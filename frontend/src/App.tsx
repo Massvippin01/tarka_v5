@@ -1,14 +1,11 @@
 import GraphExplorer from "./features/graph/GraphExplorer";
 
+import "./App.css";
+
 
 function App() {
   return (
-    <main
-      style={{
-        width: "100vw",
-        height: "100vh",
-      }}
-    >
+    <main className="sentinel-app">
       <GraphExplorer />
     </main>
   );

@@ -1,43 +1,61 @@
 from contextlib import asynccontextmanager
-
+from app.api.relationships import router as relationship_router
+from app.api.explorer import router as explorer_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.explorer import router as explorer_router
+from app.database.init_db import initialize_database
 
+from app.api.health import router as health_router
+from app.api.person import router as person_router
+from app.api.case import router as case_router
 from app.api.graph import router as graph_router
-from app.database.db import (
-    close_neo4j_connection,
-    verify_neo4j_connection,
-)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    verify_neo4j_connection()
+
+    initialize_database()
+
     yield
-    close_neo4j_connection()
 
 
 app = FastAPI(
-    title="SentinelX API",
-    description="Graph-powered intelligence platform API",
-    version="0.1.0",
+    title="SentinelX",
+    version="1.0.0",
+    description="AI Criminal Intelligence Platform",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(
+    health_router,
+    prefix="/api/v1",
+    tags=["Health"],
+)
+
+app.include_router(
+    person_router,
+    prefix="/api/v1/persons",
+    tags=["Persons"],
+)
+
+app.include_router(
+    case_router,
+    prefix="/api/v1/cases",
+    tags=["Cases"],
+)
+
+app.include_router(
     graph_router,
-    prefix="/graph",
+    prefix="/api/v1/graph",
     tags=["Graph"],
 )
 
@@ -45,14 +63,18 @@ app.include_router(
 @app.get("/")
 def root():
     return {
-        "service": "SentinelX API",
+        "application": "SentinelX",
         "status": "running",
-        "version": "0.1.0",
+        "version": "1.0.0",
     }
 
-
-@app.get("/health")
-def health():
-    return {
-        "status": "healthy",
-    }
+app.include_router(
+    relationship_router,
+    prefix="/api/v1/relationships",
+    tags=["Relationships"],
+)
+app.include_router(
+    explorer_router,
+    prefix="/api/v1/explorer",
+    tags=["Explorer"],
+)
