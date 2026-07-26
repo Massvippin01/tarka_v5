@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.domain.case import Case
+
 from .neo4j_repository import Neo4jRepository
 
 

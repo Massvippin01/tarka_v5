@@ -1,14 +1,8 @@
 from typing import Any
 
-from app.intelligence.explanations import (
-    build_explanation,
-)
-from app.intelligence.questions import (
-    generate_investigative_questions,
-)
-from app.intelligence.scoring import (
-    calculate_link_score,
-)
+from app.intelligence.explanations import build_explanation
+from app.intelligence.questions import generate_investigative_questions
+from app.intelligence.scoring import calculate_link_score
 from app.intelligence.signal_extractors import (
     extract_communication_signal,
     extract_geographic_signal,
@@ -54,9 +48,7 @@ def compare_cases(
 
     explanation = build_explanation(signals)
 
-    questions = generate_investigative_questions(
-        signals
-    )
+    questions = generate_investigative_questions(signals)
 
     return {
         "case_a": case_a["case"]["id"],
@@ -65,14 +57,8 @@ def compare_cases(
         "classification": scoring["classification"],
         "signals": signals,
         "contributions": scoring["contributions"],
-        "supporting_signals": explanation[
-            "supporting_signals"
-        ],
-        "contradictions": explanation[
-            "contradictions"
-        ],
-        "missing_data": explanation[
-            "missing_data"
-        ],
+        "supporting_signals": explanation["supporting_signals"],
+        "contradictions": explanation["contradictions"],
+        "missing_data": explanation["missing_data"],
         "recommended_questions": questions,
     }

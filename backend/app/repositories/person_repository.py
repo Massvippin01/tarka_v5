@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.domain.person import Person
+
 from .neo4j_repository import Neo4jRepository
 
 

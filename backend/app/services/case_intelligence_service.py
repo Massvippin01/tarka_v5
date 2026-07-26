@@ -59,31 +59,15 @@ def get_case_context(case_id: str) -> dict[str, Any] | None:
 
     return {
         "case": dict(case_data),
-        "location": (
-            dict(record["location"])
-            if record["location"]
-            else None
-        ),
+        "location": (dict(record["location"]) if record["location"] else None),
         "modus_operandi": (
-            dict(record["modus_operandi"])
-            if record["modus_operandi"]
-            else None
+            dict(record["modus_operandi"]) if record["modus_operandi"] else None
         ),
-        "persons": [
-            dict(person)
-            for person in record["persons"]
-            if person is not None
-        ],
+        "persons": [dict(person) for person in record["persons"] if person is not None],
         "vehicles": [
-            dict(vehicle)
-            for vehicle in record["vehicles"]
-            if vehicle is not None
+            dict(vehicle) for vehicle in record["vehicles"] if vehicle is not None
         ],
-        "phones": [
-            dict(phone)
-            for phone in record["phones"]
-            if phone is not None
-        ],
+        "phones": [dict(phone) for phone in record["phones"] if phone is not None],
     }
 
 

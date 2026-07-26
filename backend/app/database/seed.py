@@ -1,9 +1,6 @@
+from app.core.dependencies import person_repository
 from app.domain.person import Person
 from app.repositories.person_repository import PersonRepository
-
-from app.core.dependencies import (
-    person_repository,
-)
 
 
 def seed():
@@ -11,12 +8,10 @@ def seed():
     repository: PersonRepository = person_repository()
 
     repository.create(
-
         Person(
             first_name="Demo",
             last_name="Officer",
         )
-
     )
 
 

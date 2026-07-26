@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Iterable
-
 
 class CypherBuilder:
     """
@@ -10,7 +8,7 @@ class CypherBuilder:
 
     @staticmethod
     def create_node(label: str, properties: dict[str, object]) -> tuple[str, dict]:
-        assignments = ", ".join(f"{k}: ${k}" for k in properties.keys())
+        assignments = ", ".join(f"{k}: ${k}" for k in properties)
 
         query = f"""
         CREATE (n:{label} {{

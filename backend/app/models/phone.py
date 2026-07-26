@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -8,9 +6,9 @@ class PhoneBase(BaseModel):
 
     number: str
 
-    provider: Optional[str] = None
+    provider: str | None = None
 
-    imei: Optional[str] = None
+    imei: str | None = None
 
 
 class PhoneCreate(PhoneBase):
@@ -18,6 +16,4 @@ class PhoneCreate(PhoneBase):
 
 
 class PhoneRead(PhoneBase):
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

@@ -1,19 +1,9 @@
-from fastapi import APIRouter, Depends
-from fastapi import HTTPException
-from app.schemas.person import (
-    PersonCreate,
-    PersonResponse,
-)
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.dependencies import investigation_service
 from app.domain.person import Person
-
-from app.core.dependencies import (
-    investigation_service,
-)
-
-from app.services.investigation_service import (
-    InvestigationService,
-)
+from app.schemas.person import PersonCreate, PersonResponse
+from app.services.investigation_service import InvestigationService
 
 router = APIRouter()
 
@@ -24,9 +14,7 @@ router = APIRouter()
 )
 def create_person(
     request: PersonCreate,
-    service: InvestigationService = Depends(
-        investigation_service
-    ),
+    service: InvestigationService = Depends(investigation_service),
 ):
 
     person = Person(
@@ -38,6 +26,7 @@ def create_person(
     created = service.register_person(person)
 
     return PersonResponse.model_validate(created)
+
 
 @router.get(
     "/{person_id}",
@@ -58,6 +47,7 @@ def get_person(
 
     return PersonResponse.model_validate(person)
 
+
 @router.get(
     "",
     response_model=list[PersonResponse],
@@ -66,10 +56,9 @@ def list_persons(
     service: InvestigationService = Depends(investigation_service),
 ):
 
-    return [
-        PersonResponse.model_validate(p)
-        for p in service.list_persons()
-    ]
+    return [PersonResponse.model_validate(p) for p in service.list_persons()]
+
+
 @router.delete("/{person_id}")
 def delete_person(
     person_id: str,

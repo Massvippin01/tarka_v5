@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,7 @@ class CaseBase(BaseModel):
 
     occurred_at: datetime
 
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class CaseCreate(CaseBase):
@@ -22,13 +21,11 @@ class CaseCreate(CaseBase):
 
 
 class CaseUpdate(BaseModel):
-    title: Optional[str] = None
-    crime_type: Optional[str] = None
-    status: Optional[str] = None
-    description: Optional[str] = None
+    title: str | None = None
+    crime_type: str | None = None
+    status: str | None = None
+    description: str | None = None
 
 
 class CaseRead(CaseBase):
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

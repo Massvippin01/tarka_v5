@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -8,13 +6,13 @@ class VehicleBase(BaseModel):
 
     registration: str
 
-    manufacturer: Optional[str] = None
+    manufacturer: str | None = None
 
-    model: Optional[str] = None
+    model: str | None = None
 
-    color: Optional[str] = None
+    color: str | None = None
 
-    vehicle_type: Optional[str] = None
+    vehicle_type: str | None = None
 
 
 class VehicleCreate(VehicleBase):
@@ -22,6 +20,4 @@ class VehicleCreate(VehicleBase):
 
 
 class VehicleRead(VehicleBase):
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

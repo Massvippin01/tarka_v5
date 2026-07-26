@@ -56,16 +56,12 @@ def extract_modus_operandi_signal(
         comparable_attributes += 1
 
         if value_a == value_b:
-            matches.append(
-                f"{attribute}: {value_a}"
-            )
+            matches.append(f"{attribute}: {value_a}")
 
     if comparable_attributes == 0:
         strength = 0.0
     else:
-        strength = (
-            len(matches) / comparable_attributes
-        )
+        strength = len(matches) / comparable_attributes
 
     return {
         "type": "modus_operandi",
@@ -80,15 +76,11 @@ def extract_person_overlap_signal(
     case_b: dict[str, Any],
 ) -> dict[str, Any]:
     person_ids_a = {
-        person["id"]
-        for person in case_a.get("persons", [])
-        if person.get("id")
+        person["id"] for person in case_a.get("persons", []) if person.get("id")
     }
 
     person_ids_b = {
-        person["id"]
-        for person in case_b.get("persons", [])
-        if person.get("id")
+        person["id"] for person in case_b.get("persons", []) if person.get("id")
     }
 
     shared_ids = person_ids_a & person_ids_b
@@ -102,9 +94,7 @@ def extract_person_overlap_signal(
         "type": "person_overlap",
         "strength": round(strength, 4),
         "evidence": sorted(shared_ids),
-        "missing": (
-            not person_ids_a or not person_ids_b
-        ),
+        "missing": (not person_ids_a or not person_ids_b),
     }
 
 
@@ -113,15 +103,11 @@ def extract_vehicle_overlap_signal(
     case_b: dict[str, Any],
 ) -> dict[str, Any]:
     vehicle_ids_a = {
-        vehicle["id"]
-        for vehicle in case_a.get("vehicles", [])
-        if vehicle.get("id")
+        vehicle["id"] for vehicle in case_a.get("vehicles", []) if vehicle.get("id")
     }
 
     vehicle_ids_b = {
-        vehicle["id"]
-        for vehicle in case_b.get("vehicles", [])
-        if vehicle.get("id")
+        vehicle["id"] for vehicle in case_b.get("vehicles", []) if vehicle.get("id")
     }
 
     shared_ids = vehicle_ids_a & vehicle_ids_b
@@ -135,9 +121,7 @@ def extract_vehicle_overlap_signal(
         "type": "vehicle_overlap",
         "strength": round(strength, 4),
         "evidence": sorted(shared_ids),
-        "missing": (
-            not vehicle_ids_a or not vehicle_ids_b
-        ),
+        "missing": (not vehicle_ids_a or not vehicle_ids_b),
     }
 
 
@@ -158,13 +142,9 @@ def extract_temporal_signal(
     case_a: dict[str, Any],
     case_b: dict[str, Any],
 ) -> dict[str, Any]:
-    occurred_a = parse_neo4j_datetime(
-        case_a["case"].get("occurred_at")
-    )
+    occurred_a = parse_neo4j_datetime(case_a["case"].get("occurred_at"))
 
-    occurred_b = parse_neo4j_datetime(
-        case_b["case"].get("occurred_at")
-    )
+    occurred_b = parse_neo4j_datetime(case_b["case"].get("occurred_at"))
 
     if occurred_a is None or occurred_b is None:
         return {
@@ -174,9 +154,7 @@ def extract_temporal_signal(
             "missing": True,
         }
 
-    difference = abs(
-        occurred_a - occurred_b
-    )
+    difference = abs(occurred_a - occurred_b)
 
     days_apart = difference.total_seconds() / 86400
 
@@ -194,9 +172,7 @@ def extract_temporal_signal(
     return {
         "type": "temporal_proximity",
         "strength": strength,
-        "evidence": [
-            f"{round(days_apart, 2)} days apart"
-        ],
+        "evidence": [f"{round(days_apart, 2)} days apart"],
         "missing": False,
     }
 
@@ -209,13 +185,9 @@ def haversine_distance_km(
 ) -> float:
     earth_radius_km = 6371.0
 
-    latitude_difference = radians(
-        latitude_b - latitude_a
-    )
+    latitude_difference = radians(latitude_b - latitude_a)
 
-    longitude_difference = radians(
-        longitude_b - longitude_a
-    )
+    longitude_difference = radians(longitude_b - longitude_a)
 
     value = (
         sin(latitude_difference / 2) ** 2
@@ -280,9 +252,7 @@ def extract_geographic_signal(
     return {
         "type": "geographic_proximity",
         "strength": strength,
-        "evidence": [
-            f"{round(distance_km, 2)} km apart"
-        ],
+        "evidence": [f"{round(distance_km, 2)} km apart"],
         "missing": False,
     }
 
@@ -298,9 +268,7 @@ def extract_communication_signal(
             "missing": False,
         }
 
-    path_length = communication_path[
-        "path_length"
-    ]
+    path_length = communication_path["path_length"]
 
     if path_length == 1:
         strength = 1.0
@@ -314,11 +282,6 @@ def extract_communication_signal(
     return {
         "type": "communication_path",
         "strength": strength,
-        "evidence": [
-            (
-                "Phone communication path "
-                f"within {path_length} hop(s)"
-            )
-        ],
+        "evidence": [f"Phone communication path within {path_length} hop(s)"],
         "missing": False,
     }

@@ -14,13 +14,9 @@ class Neo4jRepository:
     def execute_read(self, query: str, **params):
 
         with self.driver.session() as session:
-            return session.execute_read(
-                lambda tx: tx.run(query, **params).data()
-            )
+            return session.execute_read(lambda tx: tx.run(query, **params).data())
 
     def execute_write(self, query: str, **params):
 
         with self.driver.session() as session:
-            return session.execute_write(
-                lambda tx: tx.run(query, **params).consume()
-            )
+            return session.execute_write(lambda tx: tx.run(query, **params).consume())

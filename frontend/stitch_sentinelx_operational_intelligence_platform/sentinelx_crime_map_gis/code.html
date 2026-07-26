@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KSP INTEL COMMAND | SentinelX Crime Map</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0e17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #434656;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8e90a2;
+        }
+        .map-glow {
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(255, 180, 171, 0.7); }
+            70% { transform: scale(1.2); opacity: 0.5; box-shadow: 0 0 0 10px rgba(255, 180, 171, 0); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(255, 180, 171, 0); }
+        }
+        .incident-pulse {
+            animation: pulse-red 2s infinite;
+        }
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(45, 91, 255, 0.1);
+            position: absolute;
+            top: 0;
+            z-index: 10;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            from { top: 0; }
+            to { top: 100%; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#104af0",
+                      "on-primary-fixed": "#001355",
+                      "tertiary-container": "#c24100",
+                      "on-secondary": "#213145",
+                      "on-secondary-container": "#a9bad3",
+                      "outline-variant": "#434656",
+                      "surface-container": "#1d1f29",
+                      "surface-container-highest": "#33343e",
+                      "surface-container-lowest": "#0c0e17",
+                      "surface-dim": "#11131c",
+                      "on-error": "#690005",
+                      "surface-tint": "#b8c3ff",
+                      "on-secondary-fixed": "#0b1c30",
+                      "secondary": "#b7c8e1",
+                      "on-primary": "#002387",
+                      "primary-fixed": "#dde1ff",
+                      "surface-container-low": "#191b24",
+                      "surface": "#11131c",
+                      "on-primary-fixed-variant": "#0035bd",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "tertiary-fixed-dim": "#ffb59b",
+                      "tertiary": "#ffb59b",
+                      "primary-fixed-dim": "#b8c3ff",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-tertiary-fixed": "#380d00",
+                      "on-primary-container": "#efefff",
+                      "error": "#ffb4ab",
+                      "surface-container-high": "#282933",
+                      "primary-container": "#2d5bff",
+                      "surface-bright": "#373943",
+                      "inverse-surface": "#e2e1ef",
+                      "error-container": "#93000a",
+                      "inverse-on-surface": "#2e303a",
+                      "on-error-container": "#ffdad6",
+                      "background": "#11131c",
+                      "on-surface-variant": "#c4c5d9",
+                      "on-tertiary": "#5b1a00",
+                      "outline": "#8e90a2",
+                      "surface-variant": "#33343e",
+                      "on-background": "#e2e1ef",
+                      "on-tertiary-container": "#ffece6",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "primary": "#b8c3ff",
+                      "tertiary-fixed": "#ffdbcf",
+                      "on-surface": "#e2e1ef",
+                      "on-tertiary-fixed-variant": "#812900",
+                      "secondary-container": "#3a4a5f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "24px",
+                      "xs": "4px",
+                      "gutter": "12px",
+                      "sm": "8px",
+                      "lg": "16px",
+                      "md": "12px",
+                      "base": "4px",
+                      "panel-padding": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "label-caps": ["IBM Plex Sans"],
+                      "headline-sm": ["IBM Plex Sans"],
+                      "display-lg": ["IBM Plex Sans"],
+                      "data-tabular": ["Inter"],
+                      "headline-md": ["IBM Plex Sans"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "body-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                      "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                      "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "data-tabular": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface-dim text-primary font-headline-sm text-headline-sm docked full-width top-0 border-b border-outline-variant flat no shadows flex justify-between items-center w-full px-lg h-16 z-50">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">security</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">KSP INTEL COMMAND</h1>
+</div>
+<div class="flex-1 max-w-xl mx-xl">
+<div class="relative flex items-center bg-surface-container rounded px-md py-xs border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant mr-xs">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-full placeholder:text-on-surface-variant" placeholder="Search incidents, units, or locations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="hover:bg-surface-container-highest p-sm transition-colors duration-150 rounded">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container-highest p-sm transition-colors duration-150 rounded">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="hover:bg-surface-container-highest p-sm transition-colors duration-150 rounded">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="flex items-center gap-sm ml-md">
+<div class="w-8 h-8 rounded-full border border-primary-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a high-ranking intelligence officer in a modern dark uniform, looking focused. The background is a dimly lit command center with blurred screens showing data visualizations in blue and black tones. The lighting is sharp and cinematic, highlighting the officer's authoritative features." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyRsdlUe8DfYH5H1inXOwgV6YFtmHjBWFIh9z16HCFBjZqQCD1h7r-MIhOCSK-6hV5zXgwNJdm9pRGb58CRxzhzFkJzSDMX7AEgIi3fBOO_PW9T8McJfP59m2hMr7ic7S8Vv-oCiH0424JOk6eKPuqKyhGwKkNEvKaoeuWWvdIryIeBLvlUEb23oZib9okK6HQrqWClJcuWFXsfXpqDGVwkWjySXcB1Q315HgBa6fYuYTlP-YJ9_z-e440X-BMM93I6ZXwjys7-h4"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface-container text-on-surface-variant font-label-caps text-label-caps docked h-full left-0 w-16 hover:w-64 transition-all overflow-hidden border-r border-outline-variant flat no shadows fixed left-0 top-16 bottom-0 z-40 flex flex-col group transition-all duration-300">
+<div class="flex flex-col flex-1 py-lg">
+<!-- Navigation Items -->
+<nav class="space-y-xs">
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Overview</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">security</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Command Center</span>
+</a>
+<!-- Active State: Crime Map -->
+<a class="flex items-center h-12 px-lg transition-all duration-300 bg-primary-container text-on-primary-container border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined mr-lg" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Crime Map</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">folder_shared</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Cases</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">hub</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Graph Explorer</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">timeline</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Timeline</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">person</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Persons</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">directions_car</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Vehicles</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">inventory_2</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Evidence</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">gavel</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Acts</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">menu_book</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Sections</span>
+</a>
+<a class="flex items-center h-12 px-lg transition-all duration-300 hover:bg-surface-container-high hover:text-on-surface" href="#">
+<span class="material-symbols-outlined mr-lg">monitoring</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">Analytics</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-lg border-t border-outline-variant">
+<button class="w-full bg-primary-container text-white py-sm rounded font-label-caps flex items-center justify-center gap-sm overflow-hidden">
+<span class="material-symbols-outlined">add</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">NEW CASE</span>
+</button>
+</div>
+</aside>
+<!-- Main GIS Workspace -->
+<main class="flex-1 ml-16 relative flex overflow-hidden">
+<!-- Left Control Panel -->
+<div class="w-80 bg-surface-container-low border-r border-outline-variant flex flex-col z-30 shadow-xl">
+<div class="p-panel-padding border-b border-outline-variant bg-surface-container-high">
+<h2 class="font-headline-sm text-headline-sm text-primary mb-xs">LAYERS</h2>
+<p class="text-label-sm text-on-surface-variant uppercase tracking-widest">Global GIS Configuration</p>
+</div>
+<div class="flex-1 overflow-y-auto p-md space-y-lg">
+<!-- Layer Group 1 -->
+<div>
+<h3 class="text-label-caps text-on-surface-variant mb-md opacity-60">OPERATIONAL DATA</h3>
+<div class="space-y-sm">
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer hover:border-primary-container border border-transparent transition-all">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+<span class="text-body-md font-medium">Live Incidents</span>
+</div>
+<input checked="" class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer hover:border-primary-container border border-transparent transition-all">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-fixed-dim">local_police</span>
+<span class="text-body-md font-medium">Police Stations</span>
+</div>
+<input checked="" class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer hover:border-primary-container border border-transparent transition-all">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-tertiary">warning</span>
+<span class="text-body-md font-medium">Risk Zones</span>
+</div>
+<input class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer hover:border-primary-container border border-transparent transition-all">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-secondary-container">navigation</span>
+<span class="text-body-md font-medium">Patrol Units</span>
+</div>
+<input checked="" class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+</div>
+</div>
+<!-- Layer Group 2 -->
+<div>
+<h3 class="text-label-caps text-on-surface-variant mb-md opacity-60">INFRASTRUCTURE</h3>
+<div class="space-y-sm">
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer opacity-70">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">videocam</span>
+<span class="text-body-md">CCTV Feed Density</span>
+</div>
+<input class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+<label class="flex items-center justify-between p-sm bg-surface-container-highest rounded-lg cursor-pointer opacity-70">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">cell_tower</span>
+<span class="text-body-md">Signal Intelligence</span>
+</div>
+<input class="rounded-xs border-outline bg-transparent text-primary focus:ring-primary" type="checkbox"/>
+</label>
+</div>
+</div>
+<!-- Statistics Card -->
+<div class="bg-surface-container p-md border border-outline-variant rounded-xl">
+<h4 class="text-label-caps text-primary mb-sm">ZONE HEALTH</h4>
+<div class="flex items-center justify-between py-xs border-b border-outline-variant border-dashed">
+<span class="text-label-sm text-on-surface-variant">ACTIVE ALERTS</span>
+<span class="text-data-tabular font-bold text-error">12</span>
+</div>
+<div class="flex items-center justify-between py-xs border-b border-outline-variant border-dashed">
+<span class="text-label-sm text-on-surface-variant">UNITS EN ROUTE</span>
+<span class="text-data-tabular font-bold text-tertiary">08</span>
+</div>
+<div class="flex items-center justify-between py-xs">
+<span class="text-label-sm text-on-surface-variant">RESPONSE TIME</span>
+<span class="text-data-tabular font-bold text-on-secondary-container">~4.2m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Hero Map Container -->
+<div class="flex-1 relative bg-surface-container-lowest overflow-hidden">
+<div class="scanline"></div>
+<!-- Mock Map Background -->
+<div class="absolute inset-0 z-0 bg-cover bg-center grayscale brightness-50 opacity-40 map-glow" data-alt="A highly detailed dark-themed satellite map of Bangalore city districts. The map features high-contrast vector lines for roads and district boundaries in muted grays and deep blues. Glowing neon accents highlight major transportation hubs. The aesthetic is ultra-modern, mimicking a high-end GIS intelligence platform like Palantir, with sharp topographical features and no bright colors." data-location="Bangalore city" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCMzjAUC2ZdJL3kVtMxlNqQJSpAGOVQa5HlQTZCve1gPIKTulk_EN9dhIdoiiv4yPcvRCmchYsRNI2c3EMv9C4GOkQlkzIGjGYJ1TmRGti_dcB_hWSqx3kEl_D8c77sJHu0Kj49HXulTZLxMD4Yd8GzegBeqODTWMog0hWkYG__GMTKXHBFVe4hua8y6zDV4ukwrJtGWVK7rAJFPXNDelR-kG6iqMRTH6pq9R4rY_K3yYz4Zril0XE3YBs4obgd71qu_9HtNt8DF8w')"></div>
+<!-- GIS Nodes -->
+<!-- Live Incident Pulsing Node -->
+<div class="absolute top-[35%] left-[45%] z-10 group cursor-pointer">
+<div class="w-4 h-4 bg-error rounded-full incident-pulse"></div>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-sm opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-highest border border-outline-variant p-md rounded-lg w-48 shadow-2xl pointer-events-none">
+<div class="text-error text-label-caps font-bold mb-xs">URGENT: CODE RED</div>
+<div class="text-body-md font-bold text-on-surface">Disturbance - MG Road</div>
+<div class="text-label-sm text-on-surface-variant mt-xs">02 mins ago | Unit B-12 responding</div>
+</div>
+</div>
+<div class="absolute top-[60%] left-[30%] z-10 group cursor-pointer">
+<div class="w-3 h-3 bg-tertiary rounded-full animate-ping opacity-75"></div>
+<div class="w-3 h-3 bg-tertiary rounded-full absolute top-0"></div>
+</div>
+<!-- Patrol Unit Marker -->
+<div class="absolute top-[48%] left-[52%] z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-primary-container text-xl" style="font-variation-settings: 'FILL' 1;">navigation</span>
+<span class="bg-surface-container-highest px-xs py-0 text-[10px] rounded border border-outline-variant font-bold text-primary mt-xs uppercase">PATROL-04</span>
+</div>
+<!-- Map UI Controls -->
+<div class="absolute top-lg right-lg flex flex-col gap-sm z-20">
+<button class="w-10 h-10 bg-surface-container border border-outline-variant flex items-center justify-center hover:bg-surface-container-highest transition-colors rounded">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 bg-surface-container border border-outline-variant flex items-center justify-center hover:bg-surface-container-highest transition-colors rounded">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="w-10 h-10 bg-surface-container border border-outline-variant flex items-center justify-center hover:bg-surface-container-highest transition-colors rounded mt-lg">
+<span class="material-symbols-outlined">layers</span>
+</button>
+<button class="w-10 h-10 bg-surface-container border border-outline-variant flex items-center justify-center hover:bg-surface-container-highest transition-colors rounded">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+<!-- Bottom Timeline Slider -->
+<div class="absolute bottom-xl left-1/2 -translate-x-1/2 w-[80%] z-30 bg-surface-container-low/90 backdrop-blur-md border border-outline-variant rounded-xl p-md shadow-2xl">
+<div class="flex items-center justify-between mb-sm">
+<div class="flex items-center gap-md">
+<button class="text-primary hover:text-primary-fixed-dim">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<span class="text-label-caps text-on-surface">REPLAY TIMELINE</span>
+</div>
+<div class="text-data-tabular font-bold text-on-surface-variant flex gap-xl">
+<span>START: 00:00:00</span>
+<span class="text-primary">CURRENT: 14:42:08</span>
+<span>END: 23:59:59</span>
+</div>
+</div>
+<div class="relative h-2 bg-surface-container-highest rounded-full overflow-hidden group">
+<div class="absolute top-0 left-0 h-full bg-primary w-[65%]"></div>
+<div class="absolute top-1/2 -translate-y-1/2 left-[65%] w-4 h-4 bg-white rounded-full border-2 border-primary cursor-grab active:cursor-grabbing"></div>
+</div>
+</div>
+</div>
+<!-- Right Inspector Panel (AI Summary) -->
+<div class="w-96 bg-surface-container-low border-l border-outline-variant flex flex-col z-30">
+<div class="p-panel-padding border-b border-outline-variant bg-surface-container-high flex items-center gap-sm">
+<div class="relative">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<div class="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary leading-tight">AI SENTINEL</h2>
+<p class="text-label-sm text-on-surface-variant uppercase tracking-widest">Real-time Analysis Engine</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-md space-y-lg">
+<!-- Intelligence Briefing -->
+<div class="p-md bg-primary-container/10 border-l-2 border-primary rounded-r-lg">
+<h4 class="text-label-caps text-primary mb-sm">LIVE SUMMARY</h4>
+<p class="text-body-md text-on-surface leading-relaxed">
+                            Detected anomalous movement pattern in <span class="text-primary font-bold">Zone-4 (Indiranagar)</span>. Multiple high-speed vehicles converging on a localized point. Probability of organized disturbance elevated to <span class="text-error font-bold">84%</span>. Recommend proactive unit repositioning.
+                        </p>
+</div>
+<!-- Risk Analysis Charts -->
+<div class="space-y-md">
+<h4 class="text-label-caps text-on-surface-variant opacity-60">DISTRICT RISK PROFILE</h4>
+<div class="space-y-sm">
+<div class="space-y-xs">
+<div class="flex justify-between text-label-sm">
+<span>Central Business District</span>
+<span class="text-error">EXTREME</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error w-[92%]"></div>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between text-label-sm">
+<span>Koramangala Precinct</span>
+<span class="text-tertiary">ELEVATED</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[64%]"></div>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between text-label-sm">
+<span>Whitefield Tech Corridor</span>
+<span class="text-on-secondary-container">LOW</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-on-secondary-container w-[28%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Incident Feed -->
+<div class="space-y-md">
+<h4 class="text-label-caps text-on-surface-variant opacity-60">RECENT TELEMETRY</h4>
+<div class="space-y-sm">
+<div class="p-sm bg-surface-container-highest rounded-lg border border-outline-variant hover:border-primary transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<span class="text-error text-[10px] font-bold border border-error px-1 rounded">ALERT</span>
+<span class="text-data-tabular text-[10px] text-on-surface-variant">14:40:12</span>
+</div>
+<p class="text-body-md font-medium text-on-surface">Suspected Signal Jamming</p>
+<p class="text-label-sm text-on-surface-variant">Cubbon Park Sector</p>
+</div>
+<div class="p-sm bg-surface-container-highest rounded-lg border border-outline-variant opacity-70">
+<div class="flex justify-between items-start mb-xs">
+<span class="text-primary text-[10px] font-bold border border-primary px-1 rounded">INFO</span>
+<span class="text-data-tabular text-[10px] text-on-surface-variant">14:38:45</span>
+</div>
+<p class="text-body-md font-medium text-on-surface">Shift Change - Unit B-04</p>
+<p class="text-label-sm text-on-surface-variant">Electronic City Outpost</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer CTA -->
+<div class="p-panel-padding bg-surface-container-high border-t border-outline-variant">
+<button class="w-full py-md bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-highest transition-colors rounded text-label-caps text-on-surface flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined text-primary">description</span>
+                        GENERATE INTEL REPORT
+                    </button>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest text-tertiary font-data-tabular text-data-tabular docked full-width bottom-0 h-8 border-t border-outline-variant flat no shadows fixed bottom-0 w-full z-50 flex items-center px-lg justify-between cursor-default">
+<div class="flex items-center gap-xl">
+<span class="flex items-center gap-xs">
+<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                SYSTEM HEALTH: OPERATIONAL
+            </span>
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                ENCRYPTION: ACTIVE (AES-256)
+            </span>
+</div>
+<div class="flex items-center gap-xl text-on-surface-variant font-medium">
+<span>LAT: 12.9716 N</span>
+<span>LONG: 77.5946 E</span>
+<span class="text-on-surface">© KARNATAKA POLICE INTELLIGENCE</span>
+</div>
+</footer>
+<!-- FAB (Suppressed on this complex GIS task as per guidelines) -->
+<script>
+        // Micro-interaction for the timeline slider
+        const timeline = document.querySelector('.group .bg-primary');
+        const sliderHandle = document.querySelector('.cursor-grab');
+        const currentText = document.querySelector('.text-primary');
+
+        // Simple animation simulation
+        let progress = 65;
+        setInterval(() => {
+            progress = (progress + 0.01) % 100;
+            timeline.style.width = progress + '%';
+            sliderHandle.style.left = progress + '%';
+            
+            // Randomize seconds slightly for realism
+            const now = new Date();
+            const timeStr = `CURRENT: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            currentText.innerText = timeStr;
+        }, 1000);
+
+        // Hover effect for side nav
+        const sideNav = document.querySelector('aside');
+        sideNav.addEventListener('mouseenter', () => {
+            sideNav.classList.remove('w-16');
+            sideNav.classList.add('w-64');
+        });
+        sideNav.addEventListener('mouseleave', () => {
+            sideNav.classList.remove('w-64');
+            sideNav.classList.add('w-16');
+        });
+    </script>
+</body></html>

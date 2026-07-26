@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -8,7 +6,7 @@ class LocationBase(BaseModel):
 
     name: str
 
-    address: Optional[str] = None
+    address: str | None = None
 
     latitude: float
 
@@ -20,6 +18,4 @@ class LocationCreate(LocationBase):
 
 
 class LocationRead(LocationBase):
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

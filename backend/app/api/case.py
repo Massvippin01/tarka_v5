@@ -1,19 +1,9 @@
-from fastapi import APIRouter, Depends
-from fastapi import HTTPException
-from app.schemas.case import (
-    CaseCreate,
-    CaseResponse,
-)
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.dependencies import investigation_service
 from app.domain.case import Case
-
-from app.services.investigation_service import (
-    InvestigationService,
-)
-
-from app.core.dependencies import (
-    investigation_service,
-)
+from app.schemas.case import CaseCreate, CaseResponse
+from app.services.investigation_service import InvestigationService
 
 router = APIRouter()
 
@@ -24,9 +14,7 @@ router = APIRouter()
 )
 def create_case(
     request: CaseCreate,
-    service: InvestigationService = Depends(
-        investigation_service
-    ),
+    service: InvestigationService = Depends(investigation_service),
 ):
 
     case = Case(
@@ -39,6 +27,8 @@ def create_case(
     created = service.create_case(case)
 
     return CaseResponse.model_validate(created)
+
+
 @router.get(
     "",
     response_model=list[CaseResponse],
@@ -46,10 +36,9 @@ def create_case(
 def list_cases(
     service: InvestigationService = Depends(investigation_service),
 ):
-    return [
-        CaseResponse.model_validate(c)
-        for c in service.list_cases()
-    ]
+    return [CaseResponse.model_validate(c) for c in service.list_cases()]
+
+
 @router.get(
     "/{case_id}",
     response_model=CaseResponse,
@@ -68,6 +57,8 @@ def get_case(
         )
 
     return CaseResponse.model_validate(case)
+
+
 @router.put(
     "/{case_id}",
     response_model=CaseResponse,
@@ -94,6 +85,8 @@ def update_case(
     updated = service.update_case(existing)
 
     return CaseResponse.model_validate(updated)
+
+
 @router.delete("/{case_id}")
 def delete_case(
     case_id: str,

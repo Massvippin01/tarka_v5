@@ -1,14 +1,12 @@
 from typing import Any
 
-
 QUESTION_RULES = {
     "vehicle_overlap": (
         "Compare vehicle observation timestamps and "
         "camera records across both case locations."
     ),
     "communication_path": (
-        "Review the communication timeline surrounding "
-        "both incident windows."
+        "Review the communication timeline surrounding " "both incident windows."
     ),
     "modus_operandi": (
         "Compare entry method, target selection, and "
@@ -47,9 +45,7 @@ def generate_investigative_questions(
         if signal["strength"] < 0.5:
             continue
 
-        question = QUESTION_RULES.get(
-            signal["type"]
-        )
+        question = QUESTION_RULES.get(signal["type"])
 
         if question and question not in questions:
             questions.append(question)

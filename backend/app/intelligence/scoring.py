@@ -1,6 +1,5 @@
 from typing import Any
 
-
 SIGNAL_WEIGHTS = {
     "modus_operandi": 0.30,
     "person_overlap": 0.15,
@@ -52,9 +51,7 @@ def calculate_link_score(
     if available_weight == 0:
         normalized_score = 0.0
     else:
-        normalized_score = (
-            weighted_score / available_weight
-        )
+        normalized_score = weighted_score / available_weight
 
     score = round(normalized_score * 100)
 

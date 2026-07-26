@@ -15,6 +15,4 @@ def health():
 @router.get("/ready")
 def ready():
 
-    return {
-        "ready": True
-    }
+    return {"ready": True}

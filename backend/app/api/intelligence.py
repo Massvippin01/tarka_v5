@@ -1,20 +1,15 @@
 from fastapi import APIRouter, HTTPException
 
-from app.intelligence.similarity_engine import (
-    compare_cases,
-)
+from app.intelligence.similarity_engine import compare_cases
 from app.services.case_intelligence_service import (
     get_case_context,
     has_communication_path,
 )
 
-
 router = APIRouter()
 
 
-@router.get(
-    "/compare/{case_a_id}/{case_b_id}"
-)
+@router.get("/compare/{case_a_id}/{case_b_id}")
 def compare_case_pair(
     case_a_id: str,
     case_b_id: str,

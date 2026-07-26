@@ -1,11 +1,7 @@
 from neo4j import GraphDatabase
 
 from app.core.config import settings
-
-from app.graph.graph_schema import (
-    CONSTRAINTS,
-    INDEXES,
-)
+from app.graph.graph_schema import CONSTRAINTS, INDEXES
 
 
 def initialize_database():

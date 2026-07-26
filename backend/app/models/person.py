@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -9,13 +8,13 @@ class PersonBase(BaseModel):
 
     name: str
 
-    gender: Optional[str] = None
+    gender: str | None = None
 
-    age: Optional[int] = None
+    age: int | None = None
 
-    dob: Optional[date] = None
+    dob: date | None = None
 
-    nationality: Optional[str] = None
+    nationality: str | None = None
 
 
 class PersonCreate(PersonBase):
@@ -23,6 +22,4 @@ class PersonCreate(PersonBase):
 
 
 class PersonRead(PersonBase):
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

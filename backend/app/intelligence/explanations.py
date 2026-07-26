@@ -1,6 +1,5 @@
 from typing import Any
 
-
 SIGNAL_LABELS = {
     "modus_operandi": "Modus operandi similarity",
     "person_overlap": "Shared person references",
@@ -27,9 +26,7 @@ def build_explanation(
         )
 
         if signal.get("missing"):
-            missing_data.append(
-                f"{label} data unavailable"
-            )
+            missing_data.append(f"{label} data unavailable")
             continue
 
         strength = float(signal["strength"])
@@ -45,9 +42,7 @@ def build_explanation(
             )
 
         elif strength == 0.0:
-            contradictions.append(
-                f"No supporting {label.lower()} signal"
-            )
+            contradictions.append(f"No supporting {label.lower()} signal")
 
     supporting_signals.sort(
         key=lambda signal: signal["strength"],
