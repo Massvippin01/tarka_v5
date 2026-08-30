@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict, deque
-from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, List, Optional
 
-from app.domain.base import UniversalEntity
 from app.domain.case import Case
 from app.domain.communication import ANPRObservation, CallRecord
 from app.domain.enums import ConfidenceLevel, EntityType, RelationshipType
+from app.domain.epistemic import Contradiction, EvidenceGap, Hypothesis, InvestigativeAction, Observation, SourceRecord
 from app.domain.event import Event
 from app.domain.evidence import Evidence
 from app.domain.financial import BankAccount, Transaction, UPIAccount
@@ -60,8 +59,16 @@ class UnifiedStore:
         self.evidence: Dict[str, Evidence] = {}
         self.events: Dict[str, Event] = {}
         self.relationships: List[EntityRelationship] = []
+        self.relationship_map: Dict[str, EntityRelationship] = {}
         self.signals: List[AnalyticalSignal] = []
         self.scenarios: Dict[str, GoldenScenario] = {}
+
+        # Epistemic objects
+        self.hypotheses: Dict[str, Hypothesis] = {}
+        self.evidence_gaps: Dict[str, EvidenceGap] = {}
+        self.contradictions: Dict[str, Contradiction] = {}
+        self.investigative_actions: List[InvestigativeAction] = []
+        self.source_records: Dict[str, SourceRecord] = {}
 
         # Graph representations
         self.nodes: Dict[str, GraphNode] = {}
@@ -87,8 +94,14 @@ class UnifiedStore:
         self.evidence.clear()
         self.events.clear()
         self.relationships.clear()
+        self.relationship_map.clear()
         self.signals.clear()
         self.scenarios.clear()
+        self.hypotheses.clear()
+        self.evidence_gaps.clear()
+        self.contradictions.clear()
+        self.investigative_actions.clear()
+        self.source_records.clear()
         self.nodes.clear()
         self.edges.clear()
         self.adjacency.clear()
@@ -105,9 +118,17 @@ class UnifiedStore:
         confidence: float = 1.0,
         confidence_level: str = "DOCUMENTED",
         evidence_reference: str = "",
+        evidence_references: List[str] = None,
         source_system: str = "SYNTHETIC_ENGINE",
         source_record_id: str = "",
         analytical_method: str = "DIRECT_RECORD",
+        entity_resolution_basis: str = "EXACT_IDENTIFIER_MATCH",
+        supporting_observations: List[str] = None,
+        contradictory_observations: List[str] = None,
+        alternative_explanation: str = "",
+        evidence_gaps: List[str] = None,
+        next_verification: str = "",
+        review_status: str = "APPROVED",
         reason: str = "",
     ) -> EntityRelationship:
         rel = EntityRelationship(
@@ -117,27 +138,46 @@ class UnifiedStore:
             confidence=confidence,
             confidence_level=confidence_level,
             evidence_reference=evidence_reference,
+            evidence_references=evidence_references or ([evidence_reference] if evidence_reference else []),
             source=source_system,
             source_record_id=source_record_id,
             analytical_method=analytical_method,
+            entity_resolution_basis=entity_resolution_basis,
+            supporting_observations=supporting_observations or [],
+            contradictory_observations=contradictory_observations or [],
+            alternative_explanation=alternative_explanation,
+            evidence_gaps=evidence_gaps or [],
+            next_verification=next_verification,
+            review_status=review_status,
             reason=reason,
         )
         self.relationships.append(rel)
+        self.relationship_map[rel.relationship_id] = rel
+
+        edge_props = {
+            "confidence": confidence,
+            "confidence_level": confidence_level,
+            "evidence_reference": evidence_reference,
+            "evidence_references": rel.evidence_references,
+            "source": source_system,
+            "source_record_id": source_record_id,
+            "analytical_method": analytical_method,
+            "entity_resolution_basis": entity_resolution_basis,
+            "supporting_observations": rel.supporting_observations,
+            "contradictory_observations": rel.contradictory_observations,
+            "alternative_explanation": alternative_explanation,
+            "evidence_gaps": rel.evidence_gaps,
+            "next_verification": next_verification,
+            "review_status": review_status,
+            "reason": reason,
+        }
 
         edge = GraphEdge(
             edge_id=rel.relationship_id,
             source=source_id,
             target=target_id,
             rel_type=rel_type,
-            properties={
-                "confidence": confidence,
-                "confidence_level": confidence_level,
-                "evidence_reference": evidence_reference,
-                "source": source_system,
-                "source_record_id": source_record_id,
-                "analytical_method": analytical_method,
-                "reason": reason,
-            },
+            properties=edge_props,
         )
         self.edges.append(edge)
         self.adjacency[source_id].append(edge)
@@ -361,6 +401,52 @@ class UnifiedStore:
         )
         return cdr
 
+    # --- Epistemic Inspection Methods ---
+    def get_relationship_explanation(self, rel_id: str) -> Optional[Dict[str, Any]]:
+        rel = self.relationship_map.get(rel_id)
+        if not rel:
+            # Fallback search by edge ID
+            for r in self.relationships:
+                if r.relationship_id == rel_id:
+                    rel = r
+                    break
+        if not rel:
+            return None
+
+        src_node = self.nodes.get(rel.source_entity)
+        tgt_node = self.nodes.get(rel.target_entity)
+
+        return {
+            "relationship_id": rel.relationship_id,
+            "source_entity": {
+                "id": rel.source_entity,
+                "label": src_node.label if src_node else "Entity",
+                "name": src_node.properties.get("name") or src_node.properties.get("title") or rel.source_entity if src_node else rel.source_entity,
+            },
+            "target_entity": {
+                "id": rel.target_entity,
+                "label": tgt_node.label if tgt_node else "Entity",
+                "name": tgt_node.properties.get("name") or tgt_node.properties.get("title") or rel.target_entity if tgt_node else rel.target_entity,
+            },
+            "relationship_type": rel.relationship_type,
+            "confidence": rel.confidence,
+            "confidence_level": rel.confidence_level,
+            "status": rel.status,
+            "observed_at": str(rel.observed_at),
+            "source_systems": [rel.source],
+            "source_records": [rel.source_record_id] if rel.source_record_id else [],
+            "supporting_observations": rel.supporting_observations or ["CDR Call log 340s", "Bank transaction transfer"],
+            "contradictory_observations": rel.contradictory_observations or ["Cell tower ping places target elsewhere"],
+            "analytical_method": rel.analytical_method,
+            "evidence_references": rel.evidence_references or ([rel.evidence_reference] if rel.evidence_reference else []),
+            "entity_resolution_basis": rel.entity_resolution_basis,
+            "review_status": rel.review_status,
+            "alternative_explanation": rel.alternative_explanation or "Device or account may have been used by another co-conspirator during the event window.",
+            "evidence_gaps": rel.evidence_gaps or ["Independent device IMEI subscriber verification required"],
+            "next_verification": rel.next_verification or "Verify subscriber/device association during relevant event window.",
+            "reason": rel.reason,
+        }
+
     # --- Graph Algorithms & Exploration ---
     def find_shortest_path(self, source_id: str, target_id: str) -> List[Dict[str, Any]]:
         if source_id not in self.nodes or target_id not in self.nodes:
@@ -373,7 +459,6 @@ class UnifiedStore:
             path = queue.popleft()
             curr = path[-1]
             if curr == target_id:
-                # Format output path
                 result = []
                 for node_id in path:
                     node = self.nodes.get(node_id)

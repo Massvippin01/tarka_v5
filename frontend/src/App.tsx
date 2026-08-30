@@ -3,15 +3,22 @@ import { Navbar } from "./components/Navbar";
 import { CommandCenter } from "./components/CommandCenter";
 import { EntityDossier } from "./components/EntityDossier";
 import { AICopilotDrawer } from "./components/AICopilotDrawer";
+import { RelationshipInspector } from "./components/RelationshipInspector";
+import { EvidenceGapPanel } from "./components/EvidenceGapPanel";
+import { EvidenceSpine } from "./components/EvidenceSpine";
+import { GISMap } from "./components/GISMap";
+import { Network3D } from "./components/Network3D";
 import GraphExplorer from "./features/graph/GraphExplorer";
 import "./App.css";
 
 function App() {
   const [activeTab, setActiveTab] = useState("command");
   const [selectedEntity, setSelectedEntity] = useState("P001");
+  const [selectedRelId, setSelectedRelId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotQuery, setCopilotQuery] = useState("");
+  const [is3DMode, setIs3DMode] = useState(false);
 
   const handleSelectEntity = (id: string) => {
     setSelectedEntity(id);
@@ -32,7 +39,8 @@ function App() {
   };
 
   return (
-    <main className="sentinel-app">
+    <main className="sentinel-app" style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {/* Top Nav Header */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -43,7 +51,8 @@ function App() {
         copilotOpen={copilotOpen}
       />
 
-      <div className="sentinel-content" style={{ height: "calc(100vh - 64px)" }}>
+      {/* Main Persistent Investigation Surface */}
+      <div className="sentinel-content" style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {activeTab === "command" && (
           <CommandCenter
             onSelectEntity={handleSelectEntity}
@@ -59,9 +68,30 @@ function App() {
         )}
 
         {activeTab === "network" && (
-          <div style={{ width: "100%", height: "100%" }}>
-            <GraphExplorer />
+          <div style={{ width: "100%", height: "100%", position: "relative" }}>
+            <div style={{ position: "absolute", top: "10px", right: "20px", zIndex: 100 }}>
+              <button
+                style={{ background: "#0284c7", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "4px", fontWeight: 700, cursor: "pointer", fontSize: "0.75rem" }}
+                onClick={() => setIs3DMode(!is3DMode)}
+              >
+                {is3DMode ? "🔄 SWITCH TO 2D GRAPH" : "🧊 TOGGLE 3D NETWORK MODE"}
+              </button>
+            </div>
+
+            {is3DMode ? (
+              <Network3D onSelectEntity={handleSelectEntity} onToggle2D={() => setIs3DMode(false)} />
+            ) : (
+              <GraphExplorer />
+            )}
           </div>
+        )}
+
+        {activeTab === "gaps" && (
+          <EvidenceGapPanel caseId="C102" onSelectEntity={handleSelectEntity} />
+        )}
+
+        {activeTab === "gis" && (
+          <GISMap onSelectEntity={handleSelectEntity} />
         )}
 
         {activeTab === "cases" && (
@@ -128,11 +158,25 @@ function App() {
         )}
       </div>
 
+      {/* Persistent Bottom Evidence Spine */}
+      <EvidenceSpine
+        onSelectEvent={(ev) => handleSelectEntity(ev.entityId)}
+        onInspectRelationship={() => setSelectedRelId("rel-p1-p2")}
+      />
+
+      {/* Slide-out AI Copilot Drawer */}
       <AICopilotDrawer
         isOpen={copilotOpen}
         onClose={() => setCopilotOpen(false)}
         onSelectEntity={handleSelectEntity}
         initialQuery={copilotQuery}
+      />
+
+      {/* Relationship Inspector Modal (Primary Novelty #1) */}
+      <RelationshipInspector
+        relId={selectedRelId}
+        onClose={() => setSelectedRelId(null)}
+        onSelectEntity={handleSelectEntity}
       />
     </main>
   );

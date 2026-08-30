@@ -35,6 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           { id: "cases", label: "INVESTIGATION WORKSPACE" },
           { id: "dossier", label: "ENTITY DOSSIER" },
           { id: "network", label: "NETWORK EXPLORER" },
+          { id: "gaps", label: "GAPS & HYPOTHESES" },
+          { id: "gis", label: "GIS SURVEILLANCE" },
           { id: "cyber", label: "CYBER & FINANCIAL" },
           { id: "quality", label: "DATA QUALITY & GOVERNANCE" },
         ].map((item) => (
