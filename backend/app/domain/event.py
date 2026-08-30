@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 
 from .base import UniversalEntity
 from .enums import EntityType
@@ -47,4 +47,4 @@ class Event(UniversalEntity):
 
     def add_case(self, case_id: str) -> None:
         if case_id not in self.case_ids:
-            self.case_ids.append(case_id)
+            self.case_ids.append(case_id)   

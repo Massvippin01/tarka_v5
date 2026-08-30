@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from app.services.entity_resolution_service import EntityResolutionService
-from app.services.graph_analysis_service import GraphAnalysisService
+from app.services.entity_resolution_service import (
+    EntityResolutionService,
+)
+from app.services.graph_analysis_service import (
+    GraphAnalysisService,
+)
 from app.services.timeline_service import TimelineService
 
 

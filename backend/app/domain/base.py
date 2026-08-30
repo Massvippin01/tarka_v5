@@ -30,6 +30,14 @@ class UniversalEntity:
     created_by: str | None = None
     updated_by: str | None = None
 
+    # Provenance & Fact vs Intelligence tracking
+    source: str = "SYNTHETIC_ENGINE"
+    source_record_id: str = ""
+    evidence_reference: str = ""
+    confidence: str = "DOCUMENTED"
+    analytical_method: str = "DIRECT_RECORD"
+    review_status: str = "APPROVED"
+
     tags: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
 

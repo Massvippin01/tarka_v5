@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.intelligence.engines.timeline_reasoning_engine import (
     TimelineReasoningEngine,

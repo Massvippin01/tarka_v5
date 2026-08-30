@@ -16,7 +16,7 @@ class EntityRelationship:
 
     confidence: float = 1.0
 
-    weight: float = 1.0
+    confidence_level: str = "DOCUMENTED"  # CONFIRMED, DOCUMENTED, OBSERVED, REPORTED, INFERRED, POTENTIAL
 
     valid_from: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -24,4 +24,15 @@ class EntityRelationship:
 
     evidence_ids: list[str] = field(default_factory=list)
 
+    evidence_reference: str = ""
+
+    source: str = "SYNTHETIC_ENGINE"
+
+    source_record_id: str = ""
+
+    analytical_method: str = "DIRECT_RECORD"
+
+    review_status: str = "APPROVED"
+
     reason: str = ""
+

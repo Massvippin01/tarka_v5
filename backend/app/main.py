@@ -7,6 +7,7 @@ from app.api.case import router as case_router
 from app.api.explorer import router as explorer_router
 from app.api.graph import router as graph_router
 from app.api.health import router as health_router
+from app.api.investigation import router as investigation_router
 from app.api.person import router as person_router
 from app.api.relationships import router as relationship_router
 from app.database.init_db import initialize_database
@@ -14,16 +15,14 @@ from app.database.init_db import initialize_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     initialize_database()
-
     yield
 
 
 app = FastAPI(
-    title="SentinelX",
-    version="1.0.0",
-    description="AI Criminal Intelligence Platform",
+    title="SENTINELX NEXUS",
+    version="2.0.0",
+    description="Synthetic National Criminal Intelligence & Cybercrime Platform",
     lifespan=lifespan,
 )
 
@@ -59,23 +58,30 @@ app.include_router(
     tags=["Graph"],
 )
 
-
-@app.get("/")
-def root():
-    return {
-        "application": "SentinelX",
-        "status": "running",
-        "version": "1.0.0",
-    }
-
-
 app.include_router(
     relationship_router,
     prefix="/api/v1/relationships",
     tags=["Relationships"],
 )
+
 app.include_router(
     explorer_router,
     prefix="/api/v1/explorer",
     tags=["Explorer"],
 )
+
+app.include_router(
+    investigation_router,
+    prefix="/api/v1/investigation",
+    tags=["Investigation"],
+)
+
+
+@app.get("/")
+def root():
+    return {
+        "application": "SENTINELX NEXUS",
+        "status": "running",
+        "version": "2.0.0",
+        "benchmark": "India Criminal-Justice Information Ecosystem",
+    }
