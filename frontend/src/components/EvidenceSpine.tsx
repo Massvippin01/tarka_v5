@@ -1,4 +1,5 @@
 import React from "react";
+import { useInvestigation } from "../context/InvestigationContext";
 
 interface TimelineEvent {
   id: string;
@@ -10,14 +11,16 @@ interface TimelineEvent {
 }
 
 interface EvidenceSpineProps {
-  onSelectEvent: (ev: TimelineEvent) => void;
-  onInspectRelationship: () => void;
+  onSelectEvent?: (ev: TimelineEvent) => void;
+  onInspectRelationship?: () => void;
 }
 
 export const EvidenceSpine: React.FC<EvidenceSpineProps> = ({
   onSelectEvent,
   onInspectRelationship,
 }) => {
+  const { selectedEventId, selectEvent, selectRelationship } = useInvestigation();
+
   const events: TimelineEvent[] = [
     { id: "EVT-01", time: "09:17", type: "CDR", title: "340s Call PH001 ↔ PH002", source: "CDR", entityId: "PH001" },
     { id: "EVT-02", time: "09:26", type: "FINANCIAL", title: "₹1,25,000 Transfer ACC992 → ACC481", source: "FINANCIAL", entityId: "ACC992" },
@@ -26,26 +29,46 @@ export const EvidenceSpine: React.FC<EvidenceSpineProps> = ({
     { id: "EVT-05", time: "10:03", type: "SIGNAL", title: "Signal SIG-001 High Confidence", source: "ANALYTICAL", entityId: "SIG-001" },
   ];
 
+  const handleEventClick = (ev: TimelineEvent) => {
+    selectEvent(ev.id, ev.entityId);
+    if (onSelectEvent) {
+      onSelectEvent(ev);
+    }
+  };
+
+  const handleInspectClick = () => {
+    selectRelationship("rel-p1-p2");
+    if (onInspectRelationship) {
+      onInspectRelationship();
+    }
+  };
+
   return (
     <div style={styles.spineContainer}>
       <div style={styles.spineHeader}>
         <span>EVIDENCE SPINE — TEMPORAL INVESTIGATION TIMELINE</span>
-        <button style={styles.inspectBtn} onClick={onInspectRelationship}>
+        <button style={styles.inspectBtn} onClick={handleInspectClick}>
           🔍 INSPECT RELATIONSHIP WHY?
         </button>
       </div>
       <div style={styles.timelineRow}>
-        {events.map((ev) => (
-          <div
-            key={ev.id}
-            style={styles.eventChip}
-            onClick={() => onSelectEvent(ev)}
-          >
-            <span style={styles.timeTag}>{ev.time}</span>
-            <span style={styles.typeBadge}>{ev.type}</span>
-            <span style={styles.titleText}>{ev.title}</span>
-          </div>
-        ))}
+        {events.map((ev) => {
+          const isSelected = selectedEventId === ev.id;
+          return (
+            <div
+              key={ev.id}
+              style={{
+                ...styles.eventChip,
+                ...(isSelected ? styles.eventSelected : {}),
+              }}
+              onClick={() => handleEventClick(ev)}
+            >
+              <span style={styles.timeTag}>{ev.time}</span>
+              <span style={styles.typeBadge}>{ev.type}</span>
+              <span style={styles.titleText}>{ev.title}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -95,6 +118,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "8px",
     cursor: "pointer",
     whiteSpace: "nowrap",
+  },
+  eventSelected: {
+    background: "rgba(52, 211, 153, 0.15)",
+    borderColor: "rgba(52, 211, 153, 0.4)",
+    boxShadow: "0 0 8px rgba(52, 211, 153, 0.2)",
   },
   timeTag: {
     color: "#34d399",

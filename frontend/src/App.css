@@ -1,5 +1,6 @@
 :root {
   font-family:
+    "IBM Plex Sans",
     Inter,
     ui-sans-serif,
     system-ui,
@@ -8,8 +9,8 @@
     "Segoe UI",
     sans-serif;
 
-  color: #eef3f8;
-  background: #070a0f;
+  color: #f3f6f8;
+  background: #081018;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -34,18 +35,7 @@ body,
 body {
   overflow: hidden;
 
-  background:
-    radial-gradient(
-      circle at 12% 10%,
-      rgba(45, 87, 142, 0.14),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 88% 90%,
-      rgba(24, 111, 101, 0.1),
-      transparent 28%
-    ),
-    #070a0f;
+  background: #081018;
 }
 
 button,

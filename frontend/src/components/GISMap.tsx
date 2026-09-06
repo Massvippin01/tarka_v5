@@ -1,24 +1,39 @@
-import React, { useState } from "react";
+import React from "react";
+import { useInvestigation } from "../context/InvestigationContext";
 
 interface GISMapProps {
-  onSelectEntity: (id: string) => void;
+  onSelectEntity?: (id: string) => void;
 }
 
 export const GISMap: React.FC<GISMapProps> = ({ onSelectEntity }) => {
-  const [selectedPin, setSelectedPin] = useState<any>(null);
+  const {
+    selectedLocationId,
+    selectedEntityId,
+    selectLocation,
+    selectEntity,
+  } = useInvestigation();
 
   const pins = [
-    { id: "C102", type: "CASE", name: "Delhi Cyber PS (FIR-2026-C102)", lat: 28.62, lng: 77.21, x: 280, y: 120, color: "#34d399" },
-    { id: "C481", type: "CASE", name: "Gurugram Cyber PS (FIR-2026-C481)", lat: 28.45, lng: 77.02, x: 180, y: 220, color: "#f43f5e" },
-    { id: "ANPR001", type: "ANPR", name: "DND Toll Plaza ANPR Camera (V188)", lat: 28.57, lng: 77.29, x: 340, y: 150, color: "#eab308" },
-    { id: "TOWER01", type: "CELL_TOWER", name: "South Delhi Cell Tower T-88", lat: 28.52, lng: 77.19, x: 260, y: 180, color: "#38bdf8" },
+    { id: "C102", entityId: "C102", type: "CASE", name: "Delhi Cyber PS (FIR-2026-C102)", lat: 28.62, lng: 77.21, x: 280, y: 120, color: "#34d399" },
+    { id: "C481", entityId: "C481", type: "CASE", name: "Gurugram Cyber PS (FIR-2026-C481)", lat: 28.45, lng: 77.02, x: 180, y: 220, color: "#f43f5e" },
+    { id: "ANPR001", entityId: "V188", type: "ANPR", name: "DND Toll Plaza ANPR Camera (V188)", lat: 28.57, lng: 77.29, x: 340, y: 150, color: "#eab308" },
+    { id: "TOWER01", entityId: "PH001", type: "CELL_TOWER", name: "South Delhi Cell Tower T-88", lat: 28.52, lng: 77.19, x: 260, y: 180, color: "#38bdf8" },
   ];
+
+  const handlePinClick = (pin: typeof pins[0]) => {
+    selectLocation(pin.id, pin.entityId);
+    if (onSelectEntity) {
+      onSelectEntity(pin.entityId);
+    } else {
+      selectEntity(pin.entityId);
+    }
+  };
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
         <h3>GEOSPATIAL INTELLIGENCE & MOVEMENT SURVEILLANCE</h3>
-        <div style={styles.meta}>Interactive GIS View — ANPR Toll Cameras, Cell Towers & Vehicle Movement Trails</div>
+        <div style={styles.meta}>Synchronized GIS View — ANPR Toll Cameras, Cell Towers & Vehicle Movement Trails</div>
       </div>
 
       <div style={styles.mapCanvas}>
@@ -40,29 +55,30 @@ export const GISMap: React.FC<GISMapProps> = ({ onSelectEntity }) => {
           />
 
           {/* Render Pins */}
-          {pins.map((pin) => (
-            <g
-              key={pin.id}
-              onClick={() => {
-                setSelectedPin(pin);
-                onSelectEntity(pin.id);
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <circle cx={pin.x} cy={pin.y} r="14" fill={`${pin.color}22`} />
-              <circle cx={pin.x} cy={pin.y} r="6" fill={pin.color} />
-              <text x={pin.x + 10} y={pin.y + 4} fill="#f8fafc" fontSize="10" fontWeight="bold">
-                {pin.name}
-              </text>
-            </g>
-          ))}
+          {pins.map((pin) => {
+            const isSelected = selectedLocationId === pin.id || selectedEntityId === pin.entityId;
+            return (
+              <g
+                key={pin.id}
+                onClick={() => handlePinClick(pin)}
+                style={{ cursor: "pointer" }}
+              >
+                {isSelected && <circle cx={pin.x} cy={pin.y} r="22" fill="none" stroke="#34d399" strokeWidth="2.5" />}
+                <circle cx={pin.x} cy={pin.y} r="14" fill={`${pin.color}22`} />
+                <circle cx={pin.x} cy={pin.y} r="6" fill={pin.color} />
+                <text x={pin.x + 10} y={pin.y + 4} fill="#f8fafc" fontSize="10" fontWeight="bold">
+                  {pin.name}
+                </text>
+              </g>
+            );
+          })}
         </svg>
       </div>
 
-      {selectedPin && (
+      {selectedLocationId && (
         <div style={styles.pinDetails}>
-          <strong>SELECTED MAP LOCATION: {selectedPin.name}</strong>
-          <span>Type: {selectedPin.type} | ID: {selectedPin.id}</span>
+          <strong>SYNCHRONIZED MAP SELECTION: Location {selectedLocationId}</strong>
+          <span>Entity linked: {selectedEntityId} | Synchronized across Graph, Dossier, Timeline & Copilot.</span>
         </div>
       )}
     </div>
@@ -95,10 +111,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pinDetails: {
     background: "#0f172a",
-    border: "1px solid rgba(56, 189, 248, 0.3)",
+    border: "1px solid rgba(52, 211, 153, 0.4)",
     padding: "12px",
     borderRadius: "8px",
-    color: "#38bdf8",
+    color: "#34d399",
     fontSize: "0.78rem",
     display: "flex",
     flexDirection: "column",

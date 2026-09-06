@@ -105,10 +105,15 @@ class UnifiedStore:
         self.nodes.clear()
         self.edges.clear()
         self.adjacency.clear()
+        from app.services.store_indexer import StoreIndexer
+        StoreIndexer.get_instance().clear()
 
     # --- Node and Edge Registration ---
     def register_node(self, node_id: str, label: str, properties: Dict[str, Any]):
-        self.nodes[node_id] = GraphNode(node_id, label, properties)
+        node = GraphNode(node_id, label, properties)
+        self.nodes[node_id] = node
+        from app.services.store_indexer import StoreIndexer
+        StoreIndexer.get_instance().index_node(node)
 
     def register_relationship(
         self,

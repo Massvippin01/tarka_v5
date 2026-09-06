@@ -1,120 +1,87 @@
 from __future__ import annotations
 
+import hashlib
 import logging
-from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Dict, List
-
-from app.adapters.base_adapter import BaseSourceAdapter, CanonicalRecord
-from app.domain.case import Case
-from app.domain.communication import ANPRObservation, CallRecord
-from app.domain.financial import BankAccount, Transaction, UPIAccount
-from app.domain.person import Person
-from app.domain.phone import Phone
-from app.domain.vehicle import Vehicle
+from typing import Any, Dict, List, Optional
+from app.adapters.synthetic_adapters import BaseSourceAdapter
 from app.repositories.unified_store import UnifiedStore
-from app.services.entity_resolution_engine import EntityResolutionEngine, EntityResolutionMatch
 
 logger = logging.getLogger("sentinelx.ingestion")
 
 
-@dataclass(slots=True)
-class IngestionQualityReport:
-    batch_id: str
-    total_records: int = 0
-    valid_records: int = 0
-    er_candidates_found: int = 0
-    duplicate_records: int = 0
-    orphan_records: int = 0
-    completeness_score: float = 1.0
-    provenance_coverage: float = 1.0
-    er_candidates: List[EntityResolutionMatch] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
-
-
 class IngestionPipeline:
-    def __init__(self, store: UnifiedStore = None, er_engine: EntityResolutionEngine = None):
-        self.store = store or UnifiedStore.get_instance()
-        self.er_engine = er_engine or EntityResolutionEngine(self.store)
+    def __init__(self):
+        self.store = UnifiedStore.get_instance()
+        self.seen_idempotency_keys: set[str] = set()
+        self.dead_letter_queue: List[Dict[str, Any]] = []
 
-    def ingest_records(self, adapter: BaseSourceAdapter, limit: int = 100) -> IngestionQualityReport:
+    def compute_idempotency_key(self, source_system: str, source_record_id: str) -> str:
+        raw = f"{source_system}:{source_record_id}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    def ingest_records(self, adapter: BaseSourceAdapter, limit: int = 100) -> Dict[str, Any]:
         records = adapter.fetch_records(limit=limit)
-        report = IngestionQualityReport(batch_id=f"batch-{adapter.source_system.value}-{limit}")
-        report.total_records = len(records)
+        src_name = adapter.source_system.value if hasattr(adapter, "source_system") and hasattr(adapter.source_system, "value") else str(adapter.source_system)
+        return self.ingest_canonical_records(src_name, records)
 
-        for record in records:
+    def ingest_canonical_records(self, src_name: str, records: List[Any]) -> Dict[str, Any]:
+        start_time = datetime.now(UTC)
+
+        metrics = {
+            "source_id": src_name,
+            "source_type": f"{src_name} — SYNTHETIC ADAPTER",
+            "schema_version": "v2.0",
+            "records_fetched": len(records),
+            "accepted": 0,
+            "rejected": 0,
+            "duplicate": 0,
+            "transformed": 0,
+            "linked": 0,
+            "errors": [],
+            "ingestion_started": start_time.isoformat(),
+        }
+
+        for rec in records:
+            payload = rec.payload if hasattr(rec, "payload") else rec
+            source_rec_id = str(getattr(rec, "source_record_id", payload.get("fir_id") or payload.get("record_id") or ""))
+            if not source_rec_id:
+                metrics["rejected"] += 1
+                self.dead_letter_queue.append({
+                    "adapter": src_name,
+                    "reason": "Missing source_record_id",
+                    "payload": payload,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                })
+                continue
+
+            idempotency_key = self.compute_idempotency_key(src_name, source_rec_id)
+            if idempotency_key in self.seen_idempotency_keys:
+                metrics["duplicate"] += 1
+                continue
+
+            self.seen_idempotency_keys.add(idempotency_key)
+            metrics["accepted"] += 1
+            metrics["transformed"] += 1
+
             try:
-                self.process_record(record, report)
-                report.valid_records += 1
-            except Exception as exc:
-                logger.error(f"Failed to ingest record {record.record_id}: {exc}")
+                self.store.register_node(
+                    source_rec_id,
+                    getattr(rec, "entity_type", "Record"),
+                    payload,
+                )
+                metrics["linked"] += 1
+            except Exception as e:
+                metrics["rejected"] += 1
+                metrics["errors"].append(str(e))
+                self.dead_letter_queue.append({
+                    "adapter": src_name,
+                    "reason": str(e),
+                    "payload": payload,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                })
 
-        return report
-
-    def process_record(self, record: CanonicalRecord, report: IngestionQualityReport):
-        p = record.payload
-        src = record.source_system.value
-
-        if record.entity_type == "CASE":
-            case = Case(
-                case_number=p.get("fir_number", ""),
-                fir_number=p.get("fir_number", ""),
-                title=p.get("crime_type", "Criminal Investigation"),
-                description=p.get("description", ""),
-                police_station=p.get("police_station", ""),
-                source=src,
-                source_record_id=record.source_record_id,
-                evidence_reference=record.evidence_reference,
-            )
-            self.store.save_case(case)
-
-        elif record.entity_type == "VEHICLE":
-            v = Vehicle(
-                registration_number=p.get("reg_no", ""),
-                vin=p.get("chassis", ""),
-                manufacturer=p.get("maker_model", "").split()[0],
-                model=p.get("maker_model", ""),
-                color=p.get("color", "Black"),
-                source=src,
-                source_record_id=record.source_record_id,
-                evidence_reference=record.evidence_reference,
-            )
-            self.store.save_vehicle(v)
-
-        elif record.entity_type == "CALL_RECORD":
-            cdr = CallRecord(
-                caller_number=p.get("caller", ""),
-                receiver_number=p.get("receiver", ""),
-                duration_seconds=p.get("duration", 0),
-                cell_tower_id=p.get("cell_tower", ""),
-                source=src,
-                source_record_id=record.source_record_id,
-                evidence_reference=record.evidence_reference,
-            )
-            self.store.save_call_record(cdr)
-
-        elif record.entity_type == "ANPR_OBSERVATION":
-            anpr = ANPRObservation(
-                plate_number=p.get("plate", ""),
-                camera_id=p.get("camera_id", ""),
-                camera_location=p.get("location", ""),
-                lat=p.get("lat", 0.0),
-                lng=p.get("lng", 0.0),
-                source=src,
-                source_record_id=record.source_record_id,
-                evidence_reference=record.evidence_reference,
-            )
-            self.store.anpr_observations.append(anpr)
-
-        elif record.entity_type == "TRANSACTION":
-            txn = Transaction(
-                txn_id=p.get("txn_id", ""),
-                source_account=p.get("from_account", ""),
-                target_account=p.get("to_account", ""),
-                amount=p.get("amount", 0.0),
-                reference_number=p.get("ref_no", ""),
-                source=src,
-                source_record_id=record.source_record_id,
-                evidence_reference=record.evidence_reference,
-            )
-            self.store.save_transaction(txn)
+        metrics["ingestion_completed"] = datetime.now(UTC).isoformat()
+        metrics["dead_letter_queue_size"] = len(self.dead_letter_queue)
+        metrics["status"] = "SYNTHETIC ADAPTER — COMPLETED"
+        return metrics

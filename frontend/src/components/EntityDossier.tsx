@@ -51,6 +51,24 @@ export const EntityDossier: React.FC<EntityDossierProps> = ({
 
   return (
     <div style={styles.container}>
+      {/* Non-Guilt Epistemic Disclaimer */}
+      <div
+        style={{
+          background: "rgba(230, 184, 92, 0.1)",
+          border: "1px solid rgba(230, 184, 92, 0.3)",
+          color: "var(--status-potential)",
+          padding: "6px 12px",
+          borderRadius: "4px",
+          fontSize: "0.65rem",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <span>⚖️ <strong>INVESTIGATIVE NOTICE:</strong> Graph adjacency & network association are analytical pings, not proof of culpability or guilt. All claims require empirical evidence verification.</span>
+      </div>
+
       {/* Dossier Header */}
       <div style={styles.headerCard}>
         <div style={styles.headerInfo}>

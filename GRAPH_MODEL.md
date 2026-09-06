@@ -1,36 +1,23 @@
-# SENTINELX NEXUS — Graph Model & Cypher Ontology
+# SENTINELX NEXUS — Graph Model & Analytics Specification
 
-## Graph Schema Overview
-The SENTINELX NEXUS knowledge graph is modeled in Neo4j and synchronized with the transactional domain store.
+## Node Schema
+- `Person`: `id`, `name`, `aadhaar`, `driving_license`, `aliases`, `jurisdiction`
+- `Case`: `id`, `fir_number`, `police_station`, `crime_type`, `status`
+- `Phone`: `id`, `phone_number`, `imei`, `carrier`
+- `Vehicle`: `id`, `registration_number`, `chassis_number`, `make_model`
+- `BankAccount`: `id`, `account_number`, `ifsc`, `vpa`, `bank_name`
+- `Evidence`: `id`, `evidence_number`, `evidence_type`, `chain_of_custody`
 
-### Node Labels
-- `(:Person)`: Human entities (Canonical name, Aadhaar, DL, Passport, Risk level)
-- `(:Case)`: Police FIRs & Cases (Case number, FIR number, Crime type, Status)
-- `(:Phone)`: MSISDN lines & IMEI devices (Phone number, IMEI, Carrier)
-- `(:Vehicle)`: Motor vehicles (Registration number, VIN, Make, Model, Color)
-- `(:BankAccount)`: Bank accounts (Account number, IFSC, Bank name)
-- `(:UPIAccount)`: UPI Virtual Payment Addresses (VPA, Provider)
-- `(:Evidence)`: Physical & digital evidence items (Evidence number, Hash, Vault location)
-- `(:Event)`: Chronological occurrences (Call events, Sighting events, Court hearings)
-- `(:ANPRObservation)`: Toll & surveillance camera plate sightings
-- `(:AnalyticalSignal)`: Derived multi-hop intelligence inferences
+## Edge Schema & Analytical Features
+- `ACCUSED_IN`: Role relationship connecting Person to Case.
+- `VICTIM_IN`: Role relationship connecting Person to Case.
+- `USED_PHONE`: Link connecting Person to Phone.
+- `OWNED_VEHICLE`: Link connecting Person to Vehicle.
+- `TRANSFERRED_TO`: Link connecting BankAccounts.
+- `EXCHANGED_CALL`: Link connecting Phones (CDR).
+- `SIGHTED_AT`: Link connecting Vehicle to ANPR camera/location.
 
-### Relationship Types
-- `(:Person)-[:ACCUSED_IN]->(:Case)`
-- `(:Person)-[:VICTIM_IN]->(:Case)`
-- `(:Person)-[:WITNESS_IN]->(:Case)`
-- `(:Person)-[:USES]->(:Phone)`
-- `(:Person)-[:OWNS]->(:Vehicle)`
-- `(:Person)-[:OWNS]->(:BankAccount)`
-- `(:Person)-[:CO_ACCUSED_WITH {confidence: 0.89}]->(:Person)`
-- `(:Phone)-[:CALLED {duration: 340}]->(:Phone)`
-- `(:BankAccount)-[:TRANSFERRED_TO {amount: 125000}]->(:BankAccount)`
-- `(:Vehicle)-[:SIGHTED_AT]->(:Location)`
-- `(:Evidence)-[:EVIDENCE_IN]->(:Case)`
-
-### Graph Algorithms Supported
-- Shortest Path with relationship type & confidence constraints
-- K-Hop Graph Expansion
-- Common Neighbors Analysis
-- PageRank & Degree Centrality Scoring
-- Cross-Case Linkage & Cluster Detection
+## Bounded Analytics Metrics
+- **Degree Centrality**: Calculated server-side over projected 2-hop subgraphs.
+- **PageRank**: Normalized page rank over bounded graph projections.
+- **Candidate Community Discovery**: Groups entity clusters sharing >3 common identifiers, vehicle trails, or financial links without assigning unverified legal labels.
