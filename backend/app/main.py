@@ -8,8 +8,10 @@ from app.api.explorer import router as explorer_router
 from app.api.graph import router as graph_router
 from app.api.health import router as health_router
 from app.api.investigation import router as investigation_router
+from app.api.normalization import router as normalization_router
 from app.api.person import router as person_router
 from app.api.relationships import router as relationship_router
+from app.api.resolution import router as resolution_router
 from app.database.init_db import initialize_database
 
 
@@ -62,6 +64,18 @@ app.include_router(
     relationship_router,
     prefix="/api/v1/relationships",
     tags=["Relationships"],
+)
+
+app.include_router(
+    normalization_router,
+    prefix="/api/v1/normalization",
+    tags=["Normalization"],
+)
+
+app.include_router(
+    resolution_router,
+    prefix="/api/v1/resolution",
+    tags=["Resolution"],
 )
 
 app.include_router(

@@ -100,6 +100,22 @@ export const WebGLGraphExplorer: React.FC<WebGLGraphExplorerProps> = ({ onToggle
         </div>
       </div>
 
+      {/* Epistemic Graph Safety Banner */}
+      <div style={{
+        background: "rgba(230, 184, 92, 0.08)",
+        borderBottom: "1px solid rgba(230, 184, 92, 0.2)",
+        color: "#e6b85c",
+        padding: "5px 12px",
+        fontSize: "0.65rem",
+        fontWeight: 700,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <span>⚖️ <strong>EPISTEMIC GRAPH SAFETY DIRECTIVES:</strong> Association ≠ Guilt | Centrality ≠ Criminality | Similarity ≠ Identity</span>
+        <span style={{ color: "#38bdf8" }}>ML Proposes → Evidence Verifies → Human Decides</span>
+      </div>
+
       {/* Truncation Alert Banner */}
       {data?.truncation.is_truncated && (
         <div style={styles.truncationBanner}>
