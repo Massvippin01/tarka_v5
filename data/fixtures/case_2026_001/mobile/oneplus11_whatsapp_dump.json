@@ -1,0 +1,38 @@
+{
+  "synthetic": true,
+  "source_type": "MOBILE_FORENSIC_EXPORT",
+  "case_id": "CASE-2026-001",
+  "device_metadata": {
+    "make": "OnePlus",
+    "model": "11 5G",
+    "imei": "867543029182341",
+    "android_version": "14.0",
+    "extracted_owner": "Vikram Singh",
+    "owner_alias_in_device": "Bikram Sing",
+    "acquisition_tool": "Cellebrite UFED 4PC v7.68",
+    "acquisition_timestamp": "2026-09-22T09:50:00Z"
+  },
+  "chat_threads": [
+    {
+      "thread_id": "WA-THREAD-0991",
+      "platform": "WhatsApp",
+      "participants": ["+919999011223", "+919888044556"],
+      "messages": [
+        {
+          "message_id": "MSG-001",
+          "timestamp": "2026-09-22T09:20:00Z",
+          "sender": "+919999011223",
+          "recipient": "+919888044556",
+          "text": "Sent 1.25L to HDFC ACC481. Withdraw immediately from Cyber City ATM before account freeze."
+        },
+        {
+          "message_id": "MSG-002",
+          "timestamp": "2026-09-22T09:22:00Z",
+          "sender": "+919888044556",
+          "recipient": "+919999011223",
+          "text": "Received boss. Moving Creta to safe garage now."
+        }
+      ]
+    }
+  ]
+}

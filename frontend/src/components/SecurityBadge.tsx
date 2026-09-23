@@ -40,15 +40,15 @@ export const SecurityBadge: React.FC = () => {
     <div style={styles.container}>
       {/* Persistent Synthetic Simulation Banner Badge */}
       <div style={styles.synthPill}>
-        🛡️ SYNTHETIC SIMULATION ENVIRONMENT
+         SYNTHETIC SIMULATION ENVIRONMENT
       </div>
 
       {/* Security Identity Badge */}
       <div style={styles.userBadge} onClick={() => setShowDropdown(!showDropdown)}>
-        <span style={styles.userName}>👤 {activeProfile.name}</span>
+        <span style={styles.userName}> {activeProfile.name}</span>
         <span style={styles.roleTag}>{activeProfile.role}</span>
         <span style={isAuthorized ? styles.scopeOk : styles.scopeDenied}>
-          {isAuthorized ? `✓ SCOPE AUTHORIZED (${activeCaseId})` : `⛔ OUT OF SCOPE (${activeCaseId})`}
+          {isAuthorized ? ` SCOPE AUTHORIZED (${activeCaseId})` : ` OUT OF SCOPE (${activeCaseId})`}
         </span>
         <span style={styles.caret}>▾</span>
       </div>

@@ -88,7 +88,7 @@ export const EntitiesLens: React.FC = () => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            👤 INVESTIGATIVE ENTITIES DIRECTORY
+             INVESTIGATIVE ENTITIES DIRECTORY
           </h2>
           <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "2px" }}>
             Indexed criminal network entities, risk scores, and cross-case association metrics.

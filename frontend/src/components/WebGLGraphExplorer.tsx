@@ -89,12 +89,12 @@ export const WebGLGraphExplorer: React.FC<WebGLGraphExplorerProps> = ({ onToggle
         <div style={styles.telemetryGroup}>
           {data && (
             <span style={styles.telemetryText}>
-              ⚡ Query: {data.telemetry.query_duration_ms}ms | Nodes: {data.nodes.length} | Edges: {data.edges.length}
+               Query: {data.telemetry.query_duration_ms}ms | Nodes: {data.nodes.length} | Edges: {data.edges.length}
             </span>
           )}
           {onToggleFallback && (
             <button onClick={onToggleFallback} style={styles.fallbackBtn}>
-              🔄 REACTFLOW FALLBACK
+               REACTFLOW FALLBACK
             </button>
           )}
         </div>
@@ -112,14 +112,14 @@ export const WebGLGraphExplorer: React.FC<WebGLGraphExplorerProps> = ({ onToggle
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        <span>⚖️ <strong>EPISTEMIC GRAPH SAFETY DIRECTIVES:</strong> Association ≠ Guilt | Centrality ≠ Criminality | Similarity ≠ Identity</span>
+        <span> <strong>EPISTEMIC GRAPH SAFETY DIRECTIVES:</strong> Association ≠ Guilt | Centrality ≠ Criminality | Similarity ≠ Identity</span>
         <span style={{ color: "#38bdf8" }}>ML Proposes → Evidence Verifies → Human Decides</span>
       </div>
 
       {/* Truncation Alert Banner */}
       {data?.truncation.is_truncated && (
         <div style={styles.truncationBanner}>
-          ⚠️ <strong>BOUNDED GRAPH PROJECTION TRUNCATED:</strong> Showing {data.truncation.returned_nodes} of {data.truncation.total_available_nodes} matching entities. {data.truncation.truncation_reason}
+           <strong>BOUNDED GRAPH PROJECTION TRUNCATED:</strong> Showing {data.truncation.returned_nodes} of {data.truncation.total_available_nodes} matching entities. {data.truncation.truncation_reason}
         </div>
       )}
 

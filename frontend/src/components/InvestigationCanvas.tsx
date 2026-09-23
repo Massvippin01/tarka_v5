@@ -9,26 +9,33 @@ import { EvidenceSpine } from "./EvidenceSpine";
 import { GISMap } from "./GISMap";
 import { Network3D } from "./Network3D";
 import { AICopilotDrawer } from "./AICopilotDrawer";
-import { WebGLGraphExplorer } from "./WebGLGraphExplorer";
 import { GlobalCommandSearch } from "./GlobalCommandSearch";
 import { AnalyticalContextPanel } from "./AnalyticalContextPanel";
-import { LandingPage } from "./LandingPage";
 import { AuthModal } from "./AuthModal";
-import { TimelineLens } from "./TimelineLens";
 import { EvidenceLens } from "./EvidenceLens";
 import { EntitiesLens } from "./EntitiesLens";
-import GraphExplorer from "../features/graph/GraphExplorer";
+import { CommandCenter } from "./CommandCenter";
+import { InvestigationStatePanel } from "./investigation/InvestigationStatePanel";
+import { EvidenceGraph } from "./investigation/EvidenceGraph";
+import { ContradictionCenter } from "./investigation/ContradictionCenter";
+import { EvidenceGapCenter } from "./investigation/EvidenceGapCenter";
+import { LiveProofDrawer } from "./investigation/LiveProofDrawer";
+import { InvestigationTimeline } from "./investigation/InvestigationTimeline";
+import { InvestigationDelta } from "./investigation/InvestigationDelta";
+import { ClaimInspector } from "./investigation/ClaimInspector";
+import { EvidenceImpactPanel } from "./investigation/EvidenceImpactPanel";
+import { GovernedIntelligenceSentinel } from "./investigation/GovernedIntelligenceSentinel";
 
 export const InvestigationCanvas: React.FC = () => {
-  const [viewMode, setViewMode] = useState<"LANDING" | "WORKSPACE">("WORKSPACE");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "parchment">("dark");
-  const [useReactFlowFallback, setUseReactFlowFallback] = useState(false);
   const [isCommandSearchOpen, setIsCommandSearchOpen] = useState(false);
 
   const {
     activeCaseId,
+    activeNav,
     activeLens,
+    activeWorkspaceView,
+    setActiveWorkspaceView,
     selectedEntityId,
     selectedRelationshipId,
     canvasMode,
@@ -46,75 +53,65 @@ export const InvestigationCanvas: React.FC = () => {
     dismissNewEvidenceAlert,
   } = useInvestigation();
 
-  if (viewMode === "LANDING") {
-    return (
-      <>
-        <LandingPage
-          onStartInvestigation={() => setViewMode("WORKSPACE")}
-          onOpenAuth={() => setIsAuthOpen(true)}
-        />
-        <AuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-          onSuccess={() => {
-            setIsAuthOpen(false);
-            setViewMode("WORKSPACE");
-          }}
-        />
-      </>
-    );
-  }
-
   const LENSES: { id: WorkspaceLens; label: string; icon: string }[] = [
-    { id: "Overview", label: "Overview", icon: "📊" },
-    { id: "Network", label: "Network", icon: "🕸️" },
-    { id: "Timeline", label: "Timeline", icon: "⏱️" },
-    { id: "Map", label: "Map", icon: "🗺️" },
-    { id: "Evidence", label: "Evidence", icon: "📋" },
-    { id: "Entities", label: "Entities", icon: "👤" },
-    { id: "Findings", label: "Findings", icon: "💡" },
+    { id: "Overview", label: "OVERVIEW", icon: "" },
+    { id: "Network", label: "NETWORK", icon: "️" },
+    { id: "Timeline", label: "TIMELINE", icon: "⏱️" },
+    { id: "Map", label: "MAP", icon: "️" },
+    { id: "Evidence", label: "EVIDENCE", icon: "" },
+    { id: "Entities", label: "ENTITIES", icon: "" },
+    { id: "Findings", label: "FINDINGS", icon: "" },
   ];
 
   return (
-    <div data-theme={theme} style={styles.appShell}>
+    <div style={styles.appShell}>
       {/* Top Breadcrumb & Orientation Bar */}
       <BreadcrumbBar
         onOpenCommandSearch={() => setIsCommandSearchOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
-        onGoLanding={() => setViewMode("LANDING")}
-        theme={theme}
-        onToggleTheme={() => setTheme(theme === "dark" ? "parchment" : "dark")}
       />
 
       {/* Non-Blocking Realtime Evidence Alert Banner */}
       {newEvidenceAlert && (
         <div style={styles.alertBanner}>
-          <span>⚡ <strong>REALTIME EVIDENCE UPDATE:</strong> 1 new evidence record ingested. Existing Copilot analysis remains immutable.</span>
+          <span>
+             <strong>REALTIME EVIDENCE INGESTION:</strong> New CAS artifact validated. Existing analysis remained immutable.
+          </span>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button style={styles.alertActionBtn} onClick={() => runCopilotQuery(`Re-analyze case ${activeCaseId} with latest evidence`)}>
-              RE-RUN ANALYSIS
+            <button
+              style={styles.alertActionBtn}
+              onClick={() => runCopilotQuery(`Re-analyze case ${activeCaseId} with latest evidence`)}
+            >
+              RUN DELTA REASONING
             </button>
             <button style={styles.alertDismissBtn} onClick={dismissNewEvidenceAlert}>
-              KEEP CURRENT RESULT
+              DISMISS
             </button>
           </div>
         </div>
       )}
 
-      {/* Main Workspace Layout Container */}
+      {/* Main Workspace Body */}
       <div style={styles.workspaceBody}>
-        {/* Persistent Compact Left Navigation Rail */}
+        {/* Compact Navigation Rail (Left) */}
         <LeftNavRail />
 
-        {/* Central Workspace Surface */}
+        {/* State Telemetry Panel (Left of Center) */}
+        <InvestigationStatePanel />
+
+        {/* Central Dominant Analytical Surface */}
         <div style={styles.centerSection}>
-          {/* Investigation Workspace Lenses Bar */}
+          {/* Lenses Filter Bar */}
           <div style={styles.lensBar}>
-            <div style={{ display: "flex", gap: "2px" }}>
+            <div style={{ display: "flex", gap: "4px" }}>
               {LENSES.map((lens) => (
                 <button
                   key={lens.id}
-                  onClick={() => setActiveLens(lens.id)}
+                  onClick={() => {
+                    setActiveLens(lens.id);
+                    if (lens.id === "Network") setActiveWorkspaceView("graph");
+                    else if (lens.id === "Timeline") setActiveWorkspaceView("timeline");
+                  }}
                   style={{
                     ...styles.lensBtn,
                     ...(activeLens === lens.id ? styles.lensActive : {}),
@@ -125,7 +122,7 @@ export const InvestigationCanvas: React.FC = () => {
               ))}
             </div>
 
-            {/* Mode Controls when in Network lens */}
+            {/* Projection Mode Controls (2D / 3D / GIS) */}
             {activeLens === "Network" && (
               <div style={styles.modeGroup}>
                 <button
@@ -150,51 +147,50 @@ export const InvestigationCanvas: React.FC = () => {
             )}
           </div>
 
-          {/* Active Workspace Lens Content */}
+          {/* Central Analytical Canvas Container */}
           <div style={styles.canvasContainer}>
-            {activeLens === "Network" && (
+            {activeNav === "command" ? (
+              <CommandCenter />
+            ) : activeNav === "contradictions" || activeWorkspaceView === "contradictions" ? (
+              <ContradictionCenter />
+            ) : activeNav === "gaps" || activeWorkspaceView === "gaps" ? (
+              <EvidenceGapCenter />
+            ) : activeNav === "timeline" || activeWorkspaceView === "timeline" || activeLens === "Timeline" ? (
+              <InvestigationTimeline />
+            ) : activeNav === "evidence" || activeLens === "Evidence" ? (
+              <EvidenceLens />
+            ) : activeNav === "entities" || activeLens === "Entities" ? (
+              <EntitiesLens />
+            ) : activeWorkspaceView === "delta" ? (
+              <InvestigationDelta />
+            ) : activeWorkspaceView === "graph" || activeLens === "Network" ? (
               canvasMode === "2D" ? (
-                useReactFlowFallback ? (
-                  <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                    <div style={{ position: "absolute", top: "8px", right: "12px", zIndex: 10 }}>
-                      <button
-                        onClick={() => setUseReactFlowFallback(false)}
-                        style={{ background: "#0284c7", border: "none", color: "#fff", padding: "4px 8px", borderRadius: "4px", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer" }}
-                      >
-                        ⚡ SWITCH TO WEBGL BOUNDED GRAPH
-                      </button>
-                    </div>
-                    <GraphExplorer />
-                  </div>
-                ) : (
-                  <WebGLGraphExplorer onToggleFallback={() => setUseReactFlowFallback(true)} />
-                )
+                <EvidenceGraph />
               ) : canvasMode === "3D" ? (
                 <Network3D onSelectEntity={selectEntity} onToggle2D={() => setCanvasMode("2D")} />
               ) : (
                 <GISMap onSelectEntity={selectEntity} />
               )
-            )}
-
-            {activeLens === "Timeline" && <TimelineLens />}
-            {activeLens === "Evidence" && <EvidenceLens />}
-            {activeLens === "Entities" && <EntitiesLens />}
-            {activeLens === "Map" && <GISMap onSelectEntity={selectEntity} />}
-            {(activeLens === "Overview" || activeLens === "Findings") && (
+            ) : activeLens === "Map" ? (
+              <GISMap onSelectEntity={selectEntity} />
+            ) : (
               <AnalyticalContextPanel caseId={activeCaseId} onSelectEntity={selectEntity} />
             )}
           </div>
         </div>
 
-        {/* Contextual Intelligence & Slide-Over Rail */}
+        {/* Contextual Sentinel Inspector (Right Rail) */}
         <aside style={styles.rightRail}>
-          {/* Right Rail Tabs */}
+          {/* Right Rail Sub-Tabs */}
           <div style={styles.rightNav}>
             <button
               onClick={() => setActiveRightTab("signals")}
-              style={{ ...styles.rTabBtn, ...(activeRightTab === "signals" ? styles.rTabActive : {}) }}
+              style={{
+                ...styles.rTabBtn,
+                ...(activeRightTab === "signals" ? styles.rTabActiveSentinel : {}),
+              }}
             >
-              🧠 INTELLIGENCE
+               SENTINEL
             </button>
             <button
               onClick={() => setActiveRightTab("dossier")}
@@ -206,43 +202,61 @@ export const InvestigationCanvas: React.FC = () => {
               onClick={() => setActiveRightTab("inspector")}
               style={{ ...styles.rTabBtn, ...(activeRightTab === "inspector" ? styles.rTabActive : {}) }}
             >
-              WHY? INSPECTOR
+              RELATION
+            </button>
+            <button
+              onClick={() => setActiveRightTab("claim")}
+              style={{ ...styles.rTabBtn, ...(activeRightTab === "claim" ? styles.rTabActive : {}) }}
+            >
+              CLAIM
+            </button>
+            <button
+              onClick={() => setActiveRightTab("impact")}
+              style={{ ...styles.rTabBtn, ...(activeRightTab === "impact" ? styles.rTabActive : {}) }}
+            >
+              IMPACT
             </button>
             <button
               onClick={() => setActiveRightTab("gaps")}
               style={{ ...styles.rTabBtn, ...(activeRightTab === "gaps" ? styles.rTabActive : {}) }}
             >
-              GAPS & HYPOTHESES
+              GAPS
             </button>
           </div>
 
-          {/* Dynamic Panel Content */}
+          {/* Dynamic Inspector Content */}
           <div style={styles.rightBody}>
-            {activeRightTab === "signals" && (
-              <AnalyticalContextPanel caseId={activeCaseId} onSelectEntity={selectEntity} />
-            )}
-            {activeRightTab === "dossier" && selectedEntityId && (
+            {activeRightTab === "signals" ? (
+              <GovernedIntelligenceSentinel />
+            ) : activeRightTab === "dossier" && selectedEntityId ? (
               <EntityDossier entityId={selectedEntityId} onSelectEntity={selectEntity} />
-            )}
-            {activeRightTab === "inspector" && (
+            ) : activeRightTab === "inspector" ? (
               <RelationshipInspector
                 relId={selectedRelationshipId || "rel-p1-p2"}
                 onClose={() => setActiveRightTab("dossier")}
                 onSelectEntity={selectEntity}
               />
-            )}
-            {activeRightTab === "gaps" && (
+            ) : activeRightTab === "claim" ? (
+              <ClaimInspector />
+            ) : activeRightTab === "impact" ? (
+              <EvidenceImpactPanel />
+            ) : activeRightTab === "gaps" ? (
               <EvidenceGapPanel caseId={activeCaseId} onSelectEntity={selectEntity} />
+            ) : (
+              <GovernedIntelligenceSentinel />
             )}
           </div>
         </aside>
       </div>
 
-      {/* Bottom Persistent Evidence Spine */}
+      {/* Persistent Bottom Evidence Spine */}
       <EvidenceSpine
         onSelectEvent={(ev) => selectEntity(ev.entityId)}
         onInspectRelationship={() => selectRelationship("rel-p1-p2")}
       />
+
+      {/* LiveProof Lineage Drawer Overlay */}
+      <LiveProofDrawer />
 
       {/* Contextual AI Copilot Drawer */}
       <AICopilotDrawer
@@ -273,137 +287,153 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     height: "100vh",
-    background: "var(--surface-primary)",
-    color: "var(--text-primary)",
-    fontFamily: "var(--font-sans)",
+    background: "#0D111A",
+    color: "#E6EDF8",
+    fontFamily: "'Inter', sans-serif",
     overflow: "hidden",
   },
   alertBanner: {
-    background: "rgba(56, 189, 248, 0.12)",
-    borderBottom: "1px solid rgba(56, 189, 248, 0.3)",
-    color: "#38bdf8",
-    padding: "6px 16px",
-    fontSize: "0.72rem",
+    background: "#ECE8DF",
+    borderBottom: "1px solid #D8D2C7",
+    color: "#AE2D30",
+    padding: "6px 14px",
+    fontSize: "11px",
+    fontFamily: "'IBM Plex Mono', monospace",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
   },
   alertActionBtn: {
-    background: "#0284c7",
+    background: "#AE2D30",
     border: "none",
-    color: "#fff",
-    padding: "2px 8px",
-    borderRadius: "4px",
-    fontSize: "0.65rem",
-    fontWeight: 700,
+    color: "#FAF8F3",
+    padding: "3px 8px",
+    borderRadius: "2px",
+    fontSize: "11px",
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Mono', monospace",
     cursor: "pointer",
   },
   alertDismissBtn: {
-    background: "var(--surface-primary)",
-    border: "1px solid var(--border-subtle)",
-    color: "var(--text-secondary)",
-    padding: "2px 8px",
-    borderRadius: "4px",
-    fontSize: "0.65rem",
-    fontWeight: 700,
+    background: "transparent",
+    border: "1px solid #D8D2C7",
+    color: "#625E57",
+    padding: "3px 8px",
+    borderRadius: "2px",
+    fontSize: "11px",
+    fontWeight: 500,
+    fontFamily: "'IBM Plex Mono', monospace",
     cursor: "pointer",
   },
   workspaceBody: {
     flex: 1,
     display: "flex",
     overflow: "hidden",
+    background: "#F4F1EA",
   },
   centerSection: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    background: "var(--surface-primary)",
+    background: "#F4F1EA",
   },
   lensBar: {
-    height: "38px",
-    background: "var(--surface-secondary)",
-    borderBottom: "1px solid var(--border-subtle)",
+    height: "36px",
+    background: "#FAF8F3",
+    borderBottom: "1px solid #D8D2C7",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0 12px",
+    padding: "0 10px",
   },
   lensBtn: {
     background: "transparent",
     border: "none",
-    color: "var(--text-secondary)",
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    padding: "6px 10px",
+    color: "#625E57",
+    fontSize: "11px",
+    fontWeight: 500,
+    fontFamily: "'IBM Plex Mono', monospace",
+    padding: "4px 8px",
     cursor: "pointer",
-    borderRadius: "4px",
+    borderRadius: "2px",
     display: "flex",
     alignItems: "center",
     gap: "5px",
-    transition: "all 0.1s ease",
   },
   lensActive: {
-    background: "var(--surface-selected)",
-    color: "var(--text-accent)",
-    fontWeight: 800,
+    background: "#ECE8DF",
+    color: "#1E1D1A",
+    borderBottom: "2px solid #AE2D30",
+    fontWeight: 600,
   },
   modeGroup: {
     display: "flex",
     gap: "4px",
   },
   modeBtn: {
-    background: "transparent",
-    border: "1px solid var(--border-subtle)",
-    color: "var(--text-secondary)",
-    padding: "3px 8px",
-    borderRadius: "4px",
-    fontSize: "0.62rem",
-    fontWeight: 700,
+    background: "#FAF8F3",
+    border: "1px solid #D8D2C7",
+    color: "#625E57",
+    padding: "2px 6px",
+    borderRadius: "2px",
+    fontSize: "10px",
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Mono', monospace",
     cursor: "pointer",
   },
   modeActive: {
-    background: "rgba(16, 185, 129, 0.15)",
-    color: "var(--status-observed)",
-    borderColor: "rgba(52, 211, 153, 0.4)",
+    background: "#ECE8DF",
+    color: "#1E1D1A",
+    borderColor: "#AE2D30",
   },
   canvasContainer: {
     flex: 1,
     position: "relative",
     overflow: "hidden",
-    background: "#030712",
+    background: "#F4F1EA",
   },
   rightRail: {
     width: "360px",
-    background: "var(--surface-secondary)",
-    borderLeft: "1px solid var(--border-subtle)",
+    background: "#FAF8F3",
+    borderLeft: "1px solid #D8D2C7",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
   },
   rightNav: {
     display: "flex",
-    borderBottom: "1px solid var(--border-subtle)",
-    background: "var(--surface-primary)",
+    borderBottom: "1px solid #D8D2C7",
+    background: "#ECE8DF",
   },
   rTabBtn: {
     flex: 1,
     background: "transparent",
     border: "none",
-    color: "var(--text-muted)",
-    fontSize: "0.62rem",
-    fontWeight: 700,
-    padding: "8px 2px",
+    color: "#625E57",
+    fontSize: "10px",
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Mono', monospace",
+    padding: "7px 2px",
     cursor: "pointer",
+    textAlign: "center",
   },
   rTabActive: {
-    color: "var(--text-accent)",
-    borderBottom: "2px solid var(--text-accent)",
-    background: "var(--surface-selected)",
+    color: "#1E1D1A",
+    borderBottom: "2px solid #AE2D30",
+    background: "#FAF8F3",
+    fontWeight: 700,
+  },
+  rTabActiveSentinel: {
+    color: "#AE2D30",
+    borderBottom: "2px solid #AE2D30",
+    background: "#FAF8F3",
+    fontWeight: 700,
   },
   rightBody: {
     flex: 1,
     overflowY: "auto",
-    padding: "12px",
+    padding: "0",
+    background: "#FAF8F3",
   },
 };

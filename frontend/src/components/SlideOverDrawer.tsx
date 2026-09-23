@@ -66,7 +66,7 @@ export const SlideOverDrawer: React.FC<SlideOverDrawerProps> = ({
             cursor: "pointer",
           }}
         >
-          ✕ CLOSE
+           CLOSE
         </button>
       </div>
 

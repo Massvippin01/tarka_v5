@@ -1,25 +1,29 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type CanvasMode = "2D" | "3D" | "GIS";
-export type RightTab = "dossier" | "gaps" | "hypotheses" | "inspector" | "signals";
+export type RightTab = "dossier" | "gaps" | "hypotheses" | "inspector" | "signals" | "claim" | "impact";
 export type RealtimeConnectionState = "LIVE" | "RECONNECTING" | "OFFLINE" | "STALE";
 
 export type NavRoute =
   | "command"
-  | "investigations"
   | "cases"
-  | "search"
-  | "entities"
-  | "network"
-  | "timeline"
   | "evidence"
+  | "entities"
+  | "timeline"
+  | "contradictions"
+  | "gaps"
+  | "proof"
+  | "sources"
+  | "memory"
+  | "reports"
+  | "audit"
+  | "investigations"
+  | "search"
+  | "network"
   | "alerts"
   | "watchlists"
   | "analytics"
-  | "reports"
-  | "sources"
   | "health"
-  | "audit"
   | "admin"
   | "help";
 
@@ -68,6 +72,9 @@ export interface InvestigationContextType {
   selectedEntityId: string | null;
   selectedRelationshipId: string | null;
   selectedEvidenceId: string | null;
+  selectedClaimId: string | null;
+  proofDrawerClaimId: string | null;
+  activeWorkspaceView: "graph" | "timeline" | "contradictions" | "gaps" | "delta";
   selectedEventId: string | null;
   selectedLocationId: string | null;
   selectedHypothesisId: string | null;
@@ -98,6 +105,9 @@ export interface InvestigationContextType {
   selectEntity: (entityId: string) => void;
   selectRelationship: (relId: string) => void;
   selectEvidence: (evidenceId: string) => void;
+  selectClaim: (claimId: string | null) => void;
+  openProofDrawer: (claimId: string | null) => void;
+  setActiveWorkspaceView: (v: "graph" | "timeline" | "contradictions" | "gaps" | "delta") => void;
   selectEvent: (eventId: string, entityId?: string) => void;
   selectLocation: (locationId: string, entityId?: string) => void;
   selectHypothesis: (hypothesisId: string) => void;
@@ -136,6 +146,9 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(initialParams.get("loc") || null);
   const [selectedHypothesisId, setSelectedHypothesisId] = useState<string | null>("HYP-001");
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
+  const [proofDrawerClaimId, setProofDrawerClaimId] = useState<string | null>(null);
+  const [activeWorkspaceView, setActiveWorkspaceView] = useState<"graph" | "timeline" | "contradictions" | "gaps" | "delta">("graph");
   const [timeRange, setTimeRangeState] = useState<[string, string]>(["2026-08-01", "2026-08-30"]);
   const [jurisdiction, setJurisdiction] = useState("Delhi NCR / Gurugram");
   const [entityFilters, setEntityFiltersState] = useState<string[]>([]);
@@ -380,11 +393,22 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
         historyStack,
         queryBounds,
         lastEvent,
+        selectedClaimId,
+        proofDrawerClaimId,
+        activeWorkspaceView,
 
         selectCase,
         selectEntity,
         selectRelationship,
         selectEvidence,
+        selectClaim: (claimId: string | null) => {
+          setSelectedClaimId(claimId);
+          if (claimId) setActiveRightTab("claim");
+        },
+        openProofDrawer: (claimId: string | null) => {
+          setProofDrawerClaimId(claimId);
+        },
+        setActiveWorkspaceView,
         selectEvent,
         selectLocation,
         selectHypothesis,

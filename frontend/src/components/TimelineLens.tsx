@@ -116,7 +116,7 @@ export const TimelineLens: React.FC = () => {
             cursor: "pointer",
           }}
         >
-          🤖 DETECT TIMELINE CONTRADICTIONS
+           DETECT TIMELINE CONTRADICTIONS
         </button>
       </div>
 
@@ -177,16 +177,16 @@ export const TimelineLens: React.FC = () => {
               }}
             >
               {event.type === "CALL"
-                ? "📞"
+                ? ""
                 : event.type === "TRANSACTION"
-                ? "💸"
+                ? ""
                 : event.type === "ANPR"
-                ? "📷"
+                ? ""
                 : event.type === "FIR"
-                ? "📄"
+                ? ""
                 : event.type === "CHAT"
-                ? "💬"
-                : "📍"}
+                ? ""
+                : ""}
             </div>
 
             {/* Event Content Card */}
@@ -231,7 +231,7 @@ export const TimelineLens: React.FC = () => {
                         border: "1px solid var(--status-contradicted)",
                       }}
                     >
-                      ⚠️ ALIBI CONTRADICTION DETECTED
+                       ALIBI CONTRADICTION DETECTED
                     </span>
                   )}
                 </div>
@@ -259,7 +259,7 @@ export const TimelineLens: React.FC = () => {
                     cursor: "pointer",
                   }}
                 >
-                  👤 INSPECT ENTITY ({event.entityId})
+                   INSPECT ENTITY ({event.entityId})
                 </button>
                 <button
                   onClick={() => selectEvidence(event.evidenceId)}
@@ -274,7 +274,7 @@ export const TimelineLens: React.FC = () => {
                     cursor: "pointer",
                   }}
                 >
-                  📋 VIEW EVIDENCE ({event.evidenceId})
+                   VIEW EVIDENCE ({event.evidenceId})
                 </button>
               </div>
             </div>

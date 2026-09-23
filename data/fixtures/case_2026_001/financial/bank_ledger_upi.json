@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "source_type": "FINANCIAL_TRANSACTION",
+  "case_id": "CASE-2026-001",
+  "bank_name": "State Bank of India / HDFC Bank",
+  "ledger_cycle": "September 2026",
+  "transactions": [
+    {
+      "txn_id": "TXN-2026-9912",
+      "reference_number": "UPI202688771122",
+      "timestamp": "2026-09-22T09:26:00Z",
+      "from_account": "ACC992",
+      "remitter_name": "Vikram Singh",
+      "remitter_vpa": "vicky.mule@okicici",
+      "to_account": "ACC481",
+      "beneficiary_name": "Rahul Verma",
+      "beneficiary_vpa": "chhotu.mule@okhdfc",
+      "amount": 125000.00,
+      "currency": "INR",
+      "payment_mode": "UPI",
+      "flagged_fraud": true,
+      "flag_reason": "High-velocity layer transfer from newly activated mule UPI ID"
+    }
+  ]
+}

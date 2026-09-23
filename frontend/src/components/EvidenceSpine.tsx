@@ -48,7 +48,7 @@ export const EvidenceSpine: React.FC<EvidenceSpineProps> = ({
       <div style={styles.spineHeader}>
         <span>EVIDENCE SPINE — TEMPORAL INVESTIGATION TIMELINE</span>
         <button style={styles.inspectBtn} onClick={handleInspectClick}>
-          🔍 INSPECT RELATIONSHIP WHY?
+           INSPECT RELATIONSHIP WHY?
         </button>
       </div>
       <div style={styles.timelineRow}>

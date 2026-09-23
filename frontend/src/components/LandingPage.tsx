@@ -20,7 +20,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         <div style={styles.navActions}>
           <button onClick={onStartInvestigation} style={styles.primaryNavBtn}>
-            Start Investigation <span style={{ marginLeft: "4px" }}>➔</span>
+            Start Investigation <span style={{ marginLeft: "4px" }}></span>
           </button>
           <button onClick={onOpenAuth} style={styles.secondaryNavBtn}>
             Sign In

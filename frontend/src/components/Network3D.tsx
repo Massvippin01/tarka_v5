@@ -26,7 +26,7 @@ export const Network3D: React.FC<Network3DProps> = ({ onSelectEntity, onToggle2D
           <span style={styles.meta}>Cluster Separation & Multi-Hop Spatial Layering</span>
         </div>
         <button style={styles.switchBtn} onClick={onToggle2D}>
-          🔄 SWITCH TO 2D GRAPH MODE
+           SWITCH TO 2D GRAPH MODE
         </button>
       </div>
 

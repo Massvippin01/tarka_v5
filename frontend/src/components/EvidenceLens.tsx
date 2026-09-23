@@ -21,7 +21,7 @@ const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = [
     sourceSystem: "FSL",
     recordId: "FSL-DEL-2026-8812",
     sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    provenanceStage: "RAW RECORD ➔ OBSERVATION ➔ SIGNAL ➔ EVIDENCE ➔ CLAIM",
+    provenanceStage: "RAW RECORD  OBSERVATION  SIGNAL  EVIDENCE  CLAIM",
     confidence: 0.99,
     supportingEntities: ["P001", "PH001", "ACC992"],
     contradictingEntities: [],
@@ -33,7 +33,7 @@ const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = [
     sourceSystem: "FINANCIAL",
     recordId: "ICICI-TXN-99120",
     sha256: "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
-    provenanceStage: "RAW RECORD ➔ OBSERVATION ➔ SIGNAL ➔ EVIDENCE",
+    provenanceStage: "RAW RECORD  OBSERVATION  SIGNAL  EVIDENCE",
     confidence: 0.98,
     supportingEntities: ["ACC992", "ACC481"],
     contradictingEntities: [],
@@ -45,7 +45,7 @@ const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = [
     sourceSystem: "CDR",
     recordId: "AIRTEL-CDR-2026-0814",
     sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-    provenanceStage: "RAW RECORD ➔ SIGNAL ➔ EVIDENCE",
+    provenanceStage: "RAW RECORD  SIGNAL  EVIDENCE",
     confidence: 0.95,
     supportingEntities: ["PH001", "PH002"],
     contradictingEntities: [],
@@ -57,7 +57,7 @@ const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = [
     sourceSystem: "ANPR",
     recordId: "ANPR-DEL-8812",
     sha256: "4b227777d4da1691cb48f219149ce57b28251e76500c9835077717872a128260",
-    provenanceStage: "RAW RECORD ➔ OBSERVATION ➔ EVIDENCE",
+    provenanceStage: "RAW RECORD  OBSERVATION  EVIDENCE",
     confidence: 0.92,
     supportingEntities: ["V188", "P001"],
     contradictingEntities: ["P001_ALIBI_CP"],
@@ -85,7 +85,7 @@ export const EvidenceLens: React.FC = () => {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            📋 EVIDENCE PROVENANCE & INTEGRITY SPINE
+             EVIDENCE PROVENANCE & INTEGRITY SPINE
           </h2>
           <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "2px" }}>
             Cryptographically hashed SHA-256 evidence records linked directly to CCTNS, NCRP, CDR, and FSL sources.
@@ -104,7 +104,7 @@ export const EvidenceLens: React.FC = () => {
             cursor: "pointer",
           }}
         >
-          🔒 AUDIT HASH CHAIN
+           AUDIT HASH CHAIN
         </button>
       </div>
 
@@ -180,7 +180,7 @@ export const EvidenceLens: React.FC = () => {
               }}
             >
               <span>SHA-256: {item.sha256}</span>
-              <span style={{ color: "var(--status-confirmed)", fontWeight: 700 }}>✔ IMMUTABLE</span>
+              <span style={{ color: "var(--status-confirmed)", fontWeight: 700 }}> IMMUTABLE</span>
             </div>
 
             {/* Lineage Trace */}

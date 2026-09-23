@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "source_type": "FORENSIC_DOCUMENT",
+  "case_id": "CASE-2026-001",
+  "document_title": "Witness Statement under CrPC 161: Alok Saxena",
+  "document_type": "WITNESS_STATEMENT",
+  "recording_officer": "SI Amit Patel, Cyber Cell",
+  "recording_location": "Civil Lines Police Station Delhi",
+  "recorded_at": "2026-09-22T11:30:00Z",
+  "witness_name": "Alok Saxena",
+  "witness_address": "Kashmere Gate, Delhi",
+  "statements": [
+    {
+      "page": 1,
+      "text": "I state that I met Vikram Singh at Blue Tokai Coffee in Connaught Place on the morning of 22 September 2026 at approximately 09:00 AM. We remained seated discussing business consulting till 10:15 AM. Vikram never left the table."
+    }
+  ],
+  "investigator_note": "Statement provides affirmative alibi for suspect Vikram Singh during the key fraud and transport window (09:15 - 09:45). Contradicts ANPR toll sighting at DND Toll at 09:41 and cell tower pings in South Delhi."
+}

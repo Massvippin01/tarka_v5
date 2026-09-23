@@ -59,17 +59,17 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
             <h3 style={styles.title}>Resolution Candidates for Entity #{entityId}</h3>
             <p style={styles.subtitle}>ML Proposes → Evidence Verifies → Human Decides</p>
           </div>
-          <button style={styles.closeBtn} onClick={onClose}>✕</button>
+          <button style={styles.closeBtn} onClick={onClose}></button>
         </div>
 
         {/* Safety Disclaimer */}
         <div style={styles.safetyBanner}>
-          <span>⚖️ <strong>EPISTEMIC SAFETY GUARANTEE:</strong> Model confidence score indicates analytical similarity only. Similarity ≠ Identity. Human investigator approval is required to merge records.</span>
+          <span> <strong>EPISTEMIC SAFETY GUARANTEE:</strong> Model confidence score indicates analytical similarity only. Similarity ≠ Identity. Human investigator approval is required to merge records.</span>
         </div>
 
         {actionLog && (
           <div style={styles.actionBanner}>
-            ✅ {actionLog}
+             {actionLog}
           </div>
         )}
 
@@ -102,7 +102,7 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
                   {/* Supporting */}
                   <div style={styles.signalCol}>
                     <h5 style={{ color: "#34d399", margin: "0 0 6px" }}>
-                      ✅ SUPPORTING SIGNALS ({m.supporting_signals?.length || 0})
+                       SUPPORTING SIGNALS ({m.supporting_signals?.length || 0})
                     </h5>
                     {m.supporting_signals?.map((sig: any, sIdx: number) => (
                       <div key={sIdx} style={styles.suppItem}>
@@ -114,7 +114,7 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
                   {/* Contradicting */}
                   <div style={styles.signalCol}>
                     <h5 style={{ color: "#f87171", margin: "0 0 6px" }}>
-                      ❌ CONTRADICTING SIGNALS ({m.contradicting_signals?.length || 0})
+                       CONTRADICTING SIGNALS ({m.contradicting_signals?.length || 0})
                     </h5>
                     {m.contradicting_signals?.length === 0 ? (
                       <div style={{ fontSize: "0.75rem", color: "#64748b" }}>No conflicting signals detected.</div>
@@ -139,13 +139,13 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
                     style={styles.confirmBtn}
                     onClick={() => handleDecision(m.candidate_entity_id, "CONFIRM")}
                   >
-                    ✓ Confirm Entity Identity
+                     Confirm Entity Identity
                   </button>
                   <button
                     style={styles.rejectBtn}
                     onClick={() => handleDecision(m.candidate_entity_id, "REJECT")}
                   >
-                    ✕ Reject Candidate Match
+                     Reject Candidate Match
                   </button>
                 </div>
               </div>

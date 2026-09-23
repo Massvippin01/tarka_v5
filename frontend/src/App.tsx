@@ -1,3 +1,4 @@
+import { ThemeProvider } from "./context/ThemeContext";
 import { InvestigationProvider } from "./context/InvestigationContext";
 import { InvestigationCanvas } from "./components/InvestigationCanvas";
 import "./styles/tokens.css";
@@ -5,9 +6,11 @@ import "./App.css";
 
 function App() {
   return (
-    <InvestigationProvider>
-      <InvestigationCanvas />
-    </InvestigationProvider>
+    <ThemeProvider>
+      <InvestigationProvider>
+        <InvestigationCanvas />
+      </InvestigationProvider>
+    </ThemeProvider>
   );
 }
 

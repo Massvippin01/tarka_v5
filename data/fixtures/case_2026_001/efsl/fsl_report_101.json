@@ -1,0 +1,20 @@
+{
+  "synthetic": true,
+  "source_type": "EFSL_REPORT",
+  "case_id": "CASE-2026-001",
+  "fsl_report_number": "FSL-2026-101",
+  "laboratory": "Digital Forensics Division, Forensic Science Laboratory Rohini Delhi",
+  "examination_date": "2026-09-22T10:00:00Z",
+  "examiner_name": "Dr. S. K. Mukherjee, Senior Scientific Officer",
+  "exhibits_examined": ["EX-1: OnePlus 11 Smartphone, IMEI: 867543029182341"],
+  "findings": [
+    {
+      "finding_id": "FSL-FIND-01",
+      "examined_entity_id": "P001",
+      "is_conclusive": true,
+      "confidence": 0.99,
+      "conclusion": "Forensic dump of OnePlus 11 contains chat communications directing funds to Account ACC481 controlled by Rahul Verma",
+      "forensic_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

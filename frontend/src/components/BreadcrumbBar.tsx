@@ -1,238 +1,278 @@
 import React from "react";
 import { useInvestigation } from "../context/InvestigationContext";
-import { SecurityBadge } from "./SecurityBadge";
+import { useTheme } from "../context/ThemeContext";
 import { VoiceCommandOverlay } from "./VoiceCommandOverlay";
 
 interface BreadcrumbBarProps {
   onOpenCommandSearch: () => void;
   onOpenAuth: () => void;
-  onGoLanding: () => void;
-  theme: "dark" | "parchment";
-  onToggleTheme: () => void;
 }
 
 export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
   onOpenCommandSearch,
   onOpenAuth,
-  onGoLanding,
-  theme,
-  onToggleTheme,
 }) => {
   const {
     activeCaseId,
-    activeLens,
     selectedEntityId,
-    queryBounds,
     realtimeState,
-    lastSequenceNumber,
-    historyStack,
-    goBack,
     selectCase,
     copilotOpen,
     toggleCopilot,
   } = useInvestigation();
 
-  const caseName = activeCaseId === "C102" ? "Delhi Cyber Phishing FIR" : "Gurugram Auto Theft FIR";
+  const { theme, cycleTheme } = useTheme();
+
+  const themeDisplayNames: Record<string, string> = {
+    "forensic-paper": "FORENSIC PAPER",
+    "night-ops": "NIGHT OPS",
+    "high-contrast": "HIGH CONTRAST",
+  };
 
   return (
     <header
       style={{
-        height: "48px",
-        background: "var(--surface-secondary)",
-        borderBottom: "1px solid var(--border-subtle)",
+        height: "40px",
+        backgroundColor: "var(--surface-primary)",
+        borderBottom: "1px solid var(--border-structural)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 12px",
+        padding: "0 14px",
         gap: "12px",
-        fontSize: "0.75rem",
+        fontSize: "var(--font-size-meta)",
+        fontFamily: "var(--font-sans)",
         zIndex: 10,
+        userSelect: "none",
+        color: "var(--text-primary)",
       }}
     >
-      {/* Left: History Back & Breadcrumbs */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <button
-          onClick={goBack}
-          disabled={historyStack.length <= 1}
-          title="Return to previous investigation context"
-          style={{
-            background: "var(--surface-primary)",
-            border: "1px solid var(--border-subtle)",
-            color: historyStack.length > 1 ? "var(--text-accent)" : "var(--text-muted)",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "0.7rem",
-            fontWeight: 700,
-            cursor: historyStack.length > 1 ? "pointer" : "not-allowed",
-            opacity: historyStack.length > 1 ? 1 : 0.5,
-          }}
-        >
-          ← BACK
-        </button>
-
-        {/* Breadcrumb Path */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600, color: "var(--text-secondary)" }}>
-          <span style={{ color: "var(--text-muted)" }}>Command Center</span>
-          <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span style={{ color: "var(--text-primary)" }}>{activeCaseId}: {caseName}</span>
-          <span style={{ color: "var(--text-muted)" }}>/</span>
-          <span style={{ color: "var(--text-accent)", fontWeight: 700 }}>{activeLens}</span>
-          {selectedEntityId && (
-            <>
-              <span style={{ color: "var(--text-muted)" }}>/</span>
-              <span style={{ background: "rgba(49, 196, 216, 0.15)", color: "var(--text-accent)", padding: "1px 5px", borderRadius: "3px", fontSize: "0.68rem" }}>
-                {selectedEntityId}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Middle: Active Case Selector & Realtime Indicator */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      {/* Left: Document-Style Case Context & Jurisdiction */}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+        {/* Case Selector presented as Document Title */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 700 }}>CASE:</label>
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+            }}
+          >
+            CASE
+          </span>
           <select
-            value={activeCaseId}
+            value={activeCaseId === "C102" ? "CASE-2026-001" : activeCaseId}
             onChange={(e) => selectCase(e.target.value)}
             style={{
-              background: "var(--surface-primary)",
-              border: "1px solid var(--border-subtle)",
-              color: "var(--text-accent)",
-              padding: "3px 6px",
-              borderRadius: "4px",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              outline: "none",
+              backgroundColor: "var(--surface-primary)",
+              border: "1px solid var(--border-structural)",
+              color: "var(--text-primary)",
+              fontSize: "var(--font-size-meta)",
+              fontFamily: "var(--font-mono)",
+              padding: "2px 6px",
+              borderRadius: "var(--radius-sm)",
+              fontWeight: 600,
               cursor: "pointer",
             }}
           >
-            <option value="C102">CASE C102: Delhi Cyber Phishing FIR</option>
-            <option value="C481">CASE C481: Gurugram Auto Theft FIR</option>
+            <option value="CASE-2026-001">2026-001 // Operation Triad Nexus</option>
+            <option value="C102">C102 // Hawala Syndicate - NCR</option>
+            <option value="C114">C114 // Inter-State Cyber Fraud Cell</option>
           </select>
         </div>
 
-        {/* Query Bounded Badge */}
-        <div
-          style={{
-            background: "rgba(56, 189, 248, 0.1)",
-            border: "1px solid rgba(56, 189, 248, 0.25)",
-            color: "#38bdf8",
-            fontSize: "0.62rem",
-            fontWeight: 700,
-            padding: "3px 6px",
-            borderRadius: "4px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          🔒 {queryBounds.maxNodes} NODES BOUNDED
-        </div>
+        <span style={{ color: "var(--border-strong)" }}>·</span>
 
-        {/* Realtime Live SSE Indicator */}
-        <div
+        <span
           style={{
-            background: realtimeState === "LIVE" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
-            border: `1px solid ${realtimeState === "LIVE" ? "rgba(52, 211, 153, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
-            color: realtimeState === "LIVE" ? "#34d399" : "#f59e0b",
-            fontSize: "0.62rem",
-            fontWeight: 700,
-            padding: "3px 6px",
-            borderRadius: "4px",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
+            fontSize: "11px",
+            color: "var(--text-secondary)",
+            letterSpacing: "0.04em",
+            fontFamily: "var(--font-mono)",
             whiteSpace: "nowrap",
           }}
         >
-          ● {realtimeState} | SEQ #{lastSequenceNumber}
-        </div>
+          DELHI NCR // SPECIAL CELL
+        </span>
+
+        <span style={{ color: "var(--border-strong)" }}>·</span>
+
+        <span
+          style={{
+            fontSize: "10px",
+            color: "var(--text-muted)",
+            letterSpacing: "0.06em",
+            fontFamily: "var(--font-mono)",
+            textTransform: "uppercase",
+          }}
+        >
+          RESTRICTED // LE SENSITIVE
+        </span>
+
+        {selectedEntityId && (
+          <>
+            <span style={{ color: "var(--border-strong)" }}>·</span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                color: "var(--text-secondary)",
+                padding: "1px 6px",
+                backgroundColor: "var(--surface-secondary)",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              FOCUS: {selectedEntityId}
+            </span>
+          </>
+        )}
       </div>
 
-      {/* Right Controls: Security Badge, Voice Overlay, Global Search, Theme & Copilot */}
+      {/* Right: Operational Controls */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <button
-          onClick={onGoLanding}
+        {/* CAS Integrity / Realtime Indicator */}
+        <div
+          title={`CAS SHA-256 Storage Integrity: ${realtimeState}`}
           style={{
-            background: "transparent",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-secondary)",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
-            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            fontFamily: "var(--font-mono)",
+            fontSize: "10px",
+            color: realtimeState === "LIVE" ? "var(--status-verified)" : "var(--status-gap)",
+            padding: "2px 6px",
+            border: "1px solid var(--border-structural)",
+            borderRadius: "var(--radius-sm)",
+            backgroundColor: "var(--surface-primary)",
           }}
         >
-          🏠 OVERVIEW
-        </button>
-        <button
-          onClick={onOpenAuth}
-          style={{
-            background: "rgba(158, 42, 43, 0.2)",
-            border: "1px solid var(--border-accent)",
-            color: "var(--text-primary)",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          🔒 AUTH
-        </button>
-        <SecurityBadge />
-        <VoiceCommandOverlay />
+          <span
+            style={{
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              backgroundColor: realtimeState === "LIVE" ? "var(--status-verified)" : "var(--status-gap)",
+              display: "inline-block",
+            }}
+          />
+          <span>CAS SHA-256 VERIFIED</span>
+        </div>
 
+        {/* Global Case Search */}
         <button
           onClick={onOpenCommandSearch}
+          title="Search case documents, evidence and entities (Ctrl+K)"
           style={{
-            background: "var(--surface-primary)",
-            border: "1px solid var(--border-subtle)",
-            color: "var(--text-accent)",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "0.7rem",
-            fontWeight: 700,
+            backgroundColor: "var(--surface-primary)",
+            border: "1px solid var(--border-structural)",
+            color: "var(--text-secondary)",
+            padding: "2px 8px",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "11px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <span>Search</span>
+          <kbd
+            style={{
+              backgroundColor: "var(--surface-secondary)",
+              padding: "1px 4px",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--text-secondary)",
+              fontSize: "10px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            ⌘K
+          </kbd>
+        </button>
+
+        {/* Theme Mode Toggle (Forensic Paper / Night Ops / High Contrast) */}
+        <button
+          onClick={cycleTheme}
+          title="Toggle Synchronized Theme Mode (Alt+T)"
+          style={{
+            backgroundColor: "var(--surface-primary)",
+            border: "1px solid var(--border-structural)",
+            color: "var(--text-secondary)",
+            padding: "2px 8px",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "11px",
+            fontFamily: "var(--font-mono)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "4px",
           }}
         >
-          🔍 SEARCH <kbd style={{ background: "var(--surface-elevated)", padding: "1px 4px", borderRadius: "3px", color: "var(--text-muted)", fontSize: "0.58rem" }}>⌘K</kbd>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <span>{themeDisplayNames[theme] || theme}</span>
         </button>
 
+        {/* Voice Navigation Overlay */}
+        <VoiceCommandOverlay />
+
+        {/* Officer Session */}
         <button
-          onClick={onToggleTheme}
+          onClick={onOpenAuth}
+          title="Sworn Officer Credentials"
           style={{
-            background: theme === "parchment" ? "#9e2a2b" : "var(--surface-primary)",
-            border: "1px solid var(--border-subtle)",
-            color: "#ffffff",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
+            backgroundColor: "var(--surface-primary)",
+            border: "1px solid var(--border-structural)",
+            color: "var(--text-secondary)",
+            padding: "2px 8px",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "11px",
+            fontFamily: "var(--font-mono)",
             cursor: "pointer",
           }}
         >
-          {theme === "dark" ? "📜 PARCHMENT" : "🌙 DARK"}
+          INSP. A. RAWAT [DL-8842]
         </button>
 
+        {/* Restrained Sentinel Indicator */}
         <button
           onClick={() => toggleCopilot()}
+          title="Toggle Sentinel Analyst Panel"
           style={{
-            background: copilotOpen ? "var(--status-observed)" : "var(--text-accent)",
-            border: "none",
-            color: "#081018",
-            padding: "4px 10px",
-            borderRadius: "4px",
-            fontWeight: 800,
-            fontSize: "0.7rem",
+            backgroundColor: copilotOpen ? "var(--sentinel-crimson)" : "var(--surface-primary)",
+            border: `1px solid ${copilotOpen ? "var(--sentinel-crimson)" : "var(--border-structural)"}`,
+            color: copilotOpen ? "#FFFFFF" : "var(--sentinel-crimson)",
+            padding: "2px 9px",
+            borderRadius: "var(--radius-sm)",
+            fontWeight: 600,
+            fontSize: "11px",
+            fontFamily: "var(--font-mono)",
             cursor: "pointer",
-            boxShadow: copilotOpen ? "0 0 10px rgba(52, 211, 153, 0.5)" : "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
           }}
         >
-          🤖 AI COPILOT
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: copilotOpen ? "#FFFFFF" : "var(--sentinel-crimson)",
+              display: "inline-block",
+            }}
+          />
+          <span>SENTINEL</span>
         </button>
       </div>
     </header>

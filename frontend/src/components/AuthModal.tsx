@@ -30,7 +30,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <span style={styles.redDot}></span>
             <span style={styles.eyebrow}>SECURE ACCESS</span>
           </div>
-          <button type="button" onClick={onClose} style={styles.closeBtn}>✕</button>
+          <button type="button" onClick={onClose} style={styles.closeBtn}></button>
         </div>
 
         {/* Title & Subtitle */}

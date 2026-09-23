@@ -54,7 +54,7 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
           </h3>
           <div style={styles.relType}>TYPE: {data.relationship_type || "CO_ACCUSED_WITH"}</div>
         </div>
-        {!isInline && <button style={styles.closeBtn} onClick={onClose}>✕</button>}
+        {!isInline && <button style={styles.closeBtn} onClick={onClose}></button>}
       </div>
 
         {/* Confidence & Epistemic Status Banner */}
@@ -75,7 +75,7 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
         <div style={styles.body}>
           {/* Supporting Evidence */}
           <div style={styles.section}>
-            <h4>✅ SUPPORTING OBSERVATIONS & EVIDENCE ({data.supporting_observations?.length || 0})</h4>
+            <h4> SUPPORTING OBSERVATIONS & EVIDENCE ({data.supporting_observations?.length || 0})</h4>
             <div style={styles.list}>
               {data.supporting_observations?.map((obs: string, idx: number) => (
                 <div key={idx} style={styles.itemSuccess}>
@@ -84,7 +84,7 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
               ))}
               {data.evidence_references?.map((ref: string, idx: number) => (
                 <div key={idx} style={styles.evidenceChip}>
-                  📋 Citation Ref: {ref}
+                   Citation Ref: {ref}
                 </div>
               ))}
             </div>
@@ -92,11 +92,11 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
 
           {/* Primary Novelty #2: Contradictory Observations */}
           <div style={styles.section}>
-            <h4>⚠️ CONTRADICTORY OBSERVATIONS ({data.contradictory_observations?.length || 0})</h4>
+            <h4> CONTRADICTORY OBSERVATIONS ({data.contradictory_observations?.length || 0})</h4>
             <div style={styles.list}>
               {data.contradictory_observations?.map((obs: string, idx: number) => (
                 <div key={idx} style={styles.itemDanger}>
-                  ❌ {obs}
+                   {obs}
                 </div>
               ))}
             </div>
@@ -104,17 +104,17 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
 
           {/* Alternative Explanation */}
           <div style={styles.section}>
-            <h4>💡 ALTERNATIVE HYPOTHESIS & EXPLANATION</h4>
+            <h4> ALTERNATIVE HYPOTHESIS & EXPLANATION</h4>
             <p style={styles.text}>{data.alternative_explanation || "Device or account may have been used by another co-conspirator during the event window."}</p>
           </div>
 
           {/* Evidence Gaps & Next Verification */}
           <div style={styles.section}>
-            <h4>🔍 EVIDENCE GAP & NEXT VERIFICATION ACTION</h4>
+            <h4> EVIDENCE GAP & NEXT VERIFICATION ACTION</h4>
             <div style={styles.gapBox}>
               <div style={styles.gapTitle}>CRITICAL GAP: {data.evidence_gaps?.[0] || "Unverified subscriber identity"}</div>
               <div style={styles.gapAction}>
-                ⚡ <strong>Next Verification</strong>: {data.next_verification || "Verify subscriber/device association during relevant event window."}
+                 <strong>Next Verification</strong>: {data.next_verification || "Verify subscriber/device association during relevant event window."}
               </div>
             </div>
           </div>

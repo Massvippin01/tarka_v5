@@ -1,0 +1,30 @@
+{
+  "synthetic": true,
+  "source_type": "CCTNS_FIR",
+  "case_id": "CASE-2026-001",
+  "fir_number": "FIR-2026-001",
+  "police_station": "Cyber Crime PS North Delhi",
+  "district": "North Delhi",
+  "state": "Delhi",
+  "incident_datetime": "2026-09-22T08:30:00Z",
+  "crime_type": "Cyber Fraud & Vehicle Theft",
+  "sections_invoked": ["IPC 420", "IPC 379", "IT Act 66D"],
+  "complainant": {
+    "name": "Shri Rajesh Sharma",
+    "phone": "+91 98110-22334",
+    "address": "Civil Lines, Delhi"
+  },
+  "accused": [
+    {
+      "person_id": "P001",
+      "name": "Vikram Singh",
+      "alias": "Vicky Don",
+      "gender": "MALE",
+      "aadhaar": "9988-1122-3344",
+      "phone": "+91 99990-11223",
+      "vehicle_registration": "dl 01 ab 1888",
+      "role": "PRIMARY_SYNDICATE_HEAD"
+    }
+  ],
+  "crime_summary": "Syndicate siphoned funds via compromised UPI VPAs and coordinated stolen luxury vehicle transport."
+}

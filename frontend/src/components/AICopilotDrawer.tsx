@@ -142,17 +142,17 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerTitle}>
-            <span>🤖 GOVERNED AI COPILOT</span>
+            <span> GOVERNED AI COPILOT</span>
             <span style={styles.subText}>SIH 2026 Claim Verification & Governance Engine</span>
           </div>
           <button style={styles.closeBtn} onClick={onClose}>
-            ✕
+            
           </button>
         </div>
 
         {/* Active Scope Banner */}
         <div style={styles.scopeBanner}>
-          <span>🔒 Case: {activeCaseId}</span>
+          <span> Case: {activeCaseId}</span>
           {selectedEntityId && <span>| Entity: {selectedEntityId}</span>}
           {selectedRelationshipId && <span>| Rel: {selectedRelationshipId}</span>}
           {selectedEvidenceId && <span>| Evidence: {selectedEvidenceId}</span>}
@@ -166,13 +166,13 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
             style={styles.promptTag}
             onClick={() => handleSend("What connects Case C102 and Case C481?")}
           >
-            🔍 What connects C102 and C481?
+             What connects C102 and C481?
           </button>
           <button
             style={styles.promptTag}
             onClick={() => handleSend("Why is relationship rel-p1-p2 important?")}
           >
-            🔍 Why is P001 ↔ P044 connected?
+             Why is P001 ↔ P044 connected?
           </button>
         </div>
 
@@ -191,7 +191,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               {/* Verification Summary Badge */}
               {m.verification_summary && m.sender === "assistant" && (
                 <div style={styles.vSummaryBar}>
-                  <span>✓ CLAIM VERIFICATION RATE: {(m.verification_summary.claim_verification_rate * 100).toFixed(0)}%</span>
+                  <span> CLAIM VERIFICATION RATE: {(m.verification_summary.claim_verification_rate * 100).toFixed(0)}%</span>
                   <span>({m.verification_summary.verified_claims || 0} Ground-Truth Verified)</span>
                 </div>
               )}
@@ -199,12 +199,12 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               {/* Claims Breakdown Section */}
               {m.claims && m.claims.length > 0 && m.sender === "assistant" && (
                 <div style={styles.claimsBox}>
-                  <div style={styles.sectionTitle}>⚖️ VERIFIED CLAIMS BREAKDOWN:</div>
+                  <div style={styles.sectionTitle}> VERIFIED CLAIMS BREAKDOWN:</div>
                   {m.claims.map((c: any) => (
                     <div key={c.claim_id} style={styles.claimCard}>
                       <div style={styles.claimHeader}>
                         <span style={c.verification_status === "VERIFIED" ? styles.vBadge : styles.uBadge}>
-                          {c.verification_status === "VERIFIED" ? "✓ VERIFIED" : "⚠️ UNCONFIRMED"}
+                          {c.verification_status === "VERIFIED" ? " VERIFIED" : " UNCONFIRMED"}
                         </span>
                         <span style={styles.cType}>{c.claim_type}</span>
                         <button style={styles.vActionBtn} onClick={() => setVerifyingClaim(c)}>
@@ -221,7 +221,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               {/* Tool Execution Trace */}
               {m.tool_calls && m.tool_calls.length > 0 && (
                 <div style={styles.toolsBox}>
-                  <div style={styles.sectionTitle}>🛠️ INVESTIGATIVE TOOLS EXECUTED:</div>
+                  <div style={styles.sectionTitle}>️ INVESTIGATIVE TOOLS EXECUTED:</div>
                   {m.tool_calls.map((t: any, i: number) => (
                     <div key={i} style={styles.toolItem}>
                       <code>{t.tool_name}({JSON.stringify(t.arguments)})</code>
@@ -234,7 +234,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               {/* Supporting Records Cards */}
               {m.supporting_records && m.supporting_records.length > 0 && (
                 <div style={styles.recordsBox}>
-                  <div style={styles.sectionTitle}>📌 SUPPORTING RECORDS:</div>
+                  <div style={styles.sectionTitle}> SUPPORTING RECORDS:</div>
                   <div style={styles.recordsGrid}>
                     {m.supporting_records.map((r: any, i: number) => (
                       <div
@@ -256,7 +256,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               {/* Evidence References */}
               {m.evidence_references && m.evidence_references.length > 0 && (
                 <div style={styles.evidenceBox}>
-                  <div style={styles.sectionTitle}>📋 EVIDENCE CITATIONS:</div>
+                  <div style={styles.sectionTitle}> EVIDENCE CITATIONS:</div>
                   <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                     {m.evidence_references.map((e: string, i: number) => (
                       <button key={i} style={styles.evidenceChip} onClick={() => selectEvidence(e)}>
@@ -268,7 +268,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
               )}
 
               {m.disclaimer && (
-                <div style={styles.disclaimerText}>⚠️ {m.disclaimer}</div>
+                <div style={styles.disclaimerText}> {m.disclaimer}</div>
               )}
             </div>
           ))}
@@ -300,7 +300,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
       {verifyingClaim && (
         <div style={styles.vModalOverlay} onClick={() => setVerifyingClaim(null)}>
           <div style={styles.vModal} onClick={(e) => e.stopPropagation()}>
-            <h4>⚖️ INVESTIGATOR CLAIM VERIFICATION WORKFLOW</h4>
+            <h4> INVESTIGATOR CLAIM VERIFICATION WORKFLOW</h4>
             <div style={styles.vClaimBox}>
               <strong>Claim ID: {verifyingClaim.claim_id}</strong>
               <p>{verifyingClaim.text}</p>
@@ -318,13 +318,13 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
 
             <div style={styles.vBtnRow}>
               <button style={{ ...styles.vBtn, background: "#10b981" }} onClick={() => handleVerifySubmit("CONFIRMED")}>
-                ✓ CONFIRM CLAIM
+                 CONFIRM CLAIM
               </button>
               <button style={{ ...styles.vBtn, background: "#eab308", color: "#000" }} onClick={() => handleVerifySubmit("REQUIRES_REVIEW")}>
-                ⚠ REQUIRES REVIEW
+                 REQUIRES REVIEW
               </button>
               <button style={{ ...styles.vBtn, background: "#f43f5e" }} onClick={() => handleVerifySubmit("DISMISSED")}>
-                ✕ DISMISS CLAIM
+                 DISMISS CLAIM
               </button>
             </div>
           </div>

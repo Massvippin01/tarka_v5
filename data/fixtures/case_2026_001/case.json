@@ -1,0 +1,16 @@
+{
+  "case_id": "CASE-2026-001",
+  "case_number": "FIR-2026-001",
+  "title": "Operation Triad Nexus",
+  "crime_type": "Organized Cyber Fraud & Vehicle Syndicate",
+  "priority": "CRITICAL",
+  "investigation_status": "ACTIVE_INVESTIGATION",
+  "jurisdiction": "Delhi NCR / Haryana",
+  "police_station": "Cyber Crime PS North Delhi",
+  "lead_officer": "ACP Rajesh Kumar",
+  "incident_date": "2026-09-22T09:00:00Z",
+  "synthetic": true,
+  "provenance_type": "SYNTHETIC_DATA",
+  "scenario_id": "SCENARIO-TRIAD-001",
+  "narrative": "Comprehensive synthetic cross-source golden investigation demonstrating multi-modal evidence reasoning, entity resolution, and temporal-spatial contradiction detection."
+}

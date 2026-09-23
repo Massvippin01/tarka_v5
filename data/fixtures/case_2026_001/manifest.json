@@ -1,0 +1,98 @@
+{
+  "manifest_version": "2.0.0",
+  "case_id": "CASE-2026-001",
+  "generated_at": "2026-09-22T09:00:00Z",
+  "synthetic": true,
+  "jurisdiction": "Delhi NCR / Haryana",
+  "total_fixtures": 11,
+  "fixtures": [
+    {
+      "source_id": "SRC-CCTNS-DELHI-001",
+      "source_type": "CCTNS_FIR",
+      "record_id": "FIR-2026-001",
+      "relative_path": "cctns/fir_2026_001.json",
+      "mime_type": "application/json",
+      "description": "CCTNS First Information Report registered at Cyber Crime North Delhi"
+    },
+    {
+      "source_id": "SRC-ICJS-COURT-044",
+      "source_type": "ICJS_RECORD",
+      "record_id": "ICJS-2026-P044",
+      "relative_path": "icjs/icjs_p044.json",
+      "mime_type": "application/json",
+      "description": "ICJS court proceeding and criminal history record for Rahul Verma"
+    },
+    {
+      "source_id": "SRC-EFSL-DELHI-101",
+      "source_type": "EFSL_REPORT",
+      "record_id": "FSL-2026-101",
+      "relative_path": "efsl/fsl_report_101.json",
+      "mime_type": "application/json",
+      "description": "e-FSL digital forensic extraction report of seized smartphone"
+    },
+    {
+      "source_id": "SRC-CDR-AIRTEL-NCR",
+      "source_type": "CDR_TELECOM",
+      "record_id": "CDR-2026-001",
+      "relative_path": "cdr/cdr_delhi_gurugram.json",
+      "mime_type": "application/json",
+      "description": "Telecom operator CDR and cell tower observation logs"
+    },
+    {
+      "source_id": "SRC-FIN-SBI-HDFC",
+      "source_type": "FINANCIAL_TRANSACTION",
+      "record_id": "TXN-2026-001",
+      "relative_path": "financial/bank_ledger_upi.json",
+      "mime_type": "application/json",
+      "description": "Bank ledger and UPI transaction records for mule account tracking"
+    },
+    {
+      "source_id": "SRC-MOB-UFED-OP11",
+      "source_type": "MOBILE_FORENSIC_EXPORT",
+      "record_id": "UFED-OP11-001",
+      "relative_path": "mobile/oneplus11_whatsapp_dump.json",
+      "mime_type": "application/json",
+      "description": "UFED forensic extraction of OnePlus 11 WhatsApp communications"
+    },
+    {
+      "source_id": "SRC-COMP-DELL-TRIAGE",
+      "source_type": "COMPUTER_FORENSIC_EXPORT",
+      "record_id": "COMP-2026-001",
+      "relative_path": "computer/laptop_triage.json",
+      "mime_type": "application/json",
+      "description": "Forensic disk triage and browser navigation artifacts"
+    },
+    {
+      "source_id": "SRC-CLOUD-AWS-TRAIL",
+      "source_type": "CLOUD_AUDIT_LOG",
+      "record_id": "CLOUD-2026-001",
+      "relative_path": "cloud/aws_audit_mule_access.json",
+      "mime_type": "application/json",
+      "description": "AWS CloudTrail authentication and infrastructure audit log"
+    },
+    {
+      "source_id": "SRC-ANPR-DND-TOLL",
+      "source_type": "CCTV_ANPR",
+      "record_id": "ANPR-2026-001",
+      "relative_path": "cctv_anpr/anpr_dnd_toll.json",
+      "mime_type": "application/json",
+      "description": "ANPR automated plate sighting at DND Toll Flyway Plaza"
+    },
+    {
+      "source_id": "SRC-NET-ZEEK-PCAP",
+      "source_type": "NETWORK_PCAP_LOG",
+      "record_id": "NET-2026-001",
+      "relative_path": "network/zeek_dns_traffic.json",
+      "mime_type": "application/json",
+      "description": "Zeek network flow and DNS C2 beacon telemetry"
+    },
+    {
+      "source_id": "SRC-DOC-STATEMENT-01",
+      "source_type": "FORENSIC_DOCUMENT",
+      "record_id": "DOC-2026-001",
+      "relative_path": "documents/witness_statement_alibi.json",
+      "mime_type": "application/json",
+      "description": "Recorded witness statement providing conflicting alibi testimony"
+    }
+  ]
+}

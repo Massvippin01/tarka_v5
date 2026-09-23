@@ -90,6 +90,29 @@ app.include_router(
     tags=["Investigation"],
 )
 
+from app.api.investigations_api import proof_router, router as investigations_router
+
+app.include_router(
+    investigations_router,
+    prefix="/api/v1/investigations",
+    tags=["Investigations Workspace"],
+)
+
+app.include_router(
+    proof_router,
+    prefix="/api/v1/proof",
+    tags=["Live Proof"],
+)
+
+from app.api.interaction_api import router as interaction_router
+
+app.include_router(
+    interaction_router,
+    prefix="/api/v1/interaction",
+    tags=["Interaction & Sentinel OS"],
+)
+
+
 
 @app.get("/")
 def root():

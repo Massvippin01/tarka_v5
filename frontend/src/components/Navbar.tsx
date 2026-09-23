@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             ...(copilotOpen ? styles.copilotButtonActive : {}),
           }}
         >
-          🤖 AI COPILOT
+           AI COPILOT
         </button>
       </div>
     </header>

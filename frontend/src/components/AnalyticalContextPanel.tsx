@@ -96,7 +96,7 @@ export const AnalyticalContextPanel: React.FC<AnalyticalContextPanelProps> = ({ 
               {/* Evidence Citations */}
               {sig.evidence_references && sig.evidence_references.length > 0 && (
                 <div style={styles.sectionBox}>
-                  <div style={styles.sectionLabel}>📋 SUPPORTING EVIDENCE:</div>
+                  <div style={styles.sectionLabel}> SUPPORTING EVIDENCE:</div>
                   <div style={styles.chipRow}>
                     {sig.evidence_references.map((evId: string) => (
                       <button
@@ -114,18 +114,18 @@ export const AnalyticalContextPanel: React.FC<AnalyticalContextPanelProps> = ({ 
               {/* Evidence Gaps & Alternative Explanations */}
               {sig.evidence_gaps && sig.evidence_gaps.length > 0 && (
                 <div style={styles.gapText}>
-                  ⚠️ <strong>EVIDENCE GAP:</strong> {sig.evidence_gaps[0]}
+                   <strong>EVIDENCE GAP:</strong> {sig.evidence_gaps[0]}
                 </div>
               )}
 
               {sig.alternative_explanations && sig.alternative_explanations.length > 0 && (
                 <div style={styles.altText}>
-                  💡 <strong>ALTERNATIVE HYPOTHESIS:</strong> {sig.alternative_explanations[0]}
+                   <strong>ALTERNATIVE HYPOTHESIS:</strong> {sig.alternative_explanations[0]}
                 </div>
               )}
 
               <div style={styles.verifyText}>
-                📌 <strong>RECOMMENDED ACTION:</strong> {sig.recommended_verification}
+                 <strong>RECOMMENDED ACTION:</strong> {sig.recommended_verification}
               </div>
 
               {/* Quick Action Buttons */}
@@ -139,20 +139,20 @@ export const AnalyticalContextPanel: React.FC<AnalyticalContextPanelProps> = ({ 
                       else selectEntity(targetId);
                     }}
                   >
-                    👤 OPEN DOSSIER
+                     OPEN DOSSIER
                   </button>
                 )}
                 <button
                   style={styles.actionBtn}
                   onClick={() => selectRelationship("rel-p1-p2")}
                 >
-                  🔍 WHY? INSPECTION
+                   WHY? INSPECTION
                 </button>
                 <button
                   style={styles.copilotBtn}
                   onClick={() => runCopilotQuery(`Explain analytical signal ${sig.signal_id}: ${sig.title}`)}
                 >
-                  🤖 ASK COPILOT
+                   ASK COPILOT
                 </button>
               </div>
             </div>
