@@ -718,4 +718,87 @@ class UnifiedStore:
     def get_canonical_hypotheses_by_case(self, case_id: str) -> List[EvidenceHypothesis]:
         return [h for h in self.canonical_hypotheses.values() if h.case_id == case_id]
 
+    async def persist_to_postgres(self, uow: Any) -> int:
+        """
+        Persist in-memory authoritative domain records (cases, artifacts, facts, claims, custody)
+        to PostgreSQL using UnitOfWork.
+        Returns the number of newly persisted items.
+        """
+        from app.repositories.persistence_gateway import PersistenceGateway
+        persisted = 0
+        for case in list(self.cases.values()):
+            existing = await uow.cases.get(case.id)
+            if not existing:
+                await uow.cases.create(PersistenceGateway.case_to_model(case))
+                persisted += 1
+
+        for art in list(self.artifacts.values()):
+            existing = await uow.evidence.get_artifact(art.artifact_id)
+            if not existing:
+                await uow.evidence.save_artifact(PersistenceGateway.artifact_to_model(art))
+                persisted += 1
+
+        for fact in list(self.facts.values()):
+            existing = await uow.evidence.get_fact(fact.fact_id)
+            if not existing:
+                await uow.evidence.save_fact(PersistenceGateway.fact_to_model(fact))
+                persisted += 1
+
+        for claim in list(self.claims.values()):
+            existing = await uow.epistemic.get_claim(claim.claim_id)
+            if not existing:
+                await uow.epistemic.save_claim(PersistenceGateway.claim_to_model(claim))
+                persisted += 1
+
+        for custody in list(self.custody_events.values()):
+            existing_events = await uow.evidence.get_custody_events(custody.artifact_id)
+            if not any(e.custody_event_id == custody.custody_event_id for e in existing_events):
+                await uow.evidence.append_custody_record(PersistenceGateway.custody_to_model(custody))
+                persisted += 1
+
+        return persisted
+
+    async def hydrate_from_postgres(self, uow: Any, case_id: Optional[str] = None) -> int:
+        """
+        Hydrate in-memory domain collections from PostgreSQL.
+        """
+        from app.repositories.persistence_gateway import PersistenceGateway
+        hydrated = 0
+        cases = await uow.cases.list_all()
+        for cm in cases:
+            if case_id and cm.id != case_id:
+                continue
+            case = PersistenceGateway.model_to_case(cm)
+            self.cases[case.id] = case
+            hydrated += 1
+
+            artifacts = await uow.evidence.list_artifacts_by_case(cm.id)
+            for am in artifacts:
+                art = PersistenceGateway.model_to_artifact(am)
+                self.artifacts[art.artifact_id] = art
+                self.artifact_hash_index[art.content_hash] = art.artifact_id
+                hydrated += 1
+
+                facts = await uow.evidence.list_facts_by_artifact(am.artifact_id)
+                for fm in facts:
+                    fact = PersistenceGateway.model_to_fact(fm)
+                    self.facts[fact.fact_id] = fact
+                    self.facts_by_artifact[fact.source_artifact_id].append(fact.fact_id)
+                    hydrated += 1
+
+                custodies = await uow.evidence.get_custody_events(am.artifact_id)
+                for crm in custodies:
+                    ev = PersistenceGateway.model_to_custody(crm)
+                    self.custody_events[ev.custody_event_id] = ev
+                    self.custody_by_artifact[ev.artifact_id].append(ev.custody_event_id)
+                    hydrated += 1
+
+            claims = await uow.epistemic.list_claims_by_case(cm.id)
+            for clm in claims:
+                claim = PersistenceGateway.model_to_claim(clm)
+                self.claims[claim.claim_id] = claim
+                hydrated += 1
+
+        return hydrated
+
 
