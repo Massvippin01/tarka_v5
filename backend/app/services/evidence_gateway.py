@@ -19,34 +19,55 @@ from app.domain.canonical_evidence_ir import (
     generate_uuid7,
 )
 from app.repositories.unified_store import UnifiedStore
+from app.storage.base import (
+    EvidenceByteStore,
+    StorageError,
+    StorageImmutabilityViolation,
+    StorageIntegrityError,
+    StorageNotFoundError,
+)
+from app.storage.factory import get_default_byte_store
+from app.storage.filesystem import FilesystemEvidenceByteStore
 
 
 class EvidenceGateway:
     """
     Dedicated Evidence Ingestion Gateway.
     
-    Responsibilities:
-    - Secure streaming acquisition of digital artifacts
-    - Deterministic SHA-256 content hashing (full 64-char digest)
-    - MIME type detection and byte-level validation
-    - Checksum verification & quarantine of corrupted or mismatched artifacts
-    - Immutable, content-addressed storage (append-only)
-    - UUIDv7 artifact identity generation (Artifact ID != Content Hash)
-    - Chain-of-custody event generation and integrity tracking
-    - Immutable artifact registration in UnifiedStore
+    Wave 6 Target Architecture:
+    - Secure streaming acquisition of digital forensic artifacts
+    - Deterministic streaming SHA-256 content hashing in 64KB bounded chunks
+    - MIME type sniffing and byte-level validation
+    - Checksum & size validation with automatic quarantine isolation
+    - Authoritative handoff to EvidenceByteStore (S3/MinIO CAS or Filesystem CAS)
+    - Immediate post-storage cryptographic verification
+    - Monotonic UUIDv7 artifact identity generation (Artifact ID != Content Hash)
+    - Immutable chain-of-custody tracking & provenance preservation
+    - Append-only artifact registration in UnifiedStore and PostgreSQL
     """
 
     _instance: Optional[EvidenceGateway] = None
 
-    def __init__(self, storage_root: Optional[Union[str, Path]] = None, store: Optional[UnifiedStore] = None):
-        if storage_root is None:
-            # Default to data/storage/artifacts in project root
-            base_dir = Path(__file__).resolve().parent.parent.parent.parent
-            self.storage_root = base_dir / "data" / "storage" / "artifacts"
+    def __init__(
+        self,
+        storage_root: Optional[Union[str, Path]] = None,
+        store: Optional[UnifiedStore] = None,
+        byte_store: Optional[EvidenceByteStore] = None,
+    ):
+        if byte_store is not None:
+            self.byte_store = byte_store
+        elif storage_root is not None:
+            # Preserves legacy filesystem test fixtures with filename layout
+            self.byte_store = FilesystemEvidenceByteStore(root_dir=storage_root, legacy_naming=True)
         else:
-            self.storage_root = Path(storage_root)
+            self.byte_store = get_default_byte_store()
 
-        self.storage_root.mkdir(parents=True, exist_ok=True)
+        # Expose storage_root if backed by filesystem for compatibility
+        if isinstance(self.byte_store, FilesystemEvidenceByteStore):
+            self.storage_root = self.byte_store.root_dir
+        else:
+            self.storage_root = None
+
         self.store = store or UnifiedStore.get_instance()
 
     @classmethod
@@ -55,14 +76,19 @@ class EvidenceGateway:
             cls._instance = EvidenceGateway()
         return cls._instance
 
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset singleton instance (used in tests)."""
+        cls._instance = None
+
     def compute_stream_sha256(self, stream: BinaryIO, chunk_size: int = 65536) -> Tuple[str, int]:
         """
-        Compute SHA-256 hash and byte length of a binary stream without loading full file in memory.
-        Resets stream pointer to 0 if seekable.
+        Compute SHA-256 hash and byte length of a binary stream without loading full file into memory.
+        Bounded memory usage guaranteed. Resets stream pointer to 0 if seekable.
         """
         hasher = hashlib.sha256()
         total_bytes = 0
-        
+
         if stream.seekable():
             stream.seek(0)
 
@@ -76,13 +102,12 @@ class EvidenceGateway:
         if stream.seekable():
             stream.seek(0)
 
-        return hasher.hexdigest(), total_bytes
+        return hasher.hexdigest().lower(), total_bytes
 
     def detect_mime_type(self, filename: str, sample_bytes: bytes) -> str:
         """
-        Detect MIME type using filename hints and file magic/signatures.
+        Detect MIME type using file signatures (magic bytes) with fallback to mimetypes table.
         """
-        # Signature detection
         if sample_bytes.startswith(b"%PDF"):
             return "application/pdf"
         elif sample_bytes.startswith(b"PK\x03\x04"):
@@ -96,7 +121,6 @@ class EvidenceGateway:
         elif sample_bytes.startswith(b"<?xml") or sample_bytes.startswith(b"<"):
             return "application/xml"
 
-        # Fallback to mimetypes library
         guessed, _ = mimetypes.guess_type(filename)
         return guessed or "application/octet-stream"
 
@@ -119,24 +143,28 @@ class EvidenceGateway:
         parser: Optional[str] = None,
         parser_version: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        declared_size_bytes: Optional[int] = None,
     ) -> EvidenceArtifact:
         """
-        Ingest an artifact into the platform with strict forensic controls:
-        1. Streaming SHA-256 calculation
-        2. Expected hash verification
-        3. Quarantine on checksum failure
-        4. Immutable content-addressed filesystem storage
-        5. UUIDv7 artifact identity assignment
-        6. Chain-of-custody creation
-        7. UnifiedStore registration
+        Ingest an artifact into the platform through the canonical evidence path:
+        1. Streaming SHA-256 calculation (bounded memory)
+        2. Header sniffing for MIME detection
+        3. Checksum & declared size verification
+        4. Quarantine decision if corrupt or mismatched
+        5. Authoritative byte store handoff (S3/MinIO CAS or Filesystem CAS)
+        6. Immediate post-storage cryptographic verification
+        7. Monotonic UUIDv7 artifact identity assignment (UUIDv7 != SHA-256)
+        8. Initial chain-of-custody event generation
+        9. Provenance lineage recording
+        10. UnifiedStore registration
         """
-        # Convert bytes to stream if needed
+        # Convert bytes to seekable stream if needed
         if isinstance(content, bytes):
-            stream = io.BytesIO(content)
+            stream: BinaryIO = io.BytesIO(content)
         else:
             stream = content
 
-        # 1. Compute SHA-256 and size
+        # 1. Compute streaming SHA-256 and byte length
         content_hash, file_size = self.compute_stream_sha256(stream)
 
         # 2. Peek initial bytes for MIME detection
@@ -145,60 +173,82 @@ class EvidenceGateway:
             stream.seek(0)
         mime_type = self.detect_mime_type(filename, sample_bytes)
 
-        # 3. Verify against expected checksum
+        # 3. Checksum & byte-size verification
         integrity_status = IntegrityStatus.VERIFIED
         is_quarantined = False
+        quarantine_reasons = []
 
         if expected_sha256:
             clean_expected = expected_sha256.lower().strip()
             if content_hash != clean_expected:
                 integrity_status = IntegrityStatus.MISMATCH
                 is_quarantined = True
+                quarantine_reasons.append(
+                    f"Checksum mismatch: expected {clean_expected}, observed {content_hash}"
+                )
 
-        # 4. Determine storage path
-        # Sharded by first 4 characters of hash: storage/artifacts/ab/cd/{sha256}_{filename}
-        shard1 = content_hash[:2]
-        shard2 = content_hash[2:4]
-        target_dir = self.storage_root / shard1 / shard2
-        target_dir.mkdir(parents=True, exist_ok=True)
-        
-        target_filename = f"{content_hash}_{filename}"
+        if declared_size_bytes is not None:
+            if file_size != declared_size_bytes:
+                integrity_status = IntegrityStatus.MISMATCH
+                is_quarantined = True
+                quarantine_reasons.append(
+                    f"Byte size mismatch: declared {declared_size_bytes}, observed {file_size}"
+                )
+
+        # 4. Storage handoff
         if is_quarantined:
-            target_filename = f"QUARANTINED_{content_hash}_{filename}"
-            
-        target_path = target_dir / target_filename
+            quarantine_reason_str = "; ".join(quarantine_reasons)
+            storage_uri = self.byte_store.quarantine(
+                stream=stream,
+                content_hash=content_hash,
+                file_size=file_size,
+                mime_type=mime_type,
+                reason=quarantine_reason_str,
+                metadata=metadata,
+                filename=filename,
+            )
+        else:
+            storage_uri = self.byte_store.put_stream(
+                stream=stream,
+                content_hash=content_hash,
+                file_size=file_size,
+                mime_type=mime_type,
+                metadata=metadata,
+                filename=filename,
+            )
 
-        # Write immutable content if not already present
-        if not target_path.exists():
-            with open(target_path, "wb") as f_out:
-                if stream.seekable():
-                    stream.seek(0)
-                while True:
-                    chunk = stream.read(65536)
-                    if not chunk:
-                        break
-                    f_out.write(chunk)
+        # 5. Immediate post-storage verification
+        if not is_quarantined:
+            verify_res = self.byte_store.verify(storage_uri, content_hash)
+            if not verify_res.verified:
+                raise StorageIntegrityError(
+                    f"Post-storage verification failed for '{storage_uri}': {verify_res.error}"
+                )
 
-        # 5. Generate distinct UUIDv7 Artifact ID
+        # 6. Generate distinct UUIDv7 Artifact ID
         artifact_id = generate_uuid7()
 
-        # 6. Create initial Chain-of-Custody Event
+        # 7. Create initial Chain-of-Custody Event
+        event_type = CustodyEventType.QUARANTINE if is_quarantined else CustodyEventType.INGESTION_RECEIPT
+        action_desc = (
+            f"Artifact '{filename}' quarantined by Evidence Gateway. Reasons: {'; '.join(quarantine_reasons)}."
+            if is_quarantined
+            else f"Artifact '{filename}' received by Evidence Gateway. Calculated SHA-256: {content_hash}. Status: VERIFIED."
+        )
+
         custody_event = EvidenceCustodyEvent(
             artifact_id=artifact_id,
-            event_type=CustodyEventType.QUARANTINE if is_quarantined else CustodyEventType.INGESTION_RECEIPT,
+            event_type=event_type,
             timestamp=datetime.now(UTC).isoformat(),
             actor_id=operator_id,
             actor_role="EVIDENCE_ACQUISITION_OFFICER",
-            action_description=(
-                f"Artifact '{filename}' received by Evidence Gateway. "
-                f"Calculated SHA-256: {content_hash}. Status: {integrity_status.value}."
-            ),
+            action_description=action_desc,
             content_hash_at_event=content_hash,
-            storage_location=str(target_path.as_posix()),
+            storage_location=storage_uri,
             previous_event_id=None,
         )
 
-        # 7. Assemble EvidenceArtifact
+        # 8. Assemble EvidenceArtifact
         artifact = EvidenceArtifact(
             artifact_id=artifact_id,
             case_id=case_id,
@@ -211,7 +261,7 @@ class EvidenceGateway:
             hash_algorithm="SHA-256",
             file_size_bytes=file_size,
             mime_type=mime_type,
-            storage_uri=f"file://{target_path.as_posix()}",
+            storage_uri=storage_uri,
             created_at=datetime.now(UTC).isoformat(),
             observed_at=observed_at or datetime.now(UTC).isoformat(),
             acquired_at=datetime.now(UTC).isoformat(),
@@ -227,7 +277,7 @@ class EvidenceGateway:
             metadata=metadata or {},
         )
 
-        # 8. Record Provenance
+        # 9. Record Provenance
         provenance = EvidenceProvenance(
             artifact_id=artifact.artifact_id,
             root_artifact_hash=content_hash,
@@ -240,11 +290,12 @@ class EvidenceGateway:
                     "timestamp": datetime.now(UTC).isoformat(),
                     "actor": operator_id,
                     "hash": content_hash,
+                    "storage_uri": storage_uri,
                 }
             ],
         )
 
-        # 9. Persist in UnifiedStore (Append-only)
+        # 10. Persist metadata in UnifiedStore (Append-only)
         self.store.save_artifact(artifact)
         self.store.save_custody_event(custody_event)
         self.store.save_provenance(provenance)
@@ -288,34 +339,33 @@ class EvidenceGateway:
 
     def verify_artifact_integrity(self, artifact_id: str) -> Dict[str, Any]:
         """
-        Recompute on-disk content hash and verify against recorded EvidenceArtifact hash.
+        Recompute storage content hash and verify against recorded EvidenceArtifact hash.
+        Delegates verification to EvidenceByteStore.
         """
         artifact = self.store.get_artifact(artifact_id)
         if not artifact:
             return {"verified": False, "reason": "Artifact not found"}
 
-        # Extract file path from storage URI
-        uri = artifact.storage_uri
-        if uri.startswith("file://"):
-            file_path = Path(uri.replace("file://", ""))
-        else:
-            file_path = Path(uri)
-
-        if not file_path.exists():
-            return {
-                "verified": False,
-                "reason": f"Artifact payload missing on storage at {file_path}",
-                "recorded_hash": artifact.content_hash,
-            }
-
-        with open(file_path, "rb") as f:
-            current_hash, _ = self.compute_stream_sha256(f)
-
-        is_match = (current_hash == artifact.content_hash)
+        res = self.byte_store.verify(artifact.storage_uri, artifact.content_hash)
         return {
-            "verified": is_match,
+            "verified": res.verified,
             "recorded_hash": artifact.content_hash,
-            "storage_hash": current_hash,
-            "integrity_status": "VERIFIED" if is_match else "TAMPERED_OR_CORRUPT",
-            "file_size_bytes": file_path.stat().st_size,
+            "storage_hash": res.storage_hash,
+            "integrity_status": "VERIFIED" if res.verified else "TAMPERED_OR_CORRUPT",
+            "file_size_bytes": res.size_bytes,
+            "reason": res.error,
         }
+
+    def get_artifact_stream(self, artifact_id: str) -> BinaryIO:
+        """Retrieve a readable binary stream for the artifact's raw evidence bytes."""
+        artifact = self.store.get_artifact(artifact_id)
+        if not artifact:
+            raise StorageNotFoundError(f"Artifact '{artifact_id}' not found in store.")
+        return self.byte_store.get_stream(artifact.storage_uri)
+
+    def get_artifact_bytes(self, artifact_id: str) -> bytes:
+        """Retrieve raw evidence bytes for an artifact."""
+        artifact = self.store.get_artifact(artifact_id)
+        if not artifact:
+            raise StorageNotFoundError(f"Artifact '{artifact_id}' not found in store.")
+        return self.byte_store.get_bytes(artifact.storage_uri)

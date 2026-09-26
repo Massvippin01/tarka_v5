@@ -166,6 +166,14 @@ class Settings(BaseSettings):
         default=False,
         description="Enable S3 object lock / immutability retention in production"
     )
+    S3_SECURE: bool = Field(
+        default=False,
+        description="Use SSL/TLS for S3 connection"
+    )
+    S3_ADDRESSING_STYLE: Literal["auto", "path", "virtual"] = Field(
+        default="path",
+        description="S3 addressing style ('path' recommended for MinIO)"
+    )
 
     # Search - OpenSearch Projection Engine
     OPENSEARCH_URL: str = Field(
