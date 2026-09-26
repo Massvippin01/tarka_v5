@@ -12,11 +12,14 @@ from app.api.normalization import router as normalization_router
 from app.api.person import router as person_router
 from app.api.relationships import router as relationship_router
 from app.api.resolution import router as resolution_router
+from app.core.config import settings
 from app.database.init_db import initialize_database
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Enforce strict startup configuration validation
+    settings.validate_startup_configuration()
     initialize_database()
     yield
 
@@ -30,9 +33,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
