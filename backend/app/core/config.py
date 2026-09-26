@@ -240,6 +240,14 @@ class Settings(BaseSettings):
         default=None,
         description="Google Gemini API key (optional in mock mode)"
     )
+    FISH_AUDIO_API_KEY: Optional[str] = Field(
+        default=None,
+        description="Fish Audio S2.1 Pro TTS API key (optional in mock mode)"
+    )
+    VOICE_LANGUAGE: str = Field(
+        default="en-IN",
+        description="Default voice interaction language code"
+    )
 
     # Telemetry & Observability - OpenTelemetry
     OTEL_EXPORTER_OTLP_ENDPOINT: str = Field(

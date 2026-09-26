@@ -115,6 +115,13 @@ app.include_router(
     tags=["Interaction & Sentinel OS"],
 )
 
+from app.api.voice_api import router as voice_router
+
+app.include_router(
+    voice_router,
+    prefix="/api/v1/voice",
+    tags=["Realtime Voice"],
+)
 
 
 @app.get("/")
