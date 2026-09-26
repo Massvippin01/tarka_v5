@@ -49,8 +49,10 @@ class PolicyGateway:
     }
 
     def __init__(self) -> None:
+        from app.services.governance.opa_client import OPAClient
         self.audit_service = AuditService.get_instance()
         self.authority_registry = LegalAuthorityRegistry.get_instance()
+        self.opa_client = OPAClient()
         self.decisions: List[PolicyDecision] = []
 
     @classmethod
