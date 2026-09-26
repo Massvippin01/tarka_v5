@@ -1,8 +1,9 @@
 # SENTINELX NEXUS — System Status & Implementation Matrix
 **Benchmark**: SIH 2026 — PS 26189 & SUTRAM 2026 Indigenous Digital Forensics Framework
-**Status**: WAVE 5 (GOVERNED AUTONOMOUS INTERACTION + SENTINEL VOICE OS) COMPLETED & LOCKED
-**Last Verification**: 2026-09-23 (Backend Suite: 83/83 PASSED in 21.25s, Frontend Build: 0 ERRORS in 1.09s)
-**Branch**: `feat/wave-5-governed-autonomous-interaction-voice-os`
+**Status**: WAVE 6 PHASE 1 (MULTI-STAGE CONTAINER & COMPOSE BASELINE) IMPLEMENTED & STATIC-VERIFIED
+**Production Gate**: `LOCKED (PRE-PRODUCTION / HARDENING)`
+**Last Verification**: 2026-09-26 (Backend Suite: 83/83 PASSED in 5.07s, Frontend Build: 0 ERRORS in 4.85s, Compose Config: PASSED in dev & prod)
+**Branch**: `feat/milestone-2-intelligence-graph`
 
 ---
 
@@ -10,6 +11,7 @@
 
 | Component / Layer | Implementation Architecture | Status | Verification & Contract |
 | :--- | :--- | :--- | :--- |
+| **Wave 6: Phase 1 Container Baseline** | Multi-stage Dockerfiles (`Dockerfile.backend`, `Dockerfile.frontend`), unprivileged NGINX SPA routing (`frontend/nginx.conf`), OPA baseline policy (`opa/policies/sentinelx.rego`), normalized UTF-8 dependencies (`requirements.txt`), and dual-topology Compose (`docker-compose.dev.yml`, `docker-compose.yml`). | `IMPLEMENTED & STATIC-CONFIG-VERIFIED` | `docker compose config` exit 0 on dev & prod; `pip install --dry-run` exit 0; Pytest 83/83 pass; Frontend build 0 errors; BLOCKED_EXTERNAL_DEPENDENCY (Docker Daemon offline) |
 | **Wave 5: Governed Autonomous Interaction Engine** | `app/services/interaction/`: Semantic interaction layer unifying Voice, Keyboard, Pointer, and UI into `InteractionIntent`, `TaskPlanner`, `ToolRegistry`, and `RunnerService`. | `COMPLETED & LOCKED` | Pytest `test_wave5_deterministic_eval.py` & API `POST /api/v1/interaction/*` |
 | **Wave 5: 7-Factor PolicyGateway & PolicyDecision** | `policy_gateway.py`: Enforces Role + Clearance + Case Scope + Jurisdiction + Purpose + Tool + Action Risk Class (`READ`, `ANALYZE`, `PREPARE`, `EXECUTE`). Produces immutable, auditable `PolicyDecision`. | `COMPLETED & LOCKED` | Pytest `test_policy_gateway_7_factor_enforcement` & `test_policy_decision_immutable_audit` |
 | **Wave 5: Descriptive LegalAuthorityRegistry** | `legal_authority_registry.py`: Catalogs statutory requirements (BNSS 94, CrPC 91, BSA 63, IEA 65B, IT Act 69) without granting authority itself. Evaluated via PolicyGateway. | `COMPLETED & LOCKED` | Pytest `test_legal_authority_registry_descriptive` |

@@ -1,0 +1,46 @@
+# ==============================================================================
+# SENTINELX BUILD CONTEXT EXCLUSIONS (.dockerignore)
+# Prevents sensitive credentials, caches, virtual environments, and
+# developer artifacts from entering container images.
+# ==============================================================================
+
+# VCS and Agent Metadata
+.git/
+.gitignore
+.agents/
+.agent/
+
+# Virtual Environments and Package Caches
+venv/
+backend/venv/
+**/node_modules/
+frontend/node_modules/
+
+# Python Bytecode and Test Caches
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+dist/
+build/
+*.egg-info/
+frontend/dist/
+
+# Local Environment Variables and Secrets (STRICTLY PROHIBITED IN IMAGES)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Temporary files and logs
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# Do not copy raw user evidence artifacts into build context
+data/storage/artifacts/*
+!data/storage/artifacts/.gitkeep
