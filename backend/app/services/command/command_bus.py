@@ -328,6 +328,65 @@ class CommandBus:
                 args["case_id"] = case_match.group(1).upper()
                 return [(UIActionType.OPEN_CASE, args)]
 
+        # ── Phase 3: Agent Task Intents ──────────────────────────
+        # Run specific agent
+        agent_type_map = {
+            "evidence": "EVIDENCE_ANALYST",
+            "entity": "ENTITY_ANALYST",
+            "timeline": "TIMELINE_ANALYST",
+            "contradiction": "CONTRADICTION_ANALYST",
+            "gap": "GAP_ANALYST",
+        }
+
+        if re.search(r"\b(run\s+agent|dispatch\s+agent|execute\s+agent)\b", intent_lower):
+            for key, agent_val in agent_type_map.items():
+                if key in intent_lower:
+                    args["agent_type"] = agent_val
+                    args["objective"] = intent_raw
+                    args.setdefault("case_id", case_id)
+                    return [(UIActionType.RUN_AGENT_TASK, args)]
+            # Default to evidence analyst
+            args["agent_type"] = "EVIDENCE_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        # Analyze commands that invoke specific agents
+        if re.search(r"\b(analyze\s+contradictions?|detect\s+contradictions?|scan\s+for\s+contradictions?)\b", intent_lower):
+            args["agent_type"] = "CONTRADICTION_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        if re.search(r"\b(analyze\s+(evidence\s+)?gaps?|find\s+missing\s+evidence|identify\s+gaps?)\b", intent_lower):
+            args["agent_type"] = "GAP_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        if re.search(r"\b(analyze\s+entities|find\s+entity\s+linkages?|detect\s+identity\s+matches?)\b", intent_lower):
+            args["agent_type"] = "ENTITY_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        if re.search(r"\b(analyze\s+timeline|detect\s+temporal\s+anomal|temporal\s+analysis)\b", intent_lower):
+            args["agent_type"] = "TIMELINE_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        if re.search(r"\b(analyze\s+evidence|correlate\s+evidence|evidence\s+analysis)\b", intent_lower):
+            args["agent_type"] = "EVIDENCE_ANALYST"
+            args["objective"] = intent_raw
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.RUN_AGENT_TASK, args)]
+
+        # Show agent findings
+        if re.search(r"\b(show\s+(agent\s+)?findings|agent\s+results?|investigation\s+findings)\b", intent_lower):
+            args.setdefault("case_id", case_id)
+            return [(UIActionType.SHOW_AGENT_FINDINGS, args)]
+
         # 3. Fallback to semantic IntentResolver
         resolved_intent = await self.intent_resolver.resolve_intent(
             query=intent_raw,

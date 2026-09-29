@@ -172,6 +172,87 @@ class ActionExecutor:
                 output_data["supporting_facts_count"] = len(claim.supporting_fact_ids) if claim else 0
                 message = f"Displaying supporting evidence for claim {cid}."
 
+            # ── Phase 3: Governed Agent Tasks ───────────────────────
+            elif action_type == UIActionType.RUN_AGENT_TASK:
+                from app.domain.agent import AgentType
+                from app.services.agents.agent_supervisor import AgentSupervisor
+
+                agent_type_str = arguments.get("agent_type", "")
+                objective = arguments.get("objective", "Analyze case evidence")
+
+                try:
+                    agent_type = AgentType(agent_type_str)
+                except ValueError:
+                    return CommandExecutionResult(
+                        command_id=command_id,
+                        correlation_id=correlation_id,
+                        status=CommandStatus.FAILED,
+                        message=f"Unknown agent type: '{agent_type_str}'. "
+                                f"Valid types: {[t.value for t in AgentType]}",
+                    )
+
+                supervisor = AgentSupervisor.get_instance()
+                task = supervisor.create_task(
+                    agent_type=agent_type,
+                    case_id=case_id,
+                    objective=objective,
+                    parameters=arguments,
+                    originating_command_id=command_id,
+                )
+
+                if task.status.value == "REJECTED_POLICY":
+                    output_data["task_id"] = task.task_id
+                    output_data["task_status"] = task.status.value
+                    output_data["rejection_reason"] = task.error_message
+                    message = f"Agent task rejected by policy: {task.error_message}"
+                else:
+                    # Execute the task
+                    completed_task = supervisor.execute_task(task.task_id)
+                    output_data["task_id"] = completed_task.task_id
+                    output_data["task_status"] = completed_task.status.value
+                    output_data["agent_type"] = agent_type.value
+                    output_data["findings_count"] = len(completed_task.findings)
+                    output_data["findings"] = [
+                        {
+                            "finding_id": f.finding_id,
+                            "finding_type": f.finding_type.value,
+                            "title": f.title,
+                            "confidence": f.confidence,
+                            "epistemic_status": f.epistemic_status.value,
+                            "evidence_ids": f.evidence_ids[:5],
+                            "requires_human_review": f.requires_human_review,
+                        }
+                        for f in completed_task.findings
+                    ]
+                    if completed_task.error_message:
+                        output_data["error"] = completed_task.error_message
+                    message = (
+                        f"Agent {agent_type.value} produced {len(completed_task.findings)} "
+                        f"governed findings for case {case_id}."
+                    )
+
+            elif action_type == UIActionType.SHOW_AGENT_FINDINGS:
+                from app.services.agents.agent_supervisor import AgentSupervisor
+                supervisor = AgentSupervisor.get_instance()
+
+                findings = supervisor.get_findings_for_case(case_id)
+                output_data["findings_count"] = len(findings)
+                output_data["findings"] = [
+                    {
+                        "finding_id": f.finding_id,
+                        "finding_type": f.finding_type.value,
+                        "title": f.title,
+                        "description": f.description[:200],
+                        "confidence": f.confidence,
+                        "epistemic_status": f.epistemic_status.value,
+                        "agent_type": f.agent_type.value,
+                        "requires_human_review": f.requires_human_review,
+                        "recommended_action": f.recommended_action,
+                    }
+                    for f in findings
+                ]
+                message = f"Retrieved {len(findings)} governed agent findings for case {case_id}."
+
             # Log audit event
             self.audit.log_access_event(
                 user_id=context.user_id,

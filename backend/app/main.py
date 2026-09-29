@@ -138,6 +138,14 @@ app.include_router(
     tags=["Command Control Plane"],
 )
 
+from app.api.agent_api import router as agent_router
+
+app.include_router(
+    agent_router,
+    prefix="/api/v1",
+    tags=["Governed Agent Control Plane"],
+)
+
 
 @app.get("/")
 def root():

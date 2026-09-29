@@ -293,3 +293,25 @@ class UIActionRegistry:
                 audit_event="UI_GAP_FOCUSED",
             )
         )
+
+        # 4. Governed Agent Actions (Phase 3)
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.RUN_AGENT_TASK,
+                description="Dispatch a governed investigative agent task through the AgentSupervisor.",
+                expected_ui_effect="Executes agent analysis and returns governed findings with evidence lineage.",
+                risk_class=ActionRiskClass.ANALYZE,
+                required_arguments=["agent_type"],
+                optional_arguments=["objective", "case_id"],
+                audit_event="AGENT_TASK_DISPATCHED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.SHOW_AGENT_FINDINGS,
+                description="Display governed agent findings for the current case.",
+                expected_ui_effect="Renders agent findings panel with evidence lineage and confidence scores.",
+                optional_arguments=["case_id", "agent_type", "finding_type"],
+                audit_event="AGENT_FINDINGS_DISPLAYED",
+            )
+        )

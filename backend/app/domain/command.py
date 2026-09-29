@@ -52,6 +52,10 @@ class UIActionType(str, Enum):
     SHOW_CONTRADICTION = "SHOW_CONTRADICTION"
     SHOW_GAP = "SHOW_GAP"
 
+    # Governed Agent Actions (Phase 3)
+    RUN_AGENT_TASK = "RUN_AGENT_TASK"
+    SHOW_AGENT_FINDINGS = "SHOW_AGENT_FINDINGS"
+
 
 class UIActionDescriptor(BaseModel):
     """

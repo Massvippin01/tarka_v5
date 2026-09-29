@@ -128,6 +128,28 @@ export function executeUIActions(
         }
         break;
 
+      // ── Phase 3: Governed Agent Actions ────────────────────────
+      case "RUN_AGENT_TASK":
+        console.log(
+          `[UIActionExecutor] Agent task dispatched: ${args.agent_type}`,
+          `Status: ${args.task_status || "unknown"}`,
+          `Findings: ${args.findings_count || 0}`
+        );
+        // Open copilot to show agent results
+        if (handlers.toggleCopilot) {
+          handlers.toggleCopilot(true);
+        }
+        break;
+
+      case "SHOW_AGENT_FINDINGS":
+        console.log(
+          `[UIActionExecutor] Showing ${args.findings_count || 0} agent findings`
+        );
+        if (handlers.toggleCopilot) {
+          handlers.toggleCopilot(true);
+        }
+        break;
+
       default:
         console.warn(`[UIActionExecutor] Unhandled action type: ${act.action_type}`);
         break;
