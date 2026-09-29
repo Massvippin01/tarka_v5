@@ -123,6 +123,14 @@ app.include_router(
     tags=["Realtime Voice"],
 )
 
+from app.api.context_api import router as context_router
+
+app.include_router(
+    context_router,
+    prefix="/api/v1/context",
+    tags=["Operating Context"],
+)
+
 
 @app.get("/")
 def root():

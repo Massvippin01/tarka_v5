@@ -46,8 +46,8 @@ class AuthService:
                 organization="Delhi Police Special Cell",
                 unit="Cyber Financial Crime Unit",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114"],
-                    jurisdictions=["Delhi NCR / Gurugram"],
+                    allowed_cases=["CASE-2026-001", "C102", "C114"],
+                    jurisdictions=["Delhi NCR / Gurugram", "Delhi NCR / Special Cell"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
                 permissions=[

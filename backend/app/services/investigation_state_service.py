@@ -80,7 +80,7 @@ class InvestigationStateService:
             entities.append({
                 "entity_id": pid,
                 "type": "PERSON",
-                "display_name": p.name,
+                "display_name": getattr(p, "name", getattr(p, "full_name", pid)) or pid,
                 "risk_level": getattr(p, "risk_level", "UNKNOWN"),
                 "identifiers": {"aadhaar": getattr(p, "aadhaar", None)},
                 "source": getattr(p, "source", "POLICE_RECORD"),

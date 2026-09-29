@@ -19,6 +19,7 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
     selectCase,
     copilotOpen,
     toggleCopilot,
+    reopenOnboarding,
   } = useInvestigation();
 
   const { theme, cycleTheme } = useTheme();
@@ -158,6 +159,29 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
           />
           <span>CAS SHA-256 VERIFIED</span>
         </div>
+
+        {/* Objective / Operating Context Orientation */}
+        <button
+          onClick={reopenOnboarding}
+          title="Open Operating Context & Investigation Objective Launcher"
+          style={{
+            backgroundColor: "var(--surface-primary)",
+            border: "1px solid var(--border-structural)",
+            color: "var(--text-secondary)",
+            padding: "2px 8px",
+            borderRadius: "var(--radius-sm)",
+            fontSize: "11px",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <span style={{ color: "var(--sentinel-crimson)", fontSize: "10px" }}>⦿</span>
+          <span>OBJECTIVE</span>
+        </button>
 
         {/* Global Case Search */}
         <button

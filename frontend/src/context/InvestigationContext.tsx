@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import type { OperatingContext } from "../types/operatingContext";
+import { OperatingContextService } from "../services/operatingContextService";
 
 export type CanvasMode = "2D" | "3D" | "GIS";
 export type RightTab = "dossier" | "gaps" | "hypotheses" | "inspector" | "signals" | "claim" | "impact";
@@ -100,8 +102,12 @@ export interface InvestigationContextType {
     timeWindow: string;
   };
   lastEvent: DomainEvent | null;
+  isOnboarding: boolean;
+  operatingContext: OperatingContext | null;
+  dismissOnboarding: () => void;
+  reopenOnboarding: () => void;
 
-  selectCase: (caseId: string) => void;
+  selectCase: (caseId: string, route?: string) => void;
   selectEntity: (entityId: string) => void;
   selectRelationship: (relId: string) => void;
   selectEvidence: (evidenceId: string) => void;
@@ -132,8 +138,16 @@ const InvestigationContext = createContext<InvestigationContextType | undefined>
 
 export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const storedSessionActive = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("sentinelx_session_active") : null;
+  const storedCaseId = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("sentinelx_case_id") : null;
+  const initialCaseParam = initialParams.get("case");
 
-  const [activeCaseId, setActiveCaseId] = useState(initialParams.get("case") || "C102");
+  const hasExistingSession = !!(initialCaseParam || (storedSessionActive === "true" && storedCaseId));
+
+  const [isOnboarding, setIsOnboarding] = useState<boolean>(!hasExistingSession);
+  const [operatingContext, setOperatingContext] = useState<OperatingContext | null>(null);
+  const [activeCaseId, setActiveCaseId] = useState<string>(initialCaseParam || storedCaseId || "CASE-2026-001");
+
   const [activeNav, setActiveNavState] = useState<NavRoute>(
     (initialParams.get("nav") as NavRoute) || "investigations"
   );
@@ -175,7 +189,22 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     timeWindow: `${timeRange[0]} to ${timeRange[1]}`,
   };
 
+  // Safe Operating Context & Environment Negotiation
+  useEffect(() => {
+    const service = OperatingContextService.getInstance();
+    service
+      .negotiateOperatingContext(hasExistingSession ? (initialCaseParam || storedCaseId || undefined) : undefined)
+      .then((res) => {
+        setOperatingContext(res.context);
+        if (res.context.current_case_id) {
+          setActiveCaseId(res.context.current_case_id);
+        }
+      })
+      .catch((err) => console.warn("Context negotiation error:", err));
+  }, []);
+
   // URL Sync Effect
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams();
@@ -278,10 +307,39 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLeftRailCollapsed((prev) => !prev);
   };
 
-  const selectCase = (caseId: string) => {
+  const selectCase = (caseId: string, route: string = "command") => {
     setActiveCaseId(caseId);
-    dispatchEvent("CASE_CHANGED", { caseId });
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("sentinelx_session_active", "true");
+      sessionStorage.setItem("sentinelx_case_id", caseId);
+    }
+    if (route === "graph") {
+      setActiveNavState("network");
+      setActiveWorkspaceView("graph");
+      setActiveLensState("Network");
+    } else if (route === "evidence") {
+      setActiveNavState("evidence");
+      setActiveLensState("Evidence");
+    } else if (route === "search") {
+      setActiveNavState("search");
+    } else {
+      setActiveNavState("command");
+    }
+    setIsOnboarding(false);
+    dispatchEvent("CASE_CHANGED", { caseId, route });
   };
+
+  const dismissOnboarding = () => {
+    setIsOnboarding(false);
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem("sentinelx_session_active", "true");
+    }
+  };
+
+  const reopenOnboarding = () => {
+    setIsOnboarding(true);
+  };
+
 
   const selectEntity = (entityId: string) => {
     setSelectedEntityId(entityId);
@@ -396,6 +454,10 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
         selectedClaimId,
         proofDrawerClaimId,
         activeWorkspaceView,
+        isOnboarding,
+        operatingContext,
+        dismissOnboarding,
+        reopenOnboarding,
 
         selectCase,
         selectEntity,

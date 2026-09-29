@@ -25,6 +25,7 @@ import { InvestigationDelta } from "./investigation/InvestigationDelta";
 import { ClaimInspector } from "./investigation/ClaimInspector";
 import { EvidenceImpactPanel } from "./investigation/EvidenceImpactPanel";
 import { GovernedIntelligenceSentinel } from "./investigation/GovernedIntelligenceSentinel";
+import { FirstOpenController } from "./onboarding/FirstOpenController";
 
 export const InvestigationCanvas: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -43,6 +44,10 @@ export const InvestigationCanvas: React.FC = () => {
     copilotOpen,
     copilotQuery,
     newEvidenceAlert,
+    isOnboarding,
+    operatingContext,
+    dismissOnboarding,
+    selectCase,
     selectEntity,
     selectRelationship,
     setCanvasMode,
@@ -278,6 +283,16 @@ export const InvestigationCanvas: React.FC = () => {
         onClose={() => setIsAuthOpen(false)}
         onSuccess={() => setIsAuthOpen(false)}
       />
+
+      {/* First-Open Operating Context & Onboarding Controller */}
+      {isOnboarding && operatingContext && (
+        <FirstOpenController
+          operatingContext={operatingContext}
+          onSelectCase={(caseId, route) => selectCase(caseId, route)}
+          onDismissOnboarding={dismissOnboarding}
+          onRunGoal={(goal) => runCopilotQuery(goal)}
+        />
+      )}
     </div>
   );
 };

@@ -77,7 +77,7 @@ class InvestigationDeltaService:
 
         # New entities and relationships
         new_entities_summary = [
-            {"entity_id": p.id, "display_name": p.name, "type": "PERSON", "reason": "Normalized police record"}
+            {"entity_id": p.id, "display_name": getattr(p, "name", getattr(p, "full_name", p.id)) or p.id, "type": "PERSON", "reason": "Normalized police record"}
             for p in self.store.persons.values()
         ]
         
