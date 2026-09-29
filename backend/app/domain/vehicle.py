@@ -32,3 +32,8 @@ class Vehicle(UniversalEntity):
     case_id: str | None = None
 
     status_note: str = ""
+
+    @property
+    def make(self) -> str:
+        """Alias for manufacturer to ensure polymorphic compatibility."""
+        return self.manufacturer

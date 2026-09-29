@@ -24,6 +24,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
     jurisdiction,
     selectEvidence,
     selectCase,
+    dispatchCommand,
   } = useInvestigation();
 
   const [query, setQuery] = useState(initialQuery || "");
@@ -62,6 +63,14 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
     setLoading(true);
 
     try {
+      // 1. Canonical Command Control Plane dispatch (CHAT modality)
+      // Any navigation/action embedded in chat is resolved and applied to UI
+      await dispatchCommand({
+        source: "CHAT",
+        intent: q,
+        arguments: { query: q },
+      });
+
       const res = await axios.post("http://localhost:8000/api/v1/investigation/copilot", {
         query: q,
         scope: {

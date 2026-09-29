@@ -24,7 +24,23 @@ const PRIMARY_NAV_ITEMS: NavItemDef[] = [
 ];
 
 export const LeftNavRail: React.FC = () => {
-  const { activeNav, setActiveNav, isLeftRailCollapsed, toggleLeftRail } = useInvestigation();
+  const { activeNav, setActiveNav, isLeftRailCollapsed, toggleLeftRail, dispatchUIAction } = useInvestigation();
+
+  const handleNavClick = (id: NavRoute) => {
+    if (id === "contradictions") {
+      dispatchUIAction("OPEN_CONTRADICTIONS");
+    } else if (id === "gaps") {
+      dispatchUIAction("OPEN_GAPS");
+    } else if (id === "timeline") {
+      dispatchUIAction("OPEN_TIMELINE");
+    } else if (id === "proof") {
+      dispatchUIAction("OPEN_PROOF", { claim_id: "CLM-2026-001" });
+    } else if (id === "evidence") {
+      dispatchUIAction("OPEN_EVIDENCE", { evidence_id: "EV-ANPR-001" });
+    } else {
+      setActiveNav(id);
+    }
+  };
 
   return (
     <aside
@@ -109,7 +125,7 @@ export const LeftNavRail: React.FC = () => {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => handleNavClick(item.id)}
               title={isLeftRailCollapsed ? item.label : undefined}
               style={{
                 display: "flex",

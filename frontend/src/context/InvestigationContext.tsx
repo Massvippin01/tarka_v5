@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { OperatingContext } from "../types/operatingContext";
 import { OperatingContextService } from "../services/operatingContextService";
+import { commandBus } from "../services/commandBusService";
+import { executeUIActions } from "../services/uiActionExecutor";
+import type {
+  CommandExecutionResult,
+  DispatchCommandRequest,
+  UIActionType,
+} from "../types/command";
 
 export type CanvasMode = "2D" | "3D" | "GIS";
 export type RightTab = "dossier" | "gaps" | "hypotheses" | "inspector" | "signals" | "claim" | "impact";
@@ -132,6 +139,8 @@ export interface InvestigationContextType {
   toggleCopilot: (open?: boolean) => void;
   runCopilotQuery: (query: string) => void;
   dismissNewEvidenceAlert: () => void;
+  dispatchCommand: (req: Partial<DispatchCommandRequest>) => Promise<CommandExecutionResult>;
+  dispatchUIAction: (actionType: UIActionType, args?: Record<string, any>) => Promise<CommandExecutionResult>;
 }
 
 const InvestigationContext = createContext<InvestigationContextType | undefined>(undefined);
@@ -421,6 +430,74 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     setNewEvidenceAlert(false);
   };
 
+  const dispatchCommand = useCallback(
+    async (req: Partial<DispatchCommandRequest>): Promise<CommandExecutionResult> => {
+      const fullReq: DispatchCommandRequest = {
+        source: req.source || "UI",
+        intent: req.intent || "OPEN_GRAPH",
+        case_id: req.case_id || activeCaseId,
+        selected_entity_id: req.selected_entity_id !== undefined ? req.selected_entity_id : selectedEntityId,
+        selected_claim_id: req.selected_claim_id !== undefined ? req.selected_claim_id : selectedClaimId,
+        arguments: req.arguments || {},
+        requested_actions: req.requested_actions,
+        risk_class: req.risk_class || "READ",
+        confirmation_token: req.confirmation_token,
+        correlation_id: req.correlation_id,
+      };
+
+      const result = await commandBus.dispatch(fullReq);
+      if (result.ui_actions && result.ui_actions.length > 0) {
+        executeUIActions(result.ui_actions, {
+          selectCase,
+          selectEntity,
+          selectRelationship,
+          selectEvidence,
+          selectClaim: (claimId: string | null) => {
+            setSelectedClaimId(claimId);
+            if (claimId) setActiveRightTab("claim");
+          },
+          openProofDrawer: (claimId: string | null) => {
+            setProofDrawerClaimId(claimId);
+          },
+          setActiveWorkspaceView,
+          setActiveNav,
+          setActiveLens,
+          setActiveRightTab,
+          setEntityFilters,
+          toggleCopilot,
+        });
+      }
+      return result;
+    },
+    [
+      activeCaseId,
+      selectedEntityId,
+      selectedClaimId,
+      selectCase,
+      selectEntity,
+      selectRelationship,
+      selectEvidence,
+      setActiveWorkspaceView,
+      setActiveNav,
+      setActiveLens,
+      setActiveRightTab,
+      setEntityFilters,
+      toggleCopilot,
+    ]
+  );
+
+  const dispatchUIAction = useCallback(
+    async (actionType: UIActionType, args: Record<string, any> = {}): Promise<CommandExecutionResult> => {
+      return dispatchCommand({
+        source: "UI",
+        intent: actionType,
+        requested_actions: [actionType],
+        arguments: args,
+      });
+    },
+    [dispatchCommand]
+  );
+
   return (
     <InvestigationContext.Provider
       value={{
@@ -489,6 +566,8 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
         toggleCopilot,
         runCopilotQuery,
         dismissNewEvidenceAlert,
+        dispatchCommand,
+        dispatchUIAction,
       }}
     >
       {children}

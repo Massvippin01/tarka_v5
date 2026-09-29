@@ -131,6 +131,13 @@ app.include_router(
     tags=["Operating Context"],
 )
 
+from app.api.command_api import router as command_router
+
+app.include_router(
+    command_router,
+    tags=["Command Control Plane"],
+)
+
 
 @app.get("/")
 def root():

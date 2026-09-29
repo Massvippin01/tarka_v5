@@ -349,10 +349,19 @@ class CopilotApiRequest(BaseModel):
     scope: Optional[CopilotQueryScope] = None
 
 
+# LEGACY_INTERACTION_PATH: Migrated to converge into unified Command Control Plane
 @router.post("/copilot")
 def query_ai_copilot(req: CopilotApiRequest):
     copilot = AICopilotService()
     res = copilot.process_query(req.query, req.scope)
+    # Log correlation in CommandBus audit
+    from app.services.audit_service import AuditService
+    AuditService.get_instance().log_access_event(
+        user_id="COPILOT_LEGACY_ADAPTER",
+        resource_type="COMMAND_BUS",
+        action="DISPATCH_CHAT_LEGACY",
+        details={"query": req.query, "scope": req.scope.model_dump() if req.scope else {}},
+    )
     return res
 
 

@@ -113,6 +113,7 @@ def get_session(session_id: str):
     return session
 
 
+# LEGACY_INTERACTION_PATH: Converged via CommandBus; retained for backward compatibility
 @router.post("/intent/resolve", response_model=InteractionIntent)
 async def resolve_interaction_intent(req: IntentResolveRequest, user: UserIdentity = Depends(get_current_user)):
     ctx = InteractionContext(
@@ -132,6 +133,7 @@ async def resolve_interaction_intent(req: IntentResolveRequest, user: UserIdenti
     return intent
 
 
+# LEGACY_INTERACTION_PATH: Converged via CommandBus; retained for backward compatibility
 @router.post("/plan", response_model=TaskPlan)
 async def create_task_plan(req: PlanCreateRequest, user: UserIdentity = Depends(get_current_user)):
     ctx = InteractionContext(
@@ -144,6 +146,7 @@ async def create_task_plan(req: PlanCreateRequest, user: UserIdentity = Depends(
     return plan
 
 
+# LEGACY_INTERACTION_PATH: Converged via CommandBus; retained for backward compatibility
 @router.post("/runner/step")
 def execute_runner_step(req: RunnerStepRequest, user: UserIdentity = Depends(get_current_user)):
     ctx = InteractionContext(

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useInvestigation } from "../context/InvestigationContext";
 import { SentinelRunnerOverlay, type TaskPlanView } from "./investigation/SentinelRunnerOverlay";
 
@@ -15,15 +14,7 @@ export type VoiceState =
   | "RESPONDING";
 
 export const VoiceCommandOverlay: React.FC = () => {
-  const {
-    activeCaseId,
-    selectEntity,
-    selectCase,
-    setActiveRightTab,
-    setActiveNav,
-    setActiveWorkspaceView,
-    openProofDrawer,
-  } = useInvestigation();
+  const { dispatchCommand } = useInvestigation();
 
   const [voiceState, setVoiceState] = useState<VoiceState>("READY");
   const [transcript, setTranscript] = useState<string>("");
@@ -40,126 +31,46 @@ export const VoiceCommandOverlay: React.FC = () => {
     setResponseMsg("");
   };
 
+  /**
+   * CANONICAL COMMAND DISPATCH (VOICE MODALITY):
+   * Dispatches speech transcript through the unified Command Control Plane.
+   * State transitions and UI actions are strictly governed by backend CommandBus.
+   */
   const handleProcessTranscript = async (text: string) => {
     setTranscript(text);
     setVoiceState("TRANSCRIBING");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setVoiceState("UNDERSTANDING");
-      setTimeout(async () => {
-        try {
-          // 1. Resolve Intent via Unified Semantic Interaction Engine
-          const res = await axios.post("http://localhost:8000/api/v1/interaction/intent/resolve", {
-            query: text,
-            case_id: activeCaseId,
-            modality: "VOICE",
-          });
+      try {
+        const result = await dispatchCommand({
+          source: "VOICE",
+          intent: text,
+          arguments: { raw_query: text },
+        });
 
-          const intent = res.data;
-          setVoiceState("PLANNING");
-
-          // 2. Generate Plan
-          const planRes = await axios.post("http://localhost:8000/api/v1/interaction/plan", {
-            intent: intent,
-            case_id: activeCaseId,
-          });
-
-          const plan: TaskPlanView = planRes.data;
-          setActivePlan(plan);
-          setRunnerOpen(true);
-
-          setVoiceState("EXECUTING");
-
-          // Check if confirmation is required immediately
-          if (intent.requires_confirmation) {
-            setVoiceState("CONFIRMATION");
-            setPendingAction(intent);
-            setShowConfirmModal(true);
-            return;
-          }
-
-          // Execute first step
-          setVoiceState("VERIFYING");
-          const stepRes = await axios.post("http://localhost:8000/api/v1/interaction/runner/step", {
-            plan_id: plan.plan_id,
-            purpose: `Voice dispatch: ${text}`,
-          });
-
-          if (stepRes.data.status === "WAITING_CONFIRMATION") {
-            setVoiceState("CONFIRMATION");
-            setShowConfirmModal(true);
-          } else {
-            // Apply workspace changes
-            executeClientNav(intent, text);
-            setVoiceState("RESPONDING");
-            setResponseMsg(`Plan ${plan.plan_id} active: ${intent.intent_name}`);
-            setTimeout(() => setVoiceState("READY"), 4000);
-          }
-        } catch (e) {
-          console.error("Interaction engine fallback:", e);
-          executeLocalVoiceFallback(text);
+        if (result.requires_confirmation) {
+          setVoiceState("CONFIRMATION");
+          setPendingAction(result.confirmation_challenge || { prompt_message: result.message });
+          setShowConfirmModal(true);
+          return;
         }
-      }, 350);
-    }, 300);
-  };
 
-  const executeClientNav = (intent: any, text: string) => {
-    const name = intent.intent_name || "";
-    const p = intent.parameters || {};
+        if (result.status === "SUCCESS") {
+          setVoiceState("RESPONDING");
+          setResponseMsg(result.message || "Command executed.");
+        } else {
+          setVoiceState("RESPONDING");
+          setResponseMsg(`Notice: ${result.message}`);
+        }
 
-    if (name === "INSPECT_CONTRADICTIONS" || text.toLowerCase().includes("contradiction")) {
-      setActiveNav("contradictions");
-      setActiveWorkspaceView("contradictions");
-    } else if (name === "INSPECT_EVIDENCE_GAPS" || text.toLowerCase().includes("gap")) {
-      setActiveNav("gaps");
-      setActiveWorkspaceView("gaps");
-    } else if (name === "PROVE_CLAIM_LINEAGE" || text.toLowerCase().includes("proof") || text.toLowerCase().includes("claim")) {
-      openProofDrawer(p.claim_id || "CLM-2026-001");
-    } else if (name === "COMPARE_TIMELINES" || text.toLowerCase().includes("timeline")) {
-      setActiveNav("timeline");
-      setActiveWorkspaceView("timeline");
-    } else if (name === "FIND_ENTITY_LINKAGES") {
-      if (p.entity_a) selectEntity(p.entity_a);
-      setActiveNav("entities");
-    } else if (name === "OPEN_CASE" && p.case_id) {
-      selectCase(p.case_id);
-    }
-  };
-
-  const executeLocalVoiceFallback = (text: string) => {
-    const lower = text.toLowerCase();
-    setVoiceState("VERIFYING");
-
-    setTimeout(() => {
-      if (lower.includes("case 2026-001") || lower.includes("open case")) {
-        selectCase("CASE-2026-001");
-        setResponseMsg("Case CASE-2026-001 activated in workspace context.");
-      } else if (lower.includes("contradiction") || lower.includes("kinematic")) {
-        setActiveNav("contradictions");
-        setActiveWorkspaceView("contradictions");
-        setResponseMsg("Contradiction Center opened: Impossible velocity anomaly displayed.");
-      } else if (lower.includes("trace this claim") || lower.includes("source") || lower.includes("proof")) {
-        openProofDrawer("CLM-2026-001");
-        setResponseMsg("Live Proof backward lineage drawer displayed for Claim CLM-2026-001.");
-      } else if (lower.includes("timeline")) {
-        setActiveNav("timeline");
-        setActiveWorkspaceView("timeline");
-        setResponseMsg("Spatiotemporal Timeline opened with uncertainty bounds.");
-      } else if (lower.includes("phone") || lower.includes("9888044556")) {
-        selectEntity("PH002");
-        setActiveNav("entities");
-        setActiveRightTab("dossier");
-        setResponseMsg("Burner phone +91-9888044556 selected in entity dossier.");
-      } else if (lower.includes("change") || lower.includes("delta")) {
-        setActiveWorkspaceView("delta");
-        setResponseMsg("Append-only Investigation Delta displayed.");
-      } else if (lower.includes("gap")) {
-        setActiveNav("gaps");
-        setActiveWorkspaceView("gaps");
-        setResponseMsg("Evidence Gap Center opened: Missing subscriber CAF displayed.");
+        setTimeout(() => setVoiceState("READY"), 4000);
+      } catch (err: any) {
+        console.error("Voice CommandBus error:", err);
+        setVoiceState("RESPONDING");
+        setResponseMsg(`Command error: ${err.message || "Execution failed"}`);
+        setTimeout(() => setVoiceState("READY"), 4000);
       }
-      setVoiceState("RESPONDING");
-      setTimeout(() => setVoiceState("READY"), 4000);
     }, 300);
   };
 

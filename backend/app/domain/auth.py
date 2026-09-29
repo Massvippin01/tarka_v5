@@ -50,6 +50,16 @@ class UserIdentity(BaseModel):
     permissions: List[AccessPermissionEnum] = Field(default_factory=list)
     authenticated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
+    @property
+    def clearance(self) -> str:
+        return self.scope.max_sensitivity_clearance if self.scope else "RESTRICTED"
+
+    @property
+    def jurisdiction(self) -> str:
+        if self.scope and self.scope.jurisdictions:
+            return self.scope.jurisdictions[0]
+        return self.organization or "Delhi NCR / Special Cell"
+
 
 class AuthTokenRequest(BaseModel):
     username: str

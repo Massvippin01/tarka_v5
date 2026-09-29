@@ -98,7 +98,7 @@ class InvestigationStateService:
                 "entity_id": vid,
                 "type": "VEHICLE",
                 "display_name": v.registration_number,
-                "make_model": f"{v.make} {v.model}",
+                "make_model": f"{getattr(v, 'make', getattr(v, 'manufacturer', ''))} {getattr(v, 'model', '')}".strip(),
                 "owner_id": v.owner_id,
             })
         for aid, acc in self.store.bank_accounts.items():
