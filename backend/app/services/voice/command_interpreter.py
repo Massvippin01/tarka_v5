@@ -86,6 +86,22 @@ class VoiceCommandInterpreter:
         )
         return candidate
 
+    def to_investigation_intent(
+        self,
+        candidate: VoiceCommandCandidate,
+        context: InteractionContext,
+        correlation_id: Optional[str] = None,
+    ):
+        """
+        Convert VoiceCommandCandidate into canonical InvestigationIntent.
+        """
+        from app.services.interaction.intent_normalizer import IntentNormalizer
+        return IntentNormalizer.get_instance().from_voice_candidate(
+            candidate=candidate,
+            context=context,
+            correlation_id=correlation_id,
+        )
+
     def create_command(
         self,
         candidate: VoiceCommandCandidate,
@@ -95,6 +111,8 @@ class VoiceCommandInterpreter:
         """
         Convert VoiceCommandCandidate into canonical Command for CommandBus dispatch.
         """
+        corr_id = correlation_id or candidate.candidate_id
+        inv_intent = self.to_investigation_intent(candidate, context, correlation_id=corr_id)
         requested_actions = [candidate.action] if candidate.action else []
         cmd = Command(
             source=CommandSource.VOICE,
@@ -102,9 +120,10 @@ class VoiceCommandInterpreter:
             context=context,
             arguments=candidate.parameters,
             risk_class=ActionRiskClass(candidate.risk_class),
-            correlation_id=correlation_id or Command._generate_uuid7() if hasattr(Command, "_generate_uuid7") else candidate.candidate_id,
+            correlation_id=corr_id,
             requested_actions=requested_actions,
             rationale=f"Voice command: {candidate.transcript_text}",
+            investigation_intent=inv_intent,
         )
         return cmd
 

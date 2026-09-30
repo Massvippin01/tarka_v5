@@ -167,6 +167,23 @@ class AgentSupervisor:
         )
         return task
 
+    def to_investigation_intent(
+        self,
+        task: AgentTask,
+        context: Optional[InteractionContext] = None,
+    ):
+        """
+        Convert an AgentTask into a canonical InvestigationIntent.
+        """
+        from app.services.interaction.intent_normalizer import IntentNormalizer
+        return IntentNormalizer.get_instance().from_agent_task(
+            agent_type=task.agent_type,
+            objective=task.objective,
+            case_id=task.case_id,
+            parameters=task.parameters,
+            context=context,
+        )
+
     # ── Task Execution ───────────────────────────────────────────────────
 
     def execute_task(self, task_id: str) -> AgentTask:

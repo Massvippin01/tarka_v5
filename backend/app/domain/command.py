@@ -86,6 +86,7 @@ class Command(BaseModel):
     correlation_id: str = Field(default_factory=generate_uuid7)
     requested_actions: List[str] = Field(default_factory=list)
     rationale: Optional[str] = None
+    investigation_intent: Optional[Any] = None
     timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 

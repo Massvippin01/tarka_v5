@@ -77,6 +77,7 @@ export interface DispatchCommandRequest {
   risk_class?: "READ" | "ANALYZE" | "PREPARE" | "EXECUTE";
   confirmation_token?: string | null;
   correlation_id?: string;
+  investigation_intent?: InvestigationIntent;
 }
 
 // ── Governed Agent Control Plane Types (Phase 3) ─────────────────────
@@ -124,3 +125,32 @@ export interface AgentTaskResult {
   findings: AgentFinding[];
   error?: string | null;
 }
+
+// ── Canonical Investigation Intent (Experience Refinement E0) ────────
+
+export interface InvestigationIntent {
+  intent_id: string;
+  intent_name: string;
+  target_case?: string | null;
+  target_entity?: string | null;
+  target_evidence?: string | null;
+  target_claim?: string | null;
+  modality: CommandSource;
+  language?: string;
+  risk_class?: "READ" | "ANALYZE" | "PREPARE" | "EXECUTE";
+  authorization_context?: Record<string, any>;
+  requested_detail_level?: "SUMMARY" | "STANDARD" | "DEEP_FORENSIC";
+  temporal_constraints?: Record<string, any> | null;
+  spatial_constraints?: Record<string, any> | null;
+  confidence: number;
+  ambiguity: boolean;
+  ambiguity_reason?: string | null;
+  clarification_prompt?: string | null;
+  correlation_id: string;
+  parameters: Record<string, any>;
+  raw_input?: string | null;
+  requires_confirmation?: boolean;
+  statutory_power_code?: string | null;
+  timestamp: string;
+}
+

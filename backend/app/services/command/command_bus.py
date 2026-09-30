@@ -98,6 +98,28 @@ class CommandBus:
         resolved_context = self._resolve_command_context(command, user)
         case_id = command.arguments.get("case_id") or resolved_context.case_id or "CASE-2026-001"
 
+        # 2b. Canonical InvestigationIntent resolution & ambiguity check
+        inv_intent = getattr(command, "investigation_intent", None)
+        if not inv_intent and command.source in (CommandSource.CHAT, CommandSource.VOICE, CommandSource.KEYBOARD):
+            from app.services.interaction.intent_normalizer import IntentNormalizer
+            probe_intent = IntentNormalizer.get_instance().from_text_query(command.intent, resolved_context)
+            if probe_intent.ambiguity:
+                inv_intent = probe_intent
+                command.investigation_intent = probe_intent
+
+        if inv_intent and getattr(inv_intent, "ambiguity", False):
+            reason = getattr(inv_intent, "ambiguity_reason", "Intent is ambiguous.")
+            prompt = getattr(inv_intent, "clarification_prompt", "Please clarify your request.")
+            return CommandExecutionResult(
+                command_id=command.command_id,
+                correlation_id=command.correlation_id,
+                status=CommandStatus.FAILED,
+                message=f"AMBIGUOUS_INTENT: {reason} {prompt}".strip(),
+            )
+
+        if inv_intent and getattr(inv_intent, "target_case", None):
+            case_id = inv_intent.target_case
+
         # 3. Policy & Authorization check
         allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
         allowed_jurisdictions = user.scope.jurisdictions if user and user.scope else [
@@ -281,6 +303,20 @@ class CommandBus:
                 except ValueError:
                     logger.warning(f"Requested action '{act_name}' not a valid UIActionType.")
             return actions
+
+        # 2. Canonical InvestigationIntent resolution
+        inv_intent = getattr(command, "investigation_intent", None)
+        if inv_intent and hasattr(inv_intent, "intent_name"):
+            intent_name = inv_intent.intent_name
+            params = dict(inv_intent.parameters)
+            if hasattr(inv_intent, "target_case") and inv_intent.target_case:
+                params.setdefault("case_id", inv_intent.target_case)
+            params.setdefault("case_id", context.case_id or "CASE-2026-001")
+            try:
+                act_type = UIActionType(intent_name)
+                return [(act_type, params)]
+            except ValueError:
+                pass
 
         intent_raw = command.intent.strip()
         intent_lower = intent_raw.lower()

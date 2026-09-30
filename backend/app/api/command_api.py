@@ -42,6 +42,7 @@ class DispatchCommandRequest(BaseModel):
     risk_class: ActionRiskClass = ActionRiskClass.READ
     confirmation_token: Optional[str] = None
     correlation_id: Optional[str] = None
+    investigation_intent: Optional[Dict[str, Any]] = None
 
 
 class CancelCommandRequest(BaseModel):
@@ -82,6 +83,13 @@ async def dispatch_command(
     )
     if req.correlation_id:
         cmd.correlation_id = req.correlation_id
+
+    if req.investigation_intent:
+        try:
+            from app.domain.intent import InvestigationIntent
+            cmd.investigation_intent = InvestigationIntent(**req.investigation_intent)
+        except Exception as e:
+            logger.warning("Failed to parse provided investigation_intent: %s", e)
 
     result = await command_bus.dispatch(command=cmd, user=user)
 
