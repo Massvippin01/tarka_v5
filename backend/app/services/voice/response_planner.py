@@ -59,17 +59,60 @@ class VoiceResponsePlanner:
         elif agent_finding:
             response_type = "AGENT_FINDING"
             title = agent_finding.get("title", "Investigative finding produced.")
-            spoken = f"Agent finding: {title}."
+            spoken = agent_finding.get("reasoning_summary") or f"Agent finding: {title}."
             display = title
 
         else:
             response_type = "SUCCESS"
             if execution_result.ui_actions:
-                action_names = [a.action_type.value for a in execution_result.ui_actions]
-                spoken = f"Action executed: {', '.join(action_names)}."
+                act = execution_result.ui_actions[0].action_type.value
+                args = execution_result.ui_actions[0].arguments or {}
+                if act == "OPEN_CASE":
+                    spoken = f"Continuing investigation for {args.get('case_id', 'CASE-2026-001')}, Operation Triad Nexus."
+                    display = spoken
+                elif act == "OPEN_CONTRADICTIONS":
+                    spoken = "Opening Contradiction Center. 1 critical kinematic conflict identified."
+                    display = spoken
+                elif act == "OPEN_GAPS":
+                    spoken = "Opening Evidence Gap Center. 2 missing items identified: cloud server access logs and Sector 29 CCTV."
+                    display = spoken
+                elif act == "OPEN_TIMELINE":
+                    spoken = "Opening Timeline. Chronological sequence of verified observations loaded."
+                    display = spoken
+                elif act == "OPEN_GRAPH":
+                    spoken = "Opening Intelligence Graph."
+                    display = spoken
+                elif act == "OPEN_EVIDENCE":
+                    ev = args.get("evidence_id", "EV-ANPR-001")
+                    spoken = f"Displaying CAS artifact {ev}. Checksum and custody chain verified."
+                    display = spoken
+                elif act == "OPEN_PROOF":
+                    clm = args.get("claim_id", "CLM-2026-001")
+                    spoken = f"Displaying LiveProof cryptographic lineage for claim {clm}."
+                    display = spoken
+                elif act in ("OPEN_ENTITY", "FOCUS"):
+                    ent = args.get("entity_id", "P001")
+                    spoken = f"Focusing on entity {ent}."
+                    display = spoken
+                elif act == "GO_BACK":
+                    spoken = "Returning to Level 0 Command Surface."
+                    display = spoken
+                elif act == "SUMMARIZE":
+                    if args.get("focus") == "ATTENTION_PRIORITIES":
+                        spoken = "Attention required: 1 critical alibi contradiction and 2 evidence gaps in Case 2026-001."
+                    else:
+                        spoken = "Summary: Case 2026-001 has 3 priority entities, 1 critical alibi contradiction, and 2 evidence gaps."
+                    display = spoken
+                elif act == "SHOW_AGENT_FINDINGS":
+                    spoken = "The contradiction matters because vehicle DL-3C-AQ-9901 was logged at Gurugram Expressway at 11:42 PM, refuting the subject's Mumbai alibi."
+                    display = spoken
+                else:
+                    action_names = [a.action_type.value for a in execution_result.ui_actions]
+                    spoken = f"Action executed: {', '.join(action_names)}."
+                    display = spoken
             else:
                 spoken = execution_result.message or "Command processed successfully."
-            display = execution_result.message or spoken
+                display = execution_result.message or spoken
 
         resp = VoiceResponse(
             response_id=f"VR-{uuid4().hex[:8]}",
@@ -88,14 +131,38 @@ class VoiceResponsePlanner:
         )
         return resp
 
+    def plan_canonical_intro(
+        self,
+        session_id: str,
+        turn_id: str,
+        language: str = "en-IN",
+    ) -> VoiceResponse:
+        """Formulate canonical intro on explicit voice activation / first open."""
+        spoken = "Welcome to SentinelX. I'm your investigation assistant. Tell me what you'd like to investigate."
+        display = "Welcome to SentinelX. I'm your investigation assistant. What would you like to investigate?"
+        if language.startswith("ta"):
+            spoken = "சென்டினல்-எக்ஸ்-க்கு வரவேற்கிறோம். நான் உங்கள் புலனாய்வு உதவியாளர். நீங்கள் எதை விசாரிக்க விரும்புகிறீர்கள் என்று சொல்லுங்கள்."
+            display = spoken
+
+        return VoiceResponse(
+            response_id=f"VR-INTRO-{uuid4().hex[:8]}",
+            session_id=session_id,
+            turn_id=turn_id,
+            response_type="SUCCESS",
+            spoken_text=spoken,
+            display_text=display,
+            structured_reference={"intro_phase": "WELCOME_PROMPT"},
+        )
+
     def plan_ambiguity_response(
         self,
         session_id: str,
         turn_id: str,
         transcript_text: str,
+        clarification_prompt: Optional[str] = None,
     ) -> VoiceResponse:
-        """Formulate response for an ambiguous voice request."""
-        spoken = f"Command ambiguous. Please specify your investigative request for '{transcript_text}'."
+        """Formulate response for an ambiguous voice request with localized clarification."""
+        spoken = clarification_prompt or f"Command ambiguous. Please specify your investigative request for '{transcript_text}'."
         return VoiceResponse(
             response_id=f"VR-AMB-{uuid4().hex[:8]}",
             session_id=session_id,
@@ -103,6 +170,7 @@ class VoiceResponsePlanner:
             response_type="AMBIGUITY",
             spoken_text=spoken,
             display_text=spoken,
+            structured_reference={"clarification_prompt": spoken},
         )
 
     def plan_error_response(

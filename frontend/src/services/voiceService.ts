@@ -246,6 +246,35 @@ export class VoiceService {
   }
 
   /**
+   * Request canonical introduction on explicit voice activation.
+   * "Welcome to SentinelX. I'm your investigation assistant. Tell me what you'd like to investigate."
+   */
+  public async getCanonicalIntro(sessionId?: string, language: string = "en-IN"): Promise<VoiceResponsePayload> {
+    const activeSessionId = sessionId || this.currentSession?.session_id || "VS-DEFAULT";
+    try {
+      const response = await axios.get<VoiceResponsePayload>(
+        `${API_BASE_URL}/api/v1/voice/session/${activeSessionId}/intro`,
+        {
+          params: { language },
+          timeout: 10000,
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      console.warn("[VoiceService] Fallback intro:", err);
+      return {
+        response_id: `VR-INTRO-${Date.now()}`,
+        session_id: activeSessionId,
+        turn_id: `VT-INTRO-${Date.now()}`,
+        response_type: "SUCCESS",
+        spoken_text: "Welcome to SentinelX. I'm your investigation assistant. Tell me what you'd like to investigate.",
+        display_text: "Welcome to SentinelX. I'm your investigation assistant. What would you like to investigate?",
+        created_at: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
    * Handle barge-in interruption.
    */
   public async handleInterruption(sessionId?: string): Promise<VoiceInterruptionResult> {

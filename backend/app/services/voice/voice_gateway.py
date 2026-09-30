@@ -171,6 +171,7 @@ class VoiceGateway:
                     session_id=session_id,
                     turn_id=turn.turn_id,
                     transcript_text=transcript.text,
+                    clarification_prompt=candidate.clarification_prompt,
                 )
 
             # 3. Create Canonical Command & Dispatch to CommandBus
@@ -238,6 +239,42 @@ class VoiceGateway:
             "session_id": session_id,
             "turn_id": interruption.turn_id,
         }
+
+    async def get_canonical_intro(
+        self,
+        session_id: str,
+        language: str = "en-IN",
+    ) -> VoiceResponse:
+        """
+        Play canonical intro on explicit voice activation / first open:
+        "Welcome to SentinelX. I'm your investigation assistant. Tell me what you'd like to investigate."
+        Then enters immediate listening state.
+        """
+        session = self.session_manager.get_session(session_id)
+        if not session:
+            turn_id = f"TURN-INTRO-{uuid4().hex[:6]}"
+            lang = language
+        else:
+            turn = self.session_manager.start_turn(session_id)
+            turn_id = turn.turn_id if turn else f"TURN-INTRO-{uuid4().hex[:6]}"
+            lang = session.language or language
+
+        intro_resp = self.response_planner.plan_canonical_intro(
+            session_id=session_id,
+            turn_id=turn_id,
+            language=lang,
+        )
+
+        if session:
+            self.session_manager.update_session_status(session_id, VoiceSessionStatus.SPEAKING)
+            tts_stream = self.tts.synthesize_stream(
+                text=intro_resp.spoken_text,
+                language=lang,
+            )
+            await self.transport.publish_audio(session_id, tts_stream)
+            self.session_manager.update_session_status(session_id, VoiceSessionStatus.LISTENING)
+
+        return intro_resp
 
     async def close_session(self, session_id: str) -> None:
         """Cleanly terminate voice session and transport."""

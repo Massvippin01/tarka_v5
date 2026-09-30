@@ -298,7 +298,61 @@ class IntentNormalizer:
                 raw_input=raw_text,
             )
 
-        # 2. Ambiguity check: Vague pronouns or actions without targets
+        # 2. Multilingual Normalization Layer (English, Tamil, Tanglish, Code-switching)
+        from app.services.interaction.multilingual_normalizer import MultilingualNormalizer
+        analysis = MultilingualNormalizer.get_instance().analyze_and_normalize(
+            utterance=raw_text,
+            context_case_id=case_id,
+            selected_entity_id=ctx.selected_entity_id,
+            selected_claim_id=ctx.selected_claim_id,
+        )
+
+        if analysis.is_ambiguous:
+            return InvestigationIntent(
+                intent_name="AMBIGUOUS_QUERY",
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=analysis.language_mode.value,
+                confidence=0.3,
+                ambiguity=True,
+                ambiguity_reason=analysis.ambiguity_reason,
+                clarification_prompt=analysis.clarification_prompt,
+                raw_input=raw_text,
+            )
+
+        if analysis.canonical_intent != "SEARCH" and analysis.canonical_action:
+            act_enum = None
+            try:
+                act_enum = UIActionType(analysis.canonical_action)
+            except ValueError:
+                pass
+            risk_class = ActionRiskClass.READ
+            if act_enum:
+                defn = self.registry.get(act_enum)
+                if defn:
+                    risk_class = defn.risk_class
+            requires_confirm = risk_class == ActionRiskClass.EXECUTE
+
+            intent = InvestigationIntent(
+                intent_name=analysis.canonical_intent,
+                target_case=analysis.parameters.get("case_id", case_id),
+                target_entity=analysis.parameters.get("entity_id") or ctx.selected_entity_id,
+                target_evidence=analysis.parameters.get("evidence_id") or ctx.selected_evidence_id,
+                target_claim=analysis.parameters.get("claim_id") or ctx.selected_claim_id,
+                modality=CommandSource.CHAT,
+                language=analysis.language_mode.value,
+                risk_class=risk_class,
+                requires_confirmation=requires_confirm,
+                parameters=analysis.parameters,
+                confidence=analysis.confidence,
+                ambiguity=False,
+                raw_input=raw_text,
+            )
+            if correlation_id:
+                intent.correlation_id = correlation_id
+            return intent
+
+        # 3. Ambiguity check: Vague pronouns or actions without targets
         vague_phrases = [
             "open it",
             "show details",
@@ -324,7 +378,7 @@ class IntentNormalizer:
                     raw_input=raw_text,
                 )
 
-        # 3. Canonical Semantic Mapping
+        # 4. Fallback Semantic Mapping
         # Open Case / Continue Investigation
         if re.search(r"\b(open\s+case|load\s+case|continue\s+(the\s+)?investigation|resume\s+investigation)\b", text_lower):
             return InvestigationIntent(

@@ -253,6 +253,20 @@ class ActionExecutor:
                 ]
                 message = f"Retrieved {len(findings)} governed agent findings for case {case_id}."
 
+            elif action_type == UIActionType.GO_BACK:
+                output_data["navigated_back"] = True
+                message = "Returned to Level 0 Command Surface."
+
+            elif action_type == UIActionType.SUMMARIZE:
+                output_data["summary_type"] = arguments.get("focus") or "CASE_DOCKET"
+                output_data["case_id"] = case_id
+                message = f"Structured investigation summary docket loaded for case {case_id}."
+
+            elif action_type == UIActionType.SWITCH_LEVEL:
+                lvl = arguments.get("level", 0)
+                output_data["level"] = lvl
+                message = f"Transitioned to Level {lvl}."
+
             # Log audit event
             self.audit.log_access_event(
                 user_id=context.user_id,

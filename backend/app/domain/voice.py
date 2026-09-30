@@ -104,6 +104,8 @@ class VoiceCommandCandidate(BaseModel):
     language: str = "en-IN"
     transcript_text: str = ""
     is_ambiguous: bool = False
+    ambiguity_reason: Optional[str] = None
+    clarification_prompt: Optional[str] = None
     requested_action: Optional[str] = None
     requires_confirmation: bool = False
     risk_class: str = "READ"

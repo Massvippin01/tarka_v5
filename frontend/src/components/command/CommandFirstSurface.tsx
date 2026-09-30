@@ -40,6 +40,7 @@ export const CommandFirstSurface: React.FC = () => {
   const [partialTranscript, setPartialTranscript] = useState("");
   const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
   const [isMicrophoneSupported, setIsMicrophoneSupported] = useState(true);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState<boolean>(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -112,25 +113,9 @@ export const CommandFirstSurface: React.FC = () => {
   };
 
   /**
-   * Handle Toggle Voice Microphone
+   * Start streaming microphone capture with turn detection
    */
-  const handleToggleVoice = async () => {
-    if (voiceState === "LISTENING") {
-      voiceService.stopMicrophoneCapture();
-      setVoiceState("READY");
-      setPartialTranscript("");
-      return;
-    }
-
-    if (voiceState === "SPEAKING") {
-      // Immediate Barge-in
-      voiceService.stopSpeaking();
-      await voiceService.handleInterruption();
-      setVoiceState("INTERRUPTED");
-      setTimeout(() => setVoiceState("READY"), 1200);
-      return;
-    }
-
+  const startListening = async () => {
     try {
       setVoiceState("LISTENING");
       setStatusFeedback(null);
@@ -162,6 +147,45 @@ export const CommandFirstSurface: React.FC = () => {
       setStatusFeedback(`Voice failure: ${e.message || e}`);
       setTimeout(() => setVoiceState("READY"), 2500);
     }
+  };
+
+  /**
+   * Handle Toggle Voice Microphone with Canonical Intro on first open
+   */
+  const handleToggleVoice = async () => {
+    if (voiceState === "LISTENING") {
+      voiceService.stopMicrophoneCapture();
+      setVoiceState("READY");
+      setPartialTranscript("");
+      return;
+    }
+
+    if (voiceState === "SPEAKING") {
+      // Immediate Barge-in interruption
+      voiceService.stopSpeaking();
+      await voiceService.handleInterruption();
+      setVoiceState("INTERRUPTED");
+      setTimeout(() => setVoiceState("READY"), 1200);
+      return;
+    }
+
+    // Canonical Intro on explicit voice activation / first open
+    if (!hasPlayedIntro) {
+      setHasPlayedIntro(true);
+      setVoiceState("SPEAKING");
+      try {
+        const intro = await voiceService.getCanonicalIntro();
+        setStatusFeedback(intro.display_text);
+        voiceService.speakResponse(intro.spoken_text, () => {
+          startListening();
+        });
+        return;
+      } catch (introErr) {
+        console.warn("[CommandFirstSurface] Intro skipped:", introErr);
+      }
+    }
+
+    await startListening();
   };
 
   /**

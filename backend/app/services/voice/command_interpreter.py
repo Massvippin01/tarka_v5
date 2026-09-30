@@ -48,15 +48,44 @@ class VoiceCommandInterpreter:
 
         text_lower = raw_text.lower()
 
-        # ── 1. Multilingual / Code-Switch Normalization ───────────────────
-        # Hindi: "contradictions ka summary dikhao" -> "show contradictions"
-        # Tamil: "case-la contradictions show pannu" -> "show contradictions"
-        normalized_text = self._normalize_multilingual(text_lower)
-
-        # ── 2. Intent Resolution (Reusing Phase 2 Canonical Taxonomy) ───
-        intent_name, action_type, params, risk_class, is_ambiguous = self._map_to_canonical_intent(
-            normalized_text, raw_text, context
+        # ── 1. Multilingual Normalization Layer ──────────────────────────
+        from app.services.interaction.multilingual_normalizer import MultilingualNormalizer
+        normalizer = MultilingualNormalizer.get_instance()
+        analysis = normalizer.analyze_and_normalize(
+            utterance=raw_text,
+            context_case_id=context.case_id,
+            selected_entity_id=context.selected_entity_id,
+            selected_claim_id=context.selected_claim_id,
         )
+
+        if analysis.is_ambiguous:
+            return VoiceCommandCandidate(
+                transcript_id=transcript.transcript_id,
+                intent="AMBIGUOUS_COMMAND",
+                is_ambiguous=True,
+                transcript_text=raw_text,
+                language=analysis.language_mode.value if analysis and analysis.language_mode.value != "en" else transcript.language,
+                ambiguity_reason=analysis.ambiguity_reason,
+                clarification_prompt=analysis.clarification_prompt,
+            )
+
+        # Check if canonical intent resolved from multilingual normalizer
+        if analysis.canonical_intent != "SEARCH" and analysis.canonical_action:
+            intent_name = analysis.canonical_intent
+            action_type = analysis.canonical_action
+            params = analysis.parameters
+            risk_class = ActionRiskClass.READ
+            is_ambiguous = False
+            clarification_prompt = None
+            ambiguity_reason = None
+        else:
+            # Fallback to existing intent mapping (agent tasks, high-risk executions, searches)
+            normalized_text = self._normalize_multilingual(text_lower)
+            intent_name, action_type, params, risk_class, is_ambiguous = self._map_to_canonical_intent(
+                normalized_text, raw_text, context
+            )
+            clarification_prompt = analysis.clarification_prompt
+            ambiguity_reason = analysis.ambiguity_reason
 
         requires_confirm = risk_class == ActionRiskClass.EXECUTE
         confirm_msg = (
@@ -71,9 +100,11 @@ class VoiceCommandInterpreter:
             action=action_type,
             parameters=params,
             confidence=transcript.confidence,
-            language=transcript.language,
+            language=analysis.language_mode.value if analysis and analysis.language_mode.value != "en" else transcript.language,
             transcript_text=raw_text,
             is_ambiguous=is_ambiguous,
+            ambiguity_reason=ambiguity_reason,
+            clarification_prompt=clarification_prompt,
             requested_action=action_type,
             requires_confirmation=requires_confirm,
             risk_class=risk_class.value,

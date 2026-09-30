@@ -125,6 +125,29 @@ async def process_voice_turn(
     return response
 
 
+@router.get("/session/{session_id}/intro", response_model=VoiceResponse)
+@router.get("/intro", response_model=VoiceResponse)
+async def get_canonical_intro(
+    session_id: Optional[str] = None,
+    language: str = "en-IN",
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Play/return canonical intro on explicit voice activation / first open.
+    """
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    if not gateway.session_manager.get_session(target_session_id):
+        sess, _ = await gateway.create_voice_session(user=user, language=language)
+        target_session_id = sess.session_id
+
+    response = await gateway.get_canonical_intro(
+        session_id=target_session_id,
+        language=language,
+    )
+    return response
+
+
 @router.post("/session/{session_id}/interrupt")
 @router.post("/interrupt")
 async def handle_interruption(
