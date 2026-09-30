@@ -135,8 +135,8 @@ class CommandBus:
             if not defn:
                 continue
 
-            # If action is high-risk and confirmation is required
-            if defn.risk_class == ActionRiskClass.EXECUTE:
+            # If action or command is high-risk and confirmation is required
+            if command.risk_class == ActionRiskClass.EXECUTE or defn.risk_class == ActionRiskClass.EXECUTE:
                 confirmation_token = command.authorization_context.get("confirmation_token")
                 if not confirmation_token:
                     challenge = ConfirmationChallenge(
