@@ -325,6 +325,42 @@ class IntentNormalizer:
                 )
 
         # 3. Canonical Semantic Mapping
+        # Open Case / Continue Investigation
+        if re.search(r"\b(open\s+case|load\s+case|continue\s+(the\s+)?investigation|resume\s+investigation)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.OPEN_CASE.value,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, **args},
+                raw_input=raw_text,
+            )
+
+        # Go Back / Return to Command
+        if re.search(r"\b(go\s+back|return(\s+to\s+command)?|previous\s+view)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.GO_BACK.value,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, **args},
+                raw_input=raw_text,
+            )
+
+        # Summarize Case
+        if re.search(r"\b(summarize|case\s+summary|investigation\s+summary|summary\s+docket)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.SUMMARIZE.value,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, **args},
+                raw_input=raw_text,
+            )
+
         # Graph
         if re.search(r"\b(open\s+(the\s+)?graph|show\s+graph|intelligence\s+graph|view\s+graph)\b", text_lower):
             return InvestigationIntent(
@@ -412,6 +448,44 @@ class IntentNormalizer:
                 language=language,
                 confidence=0.98,
                 parameters={"case_id": case_id, "claim_id": claim_id, **args},
+                raw_input=raw_text,
+            )
+
+        # Trace Relationship
+        if re.search(r"\b(trace\s+relationship|inspect\s+relationship|show\s+relationship)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.TRACE_PROVENANCE.value,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.95,
+                parameters={"case_id": case_id, **args},
+                raw_input=raw_text,
+            )
+
+        # Show Entity
+        if re.search(r"\b(show\s+entity|open\s+entity|inspect\s+entity)\b", text_lower):
+            ent_id = args.get("entity_id") or ctx.selected_entity_id or "P001"
+            return InvestigationIntent(
+                intent_name=UIActionType.OPEN_ENTITY.value,
+                target_case=case_id,
+                target_entity=ent_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.95,
+                parameters={"case_id": case_id, "entity_id": ent_id, **args},
+                raw_input=raw_text,
+            )
+
+        # Explain Reasoning / Findings
+        if re.search(r"\b(explain(\s+this)?|explain\s+reasoning|why\s+this|explain\s+hypothesis)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.SHOW_AGENT_FINDINGS.value,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.95,
+                parameters={"case_id": case_id, "objective": raw_text, **args},
                 raw_input=raw_text,
             )
 

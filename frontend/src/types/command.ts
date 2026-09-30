@@ -32,6 +32,9 @@ export type UIActionType =
   | "SHOW_SUPPORT"
   | "SHOW_CONTRADICTION"
   | "SHOW_GAP"
+  | "GO_BACK"
+  | "SUMMARIZE"
+  | "SWITCH_LEVEL"
   | "RUN_AGENT_TASK"
   | "SHOW_AGENT_FINDINGS";
 

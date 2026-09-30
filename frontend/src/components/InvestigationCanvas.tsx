@@ -26,6 +26,10 @@ import { ClaimInspector } from "./investigation/ClaimInspector";
 import { EvidenceImpactPanel } from "./investigation/EvidenceImpactPanel";
 import { GovernedIntelligenceSentinel } from "./investigation/GovernedIntelligenceSentinel";
 import { FirstOpenController } from "./onboarding/FirstOpenController";
+import { CommandFirstSurface } from "./command/CommandFirstSurface";
+import { InvestigationFocusSurface } from "./command/InvestigationFocusSurface";
+import { ForensicDetailSurface } from "./command/ForensicDetailSurface";
+import { AuditGovernanceSurface } from "./command/AuditGovernanceSurface";
 
 export const InvestigationCanvas: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -46,6 +50,9 @@ export const InvestigationCanvas: React.FC = () => {
     newEvidenceAlert,
     isOnboarding,
     operatingContext,
+    experienceLevel,
+    setExperienceLevel,
+    returnToCommandSurface,
     dismissOnboarding,
     selectCase,
     selectEntity,
@@ -57,6 +64,21 @@ export const InvestigationCanvas: React.FC = () => {
     runCopilotQuery,
     dismissNewEvidenceAlert,
   } = useInvestigation();
+
+  // Global Keyboard Shortcuts for Progressive Disclosure (Esc -> L0, Alt+0..4 -> Levels)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isAuthOpen && !isCommandSearchOpen && !copilotOpen) {
+        returnToCommandSurface();
+      }
+      if (e.altKey && ["0", "1", "2", "3", "4"].includes(e.key)) {
+        e.preventDefault();
+        setExperienceLevel(parseInt(e.key, 10) as any);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAuthOpen, isCommandSearchOpen, copilotOpen, returnToCommandSurface, setExperienceLevel]);
 
   const LENSES: { id: WorkspaceLens; label: string; icon: string }[] = [
     { id: "Overview", label: "OVERVIEW", icon: "" },
@@ -70,39 +92,50 @@ export const InvestigationCanvas: React.FC = () => {
 
   return (
     <div style={styles.appShell}>
-      {/* Top Breadcrumb & Orientation Bar */}
-      <BreadcrumbBar
-        onOpenCommandSearch={() => setIsCommandSearchOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-      />
+      {/* Progressive Disclosure Rendering: Level 0 (Command), Level 1 (Focus), Level 2 (Analytical Workspace), Level 3 (Forensic Detail), Level 4 (Audit & Governance) */}
+      {experienceLevel === 0 ? (
+        <CommandFirstSurface />
+      ) : experienceLevel === 1 ? (
+        <InvestigationFocusSurface />
+      ) : experienceLevel === 3 ? (
+        <ForensicDetailSurface />
+      ) : experienceLevel === 4 ? (
+        <AuditGovernanceSurface />
+      ) : (
+        <>
+          {/* Top Breadcrumb & Orientation Bar */}
+          <BreadcrumbBar
+            onOpenCommandSearch={() => setIsCommandSearchOpen(true)}
+            onOpenAuth={() => setIsAuthOpen(true)}
+          />
 
-      {/* Non-Blocking Realtime Evidence Alert Banner */}
-      {newEvidenceAlert && (
-        <div style={styles.alertBanner}>
-          <span>
-             <strong>REALTIME EVIDENCE INGESTION:</strong> New CAS artifact validated. Existing analysis remained immutable.
-          </span>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              style={styles.alertActionBtn}
-              onClick={() => runCopilotQuery(`Re-analyze case ${activeCaseId} with latest evidence`)}
-            >
-              RUN DELTA REASONING
-            </button>
-            <button style={styles.alertDismissBtn} onClick={dismissNewEvidenceAlert}>
-              DISMISS
-            </button>
-          </div>
-        </div>
-      )}
+          {/* Non-Blocking Realtime Evidence Alert Banner */}
+          {newEvidenceAlert && (
+            <div style={styles.alertBanner}>
+              <span>
+                <strong>REALTIME EVIDENCE INGESTION:</strong> New CAS artifact validated. Existing analysis remained immutable.
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  style={styles.alertActionBtn}
+                  onClick={() => runCopilotQuery(`Re-analyze case ${activeCaseId} with latest evidence`)}
+                >
+                  RUN DELTA REASONING
+                </button>
+                <button style={styles.alertDismissBtn} onClick={dismissNewEvidenceAlert}>
+                  DISMISS
+                </button>
+              </div>
+            </div>
+          )}
 
-      {/* Main Workspace Body */}
-      <div style={styles.workspaceBody}>
-        {/* Compact Navigation Rail (Left) */}
-        <LeftNavRail />
+          {/* Main Workspace Body */}
+          <div style={styles.workspaceBody}>
+            {/* Compact Navigation Rail (Left) */}
+            <LeftNavRail />
 
-        {/* State Telemetry Panel (Left of Center) */}
-        <InvestigationStatePanel />
+            {/* State Telemetry Panel (Left of Center) */}
+            <InvestigationStatePanel />
 
         {/* Central Dominant Analytical Surface */}
         <div style={styles.centerSection}>
@@ -259,6 +292,8 @@ export const InvestigationCanvas: React.FC = () => {
         onSelectEvent={(ev) => selectEntity(ev.entityId)}
         onInspectRelationship={() => selectRelationship("rel-p1-p2")}
       />
+        </>
+      )}
 
       {/* LiveProof Lineage Drawer Overlay */}
       <LiveProofDrawer />
@@ -284,8 +319,8 @@ export const InvestigationCanvas: React.FC = () => {
         onSuccess={() => setIsAuthOpen(false)}
       />
 
-      {/* First-Open Operating Context & Onboarding Controller */}
-      {isOnboarding && operatingContext && (
+      {/* First-Open Operating Context & Onboarding Controller (Active on Level 2 when onboarding) */}
+      {isOnboarding && operatingContext && experienceLevel === 2 && (
         <FirstOpenController
           operatingContext={operatingContext}
           onSelectCase={(caseId, route) => selectCase(caseId, route)}

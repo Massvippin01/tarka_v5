@@ -315,3 +315,31 @@ class UIActionRegistry:
                 audit_event="AGENT_FINDINGS_DISPLAYED",
             )
         )
+
+        # 5. Progressive Disclosure & Navigation Actions (Experience Refinement E1)
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GO_BACK,
+                description="Navigate back to previous view or return to Level 0 Command Surface.",
+                expected_ui_effect="Transitions investigator back to previous state or command surface.",
+                audit_event="UI_NAVIGATED_BACK",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.SUMMARIZE,
+                description="Display structured investigation summary docket.",
+                expected_ui_effect="Transitions to Level 1 investigation focus docket.",
+                optional_arguments=["case_id"],
+                audit_event="UI_CASE_SUMMARIZED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.SWITCH_LEVEL,
+                description="Switch active progressive disclosure experience level (0-4).",
+                expected_ui_effect="Switches surface layout to specified experience level.",
+                required_arguments=["level"],
+                audit_event="UI_LEVEL_SWITCHED",
+            )
+        )

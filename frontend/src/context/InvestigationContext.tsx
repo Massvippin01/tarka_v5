@@ -74,8 +74,13 @@ export interface NavigationHistoryItem {
   timestamp: string;
 }
 
+export type ExperienceLevel = 0 | 1 | 2 | 3 | 4;
+
 export interface InvestigationContextType {
   activeCaseId: string;
+  experienceLevel: ExperienceLevel;
+  setExperienceLevel: (level: ExperienceLevel) => void;
+  returnToCommandSurface: () => void;
   activeNav: NavRoute;
   activeLens: WorkspaceLens;
   selectedEntityId: string | null;
@@ -153,6 +158,24 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const hasExistingSession = !!(initialCaseParam || (storedSessionActive === "true" && storedCaseId));
 
+  const initialLevelParam = initialParams.get("level");
+  const parsedLevel = initialLevelParam !== null ? parseInt(initialLevelParam, 10) : null;
+  const initialExperienceLevel: ExperienceLevel =
+    parsedLevel !== null && [0, 1, 2, 3, 4].includes(parsedLevel as any)
+      ? (parsedLevel as ExperienceLevel)
+      : 0;
+
+  const [experienceLevel, setExperienceLevelState] = useState<ExperienceLevel>(initialExperienceLevel);
+
+  const setExperienceLevel = (level: ExperienceLevel) => {
+    setExperienceLevelState(level);
+    dispatchEvent("NAVIGATED", { experienceLevel: level });
+  };
+
+  const returnToCommandSurface = () => {
+    setExperienceLevel(0);
+  };
+
   const [isOnboarding, setIsOnboarding] = useState<boolean>(!hasExistingSession);
   const [operatingContext, setOperatingContext] = useState<OperatingContext | null>(null);
   const [activeCaseId, setActiveCaseId] = useState<string>(initialCaseParam || storedCaseId || "CASE-2026-001");
@@ -224,10 +247,11 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (selectedRelationshipId) params.set("rel", selectedRelationshipId);
     if (canvasMode) params.set("mode", canvasMode);
     if (activeRightTab) params.set("tab", activeRightTab);
+    params.set("level", String(experienceLevel));
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", newUrl);
-  }, [activeCaseId, activeNav, activeLens, selectedEntityId, selectedRelationshipId, canvasMode, activeRightTab]);
+  }, [activeCaseId, activeNav, activeLens, selectedEntityId, selectedRelationshipId, canvasMode, activeRightTab, experienceLevel]);
 
   // Realtime Server-Sent Events (SSE) Listener
   useEffect(() => {
@@ -322,15 +346,20 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       sessionStorage.setItem("sentinelx_session_active", "true");
       sessionStorage.setItem("sentinelx_case_id", caseId);
     }
-    if (route === "graph") {
+    if (route === "focus") {
+      setExperienceLevel(1);
+    } else if (route === "graph") {
       setActiveNavState("network");
       setActiveWorkspaceView("graph");
       setActiveLensState("Network");
+      setExperienceLevel(2);
     } else if (route === "evidence") {
       setActiveNavState("evidence");
       setActiveLensState("Evidence");
+      setExperienceLevel(2);
     } else if (route === "search") {
       setActiveNavState("search");
+      setExperienceLevel(2);
     } else {
       setActiveNavState("command");
     }
@@ -465,6 +494,8 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
           setActiveRightTab,
           setEntityFilters,
           toggleCopilot,
+          setExperienceLevel,
+          returnToCommandSurface,
         });
       }
       return result;
@@ -483,6 +514,8 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       setActiveRightTab,
       setEntityFilters,
       toggleCopilot,
+      setExperienceLevel,
+      returnToCommandSurface,
     ]
   );
 
@@ -502,6 +535,9 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     <InvestigationContext.Provider
       value={{
         activeCaseId,
+        experienceLevel,
+        setExperienceLevel,
+        returnToCommandSurface,
         activeNav,
         activeLens,
         selectedEntityId,

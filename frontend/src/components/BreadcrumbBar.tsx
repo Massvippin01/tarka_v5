@@ -20,6 +20,8 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
     copilotOpen,
     toggleCopilot,
     reopenOnboarding,
+    experienceLevel,
+    setExperienceLevel,
   } = useInvestigation();
 
   const { theme, cycleTheme } = useTheme();
@@ -48,8 +50,65 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
         color: "var(--text-primary)",
       }}
     >
-      {/* Left: Document-Style Case Context & Jurisdiction */}
+      {/* Left: Document-Style Case Context & Progressive Disclosure Level Navigator */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+        {/* Command Surface Return Button */}
+        <button
+          onClick={() => setExperienceLevel(0)}
+          style={{
+            backgroundColor: "transparent",
+            border: "1px solid var(--border-structural)",
+            color: "var(--primary-accent)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            fontWeight: 600,
+            padding: "2px 8px",
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+          title="Return to Level 0 Command Surface (Esc)"
+        >
+          <span>← L0 COMMAND</span>
+        </button>
+
+        <span style={{ color: "var(--border-strong)" }}>·</span>
+
+        {/* Level Switcher */}
+        <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+          {[
+            { level: 0, label: "L0" },
+            { level: 1, label: "L1 Focus" },
+            { level: 2, label: "L2 Workspace" },
+            { level: 3, label: "L3 Forensic" },
+            { level: 4, label: "L4 Audit" },
+          ].map((item) => (
+            <button
+              key={item.level}
+              onClick={() => setExperienceLevel(item.level as any)}
+              style={{
+                backgroundColor: experienceLevel === item.level ? "var(--surface-selected)" : "transparent",
+                borderColor: experienceLevel === item.level ? "var(--primary-accent)" : "var(--border-structural)",
+                borderWidth: "1px",
+                borderStyle: "solid",
+                color: experienceLevel === item.level ? "var(--text-primary)" : "var(--text-secondary)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "10px",
+                fontWeight: experienceLevel === item.level ? 700 : 500,
+                padding: "1px 5px",
+                borderRadius: "var(--radius-sm)",
+                cursor: "pointer",
+              }}
+              title={`Switch to Experience Level ${item.level}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <span style={{ color: "var(--border-strong)" }}>·</span>
         {/* Case Selector presented as Document Title */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span

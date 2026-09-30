@@ -52,6 +52,11 @@ class UIActionType(str, Enum):
     SHOW_CONTRADICTION = "SHOW_CONTRADICTION"
     SHOW_GAP = "SHOW_GAP"
 
+    # Navigation & Progressive Disclosure Actions (Experience Refinement E1)
+    GO_BACK = "GO_BACK"
+    SUMMARIZE = "SUMMARIZE"
+    SWITCH_LEVEL = "SWITCH_LEVEL"
+
     # Governed Agent Actions (Phase 3)
     RUN_AGENT_TASK = "RUN_AGENT_TASK"
     SHOW_AGENT_FINDINGS = "SHOW_AGENT_FINDINGS"

@@ -15,6 +15,8 @@ export interface UIActionsHandlerContext {
   setActiveRightTab?: (tab: any) => void;
   setEntityFilters?: (types: string[]) => void;
   toggleCopilot?: (open?: boolean) => void;
+  setExperienceLevel?: (level: 0 | 1 | 2 | 3 | 4) => void;
+  returnToCommandSurface?: () => void;
 }
 
 /**
@@ -37,6 +39,9 @@ export function executeUIActions(
         if (args.case_id) {
           handlers.selectCase(args.case_id);
         }
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(args.level !== undefined ? args.level : 1);
+        }
         break;
 
       case "OPEN_GRAPH":
@@ -45,23 +50,35 @@ export function executeUIActions(
         if (handlers.setActiveLens) {
           handlers.setActiveLens("Network");
         }
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "OPEN_TIMELINE":
         handlers.setActiveNav("timeline");
         handlers.setActiveWorkspaceView("timeline");
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "OPEN_CONTRADICTIONS":
       case "SHOW_CONTRADICTION":
         handlers.setActiveNav("contradictions");
         handlers.setActiveWorkspaceView("contradictions");
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "OPEN_GAPS":
       case "SHOW_GAP":
         handlers.setActiveNav("gaps");
         handlers.setActiveWorkspaceView("gaps");
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "OPEN_PROOF":
@@ -70,6 +87,9 @@ export function executeUIActions(
           handlers.openProofDrawer(args.claim_id);
         } else {
           handlers.openProofDrawer("CLM-2026-001");
+        }
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(3);
         }
         break;
 
@@ -80,6 +100,9 @@ export function executeUIActions(
           handlers.setActiveNav("entities");
           if (handlers.setActiveRightTab) {
             handlers.setActiveRightTab("dossier");
+          }
+          if (handlers.setExperienceLevel) {
+            handlers.setExperienceLevel(args.deep ? 3 : 2);
           }
         }
         break;
@@ -92,6 +115,9 @@ export function executeUIActions(
           if (handlers.setActiveRightTab) {
             handlers.setActiveRightTab("evidence");
           }
+          if (handlers.setExperienceLevel) {
+            handlers.setExperienceLevel(2);
+          }
         }
         break;
 
@@ -99,6 +125,9 @@ export function executeUIActions(
         if (args.claim_id) {
           if (handlers.selectClaim) handlers.selectClaim(args.claim_id);
           handlers.openProofDrawer(args.claim_id);
+          if (handlers.setExperienceLevel) {
+            handlers.setExperienceLevel(3);
+          }
         }
         break;
 
@@ -108,10 +137,16 @@ export function executeUIActions(
         if (args.entity_a) {
           handlers.selectEntity(args.entity_a);
         }
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "SEARCH":
         handlers.setActiveNav("entities");
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(2);
+        }
         break;
 
       case "FILTER":
@@ -125,6 +160,30 @@ export function executeUIActions(
           handlers.selectEntity(args.target_id);
         } else if (args.target_type === "EVIDENCE" && args.target_id) {
           handlers.selectEvidence(args.target_id);
+        }
+        break;
+
+      // ── Progressive Disclosure & Navigation Actions ───────────
+      case "GO_BACK":
+        if (handlers.returnToCommandSurface) {
+          handlers.returnToCommandSurface();
+        } else if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(0);
+        }
+        break;
+
+      case "SUMMARIZE":
+        if (handlers.setExperienceLevel) {
+          handlers.setExperienceLevel(1);
+        }
+        break;
+
+      case "SWITCH_LEVEL":
+        if (handlers.setExperienceLevel && args.level !== undefined) {
+          const lvl = Number(args.level);
+          if ([0, 1, 2, 3, 4].includes(lvl as any)) {
+            handlers.setExperienceLevel(lvl as 0 | 1 | 2 | 3 | 4);
+          }
         }
         break;
 
