@@ -201,6 +201,42 @@ class CommandBus:
             },
         )
 
+        # 8. Governed Memory Projection
+        try:
+            from app.services.memory.memory_service import MemoryService
+            from app.services.memory.episodic_memory import EpisodicMemoryManager
+            from app.domain.operating_context import OperatingContext
+            mem_service = MemoryService.get_instance()
+            ep_rec = EpisodicMemoryManager.create_investigator_action_record(
+                case_id=case_id or "GENERAL",
+                investigator_id=resolved_context.user_id,
+                action_name=f"{command.source.value}:{command.intent}",
+                details={"command_id": command.command_id, "actions": [a.action_type.value for a in executed_ui_actions]},
+                audit_event_id=f"AUD-{command.correlation_id[:8]}",
+                jurisdiction=resolved_context.jurisdiction or "NATIONAL_CYBER_CRIME_COORDINATION",
+            )
+            mem_service.store.save_record(ep_rec)
+            wm = mem_service.working_manager.get_or_create(
+                session_id=resolved_context.session_id or f"SES-{command.correlation_id[:8]}",
+                case_id=case_id or "GENERAL",
+                investigator_id=resolved_context.user_id,
+                jurisdiction=resolved_context.jurisdiction or "NATIONAL_CYBER_CRIME_COORDINATION",
+            )
+            wm.add_command({
+                "source": command.source.value,
+                "intent": command.intent,
+                "command_id": command.command_id,
+                "timestamp": datetime.now(UTC).isoformat(),
+            })
+            if command.source.value == "VOICE":
+                wm.add_voice_turn({
+                    "intent": command.intent,
+                    "transcript": command.payload.get("raw_transcript", command.intent),
+                    "timestamp": datetime.now(UTC).isoformat(),
+                })
+        except Exception as ex:
+            logger.debug("Memory projection from CommandBus skipped: %s", ex)
+
         return CommandExecutionResult(
             command_id=command.command_id,
             correlation_id=command.correlation_id,

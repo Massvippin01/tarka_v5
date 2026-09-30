@@ -221,9 +221,29 @@ class AgentSupervisor:
             task.status = TaskStatus.COMPLETED
             task.completed_at = datetime.now(UTC).isoformat()
 
-            # Store findings
+            # Store findings & project to episodic memory
             for finding in validated_findings:
                 self._all_findings[finding.finding_id] = finding
+                try:
+                    from app.services.memory.memory_service import MemoryService
+                    from app.services.memory.episodic_memory import EpisodicMemoryManager
+                    from app.domain.memory import MemoryEpistemicStatus
+                    mem_svc = MemoryService.get_instance()
+                    ep_rec = EpisodicMemoryManager.create_agent_finding_record(
+                        case_id=task.case_id,
+                        agent_id=agent.agent_id,
+                        task_id=task.task_id,
+                        finding_id=finding.finding_id,
+                        finding_type=finding.finding_type.value,
+                        summary=finding.title,
+                        epistemic_status=MemoryEpistemicStatus.PROPOSED,
+                        confidence=finding.confidence,
+                        supporting_evidence_ids=finding.supporting_evidence_ids,
+                        supporting_fact_ids=finding.supporting_fact_ids,
+                    )
+                    mem_svc.store.save_record(ep_rec)
+                except Exception as ex:
+                    logger.debug("Episodic memory projection for agent finding failed: %s", ex)
 
             logger.info(
                 f"Task {task.task_id} completed: {len(validated_findings)} findings "
@@ -254,6 +274,18 @@ class AgentSupervisor:
 
     def get_active_tasks(self) -> List[AgentTask]:
         return list(self._active_tasks.values())
+
+    def query_memory_for_agent(
+        self,
+        case_id: str,
+        query_text: str,
+        context: Any,
+    ) -> Any:
+        """Allow governed agents to read investigation memory strictly via MemoryRetriever."""
+        from app.services.memory.memory_service import MemoryService
+        from app.domain.memory import MemoryQuery
+        mem_svc = MemoryService.get_instance()
+        return mem_svc.query(MemoryQuery(case_id=case_id, query_text=query_text), context)
 
     # ── Finding Validation ───────────────────────────────────────────────
 

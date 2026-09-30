@@ -116,6 +116,33 @@ class AuditService:
         self.audit_records.append(payload)
         return payload
 
+    def log_event(
+        self,
+        event_type: str,
+        actor_id: str,
+        case_id: str,
+        action_details: Dict[str, Any],
+        session_id: str = "SESSION-ADMIN-01",
+    ) -> Dict[str, Any]:
+        audit_id = f"AUD-{uuid4().hex[:8]}"
+        timestamp = datetime.now(UTC).isoformat()
+        payload = {
+            "audit_id": audit_id,
+            "event_type": event_type,
+            "timestamp": timestamp,
+            "session_id": session_id,
+            "actor_id": actor_id,
+            "case_id": case_id,
+            "details": action_details,
+        }
+        event_hash = self._compute_event_hash(self._last_hash, payload)
+        payload["previous_hash"] = self._last_hash
+        payload["event_hash"] = event_hash
+        self._last_hash = event_hash
+
+        self.audit_records.append(payload)
+        return payload
+
     def get_audit_logs(self, limit: int = 50) -> List[Dict[str, Any]]:
         return self.audit_records[-limit:]
 

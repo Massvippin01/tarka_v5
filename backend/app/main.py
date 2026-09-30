@@ -146,6 +146,14 @@ app.include_router(
     tags=["Governed Agent Control Plane"],
 )
 
+from app.api.memory_api import router as memory_router
+
+app.include_router(
+    memory_router,
+    prefix="/api/v1/memory",
+    tags=["Governed Investigation Memory"],
+)
+
 
 @app.get("/")
 def root():

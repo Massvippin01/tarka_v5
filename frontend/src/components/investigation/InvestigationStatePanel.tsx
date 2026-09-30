@@ -164,6 +164,93 @@ export const InvestigationStatePanel: React.FC = () => {
         </div>
       </div>
 
+      {/* Governed Investigation Memory (Tiers 1-4) */}
+      <div style={styles.sourceSection}>
+        <div style={styles.sectionLabel}>GOVERNED MEMORY (TIERS 1–4)</div>
+        <div style={styles.sourceList}>
+          <div style={styles.sourceItem}>
+            <span>T1 Working Context</span>
+            <span style={{ ...styles.sourceTag, color: "#0284c7", background: "rgba(2, 132, 199, 0.12)" }}>
+              BOUNDED
+            </span>
+          </div>
+          <div style={styles.sourceItem}>
+            <span>T2 Chronological Episodic</span>
+            <span style={{ ...styles.sourceTag, color: "#16a34a", background: "rgba(22, 163, 74, 0.12)" }}>
+              APPEND-ONLY
+            </span>
+          </div>
+          <div style={styles.sourceItem}>
+            <span>T3 Validated Semantic</span>
+            <span style={{ ...styles.sourceTag, color: "#8b5cf6", background: "rgba(139, 92, 246, 0.12)" }}>
+              PROVENANCE
+            </span>
+          </div>
+          <div style={styles.sourceItem}>
+            <span>T4 Approved Organizational</span>
+            <span style={{ ...styles.sourceTag, color: "#ea580c", background: "rgba(234, 88, 12, 0.12)" }}>
+              GOVERNED
+            </span>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+          <button
+            style={{
+              flex: 1,
+              padding: "4px 8px",
+              background: "#FAF8F3",
+              border: "1px solid #D8D2C7",
+              fontSize: "10px",
+              fontWeight: 600,
+              fontFamily: "'IBM Plex Mono', monospace",
+              cursor: "pointer",
+              borderRadius: "2px",
+            }}
+            onClick={async () => {
+              try {
+                const res = await fetch("http://localhost:8000/api/v1/memory/snapshot", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ case_id: activeCaseId }),
+                });
+                if (res.ok) alert(`Memory Snapshot Captured for ${activeCaseId}`);
+              } catch (e) {
+                console.warn("Snapshot call failed", e);
+              }
+            }}
+          >
+            📸 Snapshot
+          </button>
+          <button
+            style={{
+              flex: 1,
+              padding: "4px 8px",
+              background: "#FAF8F3",
+              border: "1px solid #D8D2C7",
+              fontSize: "10px",
+              fontWeight: 600,
+              fontFamily: "'IBM Plex Mono', monospace",
+              cursor: "pointer",
+              borderRadius: "2px",
+            }}
+            onClick={async () => {
+              try {
+                const res = await fetch("http://localhost:8000/api/v1/memory/rehydrate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ case_id: activeCaseId }),
+                });
+                if (res.ok) alert(`Memory Rehydrated for ${activeCaseId}`);
+              } catch (e) {
+                console.warn("Rehydration call failed", e);
+              }
+            }}
+          >
+            🔄 Rehydrate
+          </button>
+        </div>
+      </div>
+
       {/* Statutory & Epistemic Disclaimer */}
       <div style={styles.disclaimerBox}>
         <strong>EPISTEMIC SAFETY MANDATE</strong>
