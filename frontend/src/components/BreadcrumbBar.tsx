@@ -2,6 +2,7 @@ import React from "react";
 import { useInvestigation } from "../context/InvestigationContext";
 import { useTheme } from "../context/ThemeContext";
 import { VoiceCommandOverlay } from "./VoiceCommandOverlay";
+import { InvestigationContextIndicator } from "./InvestigationContextIndicator";
 
 interface BreadcrumbBarProps {
   onOpenCommandSearch: () => void;
@@ -14,7 +15,6 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
 }) => {
   const {
     activeCaseId,
-    selectedEntityId,
     realtimeState,
     selectCase,
     copilotOpen,
@@ -170,23 +170,8 @@ export const BreadcrumbBar: React.FC<BreadcrumbBarProps> = ({
           RESTRICTED // LE SENSITIVE
         </span>
 
-        {selectedEntityId && (
-          <>
-            <span style={{ color: "var(--border-strong)" }}>·</span>
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "11px",
-                color: "var(--text-secondary)",
-                padding: "1px 6px",
-                backgroundColor: "var(--surface-secondary)",
-                borderRadius: "var(--radius-sm)",
-              }}
-            >
-              FOCUS: {selectedEntityId}
-            </span>
-          </>
-        )}
+        <span style={{ color: "var(--border-strong)" }}>·</span>
+        <InvestigationContextIndicator />
       </div>
 
       {/* Right: Operational Controls */}

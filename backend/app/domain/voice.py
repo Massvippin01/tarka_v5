@@ -96,7 +96,7 @@ class Transcript(BaseModel):
 
 class VoiceCommandCandidate(BaseModel):
     candidate_id: str = Field(default_factory=lambda: f"VCC-{uuid4().hex[:8]}")
-    transcript_id: str
+    transcript_id: str = Field(default_factory=lambda: f"TR-{uuid4().hex[:8]}")
     intent: str
     action: Optional[str] = None
     request_class: str = "NAVIGATION_REQUEST"

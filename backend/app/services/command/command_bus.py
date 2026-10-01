@@ -340,6 +340,37 @@ class CommandBus:
         except Exception as ex:
             logger.debug("Memory projection from CommandBus skipped: %s", ex)
 
+        # 8b. Update Investigation Context Snapshot (Subphase A3)
+        try:
+            from app.services.interaction.investigation_context_manager import InvestigationContextManager
+            ctx_mgr = InvestigationContextManager.get_instance()
+            ses_id = resolved_context.session_id or f"SES-{command.correlation_id[:8]}"
+            ctx_mgr.record_command_execution(
+                session_id=ses_id,
+                case_id=case_id,
+                command_id=command.command_id,
+                intent_name=command.intent,
+                status="SUCCESS",
+                output_data=combined_output,
+                correlation_id=command.correlation_id,
+            )
+            sel_ent = command.arguments.get("entity_id")
+            sel_ev = command.arguments.get("evidence_id")
+            sel_clm = command.arguments.get("claim_id")
+            sel_rel = command.arguments.get("relationship_id")
+            if any([sel_ent, sel_ev, sel_clm, sel_rel]):
+                ctx_mgr.set_selection(
+                    session_id=ses_id,
+                    case_id=case_id,
+                    entity_id=sel_ent,
+                    relationship_id=sel_rel,
+                    evidence_ids=[sel_ev] if sel_ev else None,
+                    claim_id=sel_clm,
+                    correlation_id=command.correlation_id,
+                )
+        except Exception as ex:
+            logger.debug("InvestigationContextManager update skipped: %s", ex)
+
         return CommandExecutionResult(
             command_id=command.command_id,
             correlation_id=command.correlation_id,

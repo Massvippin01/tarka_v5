@@ -65,6 +65,7 @@ class InteractionContext(BaseModel):
     """
     Unified operational context maintained across all control modalities.
     """
+    session_id: str = "SES-DEFAULT"
     user_id: str = "INVESTIGATOR_DELHI"
     user_role: str = "INVESTIGATOR"
     case_id: str = "CASE-2026-001"

@@ -413,9 +413,24 @@ class IntentNormalizer:
             )
 
         # ── 5. ENTITY & IDENTIFIER EXTRACTION ──
-        case_match = re.search(r"\b(case-\d{4}-\d+|c\d+)\b", text_lower)
-        if case_match:
-            case_id = case_match.group(1).upper()
+        referenced_case_match = re.search(r"\b(case-\d{4}-\d+|c\d{3})\b", text_lower)
+        if referenced_case_match:
+            ref_c_id = referenced_case_match.group(1).upper()
+            if ref_c_id != case_id:
+                return InvestigationIntent(
+                    intent_name="OUT_OF_SCOPE_REQUEST",
+                    request_class=InvestigationRequestClass.OUT_OF_SCOPE_REQUEST,
+                    target_case=ref_c_id,
+                    case_id=ref_c_id,
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.95,
+                    ambiguity=False,
+                    ambiguity_reason=f"Reference to '{ref_c_id}' does not match active case '{case_id}'.",
+                    clarification_prompt=f"Cross-case reference blocked: '{ref_c_id}' is outside the active case scope.",
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
 
         extracted_entities = [m.upper() for m in re.findall(r"\b(p\d{3,4})\b", text_lower)]
         extracted_vehicles = [m.upper().replace(" ", "") for m in re.findall(r"\b(v\d{3,4}|[a-z]{2}\s*\d{2}\s*[a-z]{1,2}\s*\d{4})\b", text_lower)]
@@ -423,10 +438,243 @@ class IntentNormalizer:
         extracted_evidence = [m.upper() for m in re.findall(r"\b(ev-[a-z0-9-]+|e\d{3,4})\b", text_lower)]
         extracted_claims = [m.upper() for m in re.findall(r"\b(clm-[a-z0-9-]+)\b", text_lower)]
 
-        # Deixis / Anaphora: "this person", "he", "him", "subject" -> context.selected_entity_id
-        if re.search(r"\b(this\s+person|he|him|the\s+subject|this\s+entity)\b", text_lower):
-            if context.selected_entity_id and context.selected_entity_id not in extracted_entities:
-                extracted_entities.insert(0, context.selected_entity_id)
+        # ── 5b. CONTEXT REFERENCE RESOLUTION (Subphase A3) ──
+        from app.services.interaction.investigation_context_manager import InvestigationContextManager
+        from app.services.interaction.context_reference_resolver import ContextReferenceResolver
+        from app.domain.investigation_context import ContextResolutionStatus, ContextReferenceType
+
+        ctx_manager = InvestigationContextManager.get_instance()
+        session_id = getattr(context, "session_id", None) or "SES-DEFAULT"
+        snapshot = ctx_manager.get_current_snapshot(session_id=session_id, case_id=case_id)
+        if context.selected_entity_id and context.selected_entity_id != snapshot.selected_entity_id:
+            snapshot = ctx_manager.set_selection(
+                session_id=session_id,
+                case_id=case_id,
+                entity_id=context.selected_entity_id,
+                relationship_id=context.selected_relationship_id,
+                evidence_ids=[context.selected_evidence_id] if context.selected_evidence_id else None,
+                claim_id=context.selected_claim_id,
+            )
+
+        ref_resolver = ContextReferenceResolver.get_instance()
+        res = ref_resolver.resolve_reference(raw_text, snapshot, correlation_id)
+
+        # Fail closed on ambiguity (Subphase A3 Constitution Invariant)
+        if res.status == ContextResolutionStatus.AMBIGUOUS:
+            return InvestigationIntent(
+                intent_name="AMBIGUOUS_REFERENCE",
+                request_class=InvestigationRequestClass.CLARIFICATION_REQUIRED,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.3,
+                ambiguity=True,
+                ambiguity_reason=res.ambiguity_reason,
+                clarification_prompt=res.clarification_prompt,
+                parameters={"candidates": [c.model_dump() for c in res.candidates]},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # Reject out of scope / cross-case leakage
+        if res.status == ContextResolutionStatus.OUT_OF_SCOPE:
+            return InvestigationIntent(
+                intent_name="OUT_OF_SCOPE_REQUEST",
+                request_class=InvestigationRequestClass.OUT_OF_SCOPE_REQUEST,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.95,
+                ambiguity=False,
+                ambiguity_reason=res.ambiguity_reason,
+                clarification_prompt=res.clarification_prompt,
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # Reject prompt injection or unauthorized context mutation
+        if res.status == ContextResolutionStatus.INVALID:
+            return InvestigationIntent(
+                intent_name="INVALID_CONTEXT_INSTRUCTION",
+                request_class=InvestigationRequestClass.UNAUTHORIZED_REQUEST,
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.0,
+                ambiguity=False,
+                ambiguity_reason=res.ambiguity_reason,
+                clarification_prompt=res.clarification_prompt,
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # Incorporate resolved references into extracted targets
+        if res.status == ContextResolutionStatus.RESOLVED:
+            if res.reference_type == ContextReferenceType.PERSON and res.resolved_id:
+                if res.resolved_id not in extracted_entities:
+                    extracted_entities.insert(0, res.resolved_id)
+            elif res.reference_type == ContextReferenceType.ENTITY and res.resolved_id:
+                if res.resolved_id.startswith("V") and res.resolved_id not in extracted_vehicles:
+                    extracted_vehicles.insert(0, res.resolved_id)
+                elif res.reference_type == ContextReferenceType.ENTITY and res.resolved_id.startswith("PH") and res.resolved_id not in extracted_phones:
+                    extracted_phones.insert(0, res.resolved_id)
+
+            # Direct resolution of specific contextual ellipsis
+            if res.reference_type == ContextReferenceType.GRAPH_HOP:
+                ent_id = res.resolved_id or snapshot.selected_entity_id or "P001"
+                depth = res.resolved_value.get("depth", 2) if isinstance(res.resolved_value, dict) else 2
+                return InvestigationIntent(
+                    intent_name=UIActionType.OPEN_ENTITY.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent="EXPAND_NETWORK",
+                    target_case=case_id,
+                    target_entity=ent_id,
+                    entities=[ent_id],
+                    targets=[ent_id],
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "entity_id": ent_id, "depth": depth},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.FILTER:
+                ent_id = res.resolved_id or snapshot.selected_entity_id or "P001"
+                t_type = res.resolved_value.get("target_type", "VEHICLE") if isinstance(res.resolved_value, dict) else "VEHICLE"
+                filt = {"target_type": t_type, "anchor_entities": [ent_id]}
+                ctx_manager.add_filter(session_id=snapshot.session_id, case_id=case_id, filter_key="target_type", filter_value=t_type)
+                return InvestigationIntent(
+                    intent_name=UIActionType.FILTER.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent=f"FILTER_{t_type}",
+                    target_case=case_id,
+                    target_entity=ent_id,
+                    entities=[ent_id],
+                    targets=[ent_id],
+                    filters=filt,
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "filter_type": "TYPE", "values": [t_type], "filters": filt},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.TEMPORAL:
+                time_win = res.resolved_value if isinstance(res.resolved_value, dict) else {}
+                ent_id = snapshot.selected_entity_id or "P001"
+                return InvestigationIntent(
+                    intent_name=UIActionType.FILTER.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent="FILTER_TIME_RANGE",
+                    target_case=case_id,
+                    target_entity=ent_id,
+                    entities=[ent_id],
+                    targets=[ent_id],
+                    filters=dict(snapshot.active_filters),
+                    time_range=time_win,
+                    temporal_constraints=time_win,
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "time_window": time_win, "filter_type": "TIME_WINDOW"},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.SPATIAL and re.search(r"\b(put\s+it\s+on\s+the\s+map|on\s+the\s+map|show\s+on\s+map|map\s+view)\b", text_lower):
+                target_id = res.resolved_id or snapshot.selected_entity_id or "P001"
+                return InvestigationIntent(
+                    intent_name=UIActionType.OPEN_GRAPH.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent="FOCUS_MAP",
+                    target_case=case_id,
+                    target_entity=target_id,
+                    entities=[target_id],
+                    targets=[target_id],
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "entity_id": target_id, "mode": "GIS"},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.RESULT_ITEM and "strongest" in text_lower:
+                target_id = res.resolved_id
+                return InvestigationIntent(
+                    intent_name=UIActionType.FOCUS.value,
+                    request_class=InvestigationRequestClass.INFORMATIONAL_REQUEST,
+                    sub_intent="STRONGEST_RESULT_ITEM",
+                    target_case=case_id,
+                    target_entity=target_id,
+                    entities=[target_id] if target_id else [],
+                    targets=[target_id] if target_id else [],
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "target_id": target_id, "ranking": "STRONGEST"},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.RELATIONSHIP and re.search(r"^(why\??|why\s+is\s+(this|he|they|it)\s+connected\??|why\s+connected\??)$", text_lower):
+                rel_id = res.resolved_id
+                ent_id = snapshot.selected_entity_id or "P001"
+                return InvestigationIntent(
+                    intent_name=UIActionType.SHOW_AGENT_FINDINGS.value,
+                    request_class=InvestigationRequestClass.INFORMATIONAL_REQUEST,
+                    sub_intent="EXPLAIN_RELATIONSHIP",
+                    target_case=case_id,
+                    target_entity=ent_id,
+                    entities=[ent_id],
+                    targets=[ent_id],
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "relationship_id": rel_id, "objective": raw_text},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.reference_type == ContextReferenceType.EVIDENCE and re.search(r"\b(show\s+(the\s+)?evidence|view\s+evidence)\b", text_lower):
+                ev_id = res.resolved_id or "EV-ANPR-001"
+                return InvestigationIntent(
+                    intent_name=UIActionType.OPEN_EVIDENCE.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent="SHOW_EVIDENCE",
+                    target_case=case_id,
+                    target_evidence=ev_id,
+                    evidence_refs=[ev_id],
+                    targets=[ev_id],
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=0.98,
+                    parameters={"case_id": case_id, "evidence_id": ev_id},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
+
+            if res.resolved_value and isinstance(res.resolved_value, dict) and res.resolved_value.get("action") == "CORRECTION":
+                cor_id = res.resolved_id
+                ctx_manager.apply_correction(session_id=snapshot.session_id, case_id=case_id, target_id=cor_id, target_type=res.resolved_value.get("type", "ENTITY"))
+                return InvestigationIntent(
+                    intent_name=UIActionType.OPEN_ENTITY.value,
+                    request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                    sub_intent="CORRECTION",
+                    target_case=case_id,
+                    target_entity=cor_id,
+                    entities=[cor_id],
+                    targets=[cor_id],
+                    filters=dict(snapshot.active_filters),
+                    modality=CommandSource.CHAT,
+                    language=language,
+                    confidence=1.0,
+                    parameters={"case_id": case_id, "entity_id": cor_id, "filters": dict(snapshot.active_filters)},
+                    raw_input=raw_text,
+                    correlation_id=correlation_id or generate_uuid7(),
+                )
 
         all_targets = list(extracted_entities + extracted_vehicles + extracted_phones + extracted_evidence)
         primary_entity = extracted_entities[0] if extracted_entities else (context.selected_entity_id or None)
@@ -456,8 +704,8 @@ class IntentNormalizer:
 
         # ── 7. NATURAL INVESTIGATIVE REQUESTS DISPATCH ──
 
-        # A. "Show me everything connected to P001" / "Expand this person's network"
-        if re.search(r"\b(show\s+me\s+everything\s+connected\s+to|connected\s+to\s+p\d+|everything\s+connected|expand\s+(this\s+person'?s\s+|his\s+)?network|expand\s+connections?)\b", text_lower):
+        # A. "Show me everything connected to P001" / "Expand this person's network" / "What is he connected to?"
+        if re.search(r"\b(what\s+is\s+(he|she|this\s+person|it|p\d+)\s+connected\s+to|what\s+are\s+they\s+connected\s+to|show\s+me\s+everything\s+connected\s+to|connected\s+to\s+p\d+|everything\s+connected|expand\s+(this\s+person'?s\s+|his\s+|her\s+)?network|expand\s+connections?)\b", text_lower):
             ent_id = primary_entity or "P001"
             return InvestigationIntent(
                 intent_name=UIActionType.OPEN_ENTITY.value,

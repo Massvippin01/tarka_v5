@@ -341,10 +341,21 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const selectCase = (caseId: string, route: string = "command") => {
+    const isDifferentCase = caseId !== activeCaseId;
     setActiveCaseId(caseId);
     if (typeof sessionStorage !== "undefined") {
       sessionStorage.setItem("sentinelx_session_active", "true");
       sessionStorage.setItem("sentinelx_case_id", caseId);
+    }
+    if (isDifferentCase) {
+      setSelectedEntityId(null);
+      setSelectedRelationshipId(null);
+      setSelectedEvidenceId(null);
+      setSelectedClaimId(null);
+      setSelectedEventId(null);
+      setSelectedLocationId(null);
+      setEntityFiltersState([]);
+      setRelationshipFiltersState([]);
     }
     if (route === "focus") {
       setExperienceLevel(1);
@@ -364,7 +375,7 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       setActiveNavState("command");
     }
     setIsOnboarding(false);
-    dispatchEvent("CASE_CHANGED", { caseId, route });
+    dispatchEvent("CASE_CHANGED", { caseId, route, resetScope: isDifferentCase });
   };
 
   const dismissOnboarding = () => {

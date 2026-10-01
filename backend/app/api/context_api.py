@@ -101,3 +101,131 @@ def activate_case_scope(
     except Exception as e:
         logger.error("Failed to activate case scope: %s", e)
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ── Subphase A3 Context Fabric Endpoints ─────────────────────────────────────
+
+from app.domain.investigation_context import (
+    ContextEvent,
+    ContextResolutionResult,
+    InvestigationContextSnapshot,
+)
+from app.services.interaction.context_reference_resolver import ContextReferenceResolver
+from app.services.interaction.investigation_context_manager import InvestigationContextManager
+
+ctx_manager = InvestigationContextManager.get_instance()
+ref_resolver = ContextReferenceResolver.get_instance()
+
+
+class ResolveReferenceRequest(BaseModel):
+    query: str
+    session_id: Optional[str] = "SES-DEFAULT"
+    case_id: Optional[str] = "CASE-2026-001"
+    correlation_id: Optional[str] = None
+
+
+class ContextCorrectionRequest(BaseModel):
+    session_id: Optional[str] = "SES-DEFAULT"
+    case_id: Optional[str] = "CASE-2026-001"
+    target_id: str
+    target_type: str = "ENTITY"
+    correlation_id: Optional[str] = None
+
+
+class ContextResetRequest(BaseModel):
+    session_id: Optional[str] = "SES-DEFAULT"
+    new_case_id: str
+    jurisdiction: Optional[str] = None
+    correlation_id: Optional[str] = None
+
+
+@router.get("/current", response_model=InvestigationContextSnapshot)
+def get_current_investigation_context(
+    session_id: str = "SES-DEFAULT",
+    case_id: str = "CASE-2026-001",
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Retrieve the current authoritative Investigation Context Snapshot.
+    """
+    # Verify user authorization for requested case
+    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
+    if case_id not in allowed_cases:
+        raise HTTPException(status_code=403, detail=f"Case '{case_id}' is outside authorized scope.")
+    return ctx_manager.get_current_snapshot(session_id=session_id, case_id=case_id)
+
+
+@router.post("/resolve", response_model=ContextResolutionResult)
+def resolve_context_reference(
+    req: ResolveReferenceRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Deterministically resolve natural language follow-up reference against active context.
+    """
+    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
+    c_id = req.case_id or "CASE-2026-001"
+    if c_id not in allowed_cases:
+        raise HTTPException(status_code=403, detail=f"Case '{c_id}' is outside authorized scope.")
+
+    snapshot = ctx_manager.get_current_snapshot(session_id=req.session_id or "SES-DEFAULT", case_id=c_id)
+    return ref_resolver.resolve_reference(
+        query=req.query,
+        snapshot=snapshot,
+        correlation_id=req.correlation_id,
+    )
+
+
+@router.post("/correction", response_model=InvestigationContextSnapshot)
+def apply_context_correction(
+    req: ContextCorrectionRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Apply explicit user correction (e.g. 'No, I meant P002') to the context stack.
+    """
+    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
+    c_id = req.case_id or "CASE-2026-001"
+    if c_id not in allowed_cases:
+        raise HTTPException(status_code=403, detail=f"Case '{c_id}' is outside authorized scope.")
+
+    return ctx_manager.apply_correction(
+        session_id=req.session_id or "SES-DEFAULT",
+        case_id=c_id,
+        target_id=req.target_id,
+        target_type=req.target_type,
+        correlation_id=req.correlation_id,
+    )
+
+
+@router.post("/reset", response_model=InvestigationContextSnapshot)
+def reset_case_context(
+    req: ContextResetRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Reset case-bound context when investigator switches active case.
+    """
+    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
+    if req.new_case_id not in allowed_cases:
+        raise HTTPException(status_code=403, detail=f"Target case '{req.new_case_id}' is outside authorized scope.")
+
+    return ctx_manager.reset_case_context(
+        session_id=req.session_id or "SES-DEFAULT",
+        new_case_id=req.new_case_id,
+        jurisdiction=req.jurisdiction,
+        correlation_id=req.correlation_id,
+    )
+
+
+@router.get("/history", response_model=List[ContextEvent])
+def get_context_audit_history(
+    session_id: str = "SES-DEFAULT",
+    case_id: str = "CASE-2026-001",
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Retrieve immutable audit event trail of all context transitions.
+    """
+    return ctx_manager.get_history(session_id=session_id, case_id=case_id)
+
