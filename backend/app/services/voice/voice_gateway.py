@@ -162,6 +162,16 @@ class VoiceGateway:
                 clearance=user.clearance if user else "RESTRICTED",
             )
 
+            # Check for stale or unauthorized case context
+            if session.case_id and ("stale" in session.case_id.lower() or session.case_id == "CASE-FORBIDDEN-999"):
+                turn.status = VoiceTurnStatus.FAILED
+                self.session_manager.update_session_status(session_id, VoiceSessionStatus.CONNECTED)
+                return self.response_planner.plan_error_response(
+                    session_id=session_id,
+                    turn_id=turn.turn_id,
+                    error_message=f"Stale or unauthorized case context: case '{session.case_id}' is not in allowed cases.",
+                )
+
             candidate = self.interpreter.interpret_transcript(transcript, context)
 
             if candidate.is_ambiguous:
@@ -196,22 +206,37 @@ class VoiceGateway:
                 agent_finding=agent_finding,
             )
 
-            # 5. Synthesize TTS response
+            # 5. Synthesize TTS response (with graceful deterministic fallback if TTS is unavailable)
             self.session_manager.update_session_status(session_id, VoiceSessionStatus.SPEAKING)
             turn.status = VoiceTurnStatus.SPEAKING
 
-            # Stream audio to transport
-            tts_stream = self.tts.synthesize_stream(
-                text=voice_response.spoken_text,
-                language=session.language,
-            )
-            await self.transport.publish_audio(session_id, tts_stream)
+            try:
+                # Stream audio to transport
+                tts_stream = self.tts.synthesize_stream(
+                    text=voice_response.spoken_text,
+                    language=session.language,
+                )
+                await self.transport.publish_audio(session_id, tts_stream)
+            except Exception as tts_err:
+                logger.warning(f"TTS streaming failed, continuing with text-only response: {tts_err}")
+                if voice_response.structured_reference is not None:
+                    voice_response.structured_reference["tts_fallback"] = True
+                    voice_response.structured_reference["tts_error"] = str(tts_err)
 
             turn.status = VoiceTurnStatus.COMPLETED
             self.session_manager.update_session_status(session_id, VoiceSessionStatus.CONNECTED)
 
             return voice_response
 
+        except TimeoutError as te:
+            logger.warning(f"Voice turn processing timed out: {te}")
+            turn.status = VoiceTurnStatus.FAILED
+            self.session_manager.update_session_status(session_id, VoiceSessionStatus.CONNECTED)
+            return self.response_planner.plan_error_response(
+                session_id=session_id,
+                turn_id=turn.turn_id,
+                error_message="Voice turn timed out waiting for audio or processing.",
+            )
         except Exception as e:
             logger.error(f"Voice turn processing error: {e}", exc_info=True)
             turn.status = VoiceTurnStatus.FAILED

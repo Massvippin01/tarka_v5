@@ -226,3 +226,132 @@ async def test_failure_mode_unauthorized_action(voice_gateway: VoiceGateway, res
     )
     # Must fail closed via policy denial or confirmation challenge
     assert resp.response_type in ("POLICY_DENIAL", "CONFIRMATION_REQUIRED", "FAILURE")
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_microphone_denied_or_empty(voice_gateway: VoiceGateway, test_investigator: UserIdentity):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+    # Empty transcript represents muted mic or silence due to mic denial
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="",
+        user=test_investigator,
+    )
+    assert resp.response_type == "AMBIGUITY"
+    assert "clarify" in resp.spoken_text.lower() or "ambiguous" in resp.spoken_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_stt_unavailable(voice_gateway: VoiceGateway, test_investigator: UserIdentity, monkeypatch):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+
+    async def mock_fail(*args, **kwargs):
+        raise ConnectionResetError("STT service unavailable: connection refused.")
+
+    monkeypatch.setattr(voice_gateway.stt, "transcribe_text_direct", mock_fail)
+
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Show timeline",
+        user=test_investigator,
+    )
+    assert resp.response_type == "FAILURE"
+    assert "STT service unavailable" in resp.spoken_text or "Voice processing error" in resp.spoken_text
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_network_unavailable(voice_gateway: VoiceGateway, test_investigator: UserIdentity, monkeypatch):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+
+    async def mock_network_err(*args, **kwargs):
+        raise OSError("Network is unreachable.")
+
+    monkeypatch.setattr(voice_gateway.transport, "publish_audio", mock_network_err)
+
+    # When transport network fails during publish, VoiceGateway logs warning and falls back to text
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Show timeline",
+        user=test_investigator,
+    )
+    # The investigation command itself succeeded and returns text display, but records tts_fallback
+    assert resp.response_type == "SUCCESS"
+    assert resp.structured_reference.get("tts_fallback") is True
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_tts_unavailable(voice_gateway: VoiceGateway, test_investigator: UserIdentity, monkeypatch):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+
+    def mock_tts_synthesize(*args, **kwargs):
+        raise RuntimeError("TTS synthesizer offline.")
+
+    monkeypatch.setattr(voice_gateway.tts, "synthesize_stream", mock_tts_synthesize)
+
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Show P001",
+        user=test_investigator,
+    )
+    # Deterministic fallback: Turn succeeds for screen display with fallback recorded
+    assert resp.response_type == "SUCCESS"
+    assert "P001" in resp.spoken_text
+    assert resp.structured_reference.get("tts_fallback") is True
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_stale_case_context(voice_gateway: VoiceGateway, test_investigator: UserIdentity):
+    # Session tied to a case the investigator is not permitted to view
+    session, _ = await voice_gateway.create_voice_session(
+        user=test_investigator,
+        case_id="CASE-FORBIDDEN-999",
+    )
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Show timeline",
+        user=test_investigator,
+    )
+    assert resp.response_type == "FAILURE"
+    assert "stale or unauthorized case context" in resp.spoken_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_cancelled_command(voice_gateway: VoiceGateway, test_investigator: UserIdentity, monkeypatch):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+    from app.domain.command import CommandExecutionResult, CommandStatus
+
+    async def mock_cancelled_dispatch(*args, **kwargs):
+        return CommandExecutionResult(
+            command_id="CMD-CANCELLED-1",
+            correlation_id="CORR-1",
+            status=CommandStatus.CANCELLED,
+            message="Command cancelled by investigator.",
+        )
+
+    monkeypatch.setattr(voice_gateway.command_bus, "dispatch", mock_cancelled_dispatch)
+
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Analyze contradictions",
+        user=test_investigator,
+    )
+    assert resp.response_type == "FAILURE"
+    assert "cancelled" in resp.spoken_text.lower()
+
+
+@pytest.mark.asyncio
+async def test_failure_mode_timeout(voice_gateway: VoiceGateway, test_investigator: UserIdentity, monkeypatch):
+    session, _ = await voice_gateway.create_voice_session(user=test_investigator)
+
+    async def mock_timeout(*args, **kwargs):
+        raise TimeoutError("Turn execution exceeded 15000ms threshold.")
+
+    monkeypatch.setattr(voice_gateway.command_bus, "dispatch", mock_timeout)
+
+    resp = await voice_gateway.process_voice_turn(
+        session_id=session.session_id,
+        transcript_text="Show timeline",
+        user=test_investigator,
+    )
+    assert resp.response_type == "FAILURE"
+    assert "timed out" in resp.spoken_text.lower()
