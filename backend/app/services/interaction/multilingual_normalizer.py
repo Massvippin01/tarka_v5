@@ -245,6 +245,7 @@ class MultilingualNormalizer:
             "open it", "inspect that", "inspect it", "check this", "check it",
             "view this", "view that", "view it", "what about that", "what about him",
             "tell me more", "analyze that", "show details", "adha paaru", "adhu enna",
+            "kaatu", "kaattu", "kamikka", "kamikunga", "paaru", "paarunga", "show", "show me", "open", "inspect",
         }
         vague_commands = {
             "do something", "edho onnu pannu", "um", "uh", "hello", "test", "hmm", "err", "um uh", "um uh test",
@@ -307,7 +308,7 @@ class MultilingualNormalizer:
         if (
             re.search(r"\b(continue\s+(the\s+)?investigation|resume\s+investigation|open\s+case|load\s+case)\b", text_lower)
             or re.search(r"(விசாரணையை\s*தொடர்|வழக்கை\s*திற|வழக்கை\s*தொடங்கு)", raw_text)
-            or re.search(r"\b((?:investigation|case)[-a\s]*(?:continue|open|resume)\s*pannu|thodaru|thodarunga)\b", text_lower)
+            or re.search(r"\b((?:investigation|case)[-a\s]*(?:continue|open|resume)\s*(?:pannu|pannunga)|thodaru|thodarunga)\b", text_lower)
         ):
             return MultilingualAnalysis(
                 raw_text=raw_text,
@@ -564,7 +565,7 @@ class MultilingualNormalizer:
         # Tanglish: "relationship-a trace pannu", "connection-a paaru"
         if (
             re.search(r"\b(trace\s+relationship|trace\s+connections?|inspect\s+relationship)\b", text_lower)
-            or re.search(r"(தொடர்பை\s*கண்டறி|இணைப்பை\s*காட்டு|தொடர்பு)", raw_text)
+            or re.search(r"(தொடர்பை\s*கண்டறி|தொடர்பை\s*காட்டு|இணைப்பை\s*காட்டு|தொடர்பு)", raw_text)
             or re.search(r"\b(relationship[-a\s]*trace\s*pannu|connection[-a\s]*paaru)\b", text_lower)
         ):
             return MultilingualAnalysis(
@@ -587,7 +588,7 @@ class MultilingualNormalizer:
         # Tanglish: "proof-a kaatu", "provenance-a paaru"
         if (
             re.search(r"\b(show\s+proof|live\s+proof|trace\s+provenance|prove\s+claim)\b", text_lower)
-            or re.search(r"(சான்றளிப்பை\s*காட்டு|ஆதாரச்\s*சான்று|சான்று)", raw_text)
+            or re.search(r"(சான்றளிப்பை\s*காட்டு|சான்றாதாரத்தை\s*காட்டு|ஆதாரச்\s*சான்று|சான்று)", raw_text)
             or re.search(r"\b(proof[-a\s]*(?:kaatu|kaattu|kaatunga|kamikka|kamikunga|paaru|paarunga)|provenance)\b", text_lower)
         ):
             claim_id = preserved_tokens.get("identifiers", {}).get("claim") or selected_claim_id or "CLM-2026-001"
@@ -611,7 +612,7 @@ class MultilingualNormalizer:
         # Tanglish: "enna maariydhu", "delta kaatunga", "enna updates"
         if (
             re.search(r"\b(what\s+changed|show\s+delta|recent\s+updates|changes)\b", text_lower)
-            or re.search(r"(என்ன\s*மாறியது|மாற்றங்களை\s*காட்டு|மாற்றம்)", raw_text)
+            or re.search(r"(என்ன\s*மாறியது|என்ன\s*மாற்றங்கள்|மாற்றங்களை\s*காட்டு|மாற்றம்)", raw_text)
             or re.search(r"\b(enna\s*maariydhu|delta\s*kaatu|changes\s*enna)\b", text_lower)
         ):
             return MultilingualAnalysis(
