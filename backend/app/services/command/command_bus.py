@@ -55,6 +55,7 @@ class CommandBus:
         self.context_resolver = context_resolver or ContextResolver()
         self.intent_resolver = intent_resolver or IntentResolver()
         self.cancelled_commands: Set[str] = set()
+        self._validation_mesh = None
 
     @classmethod
     def get_instance(cls) -> CommandBus:
@@ -70,6 +71,31 @@ class CommandBus:
 
     def is_cancelled(self, command_id: str) -> bool:
         return command_id in self.cancelled_commands
+
+    @property
+    def validation_mesh(self):
+        if self._validation_mesh is None:
+            from app.services.validation.validation_chamber_mesh import ValidationChamberMesh
+            self._validation_mesh = ValidationChamberMesh.get_instance()
+        return self._validation_mesh
+
+    async def validate_command(
+        self,
+        command: Command,
+        user: Optional[UserIdentity] = None,
+    ):
+        from app.domain.validation_mesh import ValidationTarget
+        target = ValidationTarget(
+            target_id=command.command_id,
+            target_type="COMMAND",
+            case_id=command.arguments.get("case_id") or "CASE-2026-001",
+            risk_class=command.risk_class,
+            user=user,
+            command_id=command.command_id,
+            evidence_ids=[command.arguments["evidence_id"]] if "evidence_id" in command.arguments else [],
+            payload=command.arguments,
+        )
+        return await self.validation_mesh.validate(target)
 
     async def dispatch(
         self,
