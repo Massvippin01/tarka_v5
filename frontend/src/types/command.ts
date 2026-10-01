@@ -66,6 +66,7 @@ export interface CommandExecutionResult {
   audit_event_id?: string | null;
   requires_confirmation?: boolean;
   confirmation_challenge?: any | null;
+  response_contract?: Record<string, any> | null;
   executed_at: string;
 }
 

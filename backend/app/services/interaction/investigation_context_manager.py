@@ -133,6 +133,23 @@ class InvestigationContextManager:
             self._event_logs.setdefault(key, []).append(event)
             return new_snap
 
+    def record_candidate_pool(
+        self,
+        session_id: str,
+        case_id: str,
+        candidate_ids: List[str],
+        candidate_type: str = "PERSON",
+        correlation_id: Optional[str] = None,
+    ) -> InvestigationContextSnapshot:
+        """
+        Record candidate pool / result set in context for ambiguous reference tracking.
+        """
+        rs = ResultSetReference(
+            case_id=case_id,
+            entity_ids=candidate_ids,
+        )
+        return self.set_result_set(session_id, case_id, rs, correlation_id=correlation_id)
+
     def add_filter(
         self,
         session_id: str,

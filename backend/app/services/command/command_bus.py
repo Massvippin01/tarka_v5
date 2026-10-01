@@ -140,12 +140,13 @@ class CommandBus:
             # 1. Unauthorized Request
             if req_class == InvestigationRequestClass.UNAUTHORIZED_REQUEST:
                 msg = getattr(inv_intent, "clarification_prompt", None) or f"Target case '{inv_intent.target_case or case_id}' is outside authorized scope."
-                return CommandExecutionResult(
+                unauth_res = CommandExecutionResult(
                     command_id=command.command_id,
                     correlation_id=command.correlation_id,
                     status=CommandStatus.UNAUTHORIZED,
                     message=f"UNAUTHORIZED_REQUEST: {msg}",
                 )
+                return self._enrich_result_contract(unauth_res, command, resolved_context)
 
             # 2. Unsupported Request
             if req_class == InvestigationRequestClass.UNSUPPORTED_REQUEST:
@@ -371,6 +372,27 @@ class CommandBus:
         except Exception as ex:
             logger.debug("InvestigationContextManager update skipped: %s", ex)
 
+        res_contract = None
+        try:
+            from app.services.interaction.multimodal_response_orchestrator import MultimodalResponseOrchestrator
+            temp_result = CommandExecutionResult(
+                command_id=command.command_id,
+                correlation_id=command.correlation_id,
+                status=CommandStatus.SUCCESS,
+                ui_actions=executed_ui_actions,
+                output_data=combined_output,
+                message=last_message or f"Command '{command.intent}' processed successfully.",
+            )
+            contract_obj = MultimodalResponseOrchestrator.get_instance().formulate_response(
+                command=command,
+                execution_result=temp_result,
+                context=resolved_context,
+                session_id=ses_id,
+            )
+            res_contract = contract_obj.model_dump()
+        except Exception as ex:
+            logger.debug("MultimodalResponseOrchestrator formulation skipped: %s", ex)
+
         return CommandExecutionResult(
             command_id=command.command_id,
             correlation_id=command.correlation_id,
@@ -379,7 +401,26 @@ class CommandBus:
             output_data=combined_output,
             message=last_message or f"Command '{command.intent}' processed successfully.",
             audit_event_id=f"AUD-{command.correlation_id[:8]}",
+            response_contract=res_contract,
         )
+
+    def _enrich_result_contract(
+        self,
+        result: CommandExecutionResult,
+        command: Command,
+        context: InteractionContext,
+    ) -> CommandExecutionResult:
+        try:
+            from app.services.interaction.multimodal_response_orchestrator import MultimodalResponseOrchestrator
+            contract = MultimodalResponseOrchestrator.get_instance().formulate_response(
+                command=command,
+                execution_result=result,
+                context=context,
+            )
+            result.response_contract = contract.model_dump()
+        except Exception as ex:
+            logger.debug("Failed to enrich result with response contract: %s", ex)
+        return result
 
     def _resolve_command_context(
         self,

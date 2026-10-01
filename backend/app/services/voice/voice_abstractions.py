@@ -112,39 +112,7 @@ class FishAudioS21ProTTSProvider(TTSProvider):
         return b"MOCK_FISH_AUDIO_S2_1_STREAM_" + adjusted_text[:32].encode("utf-8")
 
 
-class PronunciationLexicon:
-    """
-    Specialized pronunciation and transliteration dictionary for Indian legal and forensic terms.
-    Ensures precise voice rendering of acronyms and statutory references.
-    """
-    LEXICON_MAP = {
-        "FIR": "F.I.R.",
-        "CCTNS": "C-C-T-N-S",
-        "ICJS": "I-C-J-S",
-        "NAFIS": "Naafis",
-        "CDR": "C.D.R.",
-        "IMEI": "Eye-May",
-        "BNSS": "B-N-S-S",
-        "CrPC": "C-r-P-C",
-        "BSA": "B-S-A",
-        "IEA": "I-E-A",
-        "FSL": "F-S-L",
-        "Vahan": "Vaahan",
-        "panchnama": "paanch-naama",
-    }
-
-    @classmethod
-    def normalize_for_speech(cls, text: str) -> str:
-        words = text.split()
-        normalized = []
-        for w in words:
-            cleaned = w.strip(".,;:?!")
-            if cleaned in cls.LEXICON_MAP:
-                rep = cls.LEXICON_MAP[cleaned]
-                normalized.append(w.replace(cleaned, rep))
-            else:
-                normalized.append(w)
-        return " ".join(normalized)
+from app.services.voice.tts import PronunciationLexicon
 
 
 class TurnManager:

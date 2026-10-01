@@ -114,6 +114,28 @@ class VoiceResponsePlanner:
                 spoken = execution_result.message or "Command processed successfully."
                 display = execution_result.message or spoken
 
+        # Attach canonical IntelligenceResponseContract
+        contract_dict = getattr(execution_result, "response_contract", None)
+        if not contract_dict:
+            try:
+                from app.services.interaction.multimodal_response_orchestrator import MultimodalResponseOrchestrator
+                contract_obj = MultimodalResponseOrchestrator.get_instance().formulate_response(
+                    execution_result=execution_result,
+                    session_id=session_id,
+                    turn_id=turn_id,
+                )
+                contract_dict = contract_obj.model_dump()
+            except Exception as e:
+                logger.debug("Failed to formulate IntelligenceResponseContract in VoiceResponsePlanner: %s", e)
+
+        struct_ref = {
+            "command_id": execution_result.command_id,
+            "correlation_id": execution_result.correlation_id,
+            "audit_event_id": execution_result.audit_event_id,
+        }
+        if contract_dict:
+            struct_ref["intelligence_response_contract"] = contract_dict
+
         resp = VoiceResponse(
             response_id=f"VR-{uuid4().hex[:8]}",
             session_id=session_id,
@@ -123,11 +145,7 @@ class VoiceResponsePlanner:
             display_text=display,
             command_execution_result=execution_result.model_dump() if hasattr(execution_result, "model_dump") else execution_result.__dict__,
             agent_finding=agent_finding,
-            structured_reference={
-                "command_id": execution_result.command_id,
-                "correlation_id": execution_result.correlation_id,
-                "audit_event_id": execution_result.audit_event_id,
-            },
+            structured_reference=struct_ref,
         )
         return resp
 

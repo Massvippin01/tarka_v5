@@ -117,4 +117,5 @@ class CommandExecutionResult(BaseModel):
     audit_event_id: Optional[str] = None
     requires_confirmation: bool = False
     confirmation_challenge: Optional[ConfirmationChallenge] = None
+    response_contract: Optional[Dict[str, Any]] = None
     executed_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
