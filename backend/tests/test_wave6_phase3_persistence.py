@@ -671,7 +671,11 @@ def test_alembic_migration_metadata_and_offline_sql():
     except ImportError:
         pytest.skip("alembic.config module unavailable in dev environment")
 
-    config = Config("backend/alembic.ini")
+    from pathlib import Path
+    ini_path = Path(__file__).resolve().parent.parent / "alembic.ini"
+    if not ini_path.exists():
+        ini_path = Path("backend/alembic.ini")
+    config = Config(str(ini_path))
     script = ScriptDirectory.from_config(config)
 
     heads = script.get_heads()
