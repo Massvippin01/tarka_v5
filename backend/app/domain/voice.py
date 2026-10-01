@@ -99,6 +99,12 @@ class VoiceCommandCandidate(BaseModel):
     transcript_id: str
     intent: str
     action: Optional[str] = None
+    request_class: str = "NAVIGATION_REQUEST"
+    sub_intent: Optional[str] = None
+    targets: List[str] = Field(default_factory=list)
+    entities: List[str] = Field(default_factory=list)
+    evidence_refs: List[str] = Field(default_factory=list)
+    filters: Dict[str, Any] = Field(default_factory=dict)
     parameters: Dict[str, Any] = Field(default_factory=dict)
     confidence: float = 0.95
     language: str = "en-IN"

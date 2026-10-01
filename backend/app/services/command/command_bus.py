@@ -14,6 +14,7 @@ from app.domain.command import (
     UIActionDescriptor,
     UIActionType,
 )
+from app.domain.intent import InvestigationRequestClass
 from app.domain.interaction import (
     ActionRiskClass,
     ConfirmationChallenge,
@@ -124,27 +125,81 @@ class CommandBus:
         resolved_context = self._resolve_command_context(command, user)
         case_id = command.arguments.get("case_id") or resolved_context.case_id or "CASE-2026-001"
 
-        # 2b. Canonical InvestigationIntent resolution & ambiguity check
+        # 2b. Canonical InvestigationIntent resolution & canonical request class handling
         inv_intent = getattr(command, "investigation_intent", None)
         if not inv_intent and command.source in (CommandSource.CHAT, CommandSource.VOICE, CommandSource.KEYBOARD):
             from app.services.interaction.intent_normalizer import IntentNormalizer
             probe_intent = IntentNormalizer.get_instance().from_text_query(command.intent, resolved_context)
-            if probe_intent.ambiguity:
+            if probe_intent:
                 inv_intent = probe_intent
                 command.investigation_intent = probe_intent
 
-        if inv_intent and getattr(inv_intent, "ambiguity", False):
-            reason = getattr(inv_intent, "ambiguity_reason", "Intent is ambiguous.")
-            prompt = getattr(inv_intent, "clarification_prompt", "Please clarify your request.")
-            return CommandExecutionResult(
-                command_id=command.command_id,
-                correlation_id=command.correlation_id,
-                status=CommandStatus.FAILED,
-                message=f"AMBIGUOUS_INTENT: {reason} {prompt}".strip(),
-            )
+        if inv_intent:
+            req_class = getattr(inv_intent, "request_class", None)
 
-        if inv_intent and getattr(inv_intent, "target_case", None):
-            case_id = inv_intent.target_case
+            # 1. Unauthorized Request
+            if req_class == InvestigationRequestClass.UNAUTHORIZED_REQUEST:
+                msg = getattr(inv_intent, "clarification_prompt", None) or f"Target case '{inv_intent.target_case or case_id}' is outside authorized scope."
+                return CommandExecutionResult(
+                    command_id=command.command_id,
+                    correlation_id=command.correlation_id,
+                    status=CommandStatus.UNAUTHORIZED,
+                    message=f"UNAUTHORIZED_REQUEST: {msg}",
+                )
+
+            # 2. Unsupported Request
+            if req_class == InvestigationRequestClass.UNSUPPORTED_REQUEST:
+                msg = getattr(inv_intent, "clarification_prompt", None) or "This capability is unsupported by SentinelX forensic OS."
+                return CommandExecutionResult(
+                    command_id=command.command_id,
+                    correlation_id=command.correlation_id,
+                    status=CommandStatus.FAILED,
+                    message=f"UNSUPPORTED_REQUEST: {msg}",
+                )
+
+            # 3. Out of Scope Request
+            if req_class == InvestigationRequestClass.OUT_OF_SCOPE_REQUEST:
+                msg = getattr(inv_intent, "clarification_prompt", None) or "Request is outside active case investigation purview."
+                return CommandExecutionResult(
+                    command_id=command.command_id,
+                    correlation_id=command.correlation_id,
+                    status=CommandStatus.FAILED,
+                    message=f"OUT_OF_SCOPE_REQUEST: {msg}",
+                )
+
+            # 4. Clarification Required / Ambiguity
+            if req_class == InvestigationRequestClass.CLARIFICATION_REQUIRED or getattr(inv_intent, "ambiguity", False):
+                reason = getattr(inv_intent, "ambiguity_reason", "Intent is ambiguous.")
+                prompt = getattr(inv_intent, "clarification_prompt", "Please clarify your request.")
+                return CommandExecutionResult(
+                    command_id=command.command_id,
+                    correlation_id=command.correlation_id,
+                    status=CommandStatus.FAILED,
+                    message=f"AMBIGUOUS_INTENT (CLARIFICATION_REQUIRED): {prompt}".strip(),
+                )
+
+            # 5. Confirmation Required (Statutory / High-Risk Coercive Actions)
+            if req_class == InvestigationRequestClass.CONFIRMATION_REQUIRED or getattr(inv_intent, "requires_confirmation", False):
+                confirmation_token = command.authorization_context.get("confirmation_token")
+                if not confirmation_token:
+                    challenge = ConfirmationChallenge(
+                        risk_class=ActionRiskClass.EXECUTE,
+                        tool_name=inv_intent.intent_name,
+                        arguments=inv_intent.parameters,
+                        prompt_message=getattr(inv_intent, "clarification_prompt", None) or f"Statutory authorization required for '{inv_intent.intent_name}'.",
+                        expires_at=datetime.now(UTC).isoformat(),
+                    )
+                    return CommandExecutionResult(
+                        command_id=command.command_id,
+                        correlation_id=command.correlation_id,
+                        status=CommandStatus.WAITING_CONFIRMATION,
+                        requires_confirmation=True,
+                        confirmation_challenge=challenge,
+                        message=f"CONFIRMATION_REQUIRED: {challenge.prompt_message}",
+                    )
+
+            if getattr(inv_intent, "target_case", None):
+                case_id = inv_intent.target_case
 
         # 3. Policy & Authorization check
         allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
@@ -330,19 +385,6 @@ class CommandBus:
                     logger.warning(f"Requested action '{act_name}' not a valid UIActionType.")
             return actions
 
-        # 2. Canonical InvestigationIntent resolution
-        inv_intent = getattr(command, "investigation_intent", None)
-        if inv_intent and hasattr(inv_intent, "intent_name"):
-            intent_name = inv_intent.intent_name
-            params = dict(inv_intent.parameters)
-            if hasattr(inv_intent, "target_case") and inv_intent.target_case:
-                params.setdefault("case_id", inv_intent.target_case)
-            params.setdefault("case_id", context.case_id or "CASE-2026-001")
-            try:
-                act_type = UIActionType(intent_name)
-                return [(act_type, params)]
-            except ValueError:
-                pass
 
         intent_raw = command.intent.strip()
         intent_lower = intent_raw.lower()
@@ -485,7 +527,55 @@ class CommandBus:
             args.setdefault("case_id", case_id)
             return [(UIActionType.SHOW_AGENT_FINDINGS, args)]
 
-        # 3. Fallback to semantic IntentResolver
+        # 3. Canonical InvestigationIntent resolution (Subphase A2 General Intent)
+        inv_intent = getattr(command, "investigation_intent", None)
+        if inv_intent and hasattr(inv_intent, "intent_name"):
+            intent_name = inv_intent.intent_name
+            params = dict(inv_intent.parameters)
+            if hasattr(inv_intent, "target_case") and inv_intent.target_case:
+                params.setdefault("case_id", inv_intent.target_case)
+            params.setdefault("case_id", context.case_id or "CASE-2026-001")
+            try:
+                act_type = UIActionType(intent_name)
+                # Ensure actions satisfy required schema arguments
+                if act_type == UIActionType.FILTER:
+                    params.setdefault("filter_type", "GENERAL")
+                    if "values" not in params:
+                        params["values"] = ["DEFAULT_FILTER"]
+                elif act_type == UIActionType.FOCUS:
+                    params.setdefault("entity_id", getattr(inv_intent, "target_entity", None) or context.selected_entity_id or "P001")
+                elif act_type == UIActionType.EXPAND:
+                    params.setdefault("entity_id", getattr(inv_intent, "target_entity", None) or context.selected_entity_id or "P001")
+                elif act_type == UIActionType.COLLAPSE:
+                    params.setdefault("entity_id", getattr(inv_intent, "target_entity", None) or context.selected_entity_id or "P001")
+                elif act_type == UIActionType.SELECT:
+                    params.setdefault("target_type", "ENTITY")
+                    params.setdefault("target_id", getattr(inv_intent, "target_entity", None) or context.selected_entity_id or "P001")
+                elif act_type == UIActionType.SEARCH:
+                    params.setdefault("query", getattr(inv_intent, "raw_input", "") or "INVESTIGATION_SEARCH")
+                elif act_type == UIActionType.COMPARE:
+                    ents = getattr(inv_intent, "entities", [])
+                    if len(ents) >= 2:
+                        params.setdefault("entity_a", ents[0])
+                        params.setdefault("entity_b", ents[1])
+                    else:
+                        params.setdefault("entity_a", context.selected_entity_id or "P001")
+                        params.setdefault("entity_b", "P002")
+                elif act_type == UIActionType.OPEN_PROOF:
+                    params.setdefault("claim_id", getattr(inv_intent, "target_claim", None) or context.selected_claim_id or "CLM-2026-001")
+                elif act_type == UIActionType.SHOW_SUPPORT:
+                    params.setdefault("claim_id", getattr(inv_intent, "target_claim", None) or context.selected_claim_id or "CLM-2026-001")
+                elif act_type == UIActionType.OPEN_EVIDENCE:
+                    params.setdefault("evidence_id", getattr(inv_intent, "target_evidence", None) or context.selected_evidence_id or "EV-ANPR-001")
+                elif act_type == UIActionType.RUN_AGENT_TASK:
+                    params.setdefault("agent_type", "EVIDENCE_ANALYST")
+                    params.setdefault("objective", getattr(inv_intent, "raw_input", "Agent analysis"))
+
+                return [(act_type, params)]
+            except ValueError:
+                pass
+
+        # 4. Fallback to semantic IntentResolver
         resolved_intent = await self.intent_resolver.resolve_intent(
             query=intent_raw,
             context=context,

@@ -129,22 +129,45 @@ export interface AgentTaskResult {
   error?: string | null;
 }
 
-// ── Canonical Investigation Intent (Experience Refinement E0) ────────
+// ── Canonical Investigation Intent (Experience Refinement E0 & A2) ────────
+
+export type InvestigationRequestClass =
+  | "EXECUTABLE_INVESTIGATION_REQUEST"
+  | "INFORMATIONAL_REQUEST"
+  | "NAVIGATION_REQUEST"
+  | "CLARIFICATION_REQUIRED"
+  | "CONFIRMATION_REQUIRED"
+  | "UNAUTHORIZED_REQUEST"
+  | "UNSUPPORTED_REQUEST"
+  | "OUT_OF_SCOPE_REQUEST";
 
 export interface InvestigationIntent {
   intent_id: string;
   intent_name: string;
+  request_class?: InvestigationRequestClass;
+  sub_intent?: string | null;
   target_case?: string | null;
+  case_id?: string | null;
   target_entity?: string | null;
   target_evidence?: string | null;
   target_claim?: string | null;
+  targets?: string[];
+  entities?: string[];
+  evidence_refs?: string[];
+  jurisdiction?: string | null;
   modality: CommandSource;
   language?: string;
   risk_class?: "READ" | "ANALYZE" | "PREPARE" | "EXECUTE";
   authorization_context?: Record<string, any>;
   requested_detail_level?: "SUMMARY" | "STANDARD" | "DEEP_FORENSIC";
   temporal_constraints?: Record<string, any> | null;
+  time_range?: Record<string, any> | null;
   spatial_constraints?: Record<string, any> | null;
+  location?: Record<string, any> | null;
+  filters?: Record<string, any>;
+  grouping?: string | null;
+  comparison?: Record<string, any> | null;
+  requested_output?: string | null;
   confidence: number;
   ambiguity: boolean;
   ambiguity_reason?: string | null;
@@ -156,4 +179,5 @@ export interface InvestigationIntent {
   statutory_power_code?: string | null;
   timestamp: string;
 }
+
 

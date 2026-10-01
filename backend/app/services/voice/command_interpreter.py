@@ -69,6 +69,44 @@ class VoiceCommandInterpreter:
                 clarification_prompt=analysis.clarification_prompt,
             )
 
+        # ── 1b. General Investigative Intent Resolution (Subphase A2) ──
+        from app.services.interaction.intent_normalizer import IntentNormalizer
+        gen_intent = IntentNormalizer.get_instance()._resolve_general_investigative_intent(
+            raw_text=raw_text,
+            context=context,
+            language=transcript.language,
+        )
+        if gen_intent:
+            intent_name = gen_intent.intent_name
+            action_type = gen_intent.intent_name
+            params = gen_intent.parameters
+            risk_class = gen_intent.risk_class
+            is_ambiguous = gen_intent.ambiguity
+            clarification_prompt = gen_intent.clarification_prompt
+            ambiguity_reason = gen_intent.ambiguity_reason
+            return VoiceCommandCandidate(
+                transcript_id=transcript.transcript_id,
+                intent=intent_name,
+                action=action_type,
+                parameters=params,
+                confidence=transcript.confidence,
+                language=analysis.language_mode.value if analysis and analysis.language_mode.value != "en" else transcript.language,
+                transcript_text=raw_text,
+                is_ambiguous=is_ambiguous,
+                ambiguity_reason=ambiguity_reason,
+                clarification_prompt=clarification_prompt,
+                requested_action=action_type,
+                requires_confirmation=gen_intent.requires_confirmation,
+                risk_class=risk_class.value,
+                confirmation_message=f"Statutory authorization required for '{intent_name}'." if gen_intent.requires_confirmation else None,
+                request_class=gen_intent.request_class.value,
+                sub_intent=gen_intent.sub_intent,
+                targets=gen_intent.targets,
+                entities=gen_intent.entities,
+                evidence_refs=gen_intent.evidence_refs,
+                filters=gen_intent.filters,
+            )
+
         # Check if canonical intent resolved from multilingual normalizer
         if analysis.canonical_intent != "SEARCH" and analysis.canonical_action:
             intent_name = analysis.canonical_intent

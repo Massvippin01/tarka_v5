@@ -267,6 +267,27 @@ class ActionExecutor:
                 output_data["level"] = lvl
                 message = f"Transitioned to Level {lvl}."
 
+            elif action_type == UIActionType.FILTER:
+                filters = arguments.get("filters") or {}
+                output_data["filters"] = filters
+                message = f"Applied graph filters: {filters}."
+
+            elif action_type == UIActionType.EXPAND:
+                entity_id = arguments.get("entity_id") or context.selected_entity_id or "P001"
+                output_data["expanded_entity"] = entity_id
+                message = f"Expanded network connections for entity {entity_id}."
+
+            elif action_type == UIActionType.COLLAPSE:
+                entity_id = arguments.get("entity_id") or context.selected_entity_id or "P001"
+                output_data["collapsed_entity"] = entity_id
+                message = f"Collapsed network view for entity {entity_id}."
+
+            elif action_type == UIActionType.SELECT:
+                selection = arguments.get("selection") or arguments.get("entity_id") or "SELECTION"
+                output_data["selection"] = selection
+                message = f"Selected target {selection}."
+
+
             # Log audit event
             self.audit.log_access_event(
                 user_id=context.user_id,
