@@ -375,7 +375,7 @@ class MultilingualNormalizer:
         # Tamil: "இது ஏன் முக்கியம்", "இதை விளக்குங்கள்", "காரணம் என்ன"
         # Tanglish: "why it matters", "idhu edhukku mukkiyam", "idha vilakkunga", "vilakku"
         if (
-            re.search(r"\b(why\s+does\s+it\s+matter|why\s+it\s+matters|explain\s+this|explain\s+reasoning|why\s+this)\b", text_lower)
+            re.search(r"\b(why\s+does\s+(?:it|this)\s+matter|why\s+it\s+matters|explain\s+this|explain\s+reasoning|why\s+this)\b", text_lower)
             or re.search(r"(ஏன்\s*முக்கியம்|விளக்குங்கள்|விளக்கு|காரணம்\s*என்ன)", raw_text)
             or re.search(r"\b(edhukku\s*mukkiyam|idha\s*vilakku|vilakkunga|why\s*important)\b", text_lower)
         ):
@@ -468,7 +468,7 @@ class MultilingualNormalizer:
         # Tamil: "என்ன விடுபட்டது", "இடைவெளிகளை காட்டு", "எது காணவில்லை"
         # Tanglish: "enna missing", "what is missing", "gaps-a kaatunga", "vidupattavai enna"
         if (
-            re.search(r"\b(what\s+are\s+we\s+missing|what\s+is\s+missing|show\s+(the\s+)?gaps?|missing\s+evidence)\b", text_lower)
+            re.search(r"\b(what\s+are\s+we\s+(?:still\s+)?missing|what\s+is\s+missing|show\s+(the\s+)?gaps?|missing\s+evidence)\b", text_lower)
             or re.search(r"(என்ன\s*விடுபட்டது|இடைவெளிகளை\s*காட்டு|விடுபட்டவை|எது\s*காணவில்லை)", raw_text)
             or re.search(r"\b(gaps?[-a\s]*(?:kaatu|kaattu|kaatunga|kamikka|kamikunga|paaru|paarunga)|enna\s*missing|vidupattadhu)\b", text_lower)
         ):
@@ -493,7 +493,7 @@ class MultilingualNormalizer:
         if (
             re.search(r"\b(show|open|inspect|focus)\s+entity\s+([a-z0-9_-]+)\b", text_lower)
             or re.search(r"\b(show|open|inspect|focus)\s+(p\d+)\b", text_lower)
-            or (target_entity and not any(w in text_lower for w in ["proof", "provenance", "evidence", "timeline", "contradiction", "gap", "case", "summary"]))
+            or (target_entity and not any(w in text_lower for w in ["trace", "proof", "provenance", "evidence", "timeline", "contradiction", "gap", "case", "summary"]))
             or re.search(r"(காட்டு|பாருங்கள்).*(P\d+)", raw_text)
             or re.search(r"\b(p\d+)[-a\s]*(?:kaatu|kaattu|kamikunga|paaru)\b", text_lower)
         ):
@@ -564,7 +564,7 @@ class MultilingualNormalizer:
         # Tamil: "தொடர்பை கண்டறி", "இணைப்பை காட்டு"
         # Tanglish: "relationship-a trace pannu", "connection-a paaru"
         if (
-            re.search(r"\b(trace\s+relationship|trace\s+connections?|inspect\s+relationship)\b", text_lower)
+            re.search(r"\b(trace\s+relationship|trace\s+connections?|trace\s+p\d+|trace\s+entity|trace\b|inspect\s+relationship)\b", text_lower)
             or re.search(r"(தொடர்பை\s*கண்டறி|தொடர்பை\s*காட்டு|இணைப்பை\s*காட்டு|தொடர்பு)", raw_text)
             or re.search(r"\b(relationship[-a\s]*trace\s*pannu|connection[-a\s]*paaru)\b", text_lower)
         ):

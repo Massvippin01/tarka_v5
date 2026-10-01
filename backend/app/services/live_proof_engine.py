@@ -44,8 +44,18 @@ class LiveProof:
     custody_verified: bool = False
     source_location_verified: bool = False
 
+    @property
+    def unbroken(self) -> bool:
+        return self.is_valid
+
 
 class LiveProofEngine:
+    def trace_backward(self, claim_id: str) -> LiveProof:
+        return self.prove_claim_backward(claim_id)
+
+    def trace_forward(self, artifact_id: str) -> LiveProof:
+        return self.prove_artifact_forward(artifact_id)
+
     """
     Live Proof Engine.
     Performs bidirectional deterministic verification of evidential lineage:
