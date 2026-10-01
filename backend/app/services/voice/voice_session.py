@@ -7,6 +7,10 @@ from uuid import uuid4
 
 from app.domain.interaction import InteractionContext
 from app.domain.voice import (
+    AmbientVoiceEvent,
+    AmbientVoiceState,
+    AmbientVoiceStateMachine,
+    AmbientVoiceTransitionResult,
     InvalidVoiceStateTransition,
     VoiceSession,
     VoiceSessionStatus,
@@ -89,6 +93,30 @@ class VoiceSessionManager:
             self.update_session_status(session_id, VoiceSessionStatus.LISTENING)
 
         return turn
+
+    
+    def transition_ambient_state(
+        self,
+        session_id: str,
+        event: AmbientVoiceEvent,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> AmbientVoiceTransitionResult:
+        session = self.get_session(session_id)
+        if not session:
+            # Fallback transition result when no session exists
+            return AmbientVoiceStateMachine.transition(
+                current_state=AmbientVoiceState.READY,
+                event=event,
+                session_id=session_id,
+                metadata=metadata,
+            )
+        return session.transition_ambient(event, metadata=metadata)
+
+    def get_ambient_state(self, session_id: str) -> AmbientVoiceState:
+        session = self.get_session(session_id)
+        if not session:
+            return AmbientVoiceState.READY
+        return session.ambient_state
 
     def close_session(self, session_id: str) -> None:
         session = self.get_session(session_id)

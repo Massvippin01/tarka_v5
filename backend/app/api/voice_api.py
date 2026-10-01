@@ -7,7 +7,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app.domain.auth import UserIdentity
-from app.domain.voice import VoiceResponse
+from app.domain.voice import (
+    AmbientVoiceEvent,
+    AmbientVoiceState,
+    AmbientVoiceStateMachine,
+    AmbientVoiceTransitionResult,
+    VoiceResponse,
+)
 from app.services.auth_service import AuthService
 from app.services.voice.voice_gateway import VoiceGateway
 
@@ -186,3 +192,94 @@ async def close_voice_session(
     target_session_id = session_id or "VS-DEFAULT"
     await gateway.close_session(target_session_id)
     return {"status": "CLOSED", "session_id": target_session_id}
+
+
+# ────────────────────────────────────────────────────────────────────
+# Ambient Voice State Machine Endpoints (Subphase A1)
+# ────────────────────────────────────────────────────────────────────
+
+class AmbientTransitionRequest(BaseModel):
+    event: AmbientVoiceEvent
+    session_id: Optional[str] = None
+    turn_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AmbientStatusResponse(BaseModel):
+    session_id: str
+    ambient_state: AmbientVoiceState
+    session_status: str
+    case_id: str
+    jurisdiction: str
+    allowed_events: list[str]
+    recent_transitions: list[Dict[str, Any]] = Field(default_factory=list)
+
+
+@router.get("/ambient/status", response_model=AmbientStatusResponse)
+async def get_ambient_status(
+    session_id: Optional[str] = None,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Retrieve authoritative ambient voice interaction state for active session.
+    """
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    session = gateway.session_manager.get_session(target_session_id)
+    if not session:
+        # If no active session, report default READY state
+        return AmbientStatusResponse(
+            session_id=target_session_id,
+            ambient_state=AmbientVoiceState.READY,
+            session_status="DISCONNECTED",
+            case_id="CASE-2026-001",
+            jurisdiction="Delhi NCR / Special Cell",
+            allowed_events=[e.value for e in AmbientVoiceStateMachine.get_allowed_events(AmbientVoiceState.READY)],
+            recent_transitions=[],
+        )
+
+    allowed = [e.value for e in AmbientVoiceStateMachine.get_allowed_events(session.ambient_state)]
+    transitions_data = [t.model_dump() for t in session.ambient_transitions[-10:]]
+
+    return AmbientStatusResponse(
+        session_id=session.session_id,
+        ambient_state=session.ambient_state,
+        session_status=session.status.value,
+        case_id=session.case_id,
+        jurisdiction=session.jurisdiction,
+        allowed_events=allowed,
+        recent_transitions=transitions_data,
+    )
+
+
+@router.post("/ambient/transition", response_model=AmbientVoiceTransitionResult)
+async def transition_ambient_state(
+    req: AmbientTransitionRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Execute a governed transition on the Ambient Voice State Machine.
+    Fails closed on invalid transitions, preserving session/case security invariants.
+    """
+    gateway = get_gateway()
+    target_session_id = req.session_id or "VS-DEFAULT"
+    session = gateway.session_manager.get_session(target_session_id)
+
+    meta = dict(req.metadata)
+    meta["user_id"] = user.user_id
+    meta["clearance"] = user.clearance
+
+    if not session:
+        # Pure transition against default READY state
+        result = AmbientVoiceStateMachine.transition(
+            current_state=AmbientVoiceState.READY,
+            event=req.event,
+            session_id=target_session_id,
+            turn_id=req.turn_id,
+            case_id="CASE-2026-001",
+            metadata=meta,
+        )
+        return result
+
+    result = session.transition_ambient(req.event, metadata=meta)
+    return result
