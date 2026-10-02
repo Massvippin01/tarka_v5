@@ -209,6 +209,88 @@ export function executeUIActions(
         }
         break;
 
+      // ── Subphase A6: Advanced Investigative Graph Actions ──────
+      case "GRAPH_SEARCH":
+      case "GRAPH_FOCUS":
+        handlers.setActiveNav("investigations");
+        handlers.setActiveWorkspaceView("graph");
+        if (handlers.setActiveLens) handlers.setActiveLens("Network");
+        if (args.entity_id) {
+          handlers.selectEntity(args.entity_id);
+        }
+        break;
+
+      case "GRAPH_EXPAND":
+      case "GRAPH_COLLAPSE":
+      case "GRAPH_ISOLATE":
+      case "GRAPH_SHOW_CONNECTED":
+        handlers.setActiveNav("investigations");
+        handlers.setActiveWorkspaceView("graph");
+        if (handlers.setActiveLens) handlers.setActiveLens("Network");
+        if (args.entity_id) {
+          handlers.selectEntity(args.entity_id);
+        }
+        break;
+
+      case "GRAPH_FILTER":
+        if (handlers.setEntityFilters && Array.isArray(args.values)) {
+          handlers.setEntityFilters(args.values);
+        }
+        break;
+
+      case "GRAPH_SHOW_PATH":
+      case "GRAPH_FIND_SHORTEST_PATH":
+        handlers.setActiveNav("investigations");
+        handlers.setActiveWorkspaceView("graph");
+        if (args.source) {
+          handlers.selectEntity(args.source);
+        }
+        break;
+
+      case "GRAPH_COMPARE":
+        handlers.setActiveNav("investigations");
+        handlers.setActiveWorkspaceView("graph");
+        if (args.entity_a) {
+          handlers.selectEntity(args.entity_a);
+        }
+        break;
+
+      case "GRAPH_TRACE_EVIDENCE":
+      case "GRAPH_EXPLAIN_RELATIONSHIP":
+        if (args.relationship_id && handlers.selectRelationship) {
+          handlers.selectRelationship(args.relationship_id);
+          if (handlers.setActiveRightTab) {
+            handlers.setActiveRightTab("inspector");
+          }
+        }
+        break;
+
+      case "GRAPH_SHOW_PROOF":
+        if (args.claim_id) {
+          handlers.openProofDrawer(args.claim_id);
+        }
+        break;
+
+      case "GRAPH_SHOW_CONTRADICTIONS":
+        handlers.setActiveNav("contradictions");
+        handlers.setActiveWorkspaceView("contradictions");
+        break;
+
+      case "GRAPH_SHOW_GAPS":
+        handlers.setActiveNav("gaps");
+        handlers.setActiveWorkspaceView("gaps");
+        break;
+
+      case "GRAPH_PIN":
+      case "GRAPH_UNPIN":
+      case "GRAPH_HIDE":
+      case "GRAPH_UNHIDE":
+      case "GRAPH_RESET_VIEW":
+      case "GRAPH_RETURN_PREVIOUS":
+        handlers.setActiveNav("investigations");
+        handlers.setActiveWorkspaceView("graph");
+        break;
+
       default:
         console.warn(`[UIActionExecutor] Unhandled action type: ${act.action_type}`);
         break;

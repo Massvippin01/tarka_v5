@@ -150,3 +150,135 @@ def validate_graph_consistency(case_id: str) -> GraphConsistencyReport:
     except Exception as e:
         logger.error(f"Error validating consistency for {case_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# -------------------------------------------------------------------------
+# Subphase A6: Advanced Investigative Graph Analytical Endpoints
+# -------------------------------------------------------------------------
+
+from app.services.graph_analytical_service import GraphAnalyticalService
+
+analytical_service = GraphAnalyticalService.get_instance()
+
+
+@router.get("/{case_id}/path")
+def get_graph_path(
+    case_id: str,
+    source: str = Query(..., description="Source entity ID"),
+    target: str = Query(..., description="Target entity ID"),
+    mode: str = Query("investigative", description="'investigative' or 'topological'"),
+    min_confidence: float = Query(0.5, ge=0.0, le=1.0),
+    require_evidence: bool = Query(True),
+) -> Dict[str, Any]:
+    """
+    GET /api/v1/graph-projection/{case_id}/path?source=P001&target=V188&mode=investigative
+    Computes path, strictly distinguishing topological from evidence-backed paths.
+    """
+    try:
+        if mode.lower() == "topological":
+            return analytical_service.find_shortest_path(case_id, source, target)
+        return analytical_service.find_investigative_path(
+            case_id=case_id,
+            source=source,
+            target=target,
+            min_confidence=min_confidence,
+            require_evidence=require_evidence,
+        )
+    except Exception as e:
+        logger.error(f"Error computing path for {source}->{target}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{case_id}/compare")
+def compare_graph_entities(
+    case_id: str,
+    entity_a: str = Query(..., description="First entity ID"),
+    entity_b: str = Query(..., description="Second entity ID"),
+) -> Dict[str, Any]:
+    """
+    GET /api/v1/graph-projection/{case_id}/compare?entity_a=P001&entity_b=P044
+    Multi-dimensional comparison between two entities across shared phones, vehicles, evidence.
+    """
+    try:
+        return analytical_service.compare_entities(case_id, entity_a, entity_b)
+    except Exception as e:
+        logger.error(f"Error comparing {entity_a} vs {entity_b}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{case_id}/contradictions-view")
+def get_graph_contradictions_view(case_id: str) -> Dict[str, Any]:
+    """
+    GET /api/v1/graph-projection/{case_id}/contradictions-view
+    Returns subgraph highlighting conflicting relationships and kinematic anomalies.
+    """
+    try:
+        return analytical_service.get_contradiction_graph(case_id)
+    except Exception as e:
+        logger.error(f"Error generating contradiction graph for {case_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{case_id}/evidence-thread/{object_type}/{object_id}")
+def get_graph_evidence_thread(
+    case_id: str,
+    object_type: str,
+    object_id: str,
+) -> Dict[str, Any]:
+    """
+    GET /api/v1/graph-projection/{case_id}/evidence-thread/relationship/{relationship_id}
+    Traces unbroken lineage from source artifact to entity/relationship.
+    """
+    try:
+        return analytical_service.get_evidence_thread(case_id, object_type, object_id)
+    except Exception as e:
+        logger.error(f"Error tracing evidence thread for {object_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{case_id}/bounded-expand")
+def post_bounded_expand(
+    case_id: str,
+    payload: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    POST /api/v1/graph-projection/{case_id}/bounded-expand
+    Bounded neighborhood expansion with metadata (nodes_added, edges_added, truncated).
+    """
+    try:
+        entity_id = payload.get("entity_id")
+        if not entity_id:
+            raise HTTPException(status_code=400, detail="entity_id is required")
+        depth = payload.get("depth", 1)
+        entity_types = payload.get("entity_types")
+        min_confidence = payload.get("min_confidence", 0.0)
+        temporal_filter = payload.get("temporal_filter")
+        max_nodes = payload.get("max_nodes", 50)
+
+        return analytical_service.expand_bounded(
+            case_id=case_id,
+            entity_id=entity_id,
+            depth=depth,
+            entity_types=entity_types,
+            min_confidence=min_confidence,
+            temporal_filter=tuple(temporal_filter) if temporal_filter else None,
+            max_nodes=max_nodes,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error performing bounded expansion for {payload.get('entity_id')}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{case_id}/clusters")
+def get_graph_clusters(case_id: str) -> List[Dict[str, Any]]:
+    """
+    GET /api/v1/graph-projection/{case_id}/clusters
+    Returns neutral analytical clusters (relationship_cluster, interaction_cluster).
+    """
+    try:
+        return analytical_service.get_clusters(case_id)
+    except Exception as e:
+        logger.error(f"Error fetching clusters for {case_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

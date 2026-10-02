@@ -343,3 +343,197 @@ class UIActionRegistry:
                 audit_event="UI_LEVEL_SWITCHED",
             )
         )
+
+        # 6. Advanced Investigative Graph Actions (Wave 7 Subphase A6)
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SEARCH,
+                description="Search nodes and edges in analytical graph and center matching entities.",
+                expected_ui_effect="Filters graph elements matching query and focuses primary match.",
+                required_arguments=["query"],
+                optional_arguments=["entity_type", "case_id"],
+                audit_event="GRAPH_SEARCH_EXECUTED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_FOCUS,
+                description="Elevate target entity prominence and dim non-adjacent nodes in focus mode.",
+                expected_ui_effect="Centers canvas, dims unrelated nodes, and opens entity inspector.",
+                required_arguments=["entity_id"],
+                optional_arguments=["case_id"],
+                audit_event="GRAPH_FOCUS_ACTIVATED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_EXPAND,
+                description="Bounded 1-hop or 2-hop neighborhood expansion with filters.",
+                expected_ui_effect="Projects adjacent nodes without exploding canvas density.",
+                required_arguments=["entity_id"],
+                optional_arguments=["depth", "entity_types", "min_confidence"],
+                audit_event="GRAPH_NEIGHBORHOOD_EXPANDED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_COLLAPSE,
+                description="Collapse expanded leaf nodes around an entity to declutter view.",
+                expected_ui_effect="Collapses adjacent leaf nodes around target entity.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_NEIGHBORHOOD_COLLAPSED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_FILTER,
+                description="Apply multi-attribute epistemic or category filters to graph canvas.",
+                expected_ui_effect="Toggles visible nodes and edges based on filter criteria.",
+                required_arguments=["filter_type"],
+                optional_arguments=["values", "epistemic_status", "temporal_window"],
+                audit_event="GRAPH_FILTER_APPLIED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_ISOLATE,
+                description="Isolate entity and immediate connections, hiding all other nodes.",
+                expected_ui_effect="Hides unrelated graph nodes, keeping only isolated subgraph visible.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_SUBGRAPH_ISOLATED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SHOW_CONNECTED,
+                description="Highlight and reveal all connected entities for target node.",
+                expected_ui_effect="Highlights 1-hop adjacent nodes and connecting edges.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_CONNECTED_SHOWN",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SHOW_PATH,
+                description="Trace evidence-supported investigative path between two entities.",
+                expected_ui_effect="Highlights evidence-anchored path with provenance explanation.",
+                required_arguments=["source", "target"],
+                optional_arguments=["path_mode"],
+                audit_event="GRAPH_PATH_TRACED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_FIND_SHORTEST_PATH,
+                description="Compute topological shortest path, clearly distinguished from evidence path.",
+                expected_ui_effect="Visualizes topological shortest path with algorithmic distinction label.",
+                required_arguments=["source", "target"],
+                audit_event="GRAPH_SHORTEST_PATH_COMPUTED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_COMPARE,
+                description="Multi-dimensional comparison between two entities.",
+                expected_ui_effect="Opens comparative panel contrasting shared phones, vehicles, and evidence.",
+                required_arguments=["entity_a", "entity_b"],
+                audit_event="GRAPH_ENTITIES_COMPARED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_TRACE_EVIDENCE,
+                description="Trace unbroken evidence thread from edge to source artifact.",
+                expected_ui_effect="Opens evidence thread drawer detailing provenance steps.",
+                required_arguments=["relationship_id"],
+                audit_event="GRAPH_EVIDENCE_TRACED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_EXPLAIN_RELATIONSHIP,
+                description="Open relationship inspector explaining epistemic standing and confidence.",
+                expected_ui_effect="Opens relationship inspector with supporting facts and contradictions.",
+                required_arguments=["relationship_id"],
+                audit_event="GRAPH_RELATIONSHIP_EXPLAINED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SHOW_PROOF,
+                description="Open Live Proof drawer for claim linked to graph element.",
+                expected_ui_effect="Renders bit-level proof chain and statutory verification certificates.",
+                required_arguments=["claim_id"],
+                audit_event="GRAPH_PROOF_SHOWN",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SHOW_CONTRADICTIONS,
+                description="Activate contradiction-first graph view highlighting conflicting relationships.",
+                expected_ui_effect="Focuses canvas on conflicting relationships and kinematic anomalies.",
+                optional_arguments=["case_id"],
+                audit_event="GRAPH_CONTRADICTIONS_ACTIVATED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_SHOW_GAPS,
+                description="Highlight uncorroborated links and deductive evidence gaps on graph.",
+                expected_ui_effect="Highlights nodes and relationships with missing source verification.",
+                optional_arguments=["case_id"],
+                audit_event="GRAPH_GAPS_ACTIVATED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_PIN,
+                description="Pin node layout position in visualization without mutating canonical store.",
+                expected_ui_effect="Fixes node position in current graph session.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_NODE_PINNED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_UNPIN,
+                description="Unpin node layout position.",
+                expected_ui_effect="Releases fixed node layout position.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_NODE_UNPINNED",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_HIDE,
+                description="Temporarily hide entity from visual canvas without deleting canonical state.",
+                expected_ui_effect="Hides entity from view with clear indication of visual-only suppression.",
+                required_arguments=["entity_id"],
+                audit_event="GRAPH_NODE_HIDDEN",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_UNHIDE,
+                description="Restore hidden entities to active canvas view.",
+                expected_ui_effect="Restores previously hidden entities to canvas.",
+                optional_arguments=["entity_id"],
+                audit_event="GRAPH_NODE_UNHIDDEN",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_RESET_VIEW,
+                description="Reset graph zoom, pan, focus, and visual suppressions.",
+                expected_ui_effect="Resets canvas perspective to default layout bounds.",
+                audit_event="GRAPH_VIEW_RESET",
+            )
+        )
+        self.register(
+            UIActionDefinition(
+                action_type=UIActionType.GRAPH_RETURN_PREVIOUS,
+                description="Return to previous selection in graph navigation history stack.",
+                expected_ui_effect="Pops navigation history and restores previous focus state.",
+                audit_event="GRAPH_PREVIOUS_RETURNED",
+            )
+        )

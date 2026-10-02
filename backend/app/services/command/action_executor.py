@@ -58,7 +58,15 @@ class ActionExecutor:
         command_id: str,
     ) -> CommandExecutionResult:
         if isinstance(action_type, str):
-            action_type = UIActionType(action_type)
+            try:
+                action_type = UIActionType(action_type)
+            except ValueError:
+                return CommandExecutionResult(
+                    command_id=command_id,
+                    correlation_id=correlation_id,
+                    status=CommandStatus.FAILED,
+                    message=f"Unknown UI action: '{action_type}'",
+                )
 
         defn = self.registry.get(action_type)
         if not defn:
@@ -286,6 +294,118 @@ class ActionExecutor:
                 selection = arguments.get("selection") or arguments.get("entity_id") or "SELECTION"
                 output_data["selection"] = selection
                 message = f"Selected target {selection}."
+
+            # ── Subphase A6: Advanced Investigative Graph Actions ──────
+            elif action_type == UIActionType.GRAPH_SEARCH:
+                q = arguments.get("query", "")
+                results = self.store.search_entities(q)
+                output_data["query"] = q
+                output_data["match_count"] = len(results)
+                output_data["results"] = results
+                message = f"Graph search for '{q}' identified {len(results)} candidate entities."
+
+            elif action_type == UIActionType.GRAPH_FOCUS:
+                ent_id = arguments.get("entity_id")
+                output_data["focused_entity"] = ent_id
+                message = f"Focus mode activated on entity {ent_id}."
+
+            elif action_type == UIActionType.GRAPH_EXPAND:
+                from app.services.graph_analytical_service import GraphAnalyticalService
+                ent_id = arguments.get("entity_id") or context.selected_entity_id or "P001"
+                depth = arguments.get("depth", 1)
+                exp = GraphAnalyticalService.get_instance().expand_bounded(case_id, ent_id, depth=depth)
+                output_data["expansion"] = exp
+                message = f"Expanded {depth} hop(s) around {ent_id}: +{exp['nodes_added']} nodes, +{exp['edges_added']} edges."
+
+            elif action_type == UIActionType.GRAPH_COLLAPSE:
+                ent_id = arguments.get("entity_id") or context.selected_entity_id or "P001"
+                output_data["collapsed_entity"] = ent_id
+                message = f"Collapsed leaf connections around {ent_id}."
+
+            elif action_type == UIActionType.GRAPH_FILTER:
+                f_type = arguments.get("filter_type", "EPISTEMIC")
+                vals = arguments.get("values", [])
+                output_data["filter_type"] = f_type
+                output_data["values"] = vals
+                message = f"Applied graph {f_type} filter: {vals}."
+
+            elif action_type == UIActionType.GRAPH_ISOLATE:
+                ent_id = arguments.get("entity_id")
+                output_data["isolated_entity"] = ent_id
+                message = f"Isolated entity {ent_id} and immediate 1-hop connections on graph."
+
+            elif action_type == UIActionType.GRAPH_SHOW_CONNECTED:
+                ent_id = arguments.get("entity_id")
+                output_data["target_entity"] = ent_id
+                message = f"Displaying all verified connections for {ent_id}."
+
+            elif action_type in (UIActionType.GRAPH_SHOW_PATH, UIActionType.GRAPH_FIND_SHORTEST_PATH):
+                from app.services.graph_analytical_service import GraphAnalyticalService
+                src = arguments.get("source")
+                tgt = arguments.get("target")
+                is_topological = action_type == UIActionType.GRAPH_FIND_SHORTEST_PATH or arguments.get("path_mode") == "topological"
+                if is_topological:
+                    p = GraphAnalyticalService.get_instance().find_shortest_path(case_id, src, tgt)
+                else:
+                    p = GraphAnalyticalService.get_instance().find_investigative_path(case_id, src, tgt)
+                output_data["path"] = p
+                message = f"Computed {p['path_type']} between {src} and {tgt} ({p['hop_count']} hops)."
+
+            elif action_type == UIActionType.GRAPH_COMPARE:
+                from app.services.graph_analytical_service import GraphAnalyticalService
+                ea = arguments.get("entity_a")
+                eb = arguments.get("entity_b")
+                cmp_res = GraphAnalyticalService.get_instance().compare_entities(case_id, ea, eb)
+                output_data["comparison"] = cmp_res
+                message = f"Compared entities {ea} and {eb}: {cmp_res['shared_dimensions']['total_shared_entities']} shared elements."
+
+            elif action_type == UIActionType.GRAPH_TRACE_EVIDENCE:
+                from app.services.graph_analytical_service import GraphAnalyticalService
+                rel_id = arguments.get("relationship_id")
+                th = GraphAnalyticalService.get_instance().get_evidence_thread(case_id, "RELATIONSHIP", rel_id)
+                output_data["evidence_thread"] = th
+                message = f"Evidence thread traced for relationship {rel_id}: {len(th.get('stages', []))} verification stages."
+
+            elif action_type == UIActionType.GRAPH_EXPLAIN_RELATIONSHIP:
+                rel_id = arguments.get("relationship_id")
+                output_data["relationship_id"] = rel_id
+                message = f"Opened relationship explanation inspector for {rel_id}."
+
+            elif action_type == UIActionType.GRAPH_SHOW_PROOF:
+                cid = arguments.get("claim_id") or "CLM-2026-001"
+                output_data["claim_id"] = cid
+                message = f"Opened Live Proof drawer for claim {cid}."
+
+            elif action_type == UIActionType.GRAPH_SHOW_CONTRADICTIONS:
+                from app.services.graph_analytical_service import GraphAnalyticalService
+                c_view = GraphAnalyticalService.get_instance().get_contradiction_graph(case_id)
+                output_data["contradictions_graph"] = c_view
+                message = f"Contradiction-first graph view activated: {c_view['total_conflicts']} conflicting links identified."
+
+            elif action_type == UIActionType.GRAPH_SHOW_GAPS:
+                gaps = self.evidence_gap_engine.synthesize_gaps_for_case(case_id=case_id)
+                output_data["gaps_count"] = len(gaps)
+                message = f"Evidence gap overlay activated: {len(gaps)} unverified entities highlighted."
+
+            elif action_type in (UIActionType.GRAPH_PIN, UIActionType.GRAPH_UNPIN):
+                ent_id = arguments.get("entity_id")
+                output_data["entity_id"] = ent_id
+                action_name = "Pinned" if action_type == UIActionType.GRAPH_PIN else "Unpinned"
+                message = f"{action_name} layout node for entity {ent_id}."
+
+            elif action_type in (UIActionType.GRAPH_HIDE, UIActionType.GRAPH_UNHIDE):
+                ent_id = arguments.get("entity_id")
+                output_data["entity_id"] = ent_id
+                action_name = "Hidden from view" if action_type == UIActionType.GRAPH_HIDE else "Restored to view"
+                message = f"Entity {ent_id} {action_name.lower()}."
+
+            elif action_type == UIActionType.GRAPH_RESET_VIEW:
+                output_data["view_reset"] = True
+                message = "Graph visualization perspective reset to default bounds."
+
+            elif action_type == UIActionType.GRAPH_RETURN_PREVIOUS:
+                output_data["navigation_pop"] = True
+                message = "Restored previous graph selection in navigation history."
 
 
             # Log audit event

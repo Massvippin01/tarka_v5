@@ -1132,6 +1132,125 @@ class IntentNormalizer:
                 correlation_id=correlation_id or generate_uuid7(),
             )
 
+        # ── Subphase A6: Advanced Investigative Graph Patterns ────────
+
+        # Y. "Compare P001 and P044" / "Compare Vikram with Bikram"
+        cmp_match = re.search(r"\bcompare\s+([a-zA-Z0-9_\-]+)\s+(?:and|with|vs)\s+([a-zA-Z0-9_\-]+)\b", text_lower)
+        if cmp_match:
+            ea = cmp_match.group(1).upper()
+            eb = cmp_match.group(2).upper()
+            return InvestigationIntent(
+                intent_name=UIActionType.GRAPH_COMPARE.value,
+                request_class=InvestigationRequestClass.EXECUTABLE_INVESTIGATION_REQUEST,
+                sub_intent="GRAPH_COMPARE",
+                target_case=case_id,
+                entities=[ea, eb],
+                targets=[ea, eb],
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, "entity_a": ea, "entity_b": eb},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # Z. "Trace path from P001 to V188" / "Trace route"
+        trace_match = re.search(r"\btrace\s+(?:path|route)?\s*(?:from\s+)?([a-zA-Z0-9_\-]+)\s+to\s+([a-zA-Z0-9_\-]+)\b", text_lower)
+        if trace_match:
+            ea = trace_match.group(1).upper()
+            eb = trace_match.group(2).upper()
+            return InvestigationIntent(
+                intent_name=UIActionType.GRAPH_SHOW_PATH.value,
+                request_class=InvestigationRequestClass.EXECUTABLE_INVESTIGATION_REQUEST,
+                sub_intent="GRAPH_TRACE_PATH",
+                target_case=case_id,
+                entities=[ea, eb],
+                targets=[ea, eb],
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, "source": ea, "target": eb, "path_mode": "investigative"},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # AA. "Show contradictions in graph" / "Graph contradictions"
+        if re.search(r"\b(contradictions?\s+in\s+graph|graph\s+contradictions?|contradiction-?first\s+view)\b", text_lower):
+            return InvestigationIntent(
+                intent_name=UIActionType.GRAPH_SHOW_CONTRADICTIONS.value,
+                request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                sub_intent="GRAPH_CONTRADICTIONS",
+                target_case=case_id,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # BB. "Why is P001 connected to V188?" / "Why are they connected?"
+        why_match = re.search(r"\bwhy\s+(?:is|are)\s+([a-zA-Z0-9_\-]+)\s+connected(?:\s+to\s+([a-zA-Z0-9_\-]+))?\b", text_lower)
+        if why_match:
+            ea = why_match.group(1).upper()
+            eb = (why_match.group(2) or "").upper()
+            return InvestigationIntent(
+                intent_name=UIActionType.GRAPH_EXPLAIN_RELATIONSHIP.value,
+                request_class=InvestigationRequestClass.INFORMATIONAL_REQUEST,
+                sub_intent="GRAPH_EXPLAIN_CONNECTION",
+                target_case=case_id,
+                entities=[ea] if not eb else [ea, eb],
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.97,
+                parameters={"case_id": case_id, "entity_a": ea, "entity_b": eb, "relationship_id": f"REL-{ea}-{eb}"},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # CC. "Isolate P001" / "Isolate node"
+        isolate_match = re.search(r"\bisolate\s+(?:node\s+|entity\s+)?([a-zA-Z0-9_\-]+)\b", text_lower)
+        if isolate_match:
+            ent = isolate_match.group(1).upper()
+            return InvestigationIntent(
+                intent_name=UIActionType.GRAPH_ISOLATE.value,
+                request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                sub_intent="GRAPH_ISOLATE",
+                target_case=case_id,
+                target_entity=ent,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, "entity_id": ent},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
+        # DD. "Pin P001" / "Unpin P001" / "Hide P001"
+        pin_match = re.search(r"\b(pin|unpin|hide|unhide)\s+([a-zA-Z0-9_\-]+)\b", text_lower)
+        if pin_match:
+            cmd = pin_match.group(1).lower()
+            ent = pin_match.group(2).upper()
+            act_map = {
+                "pin": UIActionType.GRAPH_PIN.value,
+                "unpin": UIActionType.GRAPH_UNPIN.value,
+                "hide": UIActionType.GRAPH_HIDE.value,
+                "unhide": UIActionType.GRAPH_UNHIDE.value,
+            }
+            return InvestigationIntent(
+                intent_name=act_map[cmd],
+                request_class=InvestigationRequestClass.NAVIGATION_REQUEST,
+                sub_intent=f"GRAPH_{cmd.upper()}",
+                target_case=case_id,
+                target_entity=ent,
+                modality=CommandSource.CHAT,
+                language=language,
+                confidence=0.98,
+                parameters={"case_id": case_id, "entity_id": ent},
+                raw_input=raw_text,
+                correlation_id=correlation_id or generate_uuid7(),
+            )
+
         return None
 
     # ── 5. Text / Chat Modality ─────────────────────────────────────────────────

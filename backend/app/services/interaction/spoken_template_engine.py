@@ -216,6 +216,26 @@ class SpokenResponseTemplateEngine:
             gaps_count = p.get("gaps_count", 2)
             return f"Summary: Case {case_id} has {entities_count} priority entities, {contras_count} critical contradiction, and {gaps_count} evidence gaps."
 
+        elif name == "GRAPH_COMPARE":
+            ea = p.get("entity_a", "entity")
+            eb = p.get("entity_b", "candidate")
+            count = p.get("count", 0)
+            return f"{ea} and {eb} share {count} documented forensic connections across phone, vehicle, and location records."
+
+        elif name == "GRAPH_PATH":
+            ea = p.get("source", "source")
+            eb = p.get("target", "target")
+            hops = p.get("hop_count", 2)
+            return f"Found an evidence-supported path of {hops} hops between {ea} and {eb}."
+
+        elif name == "GRAPH_CONTRADICTIONS":
+            count = p.get("count", 0)
+            return f"Surfaced {count} conflicting relationships in the active intelligence graph."
+
+        elif name == "GRAPH_ISOLATE":
+            entity = p.get("entity", "entity")
+            return f"Isolated {entity} and immediate connections on the graph."
+
         else:
             return p.get("message", "Action processed successfully.")
 
