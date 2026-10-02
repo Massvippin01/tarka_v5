@@ -101,6 +101,11 @@ class SpokenResponseTemplateEngine:
         return normalized
 
     @classmethod
+    def render(cls, template_name: str, **kwargs) -> str:
+        """Convenience method rendering spoken response from kwargs."""
+        return cls.render_spoken_response(template_name, kwargs)
+
+    @classmethod
     def _render_english(cls, template_name: str, p: Dict[str, Any]) -> str:
         name = template_name.upper()
 

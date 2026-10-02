@@ -38,13 +38,26 @@ class LazyDriverProxy:
 driver = LazyDriverProxy()
 
 
-def verify_neo4j_connection() -> bool:
+_last_connectivity_check: float = 0.0
+_cached_connectivity: bool = False
+
+
+def verify_neo4j_connection(force: bool = False) -> bool:
+    global _last_connectivity_check, _cached_connectivity
+    import time
+    now = time.time()
+    if not force and (now - _last_connectivity_check < 10.0):
+        return _cached_connectivity
+
+    _last_connectivity_check = now
     try:
         d = get_neo4j_driver()
         d.verify_connectivity()
+        _cached_connectivity = True
         return True
     except Exception as e:
         logger.warning(f"Neo4j connectivity check failed: {e}")
+        _cached_connectivity = False
         return False
 
 

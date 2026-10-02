@@ -154,6 +154,14 @@ app.include_router(
     tags=["Governed Investigation Memory"],
 )
 
+from app.api.graph_projection_api import router as graph_projection_router
+
+app.include_router(
+    graph_projection_router,
+    prefix="/api/v1/graph-projection",
+    tags=["Graph Authority & Realtime Projection"],
+)
+
 
 @app.get("/")
 def root():
