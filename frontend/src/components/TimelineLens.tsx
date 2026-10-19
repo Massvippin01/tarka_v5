@@ -1,4 +1,5 @@
 import React from "react";
+import { Clock } from "lucide-react";
 import { useInvestigation } from "../context/InvestigationContext";
 
 interface TimelineEvent {
@@ -96,8 +97,8 @@ export const TimelineLens: React.FC = () => {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            ⏱️ INVESTIGATION CHRONOLOGICAL TIMELINE
+          <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Clock size={16} /> INVESTIGATION CHRONOLOGICAL TIMELINE
           </h2>
           <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "2px" }}>
             Reconstructed event sequence based on CCTNS, CDR, ANPR, and Financial intelligence pings.

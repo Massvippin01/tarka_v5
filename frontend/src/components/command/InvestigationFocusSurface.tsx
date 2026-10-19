@@ -1,4 +1,5 @@
 import React from "react";
+import { AlertTriangle, Play, Search, FileText } from "lucide-react";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 export const InvestigationFocusSurface: React.FC = () => {
@@ -196,7 +197,7 @@ export const InvestigationFocusSurface: React.FC = () => {
             <div style={styles.cardBody}>
               <div style={styles.contradictionItem}>
                 <div style={styles.contradictionTitleRow}>
-                  <span style={styles.anomalyIcon}>⚠️</span>
+                  <AlertTriangle size={14} style={{ color: "var(--sentinel-crimson)", marginRight: "6px", flexShrink: 0 }} />
                   <span style={styles.contradictionTitle}>Alibi vs. ANPR Sensor Tolling Event</span>
                 </div>
                 <p style={styles.contradictionText}>
@@ -260,19 +261,19 @@ export const InvestigationFocusSurface: React.FC = () => {
             onClick={() => setExperienceLevel(2)}
             style={styles.launchWorkspaceBtn}
           >
-            <span>▶ LAUNCH FULL ANALYTICAL WORKSPACE (L2)</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Play size={12} fill="currentColor" /> LAUNCH FULL ANALYTICAL WORKSPACE (L2)</span>
           </button>
           <button
             onClick={() => setExperienceLevel(3)}
             style={styles.toolbarBtn}
           >
-            <span>🔍 INSPECT FORENSIC DETAIL (L3)</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Search size={12} /> INSPECT FORENSIC DETAIL (L3)</span>
           </button>
           <button
             onClick={() => setExperienceLevel(4)}
             style={styles.toolbarBtn}
           >
-            <span>📋 VIEW GOVERNANCE & AUDIT LEDGER (L4)</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><FileText size={12} /> VIEW GOVERNANCE & AUDIT LEDGER (L4)</span>
           </button>
         </section>
       </main>

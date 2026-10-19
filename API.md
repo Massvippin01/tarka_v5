@@ -1,4 +1,4 @@
-# SENTINELX NEXUS — API Documentation
+`# SENTINELX NEXUS — API Documentation
 
 Base Endpoint: `http://localhost:8000/api/v1`
 

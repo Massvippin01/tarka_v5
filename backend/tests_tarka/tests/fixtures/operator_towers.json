@@ -1,0 +1,12 @@
+{
+  "TOWER_BLR_01": {
+    "latitude": 12.9352,
+    "longitude": 77.6245,
+    "radius_meters": 450.0
+  },
+  "TOWER_BLR_02": {
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "radius_meters": 500.0
+  }
+}

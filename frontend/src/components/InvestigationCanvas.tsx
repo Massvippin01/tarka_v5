@@ -30,6 +30,7 @@ import { CommandFirstSurface } from "./command/CommandFirstSurface";
 import { InvestigationFocusSurface } from "./command/InvestigationFocusSurface";
 import { ForensicDetailSurface } from "./command/ForensicDetailSurface";
 import { AuditGovernanceSurface } from "./command/AuditGovernanceSurface";
+import { ForensicWorkspacePage } from "../pages/ForensicWorkspacePage";
 
 export const InvestigationCanvas: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -82,12 +83,13 @@ export const InvestigationCanvas: React.FC = () => {
 
   const LENSES: { id: WorkspaceLens; label: string; icon: string }[] = [
     { id: "Overview", label: "OVERVIEW", icon: "" },
-    { id: "Network", label: "NETWORK", icon: "️" },
-    { id: "Timeline", label: "TIMELINE", icon: "⏱️" },
-    { id: "Map", label: "MAP", icon: "️" },
+    { id: "Network", label: "NETWORK", icon: "" },
+    { id: "Timeline", label: "TIMELINE", icon: "" },
+    { id: "Map", label: "MAP", icon: "" },
     { id: "Evidence", label: "EVIDENCE", icon: "" },
     { id: "Entities", label: "ENTITIES", icon: "" },
     { id: "Findings", label: "FINDINGS", icon: "" },
+    { id: "Forensics", label: "FORENSICS", icon: "" },
   ];
 
   return (
@@ -189,6 +191,8 @@ export const InvestigationCanvas: React.FC = () => {
           <div style={styles.canvasContainer}>
             {activeNav === "command" ? (
               <CommandCenter />
+            ) : activeNav === "forensics" || activeLens === "Forensics" ? (
+              <ForensicWorkspacePage />
             ) : activeNav === "contradictions" || activeWorkspaceView === "contradictions" ? (
               <ContradictionCenter />
             ) : activeNav === "gaps" || activeWorkspaceView === "gaps" ? (

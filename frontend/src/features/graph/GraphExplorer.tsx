@@ -55,7 +55,7 @@ function GraphExplorer() {
         console.error(requestError);
 
         setError(
-          "Unable to load the SentinelX intelligence graph.",
+          "Unable to load the TARKA forensic intelligence graph.",
         );
       }
     }

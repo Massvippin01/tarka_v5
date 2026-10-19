@@ -34,7 +34,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
   const [messages, setMessages] = useState<any[]>([
     {
       sender: "assistant",
-      text: "Greetings, Investigator. I am the SENTINELX NEXUS Governed AI Copilot. Ask any question regarding criminal networks, cross-case connections, CDR timelines, or financial mule trails.",
+      text: "Greetings, Investigator. I am the TARKA Governed AI Forensics Copilot. Ask any question regarding criminal networks, cross-case connections, CDR timelines, or financial mule trails.",
       confidence: 1.0,
       confidence_level: "DOCUMENTED",
       claims: [

@@ -50,7 +50,7 @@ context_service = OperatingContextService.get_instance()
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 def resolve_request_context(
@@ -58,6 +58,8 @@ def resolve_request_context(
     case_id: Optional[str] = None,
     session_id: Optional[str] = None,
 ) -> OperatingContext:
+    if case_id:
+        AuthService.get_instance().enforce_case_access(user, case_id)
     return context_service.resolve_context(
         user=user,
         requested_case_id=case_id,

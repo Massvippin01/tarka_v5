@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.domain.auth import UserIdentity
 from app.intelligence.similarity_engine import compare_cases
+from app.services.auth_service import AuthService, get_current_user
 from app.services.case_intelligence_service import (
     get_case_context,
     has_communication_path,
@@ -13,7 +15,12 @@ router = APIRouter()
 def compare_case_pair(
     case_a_id: str,
     case_b_id: str,
+    user: UserIdentity = Depends(get_current_user),
 ):
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_a_id)
+    auth_service.enforce_case_access(user, case_b_id)
+
     if case_a_id == case_b_id:
         raise HTTPException(
             status_code=400,

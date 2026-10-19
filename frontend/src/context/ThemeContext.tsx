@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemeMode = "forensic-paper" | "night-ops" | "high-contrast";
+export type ThemeMode = "obsidian-glass" | "porcelain" | "midnight-teal" | "high-contrast";
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -13,12 +13,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("sentinelx_theme") as ThemeMode;
-      if (stored && ["forensic-paper", "night-ops", "high-contrast"].includes(stored)) {
-        return stored;
+      const stored = localStorage.getItem("sentinelx_theme");
+      if (stored === "obsidian-glass" || stored === "porcelain" || stored === "midnight-teal" || stored === "high-contrast") {
+        return stored as ThemeMode;
       }
+      if (stored === "forensic-paper") return "porcelain";
+      if (stored === "night-ops" || stored === "tarka") return "obsidian-glass";
     }
-    return "forensic-paper";
+    return "obsidian-glass";
   });
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -30,7 +32,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cycleTheme = () => {
-    const modes: ThemeMode[] = ["forensic-paper", "night-ops", "high-contrast"];
+    const modes: ThemeMode[] = ["obsidian-glass", "porcelain", "midnight-teal", "high-contrast"];
     const nextIdx = (modes.indexOf(theme) + 1) % modes.length;
     setTheme(modes[nextIdx]);
   };

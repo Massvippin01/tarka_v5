@@ -1,0 +1,4 @@
+[14/02/2026, 10:10:00] +919876543210: Hello Sir, urgent invoice #INV-2026-889 is pending for processing.
+[14/02/2026, 10:12:30] +919876543210: Please transfer Rs. 25,000 immediately to UPI ID merchant.pay@okaxis to prevent service suspension.
+[14/02/2026, 10:15:00] +919811223344: Okay, transferring Rs 25,000 right now against invoice INV-2026-889.
+[14/02/2026, 10:20:15] +919811223344: Payment completed. Bank RRN is 202602148891.

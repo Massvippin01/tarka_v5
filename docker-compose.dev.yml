@@ -76,16 +76,20 @@ services:
       - sentinelx-dev-net
 
   minio:
-    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    image: rustfs/rustfs:1.0.0
     container_name: sentinelx-dev-minio
     restart: unless-stopped
     ports:
       - "9000:9000"
       - "9001:9001"
-    command: server /data --console-address ":9001"
+    command: server /data --console-enable --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sentinelx_minio}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-sentinelx_dev_secret}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio}}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_dev_secret}}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio}}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_dev_secret}}
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
     volumes:
       - minio_dev_data:/data
     healthcheck:
@@ -97,7 +101,7 @@ services:
       - sentinelx-dev-net
 
   opa:
-    image: openpolicyagent/opa:0.65.0
+    image: openpolicyagent/opa:0.65.0-debug
     container_name: sentinelx-dev-opa
     restart: unless-stopped
     ports:
@@ -144,13 +148,18 @@ services:
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: sentinelx_dev_secret
       OPENSEARCH_URL: http://opensearch:9200
-      S3_ENDPOINT_URL: http://minio:9000
-      S3_ACCESS_KEY: sentinelx_minio
-      S3_SECRET_KEY: sentinelx_dev_secret
-      S3_BUCKET_NAME: sentinelx-evidence
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-sentinelx_minio}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-sentinelx_dev_secret}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-sentinelx-evidence}
       OPA_URL: http://opa:8181
       REDIS_URL: redis://redis:6379/0
       ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost:8080"
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_API_BASE_URL: ${SARVAM_API_BASE_URL:-https://api.sarvam.ai}
+      SARVAM_STT_MODEL: ${SARVAM_STT_MODEL:-saaras:v4}
+      SARVAM_TTS_MODEL: ${SARVAM_TTS_MODEL:-bulbul:v4-flash}
+      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh_enhi_ads}
     volumes:
       - ./backend:/app/backend:ro
       - artifact_dev_data:/app/data/storage/artifacts

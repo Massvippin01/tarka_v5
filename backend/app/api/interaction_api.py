@@ -41,7 +41,7 @@ memories: Dict[str, StructuredInvestigationMemory] = {}
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 class SessionInitRequest(BaseModel):
@@ -83,11 +83,12 @@ class ThemeSwitchRequest(BaseModel):
 
 @router.post("/session/init", response_model=SentinelSession)
 def initialize_session(req: SessionInitRequest, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
     session = SentinelSession(
         investigator_id=user.user_id,
         context=InteractionContext(
             user_id=user.user_id,
-            user_role=user.role.value,
+            user_role=user.role.value if hasattr(user.role, "value") else str(user.role),
             case_id=req.case_id,
             jurisdiction=req.jurisdiction,
             clearance=req.clearance,
@@ -106,19 +107,22 @@ def initialize_session(req: SessionInitRequest, user: UserIdentity = Depends(get
 
 
 @router.get("/session/{session_id}", response_model=SentinelSession)
-def get_session(session_id: str):
+def get_session(session_id: str, user: UserIdentity = Depends(get_current_user)):
     session = sessions.get(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")
+    if session.context and session.context.case_id:
+        AuthService.get_instance().enforce_case_access(user, session.context.case_id)
     return session
 
 
 # LEGACY_INTERACTION_PATH: Converged via CommandBus; retained for backward compatibility
 @router.post("/intent/resolve", response_model=InteractionIntent)
 async def resolve_interaction_intent(req: IntentResolveRequest, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
     ctx = InteractionContext(
         user_id=user.user_id,
-        user_role=user.role.value,
+        user_role=user.role.value if hasattr(user.role, "value") else str(user.role),
         case_id=req.case_id,
         selected_entity_id=req.selected_entity_id,
         selected_claim_id=req.selected_claim_id,
@@ -136,9 +140,10 @@ async def resolve_interaction_intent(req: IntentResolveRequest, user: UserIdenti
 # LEGACY_INTERACTION_PATH: Converged via CommandBus; retained for backward compatibility
 @router.post("/plan", response_model=TaskPlan)
 async def create_task_plan(req: PlanCreateRequest, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
     ctx = InteractionContext(
         user_id=user.user_id,
-        user_role=user.role.value,
+        user_role=user.role.value if hasattr(user.role, "value") else str(user.role),
         case_id=req.case_id,
     )
     plan = await task_planner.plan(req.intent, ctx)
@@ -199,7 +204,12 @@ def cancel_runner(plan_id: str = Query(...)):
 
 @router.post("/response", response_model=IntelligenceResponseContract)
 async def generate_response(prompt: str = Query(...), case_id: str = "CASE-2026-001", user: UserIdentity = Depends(get_current_user)):
-    ctx = InteractionContext(user_id=user.user_id, user_role=user.role.value, case_id=case_id)
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    ctx = InteractionContext(
+        user_id=user.user_id,
+        user_role=user.role.value if hasattr(user.role, "value") else str(user.role),
+        case_id=case_id,
+    )
     contract = await response_planner.plan_response(prompt, ctx)
     return contract
 

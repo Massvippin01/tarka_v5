@@ -477,7 +477,7 @@ export const VoiceCommandOverlay: React.FC = () => {
             handleStopListening();
           }
         }}
-        title={`SentinelX Ambient Voice OS (${stateCfg.label}) — Click or Alt+V`}
+        title={`TARKA Ambient Voice OS (${stateCfg.label}) — Click or Alt+V`}
       >
         {stateCfg.icon()}
         <span>{stateCfg.label.toUpperCase()}</span>

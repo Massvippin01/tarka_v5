@@ -77,7 +77,7 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
         <div style={styles.body}>
           {loading ? (
             <div style={{ color: "#94a3b8", padding: "20px", fontSize: "0.85rem" }}>
-              ⌛ Executing 9-Stage Entity Resolution Pipeline...
+              Executing 9-Stage Entity Resolution Pipeline...
             </div>
           ) : matches.length === 0 ? (
             <div style={{ color: "#94a3b8", padding: "20px", fontSize: "0.85rem" }}>

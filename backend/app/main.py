@@ -93,6 +93,14 @@ app.include_router(
     tags=["Investigation"],
 )
 
+from app.api.intelligence import router as intelligence_router
+
+app.include_router(
+    intelligence_router,
+    prefix="/api/v1/intelligence",
+    tags=["Intelligence"],
+)
+
 from app.api.investigations_api import proof_router, router as investigations_router
 
 app.include_router(
@@ -161,6 +169,18 @@ app.include_router(
     prefix="/api/v1/graph-projection",
     tags=["Graph Authority & Realtime Projection"],
 )
+
+from app.api.forensics_api import router as forensics_router
+
+app.include_router(
+    forensics_router,
+    prefix="/api/v1/forensics",
+    tags=["TARKA Digital Forensics"],
+)
+
+from tarka.api.server import app as tarka_app
+
+app.mount("/api/v1/forensics/tarka", tarka_app)
 
 
 @app.get("/")

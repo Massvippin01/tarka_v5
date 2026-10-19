@@ -9,10 +9,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.domain.agent import AgentType, FindingType
+from app.domain.auth import UserIdentity
+from app.services.auth_service import AuthService, get_current_user
 
 logger = logging.getLogger("sentinelx.api.agents")
 
@@ -37,7 +39,7 @@ class AgentTaskResponse(BaseModel):
 
 
 @router.get("/agents")
-def list_agents():
+def list_agents(user: UserIdentity = Depends(get_current_user)):
     """List all registered investigative agents and their status."""
     from app.services.agents import AgentRegistry
     registry = AgentRegistry.get_instance()
@@ -45,13 +47,17 @@ def list_agents():
 
 
 @router.post("/agents/tasks", response_model=AgentTaskResponse)
-def dispatch_agent_task(request: AgentTaskRequest):
+def dispatch_agent_task(
+    request: AgentTaskRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
     """
     Dispatch a governed investigative agent task.
     
     The task is authorized, resource-bounded, and all findings
     are validated for evidence lineage before being returned.
     """
+    AuthService.get_instance().enforce_case_access(user, request.case_id)
     from app.services.agents.agent_supervisor import AgentSupervisor
 
     try:
@@ -121,8 +127,10 @@ def dispatch_agent_task(request: AgentTaskRequest):
 def get_agent_findings(
     case_id: str = Query(default="CASE-2026-001"),
     finding_type: Optional[str] = Query(default=None),
+    user: UserIdentity = Depends(get_current_user),
 ):
     """Retrieve governed agent findings for a case."""
+    AuthService.get_instance().enforce_case_access(user, case_id)
     from app.services.agents.agent_supervisor import AgentSupervisor
     supervisor = AgentSupervisor.get_instance()
 
@@ -158,7 +166,7 @@ def get_agent_findings(
 
 
 @router.get("/agents/tasks/{task_id}")
-def get_task_status(task_id: str):
+def get_task_status(task_id: str, user: UserIdentity = Depends(get_current_user)):
     """Get the status and findings of a specific agent task."""
     from app.services.agents.agent_supervisor import AgentSupervisor
     supervisor = AgentSupervisor.get_instance()
@@ -166,6 +174,8 @@ def get_task_status(task_id: str):
     task = supervisor.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+    AuthService.get_instance().enforce_case_access(user, task.case_id)
 
     return {
         "task_id": task.task_id,

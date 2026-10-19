@@ -10,6 +10,7 @@ interface NavItemDef {
 
 const PRIMARY_NAV_ITEMS: NavItemDef[] = [
   { id: "command", label: "Command" },
+  { id: "forensics", label: "TARKA Forensics", badge: "Z3 Active", badgeType: "warning" },
   { id: "cases", label: "Cases" },
   { id: "evidence", label: "Evidence" },
   { id: "entities", label: "Entities" },

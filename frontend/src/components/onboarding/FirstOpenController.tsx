@@ -184,7 +184,7 @@ export const FirstOpenController: React.FC<FirstOpenControllerProps> = ({
           <div style={styles.headerLeft}>
             <div style={styles.crestContainer}>
               <span style={styles.crestDot} />
-              <span style={styles.brandTitle}>SENTINELX NEXUS</span>
+              <span style={styles.brandTitle}>TARKA FORENSICS</span>
             </div>
             <span style={styles.divider}>·</span>
             <span style={styles.scopeBadge}>
@@ -215,7 +215,7 @@ export const FirstOpenController: React.FC<FirstOpenControllerProps> = ({
           <div style={styles.eyebrowTag}>
             SESSION INITIALIZED · ENVIRONMENT NEGOTIATED
           </div>
-          <h1 style={styles.mainTitle}>Welcome to SentinelX.</h1>
+          <h1 style={styles.mainTitle}>Welcome to TARKA.</h1>
           <p style={styles.subtitle}>
             What would you like to investigate?
           </p>

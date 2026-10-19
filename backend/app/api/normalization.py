@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from app.services.auth_service import get_current_user
 from app.services.normalization_service import NormalizationService, NormalizedValue
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 class NormalizationRequest(BaseModel):

@@ -58,6 +58,11 @@ class TestWave6Phase8JWTRBAC:
         payload_after = auth.verify_jwt_token(token)
         assert payload_after is None
 
+        # Fail-closed authentication check: must raise 401
+        with pytest.raises(Exception) as excinfo:
+            auth.authenticate_token(token)
+        assert excinfo.value.status_code == 401
+
     def test_rbac_case_access_scope_enforcement(self):
         auth = AuthService.get_instance()
         user_delhi = auth.users["INVESTIGATOR_DELHI"]
@@ -67,6 +72,21 @@ class TestWave6Phase8JWTRBAC:
         assert auth.validate_case_scope(user_delhi, "C102") is True
         assert auth.validate_case_scope(user_delhi, "C481") is False
 
-        # Supervisor can access both C102 and C481
+        # Supervisor can access assigned cases C102 and C481
         assert auth.validate_case_scope(user_supervisor, "C102") is True
         assert auth.validate_case_scope(user_supervisor, "C481") is True
+
+        # Supervisor cannot access unassigned case outside scope without explicit grant
+        assert auth.validate_case_scope(user_supervisor, "CASE-UNKNOWN-999") is False
+        with pytest.raises(Exception) as exc_denied:
+            auth.enforce_case_access(user_supervisor, "CASE-UNKNOWN-999")
+        assert exc_denied.value.status_code == 403
+
+        # Auditable override grants access and persists hash-chained audit record
+        audit_record = auth.grant_case_access(
+            user=user_supervisor,
+            case_id="CASE-UNKNOWN-999",
+            justification="Audited emergency cross-jurisdiction nexus investigation",
+        )
+        assert audit_record["event_hash"] is not None
+        assert auth.validate_case_scope(user_supervisor, "CASE-UNKNOWN-999") is True

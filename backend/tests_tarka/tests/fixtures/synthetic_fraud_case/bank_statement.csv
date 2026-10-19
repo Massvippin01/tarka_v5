@@ -1,0 +1,3 @@
+Date,Time,Transaction_ID,RRN,Description,Debit,Credit,Balance,Payer_VPA,Payee_VPA
+14/02/2026,10:19:30,TXN20260214001,202602148891,UPI-MERCHANT-DEBIT,25000.00,0.00,45200.00,victim@okhdfc,merchant.pay@okaxis
+14/02/2026,11:30:00,TXN20260214002,202602149999,UPI-GROCERY,450.00,0.00,44750.00,victim@okhdfc,store@okicici

@@ -11,7 +11,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [email, setEmail] = useState("investigator@sentinelx.gov.in");
+  const [email, setEmail] = useState("investigator@tarka.local");
   const [password, setPassword] = useState("••••••••••••");
 
   if (!isOpen) return null;
@@ -35,7 +35,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Title & Subtitle */}
         <h2 style={styles.title}>Sign in</h2>
-        <p style={styles.subtitle}>Continue to your investigation workspace.</p>
+        <p style={styles.subtitle}>Continue to your forensic investigation workspace.</p>
 
         {/* Sign In Form */}
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -84,7 +84,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Sign Up Link */}
         <div style={styles.footerLinkRow}>
-          <span style={styles.newText}>New to SentinelX? </span>
+          <span style={styles.newText}>New to TARKA? </span>
           <button type="button" onClick={onSuccess} style={styles.createAccountBtn}>
             Create an account
           </button>
@@ -93,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Disclaimer Footer */}
         <div style={styles.disclaimerBox}>
           <p style={styles.disclaimerText}>
-            SentinelX assists investigation and evidence analysis. It does not determine guilt, criminality, or legal responsibility.
+            TARKA assists digital forensic investigation and evidence analysis. It does not determine guilt, criminality, or legal responsibility.
           </p>
         </div>
       </div>

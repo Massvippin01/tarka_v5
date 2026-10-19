@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface TimelineEntry {
@@ -42,7 +43,9 @@ export const InvestigationTimeline: React.FC = () => {
       <div style={styles.header}>
         <div>
           <div style={styles.badge}>TEMPORAL CONSISTENCY PROJECTION</div>
-          <h2 style={styles.title}>⏱️ SPATIOTEMPORAL INVESTIGATION TIMELINE</h2>
+          <h2 style={{ ...styles.title, display: "flex", alignItems: "center", gap: "8px" }}>
+            <Clock size={16} /> SPATIOTEMPORAL INVESTIGATION TIMELINE
+          </h2>
         </div>
         <div style={styles.uncertaintyPill}>
           UNCERTAINTY BOUNDS PRESERVED: ±TIME & ±DISTANCE RETAINED

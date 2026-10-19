@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SentinelX | KSP INTEL COMMAND</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for high-density panels */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0c0e17; }
+        ::-webkit-scrollbar-thumb { background: #434656; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2d5bff; }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(45, 91, 255, 0.1);
+            position: absolute;
+            top: 0;
+            z-index: 10;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        .data-grid-overlay {
+            background-image: radial-gradient(rgba(45, 91, 255, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "inverse-primary": "#104af0",
+                "on-primary-fixed": "#001355",
+                "tertiary-container": "#c24100",
+                "on-secondary": "#213145",
+                "on-secondary-container": "#a9bad3",
+                "outline-variant": "#434656",
+                "surface-container": "#1d1f29",
+                "surface-container-highest": "#33343e",
+                "surface-container-lowest": "#0c0e17",
+                "surface-dim": "#11131c",
+                "on-error": "#690005",
+                "surface-tint": "#b8c3ff",
+                "on-secondary-fixed": "#0b1c30",
+                "secondary": "#b7c8e1",
+                "on-primary": "#002387",
+                "primary-fixed": "#dde1ff",
+                "surface-container-low": "#191b24",
+                "surface": "#11131c",
+                "on-primary-fixed-variant": "#0035bd",
+                "secondary-fixed-dim": "#b7c8e1",
+                "tertiary-fixed-dim": "#ffb59b",
+                "tertiary": "#ffb59b",
+                "primary-fixed-dim": "#b8c3ff",
+                "secondary-fixed": "#d3e4fe",
+                "on-tertiary-fixed": "#380d00",
+                "on-primary-container": "#efefff",
+                "error": "#ffb4ab",
+                "surface-container-high": "#282933",
+                "primary-container": "#2d5bff",
+                "surface-bright": "#373943",
+                "inverse-surface": "#e2e1ef",
+                "error-container": "#93000a",
+                "inverse-on-surface": "#2e303a",
+                "on-error-container": "#ffdad6",
+                "background": "#11131c",
+                "on-surface-variant": "#c4c5d9",
+                "on-tertiary": "#5b1a00",
+                "outline": "#8e90a2",
+                "surface-variant": "#33343e",
+                "on-background": "#e2e1ef",
+                "on-tertiary-container": "#ffece6",
+                "on-secondary-fixed-variant": "#38485d",
+                "primary": "#b8c3ff",
+                "tertiary-fixed": "#ffdbcf",
+                "on-surface": "#e2e1ef",
+                "on-tertiary-fixed-variant": "#812900",
+                "secondary-container": "#3a4a5f"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "xl": "24px",
+                "xs": "4px",
+                "gutter": "12px",
+                "sm": "8px",
+                "lg": "16px",
+                "md": "12px",
+                "base": "4px",
+                "panel-padding": "16px"
+              },
+              "fontFamily": {
+                "body-md": ["Inter"],
+                "label-sm": ["Inter"],
+                "label-caps": ["IBM Plex Sans"],
+                "headline-sm": ["IBM Plex Sans"],
+                "display-lg": ["IBM Plex Sans"],
+                "data-tabular": ["Inter"],
+                "headline-md": ["IBM Plex Sans"],
+                "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                "body-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                "data-tabular": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "body-lg": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TOP NAV BAR -->
+<header class="bg-surface-dim text-primary border-b border-outline-variant flex justify-between items-center w-full px-lg h-16 z-50">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-2xl">shield</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tighter">KSP INTEL COMMAND</h1>
+</div>
+<div class="flex-1 max-w-xl mx-xl">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant px-xl py-xs text-label-caps focus:border-primary outline-none transition-all" placeholder="QUERY DATABASE..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs">
+<button class="p-xs hover:bg-surface-container-highest transition-colors duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-xs hover:bg-surface-container-highest transition-colors duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-xs hover:bg-surface-container-highest transition-colors duration-150">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+<div class="h-8 w-px bg-outline-variant mx-xs"></div>
+<div class="flex items-center gap-sm">
+<div class="text-right">
+<div class="font-label-caps text-on-surface">COMMISSIONER V. RAO</div>
+<div class="text-label-sm text-on-surface-variant">L-9 AUTHENTICATED</div>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/50">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a senior police official in a dark, tactical environment. Sharp cinematic lighting focuses on a determined expression. The background is a blurred high-tech command center with glowing blue and white data interfaces, reflecting a serious, mission-critical atmosphere with military precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcwVCyiLSvavd_pmZAxJYz-X1baJkKsJMMdT4fWRjWm7EMPz63Xj-sNmc-5YiNEe7MmK3u10gHXijO1Aqu9qkyAnxBzIqxZhvFcUCeHG6IBvRJyhwPQ3HXZJerSzQbbie-QVk7l6Zd8e4BzA77hmH2ZL8vyiftROCdOo5SadHdS-KFfsVn2uqeoNCu4kWEzrvwmHuOXODyNl8w42iWonDmuR3pla2MxDWYLnAAfY_QZ35AN3oY7ZGxGTIyCdV0tHZWWwkbHodEnpk"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<!-- SIDE NAV BAR -->
+<nav class="bg-surface-container border-r border-outline-variant fixed left-0 top-16 bottom-0 z-40 flex flex-col group transition-all duration-300 w-16 hover:w-64 overflow-hidden">
+<div class="p-md flex items-center gap-md border-b border-outline-variant/50 mb-sm">
+<span class="material-symbols-outlined text-primary">security</span>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+<div class="font-headline-sm text-headline-sm text-on-surface">OPERATIONS</div>
+<div class="text-[10px] text-on-surface-variant tracking-widest uppercase">V 4.0.2</div>
+</div>
+</div>
+<div class="flex-1 px-xs flex flex-col gap-xs overflow-y-auto overflow-x-hidden">
+<!-- Overview is Active -->
+<a class="flex items-center gap-md p-sm bg-primary-container text-on-primary-container border-l-4 border-primary transition-all duration-300" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Overview</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Command Center</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Crime Map</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">folder_shared</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Cases</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Graph Explorer</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">timeline</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Timeline</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Persons</span>
+</a>
+<a class="flex items-center gap-md p-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-300" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-label-caps opacity-0 group-hover:opacity-100 whitespace-nowrap">Analytics</span>
+</a>
+</div>
+<div class="p-sm mt-auto border-t border-outline-variant/50">
+<button class="w-full bg-primary py-sm text-on-primary font-label-caps flex items-center justify-center gap-xs overflow-hidden">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="opacity-0 group-hover:opacity-100 whitespace-nowrap">NEW CASE</span>
+</button>
+</div>
+</nav>
+<!-- MAIN CONTENT CANVAS -->
+<main class="ml-16 flex-1 flex flex-col relative overflow-hidden bg-surface-lowest">
+<div class="data-grid-overlay absolute inset-0 pointer-events-none opacity-20"></div>
+<!-- Workspace Toolbar -->
+<div class="h-10 border-b border-outline-variant flex items-center justify-between px-md bg-surface-dim/80 backdrop-blur-md relative z-10">
+<div class="flex items-center gap-lg">
+<span class="font-label-caps text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+                        BENGALURU_HQ: ALPHA_WING
+                    </span>
+<span class="font-data-tabular text-on-surface-variant border-x border-outline-variant px-md">
+                        SYS_CLOCK: 09:42:15 UTC
+                    </span>
+</div>
+<div class="flex gap-md">
+<button class="font-label-caps text-primary text-[10px] flex items-center gap-xs hover:bg-surface-container-highest px-xs">
+<span class="material-symbols-outlined text-[12px]">refresh</span> SYNC
+                    </button>
+<button class="font-label-caps text-on-surface-variant text-[10px] flex items-center gap-xs hover:bg-surface-container-highest px-xs">
+<span class="material-symbols-outlined text-[12px]">download</span> EXPORT
+                    </button>
+</div>
+</div>
+<!-- Bento Dashboard Grid -->
+<div class="flex-1 grid grid-cols-12 grid-rows-6 gap-gutter p-gutter overflow-y-auto">
+<!-- Mission Status (Row 1-2, Col 1-8) -->
+<div class="col-span-8 row-span-2 bg-surface-container-low border border-outline-variant p-panel-padding relative flex flex-col overflow-hidden">
+<div class="scanline"></div>
+<div class="flex justify-between items-start mb-md">
+<div>
+<h2 class="font-label-caps text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-sm">rocket_launch</span> MISSION_STATUS
+                            </h2>
+<div class="font-display-lg text-display-lg text-on-surface mt-xs">OP_SENTINEL_ACTUAL</div>
+</div>
+<div class="flex gap-xs">
+<span class="bg-primary/20 text-primary px-sm py-1 font-label-caps text-[10px] border border-primary/40">ACTIVE_DEPLOYMENT</span>
+<span class="bg-tertiary-container/20 text-tertiary px-sm py-1 font-label-caps text-[10px] border border-tertiary-container/40">CRITICAL_PHASE</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-md flex-1">
+<div class="border-l-2 border-primary pl-md py-xs bg-surface-container-highest/10">
+<div class="text-[10px] text-on-surface-variant font-label-caps">UNITS_DEPLOYED</div>
+<div class="text-headline-md font-bold text-on-surface">1,482 <span class="text-xs text-primary font-normal">/ 1,800</span></div>
+</div>
+<div class="border-l-2 border-tertiary pl-md py-xs bg-surface-container-highest/10">
+<div class="text-[10px] text-on-surface-variant font-label-caps">INTERCEPTION_PROB</div>
+<div class="text-headline-md font-bold text-on-surface">84.2% <span class="material-symbols-outlined text-sm align-middle text-tertiary">trending_up</span></div>
+</div>
+<div class="border-l-2 border-primary pl-md py-xs bg-surface-container-highest/10">
+<div class="text-[10px] text-on-surface-variant font-label-caps">RESOURCES_ENGAGED</div>
+<div class="text-headline-md font-bold text-on-surface">68.1%</div>
+</div>
+</div>
+<div class="mt-md h-12 bg-surface-container-lowest/50 border border-outline-variant/30 flex items-center px-md overflow-hidden gap-xl">
+<div class="flex gap-xs items-center">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-label-caps text-xs text-on-surface-variant">LIFELINE: CONNECTED</span>
+</div>
+<div class="flex-1 flex gap-xs items-end h-8">
+<!-- Visual noise/wave animation -->
+<div class="flex-1 bg-surface-container-highest/30 h-full relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent w-full translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+<div class="h-full w-full flex items-center justify-around px-md">
+<div class="h-4 w-[1px] bg-primary/40"></div><div class="h-6 w-[1px] bg-primary/40"></div><div class="h-3 w-[1px] bg-primary/40"></div><div class="h-5 w-[1px] bg-primary/40"></div><div class="h-4 w-[1px] bg-primary/40"></div><div class="h-7 w-[1px] bg-primary/40"></div>
+<div class="h-4 w-[1px] bg-primary/40"></div><div class="h-2 w-[1px] bg-primary/40"></div><div class="h-5 w-[1px] bg-primary/40"></div><div class="h-4 w-[1px] bg-primary/40"></div><div class="h-6 w-[1px] bg-primary/40"></div><div class="h-3 w-[1px] bg-primary/40"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Case Velocity (Row 1-2, Col 9-12) -->
+<div class="col-span-4 row-span-2 bg-surface-container border border-outline-variant p-panel-padding flex flex-col">
+<h2 class="font-label-caps text-on-surface-variant mb-md flex items-center justify-between">
+                        CASE_VELOCITY 
+                        <span class="text-[10px] text-primary">T-24H WINDOW</span>
+</h2>
+<div class="flex-1 flex flex-col justify-end gap-sm">
+<div class="flex items-end gap-xs h-32 px-md">
+<div class="flex-1 bg-surface-container-high h-[40%] group relative">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-primary px-1 text-[10px] text-on-primary">12</div>
+</div>
+<div class="flex-1 bg-surface-container-high h-[60%] group relative"></div>
+<div class="flex-1 bg-surface-container-high h-[85%] group relative"></div>
+<div class="flex-1 bg-primary/80 h-[100%] group relative">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-100 bg-primary px-1 text-[10px] text-on-primary">42</div>
+</div>
+<div class="flex-1 bg-surface-container-high h-[75%] group relative"></div>
+<div class="flex-1 bg-surface-container-high h-[55%] group relative"></div>
+<div class="flex-1 bg-surface-container-high h-[40%] group relative"></div>
+</div>
+<div class="flex justify-between text-[10px] font-label-caps text-on-surface-variant/60 pt-xs border-t border-outline-variant">
+<span>00:00</span>
+<span>08:00</span>
+<span>16:00</span>
+<span>NOW</span>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-outline-variant flex justify-between">
+<div>
+<div class="text-[10px] text-on-surface-variant font-label-caps">PEAK_DEMAND</div>
+<div class="text-headline-sm font-bold text-on-surface">14:00 <span class="text-xs font-normal text-on-surface-variant">UTC</span></div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-on-surface-variant font-label-caps">VOL_INDEX</div>
+<div class="text-headline-sm font-bold text-tertiary">+12.4%</div>
+</div>
+</div>
+</div>
+<!-- Critical AI Alerts (Row 3-6, Col 1-4) -->
+<div class="col-span-4 row-span-4 bg-surface-container-low border border-outline-variant flex flex-col">
+<div class="p-panel-padding border-b border-outline-variant bg-surface-container">
+<h2 class="font-label-caps text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-sm">psychology</span> AI_THREAT_MONITOR
+                        </h2>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Alert 1 -->
+<div class="p-md border-b border-outline-variant/30 hover:bg-surface-container-highest transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-xs">
+<span class="text-[10px] font-bold text-error bg-error-container/20 px-xs border border-error/30">LEVEL_5_CRITICAL</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">09:41:22</span>
+</div>
+<div class="text-body-md text-on-surface mb-sm group-hover:text-primary transition-colors">Pattern anomaly detected: High-frequency encrypted comms spike in Sector 4. High correlation with Case #992-B.</div>
+<div class="flex items-center gap-md">
+<span class="text-[10px] font-label-caps text-primary border-b border-primary/40">VIEW ENITIES</span>
+<span class="text-[10px] font-label-caps text-on-surface-variant">89% CONFIDENCE</span>
+</div>
+</div>
+<!-- Alert 2 -->
+<div class="p-md border-b border-outline-variant/30 hover:bg-surface-container-highest transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<span class="text-[10px] font-bold text-tertiary bg-tertiary-container/20 px-xs border border-tertiary/30">LEVEL_3_WARNING</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">09:35:01</span>
+</div>
+<div class="text-body-md text-on-surface mb-sm">Vehicle ID KA-01-MG-2034 recognized by ANPR cluster at peripheral check-post 4A. Asset watchlist match.</div>
+<div class="flex items-center gap-md">
+<span class="text-[10px] font-label-caps text-primary border-b border-primary/40">TRACK PATH</span>
+<span class="text-[10px] font-label-caps text-on-surface-variant">AUTO-RESOLVED</span>
+</div>
+</div>
+<!-- Alert 3 -->
+<div class="p-md border-b border-outline-variant/30 hover:bg-surface-container-highest transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<span class="text-[10px] font-bold text-primary bg-primary-container/20 px-xs border border-primary/30">L-1 LOG</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">09:12:44</span>
+</div>
+<div class="text-body-md text-on-surface mb-sm">Database sync complete for National Intelligence Grid (NATGRID). 412 new records integrated.</div>
+</div>
+</div>
+</div>
+<!-- District Activity Heatmap (Row 3-6, Col 5-9) -->
+<div class="col-span-5 row-span-4 bg-surface-container-low border border-outline-variant relative overflow-hidden">
+<div class="absolute inset-0 z-0">
+<div class="w-full h-full bg-cover bg-center grayscale contrast-125 opacity-40" data-alt="A highly detailed tactical satellite map of a metropolitan district at night. The map is rendered in a dark, navy and charcoal palette with neon blue grid lines overlaying the city streets. Faint thermal heat signatures in shades of orange and red indicate high activity zones, focused around key intersections and government buildings. The visual style is that of a modern military reconnaissance interface with crisp vector-sharp icons and digital noise." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBUyPO16fUz9rYsO6rToUcsQDVVidwHOVSf1I66TCpb3yJP_uh00Qtzs896Hcxav_arTSky0BaytIHm8DRrcPZZ8YtqLU5S2Z9hG4Jj2rJBhxEEYIsj16d4n9v4s0o27LyL2afFsgN9y4nIB15MrZAkr7eYUGMu7tJ0-t6kiysMFpIjmNrDmfkFayMP1fLprfcaxvmp9SaqlcIFrvZSY89rzlZTbV_c00ohsIQLDuSwvyGlbdog1QvJOskW5mfaJ_AJylLZ8XbenLo')"></div>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-transparent to-transparent z-10"></div>
+<div class="relative z-20 p-panel-padding h-full flex flex-col">
+<div class="flex justify-between items-start">
+<h2 class="font-label-caps text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-sm">map</span> SPATIAL_ACTIVITY_INDEX
+                            </h2>
+<div class="bg-surface-dim/80 backdrop-blur-sm border border-outline-variant p-xs flex flex-col gap-xs">
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<span class="text-[10px] font-label-caps text-on-surface-variant">HIGH_DENSITY</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[10px] font-label-caps text-on-surface-variant">OPERATIONAL</span>
+</div>
+</div>
+</div>
+<div class="mt-auto flex justify-between items-end">
+<div class="bg-surface-dim/80 backdrop-blur-sm border border-outline-variant p-md">
+<div class="text-[10px] text-on-surface-variant font-label-caps">CURRENT_DISTRICT</div>
+<div class="text-headline-sm font-bold text-on-surface">BENGALURU_EAST</div>
+<div class="flex gap-md mt-sm">
+<div class="text-center">
+<div class="text-[9px] text-on-surface-variant">ALERTS</div>
+<div class="text-sm font-bold text-tertiary">12</div>
+</div>
+<div class="text-center">
+<div class="text-[9px] text-on-surface-variant">PATROLS</div>
+<div class="text-sm font-bold text-primary">45</div>
+</div>
+</div>
+</div>
+<button class="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 p-sm transition-all">
+<span class="material-symbols-outlined">zoom_out_map</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Investigation Health Metrics (Row 3-6, Col 10-12) -->
+<div class="col-span-3 row-span-4 bg-surface-container border border-outline-variant p-panel-padding flex flex-col gap-lg">
+<h2 class="font-label-caps text-on-surface-variant flex items-center gap-xs border-b border-outline-variant pb-xs">
+<span class="material-symbols-outlined text-primary text-sm">analytics</span> INVEST_HEALTH
+                    </h2>
+<div class="flex-1 flex flex-col gap-md">
+<!-- Progress Metric 1 -->
+<div>
+<div class="flex justify-between mb-xs">
+<span class="text-[10px] font-label-caps text-on-surface">CASE_RESOLVE_RATE</span>
+<span class="text-[10px] font-data-tabular text-primary">92%</span>
+</div>
+<div class="h-1 bg-surface-container-highest w-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 92%"></div>
+</div>
+</div>
+<!-- Progress Metric 2 -->
+<div>
+<div class="flex justify-between mb-xs">
+<span class="text-[10px] font-label-caps text-on-surface">EVIDENCE_INTEGRITY</span>
+<span class="text-[10px] font-data-tabular text-primary">98.4%</span>
+</div>
+<div class="h-1 bg-surface-container-highest w-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 98.4%"></div>
+</div>
+</div>
+<!-- Progress Metric 3 -->
+<div>
+<div class="flex justify-between mb-xs">
+<span class="text-[10px] font-label-caps text-on-surface">LEGAL_COMPLIANCE</span>
+<span class="text-[10px] font-data-tabular text-tertiary">84%</span>
+</div>
+<div class="h-1 bg-surface-container-highest w-full overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 84%"></div>
+</div>
+</div>
+<div class="mt-auto grid grid-cols-2 gap-sm">
+<div class="bg-surface-container-highest/30 border border-outline-variant p-sm text-center">
+<div class="text-[9px] text-on-surface-variant font-label-caps">OPEN_FILES</div>
+<div class="text-lg font-bold text-on-surface">342</div>
+</div>
+<div class="bg-surface-container-highest/30 border border-outline-variant p-sm text-center">
+<div class="text-[9px] text-on-surface-variant font-label-caps">ARCHIVED</div>
+<div class="text-lg font-bold text-on-surface">1.2K</div>
+</div>
+</div>
+<div class="p-sm bg-primary-container/10 border border-primary/20">
+<div class="text-[10px] font-label-caps text-primary mb-xs">ADVISORY_AI</div>
+<p class="text-[11px] text-on-primary-container/80 leading-tight">Increase digital forensic throughput in Sector 2 to maintain resolve velocity.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- FOOTER -->
+<footer class="bg-surface-container-lowest text-tertiary border-t border-outline-variant fixed bottom-0 w-full z-50 flex items-center px-lg justify-between h-8 font-data-tabular text-[10px]">
+<div class="flex items-center gap-xl">
+<span class="text-on-surface-variant uppercase tracking-widest">© KARNATAKA POLICE INTELLIGENCE</span>
+<div class="flex gap-md">
+<span class="flex items-center gap-xs"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> System Health: Operational</span>
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[12px]">lock</span> Encryption: Active</span>
+</div>
+</div>
+<div class="flex gap-lg text-on-surface-variant">
+<span>Lat: 12.9716 N</span>
+<span>Long: 77.5946 E</span>
+<span class="text-primary font-bold">NODE: BNG_ROOT_01</span>
+</div>
+</footer>
+<script>
+        // Micro-interactions for dashboard elements
+        document.addEventListener('DOMContentLoaded', () => {
+            const scanline = document.querySelector('.scanline');
+            
+            // Randomize data wave heights periodically
+            setInterval(() => {
+                const waveBars = document.querySelectorAll('.h-full.w-full.flex div');
+                waveBars.forEach(bar => {
+                    const height = Math.floor(Math.random() * 20) + 5;
+                    bar.style.height = `${height}px`;
+                });
+            }, 500);
+
+            // Subtle parallax effect on heatmap
+            const heatmap = document.querySelector('[data-location]');
+            if (heatmap) {
+                document.addEventListener('mousemove', (e) => {
+                    const moveX = (e.clientX - window.innerWidth / 2) * 0.005;
+                    const moveY = (e.clientY - window.innerHeight / 2) * 0.005;
+                    heatmap.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                });
+            }
+        });
+    </script>
+</body></html>

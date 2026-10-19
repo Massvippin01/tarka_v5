@@ -2,20 +2,28 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.domain.auth import UserIdentity
 from app.domain.graph_projection import (
     GraphConsistencyReport,
     GraphDelta,
     GraphProjectionHealth,
     GraphSnapshot,
 )
+from app.services.auth_service import AuthService, get_current_user
 from app.services.graph_projection_engine import GraphProjectionEngine
 from app.services.investigation_state_service import InvestigationStateService
 
 logger = logging.getLogger("sentinelx.api.graph_projection")
 
-router = APIRouter()
+
+def enforce_case_projection_access(case_id: str, user: UserIdentity = Depends(get_current_user)) -> UserIdentity:
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    return user
+
+
+router = APIRouter(dependencies=[Depends(enforce_case_projection_access)])
 engine = GraphProjectionEngine.get_instance()
 state_service = InvestigationStateService()
 

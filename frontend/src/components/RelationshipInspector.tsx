@@ -32,7 +32,7 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
   if (!data) {
     return (
       <div style={{ padding: "16px", color: "#94a3b8", fontSize: "0.78rem" }}>
-        ⌛ Loading relationship intelligence explanation...
+        Loading relationship intelligence explanation...
       </div>
     );
   }

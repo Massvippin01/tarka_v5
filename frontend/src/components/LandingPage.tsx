@@ -14,8 +14,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Top Header Navigation */}
       <header style={styles.header}>
         <div style={styles.brandGroup}>
-          <h1 style={styles.brandTitle}>SENTINELX</h1>
-          <span style={styles.brandSubtitle}>INVESTIGATION WORKSPACE</span>
+          <h1 style={styles.brandTitle}>TARKA</h1>
+          <span style={styles.brandSubtitle}>DIGITAL FORENSICS WORKSPACE</span>
         </div>
 
         <div style={styles.navActions}>
@@ -89,7 +89,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Footer Legal Disclaimer */}
       <footer style={styles.footer}>
         <p style={styles.disclaimerText}>
-          SentinelX assists investigation and evidence analysis. It does not determine guilt, criminality, or legal responsibility.
+          TARKA assists investigation and evidence analysis. It does not determine guilt, criminality, or legal responsibility.
         </p>
       </footer>
     </div>

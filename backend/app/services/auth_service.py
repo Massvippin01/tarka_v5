@@ -14,7 +14,7 @@ import logging
 import time
 from typing import Any, Dict, Optional
 from uuid import uuid4
-from fastapi import HTTPException
+from fastapi import Header, HTTPException
 
 from app.core.config import settings
 from app.cache.redis_client import RedisCacheService
@@ -46,7 +46,7 @@ class AuthService:
                 organization="Delhi Police Special Cell",
                 unit="Cyber Financial Crime Unit",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "C102", "C114"],
+                    allowed_cases=["CASE-2026-001", "C102", "C114", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Delhi NCR / Special Cell"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -150,6 +150,11 @@ class AuthService:
             cls._instance = AuthService()
         return cls._instance
 
+    def register_synthetic_identity(self, user_key: str, identity: UserIdentity) -> None:
+        """Register a synthetic user identity for tests or local execution."""
+        self.users[user_key] = identity
+        self.users[identity.user_id] = identity
+
     def _b64url_encode(self, data: bytes) -> str:
         return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
 
@@ -233,33 +238,67 @@ class AuthService:
             return self.redis_cache.revoke_token(jti, ttl_seconds=ttl)
         return False
 
-    def authenticate_token(self, token: Optional[str]) -> UserIdentity:
+    def authenticate_token(self, token: Optional[str], strict: bool = True) -> UserIdentity:
+        """
+        Authenticate an incoming authorization token.
+        Fails closed with HTTP 401 on missing, empty, invalid, expired, revoked, or unrecognized tokens.
+        Never falls back to a default investigator or anonymous principal.
+        """
         if not token:
-            return self.users["INVESTIGATOR_DELHI"]
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication credentials required. Missing Authorization header.",
+            )
 
         token_clean = token.replace("Bearer ", "").strip()
+        if not token_clean:
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication credentials required. Authorization token is blank.",
+            )
 
-        # Check standard synthetic user keys
-        if token_clean in self.users:
-            return self.users[token_clean]
+        # Check JWT token format (3 base64url parts separated by dots)
+        if "." in token_clean:
+            payload = self.verify_jwt_token(token_clean)
+            if not payload:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Authentication failed. Invalid, expired, or revoked JWT token.",
+                )
 
-        # Check JWT token format
-        payload = self.verify_jwt_token(token_clean)
-        if payload:
             user_key = payload.get("user_key")
             if user_key and user_key in self.users:
                 return self.users[user_key]
 
-        # Fallback by user_id lookup
-        for user in self.users.values():
-            if user.user_id == token_clean:
-                return user
+            sub = payload.get("sub")
+            for user in self.users.values():
+                if user.user_id == sub:
+                    return user
 
-        return self.users["INVESTIGATOR_DELHI"]
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication failed. Token subject not found in user directory.",
+            )
+
+        # Non-JWT string (demo identity keys)
+        # Strictly restricted to local development when ENABLE_DEMO_AUTH is explicitly enabled
+        if settings.ENABLE_DEMO_AUTH and token_clean in self.users:
+            logger.info("Demo authentication permitted for synthetic key '%s' (local dev only)", token_clean)
+            return self.users[token_clean]
+
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed. Invalid or unrecognized authentication token. Bearer JWT required.",
+        )
 
     def validate_case_scope(self, user: UserIdentity, case_id: str) -> bool:
-        if user.role in [UserRoleEnum.SUPERVISOR, UserRoleEnum.AUDITOR, UserRoleEnum.SYSTEM_ADMINISTRATOR]:
-            return True
+        """
+        Validates case-level access scope against user's assigned allowed cases.
+        Unconditional cross-case bypasses for supervisory or auditor roles are strictly removed.
+        Access outside assigned scope requires an explicit auditable override.
+        """
+        if not user or not user.scope or not user.scope.allowed_cases:
+            return False
         return case_id in user.scope.allowed_cases
 
     def has_permission(self, user: UserIdentity, permission: AccessPermissionEnum) -> bool:
@@ -267,9 +306,62 @@ class AuthService:
             return True
         return permission in user.permissions
 
-    def enforce_case_access(self, user: UserIdentity, case_id: str):
+    def enforce_case_access(self, user: UserIdentity, case_id: str) -> None:
+        """
+        Enforce that user has explicit authorization for the requested case.
+        Fails closed with HTTP 403 FORBIDDEN if the case is outside assigned scope.
+        """
         if not self.validate_case_scope(user, case_id):
+            role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
             raise HTTPException(
                 status_code=403,
-                detail=f"ACCESS_DENIED: User '{user.user_id}' ({user.role}) is not authorized to access case '{case_id}' under jurisdiction scope.",
+                detail=f"ACCESS_DENIED: User '{user.user_id}' ({role_str}) is not authorized to access case '{case_id}' outside assigned jurisdiction scope.",
             )
+
+    def grant_case_access(
+        self,
+        user: UserIdentity,
+        case_id: str,
+        justification: str,
+        session_id: str = "SESSION-ADMIN-01",
+    ) -> Dict[str, Any]:
+        """
+        Durably records an auditable cross-case access grant in AuditService
+        before adding case_id to the user's allowed_cases.
+        Fails closed if the audit record cannot be durably persisted.
+        """
+        if not justification or len(justification.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="VALIDATION_FAILED: A substantive justification (minimum 10 characters) is required for cross-case access override.",
+            )
+        from app.services.audit_service import AuditService
+        audit_svc = AuditService.get_instance()
+        record = audit_svc.log_access_event(
+            user_id=user.user_id,
+            resource_type="CASE_SCOPE_OVERRIDE",
+            action="GRANT_CASE_ACCESS",
+            details={
+                "case_id": case_id,
+                "role": user.role.value if hasattr(user.role, "value") else str(user.role),
+                "justification": justification.strip(),
+            },
+            session_id=session_id,
+        )
+        if not record.get("event_hash"):
+            raise HTTPException(
+                status_code=500,
+                detail="AUDIT_PERSISTENCE_FAILURE: Hash-chained audit event could not be secured.",
+            )
+        if case_id not in user.scope.allowed_cases:
+            user.scope.allowed_cases.append(case_id)
+        return record
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
+    """
+    FastAPI dependency that enforces fail-closed authentication.
+    Returns authenticated UserIdentity or raises HTTP 401 UNAUTHORIZED.
+    """
+    auth_service = AuthService.get_instance()
+    return auth_service.authenticate_token(authorization, strict=True)

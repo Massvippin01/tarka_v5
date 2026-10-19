@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { useInvestigation } from "../context/InvestigationContext";
 
 interface InvestigationContextIndicatorProps {
@@ -142,11 +143,13 @@ export const InvestigationContextIndicator: React.FC<InvestigationContextIndicat
                 border: "none",
                 color: "var(--text-muted)",
                 cursor: "pointer",
-                fontSize: "12px",
+                padding: "2px",
+                display: "flex",
+                alignItems: "center",
               }}
               aria-label="Dismiss clarification"
             >
-              ✕
+              <X size={12} />
             </button>
           </div>
           <p style={{ margin: 0, fontSize: "11px", color: "var(--text-secondary)" }}>

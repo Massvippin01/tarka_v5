@@ -1,0 +1,4 @@
+THIS_IS_AN_ORPHAN_LINE_BEFORE_ANY_HEADER
+[26/01/2026, 10:00:00] Rajesh Sharma: First valid message here.
+[99/99/9999, 99:99:99] Bad Header: This header has an invalid date
+[26/01/2026, 10:05:00] Vikram: Second valid message.

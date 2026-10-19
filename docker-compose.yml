@@ -96,13 +96,20 @@ services:
       - sentinelx-prod-net
 
   minio:
-    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    image: rustfs/rustfs:1.0.0
     container_name: sentinelx-prod-minio
     restart: always
-    command: server /data
+    ports:
+      - "${STORAGE_PORT:-9000}:9000"
+      - "${STORAGE_CONSOLE_PORT:-9001}:9001"
+    command: server /data --console-enable --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sentinelx_minio_admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
     volumes:
       - minio_prod_data:/data
     deploy:
@@ -122,10 +129,10 @@ services:
       - sentinelx-prod-net
 
   opa:
-    image: openpolicyagent/opa:0.65.0
+    image: openpolicyagent/opa:0.65.0-debug
     container_name: sentinelx-prod-opa
     restart: always
-    command: run --server --log-level=warn /policies
+    command: run --server --log-level=info /policies
     volumes:
       - ./opa/policies:/policies:ro
     deploy:
@@ -187,6 +194,11 @@ services:
       OPA_URL: ${OPA_URL:-http://opa:8181}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://sentinelx.intelligence.gov.in,http://localhost:8080}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_API_BASE_URL: ${SARVAM_API_BASE_URL:-https://api.sarvam.ai}
+      SARVAM_STT_MODEL: ${SARVAM_STT_MODEL:-saaras:v4}
+      SARVAM_TTS_MODEL: ${SARVAM_TTS_MODEL:-bulbul:v4-flash}
+      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh_enhi_ads}
     volumes:
       - evidence_prod_data:/app/data/storage/artifacts
     depends_on:

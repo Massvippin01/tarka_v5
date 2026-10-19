@@ -34,7 +34,8 @@ export type NavRoute =
   | "analytics"
   | "health"
   | "admin"
-  | "help";
+  | "help"
+  | "forensics";
 
 export type WorkspaceLens =
   | "Overview"
@@ -43,7 +44,8 @@ export type WorkspaceLens =
   | "Map"
   | "Evidence"
   | "Entities"
-  | "Findings";
+  | "Findings"
+  | "Forensics";
 
 export type DomainEventType =
   | "ENTITY_SELECTED"

@@ -28,7 +28,7 @@ action_registry = UIActionRegistry.get_instance()
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 class DispatchCommandRequest(BaseModel):
@@ -58,11 +58,20 @@ async def dispatch_command(
     CANONICAL COMMAND DISPATCH ENDPOINT.
     Accepts commands from Voice, Chat, UI clicks, Keyboard, Automation, and Agents.
     """
+    auth_service = AuthService.get_instance()
+    if req.case_id:
+        auth_service.enforce_case_access(user, req.case_id)
+        effective_case_id = req.case_id
+    else:
+        if not user.scope or not user.scope.allowed_cases:
+            raise HTTPException(status_code=403, detail="ACCESS_DENIED: No authorized cases in user scope.")
+        effective_case_id = user.scope.allowed_cases[0]
+
     ctx = InteractionContext(
         user_id=user.user_id,
-        user_role=user.role.value,
+        user_role=user.role.value if hasattr(user.role, "value") else str(user.role),
         clearance=user.clearance,
-        case_id=req.case_id or (user.scope.allowed_cases[0] if user.scope and user.scope.allowed_cases else "CASE-2026-001"),
+        case_id=effective_case_id,
         jurisdiction=user.jurisdiction or "Delhi NCR / Special Cell",
         selected_entity_id=req.selected_entity_id,
         selected_claim_id=req.selected_claim_id,
@@ -107,6 +116,6 @@ def cancel_command(req: CancelCommandRequest, user: UserIdentity = Depends(get_c
 
 
 @router.get("/actions")
-def list_actions():
+def list_actions(user: UserIdentity = Depends(get_current_user)):
     """List all supported UI actions and their schemas."""
     return {"actions": action_registry.list_actions()}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { X, ChevronLeft, ChevronRight, Compass, Scale, Crosshair, Pin, Check, AlertTriangle } from "lucide-react";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface GraphNode {
@@ -476,7 +477,7 @@ export const EvidenceGraph: React.FC = () => {
   const getEpistemicBadge = (status: string) => {
     switch (status.toUpperCase()) {
       case "VERIFIED":
-        return { tag: "[VERIFIED]", color: "#10b981", symbol: "✓" };
+        return { tag: "[VERIFIED]", color: "#10b981", symbol: "" };
       case "OBSERVED":
         return { tag: "[OBSERVED]", color: "#38bdf8", symbol: "●" };
       case "INFERRED":
@@ -534,8 +535,8 @@ export const EvidenceGraph: React.FC = () => {
             aria-label="Search graph entities"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={styles.clearBtn}>
-              ✕
+            <button onClick={() => setSearchQuery("")} style={styles.clearBtn} aria-label="Clear search">
+              <X size={12} />
             </button>
           )}
         </div>
@@ -546,18 +547,18 @@ export const EvidenceGraph: React.FC = () => {
           <button
             onClick={navigateHistoryBack}
             disabled={historyIndex <= 0}
-            style={{ ...styles.navBtn, opacity: historyIndex <= 0 ? 0.35 : 1 }}
+            style={{ ...styles.navBtn, opacity: historyIndex <= 0 ? 0.35 : 1, display: "inline-flex", alignItems: "center", gap: "4px" }}
             title="Navigate Back in Graph Selection History"
           >
-            ◀ BACK
+            <ChevronLeft size={12} /> BACK
           </button>
           <button
             onClick={navigateHistoryForward}
             disabled={historyIndex >= navHistory.length - 1}
-            style={{ ...styles.navBtn, opacity: historyIndex >= navHistory.length - 1 ? 0.35 : 1 }}
+            style={{ ...styles.navBtn, opacity: historyIndex >= navHistory.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center", gap: "4px" }}
             title="Navigate Forward in Graph Selection History"
           >
-            FWD ▶
+            FWD <ChevronRight size={12} />
           </button>
 
           {/* Analytical Mode Toggles */}
@@ -579,10 +580,10 @@ export const EvidenceGraph: React.FC = () => {
               if (selectedNode) setPathSource(selectedNode);
               setPathModalOpen(true);
             }}
-            style={styles.actionBtn}
+            style={{ ...styles.actionBtn, display: "inline-flex", alignItems: "center", gap: "5px" }}
             title="Trace evidence-supported investigative path between entities"
           >
-            🧭 TRACE PATH
+            <Compass size={13} /> TRACE PATH
           </button>
 
           <button
@@ -590,10 +591,10 @@ export const EvidenceGraph: React.FC = () => {
               if (selectedNode) setCompareEntityA(selectedNode);
               setCompareModalOpen(true);
             }}
-            style={styles.actionBtn}
+            style={{ ...styles.actionBtn, display: "inline-flex", alignItems: "center", gap: "5px" }}
             title="Multi-dimensional comparative analysis between two entities"
           >
-            ⚖ COMPARE
+            <Scale size={13} /> COMPARE
           </button>
 
           <button onClick={resetAllViews} style={styles.resetBtn} title="Reset view perspective">
@@ -651,7 +652,9 @@ export const EvidenceGraph: React.FC = () => {
       {focusNodeId && (
         <div style={styles.focusBanner}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontWeight: 800, color: "#38bdf8" }}>🎯 FOCUS MODE ACTIVE:</span>
+            <span style={{ fontWeight: 800, color: "#38bdf8", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <Crosshair size={14} /> FOCUS MODE ACTIVE:
+            </span>
             <span>Entity <strong>{focusNodeId}</strong> (1-Hop Context Isolated)</span>
           </div>
           <div style={{ display: "flex", gap: "6px" }}>
@@ -704,7 +707,7 @@ export const EvidenceGraph: React.FC = () => {
                   <div style={styles.nodeHeader}>
                     <span style={styles.nodeType}>{node.node_type}</span>
                     <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                      {isPinned && <span title="Pinned in visual workspace">📌</span>}
+                      {isPinned && <span title="Pinned in visual workspace"><Pin size={11} style={{ display: "inline-block" }} /></span>}
                       <span style={{ ...styles.epistemicTag, color: epi.color }}>
                         {epi.symbol} {epi.tag}
                       </span>
@@ -722,10 +725,10 @@ export const EvidenceGraph: React.FC = () => {
                   <div style={styles.cardActions} onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={(e) => enterFocusMode(node.id, e)}
-                      style={styles.cardActionBtn}
+                      style={{ ...styles.cardActionBtn, display: "inline-flex", alignItems: "center", gap: "4px" }}
                       title="Focus on this entity and dim unrelated nodes"
                     >
-                      🎯 FOCUS
+                      <Crosshair size={11} /> FOCUS
                     </button>
                     <button
                       onClick={(e) => toggleIsolate(node.id, e)}
@@ -855,7 +858,7 @@ export const EvidenceGraph: React.FC = () => {
       <div style={styles.legendStrip}>
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <span style={{ fontWeight: 700, color: "#64748b" }}>EPISTEMIC STANDING:</span>
-          <span style={{ color: "#10b981" }}>✓ VERIFIED</span>
+          <span style={{ color: "#10b981", display: "inline-flex", alignItems: "center", gap: "3px" }}><Check size={11} /> VERIFIED</span>
           <span style={{ color: "#38bdf8" }}>● OBSERVED</span>
           <span style={{ color: "#a855f7" }}>◇ INFERRED</span>
           <span style={{ color: "#ef4444" }}>▲ CONFLICT</span>
@@ -871,7 +874,7 @@ export const EvidenceGraph: React.FC = () => {
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>INVESTIGATIVE PATH TRACER</h3>
-              <button onClick={() => setPathModalOpen(false)} style={styles.closeBtn}>✕</button>
+              <button onClick={() => setPathModalOpen(false)} style={styles.closeBtn} aria-label="Close modal"><X size={14} /></button>
             </div>
 
             <div style={{ display: "flex", gap: "10px", margin: "12px 0" }}>
@@ -917,8 +920,8 @@ export const EvidenceGraph: React.FC = () => {
 
             {pathResult && (
               <div style={styles.pathResultContainer}>
-                <div style={styles.disclaimerBox}>
-                  ⚠ {pathResult.epistemic_disclaimer}
+                <div style={{ ...styles.disclaimerBox, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <AlertTriangle size={13} style={{ flexShrink: 0 }} /> {pathResult.epistemic_disclaimer}
                 </div>
                 <div style={{ marginTop: "8px" }}>
                   <strong>Type:</strong> {pathResult.path_type} • <strong>Hops:</strong> {pathResult.hop_count}
@@ -950,7 +953,7 @@ export const EvidenceGraph: React.FC = () => {
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>MULTI-DIMENSIONAL ENTITY COMPARISON</h3>
-              <button onClick={() => setCompareModalOpen(false)} style={styles.closeBtn}>✕</button>
+              <button onClick={() => setCompareModalOpen(false)} style={styles.closeBtn} aria-label="Close modal"><X size={14} /></button>
             </div>
 
             <div style={{ display: "flex", gap: "10px", margin: "12px 0" }}>
@@ -1030,7 +1033,7 @@ export const EvidenceGraph: React.FC = () => {
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h3 style={styles.modalTitle}>UNBROKEN EVIDENCE THREAD LINEAGE</h3>
-              <button onClick={() => setEvidenceThreadModalOpen(false)} style={styles.closeBtn}>✕</button>
+              <button onClick={() => setEvidenceThreadModalOpen(false)} style={styles.closeBtn} aria-label="Close modal"><X size={14} /></button>
             </div>
 
             <div style={{ marginTop: "12px" }}>

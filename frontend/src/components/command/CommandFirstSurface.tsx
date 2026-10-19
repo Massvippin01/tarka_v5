@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Play, Zap, AlertTriangle, GitFork, Clock, LayoutDashboard, Square, VolumeX, X } from "lucide-react";
 import { useInvestigation, type ExperienceLevel } from "../../context/InvestigationContext";
 import { voiceService } from "../../services/voiceService";
 import { useTheme } from "../../context/ThemeContext";
@@ -15,7 +16,7 @@ export type VoiceIntegratedState =
 
 interface QuickActionChip {
   id: string;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   description: string;
   targetLevel: ExperienceLevel;
@@ -256,7 +257,7 @@ export const CommandFirstSurface: React.FC = () => {
   const QUICK_ACTIONS: QuickActionChip[] = [
     {
       id: "continue-case",
-      icon: "▶",
+      icon: <Play size={12} fill="currentColor" />,
       label: `Continue ${activeCaseId}`,
       description: "Open investigation focus docket & active contradictions",
       targetLevel: 1,
@@ -265,7 +266,7 @@ export const CommandFirstSurface: React.FC = () => {
     },
     {
       id: "contradictions",
-      icon: "⚡",
+      icon: <Zap size={12} />,
       label: "Show Contradictions",
       description: "Scrutinize alibi, temporal, and spatial evidentiary conflicts",
       targetLevel: 2,
@@ -273,7 +274,7 @@ export const CommandFirstSurface: React.FC = () => {
     },
     {
       id: "evidence-gaps",
-      icon: "⚑",
+      icon: <AlertTriangle size={12} />,
       label: "Show Evidence Gaps",
       description: "Analyze missing statutory artifacts and requisition needs",
       targetLevel: 2,
@@ -281,7 +282,7 @@ export const CommandFirstSurface: React.FC = () => {
     },
     {
       id: "intel-graph",
-      icon: "⌘",
+      icon: <GitFork size={12} />,
       label: "Show Intelligence Graph",
       description: "Explore 2D/3D entity networks, financial links, and communications",
       targetLevel: 2,
@@ -289,7 +290,7 @@ export const CommandFirstSurface: React.FC = () => {
     },
     {
       id: "timeline",
-      icon: "⏱",
+      icon: <Clock size={12} />,
       label: "Analyze Timeline",
       description: "Evaluate chronological sequence of verified observations",
       targetLevel: 2,
@@ -297,7 +298,7 @@ export const CommandFirstSurface: React.FC = () => {
     },
     {
       id: "deep-workspace",
-      icon: "⚖",
+      icon: <LayoutDashboard size={12} />,
       label: "Analytical Workspace",
       description: "Direct entry to full multi-rail forensic workspace",
       targetLevel: 2,
@@ -331,7 +332,7 @@ export const CommandFirstSurface: React.FC = () => {
       {/* Top Subtle Custody & Authority Bar */}
       <header style={styles.topAuthorityBar}>
         <div style={styles.authorityLeft}>
-          <span style={styles.insigniaTag}>SENTINELX</span>
+          <span style={styles.insigniaTag}>TARKA</span>
           <span style={styles.barDivider}>/</span>
           <span style={styles.securityPill}>RESTRICTED // LE SENSITIVE</span>
           <span style={styles.barDivider}>·</span>
@@ -370,9 +371,9 @@ export const CommandFirstSurface: React.FC = () => {
       <main style={styles.commandStage}>
         {/* Brand & Subtitle Heading */}
         <div style={styles.brandContainer}>
-          <h1 style={styles.brandTitle}>SENTINELX</h1>
+          <h1 style={styles.brandTitle}>TARKA</h1>
           <p style={styles.brandSubtitle}>
-            FORENSIC COGNITIVE INVESTIGATION OPERATING SYSTEM // BHARAT SPECIAL CELL
+            INDIGENOUS DIGITAL FORENSICS PLATFORM // SUTRAM 2026
           </p>
         </div>
 
@@ -430,9 +431,9 @@ export const CommandFirstSurface: React.FC = () => {
             aria-label="Toggle voice input"
           >
             {voiceState === "LISTENING" ? (
-              <span style={{ fontSize: "15px" }}>⏹</span>
+              <Square size={14} style={{ fill: "currentColor" }} />
             ) : voiceState === "SPEAKING" ? (
-              <span style={{ fontSize: "15px" }}>⊘</span>
+              <VolumeX size={14} />
             ) : (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -474,8 +475,8 @@ export const CommandFirstSurface: React.FC = () => {
         {statusFeedback && (
           <div style={styles.feedbackBanner} role="alert">
             <span>{statusFeedback}</span>
-            <button onClick={() => setStatusFeedback(null)} style={styles.feedbackDismiss}>
-              ✕
+            <button onClick={() => setStatusFeedback(null)} style={styles.feedbackDismiss} aria-label="Dismiss feedback">
+              <X size={12} />
             </button>
           </div>
         )}

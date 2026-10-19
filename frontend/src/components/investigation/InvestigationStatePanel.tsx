@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Clock, Camera, RefreshCw } from "lucide-react";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface StateData {
@@ -111,7 +112,7 @@ export const InvestigationStatePanel: React.FC = () => {
           style={{ ...styles.viewBtn, ...(activeWorkspaceView === "timeline" ? styles.viewBtnActive : {}) }}
           onClick={() => setActiveWorkspaceView("timeline")}
         >
-          ⏱️ Spatiotemporal Timeline
+          <Clock size={11} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }} /> Spatiotemporal Timeline
         </button>
         <button
           style={{ ...styles.viewBtn, ...(activeWorkspaceView === "contradictions" ? styles.viewBtnActive : {}) }}
@@ -219,7 +220,7 @@ export const InvestigationStatePanel: React.FC = () => {
               }
             }}
           >
-            📸 Snapshot
+            <Camera size={11} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }} /> Snapshot
           </button>
           <button
             style={{
@@ -246,7 +247,7 @@ export const InvestigationStatePanel: React.FC = () => {
               }
             }}
           >
-            🔄 Rehydrate
+            <RefreshCw size={11} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }} /> Rehydrate
           </button>
         </div>
       </div>

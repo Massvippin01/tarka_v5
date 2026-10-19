@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.dependencies import investigation_service
+from app.domain.auth import UserIdentity
 from app.domain.person import Person
 from app.schemas.person import PersonCreate, PersonResponse
+from app.services.auth_service import get_current_user
 from app.services.investigation_service import InvestigationService
 
 router = APIRouter()
@@ -15,8 +17,8 @@ router = APIRouter()
 def create_person(
     request: PersonCreate,
     service: InvestigationService = Depends(investigation_service),
+    user: UserIdentity = Depends(get_current_user),
 ):
-
     person = Person(
         first_name=request.first_name,
         middle_name=request.middle_name or "",
@@ -35,8 +37,8 @@ def create_person(
 def get_person(
     person_id: str,
     service: InvestigationService = Depends(investigation_service),
+    user: UserIdentity = Depends(get_current_user),
 ):
-
     person = service.get_person(person_id)
 
     if person is None:
@@ -54,8 +56,8 @@ def get_person(
 )
 def list_persons(
     service: InvestigationService = Depends(investigation_service),
+    user: UserIdentity = Depends(get_current_user),
 ):
-
     return [PersonResponse.model_validate(p) for p in service.list_persons()]
 
 
@@ -63,6 +65,7 @@ def list_persons(
 def delete_person(
     person_id: str,
     service: InvestigationService = Depends(investigation_service),
+    user: UserIdentity = Depends(get_current_user),
 ):
 
     service.delete_person(person_id)

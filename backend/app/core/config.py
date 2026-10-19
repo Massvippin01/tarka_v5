@@ -96,6 +96,11 @@ class Settings(BaseSettings):
         default="http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://localhost:8080",
         description="Comma-separated list of allowed CORS origins"
     )
+    ENABLE_DEMO_AUTH: bool = Field(
+        default=False,
+        description="Allow raw synthetic user keys as bearer tokens (LOCAL DEV ONLY - strictly prohibited in staging/prod)"
+    )
+
 
     # Persistence - PostgreSQL Transactional Authority
     DATABASE_URL: str = Field(
@@ -249,6 +254,28 @@ class Settings(BaseSettings):
         description="Default voice interaction language code"
     )
 
+    # Sarvam AI Voice & Indic Orchestration Configuration
+    SARVAM_API_KEY: Optional[str] = Field(
+        default=None,
+        description="Sarvam AI API subscription key for Saaras STT & Bulbul TTS"
+    )
+    SARVAM_STT_MODEL: str = Field(
+        default="saaras:v4",
+        description="Sarvam Speech-to-Text model identifier (e.g. saaras:v4 or saaras:v3)"
+    )
+    SARVAM_TTS_MODEL: str = Field(
+        default="bulbul:v4-flash",
+        description="Sarvam Text-to-Speech model identifier (e.g. bulbul:v4-flash or bulbul:v3)"
+    )
+    SARVAM_DEFAULT_SPEAKER: str = Field(
+        default="shubh_enhi_ads",
+        description="Sarvam voice persona identifier (e.g. shubh_enhi_ads for bulbul:v4-flash, or shubh for bulbul:v3)"
+    )
+    SARVAM_API_BASE_URL: str = Field(
+        default="https://api.sarvam.ai",
+        description="Sarvam AI API base URL"
+    )
+
     # Telemetry & Observability - OpenTelemetry
     OTEL_EXPORTER_OTLP_ENDPOINT: str = Field(
         default="http://localhost:4317",
@@ -353,6 +380,11 @@ class Settings(BaseSettings):
             # DEBUG must be False
             if self.DEBUG:
                 errors.append(f"INVALID_CONFIGURATION: Variable 'DEBUG' must be False in {tier}.")
+
+            # ENABLE_DEMO_AUTH must be False in staging/production
+            if self.ENABLE_DEMO_AUTH:
+                errors.append(f"INVALID_CONFIGURATION: Variable 'ENABLE_DEMO_AUTH' must be False in {tier}. Synthetic demo authentication is prohibited outside local testing.")
+
 
             # SECRET_KEY strength (>= 32 chars and not placeholder)
             if is_insecure_secret(self.SECRET_KEY, min_length=32):

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.domain.auth import UserIdentity
 from app.repositories.unified_store import UnifiedStore
+from app.services.auth_service import AuthService, get_current_user
 from app.services.investigation_delta_service import InvestigationDeltaService
 from app.services.investigation_state_service import InvestigationStateService
 from app.services.live_proof_engine import LiveProofEngine
@@ -19,11 +21,12 @@ proof_engine = LiveProofEngine(store=store)
 
 
 @router.get("/{case_id}/state")
-def get_investigation_state(case_id: str) -> Dict[str, Any]:
+def get_investigation_state(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/state
     Exposes complete canonical InvestigationState projection.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         state = state_service.get_investigation_state(case_id)
         return state
@@ -33,11 +36,12 @@ def get_investigation_state(case_id: str) -> Dict[str, Any]:
 
 
 @router.get("/{case_id}/graph")
-def get_investigation_graph(case_id: str) -> Dict[str, Any]:
+def get_investigation_graph(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/graph
     Exposes evidence-aware graph projection with full traversal metadata.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         state = state_service.get_investigation_state(case_id)
 
@@ -99,11 +103,12 @@ def get_investigation_graph(case_id: str) -> Dict[str, Any]:
 
 
 @router.get("/{case_id}/contradictions")
-def get_case_contradictions(case_id: str) -> Dict[str, Any]:
+def get_case_contradictions(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/contradictions
     Exposes all open contradictions for a case.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         state = state_service.get_investigation_state(case_id)
         contradictions = state.get("contradictions", [])
@@ -120,11 +125,12 @@ def get_case_contradictions(case_id: str) -> Dict[str, Any]:
 
 
 @router.get("/{case_id}/gaps")
-def get_case_evidence_gaps(case_id: str) -> Dict[str, Any]:
+def get_case_evidence_gaps(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/gaps
     Exposes formal evidence gaps deduced for the case.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         state = state_service.get_investigation_state(case_id)
         gaps = state.get("evidence_gaps", [])
@@ -141,11 +147,12 @@ def get_case_evidence_gaps(case_id: str) -> Dict[str, Any]:
 
 
 @router.get("/{case_id}/timeline")
-def get_case_timeline(case_id: str) -> Dict[str, Any]:
+def get_case_timeline(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/timeline
     Exposes unified spatiotemporal projection retaining uncertainty.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         state = state_service.get_investigation_state(case_id)
         timeline = state.get("timeline", [])
@@ -161,11 +168,16 @@ def get_case_timeline(case_id: str) -> Dict[str, Any]:
 
 
 @router.get("/{case_id}/delta")
-def get_case_delta(case_id: str, since: Optional[str] = Query(None)) -> Dict[str, Any]:
+def get_case_delta(
+    case_id: str,
+    since: Optional[str] = Query(None),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
     """
     GET /api/v1/investigations/{case_id}/delta
     Exposes investigation state differential with append-only semantics.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     try:
         delta = delta_service.compute_case_delta(case_id, since_timestamp=since)
         return delta
@@ -179,7 +191,7 @@ proof_router = APIRouter()
 
 
 @proof_router.get("/{claim_id}")
-def get_claim_proof(claim_id: str) -> Dict[str, Any]:
+def get_claim_proof(claim_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/proof/{claim_id}
     Backward proof lineage traversal:
@@ -216,7 +228,7 @@ def get_claim_proof(claim_id: str) -> Dict[str, Any]:
 
 
 @proof_router.get("/artifact/{artifact_id}")
-def get_artifact_proof_forward(artifact_id: str) -> Dict[str, Any]:
+def get_artifact_proof_forward(artifact_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """
     GET /api/v1/proof/artifact/{artifact_id}
     Forward lineage traversal:

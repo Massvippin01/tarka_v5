@@ -68,18 +68,22 @@ def get_ingestion_pipeline_status():
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 @router.post("/auth/login", response_model=AuthTokenResponse)
 def login_user(req: AuthTokenRequest):
     auth_service = AuthService.get_instance()
-    username_upper = req.username.upper()
+    username_upper = req.username.upper().strip()
     if username_upper in auth_service.users:
         user = auth_service.users[username_upper]
-    else:
-        user = auth_service.users["INVESTIGATOR_DELHI"]
-    return AuthTokenResponse(access_token=user.user_id, user=user)
+        jwt_token = auth_service.create_jwt_token(username_upper)
+        return AuthTokenResponse(access_token=jwt_token, user=user)
+
+    raise HTTPException(
+        status_code=401,
+        detail="Authentication failed. Invalid username or credentials.",
+    )
 
 
 @router.get("/auth/me", response_model=UserIdentity)
@@ -100,22 +104,24 @@ def verify_audit_integrity(user: UserIdentity = Depends(get_current_user)):
 
 
 @router.post("/voice/command", response_model=VoiceCommandResponse)
-def execute_voice_command(req: VoiceCommandRequest):
+def execute_voice_command(req: VoiceCommandRequest, user: UserIdentity = Depends(get_current_user)):
     service = VoiceInterpreterService()
     return service.process_command(req)
 
 
 @router.get("/events/stream")
-def stream_realtime_events(case_id: Optional[str] = "C102"):
+def stream_realtime_events(case_id: Optional[str] = "C102", user: UserIdentity = Depends(get_current_user)):
+    target_case = case_id or "C102"
+    AuthService.get_instance().enforce_case_access(user, target_case)
     dispatcher = RealtimeDispatcher.get_instance()
-    scope = EventSubscriptionScope(case_id=case_id)
+    scope = EventSubscriptionScope(case_id=target_case)
 
     def event_generator():
         # Yield initial connection heartbeat
         init_event = dispatcher.publish_event(
             event_type="REALTIME_SUBSCRIPTION_ACTIVE",
-            payload={"status": "CONNECTED", "subscribed_case": case_id},
-            case_id=case_id or "C102",
+            payload={"status": "CONNECTED", "subscribed_case": target_case},
+            case_id=target_case,
         )
         yield dispatcher.format_sse_event(init_event)
 
@@ -127,7 +133,12 @@ def stream_realtime_events(case_id: Optional[str] = "C102"):
 
 
 @router.post("/events/simulate")
-def simulate_realtime_event(event_type: str = "EVIDENCE_ADDED", case_id: str = "C102"):
+def simulate_realtime_event(
+    event_type: str = "EVIDENCE_ADDED",
+    case_id: str = "C102",
+    user: UserIdentity = Depends(get_current_user),
+):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     dispatcher = RealtimeDispatcher.get_instance()
     ev = dispatcher.publish_event(
         event_type=event_type,
@@ -152,7 +163,7 @@ def get_entity_analytics_signals(entity_id: str):
 
 
 @router.post("/search/federated", response_model=FederatedSearchResponse)
-def execute_federated_search(req: FederatedSearchRequest):
+def execute_federated_search(req: FederatedSearchRequest, user: UserIdentity = Depends(get_current_user)):
     service = FederatedSearchService()
     return service.execute_search(req)
 
@@ -161,6 +172,7 @@ def execute_federated_search(req: FederatedSearchRequest):
 def execute_federated_search_get(
     q: str = Query(..., min_length=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    user: UserIdentity = Depends(get_current_user),
 ):
     service = FederatedSearchService()
     req = FederatedSearchRequest(query=q, page_size=page_size)
@@ -168,7 +180,9 @@ def execute_federated_search_get(
 
 
 @router.post("/graph/projection", response_model=GraphProjectionResponse)
-def get_graph_projection(req: GraphProjectionRequest):
+def get_graph_projection(req: GraphProjectionRequest, user: UserIdentity = Depends(get_current_user)):
+    if req.case_id:
+        AuthService.get_instance().enforce_case_access(user, req.case_id)
     service = GraphProjectionService()
     return service.project_bounded_graph(req)
 
@@ -179,7 +193,9 @@ def get_graph_projection_by_case(
     max_hops: int = Query(default=2, ge=1, le=5),
     max_nodes: int = Query(default=500, ge=10, le=2000),
     min_confidence: float = Query(default=0.0, ge=0.0, le=1.0),
+    user: UserIdentity = Depends(get_current_user),
 ):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     service = GraphProjectionService()
     req = GraphProjectionRequest(
         case_id=case_id,
@@ -256,13 +272,15 @@ def inspect_relationship(rel_id: str):
 
 
 @router.get("/evidence-gaps/{case_id}")
-def get_evidence_gaps(case_id: str):
+def get_evidence_gaps(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     engine = EvidenceGapEngine()
     return engine.analyze_case(case_id)
 
 
 @router.get("/hypotheses/{case_id}")
-def get_hypotheses(case_id: str):
+def get_hypotheses(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     service = HypothesisService()
     return {
         "case_id": case_id,
@@ -351,13 +369,15 @@ class CopilotApiRequest(BaseModel):
 
 # LEGACY_INTERACTION_PATH: Migrated to converge into unified Command Control Plane
 @router.post("/copilot")
-def query_ai_copilot(req: CopilotApiRequest):
+def query_ai_copilot(req: CopilotApiRequest, user: UserIdentity = Depends(get_current_user)):
+    if req.scope and req.scope.case_id:
+        AuthService.get_instance().enforce_case_access(user, req.scope.case_id)
     copilot = AICopilotService()
     res = copilot.process_query(req.query, req.scope)
     # Log correlation in CommandBus audit
     from app.services.audit_service import AuditService
     AuditService.get_instance().log_access_event(
-        user_id="COPILOT_LEGACY_ADAPTER",
+        user_id=user.user_id,
         resource_type="COMMAND_BUS",
         action="DISPATCH_CHAT_LEGACY",
         details={"query": req.query, "scope": req.scope.model_dump() if req.scope else {}},
@@ -366,12 +386,13 @@ def query_ai_copilot(req: CopilotApiRequest):
 
 
 @router.post("/verify-claim")
-def verify_claim(req: InvestigatorVerificationRequest):
+def verify_claim(req: InvestigatorVerificationRequest, user: UserIdentity = Depends(get_current_user)):
     audit = AuditService.get_instance()
     entry = audit.log_verification_event(
         claim_id=req.claim_id,
         action=req.action,
         investigator_notes=req.investigator_notes,
+        user_id=user.user_id,
     )
     return {
         "status": "success",
@@ -381,7 +402,7 @@ def verify_claim(req: InvestigatorVerificationRequest):
 
 
 @router.get("/audit-logs")
-def get_audit_logs(limit: int = 50):
+def get_audit_logs(limit: int = 50, user: UserIdentity = Depends(get_current_user)):
     audit = AuditService.get_instance()
     return {
         "total_records": len(audit.audit_records),

@@ -13,18 +13,78 @@
    RESTRICTED → Deep Violet (#8B5CF6)
    ========================================================================== */
 
-:root, [data-theme="forensic-paper"] {
-  /* Canonical Foundation Surfaces (Warm Forensic Ivory / Paper) */
+:root, [data-theme="obsidian-glass"], [data-theme="tarka"], [data-theme="night-ops"] {
+  /* TARKA Workstation Palette (Theme A: Obsidian Glass - Graphite-Black Base, Translucent Smoke, Electric Blue) */
+  --bg-canonical: #0C0E12;
+  --surface-primary: #12141A;
+  --surface-secondary: #161922;
+  --surface-elevated: #1E222D;
+  --surface-selected: #252A38;
+  --surface-smoke: rgba(18, 22, 31, 0.72);
+
+  /* Structural Dividers & Architectural Rules */
+  --border-structural: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* High-Contrast Typography Legibility */
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+
+  /* Restrained Electric Blue Accent */
+  --color-electric-blue: #2563EB;
+  --primary-accent: #2563EB;
+  --primary-accent-subtle: rgba(37, 99, 235, 0.15);
+}
+
+[data-theme="midnight-teal"] {
+  /* Theme C: Midnight Teal (Deep Mineral Forensic Workbench with Muted Teal Accents) */
+  --bg-canonical: #070E12;
+  --surface-primary: #0D181E;
+  --surface-secondary: #122129;
+  --surface-elevated: #182C36;
+  --surface-selected: #1E3743;
+  --surface-smoke: rgba(13, 24, 30, 0.78);
+
+  --border-structural: rgba(20, 184, 166, 0.22);
+  --border-subtle: rgba(20, 184, 166, 0.12);
+  --border-strong: rgba(45, 212, 191, 0.35);
+
+  --text-primary: #F0FDFA;
+  --text-secondary: #99F6E4;
+  --text-muted: #5EEAD4;
+
+  --color-electric-blue: #14B8A6;
+  --primary-accent: #14B8A6;
+  --primary-accent-subtle: rgba(20, 184, 166, 0.18);
+
+  --color-primary-periwinkle: #2DD4BF;
+  --color-verified-lime: #10B981;
+  --color-sentinel-coral: #F43F5E;
+  --color-gap-amber: #F59E0B;
+  --color-restricted-violet: #8B5CF6;
+}
+
+[data-theme="porcelain"], [data-theme="forensic-paper"] {
+  /* Theme B: Porcelain (Bright, Minimal, High-Contrast Surface with Warm Ivory Tint) */
   --bg-canonical: #F4F1EA;
   --surface-primary: #FAF8F3;
   --surface-secondary: #ECE8DF;
   --surface-elevated: #FFFFFF;
   --surface-selected: #E5E0D5;
+  --surface-smoke: rgba(250, 248, 243, 0.85);
 
-  /* Structural Dividers & Architectural Rules */
   --border-structural: #D8D2C7;
   --border-subtle: #E5E0D6;
   --border-strong: #BFB8AB;
+
+  --text-primary: #1E1D1A;
+  --text-secondary: #625E57;
+  --text-muted: #8C877E;
+
+  --primary-accent: #5E6AD2;
+  --primary-accent-subtle: rgba(94, 106, 210, 0.15);
 
   /* Typography Legibility Scale (Ink) */
   --text-primary: #1E1D1A;

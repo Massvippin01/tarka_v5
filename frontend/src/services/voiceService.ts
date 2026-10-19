@@ -586,8 +586,8 @@ export class VoiceService {
         session_id: activeSessionId,
         turn_id: `VT-INTRO-${Date.now()}`,
         response_type: "SUCCESS",
-        spoken_text: "Welcome to SentinelX. I'm your investigation assistant. Tell me what you'd like to investigate.",
-        display_text: "Welcome to SentinelX. I'm your investigation assistant. What would you like to investigate?",
+        spoken_text: "Welcome to TARKA, your digital forensics assistant. Tell me what you'd like to investigate.",
+        display_text: "Welcome to TARKA, your digital forensics assistant. What would you like to investigate?",
         created_at: new Date().toISOString(),
       };
     }

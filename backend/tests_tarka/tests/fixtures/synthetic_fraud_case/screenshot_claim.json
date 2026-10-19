@@ -1,0 +1,10 @@
+{
+  "artifact_type": "SCREENSHOT_METADATA",
+  "filename": "payment_receipt_screenshot.png",
+  "claimed_timestamp": "14/02/2026 10:20:00",
+  "claimed_rrn": "202602148891",
+  "claimed_amount": 15000.00,
+  "claimed_payee_vpa": "merchant.pay@okaxis",
+  "claimed_status": "SUCCESS",
+  "ocr_text": "Payment Successful Rs 15,000 to merchant.pay@okaxis Ref 202602148891"
+}

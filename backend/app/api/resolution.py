@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.domain.canonical_entity import CanonicalEntity, EntityType, ProvenanceMetadata
 from app.repositories.unified_store import UnifiedStore
+from app.services.auth_service import get_current_user
 from app.services.layered_entity_resolution import LayeredEntityResolutionEngine, ResolutionResult
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 class ResolutionRequest(BaseModel):

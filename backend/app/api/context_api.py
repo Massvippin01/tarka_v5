@@ -22,7 +22,7 @@ context_service = OperatingContextService.get_instance()
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 class ContextNegotiateRequest(BaseModel):
@@ -51,6 +51,8 @@ def negotiate_operating_context(
     Negotiate operating context upon first open or browser session start.
     Establishes role, allowed cases, voice capabilities, and onboarding options.
     """
+    if req.requested_case_id:
+        AuthService.get_instance().enforce_case_access(user, req.requested_case_id)
     ctx = context_service.resolve_context(
         user=user,
         client_report=req.client_report,
@@ -70,6 +72,8 @@ def get_current_operating_context(
     """
     Read current operating context and onboarding state for the active session.
     """
+    if case_id:
+        AuthService.get_instance().enforce_case_access(user, case_id)
     ctx = context_service.resolve_context(
         user=user,
         session_id=session_id,
@@ -87,6 +91,7 @@ def activate_case_scope(
     """
     Formally activate an authorized investigation scope from onboarding.
     """
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
     try:
         updated_ctx = context_service.activate_scope(
             session_id=req.session_id,
@@ -148,10 +153,7 @@ def get_current_investigation_context(
     """
     Retrieve the current authoritative Investigation Context Snapshot.
     """
-    # Verify user authorization for requested case
-    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
-    if case_id not in allowed_cases:
-        raise HTTPException(status_code=403, detail=f"Case '{case_id}' is outside authorized scope.")
+    AuthService.get_instance().enforce_case_access(user, case_id)
     return ctx_manager.get_current_snapshot(session_id=session_id, case_id=case_id)
 
 
@@ -163,10 +165,8 @@ def resolve_context_reference(
     """
     Deterministically resolve natural language follow-up reference against active context.
     """
-    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
     c_id = req.case_id or "CASE-2026-001"
-    if c_id not in allowed_cases:
-        raise HTTPException(status_code=403, detail=f"Case '{c_id}' is outside authorized scope.")
+    AuthService.get_instance().enforce_case_access(user, c_id)
 
     snapshot = ctx_manager.get_current_snapshot(session_id=req.session_id or "SES-DEFAULT", case_id=c_id)
     return ref_resolver.resolve_reference(
@@ -184,10 +184,8 @@ def apply_context_correction(
     """
     Apply explicit user correction (e.g. 'No, I meant P002') to the context stack.
     """
-    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
     c_id = req.case_id or "CASE-2026-001"
-    if c_id not in allowed_cases:
-        raise HTTPException(status_code=403, detail=f"Case '{c_id}' is outside authorized scope.")
+    AuthService.get_instance().enforce_case_access(user, c_id)
 
     return ctx_manager.apply_correction(
         session_id=req.session_id or "SES-DEFAULT",
@@ -206,9 +204,7 @@ def reset_case_context(
     """
     Reset case-bound context when investigator switches active case.
     """
-    allowed_cases = user.scope.allowed_cases if user and user.scope else ["CASE-2026-001", "C102"]
-    if req.new_case_id not in allowed_cases:
-        raise HTTPException(status_code=403, detail=f"Target case '{req.new_case_id}' is outside authorized scope.")
+    AuthService.get_instance().enforce_case_access(user, req.new_case_id)
 
     return ctx_manager.reset_case_context(
         session_id=req.session_id or "SES-DEFAULT",
@@ -227,5 +223,6 @@ def get_context_audit_history(
     """
     Retrieve immutable audit event trail of all context transitions.
     """
+    AuthService.get_instance().enforce_case_access(user, case_id)
     return ctx_manager.get_history(session_id=session_id, case_id=case_id)
 

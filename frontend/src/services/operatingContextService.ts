@@ -105,7 +105,7 @@ export class OperatingContextService {
         context: fallbackCtx,
         onboarding: {
           is_first_open: !requestedCaseId,
-          greeting_title: "Welcome to SentinelX.",
+          greeting_title: "Welcome to TARKA.",
           greeting_prompt: "What would you like to investigate?",
           action_options: [
             {

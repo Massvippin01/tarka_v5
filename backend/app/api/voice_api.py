@@ -31,7 +31,7 @@ def get_current_user(
     authorization: Optional[str] = Header(None),
 ) -> UserIdentity:
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization)
+    return auth_service.authenticate_token(authorization, strict=True)
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -70,6 +70,7 @@ async def create_voice_session(
     user: UserIdentity = Depends(get_current_user),
 ):
     """Create a new voice session bound to OperatingContext and issue WebRTC token."""
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
     gateway = get_gateway()
     session, transport = await gateway.create_voice_session(
         user=user,
@@ -94,6 +95,7 @@ async def issue_voice_token(
     user: UserIdentity = Depends(get_current_user),
 ):
     """Issue WebRTC LiveKit token for authenticated investigator."""
+    AuthService.get_instance().enforce_case_access(user, case_id)
     gateway = get_gateway()
     _, transport = await gateway.create_voice_session(
         user=user,

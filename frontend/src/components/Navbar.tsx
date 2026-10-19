@@ -22,10 +22,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header style={styles.header}>
       <div style={styles.brandGroup}>
-        <div style={styles.logoBadge}>NEXUS</div>
+        <div style={styles.logoBadge}>TARKA</div>
         <div>
-          <div style={styles.title}>SENTINELX NEXUS</div>
-          <div style={styles.subtitle}>NATIONAL CRIMINAL INTELLIGENCE & CYBERCRIME PLATFORM</div>
+          <div style={styles.title}>TARKA FORENSICS</div>
+          <div style={styles.subtitle}>INDIGENOUS DIGITAL FORENSICS PLATFORM • SUTRAM 2026</div>
         </div>
       </div>
 

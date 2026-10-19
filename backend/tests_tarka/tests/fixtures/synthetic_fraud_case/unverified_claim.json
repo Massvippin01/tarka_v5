@@ -1,0 +1,10 @@
+{
+  "artifact_type": "SCREENSHOT_METADATA",
+  "filename": "fake_refund_claim.png",
+  "claimed_timestamp": "14/02/2026 12:00:00",
+  "claimed_rrn": "202602147777",
+  "claimed_amount": 10000.00,
+  "claimed_payee_vpa": "refund.desk@upi",
+  "claimed_status": "SUCCESS",
+  "ocr_text": "Refund Processed Rs 10,000 Ref 202602147777"
+}

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.graph.graph_algorithms import GraphAlgorithms
+from app.services.auth_service import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/pagerank")
