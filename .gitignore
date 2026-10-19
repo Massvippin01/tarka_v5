@@ -23,6 +23,20 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and Media
 *.log
 npm-debug.log*
+.tempmediaStorage/
+*.webm
+*.webp
+.pytest_cache/
+backups/
+
+# Runtime evidence and test databases (preserve only the synthetic demo case)
+data/cases/*
+!data/cases/upi_payment_discrepancy/
+data/cases/upi_payment_discrepancy/**
+backend/data/cases/*
+!backend/data/cases/upi_payment_discrepancy/
+backend/data/cases/upi_payment_discrepancy/**
+backend/data/staging/

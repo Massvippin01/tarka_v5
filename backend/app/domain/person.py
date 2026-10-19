@@ -63,6 +63,11 @@ class Person(UniversalEntity):
             if part
         )
 
+    @property
+    def name(self) -> str:
+        """Alias for full_name to ensure polymorphic compatibility across investigation services."""
+        return self.full_name
+
     def add_alias(self, alias: str) -> None:
         if alias not in self.aliases:
             self.aliases.append(alias)

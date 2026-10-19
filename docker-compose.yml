@@ -1,0 +1,270 @@
+# ==============================================================================
+# SENTINELX - PRODUCTION BASELINE TOPOLOGY (docker-compose.yml)
+# ==============================================================================
+# Hardened, zero-trust container topology for SentinelX platform deployment.
+# All services communicate over an isolated internal network.
+# Only the unprivileged frontend reverse-proxy is exposed on public HTTP/HTTPS ports.
+#
+# ARCHITECTURAL INVARIANT STATUS (Wave 6 Phased Hardening):
+# - PostgreSQL:    CONTAINER PRESENT | INTEGRATION = NOT YET IMPLEMENTED (Phase 3)
+# - Neo4j:         CONTAINER PRESENT | INTEGRATION = PARTIALLY IMPLEMENTED (Phase 3)
+# - OpenSearch:    CONTAINER PRESENT | INTEGRATION = NOT YET IMPLEMENTED (Phase 5)
+# - MinIO (S3):    CONTAINER PRESENT | INTEGRATION = NOT YET IMPLEMENTED (Phase 4)
+# - OPA:           CONTAINER PRESENT | INTEGRATION = NOT YET IMPLEMENTED (Phase 6)
+# - Redis:         CONTAINER PRESENT | INTEGRATION = NOT YET IMPLEMENTED (Phase 7)
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sentinelx-prod-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentinelx_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinelx_prod_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinelx_prod_password}
+    volumes:
+      - pg_prod_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-sentinelx_prod_user} -d $${POSTGRES_DB:-sentinelx_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  neo4j:
+    image: neo4j:5.20-community
+    container_name: sentinelx-prod-neo4j
+    restart: always
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/sentinelx_prod_password}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_server_memory_heap_initial__size: 1G
+      NEO4J_server_memory_heap_max__size: 2G
+    volumes:
+      - neo4j_prod_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4096M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD", "neo4j-admin", "server", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    container_name: sentinelx-prod-opensearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-SentinelX_ProdPass123!}"
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - opensearch_prod_data:/usr/share/opensearch/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3072M
+        reservations:
+          cpus: '0.5'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    networks:
+      - sentinelx-prod-net
+
+  minio:
+    image: rustfs/rustfs:1.0.0
+    container_name: sentinelx-prod-minio
+    restart: always
+    ports:
+      - "${STORAGE_PORT:-9000}:9000"
+      - "${STORAGE_CONSOLE_PORT:-9001}:9001"
+    command: server /data --console-enable --console-address ":9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    volumes:
+      - minio_prod_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  opa:
+    image: openpolicyagent/opa:0.65.0-debug
+    container_name: sentinelx-prod-opa
+    restart: always
+    command: run --server --log-level=info /policies
+    volumes:
+      - ./opa/policies:/policies:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8181/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: sentinelx-prod-redis
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: sentinelx/backend:2.0.0
+    container_name: sentinelx-prod-backend
+    restart: always
+    environment:
+      APP_ENV: production
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY:-sentinelx_production_secret_key_minimum_32_characters_for_prod}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sentinelx_prod_user:sentinelx_prod_password@postgres:5432/sentinelx_prod}
+      NEO4J_URI: ${NEO4J_URI:-bolt://neo4j:7687}
+      NEO4J_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-sentinelx_prod_password}
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-sentinelx_minio_admin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-sentinelx_minio_prod_password}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-sentinelx-evidence-vault}
+      OPA_URL: ${OPA_URL:-http://opa:8181}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://sentinelx.intelligence.gov.in,http://localhost:8080}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_API_BASE_URL: ${SARVAM_API_BASE_URL:-https://api.sarvam.ai}
+      SARVAM_STT_MODEL: ${SARVAM_STT_MODEL:-saaras:v4}
+      SARVAM_TTS_MODEL: ${SARVAM_TTS_MODEL:-bulbul:v4-flash}
+      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh_enhi_ads}
+    volumes:
+      - evidence_prod_data:/app/data/storage/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      opa:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelx-prod-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: sentinelx/frontend:2.0.0
+    container_name: sentinelx-prod-frontend
+    restart: always
+    ports:
+      - "80:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sentinelx-prod-net
+
+networks:
+  sentinelx-prod-net:
+    driver: bridge
+
+volumes:
+  pg_prod_data:
+  neo4j_prod_data:
+  opensearch_prod_data:
+  minio_prod_data:
+  evidence_prod_data:

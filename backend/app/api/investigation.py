@@ -1,20 +1,209 @@
-from __future__ import annotations
-
-from typing import Any, Dict, List
-from fastapi import APIRouter, HTTPException, Query
+from typing import Any, Dict, List, Optional
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.adapters.synthetic_adapters import CCTNSAdapter, CDRAdapter, NCRPAdapter, VAHANAdapter
+from app.domain.analytics import AnalyticsResponse
+from app.domain.auth import AuthTokenRequest, AuthTokenResponse, UserIdentity
+from app.domain.copilot import CopilotQueryScope, InvestigatorVerificationRequest
+from app.domain.projection import GraphProjectionRequest, GraphProjectionResponse
+from app.domain.provenance import ProvenanceTraceResponse
+from app.domain.realtime import EventSubscriptionScope, RealtimeEvent, RealtimeStatusResponse
+from app.domain.search import FederatedSearchRequest, FederatedSearchResponse
+from app.domain.voice import VoiceCommandRequest, VoiceCommandResponse
 from app.generators.scenario_generator import ScenarioGenerator
 from app.graph.graph_algorithms import GraphAlgorithms
 from app.repositories.unified_store import UnifiedStore
 from app.services.ai_copilot_service import AICopilotService
+from app.services.analytical_engine import AnalyticalEngine
+from app.services.audit_service import AuditService
+from app.services.auth_service import AuthService
+from app.services.benchmark_service import BenchmarkService
+from app.services.cluster_projection_service import ClusterProjectionService
 from app.services.entity_resolution_engine import EntityResolutionEngine
 from app.services.evidence_gap_engine import EvidenceGapEngine
+from app.services.federated_search_service import FederatedSearchService
+from app.services.generator_service import DeterministicDatasetGenerator
+from app.services.graph_projection_service import GraphProjectionService
 from app.services.hypothesis_service import HypothesisService
 from app.services.ingestion_pipeline import IngestionPipeline
+from app.services.provenance_service import ProvenanceService
+from app.services.realtime_dispatcher import RealtimeDispatcher
+from app.services.voice_interpreter_service import VoiceInterpreterService
 
 router = APIRouter()
+
+
+@router.post("/benchmarks/run")
+def run_empirical_benchmarks(concurrency: int = 1, runs: int = 10):
+    bench = BenchmarkService.get_instance()
+    return bench.run_suite(concurrency_tier=concurrency, runs=runs)
+
+
+@router.post("/benchmarks/dataset/generate")
+def generate_dataset_tier(tier: str = "TIER_A", seed: int = 12345):
+    gen = DeterministicDatasetGenerator(seed=seed)
+    return gen.generate_tier_dataset(tier=tier)
+
+
+@router.get("/graph/cluster-projection")
+def get_clustered_graph_projection(case_id: Optional[str] = "C102"):
+    cps = ClusterProjectionService.get_instance()
+    return cps.project_clustered_graph(case_id=case_id)
+
+
+@router.get("/ingestion/pipeline/status")
+def get_ingestion_pipeline_status():
+    pipeline = IngestionPipeline()
+    cctns_res = pipeline.ingest_records(CCTNSAdapter(), limit=5)
+    cdr_res = pipeline.ingest_records(CDRAdapter(), limit=5)
+    return {
+        "overall_status": "SYNTHETIC ADAPTERS — ACTIVE",
+        "cctns_pipeline": cctns_res,
+        "cdr_pipeline": cdr_res,
+        "dead_letter_queue_count": len(pipeline.dead_letter_queue),
+    }
+
+
+def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
+    auth_service = AuthService.get_instance()
+    return auth_service.authenticate_token(authorization, strict=True)
+
+
+@router.post("/auth/login", response_model=AuthTokenResponse)
+def login_user(req: AuthTokenRequest):
+    auth_service = AuthService.get_instance()
+    username_upper = req.username.upper().strip()
+    if username_upper in auth_service.users:
+        user = auth_service.users[username_upper]
+        jwt_token = auth_service.create_jwt_token(username_upper)
+        return AuthTokenResponse(access_token=jwt_token, user=user)
+
+    raise HTTPException(
+        status_code=401,
+        detail="Authentication failed. Invalid username or credentials.",
+    )
+
+
+@router.get("/auth/me", response_model=UserIdentity)
+def get_current_user_profile(user: UserIdentity = Depends(get_current_user)):
+    return user
+
+
+@router.get("/provenance/trace/{record_id}", response_model=ProvenanceTraceResponse)
+def trace_provenance(record_id: str, user: UserIdentity = Depends(get_current_user)):
+    prov_service = ProvenanceService.get_instance()
+    return prov_service.trace_provenance_chain(record_id)
+
+
+@router.get("/audit/verify-integrity")
+def verify_audit_integrity(user: UserIdentity = Depends(get_current_user)):
+    audit = AuditService.get_instance()
+    return audit.verify_integrity()
+
+
+@router.post("/voice/command", response_model=VoiceCommandResponse)
+def execute_voice_command(req: VoiceCommandRequest, user: UserIdentity = Depends(get_current_user)):
+    service = VoiceInterpreterService()
+    return service.process_command(req)
+
+
+@router.get("/events/stream")
+def stream_realtime_events(case_id: Optional[str] = "C102", user: UserIdentity = Depends(get_current_user)):
+    target_case = case_id or "C102"
+    AuthService.get_instance().enforce_case_access(user, target_case)
+    dispatcher = RealtimeDispatcher.get_instance()
+    scope = EventSubscriptionScope(case_id=target_case)
+
+    def event_generator():
+        # Yield initial connection heartbeat
+        init_event = dispatcher.publish_event(
+            event_type="REALTIME_SUBSCRIPTION_ACTIVE",
+            payload={"status": "CONNECTED", "subscribed_case": target_case},
+            case_id=target_case,
+        )
+        yield dispatcher.format_sse_event(init_event)
+
+        # Yield matching scoped events
+        for ev in dispatcher.get_scoped_events(scope):
+            yield dispatcher.format_sse_event(ev)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/events/simulate")
+def simulate_realtime_event(
+    event_type: str = "EVIDENCE_ADDED",
+    case_id: str = "C102",
+    user: UserIdentity = Depends(get_current_user),
+):
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    dispatcher = RealtimeDispatcher.get_instance()
+    ev = dispatcher.publish_event(
+        event_type=event_type,
+        payload={"evidence_id": "EV-2026-999", "title": "New Realtime Synthetic Evidence Item"},
+        case_id=case_id,
+    )
+    return {"status": "success", "event": ev}
+
+
+@router.get("/analytics/signals/{case_id}", response_model=AnalyticsResponse)
+def get_case_analytics_signals(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    engine = AnalyticalEngine()
+    return engine.analyze_case(case_id)
+
+
+@router.get("/analytics/signals/entity/{entity_id}", response_model=AnalyticsResponse)
+def get_entity_analytics_signals(entity_id: str):
+    engine = AnalyticalEngine()
+    return engine.analyze_entity(entity_id)
+
+
+@router.post("/search/federated", response_model=FederatedSearchResponse)
+def execute_federated_search(req: FederatedSearchRequest, user: UserIdentity = Depends(get_current_user)):
+    service = FederatedSearchService()
+    return service.execute_search(req)
+
+
+@router.get("/search/federated", response_model=FederatedSearchResponse)
+def execute_federated_search_get(
+    q: str = Query(..., min_length=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    user: UserIdentity = Depends(get_current_user),
+):
+    service = FederatedSearchService()
+    req = FederatedSearchRequest(query=q, page_size=page_size)
+    return service.execute_search(req)
+
+
+@router.post("/graph/projection", response_model=GraphProjectionResponse)
+def get_graph_projection(req: GraphProjectionRequest, user: UserIdentity = Depends(get_current_user)):
+    if req.case_id:
+        AuthService.get_instance().enforce_case_access(user, req.case_id)
+    service = GraphProjectionService()
+    return service.project_bounded_graph(req)
+
+
+@router.get("/graph/projection/{case_id}", response_model=GraphProjectionResponse)
+def get_graph_projection_by_case(
+    case_id: str,
+    max_hops: int = Query(default=2, ge=1, le=5),
+    max_nodes: int = Query(default=500, ge=10, le=2000),
+    min_confidence: float = Query(default=0.0, ge=0.0, le=1.0),
+    user: UserIdentity = Depends(get_current_user),
+):
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    service = GraphProjectionService()
+    req = GraphProjectionRequest(
+        case_id=case_id,
+        max_hops=max_hops,
+        max_nodes=max_nodes,
+        min_confidence=min_confidence,
+    )
+    return service.project_bounded_graph(req)
 
 
 class CopilotRequest(BaseModel):
@@ -83,13 +272,15 @@ def inspect_relationship(rel_id: str):
 
 
 @router.get("/evidence-gaps/{case_id}")
-def get_evidence_gaps(case_id: str):
+def get_evidence_gaps(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     engine = EvidenceGapEngine()
     return engine.analyze_case(case_id)
 
 
 @router.get("/hypotheses/{case_id}")
-def get_hypotheses(case_id: str):
+def get_hypotheses(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    AuthService.get_instance().enforce_case_access(user, case_id)
     service = HypothesisService()
     return {
         "case_id": case_id,
@@ -167,11 +358,56 @@ def get_k_hop(node_id: str, k: int = 2):
     return store.get_k_hop(node_id, k=k)
 
 
+from app.domain.copilot import CopilotQueryScope, InvestigatorVerificationRequest
+from app.services.audit_service import AuditService
+
+
+class CopilotApiRequest(BaseModel):
+    query: str
+    scope: Optional[CopilotQueryScope] = None
+
+
+# LEGACY_INTERACTION_PATH: Migrated to converge into unified Command Control Plane
 @router.post("/copilot")
-def query_ai_copilot(req: CopilotRequest):
+def query_ai_copilot(req: CopilotApiRequest, user: UserIdentity = Depends(get_current_user)):
+    if req.scope and req.scope.case_id:
+        AuthService.get_instance().enforce_case_access(user, req.scope.case_id)
     copilot = AICopilotService()
-    res = copilot.process_query(req.query)
+    res = copilot.process_query(req.query, req.scope)
+    # Log correlation in CommandBus audit
+    from app.services.audit_service import AuditService
+    AuditService.get_instance().log_access_event(
+        user_id=user.user_id,
+        resource_type="COMMAND_BUS",
+        action="DISPATCH_CHAT_LEGACY",
+        details={"query": req.query, "scope": req.scope.model_dump() if req.scope else {}},
+    )
     return res
+
+
+@router.post("/verify-claim")
+def verify_claim(req: InvestigatorVerificationRequest, user: UserIdentity = Depends(get_current_user)):
+    audit = AuditService.get_instance()
+    entry = audit.log_verification_event(
+        claim_id=req.claim_id,
+        action=req.action,
+        investigator_notes=req.investigator_notes,
+        user_id=user.user_id,
+    )
+    return {
+        "status": "success",
+        "message": f"Claim {req.claim_id} marked as {req.action}",
+        "audit_entry": entry,
+    }
+
+
+@router.get("/audit-logs")
+def get_audit_logs(limit: int = 50, user: UserIdentity = Depends(get_current_user)):
+    audit = AuditService.get_instance()
+    return {
+        "total_records": len(audit.audit_records),
+        "logs": audit.get_audit_logs(limit),
+    }
 
 
 @router.get("/quality")
@@ -190,21 +426,8 @@ def get_data_quality_report():
 
 @router.get("/benchmarks")
 def run_benchmarks():
-    return {
-        "scale_tier": "100K Records",
-        "ingestion_throughput_rps": 14200,
-        "entity_resolution_latency_p50_ms": 3.2,
-        "entity_resolution_latency_p95_ms": 7.8,
-        "graph_shortest_path_latency_p50_ms": 4.1,
-        "graph_shortest_path_latency_p95_ms": 9.5,
-        "copilot_grounded_response_latency_p50_ms": 140.0,
-        "system_telemetry": {
-            "cpu_utilization": "18.4%",
-            "ram_used_mb": 412,
-            "active_graph_nodes": 12850,
-            "active_graph_edges": 48900,
-        },
-    }
+    bench = BenchmarkService.get_instance()
+    return bench.run_suite(concurrency_tier=1, runs=5)
 
 
 @router.get("/search")

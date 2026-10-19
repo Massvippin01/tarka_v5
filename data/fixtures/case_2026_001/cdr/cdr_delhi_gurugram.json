@@ -1,0 +1,39 @@
+{
+  "synthetic": true,
+  "source_type": "CDR_TELECOM",
+  "case_id": "CASE-2026-001",
+  "telecom_circle": "Delhi & NCR",
+  "operator": "Bharti Airtel Ltd",
+  "requested_range": "2026-09-22T08:00:00Z to 2026-09-22T12:00:00Z",
+  "records": [
+    {
+      "call_id": "CALL-2026-001",
+      "timestamp": "2026-09-22T09:17:00Z",
+      "caller": "+91 99990-11223",
+      "receiver": "+91-9888044556",
+      "duration": 340,
+      "call_type": "VOICE_OUTGOING",
+      "cell_tower": "TOWER-DEL-NORTH-04",
+      "lat": 28.69,
+      "lng": 77.21,
+      "imei": "867543029182341"
+    },
+    {
+      "call_id": "CALL-2026-002",
+      "timestamp": "2026-09-22T09:38:00Z",
+      "caller": "+91 99990-11223",
+      "receiver": "+91-9811099887",
+      "duration": 45,
+      "call_type": "VOICE_OUTGOING",
+      "cell_tower": "TOWER-DEL-SOUTH-88",
+      "lat": 28.52,
+      "lng": 77.21,
+      "imei": "867543029182341"
+    }
+  ],
+  "verification_metadata": {
+    "caller_caf_verified": true,
+    "receiver_caf_verified": false,
+    "caf_verification_gap": "Burner SIM +91-9888044556 lacks verified biometric Customer Application Form"
+  }
+}

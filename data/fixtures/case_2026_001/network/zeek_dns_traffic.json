@@ -1,0 +1,21 @@
+{
+  "synthetic": true,
+  "source_type": "NETWORK_PCAP_LOG",
+  "case_id": "CASE-2026-001",
+  "sensor_id": "ZEEK-SENSOR-NORTH-GATEWAY",
+  "capture_duration_minutes": 60,
+  "flows": [
+    {
+      "timestamp": "2026-09-22T08:52:00Z",
+      "src_ip": "192.168.1.45",
+      "src_port": 54210,
+      "dest_ip": "198.51.100.22",
+      "dest_port": 443,
+      "protocol": "TCP_TLS",
+      "bytes": 14208,
+      "dns_query": "mule-settlement-gateway.xyz",
+      "dns_response": "198.51.100.22",
+      "threat_indicator": "HIGH_CONFIDENCE_MALICIOUS_C2"
+    }
+  ]
+}

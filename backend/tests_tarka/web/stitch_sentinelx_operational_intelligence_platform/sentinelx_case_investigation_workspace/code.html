@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SentinelX | Unified Investigation Environment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0c0e17; }
+        ::-webkit-scrollbar-thumb { background: #33343e; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #434656; }
+        
+        .ai-glow {
+            box-shadow: inset 2px 0 0 0 #2d5bff;
+        }
+        .data-row:hover .row-actions { opacity: 1; }
+        .resizable-panel { position: relative; }
+        .resize-handle-x { cursor: col-resize; width: 4px; position: absolute; right: 0; top: 0; bottom: 0; z-index: 50; }
+        .resize-handle-x:hover { background: #2d5bff; }
+        
+        .timeline-step::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -20px;
+            width: 1px;
+            height: 20px;
+            background: #434656;
+        }
+        .timeline-step:last-child::after { display: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "inverse-primary": "#104af0",
+                "on-primary-fixed": "#001355",
+                "tertiary-container": "#c24100",
+                "on-secondary": "#213145",
+                "on-secondary-container": "#a9bad3",
+                "outline-variant": "#434656",
+                "surface-container": "#1d1f29",
+                "surface-container-highest": "#33343e",
+                "surface-container-lowest": "#0c0e17",
+                "surface-dim": "#11131c",
+                "on-error": "#690005",
+                "surface-tint": "#b8c3ff",
+                "on-secondary-fixed": "#0b1c30",
+                "secondary": "#b7c8e1",
+                "on-primary": "#002387",
+                "primary-fixed": "#dde1ff",
+                "surface-container-low": "#191b24",
+                "surface": "#11131c",
+                "on-primary-fixed-variant": "#0035bd",
+                "secondary-fixed-dim": "#b7c8e1",
+                "tertiary-fixed-dim": "#ffb59b",
+                "tertiary": "#ffb59b",
+                "primary-fixed-dim": "#b8c3ff",
+                "secondary-fixed": "#d3e4fe",
+                "on-tertiary-fixed": "#380d00",
+                "on-primary-container": "#efefff",
+                "error": "#ffb4ab",
+                "surface-container-high": "#282933",
+                "primary-container": "#2d5bff",
+                "surface-bright": "#373943",
+                "inverse-surface": "#e2e1ef",
+                "error-container": "#93000a",
+                "inverse-on-surface": "#2e303a",
+                "on-error-container": "#ffdad6",
+                "background": "#11131c",
+                "on-surface-variant": "#c4c5d9",
+                "on-tertiary": "#5b1a00",
+                "outline": "#8e90a2",
+                "surface-variant": "#33343e",
+                "on-background": "#e2e1ef",
+                "on-tertiary-container": "#ffece6",
+                "on-secondary-fixed-variant": "#38485d",
+                "primary": "#b8c3ff",
+                "tertiary-fixed": "#ffdbcf",
+                "on-surface": "#e2e1ef",
+                "on-tertiary-fixed-variant": "#812900",
+                "secondary-container": "#3a4a5f"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "xl": "24px",
+                "xs": "4px",
+                "gutter": "12px",
+                "sm": "8px",
+                "lg": "16px",
+                "md": "12px",
+                "base": "4px",
+                "panel-padding": "16px"
+              },
+              "fontFamily": {
+                "body-md": ["Inter"],
+                "label-sm": ["Inter"],
+                "label-caps": ["IBM Plex Sans"],
+                "headline-sm": ["IBM Plex Sans"],
+                "display-lg": ["IBM Plex Sans"],
+                "data-tabular": ["Inter"],
+                "headline-md": ["IBM Plex Sans"],
+                "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                "body-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "display-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "data-tabular": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                "body-lg": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden flex flex-col h-screen">
+<!-- Compact Top Navigation -->
+<header class="bg-surface-dim text-primary border-b border-outline-variant flex justify-between items-center w-full px-lg h-12 z-50">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">security</span>
+<div class="font-headline-sm text-headline-sm font-bold tracking-tight">KSP INTEL COMMAND</div>
+<div class="h-4 w-px bg-outline-variant mx-sm"></div>
+<div class="flex items-center gap-xs">
+<span class="text-on-surface-variant font-label-caps text-[10px]">CASE:</span>
+<span class="font-data-tabular text-[11px] font-bold text-on-surface">KSP-7742-IX</span>
+</div>
+</div>
+<div class="flex-1 max-w-sm mx-xl">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded px-8 py-0.5 text-[12px] focus:outline-none focus:border-primary transition-colors" placeholder="Global intel search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex gap-sm mr-md border-r border-outline-variant pr-md">
+<button class="bg-primary text-on-primary px-sm py-0.5 rounded text-[10px] font-label-caps flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">description</span>
+                GENERATE CHARGE SHEET
+            </button>
+<button class="bg-surface-container-highest text-on-surface px-sm py-0.5 rounded text-[10px] font-label-caps border border-outline-variant flex items-center gap-xs hover:bg-surface-bright">
+<span class="material-symbols-outlined text-sm">folder_zip</span>
+                EXPORT CASE
+            </button>
+</div>
+<button class="hover:bg-surface-container-highest p-1 rounded"><span class="material-symbols-outlined text-md">notifications</span></button>
+<button class="hover:bg-surface-container-highest p-1 rounded"><span class="material-symbols-outlined text-md">settings</span></button>
+<div class="h-6 w-6 bg-surface-container-highest rounded-full border border-outline overflow-hidden">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMs2e25pO-921okoWS0bYyf-Sa5XaKbFS3fOyjSwJ2zwtCm81tvMe-TkAZCRxTRByNPE2XTavMVTxQ9Jh9HtdX3eInuaL8W74T0R7MW4uQNAR17SUE7qeczd2WYzON1J6AxEDVV7W--ov5kJIs4mIXKcbzrApauQnrfcC9EgfexCdDGBqF66kRrY0IzaJrFN6fct106-MM3gAOc-looLFdUh1BRoeTfwcD96fz8YpRGadHnyhFshqrBqtvknQIAzM8RwK_WenNaaA"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Side Navigation -->
+<nav class="bg-surface-container w-12 hover:w-48 transition-all duration-300 border-r border-outline-variant z-40 flex flex-col group overflow-hidden">
+<div class="flex-1 flex flex-col gap-xs py-md px-1.5">
+<a class="flex items-center gap-md p-2 rounded bg-primary-container text-on-primary-container border-l-2 border-primary" href="#"><span class="material-symbols-outlined">folder_shared</span><span class="opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs">Case File</span></a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high" href="#"><span class="material-symbols-outlined">hub</span><span class="opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs">Network</span></a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high" href="#"><span class="material-symbols-outlined">map</span><span class="opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs">Geo-Intel</span></a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high" href="#"><span class="material-symbols-outlined">history</span><span class="opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs">Audit Log</span></a>
+</div>
+<div class="p-2 border-t border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant">terminal</span>
+</div>
+</nav>
+<!-- Main Workspace: Dockable Panel System -->
+<main class="flex-1 flex overflow-hidden bg-surface-lowest">
+<!-- Left Panel: Resizable Evidence Grid -->
+<section class="resizable-panel w-[400px] border-r border-outline-variant flex flex-col bg-surface overflow-hidden">
+<div class="resize-handle-x"></div>
+<div class="h-10 border-b border-outline-variant flex px-md items-center justify-between bg-surface-container-low">
+<span class="font-label-caps text-[10px] text-on-surface-variant">EVIDENCE REPOSITORY (24)</span>
+<div class="flex gap-sm">
+<button class="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary">filter_alt</button>
+<button class="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary">add_circle</button>
+</div>
+</div>
+<!-- Enterprise Data Grid -->
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left border-collapse text-[10px]">
+<thead class="bg-surface-container-high sticky top-0 z-20 border-b border-outline-variant">
+<tr>
+<th class="p-2 font-label-caps text-on-surface-variant">ITEM ID / TYPE</th>
+<th class="p-2 font-label-caps text-on-surface-variant">CHAIN OF CUSTODY</th>
+<th class="p-2 font-label-caps text-on-surface-variant">ADMISSIBILITY</th>
+<th class="p-2 font-label-caps text-on-surface-variant">INTEGRITY HASH</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="data-row hover:bg-surface-container-low cursor-pointer transition-colors">
+<td class="p-2">
+<div class="font-bold text-on-surface">#E-902</div>
+<div class="text-[9px] text-on-surface-variant">CCTV STREAM</div>
+</td>
+<td class="p-2">
+<span class="px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">VERIFIED</span>
+</td>
+<td class="p-2">
+<span class="material-symbols-outlined text-primary text-sm">gavel</span>
+<span class="ml-1 text-on-surface">HIGH</span>
+</td>
+<td class="p-2 font-data-tabular text-[9px] text-on-surface-variant">SHA-256: 4f9e...</td>
+</tr>
+<tr class="data-row hover:bg-surface-container-low cursor-pointer transition-colors bg-primary-container/5">
+<td class="p-2">
+<div class="font-bold text-on-surface">#E-881</div>
+<div class="text-[9px] text-on-surface-variant">CELL DUMP</div>
+</td>
+<td class="p-2">
+<span class="px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">PENDING</span>
+</td>
+<td class="p-2">
+<span class="material-symbols-outlined text-error text-sm">warning</span>
+<span class="ml-1 text-on-surface">LIMITED</span>
+</td>
+<td class="p-2 font-data-tabular text-[9px] text-on-surface-variant">SHA-256: 12ab...</td>
+</tr>
+<tr class="data-row hover:bg-surface-container-low cursor-pointer transition-colors">
+<td class="p-2">
+<div class="font-bold text-on-surface">#E-874</div>
+<div class="text-[9px] text-on-surface-variant">PHYSICAL OBJ</div>
+</td>
+<td class="p-2">
+<span class="px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">VERIFIED</span>
+</td>
+<td class="p-2">
+<span class="material-symbols-outlined text-primary text-sm">gavel</span>
+<span class="ml-1 text-on-surface">FULL</span>
+</td>
+<td class="p-2 font-data-tabular text-[9px] text-on-surface-variant">F-TAG: 9901-X</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Evidence Preview Area (Maximized Space) -->
+<div class="h-64 border-t border-outline-variant bg-surface-container-lowest p-sm flex flex-col">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-[10px] text-primary">PREVIEW: #E-902 CCTV</span>
+<button class="material-symbols-outlined text-sm hover:text-primary">open_in_full</button>
+</div>
+<div class="flex-1 bg-black rounded relative group overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHnTtA5kvq45bH1ol-POhh4wyCa3wpLialU0gg_g8Oop_HaqSHy82FOq267bZePKiPa6-6-devxRgMqIiHc--8l9cBwmENrIHsFmJsPokTdsgHNYGkIns4FeNY7uHHQIygozF02HMblZ2CXr1qdOz6CKMOhVdREaHNfmHvKtwAfLBHuqiENBh9PYcwEnzY_7JgzRKJEynaEiMRpPs7C_bP07sAI39AwLWOfwdmHgeR8TngNCeZXdHu2ljwk_9VSXQiwJtaDJW2Fv0"/>
+<div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-4xl">play_circle</span>
+</div>
+<div class="absolute bottom-2 left-2 flex gap-2">
+<span class="text-[8px] bg-error px-1 text-white font-bold rounded">LIVE_STREAM</span>
+<span class="text-[8px] bg-black/80 px-1 text-on-surface-variant rounded">14:22:10 UTC</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Center Panel: Investigation Timeline & Context -->
+<section class="flex-1 flex flex-col bg-surface-lowest relative">
+<!-- Strategic Investigation Pipeline -->
+<div class="px-lg pt-md bg-surface-container-low border-b border-outline-variant">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-display-lg text-display-lg text-on-surface flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-2xl">account_tree</span>
+                        INVESTIGATION PIPELINE
+                    </h2>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-primary-container text-on-primary-container text-[10px] font-bold">CASE STATUS: ACTIVE</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest border border-outline-variant text-on-surface-variant text-[10px]">LODGED: 2023-11-20</span>
+</div>
+</div>
+<!-- Logical Sequence Timeline -->
+<div class="flex items-center justify-between pb-4 max-w-4xl mx-auto">
+<div class="flex flex-col items-center gap-1 timeline-step relative">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container shadow-lg border-2 border-primary">
+<span class="material-symbols-outlined text-sm">report_problem</span>
+</div>
+<span class="text-[9px] font-bold text-on-surface">INCIDENT</span>
+<span class="text-[8px] text-on-surface-variant">Nov 20, 04:00</span>
+</div>
+<div class="flex-1 h-px bg-primary/30 mx-2"></div>
+<div class="flex flex-col items-center gap-1 timeline-step relative">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container shadow-lg border-2 border-primary">
+<span class="material-symbols-outlined text-sm">assignment</span>
+</div>
+<span class="text-[9px] font-bold text-on-surface">FIR LODGED</span>
+<span class="text-[8px] text-on-surface-variant">Nov 20, 08:30</span>
+</div>
+<div class="flex-1 h-px bg-primary/30 mx-2"></div>
+<div class="flex flex-col items-center gap-1 timeline-step relative">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container shadow-lg border-2 border-primary">
+<span class="material-symbols-outlined text-sm">inventory_2</span>
+</div>
+<span class="text-[9px] font-bold text-on-surface">EVIDENCE COLL.</span>
+<span class="text-[8px] text-on-surface-variant">In Progress</span>
+</div>
+<div class="flex-1 h-px bg-outline-variant mx-2"></div>
+<div class="flex flex-col items-center gap-1 timeline-step relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-sm">person_search</span>
+</div>
+<span class="text-[9px] font-bold text-on-surface-variant">SUSPECT ID</span>
+<span class="text-[8px] text-on-surface-variant">Awaiting Link</span>
+</div>
+<div class="flex-1 h-px bg-outline-variant mx-2"></div>
+<div class="flex flex-col items-center gap-1 timeline-step relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant border border-outline-variant">
+<span class="material-symbols-outlined text-sm">balance</span>
+</div>
+<span class="text-[9px] font-bold text-on-surface-variant">WARRANT</span>
+<span class="text-[8px] text-on-surface-variant">Locked</span>
+</div>
+</div>
+</div>
+<!-- Contextual Activity Log (Vertical Timeline Expansion) -->
+<div class="flex-1 overflow-y-auto p-lg flex flex-col gap-lg bg-surface-lowest">
+<div class="flex gap-lg relative">
+<div class="w-px bg-outline-variant absolute left-4 top-8 bottom-0"></div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10 shadow-md">
+<span class="material-symbols-outlined text-on-primary text-sm">bolt</span>
+</div>
+<div class="flex-1 bg-surface-container p-md rounded border border-primary/20 ai-glow">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-primary text-[10px]">AI ALERT: COORDINATED ANOMALY</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">NOW</span>
+</div>
+<p class="text-body-md text-on-surface">Subject primary mobile device pinged off Tower #402. AI suggests 88% probability of meeting Suspect B in <span class="text-primary font-bold">Zone 4</span>.</p>
+</div>
+</div>
+<div class="flex gap-lg relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">link</span>
+</div>
+<div class="flex-1 bg-surface-container-low p-md rounded border border-outline-variant">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-on-surface-variant text-[10px]">FINANCIAL LINK ESTABLISHED</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">2h ago</span>
+</div>
+<p class="text-body-md text-on-surface-variant">Records linked between Account *8821 and Entity #P-902. Transaction volume exceeding baseline by 400%.</p>
+</div>
+</div>
+<div class="flex gap-lg relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">description</span>
+</div>
+<div class="flex-1 bg-surface-container-low p-md rounded border border-outline-variant opacity-60">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-on-surface-variant text-[10px]">FILE UPLOADED</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">6h ago</span>
+</div>
+<p class="text-body-md">Witness Statement #WS-114 transcribed and added to repository.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Deep Embedded AI Lead Assistant -->
+<aside class="w-80 border-l border-outline-variant bg-surface flex flex-col">
+<div class="h-10 border-b border-outline-variant px-md flex items-center gap-sm bg-surface-container-high">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<span class="font-label-caps text-[10px] text-on-surface font-bold">AI LEAD RECOMMENDATIONS</span>
+<span class="ml-auto bg-green-500/20 text-green-500 text-[8px] px-1 rounded">ACTIVE</span>
+</div>
+<div class="flex-1 p-md overflow-y-auto space-y-lg">
+<!-- Strategic Context: AI Leads -->
+<div class="space-y-sm">
+<h3 class="text-[10px] font-label-caps text-on-surface-variant">STRATEGIC NEXT STEPS</h3>
+<div class="space-y-2">
+<div class="p-sm bg-primary-container/10 border border-primary/20 rounded hover:bg-primary-container/20 cursor-pointer transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-bold text-primary">INTERSECTION ANALYSIS</span>
+<span class="text-[9px] text-on-surface-variant">88% CONF</span>
+</div>
+<p class="text-[11px] text-on-surface">Cross-reference Tower #402 pings with CCTV #E-902 timestamps to confirm suspect identity.</p>
+</div>
+<div class="p-sm bg-surface-container-low border border-outline-variant rounded hover:bg-surface-container-high cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-bold text-on-surface">ASSET SEIZURE</span>
+<span class="text-[9px] text-on-surface-variant">64% CONF</span>
+</div>
+<p class="text-[11px] text-on-surface-variant">Trigger warrant for Account *8821 based on anomalous transaction volume.</p>
+</div>
+</div>
+</div>
+<!-- Strategic Context: Evidence Gaps -->
+<div class="space-y-sm">
+<div class="flex items-center justify-between">
+<h3 class="text-[10px] font-label-caps text-error">EVIDENCE GAPS DETECTED</h3>
+<span class="material-symbols-outlined text-sm text-error">error</span>
+</div>
+<div class="p-sm bg-error-container/10 border border-error/20 rounded">
+<ul class="text-[11px] space-y-2 text-on-surface-variant">
+<li class="flex gap-2">
+<span class="text-error font-bold">•</span>
+                                Missing 'Chain of Custody' for #E-881 (Cell Dump). Admissibility risk.
+                            </li>
+<li class="flex gap-2">
+<span class="text-error font-bold">•</span>
+                                No physical evidence linking Suspect A to Indiranagar site.
+                            </li>
+</ul>
+</div>
+</div>
+<!-- Dynamic Network Insights -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-sm space-y-sm">
+<span class="text-[9px] font-label-caps text-on-surface-variant">REAL-TIME NETWORK GRAPH</span>
+<div class="aspect-square bg-surface-container-high rounded relative flex items-center justify-center overflow-hidden border border-outline-variant/30">
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_100%)] from-primary"></div>
+<div class="z-10 text-center">
+<span class="material-symbols-outlined text-primary text-3xl animate-pulse">hub</span>
+<p class="text-[9px] text-on-surface-variant mt-2">Mapping 14 Entity<br/>Relationships</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Embedded AI Command Console -->
+<div class="p-md border-t border-outline-variant bg-surface-container-low">
+<div class="relative bg-surface-lowest border border-primary/30 rounded overflow-hidden shadow-inner">
+<input class="w-full bg-transparent border-none text-on-surface pl-md pr-10 py-2.5 text-[12px] focus:ring-0 focus:outline-none" placeholder="Execute AI tactical query..." type="text"/>
+<button class="absolute right-2 top-2 p-1 bg-primary text-on-primary rounded shadow-sm">
+<span class="material-symbols-outlined text-sm">send</span>
+</button>
+</div>
+<div class="mt-2 flex items-center gap-2 text-[8px] font-bold text-primary/80">
+<span class="flex h-1.5 w-1.5 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
+</span>
+                    AI ANALYTICS ENGINE: STANDBY
+                </div>
+</div>
+</aside>
+</main>
+</div>
+<!-- Compact Footer Status -->
+<footer class="bg-surface-container-lowest text-on-surface-variant font-data-tabular text-[10px] h-6 border-t border-outline-variant flex items-center px-lg justify-between z-50">
+<div class="flex items-center gap-xl">
+<span class="font-bold">© KARNATAKA POLICE INTELLIGENCE</span>
+<div class="flex items-center gap-1">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+            SYSTEM OPERATIONAL
+        </div>
+</div>
+<div class="flex items-center gap-xl">
+<span>ENCRYPTION: AES-256</span>
+<span>LAT: 12.9716 / LONG: 77.5946</span>
+<span class="font-bold text-on-surface">SESSION [08:42:15]</span>
+</div>
+</footer>
+<script>
+    // Resizable Panel Logic (Simple horizontal)
+    const panel = document.querySelector('.resizable-panel');
+    const handle = document.querySelector('.resize-handle-x');
+    let isResizing = false;
+
+    handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const width = e.clientX - panel.offsetLeft;
+        if (width > 200 && width < 600) {
+            panel.style.width = width + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+    });
+
+    // Table Row Interaction
+    document.querySelectorAll('.data-row').forEach(row => {
+        row.addEventListener('click', () => {
+            document.querySelectorAll('.data-row').forEach(r => r.classList.remove('bg-primary-container/10'));
+            row.classList.add('bg-primary-container/10');
+        });
+    });
+</script>
+</body></html>

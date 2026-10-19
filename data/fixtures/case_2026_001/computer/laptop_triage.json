@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "source_type": "COMPUTER_FORENSIC_EXPORT",
+  "case_id": "CASE-2026-001",
+  "system_info": {
+    "hostname": "LAPTOP-VIKRAM-DEV",
+    "os": "Windows 11 Pro",
+    "logged_in_user": "Vikram Singh",
+    "mac_address": "00:1A:2B:3C:4D:5E",
+    "seizure_time": "2026-09-22T09:45:00Z"
+  },
+  "browser_history": [
+    {
+      "url": "https://mule-banking-portal.onion/login",
+      "title": "Mule Network Operations Panel",
+      "timestamp": "2026-09-22T08:45:00Z",
+      "user": "Vikram Singh"
+    },
+    {
+      "url": "https://cybercrime.gov.in/track",
+      "title": "National Cyber Crime Reporting Portal Status",
+      "timestamp": "2026-09-22T09:05:00Z",
+      "user": "Vikram Singh"
+    }
+  ]
+}

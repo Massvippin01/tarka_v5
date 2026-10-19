@@ -1,0 +1,87 @@
+/* ==========================================================================
+   SENTINELX APP CORE STYLES (LIGHT INVESTIGATIVE WORKSTATION)
+   Compliance: Forensic Ivory & Deep Institutional Crimson System
+   ========================================================================== */
+
+:root {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg-canonical);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg-canonical);
+  color: var(--text-primary);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.sentinel-app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-canonical);
+}
+
+/* React Flow Overrides (Forensic Ivory Workstation Theme) */
+.react-flow__node {
+  border: 1px solid var(--border-structural) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  background: var(--surface-primary) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  font-size: 12px !important;
+  font-family: var(--font-mono) !important;
+}
+
+.react-flow__edge-text {
+  fill: var(--text-secondary) !important;
+  font-size: 10px !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 500 !important;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--surface-primary) !important;
+}
+
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--border-structural) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--surface-primary) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.react-flow__controls-button {
+  border-bottom: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+  background: var(--surface-primary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}

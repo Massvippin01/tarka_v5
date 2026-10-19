@@ -1,0 +1,73 @@
+# ==============================================================================
+# SENTINELX BACKEND DOCKERFILE (MULTI-STAGE)
+# Stage 1: Dependency Compiler / Builder
+# Stage 2: Hardened Non-Root Production Runtime
+# ==============================================================================
+
+# Stage 1: Build & compile Python dependencies
+FROM python:3.12-slim-bookworm AS builder
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Install build dependencies for compiling binary wheels where needed
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /install
+
+# Copy normalized UTF-8 dependencies specification
+COPY requirements.txt .
+
+# Install dependencies into dedicated prefix directory for deterministic transfer
+RUN pip install --prefix=/install/deps --no-warn-script-location -r requirements.txt
+
+# ==============================================================================
+# Stage 2: Minimal Non-Root Production Runtime
+FROM python:3.12-slim-bookworm AS runner
+
+# Install only minimal runtime shared libraries (libpq for postgres, curl for healthchecks)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create unprivileged application user and group
+RUN groupadd -g 10001 sentinelx && \
+    useradd -u 10001 -g sentinelx -m -d /home/sentinelx -s /bin/bash sentinelx
+
+# Copy compiled Python packages from builder stage
+COPY --from=builder /install/deps /usr/local
+
+WORKDIR /app
+
+# Copy application source code with non-root ownership
+COPY --chown=sentinelx:sentinelx backend/ /app/backend/
+COPY --chown=sentinelx:sentinelx data/ /app/data/
+
+# Prepare evidence CAS local storage path with correct non-root permissions
+RUN mkdir -p /app/data/storage/artifacts && \
+    chown -R sentinelx:sentinelx /app/data
+
+# Environment configuration
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/backend \
+    HOST=0.0.0.0 \
+    PORT=8000 \
+    APP_ENV=development
+
+# Switch to unprivileged runtime user
+USER sentinelx
+
+EXPOSE 8000
+
+# Healthcheck targeting verified SentinelX application endpoint
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -sf http://localhost:${PORT}/api/v1/health || exit 1
+
+# Start Uvicorn ASGI server
+CMD ["sh", "-c", "uvicorn app.main:app --host ${HOST} --port ${PORT}"]

@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "source_type": "ICJS_RECORD",
+  "case_id": "CASE-2026-001",
+  "icjs_record_id": "ICJS-2026-P044",
+  "court_case_number": "CC-481/2026",
+  "court_name": "Sessions Court Gurugram",
+  "disposition_date": "2026-06-15T11:00:00Z",
+  "legal_status": "UNDERTRIAL_ON_BAIL",
+  "subject": {
+    "person_id": "P044",
+    "name": "Rahul Verma",
+    "alias": "Chhotu",
+    "aadhaar": "8877-2233-4455",
+    "gender": "MALE",
+    "associated_cases": ["FIR-2026-C481", "CC-481/2026"]
+  },
+  "charge_summary": "Charge sheet filed under IPC 411 and 120B regarding possession of stolen vehicles and operating mule accounts."
+}

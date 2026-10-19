@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SentinelX | Investigation Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0c0e17; }
+        ::-webkit-scrollbar-thumb { background: #33343e; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #434656; }
+        
+        .ai-glow {
+            box-shadow: inset 2px 0 0 0 #2d5bff;
+            animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-left-color: #2d5bff; }
+            50% { border-left-color: rgba(45, 91, 255, 0.3); }
+        }
+        .data-row:hover .row-actions { opacity: 1; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#104af0",
+                      "on-primary-fixed": "#001355",
+                      "tertiary-container": "#c24100",
+                      "on-secondary": "#213145",
+                      "on-secondary-container": "#a9bad3",
+                      "outline-variant": "#434656",
+                      "surface-container": "#1d1f29",
+                      "surface-container-highest": "#33343e",
+                      "surface-container-lowest": "#0c0e17",
+                      "surface-dim": "#11131c",
+                      "on-error": "#690005",
+                      "surface-tint": "#b8c3ff",
+                      "on-secondary-fixed": "#0b1c30",
+                      "secondary": "#b7c8e1",
+                      "on-primary": "#002387",
+                      "primary-fixed": "#dde1ff",
+                      "surface-container-low": "#191b24",
+                      "surface": "#11131c",
+                      "on-primary-fixed-variant": "#0035bd",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "tertiary-fixed-dim": "#ffb59b",
+                      "tertiary": "#ffb59b",
+                      "primary-fixed-dim": "#b8c3ff",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-tertiary-fixed": "#380d00",
+                      "on-primary-container": "#efefff",
+                      "error": "#ffb4ab",
+                      "surface-container-high": "#282933",
+                      "primary-container": "#2d5bff",
+                      "surface-bright": "#373943",
+                      "inverse-surface": "#e2e1ef",
+                      "error-container": "#93000a",
+                      "inverse-on-surface": "#2e303a",
+                      "on-error-container": "#ffdad6",
+                      "background": "#11131c",
+                      "on-surface-variant": "#c4c5d9",
+                      "on-tertiary": "#5b1a00",
+                      "outline": "#8e90a2",
+                      "surface-variant": "#33343e",
+                      "on-background": "#e2e1ef",
+                      "on-tertiary-container": "#ffece6",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "primary": "#b8c3ff",
+                      "tertiary-fixed": "#ffdbcf",
+                      "on-surface": "#e2e1ef",
+                      "on-tertiary-fixed-variant": "#812900",
+                      "secondary-container": "#3a4a5f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "24px",
+                      "xs": "4px",
+                      "gutter": "12px",
+                      "sm": "8px",
+                      "lg": "16px",
+                      "md": "12px",
+                      "base": "4px",
+                      "panel-padding": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "label-caps": ["IBM Plex Sans"],
+                      "headline-sm": ["IBM Plex Sans"],
+                      "display-lg": ["IBM Plex Sans"],
+                      "data-tabular": ["Inter"],
+                      "headline-md": ["IBM Plex Sans"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "body-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                      "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.06em", "fontWeight": "700"}],
+                      "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "data-tabular": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-lg": ["15px", {"lineHeight": "22px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden flex flex-col h-screen">
+<!-- Top Navigation Bar -->
+<header class="bg-surface-dim text-primary font-headline-sm text-headline-sm docked full-width top-0 border-b border-outline-variant flat no shadows flex justify-between items-center w-full px-lg h-16 z-50">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-2xl">security</span>
+<div class="font-headline-md text-headline-md font-bold text-primary tracking-tight">KSP INTEL COMMAND</div>
+</div>
+<div class="flex-1 max-w-md mx-xl">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded px-10 py-xs text-body-md focus:outline-none focus:border-primary transition-colors" placeholder="Search global database..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="hover:bg-surface-container-highest p-xs rounded transition-colors duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="hover:bg-surface-container-highest p-xs rounded transition-colors duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="hover:bg-surface-container-highest p-xs rounded transition-colors duration-150">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-8 bg-surface-container-highest rounded-full border border-outline flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A sharp, professional portrait of a senior police intelligence officer in a dark navy uniform, styled as a high-contrast corporate headshot with cinematic, low-key lighting. The background is a blurred high-tech command center with subtle blue and gray tones, emphasizing authority and modern surveillance expertise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMs2e25pO-921okoWS0bYyf-Sa5XaKbFS3fOyjSwJ2zwtCm81tvMe-TkAZCRxTRByNPE2XTavMVTxQ9Jh9HtdX3eInuaL8W74T0R7MW4uQNAR17SUE7qeczd2WYzON1J6AxEDVV7W--ov5kJIs4mIXKcbzrApauQnrfcC9EgfexCdDGBqF66kRrY0IzaJrFN6fct106-MM3gAOc-looLFdUh1BRoeTfwcD96fz8YpRGadHnyhFshqrBqtvknQIAzM8RwK_WenNaaA"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Side Navigation Bar -->
+<nav class="bg-surface-container text-primary font-label-caps text-label-caps docked h-full left-0 w-16 hover:w-64 transition-all overflow-hidden border-r border-outline-variant flat no shadows fixed left-0 top-16 bottom-0 z-40 flex flex-col group transition-all duration-300">
+<div class="py-lg px-md border-b border-outline-variant mb-md flex items-center gap-md">
+<div class="w-8 h-8 bg-primary-container flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-on-primary-container">shield</span>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+<div class="font-headline-sm text-headline-sm text-on-surface">OPERATIONS</div>
+<div class="text-[10px] text-on-surface-variant">V 4.0.2</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-xs px-2">
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="opacity-0 group-hover:opacity-100">Overview</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="opacity-0 group-hover:opacity-100">Command Center</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded bg-primary-container text-on-primary-container border-l-4 border-primary transition-all" href="#">
+<span class="material-symbols-outlined">folder_shared</span>
+<span class="opacity-0 group-hover:opacity-100">Cases</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="opacity-0 group-hover:opacity-100">Crime Map</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="opacity-0 group-hover:opacity-100">Graph Explorer</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">timeline</span>
+<span class="opacity-0 group-hover:opacity-100">Timeline</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="opacity-0 group-hover:opacity-100">Persons</span>
+</a>
+<a class="flex items-center gap-md p-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="opacity-0 group-hover:opacity-100">Evidence</span>
+</a>
+</div>
+<div class="p-md group-hover:px-lg border-t border-outline-variant">
+<button class="bg-primary text-on-primary w-full py-xs rounded font-label-caps flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="hidden group-hover:inline">NEW CASE</span>
+</button>
+</div>
+</nav>
+<!-- Main Workspace -->
+<main class="ml-16 flex-1 flex flex-col h-full bg-surface-lowest">
+<!-- Metadata Header -->
+<div class="h-14 border-b border-outline-variant px-lg flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-sm">
+<span class="text-on-surface-variant font-label-caps">CASE NO:</span>
+<span class="font-data-tabular text-data-tabular font-bold">KSP-7742-IX</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-on-surface-variant font-label-caps">LEAD:</span>
+<span class="font-label-caps text-on-surface">INSP. ARJUN V.</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-xs bg-primary-container/10 border border-primary/20 px-sm py-1 rounded">
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label-caps text-primary text-[10px]">STATUS: ACTIVE</span>
+</div>
+<div class="flex items-center gap-xs bg-error-container/20 border border-error/30 px-sm py-1 rounded">
+<span class="material-symbols-outlined text-[12px] text-error">warning</span>
+<span class="font-label-caps text-error text-[10px]">RISK: HIGH</span>
+</div>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">share</span>
+<span class="font-label-caps">SHARE</span>
+</button>
+</div>
+</div>
+<!-- Investigation Grid -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Column: Evidence & Documents -->
+<section class="w-80 border-r border-outline-variant flex flex-col bg-surface">
+<div class="flex border-b border-outline-variant">
+<button class="flex-1 py-md border-b-2 border-primary bg-surface-container-high text-on-surface font-label-caps text-[10px]">EVIDENCE</button>
+<button class="flex-1 py-md text-on-surface-variant hover:bg-surface-container-low font-label-caps text-[10px]">DOCUMENTS</button>
+</div>
+<div class="p-md flex flex-col gap-md overflow-y-auto flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-on-surface-variant">ACTIVE ITEMS (12)</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">filter_list</span>
+</div>
+<!-- High-density Evidence Table -->
+<div class="border border-outline-variant rounded overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-high border-b border-outline-variant">
+<tr>
+<th class="p-2 font-label-caps text-[9px] text-on-surface-variant">ID</th>
+<th class="p-2 font-label-caps text-[9px] text-on-surface-variant">TYPE</th>
+<th class="p-2 font-label-caps text-[9px] text-on-surface-variant">SRC</th>
+</tr>
+</thead>
+<tbody class="bg-surface-lowest">
+<tr class="data-row border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer group">
+<td class="p-2 font-data-tabular text-[11px] text-on-surface">#E-902</td>
+<td class="p-2"><span class="bg-surface-container-highest px-1 rounded text-[10px] font-label-caps">CCTV</span></td>
+<td class="p-2"><span class="material-symbols-outlined text-sm text-on-surface-variant">videocam</span></td>
+</tr>
+<tr class="data-row border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="p-2 font-data-tabular text-[11px] text-on-surface">#E-881</td>
+<td class="p-2"><span class="bg-surface-container-highest px-1 rounded text-[10px] font-label-caps">CELL</span></td>
+<td class="p-2"><span class="material-symbols-outlined text-sm text-on-surface-variant">smartphone</span></td>
+</tr>
+<tr class="data-row border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="p-2 font-data-tabular text-[11px] text-on-surface">#E-874</td>
+<td class="p-2"><span class="bg-surface-container-highest px-1 rounded text-[10px] font-label-caps">PHYS</span></td>
+<td class="p-2"><span class="material-symbols-outlined text-sm text-on-surface-variant">inventory</span></td>
+</tr>
+<tr class="data-row border-b border-outline-variant hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="p-2 font-data-tabular text-[11px] text-on-surface">#E-862</td>
+<td class="p-2"><span class="bg-surface-container-highest px-1 rounded text-[10px] font-label-caps">FINAN</span></td>
+<td class="p-2"><span class="material-symbols-outlined text-sm text-on-surface-variant">receipt_long</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Media Preview Card -->
+<div class="bg-surface-container-low border border-outline-variant p-sm rounded group relative overflow-hidden">
+<div class="aspect-video bg-black rounded mb-xs flex items-center justify-center relative">
+<img class="w-full h-full object-cover opacity-60" data-alt="A grainy, high-contrast security camera frame showing a dimly lit urban alleyway at night. The image has a green-tinted night-vision effect with digital artifacts and a timestamp overlay. In the background, a shadowy figure is partially visible near a metallic door. The atmosphere is tense and investigative." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHnTtA5kvq45bH1ol-POhh4wyCa3wpLialU0gg_g8Oop_HaqSHy82FOq267bZePKiPa6-6-devxRgMqIiHc--8l9cBwmENrIHsFmJsPokTdsgHNYGkIns4FeNY7uHHQIygozF02HMblZ2CXr1qdOz6CKMOhVdREaHNfmHvKtwAfLBHuqiENBh9PYcwEnzY_7JgzRKJEynaEiMRpPs7C_bP07sAI39AwLWOfwdmHgeR8TngNCeZXdHu2ljwk_9VSXQiwJtaDJW2Fv0"/>
+<span class="material-symbols-outlined text-white text-3xl absolute group-hover:scale-110 transition-transform">play_circle</span>
+<div class="absolute top-2 left-2 bg-error/80 px-1 rounded text-[8px] font-bold text-white">LIVE_REC</div>
+</div>
+<div class="text-[11px] font-bold">CAM-04-NORTH-ALLEY</div>
+<div class="text-[10px] text-on-surface-variant">Timestamp: 2023-11-24 02:14:55</div>
+</div>
+</div>
+</section>
+<!-- Center Column: Timeline & Details -->
+<section class="flex-1 flex flex-col bg-surface-lowest relative">
+<!-- Investigative Map Background (Placeholder) -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, #1f2937 1px, transparent 0); background-size: 24px 24px;"></div>
+<!-- Content Canvas -->
+<div class="relative z-10 flex-1 flex flex-col p-lg gap-lg overflow-y-auto">
+<div class="flex items-center justify-between">
+<h2 class="font-display-lg text-display-lg text-on-surface flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                                CASE INVESTIGATION TIMELINE
+                            </h2>
+<div class="flex gap-sm">
+<button class="bg-surface-container-high border border-outline-variant px-md py-1 rounded font-label-caps text-on-surface hover:bg-surface-bright transition-colors">7D</button>
+<button class="bg-primary-container px-md py-1 rounded font-label-caps text-on-primary">24H</button>
+<button class="bg-surface-container-high border border-outline-variant px-md py-1 rounded font-label-caps text-on-surface hover:bg-surface-bright transition-colors">REALTIME</button>
+</div>
+</div>
+<!-- Live Timeline Component -->
+<div class="flex flex-col gap-gutter">
+<div class="flex gap-lg relative">
+<div class="w-px bg-outline-variant absolute left-4 top-8 bottom-0"></div>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center z-10 shadow-lg">
+<span class="material-symbols-outlined text-on-primary-container text-sm">notifications_active</span>
+</div>
+<div class="flex-1 bg-surface-container p-md rounded border border-primary/30 ai-glow">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-primary text-[10px]">ALERT: SIGNAL ANOMALY DETECTED</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">14:22:10</span>
+</div>
+<p class="text-body-md text-on-surface">Subject primary mobile device pinged off Tower #402 (Indiranagar). Deviation from projected path: +2.4km.</p>
+<div class="mt-sm flex gap-sm">
+<button class="text-[10px] font-label-caps bg-surface-container-highest px-2 py-0.5 rounded border border-outline-variant">VIEW COORDS</button>
+<button class="text-[10px] font-label-caps bg-surface-container-highest px-2 py-0.5 rounded border border-outline-variant">DISMISS</button>
+</div>
+</div>
+</div>
+<div class="flex gap-lg relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">link</span>
+</div>
+<div class="flex-1 bg-surface-container-low p-md rounded border border-outline-variant">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-on-surface-variant text-[10px]">DATA LINK ESTABLISHED</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">12:05:44</span>
+</div>
+<p class="text-body-md text-on-surface-variant">Financial records linked between Account *8821 and Entity #P-902 (Suspect B). Cumulative transfer: ₹4.5M.</p>
+</div>
+</div>
+<div class="flex gap-lg relative">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">description</span>
+</div>
+<div class="flex-1 bg-surface-container-low p-md rounded border border-outline-variant opacity-60">
+<div class="flex justify-between items-start mb-xs">
+<span class="font-label-caps text-on-surface-variant text-[10px]">FILE UPLOADED</span>
+<span class="font-data-tabular text-[10px] text-on-surface-variant">09:12:00</span>
+</div>
+<p class="text-body-md">Witness Statement #WS-114 transcribed and added to Case Folder.</p>
+</div>
+</div>
+</div>
+<!-- Case Summary Cards (Bento Style) -->
+<div class="grid grid-cols-2 gap-md mt-lg">
+<div class="bg-surface-container border border-outline-variant p-md rounded flex flex-col gap-sm">
+<span class="font-label-caps text-on-surface-variant text-[10px]">CORE SUSPECTS</span>
+<div class="flex -space-x-2">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up mugshot profile of a suspect with neutral lighting, showing sharp features and dark hair, against a neutral gray background in a forensic photography style. The image is clean and stark, typical of a police database entry." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCw7vVSUZthIM7iH5dnyQjItlxLqd9BN7JARF1H94VaTvFDtrCCjX9Fiq57wFEAHrqcU7Fuyspahctz4euOiII8cX6fhRFQv9CpFs5V_TrYQ9silwpas55yMej2pCyCk5k4cO4epJChbkM2ZmbzQcqmhtS4-7yfy5-Kc99Lt7fKvmja5DG3Z1imdc3QTSr-yoIBVhf_gQVFKEiMNfzC3cbprnnLGokMRFjzYELODVLNv-54Duo9Hr7tZ_YvSvPatV6eufXk3QVdAMM"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a male suspect with a beard, medium-length dark hair, and intense eyes, presented in a cold, clinical investigative style with flat fluorescent lighting. The background is a plain industrial wall, consistent with a high-security intake environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy-Dn3Pl6XxeKs-UFxaDmaTMIvTY6tSSHfkBwFh-WVhxz2jq5f6QyU2hdRPuYjCN28GdxQy9EZRX0aKshWPpYkQZBAB3EBGRFimErzRkL4e2FPIFlrXj9D_9767pO7IClmijj85puR40dAwviZ4JYIhWmovSfcqDSJOU79QoXI6cPA2_I1Evtqx90XOIDV0qtwaJiulxXenSqlY1e3S5ljrh6sFQmAQf1BQc3SblbKdF6v0Hv1vfqLOnABn9GRUH_qfixDMqMltHk"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container-highest flex items-center justify-center font-bold text-on-surface-variant text-xs">
+                                        +3
+                                    </div>
+</div>
+</div>
+<div class="bg-surface-container border border-outline-variant p-md rounded flex flex-col gap-sm">
+<span class="font-label-caps text-on-surface-variant text-[10px]">RISK PROJECTION</span>
+<div class="flex items-end gap-xs h-12">
+<div class="flex-1 bg-primary/20 h-4 rounded-t-sm"></div>
+<div class="flex-1 bg-primary/40 h-8 rounded-t-sm"></div>
+<div class="flex-1 bg-primary/60 h-10 rounded-t-sm"></div>
+<div class="flex-1 bg-primary h-12 rounded-t-sm animate-pulse"></div>
+</div>
+<span class="text-on-surface font-bold text-xs">CRITICAL INCREASE (+42%)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: AI Assistant Panel -->
+<aside class="w-96 border-l border-outline-variant bg-surface flex flex-col">
+<div class="h-12 border-b border-outline-variant px-md flex items-center justify-between bg-surface-container-high">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<span class="font-label-caps text-on-surface">SENTINEL AI</span>
+</div>
+<span class="bg-primary-container text-on-primary text-[9px] px-1.5 py-0.5 rounded font-bold">READY</span>
+</div>
+<div class="flex-1 p-md overflow-y-auto space-y-md">
+<!-- AI Suggestion Message -->
+<div class="bg-surface-container-low border-l-4 border-primary p-md rounded-r">
+<p class="text-body-md text-on-surface leading-relaxed">
+                                Analysis complete. I have identified 3 primary correlations between <span class="text-primary font-bold">#E-881</span> and <span class="text-primary font-bold">#P-902</span>.
+                            </p>
+<div class="mt-md space-y-2">
+<button class="w-full bg-surface-container-highest hover:bg-surface-bright text-on-surface text-left px-sm py-2 rounded text-body-md flex items-center justify-between border border-outline-variant group">
+<span>Summarize current findings</span>
+<span class="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<button class="w-full bg-surface-container-highest hover:bg-surface-bright text-on-surface text-left px-sm py-2 rounded text-body-md flex items-center justify-between border border-outline-variant group">
+<span>Generate preliminary Chargesheet</span>
+<span class="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<button class="w-full bg-surface-container-highest hover:bg-surface-bright text-on-surface text-left px-sm py-2 rounded text-body-md flex items-center justify-between border border-outline-variant group">
+<span>Map network of associates</span>
+<span class="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Graph Insight Visualization Placeholder -->
+<div class="bg-surface-container-lowest border border-outline-variant aspect-square rounded relative overflow-hidden flex items-center justify-center">
+<div class="absolute inset-0 opacity-40">
+
+</div>
+<div class="z-10 text-center px-lg">
+<span class="font-label-caps text-on-surface-variant text-[10px]">AUTOGENERATED NETWORK GRAPH</span>
+<p class="text-[11px] text-on-surface-variant mt-xs">Visualizing 14 high-confidence entity relationships.</p>
+</div>
+</div>
+</div>
+<!-- AI Command Module Input -->
+<div class="p-md border-t border-outline-variant bg-surface-container-low">
+<div class="relative ai-glow border border-primary/20 rounded bg-surface-lowest overflow-hidden transition-all focus-within:border-primary">
+<input class="w-full bg-transparent border-none text-on-surface px-md py-3 text-body-md focus:ring-0 focus:outline-none" placeholder="Ask AI to process data..." type="text"/>
+<div class="absolute right-2 top-2 flex gap-xs">
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant">
+<span class="material-symbols-outlined text-md">mic</span>
+</button>
+<button class="p-1 bg-primary text-on-primary rounded">
+<span class="material-symbols-outlined text-md">send</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-xs mt-sm text-[9px] text-on-surface-variant font-label-caps">
+<span class="material-symbols-outlined text-[10px] animate-pulse text-primary">data_usage</span>
+                            PROCESSING ENCRYPTED STREAMS...
+                        </div>
+</div>
+</aside>
+</div>
+</main>
+</div>
+<!-- Footer Status Bar -->
+<footer class="bg-surface-container-lowest text-tertiary font-data-tabular text-data-tabular docked full-width bottom-0 h-8 border-t border-outline-variant flat no shadows fixed bottom-0 w-full z-50 flex items-center px-lg justify-between cursor-default">
+<div class="flex items-center gap-lg">
+<span class="text-on-surface-variant font-bold">© KARNATAKA POLICE INTELLIGENCE</span>
+<div class="flex items-center gap-xs text-[10px] text-on-surface-variant">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+                SYSTEM HEALTH: OPERATIONAL
+            </div>
+</div>
+<div class="flex items-center gap-xl text-[10px]">
+<span class="hover:text-primary transition-colors">ENCRYPTION: ACTIVE (AES-256)</span>
+<span class="hover:text-primary transition-colors">LAT: 12.9716 N</span>
+<span class="hover:text-primary transition-colors">LONG: 77.5946 E</span>
+<div class="font-bold text-on-surface">SESSION: 08:42:15</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions for table rows
+        document.querySelectorAll('.data-row').forEach(row => {
+            row.addEventListener('click', () => {
+                // Flash interaction
+                row.classList.add('bg-primary-container/10');
+                setTimeout(() => {
+                    row.classList.remove('bg-primary-container/10');
+                }, 300);
+            });
+        });
+        
+        // AI Listening Toggle Sim
+        const aiInput = document.querySelector('aside input');
+        aiInput.addEventListener('focus', () => {
+            aiInput.closest('.ai-glow').classList.add('shadow-[0_0_10px_rgba(45,91,255,0.2)]');
+        });
+        aiInput.addEventListener('blur', () => {
+            aiInput.closest('.ai-glow').classList.remove('shadow-[0_0_10px_rgba(45,91,255,0.2)]');
+        });
+    </script>
+</body></html>

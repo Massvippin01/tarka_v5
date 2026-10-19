@@ -35,10 +35,10 @@ export const EntityDossier: React.FC<EntityDossierProps> = ({
           <p style={{ color: "#64748b" }}>Click on Vikram Singh (P001) or Case C102 from Command Center or Search bar.</p>
           <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
             <button style={styles.quickBtn} onClick={() => onSelectEntity("P001")}>
-              👤 View Vikram Singh (P001)
+               View Vikram Singh (P001)
             </button>
             <button style={styles.quickBtn} onClick={() => onSelectEntity("C102")}>
-              📁 View Case C102
+               View Case C102
             </button>
           </div>
         </div>
@@ -51,6 +51,24 @@ export const EntityDossier: React.FC<EntityDossierProps> = ({
 
   return (
     <div style={styles.container}>
+      {/* Non-Guilt Epistemic Disclaimer */}
+      <div
+        style={{
+          background: "rgba(230, 184, 92, 0.1)",
+          border: "1px solid rgba(230, 184, 92, 0.3)",
+          color: "var(--status-potential)",
+          padding: "6px 12px",
+          borderRadius: "4px",
+          fontSize: "0.65rem",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <span> <strong>INVESTIGATIVE NOTICE:</strong> Graph adjacency & network association are analytical pings, not proof of culpability or guilt. All claims require empirical evidence verification.</span>
+      </div>
+
       {/* Dossier Header */}
       <div style={styles.headerCard}>
         <div style={styles.headerInfo}>
@@ -104,16 +122,16 @@ export const EntityDossier: React.FC<EntityDossierProps> = ({
             <h4>ASSOCIATED CASES & ASSETS</h4>
             <div style={styles.linkList}>
               <div style={styles.linkItem} onClick={() => onSelectEntity("C102")}>
-                📁 <strong>Case C102</strong> (Delhi Cyber Crime FIR-2026-C102)
+                 <strong>Case C102</strong> (Delhi Cyber Crime FIR-2026-C102)
               </div>
               <div style={styles.linkItem} onClick={() => onSelectEntity("C481")}>
-                📁 <strong>Case C481</strong> (Gurugram Police FIR-2026-C481)
+                 <strong>Case C481</strong> (Gurugram Police FIR-2026-C481)
               </div>
               <div style={styles.linkItem} onClick={() => onSelectEntity("V188")}>
-                🚘 <strong>Vehicle V188</strong> (Hyundai Creta DL-01-AB-1888)
+                 <strong>Vehicle V188</strong> (Hyundai Creta DL-01-AB-1888)
               </div>
               <div style={styles.linkItem} onClick={() => onSelectEntity("ACC992")}>
-                🏦 <strong>Bank Account ACC992</strong> (SBI Connaught Place 3099882211)
+                 <strong>Bank Account ACC992</strong> (SBI Connaught Place 3099882211)
               </div>
             </div>
           </div>

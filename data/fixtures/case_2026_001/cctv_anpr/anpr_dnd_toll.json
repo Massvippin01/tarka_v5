@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "source_type": "CCTV_ANPR",
+  "case_id": "CASE-2026-001",
+  "toll_plaza": "DND Toll Flyway Plaza",
+  "operator": "Noida Toll Bridge Company Ltd",
+  "sightings": [
+    {
+      "sighting_id": "ANPR-SIGHT-001",
+      "timestamp": "2026-09-22T09:41:00Z",
+      "plate_number": "dl 01 ab 1888",
+      "camera_id": "CAM-DND-04",
+      "lane_number": 4,
+      "direction": "DELHI_TO_NOIDA",
+      "location": "DND Toll Flyway Plaza",
+      "lat": 28.57,
+      "lng": 77.29,
+      "vehicle_make": "Hyundai",
+      "vehicle_model": "Creta",
+      "color": "Black",
+      "ocr_confidence": 0.98,
+      "speed_kmh": 68
+    }
+  ]
+}

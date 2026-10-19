@@ -1,0 +1,57 @@
+graph TD
+    subgraph SOURCE_SYSTEMS["1. SOURCE SYSTEMS"]
+        S1["FIR & Police Reports (CCTNS/ICJS)"]
+        S2["CDR / Telecom Records"]
+        S3["Financial / Transaction Data"]
+        S4["Surveillance / ANPR Records"]
+        S5["Criminal History Files (PDF/CSV/JSON)"]
+    end
+
+    subgraph SECURE_INGESTION["2. SECURE INGESTION & PIPELINE (18-STAGE)"]
+        I1["SHA-256 Digest & Storage Registration"]
+        I2["Document Parsing & Structure Normalization"]
+        I3["Indic Phonetic & Transliteration Entity Extraction"]
+        I4["Deterministic & Fuzzy Entity Resolution"]
+    end
+
+    subgraph DUAL_STORAGE["3. DATA & KNOWLEDGE LAYER"]
+        P1[("PostgreSQL\n(Users, Cases, FIRs, Workflows, Audit Logs)")]
+        P2[("Object Storage\n(Original Evidence PDFs, Images, Reports)")]
+        N1[("Neo4j Knowledge Graph\n(18 Node Types, 19 Edge Types, Provenance)")]
+    end
+
+    subgraph ANALYTICS_AI["4. SEARCH, GRAPH & AI SERVICES"]
+        A1["Universal Search (Exact, Fuzzy, Transliteration)"]
+        A2["Graph Data Science (Centrality, Path Analysis, Clusters)"]
+        A3["Isolation Forest Anomaly Detection Engine"]
+        A4["Governed Local LLM & RAG Copilot"]
+    end
+
+    subgraph VERIFICATION_PROOF["5. EVIDENCE GROUNDING & PROOF MATRIX"]
+        V1["Evidence Verification & Citation Engine"]
+        V2["Contradiction & Hard-Veto Engine"]
+        V3["Live Proof Engine\n(5 Statuses: SUPPORTED | CORROBORATED | UNVERIFIED | CONTRADICTED | REQUIRES REVIEW)"]
+    end
+
+    subgraph WORKSPACE["6. HUMAN-IN-THE-LOOP INTERACTION"]
+        W1["Investigator Workspace (Command Center, Dossiers, Cases)"]
+        W2["Executive Intelligence (State/District Dashboards, Hotspots)"]
+    end
+
+    subgraph CROSS_CUTTING["CROSS-CUTTING GOVERNANCE & SECURITY"]
+        G1["RBAC & Case Scope Access Control"]
+        G2["Cryptographic Audit Hash Chaining (SHA-256)"]
+        G3["Data Minimization & Epistemic Boundaries"]
+    end
+
+    SOURCE_SYSTEMS --> SECURE_INGESTION
+    SECURE_INGESTION --> DUAL_STORAGE
+    DUAL_STORAGE --> ANALYTICS_AI
+    ANALYTICS_AI --> VERIFICATION_PROOF
+    VERIFICATION_PROOF --> WORKSPACE
+
+    CROSS_CUTTING -.- SECURE_INGESTION
+    CROSS_CUTTING -.- DUAL_STORAGE
+    CROSS_CUTTING -.- ANALYTICS_AI
+    CROSS_CUTTING -.- VERIFICATION_PROOF
+    CROSS_CUTTING -.- WORKSPACE

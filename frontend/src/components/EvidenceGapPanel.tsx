@@ -59,7 +59,7 @@ export const EvidenceGapPanel: React.FC<EvidenceGapPanelProps> = ({
         <div style={styles.grid2}>
           {/* Evidence Gaps */}
           <div style={styles.card}>
-            <h4>⚠️ IDENTIFIED EVIDENCE GAPS ({gapsData?.evidence_gaps?.length || 0})</h4>
+            <h4> IDENTIFIED EVIDENCE GAPS ({gapsData?.evidence_gaps?.length || 0})</h4>
             <div style={styles.gapList}>
               {gapsData?.evidence_gaps?.map((gap: any) => (
                 <div key={gap.gap_id} style={styles.gapItem}>
@@ -78,7 +78,7 @@ export const EvidenceGapPanel: React.FC<EvidenceGapPanelProps> = ({
                     <strong>Current Impact:</strong> {gap.current_impact}
                   </div>
                   <div style={styles.actionBox}>
-                    ⚡ <strong>Recommended Verification:</strong> {gap.next_verification}
+                     <strong>Recommended Verification:</strong> {gap.next_verification}
                   </div>
                 </div>
               ))}
@@ -87,7 +87,7 @@ export const EvidenceGapPanel: React.FC<EvidenceGapPanelProps> = ({
 
           {/* Spatial & Temporal Contradictions */}
           <div style={styles.card}>
-            <h4>❌ CONTRADICTORY OBSERVATIONS ({gapsData?.contradictions?.length || 0})</h4>
+            <h4> CONTRADICTORY OBSERVATIONS ({gapsData?.contradictions?.length || 0})</h4>
             <div style={styles.gapList}>
               {gapsData?.contradictions?.map((c: any) => (
                 <div key={c.contradiction_id} style={styles.contradictionItem}>

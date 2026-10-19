@@ -1,0 +1,7 @@
+Txn Date,Txn Time,Payer VPA / Acc,Beneficiary VPA / Acc,Debit Amount,UTR Ref No.,Terminal Lat,Terminal Lon
+26/01/2026,10:20:00,rajesh@okaxis,merchant.chai@icici,"₹ 150.00",UPI20260126001,12.9352,77.6245
+26/01/2026,11:05:00,rajesh@okaxis,store@paytm,"Rs. 1,50,000.50",UPI20260126002,,
+CORRUPT_NON_CSV_LINE_HERE
+26/01/2026,11:30:00,rajesh@okaxis,fuel@okhdfc,"0.00",UPI20260126003,12.9716,77.5946
+
+NOT_A_VALID_DATE_RECORD,12:00:00,rajesh@okaxis,atm@sbi,"₹ 5,000",TXN9999,12.9279,77.6271

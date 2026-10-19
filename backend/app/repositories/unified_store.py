@@ -4,6 +4,18 @@ import logging
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional
 
+from app.domain.canonical_evidence_ir import (
+    EvidenceArtifact,
+    EvidenceClaim,
+    EvidenceContradiction,
+    EvidenceCustodyEvent,
+    EvidenceFact,
+    EvidenceGap as CanonicalEvidenceGap,
+    EvidenceHypothesis,
+    EvidenceObservation,
+    EvidenceProvenance,
+    InvestigationSnapshot,
+)
 from app.domain.case import Case
 from app.domain.communication import ANPRObservation, CallRecord
 from app.domain.enums import ConfidenceLevel, EntityType, RelationshipType
@@ -70,6 +82,21 @@ class UnifiedStore:
         self.investigative_actions: List[InvestigativeAction] = []
         self.source_records: Dict[str, SourceRecord] = {}
 
+        # Canonical Evidence IR Collections (Wave 1)
+        self.artifacts: Dict[str, EvidenceArtifact] = {}
+        self.artifact_hash_index: Dict[str, str] = {}  # content_hash -> artifact_id
+        self.facts: Dict[str, EvidenceFact] = {}
+        self.facts_by_artifact: Dict[str, List[str]] = defaultdict(list)
+        self.facts_by_subject: Dict[str, List[str]] = defaultdict(list)
+        self.evidence_observations: Dict[str, EvidenceObservation] = {}
+        self.custody_events: Dict[str, EvidenceCustodyEvent] = {}
+        self.custody_by_artifact: Dict[str, List[str]] = defaultdict(list)
+        self.provenances: Dict[str, EvidenceProvenance] = {}
+        self.claims: Dict[str, EvidenceClaim] = {}
+        self.canonical_contradictions: Dict[str, EvidenceContradiction] = {}
+        self.canonical_gaps: Dict[str, CanonicalEvidenceGap] = {}
+        self.canonical_hypotheses: Dict[str, EvidenceHypothesis] = {}
+
         # Graph representations
         self.nodes: Dict[str, GraphNode] = {}
         self.edges: List[GraphEdge] = []
@@ -102,13 +129,31 @@ class UnifiedStore:
         self.contradictions.clear()
         self.investigative_actions.clear()
         self.source_records.clear()
+        self.artifacts.clear()
+        self.artifact_hash_index.clear()
+        self.facts.clear()
+        self.facts_by_artifact.clear()
+        self.facts_by_subject.clear()
+        self.evidence_observations.clear()
+        self.custody_events.clear()
+        self.custody_by_artifact.clear()
+        self.provenances.clear()
+        self.claims.clear()
+        self.canonical_contradictions.clear()
+        self.canonical_gaps.clear()
+        self.canonical_hypotheses.clear()
         self.nodes.clear()
         self.edges.clear()
         self.adjacency.clear()
+        from app.services.store_indexer import StoreIndexer
+        StoreIndexer.get_instance().clear()
 
     # --- Node and Edge Registration ---
     def register_node(self, node_id: str, label: str, properties: Dict[str, Any]):
-        self.nodes[node_id] = GraphNode(node_id, label, properties)
+        node = GraphNode(node_id, label, properties)
+        self.nodes[node_id] = node
+        from app.services.store_indexer import StoreIndexer
+        StoreIndexer.get_instance().index_node(node)
 
     def register_relationship(
         self,
@@ -546,3 +591,214 @@ class UnifiedStore:
                     }
                 )
         return results
+
+    # --- Canonical Evidence IR Methods (Wave 1) ---
+    def save_artifact(self, artifact: EvidenceArtifact) -> EvidenceArtifact:
+        self.artifacts[artifact.artifact_id] = artifact
+        self.artifact_hash_index[artifact.content_hash] = artifact.artifact_id
+        # Also index as node for graph reasoning without mutating raw artifact
+        self.register_node(
+            artifact.artifact_id,
+            "EvidenceArtifact",
+            {
+                "id": artifact.artifact_id,
+                "case_id": artifact.case_id,
+                "source_id": artifact.source_id,
+                "source_type": artifact.source_type.value,
+                "record_id": artifact.record_id,
+                "content_hash": artifact.content_hash,
+                "mime_type": artifact.mime_type,
+                "file_size_bytes": artifact.file_size_bytes,
+                "storage_uri": artifact.storage_uri,
+                "integrity_status": artifact.integrity_status.value,
+                "created_at": str(artifact.created_at),
+            },
+        )
+        return artifact
+
+    def get_artifact(self, artifact_id: str) -> Optional[EvidenceArtifact]:
+        return self.artifacts.get(artifact_id)
+
+    def get_artifact_by_hash(self, content_hash: str) -> Optional[EvidenceArtifact]:
+        art_id = self.artifact_hash_index.get(content_hash.lower().strip())
+        if art_id:
+            return self.artifacts.get(art_id)
+        return None
+
+    def save_fact(self, fact: EvidenceFact) -> EvidenceFact:
+        self.facts[fact.fact_id] = fact
+        self.facts_by_artifact[fact.source_artifact_id].append(fact.fact_id)
+        self.facts_by_subject[fact.subject].append(fact.fact_id)
+        # Register in graph representation linking subject to object via predicate
+        self.register_relationship(
+            source_id=fact.subject,
+            target_id=fact.object,
+            rel_type=fact.predicate,
+            confidence=fact.extraction_confidence,
+            confidence_level=fact.epistemic_status.value,
+            evidence_reference=f"Artifact {fact.source_artifact_id} [{fact.source_location}]",
+            evidence_references=[fact.source_artifact_id] + fact.supporting_evidence_ids,
+            source_system="EVIDENCE_FACT_EXTRACTION",
+            source_record_id=fact.fact_id,
+            reason=f"Derived Fact: {fact.subject} {fact.predicate} {fact.object}",
+        )
+        return fact
+
+    def get_fact(self, fact_id: str) -> Optional[EvidenceFact]:
+        return self.facts.get(fact_id)
+
+    def get_facts_by_artifact(self, artifact_id: str) -> List[EvidenceFact]:
+        fact_ids = self.facts_by_artifact.get(artifact_id, [])
+        return [self.facts[fid] for fid in fact_ids if fid in self.facts]
+
+    def get_facts_by_subject(self, subject: str) -> List[EvidenceFact]:
+        fact_ids = self.facts_by_subject.get(subject, [])
+        return [self.facts[fid] for fid in fact_ids if fid in self.facts]
+
+    def save_observation(self, obs: EvidenceObservation) -> EvidenceObservation:
+        self.evidence_observations[obs.observation_id] = obs
+        return obs
+
+    def get_observation(self, obs_id: str) -> Optional[EvidenceObservation]:
+        return self.evidence_observations.get(obs_id)
+
+    def save_custody_event(self, event: EvidenceCustodyEvent) -> EvidenceCustodyEvent:
+        self.custody_events[event.custody_event_id] = event
+        self.custody_by_artifact[event.artifact_id].append(event.custody_event_id)
+        return event
+
+    def get_custody_events(self, artifact_id: str) -> List[EvidenceCustodyEvent]:
+        event_ids = self.custody_by_artifact.get(artifact_id, [])
+        return [self.custody_events[eid] for eid in event_ids if eid in self.custody_events]
+
+    def save_provenance(self, prov: EvidenceProvenance) -> EvidenceProvenance:
+        self.provenances[prov.artifact_id] = prov
+        return prov
+
+    def get_provenance(self, artifact_id: str) -> Optional[EvidenceProvenance]:
+        return self.provenances.get(artifact_id)
+
+    def save_claim(self, claim: EvidenceClaim) -> EvidenceClaim:
+        self.claims[claim.claim_id] = claim
+        return claim
+
+    def get_claim(self, claim_id: str) -> Optional[EvidenceClaim]:
+        return self.claims.get(claim_id)
+
+    def get_claims_by_case(self, case_id: str) -> List[EvidenceClaim]:
+        return [c for c in self.claims.values() if c.case_id == case_id]
+
+    def save_contradiction(self, contradiction: EvidenceContradiction) -> EvidenceContradiction:
+        self.canonical_contradictions[contradiction.contradiction_id] = contradiction
+        return contradiction
+
+    def get_contradiction(self, contradiction_id: str) -> Optional[EvidenceContradiction]:
+        return self.canonical_contradictions.get(contradiction_id)
+
+    def get_contradictions_by_case(self, case_id: str) -> List[EvidenceContradiction]:
+        return [c for c in self.canonical_contradictions.values() if c.case_id == case_id]
+
+    def save_canonical_gap(self, gap: CanonicalEvidenceGap) -> CanonicalEvidenceGap:
+        self.canonical_gaps[gap.gap_id] = gap
+        return gap
+
+    def get_canonical_gap(self, gap_id: str) -> Optional[CanonicalEvidenceGap]:
+        return self.canonical_gaps.get(gap_id)
+
+    def get_canonical_gaps_by_case(self, case_id: str) -> List[CanonicalEvidenceGap]:
+        return [g for g in self.canonical_gaps.values() if g.case_id == case_id]
+
+    def save_canonical_hypothesis(self, hyp: EvidenceHypothesis) -> EvidenceHypothesis:
+        self.canonical_hypotheses[hyp.hypothesis_id] = hyp
+        return hyp
+
+    def get_canonical_hypothesis(self, hyp_id: str) -> Optional[EvidenceHypothesis]:
+        return self.canonical_hypotheses.get(hyp_id)
+
+    def get_canonical_hypotheses_by_case(self, case_id: str) -> List[EvidenceHypothesis]:
+        return [h for h in self.canonical_hypotheses.values() if h.case_id == case_id]
+
+    async def persist_to_postgres(self, uow: Any) -> int:
+        """
+        Persist in-memory authoritative domain records (cases, artifacts, facts, claims, custody)
+        to PostgreSQL using UnitOfWork.
+        Returns the number of newly persisted items.
+        """
+        from app.repositories.persistence_gateway import PersistenceGateway
+        persisted = 0
+        for case in list(self.cases.values()):
+            existing = await uow.cases.get(case.id)
+            if not existing:
+                await uow.cases.create(PersistenceGateway.case_to_model(case))
+                persisted += 1
+
+        for art in list(self.artifacts.values()):
+            existing = await uow.evidence.get_artifact(art.artifact_id)
+            if not existing:
+                await uow.evidence.save_artifact(PersistenceGateway.artifact_to_model(art))
+                persisted += 1
+
+        for fact in list(self.facts.values()):
+            existing = await uow.evidence.get_fact(fact.fact_id)
+            if not existing:
+                await uow.evidence.save_fact(PersistenceGateway.fact_to_model(fact))
+                persisted += 1
+
+        for claim in list(self.claims.values()):
+            existing = await uow.epistemic.get_claim(claim.claim_id)
+            if not existing:
+                await uow.epistemic.save_claim(PersistenceGateway.claim_to_model(claim))
+                persisted += 1
+
+        for custody in list(self.custody_events.values()):
+            existing_events = await uow.evidence.get_custody_events(custody.artifact_id)
+            if not any(e.custody_event_id == custody.custody_event_id for e in existing_events):
+                await uow.evidence.append_custody_record(PersistenceGateway.custody_to_model(custody))
+                persisted += 1
+
+        return persisted
+
+    async def hydrate_from_postgres(self, uow: Any, case_id: Optional[str] = None) -> int:
+        """
+        Hydrate in-memory domain collections from PostgreSQL.
+        """
+        from app.repositories.persistence_gateway import PersistenceGateway
+        hydrated = 0
+        cases = await uow.cases.list_all()
+        for cm in cases:
+            if case_id and cm.id != case_id:
+                continue
+            case = PersistenceGateway.model_to_case(cm)
+            self.cases[case.id] = case
+            hydrated += 1
+
+            artifacts = await uow.evidence.list_artifacts_by_case(cm.id)
+            for am in artifacts:
+                art = PersistenceGateway.model_to_artifact(am)
+                self.artifacts[art.artifact_id] = art
+                self.artifact_hash_index[art.content_hash] = art.artifact_id
+                hydrated += 1
+
+                facts = await uow.evidence.list_facts_by_artifact(am.artifact_id)
+                for fm in facts:
+                    fact = PersistenceGateway.model_to_fact(fm)
+                    self.facts[fact.fact_id] = fact
+                    self.facts_by_artifact[fact.source_artifact_id].append(fact.fact_id)
+                    hydrated += 1
+
+                custodies = await uow.evidence.get_custody_events(am.artifact_id)
+                for crm in custodies:
+                    ev = PersistenceGateway.model_to_custody(crm)
+                    self.custody_events[ev.custody_event_id] = ev
+                    self.custody_by_artifact[ev.artifact_id].append(ev.custody_event_id)
+                    hydrated += 1
+
+            claims = await uow.epistemic.list_claims_by_case(cm.id)
+            for clm in claims:
+                claim = PersistenceGateway.model_to_claim(clm)
+                self.claims[claim.claim_id] = claim
+                hydrated += 1
+
+        return hydrated
+
+

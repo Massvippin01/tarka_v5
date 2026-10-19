@@ -1,0 +1,287 @@
+from __future__ import annotations
+
+import logging
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, Field
+
+from app.domain.auth import UserIdentity
+from app.domain.voice import (
+    AmbientVoiceEvent,
+    AmbientVoiceState,
+    AmbientVoiceStateMachine,
+    AmbientVoiceTransitionResult,
+    VoiceResponse,
+)
+from app.services.auth_service import AuthService
+from app.services.voice.voice_gateway import VoiceGateway
+
+logger = logging.getLogger("sentinelx.api.voice")
+
+router = APIRouter()
+
+
+def get_gateway() -> VoiceGateway:
+    """Get the VoiceGateway singleton."""
+    return VoiceGateway.get_instance()
+
+
+def get_current_user(
+    authorization: Optional[str] = Header(None),
+) -> UserIdentity:
+    auth_service = AuthService.get_instance()
+    return auth_service.authenticate_token(authorization, strict=True)
+
+
+# ────────────────────────────────────────────────────────────────────
+# Request / Response Schemas
+# ────────────────────────────────────────────────────────────────────
+
+class VoiceSessionCreateRequest(BaseModel):
+    case_id: str = "CASE-2026-001"
+    jurisdiction: str = "Delhi NCR / Special Cell"
+    operating_context_id: str = "CTX-DEFAULT"
+    language: str = "en-IN"
+
+
+class VoiceSessionCreateResponse(BaseModel):
+    session_id: str
+    transport_url: str
+    access_token: str
+    room_name: str
+    participant_identity: str
+    expires_in_seconds: int = 3600
+
+
+class VoiceTurnRequest(BaseModel):
+    transcript: Optional[str] = None
+    language_hint: str = "en-IN"
+
+
+# ────────────────────────────────────────────────────────────────────
+# Endpoints
+# ────────────────────────────────────────────────────────────────────
+
+@router.post("/session", response_model=VoiceSessionCreateResponse)
+@router.post("/session/create", response_model=VoiceSessionCreateResponse)
+async def create_voice_session(
+    req: VoiceSessionCreateRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """Create a new voice session bound to OperatingContext and issue WebRTC token."""
+    AuthService.get_instance().enforce_case_access(user, req.case_id)
+    gateway = get_gateway()
+    session, transport = await gateway.create_voice_session(
+        user=user,
+        case_id=req.case_id,
+        operating_context_id=req.operating_context_id,
+        jurisdiction=req.jurisdiction,
+        language=req.language,
+    )
+
+    return VoiceSessionCreateResponse(
+        session_id=session.session_id,
+        transport_url=transport.get("transport_url", ""),
+        access_token=transport.get("access_token", ""),
+        room_name=transport.get("room_name", ""),
+        participant_identity=user.user_id,
+    )
+
+
+@router.post("/token")
+async def issue_voice_token(
+    case_id: str = "CASE-2026-001",
+    user: UserIdentity = Depends(get_current_user),
+):
+    """Issue WebRTC LiveKit token for authenticated investigator."""
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    gateway = get_gateway()
+    _, transport = await gateway.create_voice_session(
+        user=user,
+        case_id=case_id,
+    )
+    return transport
+
+
+@router.post("/session/{session_id}/turn", response_model=VoiceResponse)
+@router.post("/command", response_model=VoiceResponse)
+async def process_voice_turn(
+    session_id: Optional[str] = None,
+    req: Optional[VoiceTurnRequest] = None,
+    transcript: Optional[str] = None,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Process voice turn or command transcript through the canonical CommandBus pipeline.
+    """
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+
+    # If session doesn't exist, auto-create one for convenience
+    if not gateway.session_manager.get_session(target_session_id):
+        sess, _ = await gateway.create_voice_session(user=user)
+        target_session_id = sess.session_id
+
+    text = (req.transcript if req and req.transcript else transcript) or transcript
+
+    response = await gateway.process_voice_turn(
+        session_id=target_session_id,
+        transcript_text=text,
+        user=user,
+    )
+    return response
+
+
+@router.get("/session/{session_id}/intro", response_model=VoiceResponse)
+@router.get("/intro", response_model=VoiceResponse)
+async def get_canonical_intro(
+    session_id: Optional[str] = None,
+    language: str = "en-IN",
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Play/return canonical intro on explicit voice activation / first open.
+    """
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    if not gateway.session_manager.get_session(target_session_id):
+        sess, _ = await gateway.create_voice_session(user=user, language=language)
+        target_session_id = sess.session_id
+
+    response = await gateway.get_canonical_intro(
+        session_id=target_session_id,
+        language=language,
+    )
+    return response
+
+
+@router.post("/session/{session_id}/interrupt")
+@router.post("/interrupt")
+async def handle_interruption(
+    session_id: Optional[str] = None,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """Handle barge-in interruption during voice response."""
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    result = await gateway.handle_interruption(target_session_id)
+    return result
+
+
+@router.get("/session/{session_id}")
+@router.get("/session/{session_id}/status")
+async def get_session_status(
+    session_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """Get VoiceSession status and state."""
+    gateway = get_gateway()
+    session = gateway.session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Voice session '{session_id}' not found.")
+    return session.model_dump()
+
+
+@router.post("/session/{session_id}/close")
+@router.post("/close")
+async def close_voice_session(
+    session_id: Optional[str] = None,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """Close voice session."""
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    await gateway.close_session(target_session_id)
+    return {"status": "CLOSED", "session_id": target_session_id}
+
+
+# ────────────────────────────────────────────────────────────────────
+# Ambient Voice State Machine Endpoints (Subphase A1)
+# ────────────────────────────────────────────────────────────────────
+
+class AmbientTransitionRequest(BaseModel):
+    event: AmbientVoiceEvent
+    session_id: Optional[str] = None
+    turn_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AmbientStatusResponse(BaseModel):
+    session_id: str
+    ambient_state: AmbientVoiceState
+    session_status: str
+    case_id: str
+    jurisdiction: str
+    allowed_events: list[str]
+    recent_transitions: list[Dict[str, Any]] = Field(default_factory=list)
+
+
+@router.get("/ambient/status", response_model=AmbientStatusResponse)
+async def get_ambient_status(
+    session_id: Optional[str] = None,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Retrieve authoritative ambient voice interaction state for active session.
+    """
+    gateway = get_gateway()
+    target_session_id = session_id or "VS-DEFAULT"
+    session = gateway.session_manager.get_session(target_session_id)
+    if not session:
+        # If no active session, report default READY state
+        return AmbientStatusResponse(
+            session_id=target_session_id,
+            ambient_state=AmbientVoiceState.READY,
+            session_status="DISCONNECTED",
+            case_id="CASE-2026-001",
+            jurisdiction="Delhi NCR / Special Cell",
+            allowed_events=[e.value for e in AmbientVoiceStateMachine.get_allowed_events(AmbientVoiceState.READY)],
+            recent_transitions=[],
+        )
+
+    allowed = [e.value for e in AmbientVoiceStateMachine.get_allowed_events(session.ambient_state)]
+    transitions_data = [t.model_dump() for t in session.ambient_transitions[-10:]]
+
+    return AmbientStatusResponse(
+        session_id=session.session_id,
+        ambient_state=session.ambient_state,
+        session_status=session.status.value,
+        case_id=session.case_id,
+        jurisdiction=session.jurisdiction,
+        allowed_events=allowed,
+        recent_transitions=transitions_data,
+    )
+
+
+@router.post("/ambient/transition", response_model=AmbientVoiceTransitionResult)
+async def transition_ambient_state(
+    req: AmbientTransitionRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Execute a governed transition on the Ambient Voice State Machine.
+    Fails closed on invalid transitions, preserving session/case security invariants.
+    """
+    gateway = get_gateway()
+    target_session_id = req.session_id or "VS-DEFAULT"
+    session = gateway.session_manager.get_session(target_session_id)
+
+    meta = dict(req.metadata)
+    meta["user_id"] = user.user_id
+    meta["clearance"] = user.clearance
+
+    if not session:
+        # Pure transition against default READY state
+        result = AmbientVoiceStateMachine.transition(
+            current_state=AmbientVoiceState.READY,
+            event=req.event,
+            session_id=target_session_id,
+            turn_id=req.turn_id,
+            case_id="CASE-2026-001",
+            metadata=meta,
+        )
+        return result
+
+    result = session.transition_ambient(req.event, metadata=meta)
+    return result
