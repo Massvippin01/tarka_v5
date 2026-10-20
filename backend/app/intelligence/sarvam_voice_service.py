@@ -1427,9 +1427,13 @@ class SafeForensicAgentOrchestrator:
                 }
 
         # 8. Navigation requests
-        if any(w in q for w in ["navigate to", "open the", "open ", "switch to", "go to", "show the", "show ", "return to"]) and any(
+        is_explicit_nav = any(w in q for w in ["navigate to", "switch to", "go to", "return to", "take me to"])
+        is_view_target = any(w in q for w in ["tab", "view", "screen", "page", "library", "workstation", "workspace"])
+        is_open_or_show = any(w in q for w in ["open the", "open ", "show the", "show "])
+        has_nav_target = any(
             t in q for t in ["timeline", "evidence", "contradiction", "provenance", "gap", "robustness", "report", "overview", "system"]
-        ):
+        )
+        if has_nav_target and (is_explicit_nav or (is_open_or_show and is_view_target)):
             target_view = "overview"
             if "timeline" in q:
                 target_view = "timeline"

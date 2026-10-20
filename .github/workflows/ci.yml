@@ -135,21 +135,6 @@ jobs:
     name: "Gate 7: Live S3/MinIO CAS Integration (Disposable Service)"
     runs-on: ubuntu-24.04
     needs: [manifest-and-static-analysis]
-    services:
-      minio:
-        image: minio/minio:RELEASE.2024-06-13T22-53-53Z
-        ports:
-          - 9000:9000
-          - 9001:9001
-        env:
-          MINIO_ROOT_USER: sentinelx_ci_minio
-          MINIO_ROOT_PASSWORD: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        command: server /data --console-address ":9001"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -166,6 +151,43 @@ jobs:
           pip install -r requirements.txt
           pip install pytest boto3 botocore
 
+      - name: Start Disposable Isolated S3 Storage Service
+        env:
+          EPHEMERAL_ACCESS_KEY: sentinelx_ci_minio
+          EPHEMERAL_SECRET_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
+        run: |
+          mkdir -p ci-logs
+          echo "Starting disposable isolated S3 service container (RustFS)..."
+          docker run -d \
+            --name sentinelx-ci-s3-disposable \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -e RUSTFS_ACCESS_KEY="$EPHEMERAL_ACCESS_KEY" \
+            -e RUSTFS_SECRET_KEY="$EPHEMERAL_SECRET_KEY" \
+            -e MINIO_ROOT_USER="$EPHEMERAL_ACCESS_KEY" \
+            -e MINIO_ROOT_PASSWORD="$EPHEMERAL_SECRET_KEY" \
+            -e RUSTFS_CONSOLE_ENABLE="true" \
+            -e RUSTFS_CONSOLE_ADDRESS=":9001" \
+            rustfs/rustfs:1.0.0 \
+            server /data --console-enable --console-address ":9001"
+
+      - name: Await Service Health
+        run: |
+          echo "Awaiting S3 service health readiness at http://127.0.0.1:9000/minio/health/live..."
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9000/minio/health/live; then
+              echo "S3 service health endpoint is UP and reporting healthy!"
+              break
+            fi
+            echo "Waiting for S3 service readiness ($i/30)..."
+            sleep 1
+          done
+          if ! curl -sf http://127.0.0.1:9000/minio/health/live; then
+            echo "Error: S3 service failed health check."
+            docker logs sentinelx-ci-s3-disposable > ci-logs/s3-service-failure.log 2>&1 || true
+            exit 1
+          fi
+
       - name: Initialize Disposable S3 Bucket
         env:
           AWS_ACCESS_KEY_ID: sentinelx_ci_minio
@@ -174,17 +196,17 @@ jobs:
           S3_BUCKET_NAME: sentinelx-evidence-vault
         run: |
           python -c "
-          import boto3
+          import boto3, os
           s3 = boto3.client(
               's3',
-              endpoint_url='http://127.0.0.1:9000',
-              aws_access_key_id='sentinelx_ci_minio',
-              aws_secret_access_key='sentinelx_ci_disposable_secret_32char',
+              endpoint_url=os.environ['S3_ENDPOINT_URL'],
+              aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
               region_name='us-east-1'
           )
           try:
-              s3.create_bucket(Bucket='sentinelx-evidence-vault')
-              print('Bucket sentinelx-evidence-vault created successfully')
+              s3.create_bucket(Bucket=os.environ['S3_BUCKET_NAME'])
+              print(f\"Bucket {os.environ['S3_BUCKET_NAME']} created successfully\")
           except Exception as e:
               print(f'Bucket creation notice: {e}')
           "
@@ -201,12 +223,27 @@ jobs:
             -k "live_s3" \
             --junitxml=reports/junit-live-s3.xml -v
 
-      - name: Archive S3 Integration Test Results
+      - name: Save Diagnostics Even When Setup Fails
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          docker logs sentinelx-ci-s3-disposable > ci-logs/s3-service.log 2>&1 || true
+
+      - name: Safe Stop and Teardown of Disposable S3 Service
+        if: always()
+        run: |
+          echo "Safely stopping and removing disposable S3 service..."
+          docker stop sentinelx-ci-s3-disposable 2>/dev/null || true
+          docker rm sentinelx-ci-s3-disposable 2>/dev/null || true
+
+      - name: Archive S3 Integration Test Results and Diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: live-s3-test-reports
-          path: reports/
+          path: |
+            reports/
+            ci-logs/
           retention-days: 14
 
   # ============================================================================

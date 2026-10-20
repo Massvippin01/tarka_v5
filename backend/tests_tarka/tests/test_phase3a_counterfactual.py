@@ -526,7 +526,7 @@ def test_baseline_and_challenge_exact_summaries(populated_case):
         "The supplied evidence establishes a payment-related sequence and a discrepancy between the screenshot claim and the supplied bank-statement record. It does not sufficiently distinguish account takeover, credential sharing, or authorized-access misuse."
     )
     expected_challenge_summary = (
-        "Excluding ART-004-BCCD4200 removes the amount-mismatch contradiction. The transaction remains recorded in the supplied bank-statement record. The remaining supplied evidence establishes a payment-related sequence. It does not sufficiently distinguish account takeover, credential sharing, or authorized-access misuse."
+        f"Excluding {scr_art.artifact_id} removes the amount-mismatch contradiction. The transaction remains recorded in the supplied bank-statement record. The remaining supplied evidence establishes a payment-related sequence. It does not sufficiently distinguish account takeover, credential sharing, or authorized-access misuse."
     )
     assert base_run.analysis_summary == expected_baseline_summary
     assert chlg_run.analysis_summary == expected_challenge_summary
