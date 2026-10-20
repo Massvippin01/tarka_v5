@@ -141,3 +141,25 @@
 ### Known Limitations & Recommended Milestone 3 Scope
 1. **Neo4j Production Cluster**: Neo4j Cypher queries are fully operational in synthetic mode; production deployment will benefit from graph database cluster sharding in Milestone 3.
 2. **Indic Transliteration Expansion**: Transliteration covers 10 primary English-Indic phonetic mapping rules; full multi-lingual Indic NLP tokenization will be expanded in Milestone 3.
+
+---
+
+## 5. POST-MERGE CI REPAIR & WAVE 6 HARDENING VERIFICATION
+
+### CI Diagnostic Summary & Root Cause Resolutions
+1. **Voice Provider Test Expectation**:
+   - *Root Cause*: `test_sarvam_synthesize_endpoint_fallback_and_structure` asserted `provider in ('SARVAM_CLOUD_BULBUL', 'LOCAL_BROWSER_FALLBACK')`, whereas safe test mode explicitly returns `SARVAM_BULBUL_TEST` when live API keys are absent.
+   - *Resolution*: Updated test contract to verify safe test mode (`SARVAM_BULBUL_TEST`), simulated live mode (`SARVAM_CLOUD_BULBUL`), and failure mode (`SARVAM_ERROR`). Preserved invariant `use_browser_speech is False` across all paths.
+2. **Agent Contradiction vs. Navigation Routing**:
+   - *Root Cause*: Section 8 in `SafeForensicAgentOrchestrator.interpret_investigator_query` broadly matched substring `'contradiction'` with UI navigation terms, redirecting `"Show all contradictions in this case"` to `navigate_to_view` instead of `list_contradictions`.
+   - *Resolution*: Restricted navigation intent to explicit navigation verbs (`navigate to`, `switch to`, `go to`, `return to`) or UI target keywords (`tab`, `view`, `screen`, `workstation`, `workspace`). Analytical contradiction queries now reliably route to `list_contradictions` with regression coverage in `test_safe_agent_contradiction_vs_navigation_intent_regression`.
+3. **Counterfactual Summary Artifact Alignment**:
+   - *Root Cause*: `test_phase3a_counterfactual.py` hardcoded artifact ID `ART-004-BCCD4200` which differed from the dynamically generated ID.
+   - *Resolution*: Dynamically referenced `scr_art.artifact_id` to guarantee 100% deterministic test pass across environments.
+4. **Disposable S3/MinIO Integration Gate**:
+   - *Root Cause*: Stale MinIO tag `RELEASE.2024-06-13T22-53-53Z` failed Docker pull.
+   - *Resolution*: Adopted verified `rustfs/rustfs:1.0.0` with ephemeral credentials, `/minio/health/live` healthcheck polling, bucket creation, diagnostic preservation, and safe container cleanup.
+5. **Docker Build & Smoke Gate**:
+   - *Root Cause*: Backend container smoke test in `APP_ENV=staging` failed startup validation because `NEO4J_PASSWORD` defaulted to insecure placeholder.
+   - *Resolution*: Injected strong ephemeral `NEO4J_PASSWORD`, implemented robust readiness polling, added frontend container `/healthz` and non-root execution checks, and ensured diagnostics and teardown always run via `if: always()`.
+

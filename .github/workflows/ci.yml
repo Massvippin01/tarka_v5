@@ -280,7 +280,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Backend Container Smoke Test & Validate Health Endpoints
+      - name: Run Container Smoke Tests & Validate Health Endpoints
         run: |
           mkdir -p ci-logs
           echo "Starting backend container in isolated test mode..."
@@ -291,16 +291,25 @@ jobs:
             -e PORT=8000 \
             -e APP_ENV=staging \
             -e SECRET_KEY="sentinelx_ci_smoke_test_jwt_secret_32chars_min" \
+            -e NEO4J_PASSWORD="sentinelx_ci_smoke_test_neo4j_password_32char" \
             sentinelx/backend:ci-smoke-test
 
-          echo "Awaiting container readiness..."
+          echo "Awaiting backend container readiness..."
+          BACKEND_HEALTHY=0
           for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:8000/api/v1/health; then
-              echo "Health endpoint is UP!"
+            if curl -sf http://127.0.0.1:8000/api/v1/health > /dev/null 2>&1; then
+              echo "Backend health endpoint is UP!"
+              BACKEND_HEALTHY=1
               break
             fi
             sleep 1
           done
+
+          if [ "$BACKEND_HEALTHY" -ne 1 ]; then
+            echo "Error: Backend container failed to reach healthy state within 30s"
+            docker logs sentinelx-backend-smoke || true
+            exit 1
+          fi
 
           echo "Validating System Health Endpoint (/api/v1/health)..."
           HEALTH_RESP=$(curl -s http://127.0.0.1:8000/api/v1/health)
@@ -312,7 +321,7 @@ jobs:
           echo "$FORENSICS_RESP"
           echo "$FORENSICS_RESP" | grep -q '"status":"healthy"' || { echo "Invalid forensics response"; exit 1; }
 
-          echo "Verifying unprivileged container user execution (UID 10001)..."
+          echo "Verifying unprivileged backend container user execution (UID 10001)..."
           CONTAINER_UID=$(docker exec sentinelx-backend-smoke id -u)
           if [ "$CONTAINER_UID" != "10001" ]; then
             echo "Security Violation: Container running as UID $CONTAINER_UID, expected 10001!"
@@ -320,9 +329,55 @@ jobs:
           fi
           echo "Verified unprivileged user UID: $CONTAINER_UID"
 
-          docker logs sentinelx-backend-smoke > ci-logs/backend-container-smoke.log 2>&1
-          docker stop sentinelx-backend-smoke
-          docker rm sentinelx-backend-smoke
+          echo "Starting frontend container in isolated test mode..."
+          docker run -d \
+            --name sentinelx-frontend-smoke \
+            -p 8080:8080 \
+            sentinelx/frontend:ci-smoke-test
+
+          echo "Awaiting frontend container readiness..."
+          FRONTEND_HEALTHY=0
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8080/healthz > /dev/null 2>&1; then
+              echo "Frontend healthz endpoint is UP!"
+              FRONTEND_HEALTHY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$FRONTEND_HEALTHY" -ne 1 ]; then
+            echo "Error: Frontend container failed to reach healthy state within 20s"
+            docker logs sentinelx-frontend-smoke || true
+            exit 1
+          fi
+
+          echo "Validating Frontend Healthz Endpoint (/healthz)..."
+          FRONTEND_RESP=$(curl -s http://127.0.0.1:8080/healthz)
+          echo "$FRONTEND_RESP"
+          echo "$FRONTEND_RESP" | grep -q 'healthy' || { echo "Invalid frontend health response"; exit 1; }
+
+          echo "Verifying unprivileged frontend container user execution..."
+          FRONTEND_UID=$(docker exec sentinelx-frontend-smoke id -u)
+          echo "Verified frontend unprivileged user UID: $FRONTEND_UID"
+          if [ "$FRONTEND_UID" = "0" ]; then
+            echo "Security Violation: Frontend container running as root (UID 0)!"
+            exit 1
+          fi
+
+      - name: Save Container Diagnostics Even When Smoke Fails
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          docker logs sentinelx-backend-smoke > ci-logs/backend-container-smoke.log 2>&1 || true
+          docker logs sentinelx-frontend-smoke > ci-logs/frontend-container-smoke.log 2>&1 || true
+
+      - name: Safe Teardown of Smoke Test Containers
+        if: always()
+        run: |
+          echo "Safely stopping and removing smoke test containers..."
+          docker stop sentinelx-backend-smoke sentinelx-frontend-smoke 2>/dev/null || true
+          docker rm sentinelx-backend-smoke sentinelx-frontend-smoke 2>/dev/null || true
 
       - name: Archive Container Smoke Logs (Gate 8)
         if: always()
