@@ -779,6 +779,18 @@ def test_sarvam_synthesize_endpoint_fallback_and_structure(client: TestClient, m
     assert data_err["tts_unavailable"] is True
     assert data_err["audio_base64"] is None
 
+    # 4. Missing Credentials Mode (Simulate unconfigured credentials outside pytest)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setattr(SarvamVoiceService, "effective_api_key", property(lambda self: None))
+    res_unconfigured = client.post("/api/v1/forensics/sarvam/synthesize", json=payload)
+    assert res_unconfigured.status_code == 200
+    data_unconf = res_unconfigured.json()
+    assert data_unconf["provider"] == "SARVAM_BULBUL_UNAVAILABLE"
+    assert data_unconf["use_browser_speech"] is False, "Unconfigured voice must fail closed without browser speech fallback"
+    assert data_unconf["tts_unavailable"] is True
+    assert data_unconf["audio_base64"] is None
+    assert data_unconf["target_language_code"] == "en-IN"
+
 
 def test_sarvam_transcribe_endpoint_structure(client: TestClient):
     """Verify Sarvam audio transcription endpoint handles multipart audio upload."""
@@ -842,22 +854,27 @@ def test_safe_agent_contradiction_vs_navigation_intent_regression(client: TestCl
     """Regression test: verifies analytical contradiction requests route to list_contradictions and UI view switches route to navigate_to_view."""
     case_id = "upi_payment_discrepancy"
 
-    # Analytical queries -> must execute list_contradictions and return Z3 results
-    for analytical_query in [
+    # Analytical queries (English, Tamil, Tanglish, and conflict phrasing) -> must execute list_contradictions and return Z3 results
+    analytical_queries = [
         "Show all contradictions in this case",
+        "Find contradictions",
+        "What conflicts with the evidence?",
+        "இந்த case-ல என்ன முரண்பாடுகள் இருக்கு?",
+        "Indha case-la contradictions enna?",
         "Show contradictions",
         "List contradictions in this case",
         "Are there any contradictions?",
         "What contradictions exist in this case?",
-    ]:
+    ]
+    for analytical_query in analytical_queries:
         res = client.post(
             f"/api/v1/forensics/cases/{case_id}/agent/orchestrate",
             json={"query": analytical_query},
         )
         assert res.status_code == 200
         data = res.json()
-        assert data["status"] == "COMPLETED"
-        assert data["tool_executed"] == "list_contradictions", f"Query '{analytical_query}' was not routed to list_contradictions"
+        assert data["status"] == "COMPLETED", f"Query '{analytical_query}' status was {data.get('status')}"
+        assert data["tool_executed"] == "list_contradictions", f"Query '{analytical_query}' was routed to {data.get('tool_executed')}"
         assert "contradictions" in data["result"], f"Query '{analytical_query}' did not return contradiction results"
         assert data["navigation_view"] is None
 

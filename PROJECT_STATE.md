@@ -158,8 +158,17 @@
    - *Resolution*: Dynamically referenced `scr_art.artifact_id` to guarantee 100% deterministic test pass across environments.
 4. **Disposable S3/MinIO Integration Gate**:
    - *Root Cause*: Stale MinIO tag `RELEASE.2024-06-13T22-53-53Z` failed Docker pull.
-   - *Resolution*: Adopted verified `rustfs/rustfs:1.0.0` with ephemeral credentials, `/minio/health/live` healthcheck polling, bucket creation, diagnostic preservation, and safe container cleanup.
+   - *Resolution*: Adopted verified `rustfs/rustfs:1.0.0` with unified job-level ephemeral credentials (`sentinelx_ci_minio`), `/minio/health/live` healthcheck polling, strict bucket creation with `head_bucket` accessibility confirmation, diagnostic preservation, and safe container cleanup.
 5. **Docker Build & Smoke Gate**:
-   - *Root Cause*: Backend container smoke test in `APP_ENV=staging` failed startup validation because `NEO4J_PASSWORD` defaulted to insecure placeholder.
-   - *Resolution*: Injected strong ephemeral `NEO4J_PASSWORD`, implemented robust readiness polling, added frontend container `/healthz` and non-root execution checks, and ensured diagnostics and teardown always run via `if: always()`.
+   - *Root Cause*: Backend container smoke test in `APP_ENV=staging` failed startup validation because `NEO4J_PASSWORD` defaulted to insecure placeholder. Frontend container in isolation could not resolve `backend` upstream.
+   - *Resolution*: Injected strong ephemeral `NEO4J_PASSWORD`, connected containers via isolated bridge network `sentinelx-smoke-net`, added reverse-proxy `/api/v1/health` and `/healthz` tests, verified non-root UIDs, and ensured diagnostics and teardown always run via `if: always()`.
+
+### Verification Status Matrix (Run 39367001744 - ALL GATES GREEN)
+- **Gate 1 & 2**: Manifests & Static Compilation (`python -m compileall`) — **PASSED** (1m 00s)
+- **Gate 4**: Frontend TypeScript & Vite Production Build (`tsc -b && vite build`) — **PASSED** (20s)
+- **Gate 7**: Live S3/MinIO CAS Integration (5 live tests) — **PASSED** (1m 17s)
+- **Gate 3**: Security, RBAC, TARKA & Evidence Integrity (343 tests) — **PASSED** (1m 31s)
+- **Gate 5 & 6**: Docker Build & Container Smoke Test (Backend & Frontend) — **PASSED** (7m 43s)
+- **Pull Request**: [#2](https://github.com/Yaathrapalani/tarka/pull/2) (Branch: `fix/ci-post-merge-repair`)
+
 
