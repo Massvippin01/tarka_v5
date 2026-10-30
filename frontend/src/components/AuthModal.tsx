@@ -121,7 +121,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "12px",
     padding: "36px 32px 28px",
     boxShadow: "0 20px 40px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.05)",
-    fontFamily: '"IBM Plex Sans", Inter, sans-serif',
+    fontFamily: "var(--font-sans)",
     color: "#1c1917",
   },
   eyebrowRow: {
@@ -147,14 +147,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-block",
   },
   eyebrow: {
-    fontFamily: '"Courier Prime", "IBM Plex Mono", monospace',
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontSize: "0.68rem",
     fontWeight: 700,
     color: "#9e2a2b",
     letterSpacing: "0.12em",
   },
   title: {
-    fontFamily: '"Courier Prime", "IBM Plex Mono", Georgia, serif',
+    fontFamily: "var(--font-sans)",
     fontSize: "2.1rem",
     fontWeight: 600,
     margin: "0 0 6px 0",
@@ -177,7 +178,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "6px",
   },
   label: {
-    fontFamily: '"Courier Prime", "IBM Plex Mono", monospace',
+    fontFamily: "var(--font-sans)",
     fontSize: "0.68rem",
     fontWeight: 700,
     color: "#57534e",
@@ -219,7 +220,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#e2ddd5",
   },
   orText: {
-    fontFamily: '"Courier Prime", "IBM Plex Mono", monospace',
+    fontFamily: "var(--font-sans)",
     fontSize: "0.68rem",
     fontWeight: 700,
     color: "#78716c",
@@ -262,7 +263,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: "1px solid #e2ddd5",
   },
   disclaimerText: {
-    fontFamily: '"Courier Prime", "IBM Plex Mono", monospace',
+    fontFamily: "var(--font-sans)",
     fontSize: "0.68rem",
     color: "#78716c",
     lineHeight: "1.45",

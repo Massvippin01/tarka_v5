@@ -586,6 +586,10 @@ class ForensicSpokenResponseGenerator:
         is_hindi = language_code.startswith("hi")
         is_bengali = language_code.startswith("bn")
 
+        # Prioritize explicit neural spoken summary from Llama 3.1 8B for English/general queries
+        if isinstance(result, dict) and result.get("spoken_summary") and not (is_tamil or is_hindi or is_bengali):
+            return cls.sanitize_for_speech(result["spoken_summary"])
+
         # 1. Stop audio command
         if tool_name == "stop_speaking":
             if is_tamil:
@@ -1869,16 +1873,33 @@ class SafeForensicAgentOrchestrator:
             elif tool_name == "get_system_status":
                 result = self.adapter.get_system_status()
             else:
-                # Default case summary
+                # Default case summary or open-ended investigative voice query
                 contras = self.adapter.get_contradictions(case_id).get("contradictions", [])
                 arts = self.adapter.list_artifacts(case_id)
                 gaps = self.adapter.get_contradictions(case_id).get("evidence_gaps", [])
+                timeline = self.adapter.get_timeline(case_id).get("events", [])
+
+                from app.intelligence.local_llm_provider import default_llm_provider
+                context = {
+                    "artifacts": arts,
+                    "contradictions": contras,
+                    "evidence_gaps": gaps,
+                    "timeline_events": timeline,
+                }
+                llm_resp = default_llm_provider.generate_grounded_response(
+                    case_id=case_id,
+                    query=query or "Summarize verified case evidence and findings",
+                    case_context=context,
+                )
+
                 result = {
                     "case_id": case_id,
                     "artifact_count": len(arts),
                     "contradiction_count": len(contras),
                     "evidence_gap_count": len(gaps),
-                    "summary": f"Case {case_id} currently holds {len(arts)} verified evidence artifacts, {len(contras)} mathematical contradictions detected by the Z3 SMT solver, and {len(gaps)} open evidentiary gaps.",
+                    "llm_response": llm_resp,
+                    "summary": llm_resp.get("answer_markdown") or f"Case {case_id} currently holds {len(arts)} verified evidence artifacts, {len(contras)} mathematical contradictions detected by the Z3 SMT solver, and {len(gaps)} open evidentiary gaps.",
+                    "spoken_summary": llm_resp.get("speech_text"),
                 }
 
             pipeline_log.append({"state": "EXECUTED", "status": "COMPLETED"})

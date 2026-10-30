@@ -128,7 +128,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
     overflowY: "auto",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   header: {
     display: "flex",

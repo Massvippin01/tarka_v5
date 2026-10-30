@@ -1,0 +1,16 @@
+{
+  "artifact_type": "SCREENSHOT_METADATA",
+  "filename": "fake_payment_screenshot.png",
+  "transaction_id": "TXN20260922101402",
+  "rrn": "202602149921",
+  "claimed_timestamp": "2026-09-22T10:14:02+05:30",
+  "claimed_amount": 150000.00,
+  "currency": "INR",
+  "claimed_payee_vpa": "sbi.deputy.cbi@okhdfc",
+  "claimed_payer_vpa": "victim.user@oksbi",
+  "claimed_status": "SUCCESS",
+  "note": "RBI Security Clearance Deposit",
+  "client_device": "Samsung SM-S918B",
+  "ocr_text": "Payment Successful Rs 1,50,000 to sbi.deputy.cbi@okhdfc Ref 202602149921",
+  "evidence_tier": "T3_UNVERIFIED_CLAIM"
+}

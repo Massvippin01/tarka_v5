@@ -247,7 +247,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: "auto",
     padding: "24px 32px",
     boxSizing: "border-box",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
     color: "#1E1D1A",
     gap: "28px",
   },
@@ -262,7 +262,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     justifyContent: "space-between",
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#625E57",
     letterSpacing: "0.06em",
   },
@@ -273,7 +274,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#8C877E",
   },
   docketTitle: {
-    fontFamily: '"IBM Plex Serif", Georgia, serif',
+    fontFamily: "var(--font-sans)",
     fontSize: "24px",
     fontWeight: 600,
     color: "#1E1D1A",
@@ -309,19 +310,21 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-block",
   },
   editorialEyebrow: {
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontSize: "11px",
     fontWeight: 600,
     color: "#AE2D30",
     letterSpacing: "0.08em",
   },
   referenceCode: {
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontSize: "11px",
     color: "#8C877E",
   },
   anomalyHeading: {
-    fontFamily: '"IBM Plex Serif", Georgia, serif',
+    fontFamily: "var(--font-sans)",
     fontSize: "19px",
     fontWeight: 600,
     color: "#1E1D1A",
@@ -348,7 +351,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   itemLabel: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-sans)",
     fontWeight: 700,
     color: "#625E57",
     letterSpacing: "0.08em",
@@ -375,7 +378,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
     fontWeight: 600,
     cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   secondaryBtn: {
     background: "#FAF8F3",
@@ -386,7 +389,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
     fontWeight: 500,
     cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   rowsSection: {
     display: "flex",
@@ -402,14 +405,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rowsTitle: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-sans)",
     fontWeight: 700,
     color: "#1E1D1A",
     letterSpacing: "0.06em",
   },
   rowsCount: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#8C877E",
   },
   tableContainer: {
@@ -426,13 +430,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "12px",
   },
   colDate: {
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontSize: "11px",
     color: "#625E57",
   },
   colCategory: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-sans)",
   },
   colSubject: {
     color: "#1E1D1A",
@@ -447,7 +452,8 @@ const styles: Record<string, React.CSSProperties> = {
   colProvenance: {
     fontSize: "11px",
     color: "#8C877E",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
   },
   colAction: {
     textAlign: "right",

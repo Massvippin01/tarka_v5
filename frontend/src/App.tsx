@@ -1,26 +1,29 @@
 import { useState } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { InvestigationProvider } from "./context/InvestigationContext";
+import { TarkaGlobalProvider } from "./context/TarkaGlobalContext";
+import { TarkaGlobalShell } from "./components/shell/TarkaGlobalShell";
 import { InvestigationCanvas } from "./components/InvestigationCanvas";
-import { TarkaForensicWorkstation } from "./components/tarka/TarkaForensicWorkstation";
 import "./styles/tokens.css";
 import "./styles/liquid-glass.css";
 import "./App.css";
 
 function App() {
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-  const [viewMode] = useState<"tarka" | "canvas">(
-    params.get("view") === "canvas" ? "canvas" : "tarka"
+  const [viewMode] = useState<"v5-shell" | "canvas">(
+    params.get("view") === "canvas" ? "canvas" : "v5-shell"
   );
 
   return (
     <ThemeProvider>
       <InvestigationProvider>
-        {viewMode === "tarka" ? (
-          <TarkaForensicWorkstation />
-        ) : (
-          <InvestigationCanvas />
-        )}
+        <TarkaGlobalProvider>
+          {viewMode === "canvas" ? (
+            <InvestigationCanvas />
+          ) : (
+            <TarkaGlobalShell />
+          )}
+        </TarkaGlobalProvider>
       </InvestigationProvider>
     </ThemeProvider>
   );

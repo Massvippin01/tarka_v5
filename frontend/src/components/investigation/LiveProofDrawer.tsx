@@ -154,7 +154,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "16px",
     overflowY: "auto",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   header: {
     display: "flex",
@@ -236,6 +236,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "0.65rem",
     fontWeight: 800,
     color: "#38bdf8",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     flexShrink: 0,
     marginTop: "2px",
   },
@@ -263,7 +265,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   stepId: {
     fontSize: "0.72rem",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#f1f5f9",
     wordBreak: "break-all",
   },

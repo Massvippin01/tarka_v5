@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Boxes,
   RefreshCw,
@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   ShieldCheck,
   Shield,
+  Search,
+  Filter,
 } from "lucide-react";
 import type { ArtifactIntake } from "../../types/forensics";
 import { forensicsApi } from "../../api/forensicsApi";
@@ -34,6 +36,22 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
     Record<string, { verified?: boolean; stored_hash?: string; calculated_hash?: string; bitstream_intact?: boolean; bitstream_verified?: boolean; error?: string }>
   >({});
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [tierFilter, setTierFilter] = useState<"ALL" | "T1" | "T2" | "T3">("ALL");
+
+  const filteredArtifacts = useMemo(() => {
+    return artifacts.filter((art) => {
+      const matchesTier = tierFilter === "ALL" || art.source_tier === tierFilter;
+      const q = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        art.artifact_id.toLowerCase().includes(q) ||
+        art.filename.toLowerCase().includes(q) ||
+        art.sha256.toLowerCase().includes(q) ||
+        (art.intake_officer && art.intake_officer.toLowerCase().includes(q));
+      return matchesTier && matchesSearch;
+    });
+  }, [artifacts, tierFilter, searchTerm]);
 
   const handleVerify = async (e: React.MouseEvent, artifactId: string) => {
     e.stopPropagation();
@@ -77,41 +95,132 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
   };
 
   return (
-    <div className={`lg-table-wrapper ${className}`}>
-      <div className="lg-table-header">
-        <div>
-          <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#F3F4F6", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Boxes size={15} strokeWidth={2} color="#60A5FA" />
-            <span>Forensic Evidence Register & Custody Ledger</span>
-          </h3>
-          <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9CA3AF" }}>
-            Immutable intake records with SHA-256 bitstream verification and trust tier ratings.
-          </p>
+    <div
+      className={`lg-table-wrapper ${className}`}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 170px)",
+        maxHeight: "calc(100vh - 170px)",
+        minHeight: "450px",
+        overflow: "hidden",
+      }}
+    >
+      <div className="lg-table-header" style={{ flexShrink: 0, flexDirection: "column", gap: "10px", alignItems: "stretch" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#F3F4F6", display: "flex", alignItems: "center", gap: "8px" }}>
+              <Boxes size={15} strokeWidth={2} color="#60A5FA" />
+              <span>Forensic Evidence Register & Custody Ledger</span>
+            </h3>
+            <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9CA3AF" }}>
+              Immutable intake records with SHA-256 bitstream verification and trust tier ratings.
+            </p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
+              Showing: <strong style={{ color: "#E5E7EB", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>{filteredArtifacts.length}</strong> of <strong style={{ color: "#60A5FA", fontFamily: "var(--font-mono)" }}>{artifacts.length}</strong>
+            </span>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                className="lg-btn lg-btn-secondary"
+                style={{ padding: "4px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+              >
+                <RefreshCw size={11} strokeWidth={2} />
+                <span>Refresh</span>
+              </button>
+            )}
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "11px", color: "#9CA3AF", fontFamily: "'IBM Plex Mono', monospace" }}>
-            Artifacts: <strong style={{ color: "#E5E7EB" }}>{artifacts.length}</strong>
-          </span>
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              className="lg-btn lg-btn-secondary"
-              style={{ padding: "4px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "5px" }}
-            >
-              <RefreshCw size={11} strokeWidth={2} />
-              <span>Refresh</span>
-            </button>
-          )}
+
+        {/* Filter & Search Bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", paddingTop: "4px" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: "220px" }}>
+            <Search size={13} color="#9CA3AF" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              type="text"
+              placeholder="Filter by filename, artifact ID, or hash..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="glass-input"
+              style={{
+                width: "100%",
+                padding: "6px 10px 6px 30px",
+                fontSize: "11px",
+                height: "30px",
+                borderRadius: "6px",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", backgroundColor: "rgba(0, 0, 0, 0.3)", padding: "2px", borderRadius: "6px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+            <span style={{ fontSize: "10px", color: "#9CA3AF", padding: "0 6px", display: "flex", alignItems: "center", gap: "3px" }}>
+              <Filter size={10} /> Tier:
+            </span>
+            {(["ALL", "T1", "T2", "T3"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierFilter(t)}
+                style={{
+                  padding: "3px 8px",
+                  fontSize: "10px",
+                  fontWeight: tierFilter === t ? 700 : 500,
+                  backgroundColor: tierFilter === t ? "rgba(59, 130, 246, 0.25)" : "transparent",
+                  color: tierFilter === t ? "#93C5FD" : "#9CA3AF",
+                  border: tierFilter === t ? "1px solid rgba(59, 130, 246, 0.4)" : "1px solid transparent",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                {t === "ALL" ? "All" : t}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div
+        id="evidence-ledger-scroll-container"
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          scrollbarGutter: "stable",
+        }}
+      >
         {artifacts.length === 0 ? (
-          <div style={{ padding: "32px", textAlign: "center", color: "#6B7280", fontSize: "13px" }}>
-            No artifacts found in this case. Click "Evidence Intake" above to upload or seed.
+          <div style={{ padding: "48px 24px", textAlign: "center", color: "#9CA3AF" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>📂</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#E2E8F0" }}>Case Workspace is in Clean Standby</div>
+            <p style={{ fontSize: "12px", color: "#64748B", margin: "6px auto 16px", maxWidth: "420px" }}>
+              Zero evidence files are registered in this case ledger. Ingest evidence files (Bank CSV, Telecom CDR, WhatsApp chat, or Payment Screenshot) to initiate formal analysis.
+            </p>
+            <div style={{ display: "inline-flex", gap: "10px" }}>
+              <span style={{ fontSize: "11px", color: "#60A5FA", background: "rgba(59, 130, 246, 0.1)", padding: "4px 10px", borderRadius: "4px", border: "1px solid rgba(59, 130, 246, 0.25)" }}>
+                Click <strong>"Evidence Intake"</strong> or <strong>"Load Demo Pack"</strong> in the top bar
+              </span>
+            </div>
+          </div>
+        ) : filteredArtifacts.length === 0 ? (
+          <div style={{ padding: "48px 24px", textAlign: "center", color: "#9CA3AF" }}>
+            <div style={{ fontSize: "20px", marginBottom: "6px" }}>🔍</div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#E2E8F0" }}>No matching evidence records found</div>
+            <p style={{ fontSize: "11px", color: "#64748B", margin: "4px auto 12px" }}>
+              Try adjusting your search query or tier filter.
+            </p>
+            <button
+              onClick={() => { setSearchTerm(""); setTierFilter("ALL"); }}
+              className="lg-btn lg-btn-subtle"
+              style={{ fontSize: "11px", padding: "4px 10px" }}
+            >
+              Reset Filters
+            </button>
           </div>
         ) : (
-          artifacts.map((art) => {
+          filteredArtifacts.map((art) => {
             const vResult = verificationResults[art.artifact_id];
             const isVerifying = verifyingId === art.artifact_id;
             const isSelected = selectedArtifactId === art.artifact_id;
@@ -138,22 +247,22 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "12px", fontWeight: 700, color: "#60A5FA" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "12px", fontWeight: 700, color: "#60A5FA" }}>
                       {art.artifact_id}
                     </span>
                     <span style={{ fontSize: "13px", fontWeight: 600, color: "#F3F4F6", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
                       {art.filename}
                     </span>
                     {getTierBadge(art.source_tier)}
-                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "3px", background: "rgba(255, 255, 255, 0.08)", color: "#9CA3AF", fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "3px", background: "rgba(255, 255, 255, 0.08)", color: "#9CA3AF", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                       Seq #{art.custody_chain_sequence}
                     </span>
                   </div>
 
                   {/* Hash row */}
                   <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "11px" }}>
-                    <span style={{ color: "#6B7280", fontFamily: "'IBM Plex Mono', monospace" }}>SHA-256:</span>
-                    <code style={{ color: "#E5E7EB", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", backgroundColor: "rgba(0, 0, 0, 0.4)", padding: "2px 8px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                    <span style={{ color: "#6B7280" }}>SHA-256:</span>
+                    <code style={{ color: "#E5E7EB", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "11px", backgroundColor: "rgba(0, 0, 0, 0.4)", padding: "2px 8px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
                       {art.sha256}
                     </code>
                     <button
@@ -229,7 +338,7 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
         )}
       </div>
 
-      <div style={{ padding: "12px 18px", backgroundColor: "rgba(10, 12, 18, 0.8)", borderTop: "1px solid rgba(255, 255, 255, 0.05)", fontSize: "11px", color: "#6B7280" }}>
+      <div style={{ flexShrink: 0, padding: "12px 18px", backgroundColor: "rgba(10, 12, 18, 0.95)", borderTop: "1px solid rgba(255, 255, 255, 0.08)", fontSize: "11px", color: "#6B7280" }}>
         <strong>Statutory Notice (Section 63 BSA 2023):</strong> Cryptographic SHA-256 confirms bitstream integrity during transfer and custody storage. It verifies that raw bits remain unchanged since intake.
       </div>
     </div>

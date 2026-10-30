@@ -74,6 +74,18 @@ export const forensicsApi = {
     return res.data;
   },
 
+  resetCaseClean: async (caseId: string) => {
+    const res = await api.post(`/cases/${caseId}/reset-clean`);
+    return res.data;
+  },
+
+  loadDemoPack: async (caseId: string, packageName?: string) => {
+    const res = await api.post(`/cases/${caseId}/load-demo-pack`, null, {
+      params: { package_name: packageName || "auto" },
+    });
+    return res.data;
+  },
+
   listArtifacts: async (caseId: string): Promise<ArtifactIntake[]> => {
     const res = await api.get(`/cases/${caseId}/artifacts`);
     return res.data;

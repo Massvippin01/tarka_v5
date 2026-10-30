@@ -222,7 +222,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     background: "#FAF8F3",
     boxSizing: "border-box",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
     color: "#1E1D1A",
     overflow: "hidden",
   },
@@ -242,7 +242,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "inline-block",
   },
   sentinelLabel: {
-    fontFamily: '"IBM Plex Serif", Georgia, serif',
+    fontFamily: "var(--font-sans)",
     fontSize: "14px",
     fontWeight: 600,
     color: "#1E1D1A",
@@ -250,12 +250,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   scopeTag: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#625E57",
   },
   caseRef: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#8C877E",
   },
   subTabBar: {
@@ -309,7 +311,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   findingEyebrow: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#AE2D30",
     letterSpacing: "0.06em",
@@ -329,7 +332,8 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: "1px solid #E5E0D6",
     borderBottom: "1px solid #E5E0D6",
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
   },
   metaRow: {
     display: "flex",
@@ -356,7 +360,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "11px",
     fontWeight: 500,
     cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   secondaryActionBtn: {
     background: "#FAF8F3",
@@ -367,7 +371,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "11px",
     fontWeight: 500,
     cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   contextBox: {
     background: "#ECE8DF",
@@ -380,7 +384,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   contextTitle: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#625E57",
     letterSpacing: "0.06em",
@@ -407,7 +412,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   disclaimerTitle: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#8C877E",
     letterSpacing: "0.06em",
@@ -429,7 +435,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   planHeader: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#625E57",
     letterSpacing: "0.06em",
@@ -456,7 +463,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   planLabel: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#625E57",
   },
@@ -471,7 +479,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionsTitle: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#625E57",
   },
@@ -495,13 +504,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionDetails: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#625E57",
   },
   allowBadge: {
     fontSize: "9px",
     fontWeight: 700,
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     padding: "2px 5px",
     borderRadius: "2px",
     background: "rgba(30, 111, 67, 0.12)",
@@ -510,7 +521,8 @@ const styles: Record<string, React.CSSProperties> = {
   confirmBadge: {
     fontSize: "9px",
     fontWeight: 700,
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     padding: "2px 5px",
     borderRadius: "2px",
     background: "rgba(180, 83, 9, 0.12)",
@@ -519,7 +531,8 @@ const styles: Record<string, React.CSSProperties> = {
   denyBadge: {
     fontSize: "9px",
     fontWeight: 700,
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     padding: "2px 5px",
     borderRadius: "2px",
     background: "rgba(174, 45, 48, 0.12)",
@@ -532,7 +545,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   policyHeader: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#1E1D1A",
     borderBottom: "1px solid #D8D2C7",
@@ -550,7 +564,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pLabel: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     color: "#625E57",
   },
@@ -560,7 +575,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pAuthority: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 600,
     color: "#1E6F43",
   },

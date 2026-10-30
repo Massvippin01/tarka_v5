@@ -117,7 +117,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
     overflowY: "auto",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   header: {
     display: "flex",
@@ -166,6 +166,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "0.82rem",
     fontWeight: 700,
     color: "#f1f5f9",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
   },
   uncertaintyBadge: {
     fontSize: "0.58rem",
@@ -230,7 +232,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   artifactRef: {
     fontSize: "0.62rem",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#10b981",
     marginTop: "4px",
   },

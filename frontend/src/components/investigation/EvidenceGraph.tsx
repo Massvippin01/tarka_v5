@@ -1073,7 +1073,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     background: "#080c14",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   toolbar: {
     display: "flex",

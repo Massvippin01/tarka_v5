@@ -55,7 +55,7 @@ export const LeftNavRail: React.FC = () => {
         transition: "width 0.12s ease",
         zIndex: 20,
         userSelect: "none",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "var(--font-sans)",
       }}
     >
       {/* Brand Header */}
@@ -83,7 +83,7 @@ export const LeftNavRail: React.FC = () => {
             />
             <span
               style={{
-                fontFamily: '"IBM Plex Serif", Georgia, serif',
+                fontFamily: "var(--font-sans)",
                 fontSize: "14px",
                 fontWeight: 600,
                 color: "#1E1D1A",
@@ -164,7 +164,8 @@ export const LeftNavRail: React.FC = () => {
                     fontWeight: 500,
                     padding: "1px 5px",
                     borderRadius: "2px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                     background:
                       item.badgeType === "critical"
                         ? "rgba(174, 45, 48, 0.12)"
@@ -191,7 +192,8 @@ export const LeftNavRail: React.FC = () => {
             borderTop: "1px solid #D8D2C7",
             background: "#ECE8DF",
             fontSize: "11px",
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "var(--font-mono)",
+            fontVariantNumeric: "tabular-nums",
             color: "#625E57",
             display: "flex",
             flexDirection: "column",

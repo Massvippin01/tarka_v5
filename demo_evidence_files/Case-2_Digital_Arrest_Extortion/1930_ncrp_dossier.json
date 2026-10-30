@@ -1,0 +1,11 @@
+{
+  "acknowledgement_no": "20260922001930",
+  "intake_timestamp": "2026-09-22T09:30:00+05:30",
+  "portal": "NCRP 1930 Cybercrime Helpline",
+  "complainant_category": "Digital Arrest Extortion",
+  "suspect_numbers": ["+919871123941"],
+  "beneficiary_upi": "sbi.deputy.cbi@okhdfc",
+  "mule_bank_layer2": "ICICI Bank A/C 629101554289",
+  "claimed_loss": 150000.00,
+  "status": "ALLOCATED_TO_STATE_CYBER_CELL"
+}

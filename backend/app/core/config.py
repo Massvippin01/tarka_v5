@@ -237,9 +237,17 @@ class Settings(BaseSettings):
         default="mock",
         description="Text-to-speech provider implementation"
     )
-    REASONING_PROVIDER: Literal["deterministic_mock", "gemini"] = Field(
-        default="deterministic_mock",
-        description="Reasoning provider implementation"
+    REASONING_PROVIDER: str = Field(
+        default="ollama",
+        description="Reasoning provider implementation: ollama | deterministic_mock | gemini"
+    )
+    OLLAMA_BASE_URL: str = Field(
+        default="http://127.0.0.1:11434",
+        description="Ollama local API server URL"
+    )
+    OLLAMA_MODEL: str = Field(
+        default="llama3.1:8b",
+        description="Local LLM model identifier in Ollama"
     )
     GEMINI_API_KEY: Optional[str] = Field(
         default=None,
@@ -274,6 +282,20 @@ class Settings(BaseSettings):
     SARVAM_API_BASE_URL: str = Field(
         default="https://api.sarvam.ai",
         description="Sarvam AI API base URL"
+    )
+
+    # Local Forensic Reasoning & SLM - Ollama / Llama 3.1 8B
+    REASONING_PROVIDER: str = Field(
+        default="ollama",
+        description="Forensic reasoning provider: ollama | deterministic_mock | gemini"
+    )
+    OLLAMA_BASE_URL: str = Field(
+        default="http://127.0.0.1:11434",
+        description="Local Ollama SLM HTTP daemon endpoint"
+    )
+    OLLAMA_MODEL: str = Field(
+        default="llama3.1:8b",
+        description="Local Ollama model identifier (Meta Llama 3.1 8B Instruct)"
     )
 
     # Telemetry & Observability - OpenTelemetry

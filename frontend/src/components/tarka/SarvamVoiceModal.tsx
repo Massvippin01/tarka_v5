@@ -930,7 +930,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 fontWeight: 700,
                 padding: "3px 8px",
                 borderRadius: "4px",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
@@ -949,10 +950,28 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 backgroundColor: "rgba(59, 130, 246, 0.12)",
                 border: "1px solid rgba(59, 130, 246, 0.3)",
                 color: "#93C5FD",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               CASE: {caseId}
+            </span>
+            <span
+              style={{
+                fontSize: "11px",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                backgroundColor: "rgba(16, 185, 129, 0.14)",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                color: "#34D399",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <Zap size={10} /> LLAMA 3.1 8B ACTIVE
             </span>
           </div>
           <button
@@ -1203,7 +1222,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   borderRadius: "4px",
                   fontSize: "11px",
                   fontWeight: 600,
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
                   cursor: "pointer",
                 }}
                 title="Toggle privacy-preserving ambient voice detection (ephemeral buffers, no wake word required)"
@@ -1221,7 +1241,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     border: `1px solid ${effectiveAmbientState === "PROCESSING" ? "rgba(245, 158, 11, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
                     padding: "2px 6px",
                     borderRadius: "3px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {effectiveAmbientState === "PROCESSING" ? "● Ephemeral Audio Buffered" : "● Local VAD Ready (No Wake Word)"}
@@ -1237,7 +1258,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     gap: "4px",
                     color: micSettings.aec ? "#34D399" : "#F59E0B",
                     fontSize: "11px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   <Shield size={11} />
@@ -1254,7 +1276,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     padding: "2px 6px",
                     borderRadius: "3px",
                     fontSize: "10px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   Barge-ins: {bargeInCount}
@@ -1278,7 +1301,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     borderRadius: "4px",
                     padding: "2px 6px",
                     fontSize: "11px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   <option value="shubh_enhi_ads">Shubh (Male - Hindi/Eng)</option>
@@ -1302,7 +1326,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     borderRadius: "4px",
                     padding: "2px 6px",
                     fontSize: "11px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   <option value="en-IN">English (India)</option>
@@ -1419,7 +1444,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                             color: isDone ? "#34D399" : "#6B7280",
                             fontSize: "10px",
                             fontWeight: 600,
-                            fontFamily: "'IBM Plex Mono', monospace",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
                           }}
                         >
                           {isDone && <Check size={10} style={{ marginRight: "3px", display: "inline" }} />}
@@ -1431,7 +1457,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   })}
                 </div>
                 {agentResponse.execution_latency_ms !== undefined && (
-                  <div style={{ fontSize: "10px", color: "#60A5FA", fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <div style={{ fontSize: "10px", color: "#60A5FA", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                     Latency: {agentResponse.execution_latency_ms}ms
                   </div>
                 )}
@@ -1659,7 +1685,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                                 backgroundColor: cit.source_tier === "T1" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
                                 color: cit.source_tier === "T1" ? "#34D399" : "#FBBF24",
                                 border: `1px solid ${cit.source_tier === "T1" ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
-                                fontFamily: "'IBM Plex Mono', monospace",
+                                fontFamily: "var(--font-mono)",
+                                fontVariantNumeric: "tabular-nums",
                               }}
                             >
                               {cit.source_tier === "T1" ? "T1: Official Ledger" : "T3: Unverified Claim"}
@@ -1800,7 +1827,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                           backgroundColor: "rgba(16, 185, 129, 0.15)",
                           padding: "1px 6px",
                           borderRadius: "3px",
-                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontFamily: "var(--font-mono)",
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         Bitstream Intact
@@ -1869,7 +1897,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                         style={{
                           margin: 0,
                           fontSize: "11px",
-                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontFamily: "var(--font-mono)",
+                          fontVariantNumeric: "tabular-nums",
                           color: "#D1D5DB",
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-all",
@@ -1949,7 +1978,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                       border: "1px solid rgba(255, 255, 255, 0.05)",
                       borderRadius: "4px",
                       fontSize: "11px",
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "var(--font-mono)",
+                      fontVariantNumeric: "tabular-nums",
                       color: "#9CA3AF",
                       maxHeight: "160px",
                       overflowY: "auto",

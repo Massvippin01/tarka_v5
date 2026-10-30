@@ -245,7 +245,7 @@ export const ForensicWorkspacePage: React.FC = () => {
         height: "100%",
         width: "100%",
         backgroundColor: "#FAF8F3",
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "var(--font-sans)",
         color: "#1E1D1A",
         overflow: "hidden",
       }}
@@ -281,7 +281,7 @@ export const ForensicWorkspacePage: React.FC = () => {
                   margin: 0,
                   fontSize: "17px",
                   fontWeight: 600,
-                  fontFamily: '"IBM Plex Serif", Georgia, serif',
+                  fontFamily: "var(--font-sans)",
                   letterSpacing: "0.2px",
                 }}
               >
@@ -306,7 +306,8 @@ export const ForensicWorkspacePage: React.FC = () => {
                 border: "1px solid #CCC",
                 backgroundColor: "#FAF8F3",
                 fontWeight: 600,
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {cases.map((c: ForensicCaseItem) => (
@@ -498,7 +499,7 @@ export const ForensicWorkspacePage: React.FC = () => {
                 >
                   {authError.status === 401 ? "SECURITY GATE: 401 UNAUTHENTICATED" : "SECURITY GATE: 403 CASE SCOPE FORBIDDEN"}
                 </span>
-                <span style={{ fontSize: "12px", color: "#6B7280", fontFamily: "monospace" }}>
+                <span style={{ fontSize: "12px", color: "#6B7280", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                   FAIL-CLOSED ENFORCEMENT
                 </span>
               </div>
@@ -509,7 +510,7 @@ export const ForensicWorkspacePage: React.FC = () => {
                   fontSize: "20px",
                   fontWeight: 700,
                   color: "#111827",
-                  fontFamily: '"IBM Plex Serif", Georgia, serif',
+                  fontFamily: "var(--font-sans)",
                 }}
               >
                 {authError.title}
@@ -527,7 +528,8 @@ export const ForensicWorkspacePage: React.FC = () => {
                     border: "1px solid #E5E7EB",
                     borderRadius: "6px",
                     fontSize: "13px",
-                    fontFamily: "monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                     color: "#4B5563",
                     marginBottom: "20px",
                     wordBreak: "break-all",
@@ -671,7 +673,7 @@ export const ForensicWorkspacePage: React.FC = () => {
                       style={{
                         margin: "0 0 8px 0",
                         fontSize: "16px",
-                        fontFamily: '"IBM Plex Serif", Georgia, serif',
+                        fontFamily: "var(--font-sans)",
                       }}
                     >
                       Evidence Robustness Lab: Counterfactual Sensitivity
@@ -760,7 +762,7 @@ export const ForensicWorkspacePage: React.FC = () => {
                         <span>
                           <strong>Recomputation Completed:</strong> Excluded {challengeResult.excluded_artifact_ids.length} artifact(s).
                         </span>
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px" }}>
+                        <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "11px" }}>
                           Run: {challengeResult.challenge_run_id}
                         </span>
                       </div>

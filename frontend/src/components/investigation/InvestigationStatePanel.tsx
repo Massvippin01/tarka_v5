@@ -203,7 +203,8 @@ export const InvestigationStatePanel: React.FC = () => {
               border: "1px solid #D8D2C7",
               fontSize: "10px",
               fontWeight: 600,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-mono)",
+              fontVariantNumeric: "tabular-nums",
               cursor: "pointer",
               borderRadius: "2px",
             }}
@@ -230,7 +231,8 @@ export const InvestigationStatePanel: React.FC = () => {
               border: "1px solid #D8D2C7",
               fontSize: "10px",
               fontWeight: 600,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-mono)",
+              fontVariantNumeric: "tabular-nums",
               cursor: "pointer",
               borderRadius: "2px",
             }}
@@ -276,7 +278,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "12px",
     overflowY: "auto",
     color: "#1E1D1A",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   header: {
     borderBottom: "1px solid #D8D2C7",
@@ -284,7 +286,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   caseBadge: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     letterSpacing: "0.06em",
     color: "#625E57",
@@ -295,7 +298,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: "4px",
   },
   caseTitle: {
-    fontFamily: '"IBM Plex Serif", Georgia, serif',
+    fontFamily: "var(--font-sans)",
     fontSize: "15px",
     fontWeight: 600,
     margin: "0 0 4px",
@@ -303,7 +306,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   caseMeta: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#625E57",
     display: "flex",
     justifyContent: "space-between",
@@ -316,7 +320,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   epistemicTitle: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     letterSpacing: "0.05em",
     color: "#625E57",
@@ -337,7 +342,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: "block",
     fontSize: "16px",
     fontWeight: 700,
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#1E6F43",
   },
   metricLabel: {
@@ -351,7 +357,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sectionLabel: {
     fontSize: "10px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     fontWeight: 700,
     letterSpacing: "0.06em",
     color: "#625E57",
@@ -387,7 +394,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sourceItem: {
     fontSize: "11px",
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -399,7 +407,8 @@ const styles: Record<string, React.CSSProperties> = {
   sourceTag: {
     fontSize: "9px",
     fontWeight: 700,
-    fontFamily: "'IBM Plex Mono', monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#1E6F43",
     background: "rgba(30, 111, 67, 0.12)",
     padding: "1px 4px",

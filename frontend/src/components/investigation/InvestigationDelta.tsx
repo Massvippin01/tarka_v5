@@ -129,7 +129,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "10px 14px",
     boxSizing: "border-box",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   header: {
     display: "flex",

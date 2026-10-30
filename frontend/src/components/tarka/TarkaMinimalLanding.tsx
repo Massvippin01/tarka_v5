@@ -9,6 +9,8 @@ import {
   ChevronRight,
   ShieldCheck,
   FileText,
+  Trash2,
+  Zap,
 } from "lucide-react";
 import { TarkaParticleOrb, type OrbState } from "./TarkaParticleOrb";
 import { useTheme, type ThemeMode } from "../../context/ThemeContext";
@@ -25,6 +27,8 @@ interface TarkaMinimalLandingProps {
   onSelectCase: (caseId: string) => void;
   cases: Array<{ case_id: string; title?: string }>;
   reportCount?: number;
+  onResetClean?: () => void;
+  onLoadDemoPack?: () => void;
 }
 
 export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
@@ -39,10 +43,18 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
   onSelectCase,
   cases,
   reportCount = 0,
+  onResetClean,
+  onLoadDemoPack,
 }) => {
   const { theme, setTheme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
   const [showCaseSelector, setShowCaseSelector] = useState(false);
+
+  const getCaseDisplayName = (id: string) => {
+    if (id === "CASE-2026-001") return "Digital Arrest Case (FIR-2026-001)";
+    if (id === "upi_payment_discrepancy") return "UPI Payment Fraud (SUTRAM-2026)";
+    return id;
+  };
 
   const languageOptions = [
     { code: "en-IN", label: "Indian English (en-IN)" },
@@ -60,11 +72,11 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
   };
 
   const samplePrompts = [
-    "Summarize this case in natural language",
-    "Explain the payment discrepancy finding",
-    "Trace provenance down to source evidence bytes",
-    "What remains uncertain and which evidence is missing?",
-    "Generate statutory Section 63 BSA report",
+    "Summarize the 1930 Cybercrime Helpline intake dossier",
+    "Explain the ₹1,00,000 payment discrepancy finding",
+    "Flag downstream mule accounts for Section 106 BNSS rapid freeze",
+    "Verify electronic evidence chain under Section 63 BSA",
+    "Generate statutory court-admissible forensic report",
   ];
 
   return (
@@ -100,7 +112,7 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
           <span
             style={{
-              fontFamily: "'IBM Plex Serif', Georgia, serif",
+              fontFamily: "var(--font-sans)",
               fontSize: "24px",
               fontWeight: 700,
               letterSpacing: "3px",
@@ -112,6 +124,7 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
           </span>
           <span
             style={{
+              fontFamily: "var(--font-devanagari)",
               fontSize: "15px",
               fontWeight: 600,
               color: "var(--glass-accent-blue)",
@@ -124,7 +137,7 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
             style={{
               fontSize: "11px",
               fontWeight: 500,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "var(--font-sans)",
               color: "var(--glass-text-muted)",
               letterSpacing: "0.5px",
               marginLeft: "6px",
@@ -146,14 +159,15 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
                 alignItems: "center",
                 gap: "8px",
                 fontSize: "12px",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
                 padding: "6px 12px",
                 borderRadius: "var(--glass-radius-pill)",
               }}
               title="Select active forensic case"
             >
               <ShieldCheck size={14} className="text-blue-400" />
-              <span>{activeCaseId}</span>
+              <span>{getCaseDisplayName(activeCaseId)}</span>
               <ChevronRight size={12} style={{ transform: showCaseSelector ? "rotate(90deg)" : "none" }} />
             </button>
 
@@ -193,13 +207,14 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
                       border: "none",
                       cursor: "pointer",
                       fontSize: "12px",
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "var(--font-mono)",
+                      fontVariantNumeric: "tabular-nums",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}
                   >
-                    <span>{c.case_id}</span>
+                    <span>{getCaseDisplayName(c.case_id)}</span>
                     {c.case_id === activeCaseId && <span style={{ color: "var(--glass-accent-emerald)", fontSize: "10px" }}>ACTIVE</span>}
                   </button>
                 ))}
@@ -224,6 +239,52 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
             <SlidersHorizontal size={14} />
             <span>Settings</span>
           </button>
+
+          {/* Reset Clean Button */}
+          {onResetClean && (
+            <button
+              id="landing-btn-reset-clean"
+              onClick={onResetClean}
+              className="lg-btn lg-btn-secondary"
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--glass-radius-pill)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "12px",
+                color: "#F87171",
+                borderColor: "rgba(239, 68, 68, 0.4)",
+              }}
+              title="Reset case to clean state (0 evidence files) for live demo"
+            >
+              <Trash2 size={13} />
+              <span>Reset Clean</span>
+            </button>
+          )}
+
+          {/* Load Demo Pack Button */}
+          {onLoadDemoPack && (
+            <button
+              id="landing-btn-load-demo"
+              onClick={onLoadDemoPack}
+              className="lg-btn lg-btn-secondary"
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--glass-radius-pill)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "12px",
+                color: "#60A5FA",
+                borderColor: "rgba(59, 130, 246, 0.4)",
+              }}
+              title="1-Click load verified demo evidence package"
+            >
+              <Zap size={13} />
+              <span>Load Demo Pack</span>
+            </button>
+          )}
 
           {/* Direct Workstation Button */}
           <button

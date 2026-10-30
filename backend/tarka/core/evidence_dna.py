@@ -421,6 +421,54 @@ class CaseStore:
                     cases.append(c)
         return cases
 
+    def clean_case(self, case_id: str) -> None:
+        """Completely clears all artifacts, DNA, facts, custody records, and analysis runs for the case, resetting it to a clean empty state."""
+        import shutil
+        clean_case_id = self._sanitize(case_id)
+        cd = self.get_case_dir(clean_case_id)
+        
+        # 1. Clear artifacts directory
+        ad = cd / "artifacts"
+        if ad.exists():
+            shutil.rmtree(ad, ignore_errors=True)
+        ad.mkdir(parents=True, exist_ok=True)
+        
+        # 2. Clear analysis runs, ocr, reports, runs
+        for sub in ["analysis_runs", "ocr", "reports", "runs"]:
+            sub_dir = cd / sub
+            if sub_dir.exists():
+                shutil.rmtree(sub_dir, ignore_errors=True)
+                
+        # 3. Clear all database files (custody.db, wal, journal, etc.)
+        for db_file in cd.glob("*.db*"):
+            try:
+                db_file.unlink()
+            except Exception:
+                pass
+        for sqlite_file in cd.glob("*.sqlite*"):
+            try:
+                sqlite_file.unlink()
+            except Exception:
+                pass
+                
+        # 4. Clear all json files EXCEPT case.json
+        for j_file in cd.glob("*.json"):
+            if j_file.name != "case.json":
+                try:
+                    j_file.unlink()
+                except Exception:
+                    pass
+                    
+        # 5. Reset case.json metadata
+        case_obj = self.get_case(clean_case_id)
+        if case_obj:
+            case_obj.artifact_count = 0
+            case_obj.dna_count = 0
+            case_obj.custody_chain_head = ""
+            case_file = cd / "case.json"
+            with open(case_file, "w", encoding="utf-8") as f:
+                json.dump(case_obj.model_dump(mode="json"), f, indent=2)
+
     def list_artifacts(self, case_id: str) -> List[Artifact]:
         cd = self.get_case_dir(case_id)
         art_file = cd / "artifacts.json"

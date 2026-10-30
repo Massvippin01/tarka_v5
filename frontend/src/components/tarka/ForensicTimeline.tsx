@@ -74,7 +74,15 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({
       </div>
 
       <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", maxHeight: "650px", overflowY: "auto" }}>
-        {filteredEvents.length === 0 ? (
+        {events.length === 0 ? (
+          <div style={{ padding: "48px 24px", textAlign: "center", color: "#9CA3AF" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>⏱️</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#E2E8F0" }}>Chronological Timeline in Standby</div>
+            <p style={{ fontSize: "12px", color: "#64748B", margin: "6px auto 16px", maxWidth: "420px" }}>
+              Zero chronological events recorded. Ingest evidence files or load demo pack to establish verified timestamps and sequence causality.
+            </p>
+          </div>
+        ) : filteredEvents.length === 0 ? (
           <div style={{ padding: "32px", textAlign: "center", color: "#6B7280", fontSize: "13px" }}>
             No timeline events match the selected filter.
           </div>
@@ -110,10 +118,10 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "12px", fontWeight: 700, color: "#60A5FA" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "12px", fontWeight: 700, color: "#60A5FA" }}>
                       {evt.event_id}
                     </span>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#F3F4F6", backgroundColor: "rgba(0, 0, 0, 0.4)", padding: "2px 8px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "11px", color: "#F3F4F6", backgroundColor: "rgba(0, 0, 0, 0.4)", padding: "2px 8px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
                       {evt.timestamp}
                     </span>
                     {evt.is_timestamp_inferred && (
@@ -153,10 +161,10 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({
                 <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#6B7280", flexWrap: "wrap", gap: "8px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <span>Source: <strong style={{ color: "#D1D5DB" }}>{evt.evidence?.source_filename || "Ledger Record"}</strong></span>
-                    {evt.identifiers?.rrn && <span>RRN: <code style={{ color: "#93C5FD", fontFamily: "'IBM Plex Mono', monospace" }}>{evt.identifiers.rrn}</code></span>}
+                    {evt.identifiers?.rrn && <span>RRN: <code style={{ color: "#93C5FD", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>{evt.identifiers.rrn}</code></span>}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#9CA3AF" }}>
-                    Confidence: {Math.round(evt.confidence * 100)}%
+                  <div style={{ color: "#9CA3AF" }}>
+                    Confidence: <span style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>{Math.round(evt.confidence * 100)}%</span>
                   </div>
                 </div>
               </div>

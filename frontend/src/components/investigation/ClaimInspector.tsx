@@ -146,7 +146,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: "12px",
     color: "#f8fafc",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--font-sans)",
   },
   emptyContainer: {
     padding: "24px",
@@ -184,7 +184,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   idText: {
     fontSize: "0.65rem",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#94a3b8",
   },
   statusBox: {
@@ -230,7 +231,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   factId: {
     fontSize: "0.68rem",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    fontVariantNumeric: "tabular-nums",
     color: "#cbd5e1",
   },
   factBadge: {

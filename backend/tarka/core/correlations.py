@@ -361,7 +361,7 @@ class CorrelationEngine:
                             "claimed_payee_vpa": claimed_vpa,
                         },
                         explanation=(
-                            f"Evidence gap: Media claim asserts payment of ₹{claimed_amt:,.2f} "
+                            f"Evidence gap: Media claim asserts payment of {f'₹{claimed_amt:,.2f}' if claimed_amt is not None else 'unspecified amount'} "
                             f"(RRN: {claimed_rrn or 'None'}) to {claimed_vpa or 'None'}, but no matching "
                             f"transaction entry exists in the supplied bank statements."
                         ),

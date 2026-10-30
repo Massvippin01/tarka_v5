@@ -56,19 +56,220 @@ class TarkaForensicsAdapter:
         self.store = store or case_store
 
     def ensure_synthetic_case(self, case_id: str = "upi_payment_discrepancy") -> Dict[str, Any]:
-        """Ensures the canonical SUTRAM 2026 synthetic case is seeded and ready."""
+        """Ensures the canonical synthetic case is seeded and ready with evidence."""
         seed_demo_case_if_needed()
+        is_extortion = case_id.upper().startswith("CASE-2026-001")
         case = self.store.get_case(case_id)
         if not case:
             case = self.store.create_case(
                 case_id=case_id,
-                title="UPI Payment Discrepancy",
-                description="Investigation of ₹25,000 digital payment discrepancy across chat, bank statement, telecom CDR, and claim receipts.",
-                investigator="Forensic Officer",
+                title="Operation Digital Arrest Extortion" if is_extortion else "UPI Payment Discrepancy",
+                description="1930 Cybercrime Helpline Multi-Layered UPI Extortion investigation." if is_extortion else "Investigation of ₹25,000 digital payment discrepancy across chat, bank statement, telecom CDR, and claim receipts.",
+                investigator="ACP Rajesh Kumar" if is_extortion else "Insp. Vikramaditya",
             )
+        existing_arts = self.store.list_artifacts(case_id)
+        existing_fnames = {a.filename for a in existing_arts}
+        if is_extortion:
+            extortion_files = {
+                "whatsapp_chat_extraction.txt": (
+                    TrustTier.T3,
+                    (
+                        "[2026-09-22 09:45:12 IST] Impersonator (+91-98711-23941): THIS IS INVESTIGATION OFFICER DEPUTY RAJESH VERMA, CBI SPECIAL CELL.\n"
+                        "[2026-09-22 09:46:00 IST] Impersonator (+91-98711-23941): YOUR AADHAAR HAS BEEN LINKED TO 24 HAWALA SIM CARDS SEIZED IN MUMBAI.\n"
+                        "[2026-09-22 09:47:15 IST] Complainant: Sir please I have never been to Mumbai! This is a genuine mistake!\n"
+                        "[2026-09-22 09:50:00 IST] Impersonator (+91-98711-23941): YOU ARE UNDER IMMEDIATE DIGITAL ARREST. DO NOT DISCONNECT VIDEO CALL.\n"
+                        "[2026-09-22 10:25:10 IST] Impersonator (+91-98711-23941): TRANSFER RS 1,50,000 RBI SECURITY CLEARANCE TO ESCROW VPA sbi.deputy.cbi@okhdfc IMMEDIATELY OR LOCAL POLICE WILL REACH IN 15 MINUTES.\n"
+                        "[2026-09-22 10:28:40 IST] Complainant: I sent the money sir please send clearance order!\n"
+                    ).encode("utf-8"),
+                ),
+                "fake_payment_screenshot.json": (
+                    TrustTier.T3,
+                    json.dumps({
+                        "transaction_id": "TXN20260922101402",
+                        "rrn": "202602149921",
+                        "timestamp": "2026-09-22T10:14:02+05:30",
+                        "claimed_amount": "150000.00",
+                        "currency": "INR",
+                        "payee_vpa": "sbi.deputy.cbi@okhdfc",
+                        "payer_vpa": "victim.user@oksbi",
+                        "status": "SUCCESS",
+                        "note": "RBI Security Clearance Deposit",
+                        "client_device": "Samsung SM-S918B",
+                        "evidence_tier": "T3_UNVERIFIED_CLAIM",
+                    }, indent=2).encode("utf-8"),
+                ),
+                "bank_statement_cbs.csv": (
+                    TrustTier.T1,
+                    (
+                        "Transaction Date,Value Date,Description,Chq/Ref No,Debit,Credit,Balance\n"
+                        "2026-09-22 10:35:00,2026-09-22,UPI/CR/202602149921/VICTIM USER/OKSBI/sbi.deputy.cbi@okhdfc,202602149921,0.00,50000.00,54210.00\n"
+                    ).encode("utf-8"),
+                ),
+                "telecom_cdr_airtel.csv": (
+                    TrustTier.T1,
+                    (
+                        "Call_ID,Caller_MSISDN,Callee_MSISDN,Start_Time,Duration_Sec,Call_Type,First_Cell_ID,Last_Cell_ID,IMEI\n"
+                        "CDR-20260922-01,+919871123941,+919810012345,2026-09-22 10:48:00,2520,VOIP_INCOMING,DEL-TWR-4011,DEL-TWR-4011,864920041289100\n"
+                    ).encode("utf-8"),
+                ),
+                "npci_switch_raw.json": (
+                    TrustTier.T2,
+                    json.dumps({
+                        "rrn": "202602149921",
+                        "switch_timestamp": "2026-09-22T10:34:58.210Z",
+                        "remitter_bank": "SBIN",
+                        "beneficiary_bank": "HDFC",
+                        "response_code": "00",
+                        "settled_amount": "50000.00",
+                        "currency": "INR",
+                    }, indent=2).encode("utf-8"),
+                ),
+                "1930_ncrp_dossier.json": (
+                    TrustTier.T1,
+                    json.dumps({
+                        "acknowledgement_no": "20260922001930",
+                        "intake_timestamp": "2026-09-22T09:30:00+05:30",
+                        "portal": "NCRP 1930 Cybercrime Helpline",
+                        "complainant_category": "Digital Arrest Extortion",
+                        "suspect_numbers": ["+919871123941"],
+                        "beneficiary_upi": "sbi.deputy.cbi@okhdfc",
+                        "mule_bank_layer2": "ICICI Bank A/C 629101554289",
+                        "status": "ALLOCATED_TO_STATE_CYBER_CELL",
+                    }, indent=2).encode("utf-8"),
+                ),
+            }
+            for fname, (tier, b) in extortion_files.items():
+                if fname not in existing_fnames:
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=b,
+                        source_tier=tier,
+                        intake_officer="ACP Rajesh Kumar",
+                        intake_notes=f"Primary intake evidence for Operation Digital Arrest: {fname}",
+                    )
+        elif not existing_arts and FIXTURES_FRAUD_DIR.exists():
+            tier_map = {
+                "bank_statement.csv": TrustTier.T1,
+                "cdr_records.csv": TrustTier.T1,
+                "whatsapp_chat.txt": TrustTier.T3,
+                "screenshot_claim.json": TrustTier.T3,
+                "unverified_claim.json": TrustTier.T3,
+                "payment_receipt_screenshot.png": TrustTier.T3,
+            }
+            for fname, tier in tier_map.items():
+                if fname not in existing_fnames:
+                    fpath = FIXTURES_FRAUD_DIR / fname
+                    if fpath.exists():
+                        with open(fpath, "rb") as fp:
+                            b = fp.read()
+                        self.store.register_artifact(
+                            case_id=case_id,
+                            filename=fname,
+                            file_bytes=b,
+                            source_tier=tier,
+                            intake_officer="Forensic Officer",
+                            intake_notes=f"Primary intake evidence: {fname}",
+                        )
         d = case.model_dump(mode="json")
         d["seeded"] = True
         return d
+
+    def reset_case_clean(self, case_id: str) -> Dict[str, Any]:
+        """Completely resets a case to a pristine, clean state with zero evidence files."""
+        self.store.clean_case(case_id)
+        try:
+            from tarka.api.server import CASE_INGESTED_HASHES, CASE_WORKSPACE_FACTS
+            CASE_INGESTED_HASHES.pop(case_id, None)
+            CASE_WORKSPACE_FACTS.pop(case_id, None)
+        except Exception:
+            pass
+        return {
+            "case_id": case_id,
+            "status": "CLEAN",
+            "artifact_count": 0,
+            "message": f"Case '{case_id}' successfully reset to clean state. Ready for fresh evidence ingestion.",
+        }
+
+    def load_demo_package(
+        self,
+        case_id: str,
+        package_name: str = "auto",
+        officer: str = "Lead Forensic Examiner",
+    ) -> Dict[str, Any]:
+        """Loads one of the verified demo evidence packages into the case workspace."""
+        clean_case_id = self.store._sanitize(case_id)
+        is_extortion = (
+            "001" in clean_case_id.upper()
+            or "extort" in package_name.lower()
+            or "case-2" in package_name.lower()
+            or "digital_arrest" in package_name.lower()
+        )
+
+        demo_root = Path("demo_evidence_files").resolve()
+        if not demo_root.exists():
+            demo_root = Path("e:/Tarka_v3/tarka/demo_evidence_files").resolve()
+
+        selected_dir = (
+            demo_root / "Case-2_Digital_Arrest_Extortion"
+            if is_extortion
+            else demo_root / "Case-1_UPI_Fraud_Discrepancy"
+        )
+
+        results = []
+        if selected_dir.exists():
+            for p in sorted(selected_dir.iterdir()):
+                if p.is_file():
+                    with open(p, "rb") as fp:
+                        b = fp.read()
+                    fn_lower = p.name.lower()
+                    tier = (
+                        TrustTier.T1
+                        if ("bank" in fn_lower or "cbs" in fn_lower or "cdr" in fn_lower)
+                        else TrustTier.T3
+                        if ("claim" in fn_lower or "screenshot" in fn_lower or "fake" in fn_lower or "chat" in fn_lower)
+                        else TrustTier.T2
+                    )
+                    art, is_dedup, dna = self.store.register_artifact(
+                        case_id=clean_case_id,
+                        filename=p.name,
+                        file_bytes=b,
+                        source_tier=tier,
+                        intake_officer=officer,
+                        intake_notes=f"Demo evidence pack: {p.name}",
+                    )
+                    results.append({
+                        "artifact_id": art.artifact_id,
+                        "filename": art.filename,
+                        "sha256": art.sha256,
+                        "source_tier": tier.value if hasattr(tier, "value") else str(tier),
+                        "dna_count": len(dna),
+                    })
+        else:
+            self.ensure_synthetic_case(clean_case_id)
+            arts = self.store.list_artifacts(clean_case_id)
+            for a in arts:
+                results.append({
+                    "artifact_id": a.artifact_id,
+                    "filename": a.filename,
+                    "sha256": a.sha256,
+                    "source_tier": a.source_tier.value if hasattr(a.source_tier, "value") else str(a.source_tier),
+                    "dna_count": a.dna_count,
+                })
+
+        # Pre-compute baseline run and SMT solver state immediately
+        try:
+            self.store.get_or_create_baseline_run(clean_case_id)
+        except Exception:
+            pass
+
+        return {
+            "case_id": clean_case_id,
+            "package_loaded": "Case-2_Digital_Arrest_Extortion" if is_extortion else "Case-1_UPI_Fraud_Discrepancy",
+            "ingested_count": len(results),
+            "artifacts": results,
+            "message": f"Successfully loaded {len(results)} demo evidence files into case '{clean_case_id}'.",
+        }
 
     def list_cases(self) -> List[Dict[str, Any]]:
         """Lists all isolated forensic case workspaces."""
@@ -334,6 +535,18 @@ class TarkaForensicsAdapter:
         active_run = self.store.get_analysis_run(case_id, run_id) if run_id else base_run
         artifacts = self.store.list_artifacts(case_id)
         dna_items = self.store.list_evidence_dna(case_id)
+        facts = self.store.list_canonical_facts(case_id)
+
+        if not getattr(active_run, "derived_facts", None) and facts:
+            active_run.derived_facts = facts
+        if not getattr(active_run, "correlations", None) and facts:
+            try:
+                from tarka.core.correlations import CorrelationEngine
+                corrs, gaps = CorrelationEngine().correlate_case(facts)
+                active_run.correlations = corrs
+                active_run.evidence_gaps = gaps
+            except Exception:
+                pass
 
         dag = ProvenanceDAGBuilder.build_run_dag(active_run, artifacts, dna_items)
         return dag.model_dump(mode="json")

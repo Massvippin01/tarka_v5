@@ -68,7 +68,7 @@ class AuthService:
                 organization="Haryana Police Crime Branch",
                 unit="Cyber Crime Police Station Gurugram",
                 scope=CaseAccessScope(
-                    allowed_cases=["C481", "C512"],
+                    allowed_cases=["C481", "C512", "CASE-2026-001", "upi_payment_discrepancy"],
                     jurisdictions=["Gurugram / Haryana"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -90,7 +90,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481", "C512", "C201"],
+                    allowed_cases=["C102", "C114", "C481", "C512", "C201", "CASE-2026-001", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -114,7 +114,7 @@ class AuthService:
                 organization="National Intelligence Governance Oversight",
                 unit="Compliance & Provenance Audit Bureau",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481", "C512", "C201"],
+                    allowed_cases=["C102", "C114", "C481", "C512", "C201", "CASE-2026-001", "upi_payment_discrepancy"],
                     jurisdictions=["National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -299,6 +299,8 @@ class AuthService:
         """
         if not user or not user.scope or not user.scope.allowed_cases:
             return False
+        if "*" in user.scope.allowed_cases or user.role == UserRoleEnum.SYSTEM_ADMINISTRATOR:
+            return True
         return case_id in user.scope.allowed_cases
 
     def has_permission(self, user: UserIdentity, permission: AccessPermissionEnum) -> bool:

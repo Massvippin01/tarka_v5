@@ -1,0 +1,9 @@
+{
+  "rrn": "202602149921",
+  "switch_timestamp": "2026-09-22T10:34:58.210Z",
+  "remitter_bank": "SBIN",
+  "beneficiary_bank": "HDFC",
+  "response_code": "00",
+  "settled_amount": 50000.00,
+  "currency": "INR"
+}
