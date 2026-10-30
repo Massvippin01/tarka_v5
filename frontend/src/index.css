@@ -1,5 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@600;700&family=Noto+Sans+Symbols+2&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@600;700&family=Noto+Sans+Symbols+2&display=swap');
+@import './styles/tokens.css';
 @import './styles/liquid-glass.css';
+@import './styles/bento-executive.css';
 
 html,
 body,
@@ -8,9 +10,9 @@ body,
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: var(--glass-bg-base, #06070A);
-  color: var(--glass-text-primary, #F9FAFB);
-  font-family: var(--font-sans);
+  background-color: var(--bento-canvas, #F3F5F9);
+  color: var(--bento-text-primary, #0F172A);
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -24,15 +26,19 @@ textarea,
 h1, h2, h3, h4, h5, h6,
 .lg-tab,
 .lg-badge,
-.lg-btn {
-  font-family: var(--font-sans);
+.lg-btn,
+.bento-badge,
+.bento-btn {
+  font-family: 'Plus Jakarta Sans', var(--font-sans);
 }
 
 code,
 pre,
 kbd,
-samp {
-  font-family: var(--font-mono);
+samp,
+.font-mono-tabular,
+.mono-num {
+  font-family: 'JetBrains Mono', var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -40,22 +46,34 @@ samp {
   box-sizing: border-box;
 }
 
-/* Precision Dark Liquid Glass Scrollbar */
+/* Precision Clean Executive Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(12, 14, 18, 0.8);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
-  border-radius: 3px;
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.28);
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb,
+[data-theme="obsidian-glass"] ::-webkit-scrollbar-thumb,
+[data-theme="midnight-teal"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="obsidian"] ::-webkit-scrollbar-thumb:hover,
+[data-theme="obsidian-glass"] ::-webkit-scrollbar-thumb:hover,
+[data-theme="midnight-teal"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.28);
 }
 

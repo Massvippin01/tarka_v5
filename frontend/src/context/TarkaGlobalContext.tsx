@@ -3,10 +3,19 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 export type TarkaRoute = "intake" | "attribution" | "taint-engine" | "court-proof" | "workstation" | "workflow";
 
 export interface ActiveMutations {
-  balanceJumpFraud: boolean;      // Injects +₹1,00,000 fraud jump into CBS Ledger
-  cgnatPortCollision: boolean;    // Injects port collision, widening CGNAT candidates from 1 to 6
-  clockSkewTamper: boolean;       // Rolls back handset clock by -14m, triggering Z3 SMT unsat
-  ledgerBitFlip: boolean;         // Alters 1 byte in custody ledger, breaking Merkle hash @ seq #4
+  // 6 Core Forensic Mutations
+  alterBankRow14: boolean;            // 1. CBS Ledger balance jump (+₹1,00,000 fraud / conservation failure @ row 14)
+  forgeRrnTimestamp: boolean;         // 2. UPI RRN timestamp drift (+15m mismatch with bank CBS clock)
+  dropCgnatSourcePort: boolean;       // 3. Drop CGNAT source port, exploding subscriber candidate pool (1 -> 6 -> 41 -> 340)
+  triggerHotspotCollision: boolean;   // 4. Wi-Fi hotspot tethering TTL decrement (64 -> 63) & BSSID MAC collision
+  injectMerchantCleanDeposit: boolean;// 5. Inject ₹2,50,000 clean commercial deposit to test LIBR vs FIFO divergence
+  flipCustodyByte: boolean;           // 6. Flip 1 bit in digital custody ledger, breaking Merkle verification @ seq #4
+
+  // Backward-compatible aliases
+  balanceJumpFraud?: boolean;
+  cgnatPortCollision?: boolean;
+  clockSkewTamper?: boolean;
+  ledgerBitFlip?: boolean;
 }
 
 export interface StatutoryPeriodInfo {
@@ -25,6 +34,8 @@ interface TarkaGlobalContextType {
   setActiveCaseId: (caseId: string) => void;
   timeOffsetHours: number;
   setTimeOffsetHours: (hours: number | ((prev: number) => number)) => void;
+  clockMinutes: number;
+  setClockMinutes: (minutes: number) => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean | ((prev: boolean) => boolean)) => void;
   playbackSpeed: number;
@@ -38,6 +49,12 @@ interface TarkaGlobalContextType {
 }
 
 const DEFAULT_MUTATIONS: ActiveMutations = {
+  alterBankRow14: false,
+  forgeRrnTimestamp: false,
+  dropCgnatSourcePort: false,
+  triggerHotspotCollision: false,
+  injectMerchantCleanDeposit: false,
+  flipCustodyByte: false,
   balanceJumpFraud: false,
   cgnatPortCollision: false,
   clockSkewTamper: false,
@@ -70,6 +87,12 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [mutations, setMutations] = useState<ActiveMutations>(DEFAULT_MUTATIONS);
+
+  const clockMinutes = useMemo(() => Math.round(timeOffsetHours * 60), [timeOffsetHours]);
+
+  const setClockMinutes = useCallback((minutes: number) => {
+    setTimeOffsetHours(Math.max(0, Math.min(48, parseFloat((minutes / 60).toFixed(2)))));
+  }, []);
 
   const setActiveRoute = useCallback((route: TarkaRoute) => {
     setActiveRouteState(route);
@@ -106,10 +129,20 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [isPlaying, playbackSpeed]);
 
   const toggleMutation = useCallback((key: keyof ActiveMutations) => {
-    setMutations((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setMutations((prev) => {
+      const nextVal = !prev[key];
+      const updated = { ...prev, [key]: nextVal };
+
+      // Sync backward-compatible aliases
+      if (key === "alterBankRow14") updated.balanceJumpFraud = nextVal;
+      if (key === "balanceJumpFraud") updated.alterBankRow14 = nextVal;
+      if (key === "dropCgnatSourcePort") updated.cgnatPortCollision = nextVal;
+      if (key === "cgnatPortCollision") updated.dropCgnatSourcePort = nextVal;
+      if (key === "flipCustodyByte") updated.ledgerBitFlip = nextVal;
+      if (key === "ledgerBitFlip") updated.flipCustodyByte = nextVal;
+
+      return updated;
+    });
   }, []);
 
   const resetAllMutations = useCallback(() => {
@@ -117,7 +150,15 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   const activeMutationsCount = useMemo(() => {
-    return Object.values(mutations).filter(Boolean).length;
+    const coreKeys: (keyof ActiveMutations)[] = [
+      "alterBankRow14",
+      "forgeRrnTimestamp",
+      "dropCgnatSourcePort",
+      "triggerHotspotCollision",
+      "injectMerchantCleanDeposit",
+      "flipCustodyByte",
+    ];
+    return coreKeys.filter((k) => mutations[k]).length;
   }, [mutations]);
 
   // Compute simulated timestamp: Base + Offset hours
@@ -133,7 +174,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return {
         code: "GOLDEN_HOUR",
         label: "CRITICAL GOLDEN HOUR",
-        badgeClass: "lg-badge-coral",
+        badgeClass: "bento-badge-coral",
         statutoryRef: "BNSS § 106 & MHA SOP",
         description: "Emergency administrative debit freeze mandatory across Layer-1 & Layer-2 mule accounts.",
         hoursRemaining: Math.max(0, parseFloat((2.0 - timeOffsetHours).toFixed(1))),
@@ -143,7 +184,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return {
         code: "INTER_BANK_TAINT",
         label: "INTER-BANK REQUISITION WINDOW",
-        badgeClass: "lg-badge-amber",
+        badgeClass: "bento-badge-amber",
         statutoryRef: "Section 106 BNSS 24h Nodal Notice",
         description: "Tracing Layer 2 to Layer 4 mule cashout paths across NPCI Switch & RTGS gateways.",
         hoursRemaining: Math.max(0, parseFloat((24.0 - timeOffsetHours).toFixed(1))),
@@ -152,7 +193,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return {
       code: "MAGISTRATE_ATTACHMENT",
       label: "STATUTORY COURT ATTACHMENT",
-      badgeClass: "lg-badge-blue",
+      badgeClass: "bento-badge-blue",
       statutoryRef: "BNSS § 107 Statutory Expiry (48h)",
       description: "Police report & application for formal attachment before Judicial Magistrate First Class.",
       hoursRemaining: Math.max(0, parseFloat((48.0 - timeOffsetHours).toFixed(1))),
@@ -168,6 +209,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setActiveCaseId,
         timeOffsetHours,
         setTimeOffsetHours,
+        clockMinutes,
+        setClockMinutes,
         isPlaying,
         setIsPlaying,
         playbackSpeed,

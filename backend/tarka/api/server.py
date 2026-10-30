@@ -4269,3 +4269,111 @@ async def ingest_custom_csv(
         ),
     )
 
+
+
+# ============================================================================
+# TARKA v5.0 ADVANCED FORENSIC ENGINES (Milestones 2 - 5)
+# ============================================================================
+
+from tarka.core.intake_falsifier import (
+    validate_running_balance as _validate_running_balance,
+    decode_rail_reference as _decode_rail_reference,
+    analyze_pdf_structural_tamper as _analyze_pdf_structural_tamper,
+    build_cgnat_merkle_shield as _build_cgnat_merkle_shield,
+    IntakeValidationRequest,
+    IntakeValidationFullResponse,
+)
+from tarka.core.cgnat_attribution import (
+    solve_cgnat_funnel as _solve_cgnat_funnel,
+    analyze_dual_sim_hardware as _analyze_dual_sim_hardware,
+    detect_hotspot_collision as _detect_hotspot_collision,
+    AttributionSolveRequest,
+    CgnatAttributionResponse,
+)
+from tarka.core.taint_lien_engine import (
+    compute_taint_and_mincut as _compute_taint_and_mincut,
+    TaintComputeRequest,
+    TaintComputeResponse,
+)
+from tarka.core.court_proof_bundle import (
+    evaluate_leave_one_out as _evaluate_leave_one_out,
+    generate_bsa63_split_schedules as _generate_bsa63_split_schedules,
+    get_paper_anchor as _get_paper_anchor,
+    get_cbi_syndicate_memo as _get_cbi_syndicate_memo,
+    CourtProofRequest,
+    LeaveOneOutResponse,
+    Bsa63SchedulesResponse,
+    PaperAnchorResponse,
+    CbiSyndicateResponse,
+)
+
+@app.post("/api/v1/forensics/tarka/intake/validate", response_model=IntakeValidationFullResponse)
+async def api_intake_validate(req: IntakeValidationRequest):
+    """Real-time intake falsifier: running-balance conservation, multi-rail RRN decoder, PDF XRef, and CGNAT Merkle shield."""
+    bal_res = None
+    if req.rows is not None:
+        bal_res = _validate_running_balance(req.rows)
+
+    rrn_res = None
+    if req.rrn_to_decode is not None:
+        rrn_res = _decode_rail_reference(req.rrn_to_decode, req.claimed_txn_time)
+
+    pdf_res = None
+    if req.pdf_metadata is not None:
+        pdf_res = _analyze_pdf_structural_tamper(
+            filename=req.pdf_metadata.get("filename", "statement.pdf"),
+            sha256=req.pdf_metadata.get("sha256", "b198302ca876..."),
+            file_size_bytes=req.pdf_metadata.get("file_size_bytes", 142800),
+            eof_markers=req.pdf_metadata.get("eof_markers", 2),
+            has_overlaid_text=req.pdf_metadata.get("has_overlaid_text", True)
+        )
+
+    cgnat_res = None
+    if req.cgnat_subscribers is not None:
+        cgnat_res = _build_cgnat_merkle_shield(req.cgnat_subscribers)
+
+    return IntakeValidationFullResponse(
+        balance_validation=bal_res,
+        rrn_decoding=rrn_res,
+        pdf_tamper_analysis=pdf_res,
+        cgnat_pii_shield=cgnat_res
+    )
+
+@app.post("/api/v1/forensics/tarka/attribution/solve", response_model=CgnatAttributionResponse)
+async def api_attribution_solve(req: AttributionSolveRequest):
+    """CGNAT candidate intersection funnel (340 -> 41 -> 6 -> 1) with coincidental match probability."""
+    sessions = req.sessions or []
+    return _solve_cgnat_funnel(sessions, drop_source_port=req.drop_source_port)
+
+@app.post("/api/v1/forensics/tarka/taint/compute", response_model=TaintComputeResponse)
+async def api_taint_compute(req: TaintComputeRequest):
+    """Time-Expanded DAG taint tracer (LIBR vs FIFO vs Pro-Rata) & Dinic Min-Cut completeness verifier."""
+    return _compute_taint_and_mincut(
+        inject_merchant_clean_deposit=req.inject_merchant_clean_deposit,
+        freeze_budget_k=req.freeze_budget_k
+    )
+
+@app.post("/api/v1/forensics/tarka/court-proof/evaluate", response_model=LeaveOneOutResponse)
+async def api_court_proof_evaluate(req: CourtProofRequest):
+    """Live Leave-One-Out (LOO) defense admissibility stress-tester & prosecutor cross-examination rebuttals."""
+    return _evaluate_leave_one_out(
+        artifacts=req.artifacts,
+        whatsapp_excluded=req.whatsapp_excluded,
+        bank_clock_drifted=req.bank_clock_drifted,
+        alibi_someone_else=req.alibi_someone_else_held_phone
+    )
+
+@app.get("/api/v1/forensics/tarka/court-proof/schedules/{case_id}", response_model=Bsa63SchedulesResponse)
+async def api_court_proof_schedules(case_id: str):
+    """BSA Section 63(4) Part A & Part B split schedules with Pune Bar Association compliance."""
+    return _generate_bsa63_split_schedules(case_id)
+
+@app.get("/api/v1/forensics/tarka/court-proof/paper-anchor/{case_id}", response_model=PaperAnchorResponse)
+async def api_court_proof_paper_anchor(case_id: str):
+    """24-Word BIP-39 mnemonic phrase and Ed25519 paper anchor for physical court custody."""
+    return _get_paper_anchor(case_id)
+
+@app.get("/api/v1/forensics/tarka/court-proof/cbi-syndicate", response_model=CbiSyndicateResponse)
+async def api_court_proof_cbi_syndicate():
+    """Salted Blind-Index (HMAC-SHA256) ₹10-Crore multi-state CBI cyber syndicate aggregation memo."""
+    return _get_cbi_syndicate_memo()

@@ -130,6 +130,7 @@ export interface ProvenanceDAG {
 
 export interface FindingSummary {
   finding_id: string;
+  contradiction_id?: string;
   title: string;
   category: string;
   status: "ACTIVE" | "INACTIVE" | "SURVIVING" | "REMOVED" | "NEW";
@@ -143,6 +144,7 @@ export interface FindingSummary {
 
 export interface ContradictionFinding {
   finding_id: string;
+  contradiction_id?: string;
   title: string;
   rule_id: string;
   category: string;
@@ -174,6 +176,11 @@ export interface CounterfactualComparison {
   removed_findings: FindingSummary[];
   new_findings: FindingSummary[];
   dissolved_contradictions: FindingSummary[];
+  plain_language_summary?: string;
+  comparison?: {
+    plain_language_summary?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface LocalModelStatus {

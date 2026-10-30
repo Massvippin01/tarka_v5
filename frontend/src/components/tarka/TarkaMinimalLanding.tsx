@@ -65,7 +65,8 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
   ];
 
   const themeLabels: Record<ThemeMode, string> = {
-    "obsidian-glass": "Obsidian Glass (Default)",
+    "obsidian": "Obsidian Glass (Default)",
+    "obsidian-glass": "Obsidian Glass (Legacy)",
     "porcelain": "Porcelain (Light Minimal)",
     "midnight-teal": "Midnight Teal (Forensic)",
     "high-contrast": "High-Contrast Accessible",

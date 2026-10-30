@@ -15,7 +15,7 @@ interface TarkaParticleOrbProps {
   size?: number; // in pixels, default 240
   onClick?: () => void;
   className?: string;
-  theme?: "obsidian-glass" | "porcelain" | "midnight-teal" | "high-contrast";
+  theme?: "obsidian" | "obsidian-glass" | "porcelain" | "midnight-teal" | "high-contrast";
 }
 
 interface Particle {

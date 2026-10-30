@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemeMode = "obsidian-glass" | "porcelain" | "midnight-teal" | "high-contrast";
+export type ThemeMode = "porcelain" | "obsidian" | "midnight-teal" | "obsidian-glass" | "high-contrast";
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -14,13 +14,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("sentinelx_theme");
-      if (stored === "obsidian-glass" || stored === "porcelain" || stored === "midnight-teal" || stored === "high-contrast") {
+      if (stored === "obsidian" || stored === "obsidian-glass" || stored === "porcelain" || stored === "midnight-teal" || stored === "high-contrast") {
         return stored as ThemeMode;
       }
       if (stored === "forensic-paper") return "porcelain";
-      if (stored === "night-ops" || stored === "tarka") return "obsidian-glass";
+      if (stored === "night-ops" || stored === "tarka") return "obsidian";
     }
-    return "obsidian-glass";
+    // Default to Daylight Executive Bento (porcelain)
+    return "porcelain";
   });
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -32,8 +33,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cycleTheme = () => {
-    const modes: ThemeMode[] = ["obsidian-glass", "porcelain", "midnight-teal", "high-contrast"];
-    const nextIdx = (modes.indexOf(theme) + 1) % modes.length;
+    const modes: ThemeMode[] = ["porcelain", "obsidian", "midnight-teal"];
+    const currentNormalized = theme === "obsidian-glass" ? "obsidian" : theme;
+    const nextIdx = (modes.indexOf(currentNormalized as ThemeMode) + 1) % modes.length;
     setTheme(modes[nextIdx]);
   };
 
