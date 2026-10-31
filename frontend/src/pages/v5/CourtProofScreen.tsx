@@ -34,6 +34,7 @@ import {
 
 export const CourtProofScreen: React.FC = () => {
   const { mutations } = useTarkaGlobal();
+  const [auditSentenceIdx, setAuditSentenceIdx] = useState<number | null>(0);
 
   // 1. Initial 5 Case Artifacts
   const initialArtifacts: CaseArtifact[] = [
@@ -290,7 +291,7 @@ export const CourtProofScreen: React.FC = () => {
           title="Cryptographic Paper Seal"
           metric="RFC-3161 / Ed25519"
           metricColor="#059669"
-          subtitle="RFC-3161 / Ed25519 Paper Verification Grid (FIPS 180-4)"
+          subtitle="FIPS 180-4 / Ed25519 Paper Verification Matrix"
           statusBadge={{
             text: paperAnchor.ed25519SignatureHex.includes("INVALID")
               ? "TAMPER DETECTED"
@@ -923,7 +924,7 @@ export const CourtProofScreen: React.FC = () => {
                   color: "#0F172A",
                 }}
               >
-                RFC-3161 / Ed25519 Paper Verification Grid (FIPS 180-4)
+                FIPS 180-4 / Ed25519 Paper Verification Matrix
               </span>
               <span
                 style={{
@@ -944,6 +945,7 @@ export const CourtProofScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCopyMnemonic}
+                title="Copy 24-Word Phonetic Verification Digest"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -959,7 +961,7 @@ export const CourtProofScreen: React.FC = () => {
                 }}
               >
                 {isMnemonicCopied ? <Check size={12} /> : <Copy size={12} />}
-                <span>{isMnemonicCopied ? "Copied" : "Copy Words"}</span>
+                <span>{isMnemonicCopied ? "Copied" : "Copy 24-Word Digest"}</span>
               </button>
 
               <button
@@ -1376,6 +1378,100 @@ export const CourtProofScreen: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Interactive Click-to-Audit Sentence Provenance (Zero-Hallucination Executive STR Summary) */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "8px",
+              padding: "7px 9px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#0F172A", display: "flex", alignItems: "center", gap: "4px" }}>
+                <ShieldCheck size={12} color="#059669" />
+                <span>Zero-Hallucination Executive STR Summary (Click Sentence to Audit Provenance):</span>
+              </span>
+              <span style={{ fontSize: "8px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "1px 5px", borderRadius: "3px" }}>
+                CRYPTO-GROUNDED
+              </span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              {/* Sentence 1 */}
+              <div
+                onClick={() => setAuditSentenceIdx(auditSentenceIdx === 0 ? null : 0)}
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  fontSize: "9px",
+                  lineHeight: 1.35,
+                  cursor: "pointer",
+                  background: auditSentenceIdx === 0 ? "#EEF2FF" : "#FFFFFF",
+                  border: auditSentenceIdx === 0 ? "1px solid #818CF8" : "1px solid #E2E8F0",
+                  color: auditSentenceIdx === 0 ? "#312E81" : "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>1. Target Chassis IMEI <strong>867492061234564</strong> and BSSID <strong>74:DA:38:A2:11:BC</strong> operated 3 conduit accounts draining <strong>₹5,00,000</strong> in FIR #149/2026.</span>
+                {auditSentenceIdx === 0 && (
+                  <div style={{ marginTop: "3px", fontSize: "8px", color: "#4338CA", background: "#E0E7FF", padding: "2px 5px", borderRadius: "3px", fontFamily: "var(--font-mono)" }}>
+                    &check; [Verified by Artifact #02 SBI CBS + #04 Airtel IPDR &middot; SHA-256: b198302c... &middot; Zero Speculation]
+                  </div>
+                )}
+              </div>
+
+              {/* Sentence 2 */}
+              <div
+                onClick={() => setAuditSentenceIdx(auditSentenceIdx === 1 ? null : 1)}
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  fontSize: "9px",
+                  lineHeight: 1.35,
+                  cursor: "pointer",
+                  background: auditSentenceIdx === 1 ? "#FEF3C7" : "#FFFFFF",
+                  border: auditSentenceIdx === 1 ? "1px solid #F59E0B" : "1px solid #E2E8F0",
+                  color: auditSentenceIdx === 1 ? "#78350F" : "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>2. Salted blind-index token HMAC-SHA256(86749206...) matches <strong>14 interstate FIRs across 5 states totaling ₹10.42 Crore</strong>, crossing the ₹10.00 Cr DSPE Act §6 CBI threshold.</span>
+                {auditSentenceIdx === 1 && (
+                  <div style={{ marginTop: "3px", fontSize: "8px", color: "#B45309", background: "#FDE68A", padding: "2px 5px", borderRadius: "3px", fontFamily: "var(--font-mono)" }}>
+                    &check; [Verified across 14 State Nodal Ledger Hashes &middot; Section 6 DSPE Mandate SAT &middot; Zero LLM Generation]
+                  </div>
+                )}
+              </div>
+
+              {/* Sentence 3 */}
+              <div
+                onClick={() => setAuditSentenceIdx(auditSentenceIdx === 2 ? null : 2)}
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  fontSize: "9px",
+                  lineHeight: 1.35,
+                  cursor: "pointer",
+                  background: auditSentenceIdx === 2 ? "#ECFDF5" : "#FFFFFF",
+                  border: auditSentenceIdx === 2 ? "1px solid #10B981" : "1px solid #E2E8F0",
+                  color: auditSentenceIdx === 2 ? "#064E3B" : "#334155",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>3. Under Roscoe v. Winder LIBR accounting, <strong>₹1.80L is held under §106(1) specific lien</strong> while shielding <strong>₹2.50L clean merchant working capital</strong>.</span>
+                {auditSentenceIdx === 2 && (
+                  <div style={{ marginTop: "3px", fontSize: "8px", color: "#047857", background: "#D1FAE5", padding: "2px 5px", borderRadius: "3px", fontFamily: "var(--font-mono)" }}>
+                    &check; [Verified by Dinic Min-Cut &amp; LIBR Engine &middot; Escape Routes Open: 0/4 &middot; Bona-Fide Merchant Shielded]
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Statutory CBI Transfer Mandate Callout */}

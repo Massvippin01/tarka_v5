@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type DockTab = "rrn" | "pdf" | "privacy" | "proof";
+export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
 export type UiDensity = "comfortable" | "compact";
 
 export interface TarkaUiState {

@@ -30,6 +30,34 @@ Failure to comply with this statutory directive shall invite penal consequences 
 Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
 }
 
+export function getBnss94EntityResolutionDirective(): string {
+  return `STATUTORY REQUISITION UNDER SECTION 94 BNSS, 2023 / SEC 91 CrPC
+From: Investigating Officer (Cyber Crime Police Station, Noida)
+To: Nodal Officers — State Bank of India, HDFC Bank, Axis Bank, ICICI Bank & Bharti Airtel Ltd.
+Case Ref: FIR #149/2026 · Noida Cyber Crime PS (Complainant: Sunil Kumar)
+Date/Time: 2026-09-22 11:30:00 IST
+
+SUBJECT: MANDATORY CROSS-BANK ENTITY RESOLUTION, KYC & CDR CORRELATION FOR 5 RESOLVED TARGETS
+
+1. Based on multi-source forensic ingestion (NPCI Switch Logs, CBS Finacle Narration, and IPDRs), TARKA has resolved 18 raw identifiers into 5 canonical entities:
+   - ENT-01 (Victim Origin): Sunil Kumar (SBI A/c 30910029101, MSISDN +91-9810044210)
+   - ENT-02 (Layer-1 Conduit): Vikram Shah (SBI A/c 41088291083, MSISDN +91-9871123941, IMEI 867492061234564)
+   - ENT-03 & ENT-04 (Syndicate Layer-2): Rohit Verma (HDFC A/c 5010029419920) & Sameer Khan (Axis A/c 9140200410291)
+     * SYNDICATE LINK: Shared TLS JA4 Fingerprint (t13d1516h2_8daaf6) & Hotspot BSSID (74:DA:38:A2:11:BC)
+   - ENT-05 (Bona-Fide Commercial Merchant): Apex Electronics Pvt Ltd (GSTIN 07AAACA1234F1Z8, ICICI A/c 001405008129)
+     * HARD VETO APPLIED: Zero shared hardware tokens; active commercial POS history.
+
+2. In exercise of powers under Section 94 BNSS, you are hereby directed to produce within 24 HOURS:
+   (a) Certified Account Opening Forms (AOF), biometric e-KYC records, and registered MSISDN for ENT-02, ENT-03, and ENT-04.
+   (b) Device binding MAC/IMEI and IP ingress session history for mobile banking logins.
+   (c) Confirmation of Section 106(1) Specific Debit Lien on ₹1,80,000 for ENT-05 while keeping remaining commercial operational capital active.
+
+Failure to comply invites penal proceedings under Section 223 BNS, 2023.
+
+Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
+}
+
+
 export function getDot3920PortBlockDirective(): string {
   return `STATUTORY REQUISITION UNDER DOT CLAUSE 39.20 & SEC 94 BNSS
 From: Investigating Officer (Cyber Crime Police Station, Noida)
@@ -55,4 +83,5 @@ Failure to furnish DoT Clause 39.20 logs obstructs statutory investigation under
 
 Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
 }
+
 

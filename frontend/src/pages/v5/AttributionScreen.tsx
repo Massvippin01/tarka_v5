@@ -15,6 +15,7 @@ import {
   FileText,
   Copy,
   Terminal,
+  Network,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
@@ -382,6 +383,18 @@ export const AttributionScreen: React.FC = () => {
                 <RotateCcw size={10} />
                 <span>Reset</span>
               </button>
+            </div>
+          </div>
+
+          {/* Dual-Path CGNAT Resolution Indicator Strip */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: "9px" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#F1F5F9", border: "1px solid #CBD5E1", borderRadius: "4px", padding: "1.5px 6px" }}>
+              <span style={{ fontWeight: 800, color: "#475569" }}>Path A (Bank Logs - Port Omitted):</span>
+              <span style={{ fontWeight: 700, color: "#0F172A", fontFamily: "var(--font-mono)" }}>340 &rarr; 41 &rarr; 6 &rarr; 1 Handset (Set Intersection)</span>
+            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "4px", padding: "1.5px 6px" }}>
+              <span style={{ fontWeight: 800, color: "#047857" }}>Path B (DoT Clause 39.20 ISP Translation):</span>
+              <span style={{ fontWeight: 700, color: "#065F46", fontFamily: "var(--font-mono)" }}>Deterministic 1:1 Port Match (:44321)</span>
             </div>
           </div>
 
@@ -1088,6 +1101,32 @@ export const AttributionScreen: React.FC = () => {
           >
             <strong>Forensic Proof:</strong> {hotspotResult.anomalySummary}
           </div>
+
+          {/* Cross-Actor Fraud Relationship Discovery Strip */}
+          <div
+            style={{
+              background: "#EEF2FF",
+              border: "1px solid #C7D2FE",
+              borderRadius: "6px",
+              padding: "5px 8px",
+              fontSize: "9px",
+              lineHeight: 1.35,
+              display: "flex",
+              flexDirection: "column",
+              gap: "2.5px",
+            }}
+          >
+            <div style={{ fontWeight: 800, color: "#4338CA", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Network size={11} color="#4F46E5" />
+              <span>Cross-Actor Fraud Relationship Discovery Strip:</span>
+            </div>
+            <div style={{ color: "#312E81" }}>
+              <strong>Link 1 (Network Hop):</strong> Vikram (L1) + Rohit (L2A) + Sameer (L2B) &rarr; All 3 routed via Accomplice Hotspot BSSID <code style={{ color: "#4338CA" }}>74:DA:38:A2:11:BC</code> (TTL=63).
+            </div>
+            <div style={{ color: "#312E81" }}>
+              <strong>Link 2 (App TLS):</strong> Identical JA4 Client Fingerprint (<code style={{ color: "#4338CA" }}>t13d1516h2_8daaf6</code>) across all 4 mule banking sessions.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1190,6 +1229,27 @@ export const AttributionScreen: React.FC = () => {
             <span style={{ color: "#059669" }}>app=</span><span style={{ color: "#0284C7" }}>"com.sbi.upi"</span>{" "}
             <span style={{ color: "#059669" }}>capability=</span><span style={{ color: "#0284C7" }}>"0001"</span>{" "}
             <span style={{ color: "#4F46E5", fontWeight: 700 }}>/&gt;</span>
+          </div>
+
+          {/* SIM-Swap Precursor Event Alert Badge */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "#FFFBEB",
+              border: "1px solid #FDE68A",
+              borderRadius: "6px",
+              padding: "4px 8px",
+              fontSize: "9px",
+              color: "#92400E",
+              lineHeight: 1.35,
+            }}
+          >
+            <ShieldAlert size={13} color="#D97706" style={{ flexShrink: 0 }} />
+            <span>
+              <strong>SIM-Swap Detected:</strong> MSISDN <code style={{ color: "#92400E" }}>919871123941</code> swapped from Legacy IMSI (40410...882) to New SIM IMSI (40410...904) at <strong>09:44:12 IST</strong> (16m before &yen;5.00L debit) on Chassis TAC <code style={{ color: "#92400E" }}>86749206</code>.
+            </span>
           </div>
 
           {/* 4-Card Visual Anchor Grid */}

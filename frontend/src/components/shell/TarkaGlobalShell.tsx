@@ -13,8 +13,10 @@ import {
   FolderTree,
   Maximize2,
   Minimize2,
+  Copy,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
+import { toast } from "sonner";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
@@ -49,7 +51,35 @@ export const TarkaGlobalShell: React.FC = () => {
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
+  const [goldenHourOpen, setGoldenHourOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
+
+  const getCompiledGoldenHourDirectives = () => {
+    return `=== TARKA GOLDEN HOUR 1930 DISPATCH PACK — FIR #149/2026 ===
+Generated: 2026-09-22 10:30:00 IST | SLA Remaining: 118 Minutes
+
+[NOTICE 1: SBI §94 BNSS CBS VERIFICATION & INVARIANT PRODUCTION]
+Target: SBI Nodal Officer | UTR #626510149921
+Demands: Finacle 10.x transaction commit log, HSM cryptographic signature, and dual %%EOF incremental xref audit.
+
+[NOTICE 2: HDFC & AXIS §107 BNSS CONDUIT ATTACHMENT ORDER]
+Targets: HDFC Bank (A/c 5010029419920 - Rohit Verma) & Axis Bank (A/c 9140200410291 - Sameer Khan)
+Demands: Immediate full debit freeze under Section 107 BNSS for Layer-2 split mule accounts.
+
+[NOTICE 3: ICICI §106(1) BNSS PROPORTIONAL MERCHANT DEBIT LIEN]
+Target: ICICI Bank (A/c 001405008129 - Apex Electronics Pvt Ltd, GSTIN 07AAACA1234F1Z8)
+Demands: Proportional debit lien on ₹1,80,000.00 while preserving ₹2,50,000.00 clean operational working capital under Roscoe v. Winder doctrine.
+
+[NOTICE 4: AIRTEL DoT CLAUSE 39.20 & §94 BNSS CGNAT ORDER]
+Target: Bharti Airtel Lawful Intercept Nodal Officer | NAT IP 103.21.144.92:44000-44511
+Demands: Dynamic NAT IPDR translation table, cell tower DL-TWR-891 RADIUS logs, and IMEI 867492061234564 binding.
+
+[NOTICE 5: NPCI UPI 2.0 SWITCH CERTIFICATION UNDER §63(4) BSA]
+Target: NPCI Central Switch Operations Lead
+Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> XML stanza and JA4 TLS fingerprint t13d1516h2_8daaf6.
+
+=== ALL 5 DIRECTIVES AUTHORIZED UNDER SEAL OF IO, CYBER CRIME PS NOIDA ===`;
+  };
 
   // Live Judge Mutation Audit Log ("Session Receipts")
   const [mutationReceipts, setMutationReceipts] = useState<Array<{ id: string; time: string; text: string; type: "tamper" | "clean" }>>([
@@ -789,6 +819,124 @@ export const TarkaGlobalShell: React.FC = () => {
                 <span>Small View</span>
               </button>
             </div>
+
+            {/* ⚡ 1930 Golden Hour Batch Dispatch Popover */}
+            <Popover.Root open={goldenHourOpen} onOpenChange={setGoldenHourOpen}>
+              <Popover.Trigger asChild>
+                <button
+                  type="button"
+                  style={{
+                    height: "28px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "#FFFBEB",
+                    border: "1px solid #FDE68A",
+                    color: "#92400E",
+                    fontWeight: 700,
+                    fontSize: "10.5px",
+                    borderRadius: "6px",
+                    padding: "0 8px",
+                    cursor: "pointer",
+                    boxShadow: "0 1px 2px rgba(217, 119, 6, 0.15)",
+                  }}
+                >
+                  <Zap size={11} color="#D97706" />
+                  <span>⚡ 1930 Golden Hour</span>
+                  <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "0.5px 3.5px", borderRadius: "3px" }}>
+                    118m SLA
+                  </span>
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  align="end"
+                  sideOffset={6}
+                  style={{
+                    width: "360px",
+                    background: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "10px",
+                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
+                    padding: "12px",
+                    zIndex: 100,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0", paddingBottom: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <Zap size={13} color="#D97706" />
+                      <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F172A" }}>
+                        1930 Golden Hour Dispatch Checklist
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", padding: "1px 5px", borderRadius: "3px" }}>
+                      ⏱ SLA: 118m Remaining
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35 }}>
+                    5 pre-filled statutory requisitions generated under BNSS 2023 &amp; DoT mandates for immediate nodal transmission:
+                  </div>
+
+                  {/* 5 Requisitions List */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {[
+                      { num: "1", title: "SBI §94 CBS Verification", sub: "Finacle logs & HSM signature for UTR #626510149921", status: "READY" },
+                      { num: "2", title: "HDFC/Axis §107 Conduit Freeze", sub: "Immediate debit freeze on Layer-2 split accounts", status: "READY" },
+                      { num: "3", title: "ICICI §106 Proportional Lien", sub: "₹1.80L specific lien; protects ₹2.50L working capital", status: "READY" },
+                      { num: "4", title: "Airtel DoT 39.20 CGNAT Order", sub: "Dynamic IPDR translation for IP 103.21.144.92", status: "READY" },
+                      { num: "5", title: "NPCI Switch Certificate Demand", sub: "Section 63(4) BSA certification for UPI 2.0 session", status: "READY" },
+                    ].map((item) => (
+                      <div key={item.num} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "5px", padding: "4px 7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
+                            {item.num}. {item.title}
+                          </div>
+                          <div style={{ fontSize: "8px", color: "#64748B" }}>{item.sub}</div>
+                        </div>
+                        <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px" }}>
+                          {item.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 1-Click Copy All Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getCompiledGoldenHourDirectives());
+                      toast.success("Copied All 5 Golden-Hour Directives to clipboard!", {
+                        description: "Statutory dispatch bundle for SBI, HDFC, Axis, ICICI, Airtel, and NPCI.",
+                        duration: 4000,
+                      });
+                      setGoldenHourOpen(false);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "5px",
+                      background: "#D97706",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "6px 10px",
+                      fontSize: "10.5px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
+                    }}
+                  >
+                    <Copy size={11} />
+                    <span>📋 Copy All 5 Golden-Hour Directives</span>
+                  </button>
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
 
             {/* Live Judge Mutator Button */}
             <button

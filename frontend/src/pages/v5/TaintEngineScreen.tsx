@@ -354,6 +354,9 @@ export const TaintEngineScreen: React.FC = () => {
                 <div style={{ fontSize: "11px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "1px" }}>
                   Inflow: ₹5,00,000
                 </div>
+                <div style={{ fontSize: "7.5px", fontWeight: 700, color: "#BE123C", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "3px", padding: "1px 4px", marginTop: "3px" }}>
+                  Mule Typology: 98/100 · Pass-Through Conduit (Dwell: 112s | 100% Outflow)
+                </div>
               </div>
             </div>
 
@@ -482,6 +485,9 @@ export const TaintEngineScreen: React.FC = () => {
                   <span>|</span>
                   <span style={{ color: "#059669" }}>Frozen: ₹1.20L</span>
                 </div>
+                <div style={{ fontSize: "7.5px", fontWeight: 700, color: "#BE123C", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "3px", padding: "1px 4px", marginTop: "3px" }}>
+                  Mule Typology: 94/100 · Split Conduit (Shared JA4 & BSSID)
+                </div>
               </div>
 
               {/* Node 2B: Split Mule B (Sameer Khan) */}
@@ -521,6 +527,9 @@ export const TaintEngineScreen: React.FC = () => {
                   <span style={{ color: freezeBudgetK >= 3 ? "#64748B" : "#BE123C" }}>→ ATM: ₹1.20L</span>
                   <span>|</span>
                   <span style={{ color: "#059669" }}>Frozen: ₹80k</span>
+                </div>
+                <div style={{ fontSize: "7.5px", fontWeight: 700, color: "#BE123C", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "3px", padding: "1px 4px", marginTop: "3px" }}>
+                  Mule Typology: 94/100 · Split Conduit (Shared JA4 & BSSID)
                 </div>
               </div>
             </div>
@@ -677,6 +686,9 @@ export const TaintEngineScreen: React.FC = () => {
                   ) : (
                     <span>₹1.80L locked under §106 Specific Lien. Click <strong>'+ Inject Clean Deposit'</strong> to simulate commingled merchant capital.</span>
                   )}
+                </div>
+                <div style={{ fontSize: "7.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "3px", padding: "1px 4px", marginTop: "3px" }}>
+                  Mule Typology: 06/100 · Bona-Fide Merchant (Counter-Evidence: Active GSTIN · 0 Device Overlap &rarr; Protected under &sect;106(1) Specific Lien)
                 </div>
               </div>
 
@@ -1123,9 +1135,9 @@ export const TaintEngineScreen: React.FC = () => {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ fontWeight: 800, color: "#047857" }}>Tier 0: § 106(3) BNSS Emergency Lien (24h Intimation)</span>
+              <span style={{ fontWeight: 800, color: "#047857" }}>Tier 0: § 106(3) BNSS Emergency Administrative Lien (24h Magistrate Intimation Mandatory)</span>
               <span style={{ color: "#4F46E5", fontWeight: 800 }}>⟶</span>
-              <span style={{ fontWeight: 800, color: "#4338CA" }}>Tier 1: § 107 Attachment Order (Full Conduit Freeze)</span>
+              <span style={{ fontWeight: 800, color: "#4338CA" }}>Tier 1: § 107 BNSS Judicial Attachment &amp; Victim Restoration Order (Required for Persistent Conduit Freeze)</span>
             </div>
             <span style={{ fontSize: "8px", fontWeight: 700, background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px" }}>
               TIME-GATED BNSS

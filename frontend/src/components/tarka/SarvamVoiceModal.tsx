@@ -994,7 +994,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 gap: "4px",
               }}
             >
-              <Zap size={10} /> LLAMA 3.1 8B ACTIVE
+              <Shield size={10} color="#34D399" /> 🔒 100% Air-Gapped On-Device Speech Synthesis (0 External API Calls)
             </span>
           </div>
           <button

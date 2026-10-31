@@ -7,12 +7,15 @@ import {
   Copy,
   Check,
   Info,
+  Dna,
 } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { scaleLinear } from "d3-scale";
+import { toast } from "sonner";
 import { useTarkaUiStore, type DockTab } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
+import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -199,7 +202,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             minHeight: "44px",
             maxHeight: "44px",
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            gridTemplateColumns: "repeat(5, 1fr)",
             borderBottom: "1px solid #E2E8F0",
             background: "#F8FAFC",
             boxSizing: "border-box",
@@ -214,18 +217,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: activeDockTab === "rrn" ? "#FFFFFF" : "transparent",
               color: activeDockTab === "rrn" ? "#09090B" : "#64748B",
               fontWeight: activeDockTab === "rrn" ? 700 : 500,
-              fontSize: "11px",
+              fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
-              padding: "0 4px",
+              gap: "3px",
+              padding: "0 2px",
               whiteSpace: "nowrap",
             }}
           >
-            <Clock size={12} color={activeDockTab === "rrn" ? "#4F46E5" : "#64748B"} />
-            <span>RRN Lab</span>
+            <Clock size={11} color={activeDockTab === "rrn" ? "#4F46E5" : "#64748B"} />
+            <span>RRN</span>
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -236,19 +239,19 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: activeDockTab === "pdf" ? "#FFFFFF" : "transparent",
               color: activeDockTab === "pdf" ? "#09090B" : "#64748B",
               fontWeight: activeDockTab === "pdf" ? 700 : 500,
-              fontSize: "11px",
+              fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
-              padding: "0 4px",
+              gap: "3px",
+              padding: "0 2px",
               whiteSpace: "nowrap",
             }}
           >
-            <FileText size={12} color={activeDockTab === "pdf" ? "#E11D48" : "#64748B"} />
+            <FileText size={11} color={activeDockTab === "pdf" ? "#E11D48" : "#64748B"} />
             <span>PDF</span>
-            <span style={{ fontSize: "8px", fontWeight: 800, background: "#FFE4E6", color: "#BE123C", padding: "1px 4px", borderRadius: "3px" }}>
+            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FFE4E6", color: "#BE123C", padding: "0.5px 3px", borderRadius: "3px" }}>
               2 %%EOF
             </span>
           </Tabs.Trigger>
@@ -261,20 +264,20 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: activeDockTab === "privacy" ? "#FFFFFF" : "transparent",
               color: activeDockTab === "privacy" ? "#09090B" : "#64748B",
               fontWeight: activeDockTab === "privacy" ? 700 : 500,
-              fontSize: "11px",
+              fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
-              padding: "0 4px",
+              gap: "3px",
+              padding: "0 2px",
               whiteSpace: "nowrap",
             }}
           >
-            <ShieldCheck size={12} color={activeDockTab === "privacy" ? "#059669" : "#64748B"} />
+            <ShieldCheck size={11} color={activeDockTab === "privacy" ? "#059669" : "#64748B"} />
             <span>Privacy</span>
-            <span style={{ fontSize: "8px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px" }}>
-              9,996
+            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "0.5px 3px", borderRadius: "3px" }}>
+              9.9k
             </span>
           </Tabs.Trigger>
 
@@ -286,18 +289,43 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: activeDockTab === "proof" ? "#FFFFFF" : "transparent",
               color: activeDockTab === "proof" ? "#09090B" : "#64748B",
               fontWeight: activeDockTab === "proof" ? 700 : 500,
-              fontSize: "11px",
+              fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "4px",
-              padding: "0 4px",
+              gap: "3px",
+              padding: "0 2px",
               whiteSpace: "nowrap",
             }}
           >
-            <CheckCircle2 size={12} color={activeDockTab === "proof" ? "#7C3AED" : "#64748B"} />
+            <CheckCircle2 size={11} color={activeDockTab === "proof" ? "#7C3AED" : "#64748B"} />
             <span>Proof</span>
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
+            value="entities"
+            style={{
+              border: "none",
+              borderBottom: activeDockTab === "entities" ? "2px solid #0D9488" : "2px solid transparent",
+              background: activeDockTab === "entities" ? "#FFFFFF" : "transparent",
+              color: activeDockTab === "entities" ? "#09090B" : "#64748B",
+              fontWeight: activeDockTab === "entities" ? 700 : 500,
+              fontSize: "10.5px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "3px",
+              padding: "0 2px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Dna size={11} color={activeDockTab === "entities" ? "#0D9488" : "#64748B"} />
+            <span>Entities</span>
+            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#CCFBF1", color: "#0F766E", padding: "0.5px 3px", borderRadius: "3px" }}>
+              18→5
+            </span>
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -1302,6 +1330,139 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 : "Mathematical conservation is proven across 6 Finacle CBS ledger rows. Proceed with Tier-1 bank evidence for attribution."}
             </div>
           </div>
+        </Tabs.Content>
+
+        {/* =====================================================================
+            TAB 5: ENTITY EXTRACTION & ALIAS RESOLUTION MATRIX (18 -> 5)
+            ===================================================================== */}
+        <Tabs.Content
+          value="entities"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "10px 12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {/* Header Banner */}
+          <div
+            style={{
+              background: "#F0FDFA",
+              border: "1px solid #99F6E4",
+              borderRadius: "7px",
+              padding: "7px 10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F766E", display: "flex", alignItems: "center", gap: "5px" }}>
+                <Dna size={13} color="#0D9488" />
+                <span>Deterministic Entity Extraction & Resolution Matrix</span>
+              </div>
+              <div style={{ fontSize: "8.5px", color: "#115E59", marginTop: "1px" }}>
+                18 noisy raw identifiers extracted across 4 evidence files &rarr; Resolved into 5 Canonical Entities with Hard Veto logic.
+              </div>
+            </div>
+            <span style={{ fontSize: "9px", fontWeight: 800, background: "#CCFBF1", color: "#0F766E", padding: "1.5px 6px", borderRadius: "4px" }}>
+              18 &rarr; 5 ENTITIES
+            </span>
+          </div>
+
+          {/* Entity 1: Sunil Kumar (Victim) */}
+          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "7px", padding: "6px 8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#0F172A" }}>
+                ENT-01 &middot; Sunil Kumar (Victim Origin)
+              </span>
+              <span style={{ fontSize: "8px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 5px", borderRadius: "3px" }}>
+                VICTIM COMPLAINANT
+              </span>
+            </div>
+            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
+              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A" }}>30910029101</code> &middot; MSISDN <code style={{ color: "#0F172A" }}>+91-9810044210</code> &middot; Handset Video Call Screenshot (Verified PII).
+            </div>
+          </div>
+
+          {/* Entity 2: Vikram Shah (L1 Mule) */}
+          <div style={{ background: "#FFFFFF", border: "1px solid #FECDD3", borderRadius: "7px", padding: "6px 8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#BE123C" }}>
+                ENT-02 &middot; Vikram Shah (Layer-1 Conduit)
+              </span>
+              <span style={{ fontSize: "8px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "3px" }}>
+                L1 CONDUIT MULE
+              </span>
+            </div>
+            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
+              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C" }}>VIKRAM_MULE</code> &middot; VPA: <code style={{ color: "#BE123C" }}>vikram.pay@okaxis</code> &middot; MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> &middot; IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
+            </div>
+          </div>
+
+          {/* Entity 3 & 4: Rohit Verma & Sameer Khan (Cross-Actor Syndicate Link) */}
+          <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "7px", padding: "6px 8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400E" }}>
+                ENT-03 &amp; ENT-04 &middot; Rohit Verma (L2A) &amp; Sameer Khan (L2B)
+              </span>
+              <span style={{ fontSize: "8px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", border: "1px solid #FCD34D", padding: "1px 5px", borderRadius: "3px" }}>
+                CROSS-ACTOR SYNDICATE HIT
+              </span>
+            </div>
+            <div style={{ fontSize: "8.5px", color: "#78350F", marginTop: "2px", lineHeight: 1.35 }}>
+              <strong>Syndicate Linkage Alert:</strong> Different KYC names &amp; accounts (HDFC <code style={{ color: "#92400E" }}>5010029419920</code> &amp; AXIS <code style={{ color: "#92400E" }}>9140200410291</code>), but linked via identical <strong>JA4 TLS Fingerprint (t13d1516h2_8daaf6)</strong> and shared <strong>Wi-Fi Hotspot BSSID (74:DA:38:A2:11:BC)</strong>.
+            </div>
+          </div>
+
+          {/* Entity 5: Apex Electronics (Bona-Fide Hard Veto) */}
+          <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "7px", padding: "6px 8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#166534" }}>
+                ENT-05 &middot; Apex Electronics Pvt Ltd (Bona-Fide Merchant)
+              </span>
+              <span style={{ fontSize: "8px", fontWeight: 800, background: "#DCFCE7", color: "#15803D", border: "1px solid #86EFAC", padding: "1px 5px", borderRadius: "3px" }}>
+                &check; HARD VETO PROTECTION
+              </span>
+            </div>
+            <div style={{ fontSize: "8.5px", color: "#14532D", marginTop: "2px", lineHeight: 1.35 }}>
+              <strong>Hard Veto Applied:</strong> Received &yen;1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
+            </div>
+          </div>
+
+          {/* 1-Click Directive Button */}
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
+              toast.success("Copied § 94 BNSS KYC/CAF Requisition to clipboard!", {
+                description: "Statutory order for 5 resolved targets served to SBI, HDFC, Axis, ICICI and Airtel.",
+                duration: 3500,
+              });
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "5px",
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #0D9488",
+              background: "#0D9488",
+              color: "#FFFFFF",
+              fontSize: "10px",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 1px 3px rgba(13, 148, 136, 0.25)",
+              marginTop: "2px",
+            }}
+          >
+            <Copy size={11} />
+            <span>&copy; Copy &sect;94 BNSS Cross-Bank KYC/CAF Resolution Directive</span>
+          </button>
         </Tabs.Content>
       </Tabs.Root>
     </div>
