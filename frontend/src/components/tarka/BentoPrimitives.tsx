@@ -14,6 +14,10 @@ export interface BentoKpiCardProps {
     isWarning?: boolean;
     label?: string;
   };
+  statusBadge?: {
+    text: string;
+    variant?: "emerald" | "rose" | "indigo" | "amber" | "slate";
+  };
   subtitle: string;
   icon: React.ElementType;
   iconColor?: string;
@@ -23,11 +27,20 @@ export interface BentoKpiCardProps {
   className?: string;
 }
 
+const statusBadgeStyles = {
+  emerald: { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" },
+  rose: { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" },
+  indigo: { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" },
+  amber: { bg: "#FFFBEB", text: "#B45309", border: "#FDE68A" },
+  slate: { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" },
+};
+
 export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
   title,
   metric,
   metricColor,
   delta,
+  statusBadge,
   subtitle,
   icon: Icon,
   iconColor = "#4F46E5",
@@ -40,8 +53,8 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
   const minVal = Math.min(...sparklineData);
   const maxVal = Math.max(...sparklineData);
   const range = maxVal - minVal || 1;
-  const width = 80;
-  const height = 30;
+  const width = 76;
+  const height = 28;
   const points = sparklineData
     .map((val, idx) => {
       const x = (idx / (sparklineData.length - 1)) * width;
@@ -50,10 +63,25 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
     })
     .join(" ");
 
+  const badgeStyle = statusBadge
+    ? statusBadgeStyles[statusBadge.variant || "emerald"]
+    : null;
+
   return (
-    <div className={`bento-card ${className}`} style={{ minHeight: "148px", justifyContent: "space-between" }}>
+    <div
+      className={`bento-card ${className}`}
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        borderRadius: "14px",
+        padding: "14px 18px",
+        minHeight: "128px",
+        justifyContent: "space-between",
+        boxShadow: "0 2px 10px -2px rgba(15, 23, 42, 0.04)",
+      }}
+    >
       {/* Top Header Row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div
             style={{
@@ -70,16 +98,32 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
             <Icon size={18} color={iconColor} strokeWidth={2.2} />
           </div>
           <div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-secondary)", letterSpacing: "-0.1px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.3px" }}>
               {title}
             </div>
-            <div style={{ fontSize: "10.5px", color: "var(--bento-text-muted)", marginTop: "1px" }}>
+            <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "1px" }}>
               {subtitle}
             </div>
           </div>
         </div>
 
-        {onSeeDetails && (
+        {statusBadge && badgeStyle ? (
+          <span
+            style={{
+              fontSize: "10.5px",
+              fontWeight: 800,
+              padding: "2px 8px",
+              borderRadius: "6px",
+              background: badgeStyle.bg,
+              color: badgeStyle.text,
+              border: `1px solid ${badgeStyle.border}`,
+              fontFamily: "var(--font-mono)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {statusBadge.text}
+          </span>
+        ) : onSeeDetails ? (
           <button
             type="button"
             onClick={onSeeDetails}
@@ -99,42 +143,56 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
             <span>Details</span>
             <ChevronRight size={12} />
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Main Metric & Bottom Trends */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "14px" }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "12px", width: "100%" }}>
+        <div style={{ minWidth: 0, flex: 1, marginRight: "12px" }}>
           <div
             style={{
-              fontSize: "26px",
+              fontSize:
+                metric.length > 15
+                  ? "19px"
+                  : metric.length > 11
+                  ? "22px"
+                  : "26px",
               fontWeight: 800,
               letterSpacing: "-0.6px",
-              lineHeight: 1.1,
-              color: metricColor || "var(--bento-text-primary)",
+              lineHeight: 1.15,
+              color: metricColor || "#0F172A",
               fontFamily: "'Plus Jakarta Sans', sans-serif",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
+            title={metric}
           >
             {metric}
           </div>
 
           {delta && (
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "5px" }}>
               <span
-                className={`bento-badge ${
-                  delta.isWarning
-                    ? "badge-crimson"
-                    : delta.isPositive
-                    ? "badge-emerald"
-                    : "badge-slate"
-                }`}
-                style={{ fontSize: "10px", padding: "2px 7px" }}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  padding: "2px 7px",
+                  borderRadius: "5px",
+                  background: delta.isWarning ? "#FFF1F2" : delta.isPositive ? "#ECFDF5" : "#EEF2FF",
+                  color: delta.isWarning ? "#BE123C" : delta.isPositive ? "#047857" : "#4338CA",
+                  border: `1px solid ${delta.isWarning ? "#FECDD3" : delta.isPositive ? "#A7F3D0" : "#C7D2FE"}`,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  fontFamily: "var(--font-mono)",
+                }}
               >
                 {delta.isPositive ? <ArrowUpRight size={11} /> : delta.isWarning ? <ArrowDownRight size={11} /> : null}
                 <span>{delta.value}</span>
               </span>
               {delta.label && (
-                <span style={{ fontSize: "10.5px", color: "var(--bento-text-muted)" }}>
+                <span style={{ fontSize: "10.5px", color: "#64748B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {delta.label}
                 </span>
               )}
@@ -143,11 +201,11 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
         </div>
 
         {/* Mini SVG Sparkline */}
-        <div style={{ width: `${width}px`, height: `${height}px`, opacity: 0.85 }}>
+        <div style={{ width: `${width}px`, height: `${height}px`, opacity: 0.85, flexShrink: 0 }}>
           <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
             <polyline
               fill="none"
-              stroke={delta?.isWarning ? "var(--bento-crimson)" : "var(--bento-indigo)"}
+              stroke={delta?.isWarning ? "#E11D48" : "#4F46E5"}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -333,6 +391,195 @@ export const HatchedBarChart: React.FC<HatchedBarChartProps> = ({
           })}
         </svg>
       </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// 2B. SalezyHatchedBarChart (Suspect Receipt vs SBI CBS Discrepancy)
+// ============================================================================
+export interface SalezyHatchedBarChartProps {
+  claimedAmount?: number;
+  settledAmount?: number;
+  claimedLabel?: string;
+  settledLabel?: string;
+  height?: number;
+  className?: string;
+}
+
+export const SalezyHatchedBarChart: React.FC<SalezyHatchedBarChartProps> = ({
+  claimedAmount = 15000,
+  settledAmount = 215000,
+  claimedLabel = "Claimed Receipt",
+  settledLabel = "SBI CBS Settled",
+  height = 190,
+  className = "",
+}) => {
+  const maxVal = Math.max(claimedAmount, settledAmount, 220000);
+  const chartHeight = height - 44;
+  const barWidth = 48;
+  const leftX = 54;
+  const rightX = 186;
+
+  const leftBarH = Math.max((claimedAmount / maxVal) * (chartHeight - 40), 12);
+  const leftY = chartHeight - leftBarH;
+
+  const rightBarH = Math.max((settledAmount / maxVal) * (chartHeight - 40), 20);
+  const rightY = chartHeight - rightBarH;
+
+  const diffAmount = settledAmount - claimedAmount;
+
+  return (
+    <div className={className} style={{ width: "100%", height: `${height}px`, position: "relative" }}>
+      <svg width="100%" height={height} viewBox="0 0 300 190" preserveAspectRatio="xMidYMid meet" style={{ overflow: "visible" }}>
+        <defs>
+          <pattern id="salezyHatchSlate" width="7" height="7" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="7" stroke="#E11D48" strokeWidth="2" opacity="0.45" />
+          </pattern>
+          <linearGradient id="solidSettledGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4F46E5" />
+            <stop offset="100%" stopColor="#3730A3" />
+          </linearGradient>
+        </defs>
+
+        {/* Horizontal grid lines */}
+        {[0, 0.5, 1].map((pct, i) => {
+          const y = chartHeight - pct * (chartHeight - 35);
+          return (
+            <g key={i}>
+              <line x1="16" y1={y} x2="284" y2={y} stroke="#E2E8F0" strokeDasharray="3 3" />
+              <text x="14" y={y + 3} textAnchor="end" fill="#94A3B8" fontSize="8.5" fontFamily="'JetBrains Mono', monospace">
+                {i === 0 ? "0" : i === 1 ? "1L" : "2L"}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Left Bar: Suspect Claimed Receipt (Hatched) */}
+        <g>
+          <rect
+            x={leftX}
+            y={leftY}
+            width={barWidth}
+            height={leftBarH}
+            rx="7"
+            fill="#FFE4E6"
+            stroke="#FECDD3"
+            strokeWidth="1"
+          />
+          <rect
+            x={leftX}
+            y={leftY}
+            width={barWidth}
+            height={leftBarH}
+            rx="7"
+            fill="url(#salezyHatchSlate)"
+          />
+          <text
+            x={leftX + barWidth / 2}
+            y={leftY - 6}
+            textAnchor="middle"
+            fill="#BE123C"
+            fontSize="11"
+            fontWeight="800"
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            ₹15k
+          </text>
+          <text
+            x={leftX + barWidth / 2}
+            y={chartHeight + 15}
+            textAnchor="middle"
+            fill="#BE123C"
+            fontSize="10"
+            fontWeight="700"
+            fontFamily="'Plus Jakarta Sans', sans-serif"
+          >
+            {claimedLabel}
+          </text>
+          <text
+            x={leftX + barWidth / 2}
+            y={chartHeight + 27}
+            textAnchor="middle"
+            fill="#94A3B8"
+            fontSize="8.5"
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            Tier 3
+          </text>
+        </g>
+
+        {/* Right Bar: SBI Central CBS Ledger (Solid Indigo) */}
+        <g>
+          <rect
+            x={rightX}
+            y={rightY}
+            width={barWidth}
+            height={rightBarH}
+            rx="7"
+            fill="url(#solidSettledGrad)"
+            stroke="#4338CA"
+            strokeWidth="1"
+          />
+          <text
+            x={rightX + barWidth / 2}
+            y={rightY - 6}
+            textAnchor="middle"
+            fill="#4F46E5"
+            fontSize="11"
+            fontWeight="800"
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            ₹2.15L
+          </text>
+          <text
+            x={rightX + barWidth / 2}
+            y={chartHeight + 15}
+            textAnchor="middle"
+            fill="#0F172A"
+            fontSize="10"
+            fontWeight="700"
+            fontFamily="'Plus Jakarta Sans', sans-serif"
+          >
+            {settledLabel}
+          </text>
+          <text
+            x={rightX + barWidth / 2}
+            y={chartHeight + 27}
+            textAnchor="middle"
+            fill="#059669"
+            fontSize="8.5"
+            fontWeight="700"
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            Tier 1
+          </text>
+        </g>
+
+        {/* Floating Callout Badge connecting the gap */}
+        <g transform={`translate(${(leftX + rightX + barWidth) / 2}, ${Math.min(leftY, rightY) + 12})`}>
+          <rect
+            x="-48"
+            y="-12"
+            width="96"
+            height="22"
+            rx="6"
+            fill="#E11D48"
+            style={{ filter: "drop-shadow(0 2px 5px rgba(225,29,72,0.35))" }}
+          />
+          <text
+            x="0"
+            y="3"
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontSize="9"
+            fontWeight="800"
+            fontFamily="'JetBrains Mono', monospace"
+          >
+            +₹{(diffAmount / 100000).toFixed(2)}L Hidden
+          </text>
+        </g>
+      </svg>
     </div>
   );
 };
