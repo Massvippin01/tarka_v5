@@ -338,10 +338,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "10px 12px",
+            padding: "14px 16px",
             display: activeDockTab === "rrn" ? "flex" : "none",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           {/* Header Controls: Rail Toggle + Grammar Select */}
@@ -807,10 +807,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "10px 12px",
+            padding: "14px 16px",
             display: activeDockTab === "pdf" ? "flex" : "none",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           {/* Revision SVG Ruler */}
@@ -988,10 +988,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "10px 12px",
+            padding: "14px 16px",
             display: activeDockTab === "privacy" ? "flex" : "none",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           {/* HiDPI Canvas Blinding Matrix */}
@@ -1146,10 +1146,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "10px 12px",
+            padding: "14px 16px",
             display: activeDockTab === "proof" ? "flex" : "none",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1341,10 +1341,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "10px 12px",
+            padding: "14px 16px",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "10px",
           }}
         >
           {/* Header Banner */}

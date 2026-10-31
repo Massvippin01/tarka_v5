@@ -126,7 +126,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
     }
   };
 
-  const rowHeight = density === "compact" ? 34 : 40;
+  const rowHeight = density === "compact" ? 36 : 42;
 
   return (
     <div
@@ -411,114 +411,117 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       </div>
 
       {/* =========================================================================
-          CONFLICT ALERT STRIP & NAIVE VS TARKA CONTRAST
+          STREAMLINED DISCREPANCY & DIRECTIVE ACTION BAR (SINGLE ROW, 36PX)
           ========================================================================= */}
       <div
         style={{
-          padding: "5px 10px",
+          padding: "0 12px",
+          height: "36px",
+          minHeight: "36px",
+          maxHeight: "36px",
           background: "rgba(255, 241, 242, 0.75)",
           borderBottom: "1px solid #FECDD3",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "8px",
+          gap: "10px",
           fontSize: "11px",
-          flexWrap: "wrap",
           flexShrink: 0,
+          boxSizing: "border-box",
         }}
       >
         {/* Left: Claim vs CBS Finacle values */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <AlertCircle size={13} color="#E11D48" style={{ flexShrink: 0 }} />
-            <span style={{ color: "#475569" }}>Claimed Receipt:</span>
-            <strong style={{ color: "#BE123C", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
-              ₹15,000.00
-            </strong>
-            <span
-              style={{
-                fontSize: "8.5px",
-                fontWeight: 700,
-                color: "#BE123C",
-                background: "#FFE4E6",
-                border: "1px solid #FECDD3",
-                padding: "0 4px",
-                borderRadius: "3px",
-              }}
-            >
-              Tier-3 Canva
-            </span>
-          </div>
-
-          <div
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
+          <AlertCircle size={13} color="#E11D48" style={{ flexShrink: 0 }} />
+          <span style={{ color: "#475569", whiteSpace: "nowrap" }}>Claim:</span>
+          <strong style={{ color: "#BE123C", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+            ₹15,000.00
+          </strong>
+          <span
             style={{
-              fontSize: "10.5px",
+              fontSize: "8.5px",
+              fontWeight: 700,
+              color: "#BE123C",
+              background: "#FFE4E6",
+              border: "1px solid #FECDD3",
+              padding: "0.5px 4px",
+              borderRadius: "3px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Tier-3 Canva
+          </span>
+
+          <span
+            style={{
+              fontSize: "10px",
               fontWeight: 800,
               color: "#BE123C",
               background: "#FFFFFF",
               border: "1px solid #FECDD3",
-              padding: "1px 6px",
+              padding: "0.5px 6px",
               borderRadius: "4px",
+              whiteSpace: "nowrap",
             }}
           >
-            ≠ Δ ₹2,00,000.00 Hidden Deficit (14.3× Overwrite)
-          </div>
+            ≠ Δ ₹2,00,000.00 Hidden Deficit (14.3×)
+          </span>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span style={{ color: "#475569" }}>Finacle CBS:</span>
-            <strong style={{ color: "#047857", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
-              ₹2,15,000.00
-            </strong>
-            <button
-              type="button"
-              onClick={() => {
-                onSelectRrn("626510149921");
-                setActiveDockTab("rrn");
-              }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "2px",
-                fontSize: "9.5px",
-                fontFamily: "var(--font-mono)",
-                fontWeight: 700,
-                color: "#047857",
-                background: "#ECFDF5",
-                border: "1px solid #A7F3D0",
-                padding: "1px 5px",
-                borderRadius: "3px",
-                cursor: "pointer",
-              }}
-              title="Inspect RRN in Forensic Lab"
-            >
-              <span>#626510149921</span>
-              <ExternalLink size={9} />
-            </button>
-          </div>
+          <span style={{ color: "#475569", whiteSpace: "nowrap" }}>Finacle CBS:</span>
+          <strong style={{ color: "#047857", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+            ₹2,15,000.00
+          </strong>
+          <button
+            type="button"
+            onClick={() => {
+              onSelectRrn("626510149921");
+              setActiveDockTab("rrn");
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "2px",
+              fontSize: "9.5px",
+              fontFamily: "var(--font-mono)",
+              fontWeight: 700,
+              color: "#047857",
+              background: "#ECFDF5",
+              border: "1px solid #A7F3D0",
+              padding: "0.5px 5px",
+              borderRadius: "3px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            title="Inspect RRN in Forensic Lab"
+          >
+            <span>#626510149921</span>
+            <ExternalLink size={9} />
+          </button>
         </div>
 
         {/* Right: Naive IO vs TARKA View + Actionable §94 Directive Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
           {/* Naive IO vs TARKA Invariant View Badge */}
           <div
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              fontSize: "9.5px",
+              fontSize: "9px",
               background: "#FFFFFF",
               border: "1px solid #CBD5E1",
-              borderRadius: "14px",
-              padding: "1.5px 8px",
+              borderRadius: "12px",
+              padding: "1px 8px",
               color: "#334155",
+              whiteSpace: "nowrap",
             }}
             title="Contrast between manual inspection error and TARKA automated mathematical verification"
           >
-            <span style={{ color: "#BE123C", fontWeight: 700 }}>Naive IO View:</span>
-            <span>Sees ₹15,000 Receipt (Misses ₹2.00L)</span>
+            <span style={{ color: "#BE123C", fontWeight: 700 }}>Naive IO:</span>
+            <span>₹15,000</span>
             <span style={{ color: "#4F46E5", fontWeight: 800 }}>⟶</span>
-            <span style={{ color: "#047857", fontWeight: 800 }}>TARKA Invariant View:</span>
-            <span>Catches ₹2,15,000 Finacle Debit + Dual %%EOF</span>
+            <span style={{ color: "#047857", fontWeight: 800 }}>TARKA Invariant:</span>
+            <span>₹2,15,000 Debit + Dual %%EOF</span>
           </div>
 
           {/* Actionable §94 BNSS Directive Copy Button */}
@@ -537,8 +540,8 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               gap: "4px",
               fontSize: "10px",
               fontWeight: 700,
-              padding: "2px 8px",
-              borderRadius: "5px",
+              padding: "2.5px 8px",
+              borderRadius: "4px",
               border: "1px solid #C7D2FE",
               background: "#EEF2FF",
               color: "#4338CA",
@@ -548,7 +551,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             title="Copy pre-filled statutory requisition to SBI Nodal Officer under Section 94 BNSS / Section 91 CrPC"
           >
             <FileText size={11} color="#4F46E5" />
-            <span>📋 Copy §94 BNSS CBS Directive</span>
+            <span>📋 Copy §94 BNSS Directive</span>
           </button>
         </div>
       </div>
@@ -700,19 +703,19 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                         {isDisputed && (
                           <span
                             style={{
-                              fontSize: "9px",
+                              fontSize: "8.5px",
                               fontWeight: 700,
                               background: "#FEF3C7",
                               color: "#92400E",
                               border: "1px solid #FDE68A",
                               padding: "0.5px 5px",
-                              borderRadius: "4px",
+                              borderRadius: "3px",
                               whiteSpace: "nowrap",
                               flexShrink: 0,
                             }}
-                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah (Paired with Tranche 2 IMPS ₹2.85L on Screen 3)"
+                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah (Paired with Tranche 2 IMPS on Screen 3)"
                           >
-                            Tranche 1 of ₹5.00L Total Fraud Outflow
+                            Tranche 1 of ₹5.00L Outflow
                           </span>
                         )}
                       </div>
