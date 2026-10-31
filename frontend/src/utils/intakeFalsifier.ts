@@ -527,3 +527,4 @@ export async function buildCgnatMerkleShield(
     subscribers: rows,
   };
 }
+

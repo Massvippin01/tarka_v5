@@ -476,3 +476,4 @@ def build_cgnat_merkle_shield(
         is_proof_valid=True,
         masked_subscribers=rows
     )
+

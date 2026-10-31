@@ -281,3 +281,4 @@ def get_cbi_syndicate_memo() -> CbiSyndicateResponse:
         linked_fir_count=14,
         blind_indexed_entities=items
     )
+

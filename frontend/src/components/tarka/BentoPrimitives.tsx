@@ -508,3 +508,4 @@ export const SegmentedPillSwitcher: React.FC<SegmentedPillSwitcherProps> = ({
     </div>
   );
 };
+
