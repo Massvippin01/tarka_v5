@@ -9,7 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
-import { ReuiStatusBadge, ReuiKbd } from "../tarka/BentoPrimitives";
+import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { IntakeScreen } from "../../pages/v5/IntakeScreen";
 import { AttributionScreen } from "../../pages/v5/AttributionScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
@@ -32,43 +32,39 @@ export const TarkaGlobalShell: React.FC = () => {
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
 
-  // 4 Core Pipeline Navigation Items
+  // 4 Core Pipeline Navigation Items (RULE 2: Zero Truncation Executive Labels)
   const navItems = [
     {
       id: "intake" as TarkaRoute,
       step: "01",
-      title: "Evidence & Ledger Falsifier",
-      subtitle: "Double-entry & PDF integrity",
-      badgeText: mutations.alterBankRow14 ? "Row #14 Fail" : "2 Alerts",
+      title: "Evidence Intake",
+      subtitle: "Ledger & PDF Integrity",
+      badgeText: mutations.alterBankRow14 ? "Fail" : "2",
       badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
-      kbd: "1",
     },
     {
       id: "attribution" as TarkaRoute,
       step: "02",
-      title: "CGNAT & Device Attribution",
-      subtitle: "Port funnel & IMEI twin",
-      badgeText: "1 IMEI",
+      title: "CGNAT Attribution",
+      subtitle: "Port Funnel & IMEI Twin",
+      badgeText: "✓",
       badgeVariant: "emerald" as const,
-      kbd: "2",
     },
     {
       id: "taint-engine" as TarkaRoute,
       step: "03",
-      title: "Taint DAG & BNSS Liens",
-      subtitle: "Dinic min-cut & Sec 106",
+      title: "Taint & BNSS Liens",
+      subtitle: "Dinic Min-Cut & §106",
       badgeText: "K=3",
       badgeVariant: "indigo" as const,
-      kbd: "3",
     },
     {
       id: "court-proof" as TarkaRoute,
       step: "04",
-      title: "Section 63(4) Court Proof",
-      subtitle: "BIP-39 & CBI memo",
-      badgeText: "Ready",
+      title: "Court Proof Dossier",
+      subtitle: "BSA §63(4) & CBI Memo",
+      badgeText: "OK",
       badgeVariant: "emerald" as const,
-      kbd: "4",
     },
   ];
 
@@ -81,12 +77,12 @@ export const TarkaGlobalShell: React.FC = () => {
     { name: "whatsapp_chat.txt", tier: "T3", status: "amber" as const, desc: "Uncertified Extortion Chat" },
   ];
 
-  // Operational Clock Stepper Stages
+  // Operational Clock Stepper Stages (RULE 1: Compact Single-Line Labels)
   const clockStages = [
-    { label: "T+0m Report", offset: 0, title: "FIR Ingestion" },
-    { label: "T+15m Sweep", offset: 0.25, title: "L1 Mule Freeze" },
-    { label: "T+2.5h NCRP Window", offset: 2.5, title: "Golden Hour SOP" },
-    { label: "T+48h Remand", offset: 48, title: "Sec 107 BNSS Filing" },
+    { label: "T+0m", offset: 0, title: "FIR Ingestion" },
+    { label: "T+15m", offset: 0.25, title: "L1 Mule Freeze" },
+    { label: "T+2.5h Lien", offset: 2.5, title: "Golden Hour SOP" },
+    { label: "T+48h Court", offset: 48, title: "Sec 107 BNSS Filing" },
   ];
 
   const currentNav = navItems.find((n) => n.id === activeRoute) || navItems[0];
@@ -271,9 +267,8 @@ export const TarkaGlobalShell: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-                      <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} />
-                      <ReuiKbd>{item.kbd}</ReuiKbd>
+                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                      <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
                     </div>
                   </button>
                 );
@@ -420,43 +415,48 @@ export const TarkaGlobalShell: React.FC = () => {
           height: "100%",
         }}
       >
-        {/* TOP COMMAND HEADER (56PX HEIGHT) */}
+        {/* TOP COMMAND HEADER (RULE 1: STRICT 52PX SINGLE-LINE, ZERO WRAPPING) */}
         <header
           style={{
-            height: "56px",
+            height: "52px",
+            minHeight: "52px",
+            maxHeight: "52px",
             background: "#FFFFFF",
             borderBottom: "1px solid #E4E4E7",
-            padding: "0 20px",
+            padding: "0 18px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexShrink: 0,
             boxSizing: "border-box",
             zIndex: 30,
+            whiteSpace: "nowrap",
           }}
         >
-          {/* Left Breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "#71717A" }}>
-              {activeCaseId}
+          {/* Left: Breadcrumb FIR #149/2026 / Evidence Intake + compact badge ● Z3 Verified */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "#71717A", whiteSpace: "nowrap" }}>
+              FIR #149/2026
             </span>
             <span style={{ color: "#D4D4D8" }}>/</span>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "#09090B" }}>
-              {currentNav.step}. {currentNav.title}
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "#09090B", whiteSpace: "nowrap" }}>
+              {currentNav.title}
             </span>
-            <ReuiStatusBadge text="FALSIFICATION GATE ACTIVE" variant="rose" />
+            <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
           </div>
 
-          {/* Center: ReUI Operational Clock Stepper */}
+          {/* Center (Segmented Pill Bar): T+0m | T+15m | T+2.5h Lien | T+48h Court */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "4px",
+              gap: "3px",
               background: "#F4F4F5",
               border: "1px solid #E4E4E7",
               borderRadius: "8px",
-              padding: "2px 4px",
+              padding: "2px 3px",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
             }}
           >
             {clockStages.map((stg, idx) => {
@@ -471,8 +471,8 @@ export const TarkaGlobalShell: React.FC = () => {
                     background: isCurrent ? "#FFFFFF" : "transparent",
                     color: isCurrent ? "#09090B" : "#71717A",
                     fontWeight: isCurrent ? 700 : 500,
-                    fontSize: "11px",
-                    padding: "3px 8px",
+                    fontSize: "12px",
+                    padding: "4px 10px",
                     borderRadius: "6px",
                     cursor: "pointer",
                     boxShadow: isCurrent ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
@@ -480,11 +480,12 @@ export const TarkaGlobalShell: React.FC = () => {
                     alignItems: "center",
                     gap: "4px",
                     transition: "all 0.15s ease",
+                    whiteSpace: "nowrap",
                   }}
                   title={stg.title}
                 >
                   {isCurrent && (
-                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4F46E5" }} />
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4F46E5", flexShrink: 0 }} />
                   )}
                   <span>{stg.label}</span>
                 </button>
@@ -492,29 +493,31 @@ export const TarkaGlobalShell: React.FC = () => {
             })}
           </div>
 
-          {/* Right Header Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Right Header Actions: [⚡ Mutator (N)] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, whiteSpace: "nowrap" }}>
             {/* Live Judge Mutator Button */}
             <button
               type="button"
               onClick={() => setMutatorRibbonOpen((prev) => !prev)}
               style={{
+                height: "32px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                gap: "5px",
                 background: activeMutationsCount > 0 ? "#FFF1F2" : "#F4F4F5",
                 border: activeMutationsCount > 0 ? "1px solid #FECDD3" : "1px solid #E4E4E7",
                 color: activeMutationsCount > 0 ? "#9F1239" : "#3F3F46",
                 fontWeight: 600,
-                fontSize: "11.5px",
+                fontSize: "12px",
                 borderRadius: "8px",
-                padding: "6px 11px",
+                padding: "0 12px",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
                 transition: "all 0.15s ease",
               }}
             >
               <Zap size={13} color={activeMutationsCount > 0 ? "#F43F5E" : "#71717A"} />
-              <span>Live Judge Mutator ({activeMutationsCount})</span>
+              <span>⚡ Mutator ({activeMutationsCount})</span>
               <ChevronDown
                 size={12}
                 style={{
@@ -529,6 +532,7 @@ export const TarkaGlobalShell: React.FC = () => {
               type="button"
               onClick={() => setVoiceOpen(true)}
               style={{
+                height: "32px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "5px",
@@ -536,14 +540,15 @@ export const TarkaGlobalShell: React.FC = () => {
                 border: "1px solid #E4E4E7",
                 color: "#3F3F46",
                 fontWeight: 600,
-                fontSize: "11.5px",
+                fontSize: "12px",
                 borderRadius: "8px",
-                padding: "6px 11px",
+                padding: "0 12px",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               <Mic size={13} color="#4F46E5" />
-              <span>Sarvam Voice AI</span>
+              <span>🎙️ Voice AI</span>
             </button>
 
             {/* Export Section 63(4) PDF Button */}
@@ -551,6 +556,7 @@ export const TarkaGlobalShell: React.FC = () => {
               type="button"
               onClick={handlePrintPdf}
               style={{
+                height: "32px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "5px",
@@ -558,15 +564,16 @@ export const TarkaGlobalShell: React.FC = () => {
                 border: "1px solid #09090B",
                 color: "#FFFFFF",
                 fontWeight: 600,
-                fontSize: "11.5px",
+                fontSize: "12px",
                 borderRadius: "8px",
-                padding: "6px 12px",
+                padding: "0 12px",
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                whiteSpace: "nowrap",
               }}
             >
               <FileDown size={13} />
-              <span>Export § 63(4) PDF</span>
+              <span>⬇ Export §63 PDF</span>
             </button>
           </div>
         </header>

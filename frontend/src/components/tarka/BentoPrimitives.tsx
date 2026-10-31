@@ -1,8 +1,7 @@
 import React from "react";
-import { ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
 
 // ============================================================================
-// 1. BentoKpiCard
+// 1. BentoKpiCard — Compact FlowMail / ReUI Daylight Card (96px, #09090B Hero)
 // ============================================================================
 export interface BentoKpiCardProps {
   title: string;
@@ -16,15 +15,16 @@ export interface BentoKpiCardProps {
   };
   statusBadge?: {
     text: string;
-    variant?: "emerald" | "rose" | "indigo" | "amber" | "slate";
+    variant?: "emerald" | "rose" | "indigo" | "amber" | "slate" | "purple";
   };
-  subtitle: string;
+  subtitle?: string;
   icon: React.ElementType;
   iconColor?: string;
   iconBg?: string;
   onSeeDetails?: () => void;
   sparklineData?: number[];
   className?: string;
+  meta?: string;
 }
 
 const statusBadgeStyles = {
@@ -33,39 +33,28 @@ const statusBadgeStyles = {
   indigo: { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" },
   amber: { bg: "#FFFBEB", text: "#B45309", border: "#FDE68A" },
   slate: { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" },
+  purple: { bg: "#F5F3FF", text: "#6D28D9", border: "#DDD6FE" },
 };
 
 export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
   title,
   metric,
-  metricColor,
   delta,
   statusBadge,
   subtitle,
   icon: Icon,
   iconColor = "#4F46E5",
-  iconBg = "var(--bento-indigo-subtle)",
-  onSeeDetails,
-  sparklineData = [24, 28, 22, 35, 42, 38, 52, 60],
+  iconBg = "#EEF2FF",
   className = "",
+  meta,
 }) => {
-  // Generate simple sparkline SVG path
-  const minVal = Math.min(...sparklineData);
-  const maxVal = Math.max(...sparklineData);
-  const range = maxVal - minVal || 1;
-  const width = 76;
-  const height = 28;
-  const points = sparklineData
-    .map((val, idx) => {
-      const x = (idx / (sparklineData.length - 1)) * width;
-      const y = height - ((val - minVal) / range) * (height - 6) - 3;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  // Determine badge styling and text
+  const badgeText = statusBadge?.text || delta?.value || "";
+  const badgeVariant = statusBadge?.variant || (delta?.isWarning ? "rose" : delta?.isPositive ? "emerald" : "indigo");
+  const badgeStyle = statusBadgeStyles[badgeVariant] || statusBadgeStyles.emerald;
 
-  const badgeStyle = statusBadge
-    ? statusBadgeStyles[statusBadge.variant || "emerald"]
-    : null;
+  // Determine top-right meta tag
+  const rightMeta = meta || delta?.label || (subtitle && subtitle.length <= 32 ? subtitle : "");
 
   return (
     <div
@@ -75,19 +64,23 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
         border: "1px solid #E2E8F0",
         borderRadius: "14px",
         padding: "14px 18px",
-        minHeight: "128px",
+        height: "96px",
+        display: "flex",
+        flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: "0 2px 10px -2px rgba(15, 23, 42, 0.04)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+        boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
-      {/* Top Header Row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      {/* Row 1 (Top): Icon + Title & Top-Right Muted Meta */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
           <div
             style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
+              width: "28px",
+              height: "28px",
+              borderRadius: "8px",
               background: iconBg,
               display: "flex",
               alignItems: "center",
@@ -95,124 +88,77 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
               flexShrink: 0,
             }}
           >
-            <Icon size={18} color={iconColor} strokeWidth={2.2} />
+            <Icon size={15} color={iconColor} strokeWidth={2.2} />
           </div>
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.3px" }}>
-              {title}
-            </div>
-            <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "1px" }}>
-              {subtitle}
-            </div>
-          </div>
-        </div>
-
-        {statusBadge && badgeStyle ? (
           <span
             style={{
-              fontSize: "10.5px",
-              fontWeight: 800,
-              padding: "2px 8px",
-              borderRadius: "6px",
-              background: badgeStyle.bg,
-              color: badgeStyle.text,
-              border: `1px solid ${badgeStyle.border}`,
-              fontFamily: "var(--font-mono)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {statusBadge.text}
-          </span>
-        ) : onSeeDetails ? (
-          <button
-            type="button"
-            onClick={onSeeDetails}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "2px",
-              fontSize: "11px",
+              fontSize: "12.5px",
               fontWeight: 600,
-              color: "var(--bento-indigo)",
-              padding: "2px 4px",
-            }}
-          >
-            <span>Details</span>
-            <ChevronRight size={12} />
-          </button>
-        ) : null}
-      </div>
-
-      {/* Main Metric & Bottom Trends */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "12px", width: "100%" }}>
-        <div style={{ minWidth: 0, flex: 1, marginRight: "12px" }}>
-          <div
-            style={{
-              fontSize:
-                metric.length > 15
-                  ? "19px"
-                  : metric.length > 11
-                  ? "22px"
-                  : "26px",
-              fontWeight: 800,
-              letterSpacing: "-0.6px",
-              lineHeight: 1.15,
-              color: metricColor || "#0F172A",
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              color: "#475569",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
-            title={metric}
           >
-            {metric}
-          </div>
-
-          {delta && (
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "5px" }}>
-              <span
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  padding: "2px 7px",
-                  borderRadius: "5px",
-                  background: delta.isWarning ? "#FFF1F2" : delta.isPositive ? "#ECFDF5" : "#EEF2FF",
-                  color: delta.isWarning ? "#BE123C" : delta.isPositive ? "#047857" : "#4338CA",
-                  border: `1px solid ${delta.isWarning ? "#FECDD3" : delta.isPositive ? "#A7F3D0" : "#C7D2FE"}`,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                {delta.isPositive ? <ArrowUpRight size={11} /> : delta.isWarning ? <ArrowDownRight size={11} /> : null}
-                <span>{delta.value}</span>
-              </span>
-              {delta.label && (
-                <span style={{ fontSize: "10.5px", color: "#64748B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {delta.label}
-                </span>
-              )}
-            </div>
-          )}
+            {title}
+          </span>
         </div>
 
-        {/* Mini SVG Sparkline */}
-        <div style={{ width: `${width}px`, height: `${height}px`, opacity: 0.85, flexShrink: 0 }}>
-          <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
-            <polyline
-              fill="none"
-              stroke={delta?.isWarning ? "#E11D48" : "#4F46E5"}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={points}
-            />
-          </svg>
-        </div>
+        {rightMeta && (
+          <span
+            style={{
+              fontSize: "11px",
+              color: "#94A3B8",
+              fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {rightMeta}
+          </span>
+        )}
+      </div>
+
+      {/* Row 2 (Bottom): Hero Value in #09090B + Single-Line Semantic Pill Badge */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px", width: "100%" }}>
+        <span
+          style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            color: "#09090B",
+            letterSpacing: "-0.03em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            lineHeight: 1,
+            fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
+          }}
+          title={metric}
+        >
+          {metric}
+        </span>
+
+        {badgeText && (
+          <span
+            style={{
+              padding: "3px 9px",
+              borderRadius: "999px",
+              fontSize: "11px",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              background: badgeStyle.bg,
+              color: badgeStyle.text,
+              border: `1px solid ${badgeStyle.border}`,
+              fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            {badgeText}
+          </span>
+        )}
       </div>
     </div>
   );

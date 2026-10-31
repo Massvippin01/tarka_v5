@@ -5,10 +5,7 @@ import {
   AlertTriangle,
   FileCheck,
   Search,
-  CheckCircle2,
-  XCircle,
   Zap,
-  Layers,
   Split,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
@@ -136,80 +133,66 @@ export const IntakeScreen: React.FC = () => {
     );
   }, [validationResult.rows, searchTerm]);
 
-  // Conservation blocks (6 items #11 to #16)
-  const conservationSegments = [
-    { seq: "#11", ok: true },
-    { seq: "#12", ok: true },
-    { seq: "#13", ok: true },
-    { seq: "#14", ok: !isRow14Tampered && !validationResult.discrepantRowId },
-    { seq: "#15", ok: !isRow14Tampered && !validationResult.discrepantRowId },
-    { seq: "#16", ok: !isRow14Tampered && !validationResult.discrepantRowId },
-  ];
-
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
-        padding: "16px 20px 32px 20px",
+        padding: "14px 18px 24px 18px",
         boxSizing: "border-box",
         minHeight: "100%",
         background: "var(--bento-canvas, #F4F6FB)",
       }}
     >
       {/* =========================================================================
-          PAGE SUBHEADER / CASE METADATA BAR
+          RULE 4: COMPACT PAGE HEADER + CONTROLS ON ONE SINGLE 44PX ROW
           ========================================================================= */}
       <div
         style={{
+          height: "44px",
+          minHeight: "44px",
+          marginBottom: "12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "12px",
-          padding: "4px 2px",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
         }}
       >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <h1
-              style={{
-                fontSize: "20px",
-                fontWeight: 800,
-                color: "#0F172A",
-                margin: 0,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Evidence Intake & Ledger Falsification
-            </h1>
-            <ReuiStatusBadge text="Z3 SMT VERIFIED" variant="emerald" />
-          </div>
-          <div style={{ fontSize: "12.5px", color: "#64748B", marginTop: "2px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <span>State Bank of India CBS Reconciliation · Sunil Kumar (A/c #30981140029) · FIR #149/2026</span>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#FFFFFF", padding: "2px 6px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", marginRight: "3px" }}>CBS Rows:</span>
-              {conservationSegments.map((s, idx) => (
-                <span
-                  key={idx}
-                  title={`Row ${s.seq}: ${s.ok ? "Conservation Verified" : "Discrepancy Detected"}`}
-                  style={{
-                    display: "inline-block",
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "2px",
-                    background: s.ok ? "#10B981" : "#F43F5E",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+        {/* Left: Title + Muted Account Pill */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", whiteSpace: "nowrap" }}>
+          <h1
+            style={{
+              fontSize: "18px",
+              fontWeight: 800,
+              color: "#09090B",
+              margin: 0,
+              letterSpacing: "-0.02em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Evidence Intake & Ledger Falsification
+          </h1>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#64748B",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              padding: "2px 8px",
+              borderRadius: "6px",
+              fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            SBI A/c #30981140029
+          </span>
         </div>
 
-        {/* Quick Action Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* ASC / DESC Toggle */}
+        {/* Right: ASC/DESC + Permute + Row #14 Tamper on Exact Same Row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, whiteSpace: "nowrap" }}>
+          {/* ASC | DESC Toggle */}
           <div
             style={{
               display: "inline-flex",
@@ -218,6 +201,9 @@ export const IntakeScreen: React.FC = () => {
               border: "1px solid #E2E8F0",
               borderRadius: "8px",
               padding: "2px",
+              height: "32px",
+              boxSizing: "border-box",
+              whiteSpace: "nowrap",
             }}
           >
             <button
@@ -226,16 +212,17 @@ export const IntakeScreen: React.FC = () => {
               style={{
                 border: "none",
                 background: sortPolarity === "ASC" ? "#F1F5F9" : "transparent",
-                color: sortPolarity === "ASC" ? "#0F172A" : "#64748B",
+                color: sortPolarity === "ASC" ? "#09090B" : "#64748B",
                 fontWeight: sortPolarity === "ASC" ? 700 : 500,
-                fontSize: "11px",
-                padding: "4px 9px",
+                fontSize: "11.5px",
+                padding: "3px 9px",
                 borderRadius: "6px",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
                 transition: "all 0.15s ease",
               }}
             >
-              ASC (Oldest First)
+              ASC
             </button>
             <button
               type="button"
@@ -243,24 +230,26 @@ export const IntakeScreen: React.FC = () => {
               style={{
                 border: "none",
                 background: sortPolarity === "DESC" ? "#F1F5F9" : "transparent",
-                color: sortPolarity === "DESC" ? "#0F172A" : "#64748B",
+                color: sortPolarity === "DESC" ? "#09090B" : "#64748B",
                 fontWeight: sortPolarity === "DESC" ? 700 : 500,
-                fontSize: "11px",
-                padding: "4px 9px",
+                fontSize: "11.5px",
+                padding: "3px 9px",
                 borderRadius: "6px",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
                 transition: "all 0.15s ease",
               }}
             >
-              DESC (Newest First)
+              DESC
             </button>
           </div>
 
-          {/* Permute Same-Sec Button */}
+          {/* Permute Same-Sec */}
           <button
             type="button"
             onClick={() => setPermuteActive((prev) => !prev)}
             style={{
+              height: "32px",
               display: "inline-flex",
               alignItems: "center",
               gap: "5px",
@@ -269,22 +258,24 @@ export const IntakeScreen: React.FC = () => {
               color: permuteActive ? "#4338CA" : "#475569",
               fontWeight: 600,
               fontSize: "11.5px",
-              padding: "5px 11px",
+              padding: "0 10px",
               borderRadius: "8px",
               cursor: "pointer",
+              whiteSpace: "nowrap",
               boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
             }}
             title="Evaluate same-second permutations for sub-second ordering"
           >
-            <Split size={13} color={permuteActive ? "#4F46E5" : "#64748B"} />
+            <Split size={12} color={permuteActive ? "#4F46E5" : "#64748B"} />
             <span>Permute Same-Sec {permuteActive ? "(Active)" : ""}</span>
           </button>
 
-          {/* Direct Row #14 Tamper Toggle */}
+          {/* Toggle Row #14 Tamper */}
           <button
             type="button"
             onClick={() => toggleMutation("alterBankRow14")}
             style={{
+              height: "32px",
               display: "inline-flex",
               alignItems: "center",
               gap: "5px",
@@ -293,334 +284,157 @@ export const IntakeScreen: React.FC = () => {
               color: isRow14Tampered ? "#BE123C" : "#475569",
               fontWeight: 600,
               fontSize: "11.5px",
-              padding: "5px 11px",
+              padding: "0 10px",
               borderRadius: "8px",
               cursor: "pointer",
+              whiteSpace: "nowrap",
               boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
             }}
           >
-            <Zap size={13} color={isRow14Tampered ? "#E11D48" : "#64748B"} />
-            <span>{isRow14Tampered ? "Tampered (-₹2.00L)" : "Toggle Row #14 Tamper"}</span>
+            <Zap size={12} color={isRow14Tampered ? "#E11D48" : "#64748B"} />
+            <span>{isRow14Tampered ? "Row #14 Tampered (-₹2.00L)" : "Toggle Row #14 Tamper"}</span>
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          ROW 1: 4 TOP BENTO KPI CARDS (MODELED ON SALEZY & FLOWMAIL EXECUTIVE KPIS)
+          RULE 3: 4 TOP COMPACT BENTO KPI CARDS (96PX HEIGHT, #09090B HERO)
           ========================================================================= */}
-      <div className="bento-grid-4">
+      <div className="bento-grid-4" style={{ marginBottom: "14px", flexShrink: 0 }}>
         {/* Card 1: Double-Entry Conservation */}
         <BentoKpiCard
           title="Ledger Conservation"
           metric={isRow14Tampered ? "Row #14 Fail" : "100% Valid"}
-          metricColor={isRow14Tampered ? "#E11D48" : "#059669"}
-          subtitle="6 CBS rows mathematically reconciled"
           statusBadge={{
-            text: isRow14Tampered ? "INVARIANT BREACH" : "VERIFIED ✓",
+            text: isRow14Tampered ? "INVARIANT BREACH" : "✓ 6/6 Reconciled",
             variant: isRow14Tampered ? "rose" : "emerald",
           }}
-          delta={{
-            value: isRow14Tampered ? "-₹2,00,000.00 Deficit" : "Bal[k-1]+Cr-Dr = Bal[k]",
-            isWarning: isRow14Tampered,
-            isPositive: !isRow14Tampered,
-          }}
+          meta="Double-Entry Invariant"
           icon={ShieldCheck}
           iconColor={isRow14Tampered ? "#E11D48" : "#059669"}
           iconBg={isRow14Tampered ? "#FFF1F2" : "#ECFDF5"}
-          sparklineData={isRow14Tampered ? [100, 100, 100, 20, 20, 20] : [100, 100, 100, 100, 100, 100]}
         />
 
         {/* Card 2: NPCI RRN Clock Sync */}
         <BentoKpiCard
           title="NPCI RRN Clock Sync"
           metric="10:00:14 IST"
-          metricColor="#4F46E5"
-          subtitle="Julian Day 265 · Switch STAN #149921"
           statusBadge={{
-            text: isForgedRrn ? "CLOCK DRIFT (+50m)" : "Δ +14s NTP SYNC",
+            text: isForgedRrn ? "CLOCK SKEW (+50m)" : "Δ +14s IST",
             variant: isForgedRrn ? "rose" : "indigo",
           }}
-          delta={{
-            value: isForgedRrn ? "Outside ±180s Limit" : "In Spec: ±180s Window",
-            isWarning: isForgedRrn,
-            isPositive: !isForgedRrn,
-          }}
+          meta="Julian Day 265"
           icon={Clock}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
-          sparklineData={[14, 14, 15, 14, 14, isForgedRrn ? 3000 : 14]}
         />
 
         {/* Card 3: Claim vs CBS Ledger Diff */}
         <BentoKpiCard
           title="Claim vs CBS Ledger Diff"
           metric="-₹2,00,000.00"
-          metricColor="#E11D48"
-          subtitle="Receipt ₹15,000 vs True CBS ₹2,15,000"
           statusBadge={{
-            text: "14.3× SUPPRESSION",
+            text: "14.3× Suppressed",
             variant: "rose",
           }}
-          delta={{
-            value: "Forged PDF Receipt",
-            isWarning: true,
-            label: "Canva Superimposed",
-          }}
+          meta="Canva Superimposed"
           icon={AlertTriangle}
           iconColor="#E11D48"
           iconBg="#FFF1F2"
-          sparklineData={[15, 15, 15, 215, 215, 215]}
         />
 
         {/* Card 4: PDF XRef & CGNAT Shield */}
         <BentoKpiCard
           title="PDF XRef & CGNAT Shield"
           metric="9,996 / 10,000"
-          metricColor="#059669"
-          subtitle="Airtel IPDR masked · PDF Rev 2 Canva"
           statusBadge={{
-            text: "MERKLE BLINDED",
+            text: "99.96% Blinded",
             variant: "emerald",
           }}
-          delta={{
-            value: "DoT Cl. 39.20 Safe",
-            isPositive: true,
-            label: "Zero PII Leakage",
-          }}
+          meta="DoT Cl. 39.20 Safe"
           icon={FileCheck}
           iconColor="#7C3AED"
           iconBg="#F5F3FF"
-          sparklineData={[9996, 9996, 9996, 9996, 9996, 9996]}
         />
       </div>
 
       {/* =========================================================================
-          ROW 2: TWO-COLUMN WORKBENCH (7.5 COLS LEFT + 4.5 COLS RIGHT)
+          RULE 5: 2-COLUMN MAIN WORKBENCH GRID (7.3FR LEFT + 4.7FR RIGHT)
           ========================================================================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1.65fr 1fr",
+          gridTemplateColumns: "7.3fr 4.7fr",
           gap: "14px",
           alignItems: "start",
         }}
       >
         {/* =======================================================================
-            LEFT COLUMN (7.5 COLS): SBI FINACLE CBS DATA GRID & CONFLICT ENGINE
+            LEFT COLUMN (7.3FR): UNIFIED SBI LEDGER & RECEIPT CONFLICT CARD
             ======================================================================= */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {/* 1. TOP CROSS-SOURCE CONFLICT STRIP */}
+        <div
+          className="bento-card"
+          style={{
+            padding: 0,
+            overflow: "hidden",
+            background: "#FFFFFF",
+            border: "1px solid #E2E8F0",
+            borderRadius: "14px",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
+          }}
+        >
+          {/* 1. CARD HEADER */}
           <div
-            className="bento-card"
             style={{
-              padding: "14px 18px",
+              padding: "12px 16px",
+              borderBottom: "1px solid #E2E8F0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
               background: "#FFFFFF",
-              border: "1px solid #E2E8F0",
+              whiteSpace: "nowrap",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Layers size={14} color="#64748B" />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
-                  Cross-Source Evidentiary Conflict: Mobile Receipt vs. Core Banking Ledger
-                </span>
-              </div>
-              <ReuiStatusBadge text="PRIMARY CONTRADICTION" variant="rose" />
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto 1fr",
-                alignItems: "center",
-                gap: "14px",
-                background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "12px 16px",
-              }}
-            >
-              {/* Suspect Mobile Receipt */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>
-                  Suspect Claimed Receipt (<span style={{ fontFamily: "var(--font-mono)" }}>victim_upi_receipt.pdf</span>)
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginTop: "2px" }}>
-                  <span style={{ fontSize: "22px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-sans)" }}>
-                    ₹15,000.00
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "10.5px",
-                      fontWeight: 700,
-                      color: "#BE123C",
-                      background: "#FFE4E6",
-                      padding: "1px 6px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    14.3× SUPPRESSED
-                  </span>
-                </div>
-                <div style={{ fontSize: "11px", color: "#94A3B8" }}>
-                  Complainant WhatsApp export · Canva altered layer
-                </div>
-              </div>
-
-              {/* Conflict Operator */}
-              <div
+            {/* Left Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#09090B", whiteSpace: "nowrap" }}>
+                SBI Core Banking Ledger (<span style={{ fontFamily: "var(--font-mono)" }}>sbi_finacle_cbs.csv</span>)
+              </span>
+              <span
                 style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "#FFF1F2",
-                  border: "1px solid #FECDD3",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#BE123C",
-                  fontSize: "18px",
-                  fontWeight: 900,
-                  flexShrink: 0,
+                  fontSize: "10.5px",
+                  fontWeight: 600,
+                  color: "#64748B",
+                  background: "#F1F5F9",
+                  padding: "1px 7px",
+                  borderRadius: "4px",
+                  whiteSpace: "nowrap",
                 }}
               >
-                ≠
-              </div>
-
-              {/* Certified Core Banking System */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px", textAlign: "right" }}>
-                <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>
-                  Actual Core Banking Debit (<span style={{ fontFamily: "var(--font-mono)" }}>sbi_finacle_cbs.csv</span>)
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: "6px", marginTop: "2px" }}>
-                  <span
-                    style={{
-                      fontSize: "10.5px",
-                      fontWeight: 700,
-                      color: "#047857",
-                      background: "#ECFDF5",
-                      padding: "1px 6px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    TIER-1 FINACLE 10.x
-                  </span>
-                  <span style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-sans)" }}>
-                    ₹2,15,000.00
-                  </span>
-                </div>
-                <div style={{ fontSize: "11px", color: "#94A3B8" }}>
-                  State Bank of India Data Centre · SHA-256 HMAC
-                </div>
-              </div>
+                6 Rows · Tier-1 HSM
+              </span>
             </div>
-          </div>
 
-          {/* 2. MATHEMATICAL INVARIANT FORMULA BANNER */}
-          <div
-            className="bento-card"
-            style={{
-              padding: "12px 18px",
-              background: isRow14Tampered ? "#FFF1F2" : "#F0FDF4",
-              border: isRow14Tampered ? "1px solid #FECDD3" : "1px solid #BBF7D0",
-              borderRadius: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {isRow14Tampered ? (
-                  <XCircle size={16} color="#BE123C" />
-                ) : (
-                  <CheckCircle2 size={16} color="#047857" />
-                )}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono)",
-                    color: isRow14Tampered ? "#9F1239" : "#065F46",
-                  }}
-                >
-                  Formula: Bal[k] = Bal[k-1] + Credit[k] - Debit[k]
-                </span>
-              </div>
-
-              <div style={{ fontSize: "11.5px", fontWeight: 600, color: isRow14Tampered ? "#BE123C" : "#047857" }}>
-                {isRow14Tampered ? (
-                  <span>
-                    Row #14: ₹7,37,440 - ₹2,15,000 = <strong>₹5,22,440.00</strong> ≠ Reported <strong>₹3,22,440.00</strong> (Δ -₹2,00,000.00)
-                  </span>
-                ) : (
-                  <span>
-                    Row #14: ₹7,37,440 - ₹2,15,000 = <strong>₹5,22,440.00</strong> (Exact 0.00 error · Invariant Verified)
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 3. REUI FORENSIC DATA GRID (HIGH-CLARITY TABLE MATCHING SALEZY & HEALTH) */}
-          <div
-            className="bento-card"
-            style={{
-              overflow: "hidden",
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-            }}
-          >
-            {/* Table Toolbar */}
-            <div
-              style={{
-                padding: "12px 18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#0F172A" }}>
-                  SBI Core Banking Ledger (<span style={{ fontFamily: "var(--font-mono)" }}>sbi_finacle_cbs.csv</span>)
-                </span>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "#64748B",
-                    background: "#F1F5F9",
-                    padding: "1px 7px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {displayRows.length} Rows
-                </span>
-              </div>
-
-              {/* Search Bar */}
-              <div style={{ position: "relative", width: "220px" }}>
+            {/* Right: Search + Live Equation Pill */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              {/* Inline Search Input */}
+              <div style={{ position: "relative", width: "180px" }}>
                 <Search
-                  size={13}
+                  size={12}
                   color="#94A3B8"
-                  style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)" }}
+                  style={{ position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)" }}
                 />
                 <input
                   type="text"
-                  placeholder="Filter rows, RRN..."
+                  placeholder="Filter UTR / Narration..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "5px 10px 5px 28px",
-                    fontSize: "11.5px",
-                    borderRadius: "7px",
+                    height: "28px",
+                    padding: "0 8px 0 26px",
+                    fontSize: "11px",
+                    borderRadius: "6px",
                     border: "1px solid #CBD5E1",
                     background: "#FAFAFA",
                     color: "#0F172A",
@@ -629,392 +443,457 @@ export const IntakeScreen: React.FC = () => {
                   }}
                 />
               </div>
+
+              {/* Live Equation Pill */}
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono, monospace)",
+                  padding: "3px 9px",
+                  borderRadius: "6px",
+                  whiteSpace: "nowrap",
+                  background: isRow14Tampered ? "#FFF1F2" : "#ECFDF5",
+                  color: isRow14Tampered ? "#BE123C" : "#047857",
+                  border: `1px solid ${isRow14Tampered ? "#FECDD3" : "#A7F3D0"}`,
+                }}
+              >
+                {isRow14Tampered
+                  ? "Bal[14] ≠ Expected (-₹2.00L Deficit) ✗"
+                  : "Bal[k] = Bal[k-1] + Cr - Dr ✓"}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. COMPACT CROSS-SOURCE CONFLICT BANNER */}
+          <div
+            style={{
+              padding: "10px 16px",
+              background: "rgba(255, 241, 242, 0.5)",
+              borderBottom: "1px solid #FECDD3",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {/* Left: Suspect Receipt */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+              <span style={{ fontSize: "11.5px", color: "#64748B" }}>
+                Suspect Receipt (<span style={{ fontFamily: "var(--font-mono)" }}>victim_upi_receipt.pdf · T3</span>):
+              </span>
+              <strong style={{ fontSize: "13.5px", color: "#BE123C", fontFamily: "var(--font-mono)" }}>
+                ₹15,000.00
+              </strong>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#BE123C",
+                  background: "#FFE4E6",
+                  padding: "1px 6px",
+                  borderRadius: "4px",
+                }}
+              >
+                Canva Edited
+              </span>
             </div>
 
-            {/* Table Container */}
-            <div style={{ overflowX: "auto" }}>
-              <table className="daylight-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "42px" }}>#</th>
-                    <th style={{ width: "120px" }}>Timestamp</th>
-                    <th>Description & RRN</th>
-                    <th style={{ width: "105px" }}>Type</th>
-                    <th style={{ width: "110px", textAlign: "right" }}>Debit / Credit</th>
-                    <th style={{ width: "140px", textAlign: "right" }}>Closing Balance (₹)</th>
-                    <th style={{ width: "95px", textAlign: "center" }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayRows.map((row) => {
-                    const isDisputed = row.sequenceNo === 14;
-                    const isUnsat = row.status === "UNSAT" || (isDisputed && isRow14Tampered);
-
-                    return (
-                      <tr
-                        key={row.id}
-                        style={{
-                          backgroundColor: isUnsat
-                            ? "#FFF5F5"
-                            : isDisputed
-                            ? "#FEF2F2"
-                            : "transparent",
-                          transition: "background-color 0.15s ease",
-                        }}
-                      >
-                        {/* Sequence No */}
-                        <td style={{ fontWeight: 700, color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                          #{row.sequenceNo}
-                        </td>
-
-                        {/* Timestamp */}
-                        <td style={{ fontFamily: "var(--font-mono)", fontSize: "11.5px", color: "#475569" }}>
-                          {row.timestamp.split("T")[1]}
-                        </td>
-
-                        {/* Description & RRN */}
-                        <td>
-                          <div style={{ fontWeight: 600, color: isDisputed ? "#BE123C" : "#0F172A" }}>
-                            {row.description}
-                          </div>
-                          {row.rrn !== "—" && (
-                            <div style={{ fontSize: "10.5px", fontFamily: "var(--font-mono)", color: "#64748B", marginTop: "1px" }}>
-                              RRN: {row.rrn}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Type Badge */}
-                        <td>
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              fontWeight: 700,
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              background:
-                                row.sequenceNo === 11
-                                  ? "#F1F5F9"
-                                  : row.sequenceNo === 13
-                                  ? "#ECFDF5"
-                                  : row.sequenceNo === 14
-                                  ? "#FFE4E6"
-                                  : "#EEF2FF",
-                              color:
-                                row.sequenceNo === 11
-                                  ? "#475569"
-                                  : row.sequenceNo === 13
-                                  ? "#047857"
-                                  : row.sequenceNo === 14
-                                  ? "#BE123C"
-                                  : "#4338CA",
-                            }}
-                          >
-                            {row.sequenceNo === 11
-                              ? "OPENING"
-                              : row.sequenceNo === 13
-                              ? "SALARY CR"
-                              : row.sequenceNo === 14
-                              ? "DISPUTED DR"
-                              : "RETAIL DR"}
-                          </span>
-                        </td>
-
-                        {/* Debit / Credit Amount */}
-                        <td
-                          style={{
-                            textAlign: "right",
-                            fontFamily: "var(--font-mono)",
-                            fontWeight: 700,
-                            color: row.credit > 0 ? "#047857" : row.debit > 0 ? "#BE123C" : "#64748B",
-                          }}
-                        >
-                          {row.credit > 0
-                            ? `+₹${row.credit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
-                            : row.debit > 0
-                            ? `-₹${row.debit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
-                            : "—"}
-                        </td>
-
-                        {/* Closing Balance (INTERACTIVE INPUT ON ROW #14) */}
-                        <td style={{ textAlign: "right" }}>
-                          {isDisputed ? (
-                            <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                              <input
-                                type="text"
-                                value={customRow14Balance}
-                                onChange={(e) => setCustomRow14Balance(e.target.value)}
-                                style={{
-                                  width: "106px",
-                                  textAlign: "right",
-                                  padding: "3px 6px",
-                                  fontSize: "12px",
-                                  fontWeight: 700,
-                                  fontFamily: "var(--font-mono)",
-                                  color: isUnsat ? "#BE123C" : "#0F172A",
-                                  background: isUnsat ? "#FFE4E6" : "#FFFFFF",
-                                  border: isUnsat ? "1px solid #FECDD3" : "1px solid #CBD5E1",
-                                  borderRadius: "6px",
-                                  outline: "none",
-                                }}
-                                title="Edit Row #14 closing balance to test mathematical falsification"
-                              />
-                            </div>
-                          ) : (
-                            <span
-                              style={{
-                                fontFamily: "var(--font-mono)",
-                                fontWeight: 700,
-                                color: isUnsat ? "#BE123C" : "#0F172A",
-                              }}
-                            >
-                              ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Status */}
-                        <td style={{ textAlign: "center" }}>
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                              fontSize: "10.5px",
-                              fontWeight: 700,
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              background: isUnsat ? "#FFF1F2" : "#ECFDF5",
-                              color: isUnsat ? "#BE123C" : "#047857",
-                              border: `1px solid ${isUnsat ? "#FECDD3" : "#A7F3D0"}`,
-                            }}
-                          >
-                            {isUnsat ? "FAIL ✗" : "VALID ✓"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Table Footer */}
+            {/* Center: Conflict Delta */}
             <div
               style={{
-                padding: "8px 18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                background: "#F8FAFC",
-                borderTop: "1px solid #E2E8F0",
                 fontSize: "11px",
-                color: "#64748B",
+                fontWeight: 800,
+                color: "#BE123C",
+                background: "#FFFFFF",
+                border: "1px solid #FECDD3",
+                padding: "2px 8px",
+                borderRadius: "6px",
+                fontFamily: "var(--font-mono)",
+                flexShrink: 0,
               }}
             >
-              <span>SBI Finacle 10.2 Server: Branch Code 01489 (Noida Sec 62)</span>
-              <span>HMAC: 94a1...fe02 (Verified)</span>
+              ≠ Δ ₹2,00,000.00 Hidden Debit
             </div>
+
+            {/* Right: Certified Finacle Settlement */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+              <span style={{ fontSize: "11.5px", color: "#64748B" }}>
+                SBI Finacle Settlement (<span style={{ fontFamily: "var(--font-mono)" }}>Tier-1</span>):
+              </span>
+              <strong style={{ fontSize: "13.5px", color: "#047857", fontFamily: "var(--font-mono)" }}>
+                ₹2,15,000.00
+              </strong>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#047857",
+                  background: "#ECFDF5",
+                  padding: "1px 6px",
+                  borderRadius: "4px",
+                }}
+              >
+                RRN #626510149921
+              </span>
+            </div>
+          </div>
+
+          {/* 3. THE 6-ROW FORENSIC DATA TABLE (ALL 6 ROWS IMMEDIATELY VISIBLE) */}
+          <div style={{ overflowX: "auto" }}>
+            <table className="daylight-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ height: "34px", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                  <th style={{ width: "42px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
+                    Row
+                  </th>
+                  <th style={{ width: "95px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
+                    Timestamp
+                  </th>
+                  <th style={{ padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
+                    UTR & Counterparty
+                  </th>
+                  <th style={{ width: "90px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
+                    Rail
+                  </th>
+                  <th style={{ width: "115px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700, textAlign: "right" }}>
+                    Debit / Credit (₹)
+                  </th>
+                  <th style={{ width: "135px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700, textAlign: "right" }}>
+                    Closing Balance (₹)
+                  </th>
+                  <th style={{ width: "85px", padding: "6px 14px", fontSize: "11px", color: "#64748B", fontWeight: 700, textAlign: "center" }}>
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayRows.map((row) => {
+                  const isDisputed = row.sequenceNo === 14;
+                  const isUnsat = row.status === "UNSAT" || (isDisputed && isRow14Tampered);
+
+                  return (
+                    <tr
+                      key={row.id}
+                      style={{
+                        height: "38px",
+                        backgroundColor: isUnsat
+                          ? "#FFF1F2"
+                          : isDisputed
+                          ? "#FEF2F2"
+                          : "transparent",
+                        borderBottom: "1px solid #F1F5F9",
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      {/* Row Seq */}
+                      <td style={{ padding: "6px 14px", fontWeight: 700, color: "#64748B", fontFamily: "var(--font-mono)" }}>
+                        #{row.sequenceNo}
+                      </td>
+
+                      {/* Timestamp */}
+                      <td style={{ padding: "6px 14px", fontFamily: "var(--font-mono)", fontSize: "11.5px", color: "#475569" }}>
+                        {row.timestamp.split("T")[1]}
+                      </td>
+
+                      {/* UTR & Counterparty */}
+                      <td style={{ padding: "6px 14px" }}>
+                        <div style={{ fontWeight: 600, color: isDisputed ? "#BE123C" : "#09090B", fontSize: "12px" }}>
+                          {row.description}
+                        </div>
+                        {row.rrn !== "—" && (
+                          <div style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "#64748B" }}>
+                            RRN: {row.rrn}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Rail Badge */}
+                      <td style={{ padding: "6px 14px" }}>
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background:
+                              row.sequenceNo === 11
+                                ? "#F1F5F9"
+                                : row.sequenceNo === 13
+                                ? "#ECFDF5"
+                                : row.sequenceNo === 14
+                                ? "#FFE4E6"
+                                : "#EEF2FF",
+                            color:
+                              row.sequenceNo === 11
+                                ? "#475569"
+                                : row.sequenceNo === 13
+                                ? "#047857"
+                                : row.sequenceNo === 14
+                                ? "#BE123C"
+                                : "#4338CA",
+                          }}
+                        >
+                          {row.sequenceNo === 11
+                            ? "OPENING"
+                            : row.sequenceNo === 13
+                            ? "NEFT CR"
+                            : row.sequenceNo === 14
+                            ? "UPI MULE"
+                            : "RETAIL"}
+                        </span>
+                      </td>
+
+                      {/* Debit / Credit Amount */}
+                      <td
+                        style={{
+                          padding: "6px 14px",
+                          textAlign: "right",
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          color: row.credit > 0 ? "#047857" : row.debit > 0 ? "#BE123C" : "#64748B",
+                        }}
+                      >
+                        {row.credit > 0
+                          ? `+₹${row.credit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                          : row.debit > 0
+                          ? `-₹${row.debit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                          : "—"}
+                      </td>
+
+                      {/* Closing Balance (INTERACTIVE INPUT ON ROW #14) */}
+                      <td style={{ padding: "6px 14px", textAlign: "right" }}>
+                        {isDisputed ? (
+                          <input
+                            type="text"
+                            value={customRow14Balance}
+                            onChange={(e) => setCustomRow14Balance(e.target.value)}
+                            style={{
+                              width: "104px",
+                              height: "24px",
+                              textAlign: "right",
+                              padding: "2px 6px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              fontFamily: "var(--font-mono)",
+                              color: isUnsat ? "#BE123C" : "#09090B",
+                              background: isUnsat ? "#FFFFFF" : "#FFFFFF",
+                              border: isUnsat ? "1px solid #FECDD3" : "1px solid #CBD5E1",
+                              borderRadius: "5px",
+                              outline: "none",
+                              boxSizing: "border-box",
+                            }}
+                            title="Edit Row #14 closing balance to test mathematical falsification"
+                          />
+                        ) : (
+                          <span
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                              color: isUnsat ? "#BE123C" : "#09090B",
+                            }}
+                          >
+                            ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: "6px 14px", textAlign: "center" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            fontSize: "10.5px",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: isUnsat ? "#FFF1F2" : "#ECFDF5",
+                            color: isUnsat ? "#BE123C" : "#047857",
+                            border: `1px solid ${isUnsat ? "#FECDD3" : "#A7F3D0"}`,
+                          }}
+                        >
+                          {isUnsat ? "FAIL ✗" : "VALID ✓"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
         {/* =======================================================================
-            RIGHT COLUMN (4.5 COLS): PROTOCOL PACKET DISSECTOR & BINARY XREF
+            RIGHT COLUMN (4.7FR): 2 COMPACT STACKED CARDS
             ======================================================================= */}
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {/* CARD A: NPCI 12-DIGIT RRN PROTOCOL PACKET DISSECTOR */}
+          {/* CARD 1: NPCI 12-DIGIT RRN DISSECTOR (626510149921) */}
           <div
             className="bento-card"
             style={{
-              padding: "16px 18px",
+              padding: "14px 16px",
               background: "#FFFFFF",
               border: "1px solid #E2E8F0",
+              borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "12px",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
-                  NPCI 12-Digit RRN Protocol Dissector
-                </div>
-                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "1px" }}>
-                  Standardized UPI/IMPS switch routing format
-                </div>
+            {/* Header + Input */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#09090B" }}>
+                NPCI 12-Digit RRN Dissector
               </div>
               <ReuiStatusBadge
-                text={decodedRrn.admissibilityVerdict === "ADMISSIBLE" ? "SPEC COMPLIANT" : "CLOCK SKEW"}
+                text={decodedRrn.admissibilityVerdict === "ADMISSIBLE" ? "SPEC OK" : "SKEW"}
                 variant={decodedRrn.admissibilityVerdict === "ADMISSIBLE" ? "emerald" : "rose"}
+                dot={false}
               />
             </div>
 
-            {/* Interactive RRN Input */}
-            <div style={{ marginBottom: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input
-                  type="text"
-                  value={rrnInput}
-                  onChange={(e) => setRrnInput(e.target.value.trim())}
-                  maxLength={12}
-                  style={{
-                    flex: 1,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "16px",
-                    fontWeight: 800,
-                    letterSpacing: "0.1em",
-                    padding: "7px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #CBD5E1",
-                    background: "#FAFAFA",
-                    color: "#0F172A",
-                    outline: "none",
-                  }}
-                  title="Enter 12-digit UPI/IMPS RRN string (YDDDHHSSSSSS)"
-                />
-                <button
-                  type="button"
-                  onClick={() => setRrnInput("626510149921")}
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    padding: "7px 10px",
-                    borderRadius: "7px",
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
-                    color: "#475569",
-                    cursor: "pointer",
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            {/* 4-Segment Byte Anatomy Ruler */}
-            <div style={{ marginBottom: "14px" }}>
-              <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", marginBottom: "6px" }}>
-                Packet Byte Anatomy (ISO-8583 Grammar)
-              </div>
-              <div
+            {/* Inline Input Box */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <input
+                type="text"
+                value={rrnInput}
+                onChange={(e) => setRrnInput(e.target.value.trim())}
+                maxLength={12}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1.5fr 1.2fr 2fr",
-                  gap: "6px",
+                  flex: 1,
+                  height: "30px",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  padding: "0 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #CBD5E1",
+                  background: "#FAFAFA",
+                  color: "#09090B",
+                  outline: "none",
+                  boxSizing: "border-box",
                 }}
-              >
-                {/* Byte 0 */}
-                <div
-                  style={{
-                    background: "#EEF2FF",
-                    border: "1px solid #C7D2FE",
-                    borderRadius: "8px",
-                    padding: "7px 8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#4338CA" }}>Byte 0 (Year)</div>
-                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#3730A3", fontFamily: "var(--font-mono)" }}>
-                    [{rrnInput[0] || "?"}]
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#6366F1", marginTop: "1px" }}>
-                    20{rrnInput[0] ? `2${rrnInput[0]}` : "26"}
-                  </div>
-                </div>
-
-                {/* Bytes 1-3 */}
-                <div
-                  style={{
-                    background: "#ECFDF5",
-                    border: "1px solid #A7F3D0",
-                    borderRadius: "8px",
-                    padding: "7px 8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857" }}>Bytes 1–3 (Julian)</div>
-                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#065F46", fontFamily: "var(--font-mono)" }}>
-                    [{rrnInput.substring(1, 4) || "???"}]
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#10B981", marginTop: "1px" }}>
-                    Day {decodedRrn.julianDay || 265} (22 Sep)
-                  </div>
-                </div>
-
-                {/* Bytes 4-5 */}
-                <div
-                  style={{
-                    background: "#FFFBEB",
-                    border: "1px solid #FDE68A",
-                    borderRadius: "8px",
-                    padding: "7px 8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#B45309" }}>Bytes 4–5 (Hour)</div>
-                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#92400E", fontFamily: "var(--font-mono)" }}>
-                    [{rrnInput.substring(4, 6) || "??"}]
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#F59E0B", marginTop: "1px" }}>
-                    {decodedRrn.hour || 10}:00 IST
-                  </div>
-                </div>
-
-                {/* Bytes 6-11 */}
-                <div
-                  style={{
-                    background: "#F5F3FF",
-                    border: "1px solid #DDD6FE",
-                    borderRadius: "8px",
-                    padding: "7px 8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#6D28D9" }}>Bytes 6–11 (STAN Trace)</div>
-                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#5B21B6", fontFamily: "var(--font-mono)" }}>
-                    [{rrnInput.substring(6, 12) || "??????"}]
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#8B5CF6", marginTop: "1px" }}>
-                    Switch Audit #{decodedRrn.sequence || "149921"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Graduated Clock Drift Scale (±180s NTP Boundary) */}
-            <div>
-              <div
+              />
+              <button
+                type="button"
+                onClick={() => setRrnInput("626510149921")}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  height: "30px",
                   fontSize: "11px",
-                  color: "#64748B",
-                  marginBottom: "4px",
+                  fontWeight: 600,
+                  padding: "0 9px",
+                  borderRadius: "6px",
+                  border: "1px solid #E2E8F0",
+                  background: "#F8FAFC",
+                  color: "#475569",
+                  cursor: "pointer",
                 }}
               >
-                <span style={{ fontWeight: 600 }}>NTP Switch Clock Offset (±180s Limit)</span>
+                Reset
+              </button>
+            </div>
+
+            {/* 4-Column Byte Anatomy Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1.3fr 1.1fr 1.5fr",
+                gap: "6px",
+                marginBottom: "12px",
+              }}
+            >
+              {/* Byte 0 */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "6px 4px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>Byte 0</div>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: "#4338CA", fontFamily: "var(--font-mono)" }}>
+                  [{rrnInput[0] || "?"}]
+                </div>
+                <div style={{ fontSize: "9.5px", color: "#475569" }}>2026</div>
+              </div>
+
+              {/* Bytes 1-3 */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "6px 4px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>Bytes 1–3</div>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>
+                  [{rrnInput.substring(1, 4) || "???"}]
+                </div>
+                <div style={{ fontSize: "9.5px", color: "#475569" }}>Day 265</div>
+              </div>
+
+              {/* Bytes 4-5 */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "6px 4px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>Bytes 4–5</div>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)" }}>
+                  [{rrnInput.substring(4, 6) || "??"}]
+                </div>
+                <div style={{ fontSize: "9.5px", color: "#475569" }}>10:00 IST</div>
+              </div>
+
+              {/* Bytes 6-11 */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "6px 4px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>Bytes 6–11</div>
+                <div style={{ fontSize: "14px", fontWeight: 800, color: "#6D28D9", fontFamily: "var(--font-mono)" }}>
+                  [{rrnInput.substring(6, 12) || "??????"}]
+                </div>
+                <div style={{ fontSize: "9.5px", color: "#475569" }}>STAN Trace</div>
+              </div>
+            </div>
+
+            {/* Compact ±180s NTP Switch Drift Bar */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#64748B", marginBottom: "4px" }}>
+                <span>NTP Clock Offset (±180s Limit)</span>
                 <span style={{ fontWeight: 700, color: isForgedRrn ? "#BE123C" : "#047857" }}>
-                  {isForgedRrn ? "Δ +3,000s (+50 min) FORGED" : "Δ +14.0s (IN SPEC)"}
+                  {isForgedRrn ? "Δ +3,000s SKEW" : "Δ +14.0s (IN SPEC)"}
                 </span>
               </div>
 
-              {/* Visual Ruler Track */}
+              {/* 6px Track */}
               <div
                 style={{
                   position: "relative",
-                  height: "24px",
-                  background: "#F1F5F9",
-                  borderRadius: "6px",
-                  border: "1px solid #E2E8F0",
+                  height: "6px",
+                  background: "#E2E8F0",
+                  borderRadius: "3px",
                   overflow: "hidden",
                 }}
               >
-                {/* In-Spec Safe Zone (-180s to +180s) */}
+                {/* Safe zone */}
                 <div
                   style={{
                     position: "absolute",
@@ -1022,13 +901,10 @@ export const IntakeScreen: React.FC = () => {
                     right: "25%",
                     top: 0,
                     bottom: 0,
-                    background: "rgba(16, 185, 129, 0.12)",
-                    borderLeft: "1px dashed #10B981",
-                    borderRight: "1px dashed #10B981",
+                    background: "#A7F3D0",
                   }}
                 />
-
-                {/* Center Zero Line */}
+                {/* Center marker */}
                 <div
                   style={{
                     position: "absolute",
@@ -1036,23 +912,19 @@ export const IntakeScreen: React.FC = () => {
                     top: 0,
                     bottom: 0,
                     width: "2px",
-                    background: "#94A3B8",
+                    background: "#64748B",
                   }}
                 />
-
-                {/* Indicator Pin */}
+                {/* Needle */}
                 <div
                   style={{
                     position: "absolute",
                     left: isForgedRrn ? "92%" : "54%",
-                    top: "3px",
-                    bottom: "3px",
+                    top: 0,
+                    bottom: 0,
                     width: "8px",
-                    borderRadius: "4px",
+                    borderRadius: "2px",
                     background: isForgedRrn ? "#E11D48" : "#4F46E5",
-                    boxShadow: isForgedRrn
-                      ? "0 0 8px rgba(225, 29, 72, 0.6)"
-                      : "0 0 6px rgba(79, 70, 229, 0.5)",
                     transition: "all 0.3s ease",
                   }}
                 />
@@ -1062,46 +934,41 @@ export const IntakeScreen: React.FC = () => {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: "9.5px",
+                  fontSize: "9px",
                   color: "#94A3B8",
                   marginTop: "3px",
                   fontFamily: "var(--font-mono)",
                 }}
               >
                 <span>-180s</span>
-                <span>-90s</span>
-                <span style={{ fontWeight: 700, color: "#64748B" }}>0s (NTP)</span>
-                <span>+90s</span>
+                <span>0s (NTP)</span>
                 <span>+180s</span>
               </div>
             </div>
           </div>
 
-          {/* CARD B: BINARY PDF XREF AUDIT & CGNAT MERKLE SHIELD */}
+          {/* CARD 2: PDF XREF & CGNAT MERKLE SHIELD */}
           <div
             className="bento-card"
             style={{
-              padding: "16px 18px",
+              padding: "14px 16px",
               background: "#FFFFFF",
               border: "1px solid #E2E8F0",
-              flex: 1,
+              borderRadius: "14px",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03)",
             }}
           >
-            {/* Header Tabs */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: "12px",
-              }}
-            >
+            {/* Header + Segmented Switcher */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#09090B" }}>
+                Integrity & Privacy Shield
+              </div>
               <div
                 style={{
                   display: "inline-flex",
                   background: "#F1F5F9",
                   padding: "2px",
-                  borderRadius: "8px",
+                  borderRadius: "6px",
                   border: "1px solid #E2E8F0",
                 }}
               >
@@ -1111,16 +978,16 @@ export const IntakeScreen: React.FC = () => {
                   style={{
                     border: "none",
                     background: activeTabDissector === "pdf" ? "#FFFFFF" : "transparent",
-                    color: activeTabDissector === "pdf" ? "#0F172A" : "#64748B",
+                    color: activeTabDissector === "pdf" ? "#09090B" : "#64748B",
                     fontWeight: activeTabDissector === "pdf" ? 700 : 500,
-                    fontSize: "11px",
-                    padding: "4px 9px",
-                    borderRadius: "6px",
+                    fontSize: "10.5px",
+                    padding: "3px 7px",
+                    borderRadius: "4px",
                     cursor: "pointer",
                     boxShadow: activeTabDissector === "pdf" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
                   }}
                 >
-                  PDF Binary XRef Audit
+                  PDF XRef (2 %%EOF)
                 </button>
                 <button
                   type="button"
@@ -1128,177 +995,91 @@ export const IntakeScreen: React.FC = () => {
                   style={{
                     border: "none",
                     background: activeTabDissector === "cgnat" ? "#FFFFFF" : "transparent",
-                    color: activeTabDissector === "cgnat" ? "#0F172A" : "#64748B",
+                    color: activeTabDissector === "cgnat" ? "#09090B" : "#64748B",
                     fontWeight: activeTabDissector === "cgnat" ? 700 : 500,
-                    fontSize: "11px",
-                    padding: "4px 9px",
-                    borderRadius: "6px",
+                    fontSize: "10.5px",
+                    padding: "3px 7px",
+                    borderRadius: "4px",
                     cursor: "pointer",
                     boxShadow: activeTabDissector === "cgnat" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
                   }}
                 >
-                  CGNAT Merkle Shield
+                  CGNAT Merkle (9,996)
                 </button>
               </div>
-
-              <span style={{ fontSize: "11px", color: "#94A3B8", fontFamily: "var(--font-mono)" }}>
-                {activeTabDissector === "pdf" ? "victim_upi_receipt.pdf" : "airtel_cgnat_ipdr.csv"}
-              </span>
             </div>
 
-            {/* TAB CONTENT 1: PDF BINARY XREF AUDIT */}
+            {/* TAB CONTENT 1: PDF XRef (2 %%EOF) */}
             {activeTabDissector === "pdf" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontSize: "11.5px", color: "#475569" }}>
-                  Binary Byte-Offset Timeline (<span style={{ fontFamily: "var(--font-mono)" }}>148,474 bytes total</span>):
-                </div>
-
-                {/* Byte Blocks */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {/* Block 1: Genuine PhonePe Generator */}
-                  <div
-                    style={{
-                      background: "#F0FDF4",
-                      border: "1px solid #BBF7D0",
-                      borderRadius: "8px",
-                      padding: "8px 10px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#065F46" }}>
-                        Revision 1 (0x00000000 – 0x00014208)
-                      </span>
-                      <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857", background: "#DCFCE7", padding: "1px 5px", borderRadius: "3px" }}>
-                        ORIGINAL %%EOF 1
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
-                      Producer: <strong style={{ color: "#065F46" }}>PhonePe UPI Gateway</strong> · Font: ArialMT · Debit ₹2,15,000.00
-                    </div>
-                  </div>
-
-                  {/* Block 2: Incremental Tamper Trailer */}
-                  <div
-                    style={{
-                      background: "#FFF1F2",
-                      border: "1px solid #FECDD3",
-                      borderRadius: "8px",
-                      padding: "8px 10px",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#9F1239" }}>
-                        Revision 2 (0x00014209 – 0x000234FA)
-                      </span>
-                      <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#BE123C", background: "#FFE4E6", padding: "1px 5px", borderRadius: "3px" }}>
-                        INCREMENTAL TRAILER %%EOF 2
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
-                      Producer: <strong style={{ color: "#BE123C" }}>Canva / HelveticaModified</strong> · Overwrote stream to ₹15,000.00
-                    </div>
-                  </div>
-                </div>
-
-                {/* Finding Summary */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <div
                   style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    padding: "8px 10px",
-                    fontSize: "11px",
-                    color: "#475569",
+                    borderRadius: "6px",
+                    padding: "6px 8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
                 >
-                  <strong style={{ color: "#0F172A" }}>Forensic Finding:</strong> Incremental PDF trailer found after primary EOF. Text layer was re-rendered in web graphics software to conceal the actual ₹2,15,000 transaction.
+                  <span style={{ fontSize: "11px", color: "#475569" }}>
+                    <strong style={{ color: "#047857" }}>0x00000000</strong> Finacle Original (%%EOF 1)
+                  </span>
+                  <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
+                    PhonePe / ArialMT
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    background: "#FFF1F2",
+                    border: "1px solid #FECDD3",
+                    borderRadius: "6px",
+                    padding: "6px 8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span style={{ fontSize: "11px", color: "#9F1239" }}>
+                    <strong style={{ color: "#BE123C" }}>0x00014209</strong> Canva Append (%%EOF 2)
+                  </span>
+                  <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#BE123C", background: "#FFE4E6", padding: "1px 5px", borderRadius: "3px" }}>
+                    TAMPERED STREAM
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* TAB CONTENT 2: CGNAT MERKLE SHIELD */}
+            {/* TAB CONTENT 2: CGNAT Merkle (9,996) */}
             {activeTabDissector === "cgnat" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontSize: "11.5px", color: "#475569" }}>
-                  Airtel CGNAT Public IP: <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>122.160.42.18</span> (Tower ID: NOIDA-SEC62)
-                </div>
-
-                {/* Merkle Tree Diagram */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <div
                   style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    padding: "10px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "8px",
+                    borderRadius: "6px",
+                    padding: "6px 8px",
+                    fontSize: "11px",
+                    color: "#09090B",
+                    fontFamily: "var(--font-mono)",
                   }}
                 >
-                  {/* Root */}
-                  <div
-                    style={{
-                      background: "#FFFFFF",
-                      border: "1px solid #CBD5E1",
-                      borderRadius: "6px",
-                      padding: "4px 10px",
-                      fontSize: "10px",
-                      fontFamily: "var(--font-mono)",
-                      color: "#0F172A",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Merkle Root: 0x4f8a92e1...c03b
-                  </div>
-
-                  {/* Branches */}
-                  <div style={{ display: "flex", width: "100%", justifyContent: "space-around", gap: "8px" }}>
-                    <div
-                      style={{
-                        flex: 1,
-                        background: "#EEF2FF",
-                        border: "1px solid #C7D2FE",
-                        borderRadius: "6px",
-                        padding: "5px 6px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#4338CA" }}>Target Suspect Leaf</div>
-                      <div style={{ fontSize: "10px", color: "#3730A3", fontFamily: "var(--font-mono)" }}>
-                        Port 44321 → SESS-01
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        flex: 1,
-                        background: "#ECFDF5",
-                        border: "1px solid #A7F3D0",
-                        borderRadius: "6px",
-                        padding: "5px 6px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857" }}>9,996 Blinded Citizens</div>
-                      <div style={{ fontSize: "10px", color: "#065F46", fontFamily: "var(--font-mono)" }}>
-                        Zero PII Disclosed
-                      </div>
-                    </div>
-                  </div>
+                  Root: 0xb189...7492 · 9,996 Citizens Blinded
                 </div>
 
                 <div
                   style={{
-                    background: "#F0FDF4",
-                    border: "1px solid #BBF7D0",
-                    borderRadius: "8px",
-                    padding: "8px 10px",
-                    fontSize: "11px",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    borderRadius: "6px",
+                    padding: "6px 8px",
+                    fontSize: "10.5px",
                     color: "#065F46",
                   }}
                 >
-                  <strong style={{ color: "#047857" }}>DoT Clause 39.20 Compliant:</strong> 9,996 innocent citizen records are masked using cryptographic hashes. Court-admissible proof of inclusion is preserved without subpoenaing civilian CDRs.
+                  DoT Clause 39.20 verified: Zero civilian CDRs subpoenaed.
                 </div>
               </div>
             )}
