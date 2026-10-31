@@ -320,8 +320,20 @@ body {
   width: 100%;
 }
 
-@container ledgercard (max-width: 1040px) {
+@container ledgercard (max-width: 1039px) {
   .col-rrn-cquery {
+    display: none !important;
+  }
+}
+
+@container ledgercard (max-width: 859px) {
+  .col-rail-cquery {
+    display: none !important;
+  }
+}
+
+@container gaterail (max-width: 1099px) {
+  .station-name-full {
     display: none !important;
   }
 }

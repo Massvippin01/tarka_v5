@@ -1,6 +1,7 @@
 import React from "react";
 import NumberFlow from "@number-flow/react";
 import { type LucideIcon, Info } from "lucide-react";
+import * as HoverCard from "@radix-ui/react-hover-card";
 
 export interface IntakeKpiCardProps {
   title: string;
@@ -51,31 +52,31 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
   return (
     <div
       onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      data-card="kpi-card"
       className="bento-card"
       style={{
-        height: "96px",
-        minHeight: "96px",
-        maxHeight: "96px",
-        padding: "9px 12px",
+        height: "80px",
+        minHeight: "80px",
+        maxHeight: "80px",
+        padding: "8px 12px",
         boxSizing: "border-box",
         background: "#FFFFFF",
-        border: active ? "1px solid #6366F1" : "1px solid #E2E8F0",
-        borderRadius: "14px",
+        border: active ? "1px solid #4F46E5" : "1px solid #E2E8F0",
+        borderRadius: "10px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         boxShadow: active
-          ? "0 0 0 2px rgba(99, 102, 241, 0.2), 0 1px 3px rgba(15, 23, 42, 0.04)"
-          : "0 1px 3px rgba(15, 23, 42, 0.03)",
+          ? "0 0 0 2px rgba(79, 70, 229, 0.2), 0 1px 3px rgba(15, 23, 42, 0.04)"
+          : "0 1px 2px rgba(15, 23, 42, 0.03)",
         cursor: onClick ? "pointer" : "default",
-        overflow: "hidden",
         userSelect: "none",
         transition: "all 0.15s ease",
+        width: "100%",
+        minWidth: 0,
       }}
     >
-      {/* Top Row: Icon + Title + Pill */}
+      {/* Top Row: Icon Well + Full Label + Info HoverCard + Status Pill */}
       <div
         style={{
           display: "flex",
@@ -89,8 +90,8 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
         <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
           <div
             style={{
-              width: "19px",
-              height: "19px",
+              width: "20px",
+              height: "20px",
               borderRadius: "5px",
               background: iconBg,
               display: "flex",
@@ -99,145 +100,126 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
               flexShrink: 0,
             }}
           >
-            <Icon size={11.5} color={iconColor} strokeWidth={2.4} />
+            <Icon size={12} color={iconColor} strokeWidth={2.4} />
           </div>
+
           <span
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              color: "#475569",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#334155",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
-            title={title}
           >
             {title}
           </span>
-          {tooltipText && (
-            <span
-              title={tooltipText}
-              style={{
-                color: "#94A3B8",
-                display: "inline-flex",
-                alignItems: "center",
-                cursor: "help",
-                flexShrink: 0,
-              }}
-            >
-              <Info size={10} />
-            </span>
-          )}
+
+          {/* Info HoverCard for Sub-label & Metadata */}
+          <HoverCard.Root openDelay={150} closeDelay={100}>
+            <HoverCard.Trigger asChild>
+              <button
+                type="button"
+                aria-label={`Detailed forensic metadata for ${title}`}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  padding: "1px",
+                  cursor: "help",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  color: "#94A3B8",
+                  flexShrink: 0,
+                }}
+              >
+                <Info size={11} />
+              </button>
+            </HoverCard.Trigger>
+            <HoverCard.Portal>
+              <HoverCard.Content
+                side="top"
+                align="center"
+                sideOffset={4}
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  padding: "6px 8px",
+                  boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                  fontSize: "10px",
+                  color: "#0F172A",
+                  zIndex: 9999,
+                  maxWidth: "220px",
+                  fontFamily: "var(--font-sans)",
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: "2px" }}>{title}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#64748B", marginBottom: "4px" }}>
+                  {metaText}
+                </div>
+                {tooltipText && <div style={{ fontSize: "9.5px", color: "#475569" }}>{tooltipText}</div>}
+                <HoverCard.Arrow style={{ fill: "#FFFFFF" }} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
         </div>
 
+        {/* Status Pill */}
         <span
           style={{
-            fontSize: "9px",
-            fontWeight: 700,
-            padding: "1.5px 5px",
-            borderRadius: "4px",
+            fontSize: "8.5px",
+            fontWeight: 800,
+            fontFamily: "var(--font-mono)",
             background: pStyle.bg,
             color: pStyle.color,
             border: `1px solid ${pStyle.border}`,
+            padding: "1.5px 5px",
+            borderRadius: "4px",
             whiteSpace: "nowrap",
             flexShrink: 0,
-            lineHeight: 1.2,
           }}
         >
           {pillText}
         </span>
       </div>
 
-      {/* Center Row: Hero Value strictly #09090B font-weight 800 */}
+      {/* Second Row: Hero Number Value */}
       <div
         style={{
           display: "flex",
           alignItems: "baseline",
-          gap: "3px",
-          margin: "auto 0",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {heroText ? (
-          <span
-            style={{
-              fontSize: "19.5px",
-              fontWeight: 800,
-              color: "#09090B",
-              letterSpacing: "-0.025em",
-              fontFamily: "var(--font-sans)",
-              lineHeight: 1.1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-            title={heroText}
-          >
-            {heroText}
-          </span>
-        ) : typeof numericValue === "number" ? (
-          <div
-            style={{
-              fontSize: "19.5px",
-              fontWeight: 800,
-              color: "#09090B",
-              letterSpacing: "-0.025em",
-              fontFamily: "var(--font-sans)",
-              lineHeight: 1.1,
-              display: "flex",
-              alignItems: "baseline",
-            }}
-          >
-            {prefix && (
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "15px",
-                  color: "#475569",
-                  marginRight: "2px",
-                }}
-              >
-                {prefix}
-              </span>
-            )}
-            <NumberFlow
-              value={numericValue}
-              format={{ maximumFractionDigits: 2, minimumFractionDigits: 0 }}
-            />
-            {suffix && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#64748B",
-                  marginLeft: "4px",
-                  fontWeight: 600,
-                }}
-              >
-                {suffix}
-              </span>
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Bottom Row: Subtitle / Meta */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
-          fontSize: "10px",
-          color: "#64748B",
-          fontFamily: "var(--font-mono)",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
-          textOverflow: "ellipsis",
+          width: "100%",
+          gap: "6px",
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis" }} title={metaText}>
-          {metaText}
-        </span>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 800,
+            fontFamily: "var(--font-sans)",
+            color: "#09090B",
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {heroText ? (
+            <span>{heroText}</span>
+          ) : numericValue !== undefined ? (
+            <span style={{ display: "inline-flex", alignItems: "baseline" }}>
+              {prefix && <span>{prefix}</span>}
+              <NumberFlow value={numericValue} />
+              {suffix && <span style={{ fontSize: "14px", fontWeight: 700, marginLeft: "2px", color: "#64748B" }}>{suffix}</span>}
+            </span>
+          ) : (
+            "—"
+          )}
+        </div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ const path = require('path');
 
 async function capture() {
   const dir = path.join(__dirname, 'screens', 'after');
+  const artifactDir = 'C:\\Users\\User\\.gemini\\antigravity\\brain\\249cd97f-a6aa-46cc-9ccf-37d2236e6dbe';
   fs.mkdirSync(dir, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
@@ -16,25 +17,31 @@ async function capture() {
 
   for (const vp of viewports) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
-    await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'networkidle' });
-    // wait a moment for fonts and NumberFlow to settle
+    await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-card="kpi-card"]');
     await page.waitForTimeout(600);
-    await page.screenshot({ path: path.join(dir, `intake-${vp.name}.png`) });
+    const localPath = path.join(dir, `intake-${vp.name}.png`);
+    const artPath = path.join(artifactDir, `intake-${vp.name}.png`);
+    await page.screenshot({ path: localPath });
+    try { fs.copyFileSync(localPath, artPath); } catch (e) {}
+    console.log(`Captured intake-${vp.name}.png`);
     await page.close();
   }
 
   // Capture Tampered state at 1920x1080
   {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-    await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'networkidle' });
+    await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-card="kpi-card"]');
     await page.waitForTimeout(400);
-    // Click toggle tamper button
-    const tamperBtn = await page.locator('button:has-text("Toggle Row #14 Tamper")');
-    if (await tamperBtn.count() > 0) {
-      await tamperBtn.click();
-      await page.waitForTimeout(600);
-      await page.screenshot({ path: path.join(dir, 'intake-tampered-1920.png') });
-    }
+    // Press 'T' to tamper Row #14
+    await page.keyboard.press('t');
+    await page.waitForTimeout(600);
+    const localPath = path.join(dir, 'intake-tampered-1920.png');
+    const artPath = path.join(artifactDir, 'intake-tampered-1920.png');
+    await page.screenshot({ path: localPath });
+    try { fs.copyFileSync(localPath, artPath); } catch (e) {}
+    console.log('Captured intake-tampered-1920.png');
     await page.close();
   }
 
@@ -47,18 +54,21 @@ async function capture() {
 
   for (const item of otherViews) {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-    await page.goto(`http://127.0.0.1:5173/?view=${item.view}`, { waitUntil: 'networkidle' });
+    await page.goto(`http://127.0.0.1:5173/?view=${item.view}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(600);
-    await page.screenshot({ path: path.join(dir, item.file) });
+    const localPath = path.join(dir, item.file);
+    const artPath = path.join(artifactDir, item.file);
+    await page.screenshot({ path: localPath });
+    try { fs.copyFileSync(localPath, artPath); } catch (e) {}
+    console.log(`Captured ${item.file}`);
     await page.close();
   }
 
   await browser.close();
-  console.log('After-screenshots captured successfully!');
+  console.log('All screenshots captured and saved to artifacts successfully!');
 }
 
 capture().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

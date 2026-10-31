@@ -167,3 +167,4 @@ export function deriveGateVerdict(input: InvariantEvaluationInput): GateVerdictR
     },
   };
 }
+
