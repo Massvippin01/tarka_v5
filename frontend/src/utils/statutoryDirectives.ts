@@ -84,4 +84,51 @@ Failure to furnish DoT Clause 39.20 logs obstructs statutory investigation under
 Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
 }
 
+export function getDotSimSwapDirective(): string {
+  return `STATUTORY MANDATE UNDER DOT SIM-SWAP SECURITY DIRECTIVE & SEC 94 BNSS
+From: Investigating Officer (Cyber Crime Police Station, Noida)
+To: Nodal Officers — Bharti Airtel Ltd. & Reliance Jio Infocomm Ltd.
+Case Ref: FIR #149/2026 · Noida Cyber Crime PS (Complainant: Sunil Kumar)
+Date/Time: 2026-09-22 11:45:00 IST
+
+SUBJECT: INVESTIGATION OF PRECURSOR SIM-SWAP FRAUD & PHYSICAL IMSI RE-ALLOCATION
+
+1. Forensic evidence indicates that MSISDN +91-98711-23941 underwent an unauthorized physical SIM swap at 09:44:12 IST (16 minutes prior to ₹5,00,000 siphoning):
+   - Legacy IMSI: 404100291048882 (Deactivated)
+   - Fraudulent Target IMSI: 404100291048904 (Activated on Handset TAC 86749206)
+   - Handset Hardware: Samsung Galaxy M34 5G (Dual-SIM Chassis)
+   - Slot 1 IMEI: 867492061234564 (Airtel) | Slot 2 IMEI: 867492061234572 (Jio)
+
+2. Under Section 94 BNSS and DoT Security Directives, produce immediately:
+   (a) Store POS transaction ID, biometric Aadhaar thumbprint scan, and agent identity authorizing the SIM swap at 09:44:12 IST.
+   (b) SMS Gateway dispatch logs for OTPs routed to IMSI 404100291048904 during the 09:45:00 - 10:15:00 IST window.
+   (c) Immediate block / IMEI blacklisting across CEIR portal for chassis TAC 86749206.
+
+Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
+}
+
+export function getBnss94ImeiSeizureDirective(): string {
+  return `SEARCH & SEIZURE WARRANT REQUISITION UNDER SEC 94/106 BNSS, 2023
+From: Investigating Officer (Cyber Crime Police Station, Noida)
+To: In-Charge Officer, Special Task Force (STF) / Tactical Recovery Unit
+Case Ref: FIR #149/2026 · Noida Cyber Crime PS
+Date/Time: 2026-09-22 12:00:00 IST
+
+SUBJECT: WARRANT FOR PHYSICAL RECOVERY & FORENSIC SEIZURE OF CHASSIS TAC 86749206
+
+Target Device Hardware Identification:
+• Model: Samsung Galaxy M34 5G (Exynos 1280 Octa-Core)
+• Primary Slot 1 IMEI: 867492061234564 (Luhn Checksum: PASS)
+• Secondary Slot 2 IMEI: 867492061234572 (Luhn Checksum: PASS)
+• Client TLS JA4 Signature: t13d1516h2_8daaf6 (Dual-Anchor Validated)
+• Last Triangulated Azimuth: DL-TWR-891 Sector 4 Rohini, Delhi (28.5355°N, 77.3910°E)
+
+Directives:
+1. Execute search and seizure of physical handset chassis TAC 86749206 under Section 106 BNSS.
+2. Maintain strict air-gapped chain of custody into Faraday RF shielding pouch as mandated by ISO/IEC 27037 standards.
+3. Secure immediate Section 63(4) BSA Hash verification upon seizure.
+
+Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
+}
+
 

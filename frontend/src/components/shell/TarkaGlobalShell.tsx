@@ -21,7 +21,9 @@ import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContex
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { IntakeScreen } from "../../pages/v5/IntakeScreen";
+import { EntityResolutionScreen } from "../../pages/v5/EntityResolutionScreen";
 import { AttributionScreen } from "../../pages/v5/AttributionScreen";
+import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
 import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
 import { SarvamVoiceModal } from "../tarka/SarvamVoiceModal";
@@ -106,62 +108,85 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       } else if ((e.key === "f" || e.key === "F") && !isInput && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         togglePresentationMode();
+      } else if (e.altKey && !isInput) {
+        if (e.key === "1") { e.preventDefault(); setActiveRoute("intake"); }
+        else if (e.key === "2") { e.preventDefault(); setActiveRoute("entities"); }
+        else if (e.key === "3") { e.preventDefault(); setActiveRoute("attribution"); }
+        else if (e.key === "4") { e.preventDefault(); setActiveRoute("network"); }
+        else if (e.key === "5") { e.preventDefault(); setActiveRoute("taint-engine"); }
+        else if (e.key === "6") { e.preventDefault(); setActiveRoute("court-proof"); }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, togglePresentationMode]);
+  }, [toggleSidebar, togglePresentationMode, setActiveRoute]);
 
-  // 4 Core Pipeline Navigation Items
+  // 6 Core PS4 Deliverable Pipeline Navigation Items
   const navItems = [
     {
       id: "intake" as TarkaRoute,
       step: "01",
-      title: "Evidence Intake & Ledger Falsification",
+      title: "Multi-Vector Intake & Falsification Gate",
       shortTitle: "Evidence Intake",
       subtitle: "Ledger & PDF Integrity",
       badgeText: mutations.alterBankRow14 ? "Fail" : "2",
       badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
-      tooltip: "2 open flags (Row #14 Extortion Debit + Canva PDF Trailer)",
+      tooltip: "Ledger Falsification, RRN Protocol & PDF Trailer Audit (Alt+1)",
       isLocked: false,
     },
     {
-      id: "attribution" as TarkaRoute,
+      id: "entities" as TarkaRoute,
       step: "02",
-      title: "CGNAT Attribution & Hardware Twin",
+      title: "Entity Extraction & Resolution Framework",
+      shortTitle: "Entity Resolution",
+      subtitle: "Multi-Source Extraction",
+      badgeText: "5 Ent",
+      badgeVariant: "indigo" as const,
+      tooltip: "PS4 Deliverable #2: Multi-Source Extraction & Hard-Veto Shield (Alt+2)",
+      isLocked: intakeGate?.isHalted,
+    },
+    {
+      id: "attribution" as TarkaRoute,
+      step: "03",
+      title: "Fraud Attribution & SIM-Swap Engine",
       shortTitle: "CGNAT Attribution",
       subtitle: "Port Funnel & IMEI Twin",
-      badgeText: "✓",
+      badgeText: "1:1",
       badgeVariant: "emerald" as const,
-      tooltip: intakeGate?.isHalted
-        ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)"
-        : "CGNAT & Hardware Twin Attribution",
+      tooltip: "PS4 Deliverable #1: CGNAT 340→1 Funnel & Z3 SMT Clock Proof (Alt+3)",
+      isLocked: intakeGate?.isHalted,
+    },
+    {
+      id: "network" as TarkaRoute,
+      step: "04",
+      title: "Fraud-Network & Actor Relationships",
+      shortTitle: "Fraud Network",
+      subtitle: "Actor Relationships",
+      badgeText: "TTL=63",
+      badgeVariant: "indigo" as const,
+      tooltip: "PS4 Deliverable #4: Wi-Fi Hotspot BSSID, JA4 TLS & Syndicate Graph (Alt+4)",
       isLocked: intakeGate?.isHalted,
     },
     {
       id: "taint-engine" as TarkaRoute,
-      step: "03",
-      title: "Taint DAG & BNSS Liens",
-      shortTitle: "Taint & BNSS Liens",
-      subtitle: "Dinic Min-Cut & §106",
+      step: "05",
+      title: "Transaction Flow & Mule Taint DAG",
+      shortTitle: "Taint DAG",
+      subtitle: "Mule Flow & Min-Cut",
       badgeText: "K=3",
       badgeVariant: "indigo" as const,
-      tooltip: intakeGate?.isHalted
-        ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)"
-        : "Taint DAG & BNSS Lien Requisition",
+      tooltip: "PS4 Deliverable #3: 5-Column Money Trail, LIBR/FIFO & Dinic Min-Cut (Alt+5)",
       isLocked: intakeGate?.isHalted,
     },
     {
       id: "court-proof" as TarkaRoute,
-      step: "04",
-      title: "BSA § 63(4) Court Proof Dossier",
-      shortTitle: "Court Proof Dossier",
-      subtitle: "BSA §63(4) & CBI Memo",
-      badgeText: "OK",
+      step: "06",
+      title: "Actionable Intelligence & BSA §63(4) Dossier",
+      shortTitle: "Court Dossier",
+      subtitle: "MHA SOP & BSA §63",
+      badgeText: "§63(4)",
       badgeVariant: "emerald" as const,
-      tooltip: intakeGate?.isHalted
-        ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)"
-        : "Section 63(4) BSA Court Admissibility Bundle",
+      tooltip: "PS4 Deliverable #5: MHA Jan 2026 SOP Orders, CBI STR Memo & LOO Proof (Alt+6)",
       isLocked: intakeGate?.isHalted,
     },
   ];
@@ -1138,7 +1163,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           }}
         >
           {activeRoute === "intake" && <IntakeScreen />}
+          {activeRoute === "entities" && <EntityResolutionScreen />}
           {activeRoute === "attribution" && <AttributionScreen />}
+          {activeRoute === "network" && <FraudNetworkScreen />}
           {activeRoute === "taint-engine" && <TaintEngineScreen />}
           {activeRoute === "court-proof" && <CourtProofScreen />}
         </div>

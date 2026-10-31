@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
-export type TarkaRoute = "intake" | "attribution" | "taint-engine" | "court-proof" | "workstation" | "workflow";
+export type TarkaRoute =
+  | "intake"
+  | "entities"
+  | "attribution"
+  | "network"
+  | "taint-engine"
+  | "court-proof"
+  | "workstation"
+  | "workflow";
 
 export interface ActiveMutations {
   // 6 Core Forensic Mutations
@@ -101,6 +109,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
       if (view === "attribution" || path.includes("attribution")) return "attribution";
+      if (view === "entities" || view === "entity" || path.includes("entities")) return "entities";
+      if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
       if (view === "taint-engine" || view === "taint" || path.includes("taint")) return "taint-engine";
       if (view === "court-proof" || view === "court" || path.includes("court")) return "court-proof";
       if (view === "workstation" || view === "tarka" || path.includes("workstation")) return "workstation";
