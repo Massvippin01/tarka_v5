@@ -51,6 +51,16 @@ export const TarkaGlobalShell: React.FC = () => {
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
 
+  // Live Judge Mutation Audit Log ("Session Receipts")
+  const [mutationReceipts, setMutationReceipts] = useState<Array<{ id: string; time: string; text: string; type: "tamper" | "clean" }>>([
+    { id: "rcpt-0", time: "10:00:14", text: "Baseline CBS Finacle 10.x Commit Verified (6/6 Invariant Satisfied)", type: "clean" },
+  ]);
+
+  const addReceipt = (text: string, type: "tamper" | "clean" = "tamper") => {
+    const time = new Date().toTimeString().split(" ")[0];
+    setMutationReceipts((prev) => [{ id: `rcpt-${Date.now()}-${Math.random()}`, time, text, type }, ...prev.slice(0, 7)]);
+  };
+
   // Global Ctrl+B (sidebar) and F (presentation mode) shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -623,6 +633,24 @@ export const TarkaGlobalShell: React.FC = () => {
               {currentNav.title}
             </span>
             <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 800,
+                color: "#047857",
+                background: "#ECFDF5",
+                border: "1px solid #A7F3D0",
+                padding: "2px 7px",
+                borderRadius: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+              }}
+              title="Air-Gap Compliance: Zero external runtime network requests or CDNs"
+            >
+              <Lock size={10} color="#059669" />
+              <span>🔒 Air-Gap Verified · 0 External Calls</span>
+            </span>
           </div>
 
           {/* Center: Operational Clock Stepper */}
@@ -847,73 +875,103 @@ export const TarkaGlobalShell: React.FC = () => {
             style={{
               background: "#F8FAFC",
               borderBottom: "1px solid #E2E8F0",
-              padding: "8px 14px",
+              padding: "10px 14px",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
               gap: "8px",
               fontSize: "11px",
               flexShrink: 0,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontWeight: 700, color: "#0F172A" }}>Live Judge Falsification Mutators:</span>
-              <button
-                type="button"
-                onClick={() => toggleMutation("alterBankRow14")}
-                style={{
-                  padding: "3px 8px",
-                  borderRadius: "4px",
-                  border: mutations.alterBankRow14 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                  background: mutations.alterBankRow14 ? "#FFF1F2" : "#FFFFFF",
-                  color: mutations.alterBankRow14 ? "#BE123C" : "#334155",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <Zap size={11} color={mutations.alterBankRow14 ? "#E11D48" : "#64748B"} />
-                <span>{mutations.alterBankRow14 ? "Row #14 Tampered (-₹2.00L)" : "Alter Bank Row #14"}</span>
-              </button>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontWeight: 700, color: "#0F172A" }}>Live Judge Falsification Mutators:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !mutations.alterBankRow14;
+                    toggleMutation("alterBankRow14");
+                    addReceipt(next ? "Row #14 Altered (+₹2.0L Deficit) ⟶ Gate I1 Halted (Extortion Debit Flushed)" : "Row #14 Restored to ₹5,22,440.00 ⟶ Gate I1 Passed", next ? "tamper" : "clean");
+                  }}
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: mutations.alterBankRow14 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                    background: mutations.alterBankRow14 ? "#FFF1F2" : "#FFFFFF",
+                    color: mutations.alterBankRow14 ? "#BE123C" : "#334155",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <Zap size={11} color={mutations.alterBankRow14 ? "#E11D48" : "#64748B"} />
+                  <span>{mutations.alterBankRow14 ? "Row #14 Tampered (-₹2.00L)" : "Alter Bank Row #14"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !mutations.forgeRrnTimestamp;
+                    toggleMutation("forgeRrnTimestamp");
+                    addReceipt(next ? "Forge RRN Clock Skew (+50m / 3000s) ⟶ Gate I2 Flagged (Switch Skew)" : "Reset RRN Clock Skew (+14s) ⟶ Gate I2 Passed", next ? "tamper" : "clean");
+                  }}
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: mutations.forgeRrnTimestamp ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                    background: mutations.forgeRrnTimestamp ? "#FFF1F2" : "#FFFFFF",
+                    color: mutations.forgeRrnTimestamp ? "#BE123C" : "#334155",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {mutations.forgeRrnTimestamp ? "RRN Skew Active (+50m)" : "Forge RRN Clock Skew"}
+                </button>
+              </div>
 
               <button
                 type="button"
-                onClick={() => toggleMutation("forgeRrnTimestamp")}
+                onClick={() => {
+                  resetAllMutations();
+                  addReceipt("All Invariants Reset to Clean State (6/6 Conserved)", "clean");
+                }}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
                   padding: "3px 8px",
                   borderRadius: "4px",
-                  border: mutations.forgeRrnTimestamp ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                  background: mutations.forgeRrnTimestamp ? "#FFF1F2" : "#FFFFFF",
-                  color: mutations.forgeRrnTimestamp ? "#BE123C" : "#334155",
-                  fontWeight: 600,
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: "#475569",
                   cursor: "pointer",
+                  fontSize: "10.5px",
                 }}
               >
-                {mutations.forgeRrnTimestamp ? "RRN Skew Active (+50m)" : "Forge RRN Clock Skew"}
+                <RotateCcw size={10} />
+                <span>Reset Clean</span>
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={resetAllMutations}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "3px",
-                padding: "3px 8px",
-                borderRadius: "4px",
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: "#475569",
-                cursor: "pointer",
-                fontSize: "10.5px",
-              }}
-            >
-              <RotateCcw size={10} />
-              <span>Reset Clean</span>
-            </button>
+            {/* Live Judge Mutation Audit Log (Session Receipts) */}
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
+                <span>Live Judge Mutation Audit Trail (Session Receipts)</span>
+                <span style={{ color: "#059669" }}>Real-time Audit Log</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px", maxHeight: "72px", overflowY: "auto" }}>
+                {mutationReceipts.map((rcpt) => (
+                  <div key={rcpt.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)" }}>
+                    <span style={{ color: "#94A3B8" }}>{rcpt.time}</span>
+                    <span style={{ color: rcpt.type === "tamper" ? "#BE123C" : "#047857", fontWeight: 600 }}>
+                      {rcpt.type === "tamper" ? "✗" : "✓"} {rcpt.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

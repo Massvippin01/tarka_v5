@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import {
   Search,
   Copy,
@@ -15,10 +16,12 @@ import {
   XCircle,
   MoreHorizontal,
   Split,
+  FileText,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { type LedgerRowData } from "../../../utils/intakeFalsifier";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
+import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
 
 export type ValidatedLedgerRow = LedgerRowData & {
   expectedBalance?: number;
@@ -408,12 +411,12 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       </div>
 
       {/* =========================================================================
-          CONFLICT ALERT STRIP (COMPACT 44PX, WRAP-SAFE)
+          CONFLICT ALERT STRIP & NAIVE VS TARKA CONTRAST
           ========================================================================= */}
       <div
         style={{
-          padding: "4px 10px",
-          background: "rgba(255, 241, 242, 0.65)",
+          padding: "5px 10px",
+          background: "rgba(255, 241, 242, 0.75)",
           borderBottom: "1px solid #FECDD3",
           display: "flex",
           alignItems: "center",
@@ -424,70 +427,128 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <AlertCircle size={13} color="#E11D48" style={{ flexShrink: 0 }} />
-          <span style={{ color: "#475569" }}>Claimed Receipt:</span>
-          <strong style={{ color: "#BE123C", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
-            ₹15,000.00
-          </strong>
-          <span
+        {/* Left: Claim vs CBS Finacle values */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <AlertCircle size={13} color="#E11D48" style={{ flexShrink: 0 }} />
+            <span style={{ color: "#475569" }}>Claimed Receipt:</span>
+            <strong style={{ color: "#BE123C", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
+              ₹15,000.00
+            </strong>
+            <span
+              style={{
+                fontSize: "8.5px",
+                fontWeight: 700,
+                color: "#BE123C",
+                background: "#FFE4E6",
+                border: "1px solid #FECDD3",
+                padding: "0 4px",
+                borderRadius: "3px",
+              }}
+            >
+              Tier-3 Canva
+            </span>
+          </div>
+
+          <div
             style={{
-              fontSize: "8.5px",
-              fontWeight: 700,
+              fontSize: "10.5px",
+              fontWeight: 800,
               color: "#BE123C",
-              background: "#FFE4E6",
+              background: "#FFFFFF",
               border: "1px solid #FECDD3",
-              padding: "0 4px",
-              borderRadius: "3px",
+              padding: "1px 6px",
+              borderRadius: "4px",
             }}
           >
-            Tier-3 Canva
-          </span>
+            ≠ Δ ₹2,00,000.00 Hidden Deficit (14.3× Overwrite)
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ color: "#475569" }}>Finacle CBS:</span>
+            <strong style={{ color: "#047857", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
+              ₹2,15,000.00
+            </strong>
+            <button
+              type="button"
+              onClick={() => {
+                onSelectRrn("626510149921");
+                setActiveDockTab("rrn");
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "2px",
+                fontSize: "9.5px",
+                fontFamily: "var(--font-mono)",
+                fontWeight: 700,
+                color: "#047857",
+                background: "#ECFDF5",
+                border: "1px solid #A7F3D0",
+                padding: "1px 5px",
+                borderRadius: "3px",
+                cursor: "pointer",
+              }}
+              title="Inspect RRN in Forensic Lab"
+            >
+              <span>#626510149921</span>
+              <ExternalLink size={9} />
+            </button>
+          </div>
         </div>
 
-        <div
-          style={{
-            fontSize: "10.5px",
-            fontWeight: 800,
-            color: "#BE123C",
-            background: "#FFFFFF",
-            border: "1px solid #FECDD3",
-            padding: "1px 6px",
-            borderRadius: "4px",
-          }}
-        >
-          ≠ Δ ₹2,00,000.00 Hidden Deficit (14.3× Overwrite)
-        </div>
+        {/* Right: Naive IO vs TARKA View + Actionable §94 Directive Button */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          {/* Naive IO vs TARKA Invariant View Badge */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "9.5px",
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
+              borderRadius: "14px",
+              padding: "1.5px 8px",
+              color: "#334155",
+            }}
+            title="Contrast between manual inspection error and TARKA automated mathematical verification"
+          >
+            <span style={{ color: "#BE123C", fontWeight: 700 }}>Naive IO View:</span>
+            <span>Sees ₹15,000 Receipt (Misses ₹2.00L)</span>
+            <span style={{ color: "#4F46E5", fontWeight: 800 }}>⟶</span>
+            <span style={{ color: "#047857", fontWeight: 800 }}>TARKA Invariant View:</span>
+            <span>Catches ₹2,15,000 Finacle Debit + Dual %%EOF</span>
+          </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <span style={{ color: "#475569" }}>Finacle CBS:</span>
-          <strong style={{ color: "#047857", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
-            ₹2,15,000.00
-          </strong>
+          {/* Actionable §94 BNSS Directive Copy Button */}
           <button
             type="button"
             onClick={() => {
-              onSelectRrn("626510149921");
-              setActiveDockTab("rrn");
+              navigator.clipboard.writeText(getBnss94CbsDirective());
+              toast.success("Copied §94 BNSS CBS Verification Directive to clipboard!", {
+                description: "Statutory requisition for UTR 626510149921 with ₹2.00L delta & dual %%EOF offsets.",
+                duration: 3500,
+              });
             }}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "2px",
-              fontSize: "9.5px",
-              fontFamily: "var(--font-mono)",
+              gap: "4px",
+              fontSize: "10px",
               fontWeight: 700,
-              color: "#047857",
-              background: "#ECFDF5",
-              border: "1px solid #A7F3D0",
-              padding: "1px 5px",
-              borderRadius: "3px",
+              padding: "2px 8px",
+              borderRadius: "5px",
+              border: "1px solid #C7D2FE",
+              background: "#EEF2FF",
+              color: "#4338CA",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
-            title="Inspect RRN in Forensic Lab"
+            title="Copy pre-filled statutory requisition to SBI Nodal Officer under Section 94 BNSS / Section 91 CrPC"
           >
-            <span>#626510149921</span>
-            <ExternalLink size={9} />
+            <FileText size={11} color="#4F46E5" />
+            <span>📋 Copy §94 BNSS CBS Directive</span>
           </button>
         </div>
       </div>
@@ -621,20 +682,40 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
 
                     {/* Counterparty & Narration */}
                     <td style={{ padding: "2px 6px", overflow: "hidden" }}>
-                      <span
-                        style={{
-                          fontWeight: isDisputed ? 700 : 500,
-                          color: isDisputed ? "#09090B" : "#1E293B",
-                          fontSize: "12px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          display: "block",
-                        }}
-                        title={row.description}
-                      >
-                        {row.description}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+                        <span
+                          style={{
+                            fontWeight: isDisputed ? 700 : 500,
+                            color: isDisputed ? "#09090B" : "#1E293B",
+                            fontSize: "12px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "block",
+                          }}
+                          title={row.description}
+                        >
+                          {row.description}
+                        </span>
+                        {isDisputed && (
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 700,
+                              background: "#FEF3C7",
+                              color: "#92400E",
+                              border: "1px solid #FDE68A",
+                              padding: "0.5px 5px",
+                              borderRadius: "4px",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah (Paired with Tranche 2 IMPS ₹2.85L on Screen 3)"
+                          >
+                            Tranche 1 of ₹5.00L Total Fraud Outflow
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* UTR / RRN (136px) */}
@@ -947,6 +1028,12 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                                 {copiedRowHash === row.sequenceNo ? <Check size={11} /> : <Copy size={11} />}
                               </button>
                             </div>
+
+                            {row.sequenceNo === 14 && (
+                              <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400E", background: "#FEF3C7", padding: "1px 6px", borderRadius: "4px", border: "1px solid #FDE68A" }}>
+                                Fraud Outflow: ₹2,15,000 (Tranche 1) + ₹2,85,000 (Tranche 2 IMPS) = ₹5,00,000.00 Total
+                              </span>
+                            )}
 
                             {row.rrn !== "—" && (
                               <button

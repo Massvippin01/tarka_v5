@@ -9,7 +9,10 @@ import {
   FileCheck,
   Sliders,
   RotateCcw,
+  FileText,
 } from "lucide-react";
+import { toast } from "sonner";
+import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
@@ -417,6 +420,36 @@ export const GateRail: React.FC<GateRailProps> = ({
             </div>
           )}
         </div>
+
+        {/* Actionable Statutory Directive (Visible on PDF Append or Tamper Warning) */}
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(getBnss94CbsDirective());
+            toast.success("Copied §94 BNSS CBS Directive to clipboard!", {
+              description: "Requisition for UTR #626510149921 with ₹2.00L delta and dual %%EOF byte ranges.",
+              duration: 3500,
+            });
+          }}
+          title="Copy pre-filled §94 BNSS statutory directive to SBI Nodal Officer"
+          style={{
+            fontSize: "10px",
+            fontWeight: 700,
+            padding: "4px 8px",
+            borderRadius: "5px",
+            border: "1px solid #C7D2FE",
+            background: "#EEF2FF",
+            color: "#4338CA",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "3px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <FileText size={10} color="#4F46E5" />
+          <span>📋 Copy §94 Directive</span>
+        </button>
 
         {/* Reset Clean */}
         <button

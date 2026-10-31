@@ -706,6 +706,29 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             setTtsUnavailable(false);
             setTtsDiagnosticNotice("");
             playBase64Audio(res.speech.audio_base64, turnToken);
+          } else if (typeof window !== "undefined" && window.speechSynthesis && res.speech.spoken_text) {
+            // Air-gap offline voice fallback via Web Speech API (zero external calls)
+            setActiveSpeechProvider("WEB_SPEECH_OFFLINE");
+            setTtsUnavailable(false);
+            setTtsDiagnosticNotice("Air-Gap Offline: Playing audio via browser on-device Web Speech API.");
+            setIsSpeaking(true);
+            isSpeakingRef.current = true;
+            setVadState("PLAYING_RESPONSE");
+            const utterance = new SpeechSynthesisUtterance(res.speech.spoken_text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.lang = "en-IN";
+            utterance.onend = () => {
+              setIsSpeaking(false);
+              isSpeakingRef.current = false;
+              setVadState("IDLE_LISTENING");
+            };
+            utterance.onerror = () => {
+              setIsSpeaking(false);
+              isSpeakingRef.current = false;
+              setVadState("IDLE_LISTENING");
+            };
+            window.speechSynthesis.speak(utterance);
           } else {
             // Sarvam Bulbul unavailable or failed. No silent fallback to window.speechSynthesis.
             setTtsUnavailable(true);

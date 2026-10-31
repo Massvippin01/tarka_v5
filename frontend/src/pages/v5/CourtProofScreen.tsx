@@ -288,9 +288,9 @@ export const CourtProofScreen: React.FC = () => {
         {/* Card 3: Cryptographic Paper Seal */}
         <BentoKpiCard
           title="Cryptographic Paper Seal"
-          metric="24-Word BIP-39"
+          metric="RFC-3161 / Ed25519"
           metricColor="#059669"
-          subtitle="Offline verifiable via standalone verify.html"
+          subtitle="RFC-3161 / Ed25519 Paper Verification Grid (FIPS 180-4)"
           statusBadge={{
             text: paperAnchor.ed25519SignatureHex.includes("INVALID")
               ? "TAMPER DETECTED"
@@ -300,9 +300,9 @@ export const CourtProofScreen: React.FC = () => {
               : "emerald",
           }}
           delta={{
-            value: "256-bit Seed",
+            value: "FIPS 180-4",
             isPositive: true,
-            label: "Air-gapped verify",
+            label: "Human Hash Grid",
           }}
           icon={Key}
           iconColor="#059669"
@@ -455,7 +455,7 @@ export const CourtProofScreen: React.FC = () => {
                 }}
               >
                 {looResult.proofSurvives
-                  ? "PRIMA FACIE ADMISSIBILITY SURVIVES ON INDEPENDENT RECORDS"
+                  ? "Prima Facie Methodological Compliance (BSA § 63(4))"
                   : "FATAL DEFECT: CHAIN OF CUSTODY SEVERED"}
               </span>
             </div>
@@ -476,15 +476,12 @@ export const CourtProofScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* 5 Evidence Artifact Checklist Rows */}
+          {/* 5 Evidence Artifact Checklist Rows (Fully Visible, Zero Cutoff) */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
               gap: "6px",
-              maxHeight: "165px",
-              overflowY: "auto",
-              paddingRight: "4px",
             }}
           >
             {artifacts.map((art) => {
@@ -689,20 +686,36 @@ export const CourtProofScreen: React.FC = () => {
                 BSA § 63(4) Split Certificates
               </span>
             </div>
-            <span
-              style={{
-                fontSize: "9px",
-                fontWeight: 800,
-                color: "#047857",
-                background: "#ECFDF5",
-                border: "1px solid #A7F3D0",
-                padding: "3px 7px",
-                borderRadius: "5px",
-                letterSpacing: "0.3px",
-              }}
-            >
-              ✓ PUNE BAR ASSOCIATION 2026 COMPLIANT
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  color: "#4338CA",
+                  background: "#EEF2FF",
+                  border: "1px solid #C7D2FE",
+                  padding: "3px 7px",
+                  borderRadius: "5px",
+                  letterSpacing: "0.2px",
+                }}
+              >
+                ⏱ Statutory Filing SLA: Ready for Part-A / Part-B Counter-Signature prior to Charge-Sheet Submission
+              </span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: 800,
+                  color: "#047857",
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  padding: "3px 7px",
+                  borderRadius: "5px",
+                  letterSpacing: "0.3px",
+                }}
+              >
+                ✓ PUNE BAR 2026 COMPLIANT
+              </span>
+            </div>
           </div>
 
           {/* Interactive Schedule Tab Switcher */}
@@ -910,7 +923,7 @@ export const CourtProofScreen: React.FC = () => {
                   color: "#0F172A",
                 }}
               >
-                24-Word BIP-39 Paper Anchor & Offline HTML
+                RFC-3161 / Ed25519 Paper Verification Grid (FIPS 180-4)
               </span>
               <span
                 style={{

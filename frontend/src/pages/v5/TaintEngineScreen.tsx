@@ -247,6 +247,8 @@ export const TaintEngineScreen: React.FC = () => {
           >
             {/* SVG Connecting Flow Lines Overlay */}
             <svg
+              viewBox="0 0 900 280"
+              preserveAspectRatio="none"
               style={{
                 position: "absolute",
                 top: 0,
@@ -258,51 +260,55 @@ export const TaintEngineScreen: React.FC = () => {
               }}
             >
               <defs>
-                <linearGradient id="flowEmeraldGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#4F46E5" />
-                  <stop offset="100%" stopColor="#059669" />
-                </linearGradient>
-                <linearGradient id="flowRoseGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#4F46E5" />
-                  <stop offset="100%" stopColor="#E11D48" />
-                </linearGradient>
+                <marker id="arrow-emerald" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+                </marker>
+                <marker id="arrow-indigo" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#4F46E5" />
+                </marker>
+                <marker id="arrow-rose" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#E11D48" />
+                </marker>
               </defs>
 
-              {/* Wire 1: Victim (Bottom) to Mule L1 (Top) - Vertical dashed arrow in col 1 handled via DOM */}
-              {/* Wire 2: Mule L1 (Col 1) to Mule L2A (Col 2 Top) */}
+              {/* Wire 2: Vikram Shah (Col 1 Bottom) -> Rohit Verma (Col 2 Top) */}
               <path
-                d="M 230 195 C 265 195, 275 80, 310 80"
+                d="M 285 210 C 300 210, 300 65, 315 65"
                 fill="none"
-                stroke={engineState.minCut.isFreezeComplete ? "#4F46E5" : "#E11D48"}
+                stroke="#4F46E5"
                 strokeWidth="2.5"
                 strokeDasharray="5 3"
+                markerEnd="url(#arrow-indigo)"
               />
 
-              {/* Wire 3: Mule L1 (Col 1) to Mule L2B (Col 2 Bottom) */}
+              {/* Wire 3: Vikram Shah (Col 1 Bottom) -> Sameer Khan (Col 2 Bottom) */}
               <path
-                d="M 230 205 C 265 205, 275 220, 310 220"
+                d="M 285 225 C 300 225, 300 225, 315 225"
                 fill="none"
                 stroke={freezeBudgetK >= 3 ? "#4F46E5" : "#E11D48"}
                 strokeWidth="2.5"
                 strokeDasharray="5 3"
+                markerEnd={freezeBudgetK >= 3 ? "url(#arrow-indigo)" : "url(#arrow-rose)"}
               />
 
-              {/* Wire 4: Mule L2A (Col 2 Top) to Innocent Merchant (Col 3 Top) */}
+              {/* Wire 4: Rohit Verma (Col 2 Top) -> Apex Electronics (Col 3 Top) */}
               <path
-                d="M 470 80 C 505 80, 515 95, 550 95"
+                d="M 585 65 C 600 65, 600 65, 615 65"
                 fill="none"
                 stroke="#059669"
                 strokeWidth="2.5"
                 strokeDasharray="5 3"
+                markerEnd="url(#arrow-emerald)"
               />
 
-              {/* Wire 5: Mule L2B (Col 2 Bottom) to ATM Cashout (Col 3 Bottom) */}
+              {/* Wire 5: Sameer Khan (Col 2 Bottom) -> ATM Cashout (Col 3 Bottom) */}
               <path
-                d="M 470 220 C 505 220, 515 225, 550 225"
+                d="M 585 225 C 600 225, 600 225, 615 225"
                 fill="none"
                 stroke={freezeBudgetK >= 3 ? "#059669" : "#E11D48"}
                 strokeWidth="2.5"
                 strokeDasharray="5 3"
+                markerEnd={freezeBudgetK >= 3 ? "url(#arrow-emerald)" : "url(#arrow-rose)"}
               />
             </svg>
 
@@ -417,8 +423,8 @@ export const TaintEngineScreen: React.FC = () => {
                 </div>
                 <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Rohit Verma</div>
                 <div style={{ fontSize: "10px", color: "#64748B" }}>HDFC 5010029419920</div>
-                <div style={{ fontSize: "12px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                  ₹3,00,000 (60% Flow)
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.3 }}>
+                  Inflow: ₹3,00,000 | Forwarded to Apex: ₹1,80,000 | Retained & Frozen (§107): ₹1,20,000
                 </div>
               </div>
 
@@ -452,8 +458,8 @@ export const TaintEngineScreen: React.FC = () => {
                 </div>
                 <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Sameer Khan</div>
                 <div style={{ fontSize: "10px", color: "#64748B" }}>AXIS 9140200410291</div>
-                <div style={{ fontSize: "12px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                  ₹2,00,000 (40% Flow)
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.3 }}>
+                  Inflow: ₹2,00,000 | ATM Cashout: ₹1,20,000 | Retained & Frozen (§107): ₹80,000
                 </div>
               </div>
             </div>
@@ -493,10 +499,10 @@ export const TaintEngineScreen: React.FC = () => {
                 <div style={{ marginTop: "6px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", marginBottom: "2px" }}>
                     <span style={{ color: "#047857", fontWeight: 700 }}>
-                      Clean Working Capital: {isInjectClean ? "₹2.50L (UNFROZEN)" : "₹0"}
+                      {isInjectClean ? "64% Green (₹2.50L Clean Working Capital — Liquid for Payroll)" : "Clean Working Capital: ₹0"}
                     </span>
                     <span style={{ color: "#BE123C", fontWeight: 700 }}>
-                      Tainted Inflow: ₹1.80L (§ 106 Lien)
+                      {isInjectClean ? "36% Red (₹1.80L §106 Specific Lien)" : "Tainted Inflow: ₹1.80L (§ 106 Lien)"}
                     </span>
                   </div>
                   <div style={{ width: "100%", height: "12px", background: "#E2E8F0", borderRadius: "6px", overflow: "hidden", display: "flex" }}>
@@ -521,8 +527,12 @@ export const TaintEngineScreen: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ fontSize: "9px", color: "#047857", marginTop: "4px", lineHeight: 1.3 }}>
-                  ✓ <strong>Rajasthan HC Rule:</strong> Only ₹1.80L locked. Clean working capital (₹2.50L) remains liquid for payroll.
+                <div style={{ fontSize: "9px", color: isInjectClean ? "#047857" : "#B45309", marginTop: "4px", lineHeight: 1.3 }}>
+                  {isInjectClean ? (
+                    <span>✓ <strong>Rajasthan High Court Rule:</strong> Proportional §106 lien protects merchant working capital. Only ₹1.80L locked. Clean working capital (₹2.50L) remains 100% liquid for payroll.</span>
+                  ) : (
+                    <span>100% Tainted Inflow (₹1.80L locked under §106 Specific Lien). Click <strong>'+ Inject Clean Deposit'</strong> to simulate commingled merchant working capital.</span>
+                  )}
                 </div>
               </div>
 
@@ -579,11 +589,24 @@ export const TaintEngineScreen: React.FC = () => {
               gap: "6px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Sliders size={14} color="#4F46E5" />
                 <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                   Dinic Min-Cut Freeze Budget Optimizer (Budget K = {freezeBudgetK} Accounts)
+                </span>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    background: "#ECFDF5",
+                    color: "#047857",
+                    border: "1px solid #A7F3D0",
+                    padding: "1px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  Open Escape Routes to Unfrozen Sinks: 0 / 4 (100% Reachability Sealed)
                 </span>
               </div>
               <span
@@ -918,6 +941,29 @@ export const TaintEngineScreen: React.FC = () => {
             minHeight: 0,
           }}
         >
+          {/* Statutory Escalation Path Indicator */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "4px 8px",
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              fontSize: "9.5px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <span style={{ fontWeight: 800, color: "#047857" }}>Tier 0: § 106(3) BNSS Emergency Lien (24h Magistrate Intimation Mandatory)</span>
+              <span style={{ color: "#4F46E5", fontWeight: 800 }}>⟶</span>
+              <span style={{ fontWeight: 800, color: "#4338CA" }}>Tier 1: § 107 BNSS Judicial Attachment Order (Required for Full Conduit Freeze)</span>
+            </div>
+            <span style={{ fontSize: "8.5px", fontWeight: 700, background: "#EEF2FF", color: "#4338CA", padding: "1px 5px", borderRadius: "3px" }}>
+              TIME-GATED BNSS
+            </span>
+          </div>
+
           {/* Header with Switcher & Copy Button */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", gap: "4px" }}>

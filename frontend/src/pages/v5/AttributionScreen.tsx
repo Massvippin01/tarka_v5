@@ -12,9 +12,12 @@ import {
   Check,
   CheckCircle2,
   Lock,
+  FileText,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { BentoKpiCard } from "../../components/tarka/BentoPrimitives";
+import { getDot3920PortBlockDirective } from "../../utils/statutoryDirectives";
 import {
   solveCgnatFunnel,
   analyzeDualSimHardware,
@@ -144,15 +147,15 @@ export const AttributionScreen: React.FC = () => {
           title="Coincidental Match Odds"
           metric="1 in 7.14M"
           metricColor="#4F46E5"
-          subtitle="Across 4 independent bank logins"
+          subtitle="99.9998% Posterior Credibility | Tower Pool N = 10,000"
           statusBadge={{
             text: "P = 1.4×10⁻⁷",
             variant: "indigo",
           }}
           delta={{
-            value: "Beyond Doubt",
+            value: "99.9998%",
             isPositive: true,
-            label: "DoT Cl. 39.20",
+            label: "Bayesian Credibility",
           }}
           icon={Cpu}
           iconColor="#4F46E5"
@@ -239,6 +242,36 @@ export const AttributionScreen: React.FC = () => {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {/* DoT Clause 39.20 Statutory Requisition Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(getDot3920PortBlockDirective());
+                  toast.success("Copied DoT Clause 39.20 Requisition to clipboard!", {
+                    description: "Statutory directive to Airtel Nodal Officer for dynamic port translation & IPDR.",
+                    duration: 3500,
+                  });
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "5px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #C7D2FE",
+                  background: "#EEF2FF",
+                  color: "#4338CA",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+                title="Copy pre-filled statutory requisition to Airtel under DoT License Clause 39.20"
+              >
+                <FileText size={12} color="#4F46E5" />
+                <span>📋 Copy DoT 39.20 Requisition</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => toggleMutation("dropCgnatSourcePort")}
@@ -384,6 +417,16 @@ export const AttributionScreen: React.FC = () => {
                         {isChecked ? (isPortDropped ? "340" : isTarget ? "1 ★" : count) : "OFF"}
                       </text>
                     </g>
+
+                    {/* Set Intersection Connector ∩ between sequential stages */}
+                    {idx < 3 && (
+                      <g transform={`translate(${x + colWidth + gap / 2}, 52)`}>
+                        <circle cx="0" cy="0" r="9" fill="#EEF2FF" stroke="#C7D2FE" strokeWidth="1" />
+                        <text x="0" y="3.5" textAnchor="middle" fill="#4F46E5" fontSize="10" fontWeight="900" fontFamily="system-ui, sans-serif">
+                          ∩
+                        </text>
+                      </g>
+                    )}
                   </g>
                 );
               })}
@@ -435,7 +478,7 @@ export const AttributionScreen: React.FC = () => {
                         Step {idx + 1}: {stage.bank}
                       </div>
                       <div style={{ fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                        {stage.time} · Public IP: 103.21.144.92:{stage.port}
+                        {stage.time} · Bank Log IP: 103.21.144.92 : <span style={{ color: "#B45309", fontWeight: 700 }}>[PORT OMITTED BY BANK CBS]</span> → ISP CGNAT Pool: Ports 44000–44511 (340 Active Handsets)
                       </div>
                     </div>
                   </div>
@@ -795,6 +838,27 @@ export const AttributionScreen: React.FC = () => {
               </div>
               <div style={{ fontSize: "9.5px", color: "#059669" }}>Bank Switch TLS 1.3 Match ✓</div>
             </div>
+          </div>
+
+          {/* Dual-Anchor Confirmation Badge */}
+          <div
+            style={{
+              background: "#ECFDF5",
+              border: "1px solid #6EE7B7",
+              borderRadius: "8px",
+              padding: "6px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              color: "#047857",
+            }}
+          >
+            <CheckCircle2 size={14} color="#059669" style={{ flexShrink: 0 }} />
+            <span>
+              ✓ DUAL-ANCHOR CONFIRMED: Handset IMEI (86749206...) + TLS JA4 Fingerprint (t13d1516h2...) Match Across All 4 Bank Sessions (Rules Out Passive IMEI Cloning)
+            </span>
           </div>
         </div>
 

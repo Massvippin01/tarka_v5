@@ -104,3 +104,4 @@ const { chromium } = require('@playwright/test');
   await browser.close();
   console.log('--- ALL VERIFICATIONS COMPLETE ---');
 })();
+
