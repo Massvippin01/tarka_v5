@@ -1,22 +1,15 @@
 import React, { useState, useMemo } from "react";
 import {
   Scale,
-  ShieldAlert,
-  ShieldCheck,
   Download,
-  CheckCircle2,
-  AlertTriangle,
   RotateCcw,
   Copy,
   Check,
   FileCheck,
   Network,
+  Key,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
-import {
-  BentoKpiCard,
-  SegmentedPillSwitcher,
-} from "../../components/tarka/BentoPrimitives";
 import {
   evaluateLeaveOneOut,
   generateBsa63SplitSchedules,
@@ -28,10 +21,7 @@ import {
 } from "../../utils/courtProofEngine";
 
 export const CourtProofScreen: React.FC = () => {
-  const { mutations, toggleMutation } = useTarkaGlobal();
-
-  // Active Sub-tab
-  const [activeTab, setActiveTab] = useState<"leave-one-out" | "bsa-split" | "paper-anchor" | "cbi-aggregation">("leave-one-out");
+  const { mutations } = useTarkaGlobal();
 
   // Initial Case Artifacts
   const initialArtifacts: CaseArtifact[] = [
@@ -90,6 +80,10 @@ export const CourtProofScreen: React.FC = () => {
     );
   };
 
+  const resetArtifacts = () => {
+    setArtifacts(initialArtifacts);
+  };
+
   // Defense Alibi Challenges
   const [alibis, setAlibis] = useState<AlibiChallenge[]>([
     {
@@ -116,6 +110,12 @@ export const CourtProofScreen: React.FC = () => {
     setAlibis((prev) =>
       prev.map((a) => (a.id === id ? { ...a, isChallenged: !a.isChallenged } : a))
     );
+    // If WhatsApp alibi toggled, also exclude WhatsApp artifact
+    if (id === "alibi-whatsapp-excluded") {
+      setArtifacts((prev) =>
+        prev.map((a) => (a.id === "art-whatsapp" ? { ...a, isExcluded: !a.isExcluded } : a))
+      );
+    }
   };
 
   // Evaluate LOO
@@ -127,6 +127,21 @@ export const CourtProofScreen: React.FC = () => {
   const bsaSchedules = useMemo(() => {
     return generateBsa63SplitSchedules("CASE-2026-001");
   }, []);
+
+  const [activeBsaTab, setActiveBsaTab] = useState<"partB" | "bank" | "isp">("partB");
+
+  const currentScheduleText = useMemo(() => {
+    if (activeBsaTab === "partB") return bsaSchedules.partB_ForensicExpert;
+    if (activeBsaTab === "bank") return bsaSchedules.partA_BankNodal;
+    return bsaSchedules.partA_IspRouter;
+  }, [activeBsaTab, bsaSchedules]);
+
+  const [isScheduleCopied, setIsScheduleCopied] = useState(false);
+  const handleCopySchedule = () => {
+    navigator.clipboard.writeText(currentScheduleText);
+    setIsScheduleCopied(true);
+    setTimeout(() => setIsScheduleCopied(false), 2000);
+  };
 
   // 24-Word Paper Anchor Bundle
   const paperAnchor = useMemo(() => {
@@ -141,516 +156,655 @@ export const CourtProofScreen: React.FC = () => {
     return canonical;
   }, [mutations.flipCustodyByte, mutations.ledgerBitFlip]);
 
-  // CBI Syndicate Cluster
-  const cbiMemo = useMemo(() => {
-    return getCbiSyndicateMemo();
-  }, []);
-
-  // Copy State
-  const [copiedSchedule, setCopiedSchedule] = useState<string | null>(null);
-  const handleCopyText = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSchedule(id);
-    setTimeout(() => setCopiedSchedule(null), 2000);
-  };
-
-  // Download verify.html
-  const handleDownloadVerify = () => {
+  // Offline verify.html download
+  const handleDownloadOfflineVerify = () => {
     const html = generateOfflineVerifyHtml(paperAnchor);
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "verify.html";
-    document.body.appendChild(a);
+    a.download = `TARKA_PROOF_VERIFY_${paperAnchor.caseId}.html`;
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  // CBI Syndicate Cluster Memo
+  const cbiMemo = useMemo(() => getCbiSyndicateMemo(), []);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "20px", overflowY: "auto", height: "calc(100vh - 120px)" }}>
-      {/* 1. Header & Tab Switcher */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span className="bento-badge bento-badge-blue">
-              <Scale size={11} /> SCREEN 4: ADVERSARIAL COURT PROOF
-            </span>
-            <span className="bento-badge bento-badge-neutral font-mono-tabular">
-              BSA § 63(4) & PUNE BAR COMPLIANT
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 52px)",
+        padding: "10px 14px",
+        gap: "10px",
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      {/* 1. SINGLE-LINE 4-PILL TELEMETRY STRIP (HEIGHT: 38PX, NO VERTICAL SCROLL) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "10px",
+          height: "38px",
+          flexShrink: 0,
+        }}
+      >
+        {/* Pill 1: Admissibility Robustness */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: looResult.proofSurvives ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(225,29,72,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Scale size={14} color={looResult.proofSurvives ? "#059669" : "#E11D48"} />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              ADMISSIBILITY SCORE
             </span>
           </div>
-          <h1 style={{ margin: "2px 0 4px", fontSize: "22px", fontWeight: 700, color: "var(--bento-text-main)", letterSpacing: "-0.5px" }}>
-            Adversarial Stress-Testing & Cryptographic Paper Anchor
-          </h1>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--bento-text-muted)", maxWidth: "800px", lineHeight: 1.5 }}>
-            Leave-One-Out (LOO) evidence survival stress-testing, BSA Section 63(4) split schedules (Part A Custodian + Part B Forensic Expert), 24-word BIP-39 physical court anchor, and ₹10-Crore CBI multi-state syndicate blind indexing.
-          </p>
-        </div>
-
-        <SegmentedPillSwitcher
-          options={[
-            { id: "leave-one-out", label: "Leave-One-Out Stress" },
-            { id: "bsa-split", label: "BSA § 63(4) Split Drafts" },
-            { id: "paper-anchor", label: "Ed25519 Paper Anchor" },
-            { id: "cbi-aggregation", label: "₹10-Cr CBI Syndicate" },
-          ]}
-          activeId={activeTab}
-          onChange={(val) => setActiveTab(val as any)}
-        />
-      </div>
-
-      {/* 2. Top 4 Bento KPI Cards */}
-      <div className="bento-grid-4">
-        <BentoKpiCard
-          title="PROSECUTION CONFIDENCE SCORE"
-          metric={`${looResult.confidenceScore}%`}
-          metricColor={looResult.proofSurvives ? "var(--bento-emerald)" : "var(--bento-crimson)"}
-          delta={{
-            value: looResult.proofSurvives ? "SURVIVES DEFENSE CHALLENGE" : "FATAL EVIDENCE DEFECT",
-            isPositive: looResult.proofSurvives,
-            isWarning: !looResult.proofSurvives,
-            label: "Beyond Reasonable Doubt",
-          }}
-          subtitle="Tier-1 Independent Record Baseline"
-          icon={Scale}
-          iconColor={looResult.proofSurvives ? "var(--bento-emerald)" : "var(--bento-crimson)"}
-          iconBg={looResult.proofSurvives ? "var(--bento-emerald-subtle)" : "var(--bento-crimson-subtle)"}
-        />
-
-        <BentoKpiCard
-          title="TIER-1 INDEPENDENT RECORDS"
-          metric={`${looResult.tier1Count} OF 3 ACTIVE`}
-          metricColor="var(--bento-indigo)"
-          delta={{
-            value: "STATUTORY PRECEDENT",
-            isPositive: true,
-            label: "Arjun Panditrao Khotkar SAT",
-          }}
-          subtitle="CBS + NPCI + CGNAT IPDR"
-          icon={FileCheck}
-          iconColor="var(--bento-indigo)"
-          iconBg="var(--bento-indigo-subtle)"
-        />
-
-        <BentoKpiCard
-          title="PUNE BAR COMPLIANCE"
-          metric="CERTIFIED SAT"
-          metricColor="var(--bento-emerald)"
-          delta={{
-            value: "PART A + PART B SPLIT",
-            isPositive: true,
-            label: "Write-blocker serial declared",
-          }}
-          subtitle="BSA Section 63 Mandate"
-          icon={ShieldCheck}
-          iconColor="var(--bento-emerald)"
-          iconBg="var(--bento-emerald-subtle)"
-        />
-
-        <BentoKpiCard
-          title="CBI SYNDICATE SCALE"
-          metric={cbiMemo.totalLossCroresStr}
-          metricColor="var(--bento-crimson)"
-          delta={{
-            value: `${cbiMemo.linkedFirCount} LINKED FIRS`,
-            isWarning: true,
-            label: "4 States (Delhi, MH, KA, UP)",
-          }}
-          subtitle="Salted Blind-Index Nexus"
-          icon={Network}
-          iconColor="var(--bento-crimson)"
-          iconBg="var(--bento-crimson-subtle)"
-        />
-      </div>
-
-      {/* 3. SUB-TAB 1: Leave-One-Out Stress Tester */}
-      {activeTab === "leave-one-out" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Status Alert Banner */}
-          <div
+          <span
             style={{
-              padding: "16px 20px",
-              borderRadius: "14px",
-              background: looResult.proofSurvives ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-              border: looResult.proofSurvives ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "12px",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: looResult.proofSurvives ? "#059669" : "#E11D48",
+              background: looResult.proofSurvives ? "rgba(5,150,105,0.1)" : "rgba(225,29,72,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              {looResult.proofSurvives ? (
-                <CheckCircle2 size={24} color="#10B981" />
-              ) : (
-                <ShieldAlert size={24} color="#EF4444" />
-              )}
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: looResult.proofSurvives ? "#059669" : "#DC2626" }}>
-                  {looResult.proofSurvives
-                    ? "PROOF SURVIVES ADVERSARIAL STRESS TEST (TIER-1 ANCHORED)"
-                    : "ADMISSIBILITY BREACH: CRITICAL TIER-1 RECORD EXCLUDED"}
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginTop: "2px" }}>
-                  Active Evidence Artifacts: <strong className="font-mono-tabular">{looResult.activeArtifactsCount} of 5</strong> | Attribution Survival: <strong className="font-mono-tabular">{looResult.attributionSurvives ? "SAT" : "UNSAT"}</strong> | Taint Survival: <strong className="font-mono-tabular">{looResult.taintSurvives ? "SAT" : "UNSAT"}</strong>
-                </div>
-              </div>
-            </div>
+            {looResult.confidenceScore}% ({looResult.proofSurvives ? "PROOF SURVIVES" : "SEVERED"})
+          </span>
+        </div>
 
-            <button
-              type="button"
-              onClick={() => setArtifacts(initialArtifacts)}
-              className="bento-btn bento-btn-secondary bento-btn-sm"
-            >
-              <RotateCcw size={12} />
-              <span>Reset Evidence Matrix</span>
-            </button>
+        {/* Pill 2: BSA § 63(4) Split Schedules */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(79,70,229,0.25)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <FileCheck size={14} color="#4F46E5" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              BSA § 63(4) SCHEDULES
+            </span>
           </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#4F46E5",
+              background: "rgba(79,70,229,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            PARTS A & B READY (PUNE BAR)
+          </span>
+        </div>
 
-          {/* Interactive Evidence Matrix */}
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "4px" }}>
-              Leave-One-Out Artifact Ingestion Matrix
-            </div>
-            <p style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginBottom: "16px" }}>
-              Uncheck any artifact to simulate a successful defense motion to exclude evidence under BSA Section 63(4). Observe how the state&apos;s case re-evaluates.
-            </p>
+        {/* Pill 3: Cryptographic Paper Anchor */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(16,185,129,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Key size={14} color="#059669" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              CRYPTO PAPER ANCHOR
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#059669",
+              background: "rgba(5,150,105,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            24-WORD BIP-39 + ED25519
+          </span>
+        </div>
 
-            {/* Defense Alibi Hypothesis Toggles */}
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--bento-text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-                Defense Cross-Examination Alibi Challenges (1-Click Test):
+        {/* Pill 4: CBI Syndicate Nexus */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(217,119,6,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Network size={14} color="#D97706" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              CBI MULTI-STATE NEXUS
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#D97706",
+              background: "rgba(217,119,6,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {cbiMemo.linkedFirCount} FIRS · {cbiMemo.totalLossCroresStr}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. MAIN 12-COLUMN BENTO INFOGRAPHIC WORKSPACE (HEIGHT: CALC(100% - 48PX), OVERFLOW: HIDDEN) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(12, 1fr)",
+          gap: "10px",
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        {/* LEFT COLUMN: 6 COLS (LEAVE-ONE-OUT STRESS-TESTER & BIP-39 PAPER ANCHOR) */}
+        <div
+          style={{
+            gridColumn: "span 6",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            minHeight: 0,
+          }}
+        >
+          {/* CARD 1: LIVE LEAVE-ONE-OUT (LOO) ADMISSIBILITY STRESS-TESTER */}
+          <div
+            style={{
+              flex: "1 1 58%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Scale size={15} color="#4F46E5" />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Live Leave-One-Out (LOO) Defense Stress-Tester
+                  </span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", padding: "2px 6px", borderRadius: "4px" }}>
+                    ARJUN PANDITRAO BENCH
+                  </span>
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                  Toggle artifacts or alibis to stress-test prosecution reliance on Tier-1 independent records.
+                </div>
               </div>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {alibis.map((alibi) => (
-                  <button
-                    key={alibi.id}
-                    type="button"
-                    onClick={() => toggleAlibi(alibi.id)}
-                    className={`bento-btn bento-btn-sm ${alibi.isChallenged ? "bento-btn-primary" : "bento-btn-secondary"}`}
+
+              <button
+                type="button"
+                onClick={resetArtifacts}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  background: "var(--bento-canvas-subtle, #F8FAFC)",
+                  color: "var(--bento-text-secondary, #475569)",
+                  cursor: "pointer",
+                }}
+              >
+                <RotateCcw size={11} />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            {/* 5 Artifact Checklist Rows */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                flex: 1,
+                justifyContent: "space-around",
+              }}
+            >
+              {artifacts.map((art) => {
+                const isTier1 = art.tier === "TIER_1_INDEPENDENT";
+                return (
+                  <div
+                    key={art.id}
                     style={{
-                      background: alibi.isChallenged ? "#DC2626" : undefined,
-                      borderColor: alibi.isChallenged ? "#DC2626" : undefined,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "5px 8px",
+                      borderRadius: "6px",
+                      background: art.isExcluded ? "rgba(225,29,72,0.04)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                      border: art.isExcluded ? "1px dashed rgba(225,29,72,0.3)" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                      opacity: art.isExcluded ? 0.6 : 1,
                     }}
                   >
-                    <span>{alibi.name}</span>
-                    {alibi.isChallenged && <span className="bento-badge bento-badge-coral font-mono-tabular">CHALLENGED</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-              {artifacts.map((art) => (
-                <div
-                  key={art.id}
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    border: art.isExcluded ? "1px dashed var(--bento-border-subtle)" : "1px solid var(--bento-border-subtle)",
-                    background: art.isExcluded ? "rgba(0,0,0,0.02)" : "var(--bento-card-bg)",
-                    opacity: art.isExcluded ? 0.5 : 1,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <input
-                      type="checkbox"
-                      checked={!art.isExcluded}
-                      onChange={() => toggleArtifact(art.id)}
-                      style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#2563EB" }}
-                    />
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-main)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <input
+                        type="checkbox"
+                        checked={!art.isExcluded}
+                        onChange={() => toggleArtifact(art.id)}
+                        style={{ width: "13px", height: "13px", cursor: "pointer", accentColor: "#4F46E5", margin: 0 }}
+                      />
+                      <div>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: art.isExcluded ? "#E11D48" : "var(--bento-text-primary, #0F172A)" }}>
                           {art.name}
-                        </span>
-                        <span className={`bento-badge ${art.tier === "TIER_1_INDEPENDENT" ? "bento-badge-emerald" : "bento-badge-amber"}`}>
-                          {art.tier}
-                        </span>
-                        {art.isExcluded && <span className="bento-badge bento-badge-coral font-mono-tabular">EXCLUDED</span>}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "var(--bento-text-muted)", marginTop: "2px" }} className="font-mono-tabular">
-                        Custodian: {art.custodian} | SHA-256: {art.sha256.slice(0, 24)}...
+                        </div>
+                        <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                          SHA: {art.sha256.slice(0, 16)}... | Custodian: {art.custodian}
+                        </div>
                       </div>
                     </div>
+
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        color: isTier1 ? "#059669" : "#64748B",
+                        background: isTier1 ? "rgba(5,150,105,0.1)" : "rgba(100,116,139,0.1)",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {isTier1 ? "TIER-1 INDEPENDENT" : "TIER-2 CORROBORATIVE"}
+                    </span>
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Defense Alibi Quick Challenge Buttons */}
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {alibis.map((alibi) => (
+                <button
+                  key={alibi.id}
+                  type="button"
+                  onClick={() => toggleAlibi(alibi.id)}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: alibi.isChallenged ? "1px solid #DC2626" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: alibi.isChallenged ? "rgba(220,38,38,0.1)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                    color: alibi.isChallenged ? "#B91C1C" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {alibi.name} {alibi.isChallenged ? "🚨" : ""}
+                </button>
+              ))}
+            </div>
+
+            {/* Prosecutor Cross-Examination Rebuttal Banner */}
+            <div
+              style={{
+                fontSize: "10px",
+                lineHeight: 1.4,
+                padding: "6px 8px",
+                borderRadius: "6px",
+                background: looResult.proofSurvives ? "rgba(5,150,105,0.08)" : "rgba(225,29,72,0.08)",
+                border: looResult.proofSurvives ? "1px solid rgba(5,150,105,0.25)" : "1px solid rgba(225,29,72,0.25)",
+                color: looResult.proofSurvives ? "#065F46" : "#9F1239",
+              }}
+            >
+              {looResult.prosecutorRebuttal}
+            </div>
+          </div>
+
+          {/* CARD 2: 24-WORD BIP-39 PAPER ANCHOR & OFFLINE VERIFY.HTML */}
+          <div
+            style={{
+              flex: "1 1 42%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Key size={14} color="#059669" />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  24-Word BIP-39 Paper Anchor & Offline HTML Exporter
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDownloadOfflineVerify}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: "#0284C7",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                }}
+              >
+                <Download size={11} />
+                <span>Export verify.html</span>
+              </button>
+            </div>
+
+            {/* 24-Word Mnemonic Word Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(6, 1fr)",
+                gap: "4px",
+                padding: "6px",
+                background: "var(--bento-canvas-subtle, #F8FAFC)",
+                borderRadius: "6px",
+                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              }}
+            >
+              {paperAnchor.bip39Mnemonic.map((word, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    fontSize: "9px",
+                    fontFamily: "var(--font-mono)",
+                    padding: "2px 4px",
+                    borderRadius: "3px",
+                    background: "rgba(255,255,255,0.9)",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    color: "var(--bento-text-primary, #0F172A)",
+                    textAlign: "center",
+                  }}
+                >
+                  <span style={{ color: "var(--bento-text-muted, #94A3B8)", marginRight: "2px" }}>{idx + 1}.</span>
+                  {word}
                 </div>
               ))}
             </div>
 
-            {/* Live Cross-Examination Rebuttal */}
-            <div style={{ padding: "16px", borderRadius: "8px", background: "#0F172A", border: "1px solid #334155" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
-                AUTOMATED PROSECUTOR CROSS-EXAMINATION REBUTTAL:
-              </div>
-              <div style={{ fontSize: "12px", color: "#F8FAFC", lineHeight: 1.6, fontFamily: "var(--font-mono)" }}>
-                {looResult.prosecutorRebuttal}
-              </div>
+            {/* SHA-256 Root & Ed25519 Seal */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
+              <span>Merkle Root: <strong className="font-mono-tabular" style={{ color: "#059669" }}>{paperAnchor.merkleRootSha256.slice(0, 24)}...</strong></span>
+              <span>Ed25519 Sig: <strong className="font-mono-tabular" style={{ color: "#4F46E5" }}>{paperAnchor.ed25519SignatureHex.slice(0, 16)}...</strong></span>
             </div>
           </div>
         </div>
-      )}
 
-      {/* 4. SUB-TAB 2: BSA § 63(4) Split Drafts */}
-      {activeTab === "bsa-split" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "4px" }}>
-              BSA Section 63(4) Split Certificate Generator (Pune Bar Association Mandate)
-            </div>
-            <p style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginBottom: "16px" }}>
-              Separates Schedule &apos;A&apos; (Device/Server Custodian) from Schedule &apos;B&apos; (Certified Independent Forensic Examiner), complying with 2026 Supreme Court and Pune Bar Association advisories.
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-              {/* Part A: Bank Nodal */}
-              <div style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--bento-border-subtle)", background: "var(--bento-card-bg)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <div>
-                    <span className="bento-badge bento-badge-blue">SCHEDULE &apos;A&apos; (CUSTODIAN)</span>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-main)", marginTop: "4px" }}>
-                      Bank Nodal CBS Administrator
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopyText(bsaSchedules.partA_BankNodal, "partA_cbs")}
-                    className="bento-btn bento-btn-secondary bento-btn-sm"
-                  >
-                    {copiedSchedule === "partA_cbs" ? <Check size={12} color="#059669" /> : <Copy size={12} />}
-                    <span>{copiedSchedule === "partA_cbs" ? "Copied" : "Copy Schedule"}</span>
-                  </button>
-                </div>
-
-                <textarea
-                  readOnly
-                  value={bsaSchedules.partA_BankNodal}
-                  style={{
-                    width: "100%",
-                    height: "220px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle)",
-                    background: "#0F172A",
-                    color: "#94A3B8",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    resize: "none",
-                  }}
-                />
+        {/* RIGHT COLUMN: 6 COLS (BSA 63 SCHEDULES & CBI SYNDICATE NEXUS) */}
+        <div
+          style={{
+            gridColumn: "span 6",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            minHeight: 0,
+          }}
+        >
+          {/* CARD 3: BSA SECTION 63(4) SPLIT SCHEDULES (PARTS A & B) */}
+          <div
+            style={{
+              flex: "1 1 58%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <FileCheck size={15} color="#4F46E5" />
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  BSA Section 63(4) Split Schedules
+                </span>
+                <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", padding: "2px 6px", borderRadius: "4px" }}>
+                  PUNE BAR COMPLIANT
+                </span>
               </div>
 
-              {/* Part B: Forensic Expert */}
-              <div style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--bento-border-subtle)", background: "var(--bento-card-bg)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <div>
-                    <span className="bento-badge bento-badge-emerald">SCHEDULE &apos;B&apos; (EXPERT)</span>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-main)", marginTop: "4px" }}>
-                      MeitY Empanelled Forensic Examiner
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopyText(bsaSchedules.partB_ForensicExpert, "partB_expert")}
-                    className="bento-btn bento-btn-secondary bento-btn-sm"
-                  >
-                    {copiedSchedule === "partB_expert" ? <Check size={12} color="#059669" /> : <Copy size={12} />}
-                    <span>{copiedSchedule === "partB_expert" ? "Copied" : "Copy Schedule"}</span>
-                  </button>
-                </div>
-
-                <textarea
-                  readOnly
-                  value={bsaSchedules.partB_ForensicExpert}
-                  style={{
-                    width: "100%",
-                    height: "220px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle)",
-                    background: "#0F172A",
-                    color: "#94A3B8",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    resize: "none",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. SUB-TAB 3: Ed25519 Paper Anchor */}
-      {activeTab === "paper-anchor" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)" }}>
-                  Ed25519 Cryptographic Proof Bundle & 24-Word BIP-39 Paper Anchor
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                  Provides air-gapped cryptographic anchors that can be printed and sealed in court evidence lockers.
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
+              {/* Schedule Tab Switcher */}
+              <div style={{ display: "flex", gap: "4px" }}>
                 <button
                   type="button"
-                  onClick={() => toggleMutation("flipCustodyByte")}
-                  className={`bento-btn bento-btn-sm ${mutations.flipCustodyByte ? "bento-btn-primary" : "bento-btn-secondary"}`}
+                  onClick={() => setActiveBsaTab("partB")}
                   style={{
-                    background: mutations.flipCustodyByte ? "#DC2626" : undefined,
-                    borderColor: mutations.flipCustodyByte ? "#DC2626" : undefined,
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 6px",
+                    borderRadius: "4px",
+                    border: activeBsaTab === "partB" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: activeBsaTab === "partB" ? "rgba(79,70,229,0.12)" : "transparent",
+                    color: activeBsaTab === "partB" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
                   }}
                 >
-                  <AlertTriangle size={13} />
-                  <span>{mutations.flipCustodyByte ? "Revert Custody Bit-Flip" : "Simulate 1-Bit Ledger Tamper (Seq #4)"}</span>
+                  Schedule B (Expert)
                 </button>
-
                 <button
                   type="button"
-                  onClick={handleDownloadVerify}
-                  className="bento-btn bento-btn-primary bento-btn-sm"
+                  onClick={() => setActiveBsaTab("bank")}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 6px",
+                    borderRadius: "4px",
+                    border: activeBsaTab === "bank" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: activeBsaTab === "bank" ? "rgba(79,70,229,0.12)" : "transparent",
+                    color: activeBsaTab === "bank" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
+                  }}
                 >
-                  <Download size={13} />
-                  <span>Download Standalone verify.html</span>
+                  Schedule A (Bank)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveBsaTab("isp")}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 6px",
+                    borderRadius: "4px",
+                    border: activeBsaTab === "isp" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: activeBsaTab === "isp" ? "rgba(79,70,229,0.12)" : "transparent",
+                    color: activeBsaTab === "isp" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Schedule A (ISP)
                 </button>
               </div>
             </div>
 
+            {/* Certificate Text Box */}
             <div
               style={{
-                padding: "16px",
-                borderRadius: "10px",
-                background: mutations.flipCustodyByte ? "rgba(239, 68, 68, 0.05)" : "rgba(16, 185, 129, 0.05)",
-                border: mutations.flipCustodyByte ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)",
-                marginBottom: "20px",
+                flex: 1,
+                background: "var(--bento-canvas-subtle, #F8FAFC)",
+                borderRadius: "8px",
+                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+                padding: "8px 10px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "10px",
+                lineHeight: 1.4,
+                color: "var(--bento-text-primary, #0F172A)",
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                minHeight: 0,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <span className={`bento-badge ${mutations.flipCustodyByte ? "bento-badge-coral" : "bento-badge-emerald"}`}>
-                  {mutations.flipCustodyByte ? "LEDGER CORRUPTED (BIT-FLIP DETECTED)" : "CRYPTOGRAPHIC CUSTODY PRISTINE"}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                  Generated: <strong className="font-mono-tabular">{paperAnchor.generatedAtIST}</strong>
-                </span>
-              </div>
-
-              <div className="bento-grid-4" style={{ marginTop: "12px" }}>
-                <div style={{ gridColumn: "span 2" }}>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>Canonical Merkle Root SHA-256</div>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: mutations.flipCustodyByte ? "#DC2626" : "#059669" }} className="font-mono-tabular">
-                    {paperAnchor.merkleRootSha256}
-                  </div>
-                </div>
-
-                <div style={{ gridColumn: "span 2" }}>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>Ed25519 Custodial Signature</div>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-main)", overflow: "hidden", textOverflow: "ellipsis" }} className="font-mono-tabular">
-                    {paperAnchor.ed25519SignatureHex.slice(0, 48)}...
-                  </div>
-                </div>
-              </div>
+              {currentScheduleText}
             </div>
 
-            {/* 24-Word BIP-39 Grid */}
-            <div style={{ padding: "16px", borderRadius: "10px", background: "var(--bento-card-bg)", border: "1px solid var(--bento-border-subtle)" }}>
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "12px" }}>
-                24-Word BIP-39 Physical Court Custody Mnemonic:
+            {/* Bottom Actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                Tableau T8u Bridge (S/N TAB-88219-04) · SHA-256 (FIPS 180-4)
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px" }}>
-                {paperAnchor.bip39Mnemonic.map((word, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: "8px",
-                      borderRadius: "6px",
-                      background: "rgba(0,0,0,0.03)",
-                      border: "1px solid var(--bento-border-subtle)",
-                      fontSize: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <span style={{ fontSize: "10px", color: "var(--bento-text-muted)" }} className="font-mono-tabular">
-                      {(idx + 1).toString().padStart(2, "0")}
-                    </span>
-                    <strong className="font-mono-tabular">{word}</strong>
-                  </div>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={handleCopySchedule}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: isScheduleCopied ? "#059669" : "#4F46E5",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                }}
+              >
+                {isScheduleCopied ? <Check size={12} /> : <Copy size={12} />}
+                <span>{isScheduleCopied ? "Copied" : "Copy Schedule"}</span>
+              </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* 6. SUB-TAB 4: CBI Syndicate Aggregation */}
-      {activeTab === "cbi-aggregation" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "4px" }}>
-              Salted Blind-Index (HMAC-SHA256) ₹10-Crore Multi-State CBI Syndicate Aggregation
+          {/* CARD 4: SALTED BLIND-INDEX CBI MULTI-STATE SYNDICATE AGGREGATION MEMO */}
+          <div
+            style={{
+              flex: "1 1 42%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Network size={14} color="#D97706" />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  Salted Blind-Index (HMAC-SHA256) CBI Syndicate Memo
+                </span>
+              </div>
+              <span style={{ fontSize: "9px", fontWeight: 700, color: "#D97706", background: "rgba(217,119,6,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                PII-PRESERVING AGGREGATION
+              </span>
             </div>
-            <p style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginBottom: "16px" }}>
-              Demonstrates cross-jurisdiction correlation across 4 state police cyber cells (Delhi, Maharashtra, Karnataka, Uttar Pradesh) using cryptographic blind indexes without sharing unredacted PII across state lines.
-            </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {/* Syndicate Header Bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                {cbiMemo.syndicateName}
+              </span>
+              <span style={{ fontSize: "10px", fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono)" }}>
+                {cbiMemo.totalLossCroresStr} ({cbiMemo.linkedFirCount} Connected FIRs)
+              </span>
+            </div>
+
+            {/* 4 Blind-Indexed Entity Cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "6px",
+                flex: 1,
+                minHeight: 0,
+              }}
+            >
               {cbiMemo.blindIndexedEntities.map((ent, idx) => (
                 <div
                   key={idx}
                   style={{
-                    padding: "14px",
-                    borderRadius: "10px",
-                    background: "rgba(0,0,0,0.02)",
-                    border: "1px solid var(--bento-border-subtle)",
+                    background: "var(--bento-canvas-subtle, #F8FAFC)",
+                    padding: "5px 8px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--bento-border-subtle, #E2E8F0)",
                     display: "flex",
+                    flexDirection: "column",
                     justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "12px",
-                    flexWrap: "wrap",
                   }}
                 >
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span className="bento-badge bento-badge-blue">{ent.entityType}</span>
-                      <code className="font-mono-tabular" style={{ fontSize: "12px", color: "var(--bento-text-main)", fontWeight: 700 }}>
-                        {ent.blindIndexHash}
-                      </code>
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--bento-text-muted)", marginTop: "4px" }}>
-                      Linked FIR Jurisdictions: {ent.locations.join(" • ")}
-                    </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--bento-text-muted, #94A3B8)" }}>
+                      {ent.entityType} MATCH
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669" }}>
+                      {ent.matchesCount} FIRs
+                    </span>
                   </div>
-
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "10px", color: "var(--bento-text-muted)", textTransform: "uppercase" }}>
-                      Cross-FIR Matches
-                    </div>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: "#2563EB" }} className="font-mono-tabular">
-                      {ent.matchesCount} Multi-State FIRs
-                    </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-secondary, #475569)", fontFamily: "var(--font-mono)" }}>
+                    {ent.blindIndexHash}
+                  </div>
+                  <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                    {ent.locations[0]}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

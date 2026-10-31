@@ -4307,6 +4307,7 @@ from tarka.core.court_proof_bundle import (
     CbiSyndicateResponse,
 )
 
+@app.post("/api/intake/validate", response_model=IntakeValidationFullResponse)
 @app.post("/intake/validate", response_model=IntakeValidationFullResponse)
 @app.post("/api/v1/forensics/tarka/intake/validate", response_model=IntakeValidationFullResponse)
 async def api_intake_validate(req: IntakeValidationRequest):
@@ -4340,6 +4341,7 @@ async def api_intake_validate(req: IntakeValidationRequest):
         cgnat_pii_shield=cgnat_res
     )
 
+@app.post("/api/attribution/solve", response_model=CgnatAttributionResponse)
 @app.post("/attribution/solve", response_model=CgnatAttributionResponse)
 @app.post("/api/v1/forensics/tarka/attribution/solve", response_model=CgnatAttributionResponse)
 async def api_attribution_solve(req: AttributionSolveRequest):
@@ -4347,6 +4349,7 @@ async def api_attribution_solve(req: AttributionSolveRequest):
     sessions = req.sessions or []
     return _solve_cgnat_funnel(sessions, drop_source_port=req.drop_source_port)
 
+@app.post("/api/taint/compute", response_model=TaintComputeResponse)
 @app.post("/taint/compute", response_model=TaintComputeResponse)
 @app.post("/api/v1/forensics/tarka/taint/compute", response_model=TaintComputeResponse)
 async def api_taint_compute(req: TaintComputeRequest):
@@ -4356,6 +4359,7 @@ async def api_taint_compute(req: TaintComputeRequest):
         freeze_budget_k=req.freeze_budget_k
     )
 
+@app.post("/api/court-proof/evaluate", response_model=LeaveOneOutResponse)
 @app.post("/court-proof/evaluate", response_model=LeaveOneOutResponse)
 @app.post("/api/v1/forensics/tarka/court-proof/evaluate", response_model=LeaveOneOutResponse)
 async def api_court_proof_evaluate(req: CourtProofRequest):
@@ -4367,18 +4371,21 @@ async def api_court_proof_evaluate(req: CourtProofRequest):
         alibi_someone_else=req.alibi_someone_else_held_phone
     )
 
+@app.get("/api/court-proof/schedules/{case_id}", response_model=Bsa63SchedulesResponse)
 @app.get("/court-proof/schedules/{case_id}", response_model=Bsa63SchedulesResponse)
 @app.get("/api/v1/forensics/tarka/court-proof/schedules/{case_id}", response_model=Bsa63SchedulesResponse)
 async def api_court_proof_schedules(case_id: str):
     """BSA Section 63(4) Part A & Part B split schedules with Pune Bar Association compliance."""
     return _generate_bsa63_split_schedules(case_id)
 
+@app.get("/api/court-proof/paper-anchor/{case_id}", response_model=PaperAnchorResponse)
 @app.get("/court-proof/paper-anchor/{case_id}", response_model=PaperAnchorResponse)
 @app.get("/api/v1/forensics/tarka/court-proof/paper-anchor/{case_id}", response_model=PaperAnchorResponse)
 async def api_court_proof_paper_anchor(case_id: str):
     """24-Word BIP-39 mnemonic phrase and Ed25519 paper anchor for physical court custody."""
     return _get_paper_anchor(case_id)
 
+@app.get("/api/court-proof/cbi-syndicate", response_model=CbiSyndicateResponse)
 @app.get("/court-proof/cbi-syndicate", response_model=CbiSyndicateResponse)
 @app.get("/api/v1/forensics/tarka/court-proof/cbi-syndicate", response_model=CbiSyndicateResponse)
 async def api_court_proof_cbi_syndicate():

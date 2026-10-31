@@ -7,13 +7,10 @@ import {
   Store,
   Copy,
   Check,
+  Sliders,
+  DollarSign,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
-import {
-  BentoKpiCard,
-  SemiCircleGauge,
-  SegmentedPillSwitcher,
-} from "../../components/tarka/BentoPrimitives";
 import {
   computeTaintEngine,
   generateBnssDrafts,
@@ -23,9 +20,6 @@ type TaintRule = "LIBR" | "FIFO" | "PRO_RATA";
 
 export const TaintEngineScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-
-  // Active Sub-tab
-  const [activeTab, setActiveTab] = useState<"dag" | "accounting" | "min-cut" | "bnss">("dag");
 
   // Accounting Rule Selection
   const [selectedRule, setSelectedRule] = useState<TaintRule>("LIBR");
@@ -38,489 +32,793 @@ export const TaintEngineScreen: React.FC = () => {
     return computeTaintEngine(mutations.injectMerchantCleanDeposit, freezeBudgetK);
   }, [mutations.injectMerchantCleanDeposit, freezeBudgetK]);
 
-  // Compute % Contained for SemiCircleGauge
-  const containmentPercentage = useMemo(() => {
-    if (engineState.minCut.isFreezeComplete) return 100;
-    const initial = engineState.summary.initialVictimLoss;
-    const leaked = engineState.minCut.residualLeakageAmount;
-    return Math.max(0, Math.min(100, Math.round(((initial - leaked) / initial) * 100)));
-  }, [engineState]);
+  // Active BNSS notice selection (106 vs 107)
+  const [selectedNoticeType, setSelectedNoticeType] = useState<"106" | "107">("106");
 
   // BNSS Draft State
   const bnssDrafts = useMemo(() => {
     return generateBnssDrafts("ICICI 001405008129", "ICICI Bank", 120000);
   }, []);
 
-  const [copiedDraft, setCopiedDraft] = useState<string | null>(null);
+  const activeDraft = useMemo(() => {
+    return selectedNoticeType === "106" ? bnssDrafts.notice106 : bnssDrafts.application107;
+  }, [selectedNoticeType, bnssDrafts]);
 
-  const handleCopy = (text: string, type: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedDraft(type);
-    setTimeout(() => setCopiedDraft(null), 2000);
+  const [isCopied, setIsCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(activeDraft.draftText);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const isInjectClean = mutations.injectMerchantCleanDeposit;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: "20px", overflowY: "auto", height: "calc(100vh - 120px)" }}>
-      {/* 1. Header & Tab Switcher */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span className="bento-badge bento-badge-blue">
-              <GitFork size={11} /> SCREEN 3: TIME-EXPANDED DAG & TAINT ENGINE
-            </span>
-            <span className="bento-badge bento-badge-neutral font-mono-tabular">
-              BNSS § 106/107 & ROSCOE V. WINDER
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100vh - 52px)",
+        padding: "10px 14px",
+        gap: "10px",
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      {/* 1. SINGLE-LINE 4-PILL TELEMETRY STRIP (HEIGHT: 38PX, NO VERTICAL SCROLL) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "10px",
+          height: "38px",
+          flexShrink: 0,
+        }}
+      >
+        {/* Pill 1: Initial Victim Loss */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(225,29,72,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <UserX size={14} color="#E11D48" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              DEFRAUDED LOSS
             </span>
           </div>
-          <h1 style={{ margin: "2px 0 4px", fontSize: "22px", fontWeight: 700, color: "var(--bento-text-main)", letterSpacing: "-0.5px" }}>
-            Multi-Accounting Taint Tracer & Dinic Min-Cut Freeze Verifier
-          </h1>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--bento-text-muted)", maxWidth: "800px", lineHeight: 1.5 }}>
-            Time-Expanded DAG transformation eliminates wash cycles, exact 3-way accounting state machine (LIBR vs FIFO vs Pro-Rata), Dinic min-cut freeze budget optimizer, and dual-track BNSS statutory notice drafting.
-          </p>
-        </div>
-
-        <SegmentedPillSwitcher
-          options={[
-            { id: "dag", label: "Time-Expanded DAG" },
-            { id: "accounting", label: "LIBR vs FIFO vs Pro-Rata" },
-            { id: "min-cut", label: "Dinic Min-Cut Verifier" },
-            { id: "bnss", label: "BNSS § 106/107 Notices" },
-          ]}
-          activeId={activeTab}
-          onChange={(val) => setActiveTab(val as any)}
-        />
-      </div>
-
-      {/* 2. Top 4 Bento KPI Cards */}
-      <div className="bento-grid-4">
-        <BentoKpiCard
-          title="VICTIM TRUST PROPERTY LOSS"
-          metric={`₹${(engineState.summary.initialVictimLoss / 100000).toFixed(2)}L`}
-          metricColor="var(--bento-crimson)"
-          delta={{
-            value: "₹5,00,000.00",
-            isWarning: true,
-            label: "T+0 Incident Loss",
-          }}
-          subtitle="Complainant Defrauded Capital"
-          icon={UserX}
-          iconColor="var(--bento-crimson)"
-          iconBg="var(--bento-crimson-subtle)"
-        />
-
-        <BentoKpiCard
-          title="LIBR RECOVERABLE TAINT"
-          metric={`₹${(engineState.summary.librRecoverable / 100000).toFixed(2)}L`}
-          metricColor="var(--bento-emerald)"
-          delta={{
-            value: "ROSCOE V. WINDER",
-            isPositive: true,
-            label: engineState.summary.divergenceDetected ? "Clean funds protected" : "Concordant accounting",
-          }}
-          subtitle="Rajasthan HC Precedent Capped"
-          icon={Scale}
-          iconColor="var(--bento-emerald)"
-          iconBg="var(--bento-emerald-subtle)"
-        />
-
-        <BentoKpiCard
-          title="DINIC MIN-CUT FREEZE STATUS"
-          metric={engineState.minCut.isFreezeComplete ? "SATISFIED" : "LEAKING"}
-          metricColor={engineState.minCut.isFreezeComplete ? "var(--bento-emerald)" : "var(--bento-amber)"}
-          delta={{
-            value: `Budget K=${freezeBudgetK}`,
-            isPositive: engineState.minCut.isFreezeComplete,
-            isWarning: !engineState.minCut.isFreezeComplete,
-            label: engineState.minCut.isFreezeComplete ? "Zero leakage" : `₹${(engineState.minCut.residualLeakageAmount / 100000).toFixed(2)}L leaking`,
-          }}
-          subtitle="Graph Flow Containment"
-          icon={Lock}
-          iconColor={engineState.minCut.isFreezeComplete ? "var(--bento-emerald)" : "var(--bento-amber)"}
-          iconBg={engineState.minCut.isFreezeComplete ? "var(--bento-emerald-subtle)" : "var(--bento-amber-subtle)"}
-        />
-
-        <BentoKpiCard
-          title="PROTECTED MERCHANT CAPITAL"
-          metric={`₹${(engineState.summary.cleanFundsProtectedLibr / 100000).toFixed(2)}L`}
-          metricColor="var(--bento-indigo)"
-          delta={{
-            value: "GST REGISTERED",
-            isPositive: true,
-            label: "Legitimate Commerce Shield",
-          }}
-          subtitle="Innocent Merchant Protection"
-          icon={Store}
-          iconColor="var(--bento-indigo)"
-          iconBg="var(--bento-indigo-subtle)"
-        />
-      </div>
-
-      {/* 3. SUB-TAB 1: Time-Expanded DAG */}
-      {activeTab === "dag" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {/* Status Alert */}
-          <div
+          <span
             style={{
-              padding: "16px 20px",
-              borderRadius: "14px",
-              background: "rgba(37, 99, 235, 0.05)",
-              border: "1px solid rgba(37, 99, 235, 0.2)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "12px",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#E11D48",
+              background: "rgba(225,29,72,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <GitFork size={24} color="#2563EB" />
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)" }}>
-                  Zero-Cycle Guaranteed Time-Expanded Directed Acyclic Graph (TE-DAG)
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginTop: "2px" }}>
-                  Every account state node is parameterized as <code className="font-mono-tabular">(Account_i, t_k)</code>. Cyclic wash transactions cannot produce infinite loops in SMT verification.
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => toggleMutation("injectMerchantCleanDeposit")}
-              className={`bento-btn bento-btn-sm ${mutations.injectMerchantCleanDeposit ? "bento-btn-primary" : "bento-btn-secondary"}`}
-              style={{
-                background: mutations.injectMerchantCleanDeposit ? "#7C3AED" : undefined,
-                borderColor: mutations.injectMerchantCleanDeposit ? "#7C3AED" : undefined,
-              }}
-            >
-              <Store size={13} />
-              <span>{mutations.injectMerchantCleanDeposit ? "Revert Clean Deposit" : "Inject ₹2.5L Clean Deposit (LIBR Divergence)"}</span>
-            </button>
-          </div>
-
-          {/* TE-DAG Node Cards Flow */}
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "16px" }}>
-              Chronological Node States & Flow Sequence
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {engineState.nodes.map((node) => (
-                <div
-                  key={node.id}
-                  style={{
-                    padding: "16px",
-                    borderRadius: "10px",
-                    border: node.isFrozen ? "1px solid #DC2626" : "1px solid var(--bento-border-subtle)",
-                    background: node.isFrozen ? "rgba(239, 68, 68, 0.05)" : "var(--bento-card-bg)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "12px",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <div
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "8px",
-                        background: node.classification === "VICTIM" ? "rgba(37, 99, 235, 0.1)" : node.classification === "INNOCENT_MERCHANT" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {node.classification === "INNOCENT_MERCHANT" ? <Store size={16} color="#059669" /> : node.classification === "VICTIM" ? <UserX size={16} color="#2563EB" /> : <Lock size={16} color="#DC2626" />}
-                    </div>
-
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)" }}>
-                          Layer {node.layer}: {node.accountHolder}
-                        </span>
-                        <span className={`bento-badge ${node.classification === "INNOCENT_MERCHANT" ? "bento-badge-emerald" : node.classification === "VICTIM" ? "bento-badge-blue" : "bento-badge-coral"}`}>
-                          {node.classification}
-                        </span>
-                        {node.isFrozen && <span className="bento-badge bento-badge-coral font-mono-tabular">FROZEN (§ 106)</span>}
-                      </div>
-                      <div style={{ fontSize: "11px", color: "var(--bento-text-muted)", marginTop: "2px" }} className="font-mono-tabular">
-                        {node.bankName} | Acct: {node.accountNumber} | Timestamp: {node.timestampIST} | Dwell Time: {node.dwellTimeSeconds}s
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "10px", color: "var(--bento-text-muted)", textTransform: "uppercase" }}>
-                        Total Balance
-                      </div>
-                      <div style={{ fontSize: "14px", fontWeight: 700 }} className="font-mono-tabular">
-                        ₹{node.totalBalance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "10px", color: "var(--bento-text-muted)", textTransform: "uppercase" }}>
-                        LIBR Taint
-                      </div>
-                      <div style={{ fontSize: "14px", fontWeight: 800, color: "#2563EB" }} className="font-mono-tabular">
-                        ₹{node.taintLibr.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+            ₹{(engineState.summary.initialVictimLoss / 100000).toFixed(2)}L (T+0 Loss)
+          </span>
         </div>
-      )}
 
-      {/* 4. SUB-TAB 2: LIBR vs FIFO vs Pro-Rata */}
-      {activeTab === "accounting" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+        {/* Pill 2: LIBR Recoverable */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(5,150,105,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Scale size={14} color="#059669" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              LIBR RECOVERABLE
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#059669",
+              background: "rgba(5,150,105,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            ₹{(engineState.summary.librRecoverable / 100000).toFixed(2)}L (ROSCOE V. WINDER)
+          </span>
+        </div>
+
+        {/* Pill 3: Dinic Min-Cut Freeze Status */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: engineState.minCut.isFreezeComplete ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(217,119,6,0.3)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Lock size={14} color={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"} />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              DINIC MIN-CUT FREEZE
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: engineState.minCut.isFreezeComplete ? "#059669" : "#D97706",
+              background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {engineState.minCut.isFreezeComplete ? `SAT (K=${freezeBudgetK}) · ZERO LEAKAGE` : `LEAKING ₹${(engineState.minCut.residualLeakageAmount / 100000).toFixed(2)}L`}
+          </span>
+        </div>
+
+        {/* Pill 4: BNSS Statutory Split */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 12px",
+            borderRadius: "8px",
+            background: "var(--bento-card-bg, #FFFFFF)",
+            border: "1px solid rgba(79,70,229,0.25)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <GitFork size={14} color="#4F46E5" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              BNSS 2023 DUAL-TRACK
+            </span>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "#4F46E5",
+              background: "rgba(79,70,229,0.1)",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            § 106 LIEN & § 107 DEBIT FREEZE
+          </span>
+        </div>
+      </div>
+
+      {/* 2. MAIN 12-COLUMN BENTO INFOGRAPHIC WORKSPACE (HEIGHT: CALC(100% - 48PX), OVERFLOW: HIDDEN) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(12, 1fr)",
+          gap: "10px",
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        {/* LEFT COLUMN: 7 COLS (VISUAL MULE FLOW DIAGRAM + DINIC MIN-CUT SLIDER) */}
+        <div
+          style={{
+            gridColumn: "span 7",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            minHeight: 0,
+          }}
+        >
+          {/* CARD 1: VISUAL MULE MONEY TRAIL FLOW DIAGRAM (TE-DAG) */}
+          <div
+            style={{
+              flex: "1 1 60%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            {/* Header with Title and Injection Button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)" }}>
-                  Exact 3-Way Forensic Accounting Convention Comparison
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <GitFork size={15} color="#4F46E5" />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Time-Expanded DAG Money Trail & Node Classification
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      color: "#059669",
+                      background: "rgba(5,150,105,0.08)",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    ZERO CYCLES GUARANTEED
+                  </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                  Compare recoverable amounts under Lowest Intermediate Balance Rule (LIBR), First-In First-Out (FIFO), and Pari Passu Pro-Rata.
+                <div style={{ fontSize: "11px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                  Dynamic node expansion: Mule accounts vs Innocent Merchant GST distinction.
                 </div>
               </div>
 
-              <SegmentedPillSwitcher
-                options={[
-                  { id: "LIBR", label: "LIBR (Roscoe v. Winder)" },
-                  { id: "FIFO", label: "FIFO (Clayton's Case)" },
-                  { id: "PRO_RATA", label: "Pro-Rata (Pari Passu)" },
-                ]}
-                activeId={selectedRule}
-                onChange={(val) => setSelectedRule(val as any)}
-              />
+              <button
+                type="button"
+                onClick={() => toggleMutation("injectMerchantCleanDeposit")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: isInjectClean ? "1px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  background: isInjectClean ? "rgba(5,150,105,0.12)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  color: isInjectClean ? "#047857" : "var(--bento-text-secondary, #475569)",
+                  cursor: "pointer",
+                }}
+                title="Injects ₹2.5L clean commercial funds into Merchant account to prove LIBR protects innocent capital"
+              >
+                <DollarSign size={11} />
+                <span>{isInjectClean ? "Clean Deposit Injected (+₹2.5L)" : "Inject Clean Deposit (+₹2.5L)"}</span>
+              </button>
             </div>
 
+            {/* Visual Left-to-Right TE-DAG Pipeline Grid */}
             <div
               style={{
-                padding: "16px",
-                borderRadius: "10px",
-                background: engineState.summary.divergenceDetected ? "rgba(124, 58, 237, 0.05)" : "rgba(16, 185, 129, 0.05)",
-                border: engineState.summary.divergenceDetected ? "1px solid rgba(124, 58, 237, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)",
-                marginBottom: "20px",
+                display: "grid",
+                gridTemplateColumns: "1.1fr 1fr 1.3fr",
+                gap: "8px",
+                flex: 1,
+                minHeight: 0,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <span className={`bento-badge ${engineState.summary.divergenceDetected ? "bento-badge-purple" : "bento-badge-emerald"}`}>
-                  {engineState.summary.divergenceDetected ? "ACCOUNTING DIVERGENCE ACTIVE" : "CONCORDANT RESULTS"}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                  {engineState.summary.divergenceNotes}
-                </span>
+              {/* Column 1: Layer 0 Victim & Layer 1 Mule */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {/* Victim Node */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(225,29,72,0.04)",
+                    border: "1px solid rgba(225,29,72,0.25)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#E11D48", textTransform: "uppercase" }}>
+                      VICTIM SOURCE (T+0)
+                    </span>
+                    <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                      09:30 IST
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Sunil Kumar (Victim)
+                  </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                    SBI 30910029101
+                  </div>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#E11D48", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    -₹5,00,000.00
+                  </div>
+                </div>
+
+                {/* Layer 1 Mule Node */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(217,119,6,0.06)",
+                    border: "1px solid rgba(217,119,6,0.3)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    flex: 1,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
+                      LAYER 1 MULE
+                    </span>
+                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                      § 107 FULL FREEZE
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Vikram Shah
+                  </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                    SBI 41088291083 (Dwell: 112s)
+                  </div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Total Inflow: ₹5,00,000
+                  </div>
+                </div>
               </div>
 
-              <div className="bento-grid-4" style={{ marginTop: "12px" }}>
-                <div>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>LIBR Recoverable</div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#059669" }} className="font-mono-tabular">
-                    ₹{engineState.summary.librRecoverable.toLocaleString("en-IN")}
+              {/* Column 2: Layer 2 Mule Splits (A & B) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {/* Layer 2 Mule A */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(217,119,6,0.04)",
+                    border: "1px solid rgba(217,119,6,0.25)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    flex: 1,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
+                      MULE L2 (SPLIT A)
+                    </span>
+                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                      § 107 FREEZE
+                    </span>
                   </div>
-                  <div style={{ fontSize: "10px", color: "var(--bento-text-muted)" }}>Capped at lowest balance</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Rohit Verma
+                  </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                    HDFC 5010029419920
+                  </div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Tainted: ₹3,00,000
+                  </div>
                 </div>
 
-                <div>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>FIFO Recoverable</div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#DC2626" }} className="font-mono-tabular">
-                    ₹{engineState.summary.fifoRecoverable.toLocaleString("en-IN")}
+                {/* Layer 2 Mule B */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(217,119,6,0.04)",
+                    border: "1px solid rgba(217,119,6,0.25)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    flex: 1,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
+                      MULE L2 (SPLIT B)
+                    </span>
+                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                      § 107 FREEZE
+                    </span>
                   </div>
-                  <div style={{ fontSize: "10px", color: "var(--bento-text-muted)" }}>Assumes dirty spent first</div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Sameer Khan
+                  </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                    AXIS 9140200410291
+                  </div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Tainted: ₹2,00,000
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 3: Layer 3 Terminal (Innocent Merchant & ATM Cashout) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {/* Innocent Merchant Node (GST Protected) */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(5,150,105,0.06)",
+                    border: "1px solid rgba(5,150,105,0.3)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    flex: 1.2,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Store size={11} color="#059669" />
+                      <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669", textTransform: "uppercase" }}>
+                        INNOCENT MERCHANT
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "rgba(5,150,105,0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                      § 106 LIEN ONLY
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Apex Electronics Pvt Ltd
+                  </div>
+                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                    GST: 07AAACA1234F1Z8 · ICICI
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "2px" }}>
+                    <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>Total Balance:</span>
+                    <span style={{ fontSize: "10px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--bento-text-primary, #0F172A)" }}>
+                      ₹{engineState.nodes.find((n) => n.id === "node-merchant-l3")?.totalBalance.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", color: "#059669", fontWeight: 700 }}>LIBR Lien Mark:</span>
+                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#059669" }}>
+                      ₹{engineState.nodes.find((n) => n.id === "node-merchant-l3")?.taintLibr.toLocaleString("en-IN")}
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>Pro-Rata Recoverable</div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#2563EB" }} className="font-mono-tabular">
-                    ₹{engineState.summary.proRataRecoverable.toLocaleString("en-IN")}
+                {/* ATM Cashout Sink */}
+                <div
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "rgba(100,116,139,0.06)",
+                    border: "1px solid rgba(100,116,139,0.25)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    flex: 0.8,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>
+                      ATM CASH EXIT
+                    </span>
+                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#64748B", background: "rgba(100,116,139,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                      TERMINAL SINK
+                    </span>
                   </div>
-                  <div style={{ fontSize: "10px", color: "var(--bento-text-muted)" }}>Fractional apportionment</div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: "11px", color: "var(--bento-text-muted)" }}>Merchant Clean Shield</div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#7C3AED" }} className="font-mono-tabular">
-                    ₹{engineState.summary.cleanFundsProtectedLibr.toLocaleString("en-IN")}
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    Noida Sec 18 ATM DL-049
                   </div>
-                  <div style={{ fontSize: "10px", color: "var(--bento-text-muted)" }}>Protected from police lien</div>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#DC2626", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Dispensed: ₹1,20,000 (Physical Cash)
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* 5. SUB-TAB 3: Dinic Min-Cut Verifier */}
-      {activeTab === "min-cut" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)" }}>
-                  Dinic Min-Cut Freeze Completeness & Residual Path Verifier
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                  Finds the minimum capacity cut of bank accounts that completely severs victim source funds from cashout sinks.
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 600 }}>
-                  Freeze Budget K: <strong className="font-mono-tabular">{freezeBudgetK} Accounts</strong>
+          {/* CARD 2: DINIC MIN-CUT FREEZE VERIFIER & RESIDUAL LEAKAGE SLIDER */}
+          <div
+            style={{
+              flex: "1 1 40%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Sliders size={14} color="#4F46E5" />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  Dinic Min-Cut Freeze Budget Optimizer (K = {freezeBudgetK})
                 </span>
-                <input
-                  type="range"
-                  min="1"
-                  max="6"
-                  value={freezeBudgetK}
-                  onChange={(e) => setFreezeBudgetK(parseInt(e.target.value, 10))}
-                  style={{ accentColor: "#2563EB", cursor: "pointer", width: "120px" }}
-                />
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    color: engineState.minCut.isFreezeComplete ? "#059669" : "#D97706",
+                    background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {engineState.minCut.isFreezeComplete ? "100% FLOW CONTAINED" : "RESIDUAL ESCAPE DETECTED"}
+                </span>
               </div>
+
+              <span style={{ fontSize: "10px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                Capacity = {engineState.minCut.minCutCapacity} Nodes
+              </span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "20px", alignItems: "center" }}>
-              <SemiCircleGauge
-                percentage={containmentPercentage}
-                label="FUND FLOW CONTAINMENT"
-                sublabel={`Budget K=${freezeBudgetK} Accounts`}
-                summaryText={engineState.minCut.isFreezeComplete ? "FULL CONTAINMENT (SAT)" : "RESIDUAL ESCAPE ALERT"}
-                color={engineState.minCut.isFreezeComplete ? "var(--bento-emerald)" : "var(--bento-amber)"}
+            {/* Interactive Slider Bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>K=1</span>
+              <input
+                type="range"
+                min={1}
+                max={6}
+                value={freezeBudgetK}
+                onChange={(e) => setFreezeBudgetK(Number(e.target.value))}
+                style={{ flex: 1, cursor: "pointer", accentColor: "#4F46E5" }}
               />
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>K=6</span>
+            </div>
 
+            {/* Verdict Explanation Box */}
+            <div
+              style={{
+                fontSize: "10px",
+                lineHeight: 1.4,
+                padding: "6px 10px",
+                borderRadius: "6px",
+                background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.08)" : "rgba(217,119,6,0.08)",
+                border: engineState.minCut.isFreezeComplete ? "1px solid rgba(5,150,105,0.25)" : "1px solid rgba(217,119,6,0.25)",
+                color: engineState.minCut.isFreezeComplete ? "#065F46" : "#92400E",
+              }}
+            >
+              {engineState.minCut.verdictDetail}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: 5 COLS (3-WAY ACCOUNTING ENGINE + BNSS NOTICE DRAFT GENERATOR) */}
+        <div
+          style={{
+            gridColumn: "span 5",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            minHeight: 0,
+          }}
+        >
+          {/* CARD 3: 3-WAY TAINT ACCOUNTING COMPARISON (LIBR VS FIFO VS PRO-RATA) */}
+          <div
+            style={{
+              flex: "1 1 45%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Scale size={15} color="#4F46E5" />
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  Accounting State Machine Comparison
+                </span>
+              </div>
+              <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
+                HIGH COURT MANDATE
+              </span>
+            </div>
+
+            {/* 3 Metric Comparison Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+              {/* LIBR Card */}
               <div
+                onClick={() => setSelectedRule("LIBR")}
                 style={{
-                  padding: "16px",
-                  borderRadius: "10px",
-                  background: engineState.minCut.isFreezeComplete ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)",
-                  border: engineState.minCut.isFreezeComplete ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(239, 68, 68, 0.2)",
+                  background: selectedRule === "LIBR" ? "rgba(5,150,105,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  border: selectedRule === "LIBR" ? "1.5px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  cursor: "pointer",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <span className={`bento-badge ${engineState.minCut.isFreezeComplete ? "bento-badge-emerald" : "bento-badge-coral"}`}>
-                    {engineState.minCut.verdict}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "var(--bento-text-muted)" }}>
-                    Min-Cut Capacity: <strong className="font-mono-tabular">{engineState.minCut.minCutCapacity} Accounts</strong>
-                  </span>
+                <div style={{ fontSize: "9px", fontWeight: 800, color: "#059669", textTransform: "uppercase" }}>
+                  LIBR (HC RULE) ★
                 </div>
-
-                <div style={{ fontSize: "13px", color: "var(--bento-text-main)", lineHeight: 1.5, marginBottom: "12px" }}>
-                  {engineState.minCut.verdictDetail}
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                  ₹{(engineState.summary.librRecoverable / 100000).toFixed(2)}L
                 </div>
-
-                {engineState.minCut.residualPaths.length > 0 && (
-                  <div style={{ padding: "10px", borderRadius: "6px", background: "rgba(239, 68, 68, 0.1)", fontSize: "11px", color: "#DC2626" }}>
-                    <strong>Leaking Path: </strong>
-                    <span className="font-mono-tabular">{engineState.minCut.residualPaths[0].join(" → ")}</span>
-                  </div>
-                )}
+                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
+                  Lowest intermediate cap; clean funds protected.
+                </div>
               </div>
+
+              {/* FIFO Card */}
+              <div
+                onClick={() => setSelectedRule("FIFO")}
+                style={{
+                  background: selectedRule === "FIFO" ? "rgba(79,70,229,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  border: selectedRule === "FIFO" ? "1.5px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>
+                  FIFO (FIRST-IN)
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#4F46E5", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                  ₹{(engineState.summary.fifoRecoverable / 100000).toFixed(2)}L
+                </div>
+                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
+                  First funds in presumed spent first.
+                </div>
+              </div>
+
+              {/* Pro-Rata Card */}
+              <div
+                onClick={() => setSelectedRule("PRO_RATA")}
+                style={{
+                  background: selectedRule === "PRO_RATA" ? "rgba(217,119,6,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  border: selectedRule === "PRO_RATA" ? "1.5px solid #D97706" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ fontSize: "9px", fontWeight: 800, color: "#D97706", textTransform: "uppercase" }}>
+                  PRO-RATA
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                  ₹{(engineState.summary.proRataRecoverable / 100000).toFixed(2)}L
+                </div>
+                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
+                  Proportional commingled pool fraction.
+                </div>
+              </div>
+            </div>
+
+            {/* Clean Funds Protected Banner */}
+            <div
+              style={{
+                fontSize: "10px",
+                lineHeight: 1.4,
+                padding: "6px 8px",
+                borderRadius: "6px",
+                background: isInjectClean ? "rgba(5,150,105,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                border: isInjectClean ? "1px solid rgba(5,150,105,0.25)" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                color: isInjectClean ? "#047857" : "var(--bento-text-muted, #94A3B8)",
+              }}
+            >
+              {engineState.summary.divergenceNotes}
+            </div>
+          </div>
+
+          {/* CARD 4: DUAL-TRACK BNSS STATUTORY NOTICE GENERATOR */}
+          <div
+            style={{
+              flex: "1 1 55%",
+              background: "var(--bento-card-bg, #FFFFFF)",
+              borderRadius: "12px",
+              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                  MHA SOP 02.01.2026 Statutory Notice
+                </span>
+              </div>
+
+              {/* Notice Type Switcher (106 vs 107) */}
+              <div style={{ display: "flex", gap: "4px" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNoticeType("106")}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: selectedNoticeType === "106" ? "1px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: selectedNoticeType === "106" ? "rgba(5,150,105,0.12)" : "transparent",
+                    color: selectedNoticeType === "106" ? "#047857" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
+                  }}
+                >
+                  § 106 Lien Notice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNoticeType("107")}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: selectedNoticeType === "107" ? "1px solid #DC2626" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: selectedNoticeType === "107" ? "rgba(220,38,38,0.12)" : "transparent",
+                    color: selectedNoticeType === "107" ? "#B91C1C" : "var(--bento-text-secondary, #475569)",
+                    cursor: "pointer",
+                  }}
+                >
+                  § 107 Full Freeze
+                </button>
+              </div>
+            </div>
+
+            {/* Notice Draft Text Box */}
+            <div
+              style={{
+                flex: 1,
+                background: "var(--bento-canvas-subtle, #F8FAFC)",
+                borderRadius: "8px",
+                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+                padding: "8px 10px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "10px",
+                lineHeight: 1.4,
+                color: "var(--bento-text-primary, #0F172A)",
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                minHeight: 0,
+              }}
+            >
+              {activeDraft.draftText}
+            </div>
+
+            {/* Bottom Actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                Target: <strong>ICICI Cyber Liaison Desk</strong> (48h Statutory Deadline)
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopy}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: isCopied ? "#059669" : "#4F46E5",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                }}
+              >
+                {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                <span>{isCopied ? "Copied to Clipboard" : "Copy BNSS Notice"}</span>
+              </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* 6. SUB-TAB 4: BNSS § 106/107 Notices */}
-      {activeTab === "bnss" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div className="bento-card" style={{ padding: "20px" }}>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--bento-text-main)", marginBottom: "4px" }}>
-              Dual-Track BNSS Statutory Requisition & Attachment Generator
-            </div>
-            <p style={{ fontSize: "12px", color: "var(--bento-text-muted)", marginBottom: "20px" }}>
-              Automated legal drafting compliant with Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023 and MHA SOP of 02.01.2026.
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-              {/* Notice 106(1) */}
-              <div style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--bento-border-subtle)", background: "var(--bento-card-bg)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <div>
-                    <span className="bento-badge bento-badge-amber">SECTION 106(1) BNSS</span>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-main)", marginTop: "4px" }}>
-                      Administrative Debit Lien Notice (24h)
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bnssDrafts.notice106.draftText, "106")}
-                    className="bento-btn bento-btn-secondary bento-btn-sm"
-                  >
-                    {copiedDraft === "106" ? <Check size={12} color="#059669" /> : <Copy size={12} />}
-                    <span>{copiedDraft === "106" ? "Copied" : "Copy Draft"}</span>
-                  </button>
-                </div>
-
-                <textarea
-                  readOnly
-                  value={bnssDrafts.notice106.draftText}
-                  style={{
-                    width: "100%",
-                    height: "260px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle)",
-                    background: "#0F172A",
-                    color: "#94A3B8",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    resize: "none",
-                  }}
-                />
-              </div>
-
-              {/* Application 107(1) */}
-              <div style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--bento-border-subtle)", background: "var(--bento-card-bg)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <div>
-                    <span className="bento-badge bento-badge-blue">SECTION 107(1) BNSS</span>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-main)", marginTop: "4px" }}>
-                      Magistrate Attachment Application (48h)
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(bnssDrafts.application107.draftText, "107")}
-                    className="bento-btn bento-btn-secondary bento-btn-sm"
-                  >
-                    {copiedDraft === "107" ? <Check size={12} color="#059669" /> : <Copy size={12} />}
-                    <span>{copiedDraft === "107" ? "Copied" : "Copy Draft"}</span>
-                  </button>
-                </div>
-
-                <textarea
-                  readOnly
-                  value={bnssDrafts.application107.draftText}
-                  style={{
-                    width: "100%",
-                    height: "260px",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle)",
-                    background: "#0F172A",
-                    color: "#94A3B8",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                    resize: "none",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
