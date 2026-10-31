@@ -99,6 +99,13 @@ body {
   width: 100%;
 }
 
+.bento-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
 @media (max-width: 1200px) {
   .bento-grid-4 {
     grid-template-columns: repeat(2, 1fr);
@@ -465,6 +472,17 @@ body {
   padding: 10px 14px 20px 14px !important;
   gap: 10px !important;
 }
+
+/* Compact rules for Attribution Screen */
+.tarka-density-compact .tarka-attribution-root {
+  padding: 8px 12px 16px 12px !important;
+  gap: 8px !important;
+}
+
+.tarka-density-compact .bento-grid-12 {
+  gap: 8px !important;
+}
+
 
 
 

@@ -6,8 +6,8 @@ const { chromium } = require('@playwright/test');
   const page = await context.newPage();
 
   console.log('--- 1. Testing Screen 1: Evidence Intake ---');
-  await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+  await page.goto('http://127.0.0.1:5173/?view=intake', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
 
   // Take screenshot of Screen 1
   await page.screenshot({ path: 'e2e/screens/v55_screen1_intake.png' });
@@ -28,8 +28,8 @@ const { chromium } = require('@playwright/test');
   await mutatorBtn.click(); // Close mutator
 
   console.log('--- 2. Testing Screen 2: Attribution ---');
-  await page.goto('http://127.0.0.1:5173/?view=attribution', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+  await page.goto('http://127.0.0.1:5173/?view=attribution', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screens/v55_screen2_attribution.png' });
 
   // Test Copy DoT 39.20 Requisition button
@@ -41,8 +41,8 @@ const { chromium } = require('@playwright/test');
   }
 
   console.log('--- 3. Testing Screen 3: Taint Engine ---');
-  await page.goto('http://127.0.0.1:5173/?view=taint-engine', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+  await page.goto('http://127.0.0.1:5173/?view=taint-engine', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screens/v55_screen3_taint_engine.png' });
 
   // Test Clean Working Capital injection
@@ -55,10 +55,11 @@ const { chromium } = require('@playwright/test');
   }
 
   console.log('--- 4. Testing Screen 4: Court Proof ---');
-  await page.goto('http://127.0.0.1:5173/?view=court-proof', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(500);
+  await page.goto('http://127.0.0.1:5173/?view=court-proof', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
   await page.screenshot({ path: 'e2e/screens/v55_screen4_court_proof.png' });
 
   console.log('All 4 screens verified and screenshots captured successfully!');
   await browser.close();
 })();
+

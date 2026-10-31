@@ -123,7 +123,7 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px", width: "100%" }}>
         <span
           style={{
-            fontSize: "24px",
+            fontSize: metric.length > 15 ? "18px" : metric.length > 11 ? "20px" : "24px",
             fontWeight: 800,
             color: "#09090B",
             letterSpacing: "-0.03em",
