@@ -692,6 +692,82 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               Midnight rollover
             </button>
           </div>
+
+          {/* NPCI Switch Admissibility Telemetry Card */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              padding: "8px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              marginTop: "2px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+                NPCI Switch Telemetry & Audit Trail
+              </span>
+              <span
+                style={{
+                  fontSize: "8.5px",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
+                  padding: "1px 5px",
+                  borderRadius: "3px",
+                  background: isWithinTolerance ? "#ECFDF5" : "#FFF1F2",
+                  color: isWithinTolerance ? "#047857" : "#BE123C",
+                  border: `1px solid ${isWithinTolerance ? "#A7F3D0" : "#FECDD3"}`,
+                }}
+              >
+                {isWithinTolerance ? "SWITCH ACK CERTIFIED" : "CLOCK SKEW REJECTED"}
+              </span>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "10px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>Gateway Route</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+                  NPCI-UPI-GW-MUM-02
+                </div>
+              </div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>Settlement Window</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+                  Cycle 04 (10:00–10:15 IST)
+                </div>
+              </div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>Cipher Suite</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+                  ECDSA P-256 / SHA-256
+                </div>
+              </div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>STAN Collision Check</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
+                  0 Collisions in 24h ✓
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                fontSize: "9.5px",
+                color: "#475569",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                borderRadius: "4px",
+                padding: "4px 6px",
+                lineHeight: 1.3,
+              }}
+            >
+              <strong style={{ color: "#0F172A" }}>Section 63(4) BSA Note: </strong>
+              Carrier timestamp certified by NPCI HSM. Invariant I2 holds when switch clock drift |Δt| ≤ 180s.
+            </div>
+          </div>
         </Tabs.Content>
 
         {/* =====================================================================
@@ -824,6 +900,55 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             <strong>Quarantine Verdict: </strong>
             Receipt quarantined (Tier-3) → excluded from attribution; proceeding with Tier-1 bank evidence (Gate I4).
           </div>
+
+          {/* Dual-Stream Byte-Level Forensic Details */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              padding: "8px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+                Cryptographic Revision Hashes (SHA-256)
+              </span>
+              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#BE123C", background: "#FFE4E6", padding: "1px 5px", borderRadius: "3px" }}>
+                INCREMENTAL OVERWRITE
+              </span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "9.5px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#64748B", fontSize: "9px" }}>
+                  <span>Rev 1 Stream (0x00000000..0x00014208)</span>
+                  <span style={{ color: "#047857", fontWeight: 700 }}>Finacle Certified Original</span>
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px", wordBreak: "break-all" }}>
+                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                </div>
+              </div>
+
+              <div style={{ background: "#FFFFFF", border: "1px solid #FECDD3", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#64748B", fontSize: "9px" }}>
+                  <span>Rev 2 Append (0x00014209..0x00015080)</span>
+                  <span style={{ color: "#BE123C", fontWeight: 700 }}>Canva Web Export (+18.4 KB)</span>
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", color: "#BE123C", marginTop: "2px", wordBreak: "break-all" }}>
+                  7d1b54f9a0c8432a98eef65bc042a1948efb4e1329a4309a6f1d8c919f2a41d0
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <strong style={{ color: "#0F172A" }}>Forensic Finding: </strong>
+              The claimant PDF file contains 2 distinct %%EOF trailers. Canva added an updated xref table modifying the visual text layer from ₹2,15,000 to ₹15,000 while leaving the underlying stream intact.
+            </div>
+          </div>
         </Tabs.Content>
 
         {/* =====================================================================
@@ -939,6 +1064,48 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             >
               {isVerifyingPath ? "Verifying WebCrypto SHA-256..." : "Verify Inclusion Proof (Depth 14)"}
             </button>
+          </div>
+
+          {/* Privacy Enclave Attestation Box */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              padding: "8px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+                DoT Clause 39.20 Safe Harbor Compliance
+              </span>
+              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
+                AIR-GAP ATTESTED
+              </span>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "10px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>Citizen Masking Rate</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
+                  99.96% (9,996 / 10,000)
+                </div>
+              </div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                <div style={{ color: "#64748B", fontSize: "9px" }}>Target Disclosures</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#4338CA", marginTop: "1px" }}>
+                  4 Allocated Ports Only
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <strong style={{ color: "#0F172A" }}>Judicial Privacy Guarantee: </strong>
+              Zero innocent citizen communications or identities are exposed to IOs or court record, complying with High Court privacy mandates and DoT IPDR rules.
+            </div>
           </div>
         </Tabs.Content>
 
@@ -1094,6 +1261,47 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               )}
             </div>
           ))}
+
+          {/* Z3 Solver Judicial Certificate Banner */}
+          <div
+            style={{
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              padding: "8px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              marginTop: "2px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+                Z3 SMT Invariant Solver Verification
+              </span>
+              <span
+                style={{
+                  fontSize: "8.5px",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
+                  padding: "1px 5px",
+                  borderRadius: "3px",
+                  background: isRow14Tampered || isForgedRrn ? "#FFF1F2" : "#ECFDF5",
+                  color: isRow14Tampered || isForgedRrn ? "#BE123C" : "#047857",
+                  border: `1px solid ${isRow14Tampered || isForgedRrn ? "#FECDD3" : "#A7F3D0"}`,
+                }}
+              >
+                {isRow14Tampered || isForgedRrn ? "FALSIFICATION UNSAT" : "ALL INVARIANTS SAT"}
+              </span>
+            </div>
+
+            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <strong style={{ color: "#0F172A" }}>Judicial Order Direction: </strong>
+              {isRow14Tampered
+                ? "Falsification gate has halted downstream attribution engines. Row #14 contains an unsat mathematical deficit of ₹2,00,000.00."
+                : "Mathematical conservation is proven across 6 Finacle CBS ledger rows. Proceed with Tier-1 bank evidence for attribution."}
+            </div>
+          </div>
         </Tabs.Content>
       </Tabs.Root>
     </div>

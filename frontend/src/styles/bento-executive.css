@@ -359,4 +359,112 @@ body {
   min-height: 0 !important;
 }
 
+/* ==========================================================================
+   Universal Court-Grade Precision Scrollbar (Accessible & Smooth)
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 rgba(241, 245, 249, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  min-height: 28px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #64748B;
+}
+
+/* ==========================================================================
+   Density Modes: Standard vs Compact / Small View
+   ========================================================================== */
+.tarka-density-compact {
+  --bento-card-padding: 6px 10px;
+}
+
+.tarka-density-compact .bento-grid-4 {
+  gap: 8px !important;
+}
+
+.tarka-density-compact .bento-card {
+  padding: 6px 10px !important;
+}
+
+.tarka-density-compact .bento-metric {
+  font-size: 18px !important;
+}
+
+.tarka-density-compact .bento-title {
+  font-size: 11px !important;
+}
+
+/* Compact rules for Intake Workbench */
+.tarka-density-compact .tarka-intake-root {
+  gap: 6px !important;
+  padding: 6px 10px !important;
+}
+
+.tarka-density-compact section[aria-label="Key Forensic Metrics"] {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  gap: 6px !important;
+}
+
+.tarka-density-compact [data-card="kpi-card"] {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  padding: 5px 8px !important;
+}
+
+.tarka-density-compact [data-card="kpi-card"] .kpi-hero-num {
+  font-size: 17px !important;
+}
+
+.tarka-density-compact section[aria-label="Falsification Gate Pipeline"] {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+}
+
+.tarka-density-compact [data-card="gate-rail"] {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 0 8px !important;
+}
+
+.tarka-density-compact [data-card="gate-rail"] button[data-station] {
+  height: 32px !important;
+  padding: 0 6px !important;
+}
+
+/* Compact padding for other dossier pages */
+.tarka-density-compact .tarka-dossier-page {
+  padding: 10px 14px 20px 14px !important;
+  gap: 10px !important;
+}
+
+
 

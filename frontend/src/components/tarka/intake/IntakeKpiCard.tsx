@@ -2,6 +2,7 @@ import React from "react";
 import NumberFlow from "@number-flow/react";
 import { type LucideIcon, Info } from "lucide-react";
 import * as HoverCard from "@radix-ui/react-hover-card";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 
 export interface IntakeKpiCardProps {
   title: string;
@@ -47,6 +48,8 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
   onClick,
   active = false,
 }) => {
+  const { density } = useTarkaUiStore();
+  const isCompact = density === "compact";
   const pStyle = pillVariantStyles[pillVariant] || pillVariantStyles.emerald;
 
   return (
@@ -55,10 +58,10 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
       data-card="kpi-card"
       className="bento-card"
       style={{
-        height: "80px",
-        minHeight: "80px",
-        maxHeight: "80px",
-        padding: "8px 12px",
+        height: isCompact ? "64px" : "80px",
+        minHeight: isCompact ? "64px" : "80px",
+        maxHeight: isCompact ? "64px" : "80px",
+        padding: isCompact ? "5px 8px" : "8px 12px",
         boxSizing: "border-box",
         background: "#FFFFFF",
         border: active ? "1px solid #4F46E5" : "1px solid #E2E8F0",
@@ -87,12 +90,12 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
           minWidth: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isCompact ? "4px" : "6px", minWidth: 0, overflow: "hidden" }}>
           <div
             style={{
-              width: "20px",
-              height: "20px",
-              borderRadius: "5px",
+              width: isCompact ? "18px" : "20px",
+              height: isCompact ? "18px" : "20px",
+              borderRadius: "4px",
               background: iconBg,
               display: "flex",
               alignItems: "center",
@@ -100,12 +103,12 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
               flexShrink: 0,
             }}
           >
-            <Icon size={12} color={iconColor} strokeWidth={2.4} />
+            <Icon size={isCompact ? 10 : 12} color={iconColor} strokeWidth={2.4} />
           </div>
 
           <span
             style={{
-              fontSize: "12px",
+              fontSize: isCompact ? "11px" : "12px",
               fontWeight: 700,
               color: "#334155",
               whiteSpace: "nowrap",
@@ -134,7 +137,7 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
                   flexShrink: 0,
                 }}
               >
-                <Info size={11} />
+                <Info size={isCompact ? 9 : 11} />
               </button>
             </HoverCard.Trigger>
             <HoverCard.Portal>
@@ -169,13 +172,13 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
         {/* Status Pill */}
         <span
           style={{
-            fontSize: "8.5px",
+            fontSize: isCompact ? "8px" : "8.5px",
             fontWeight: 800,
             fontFamily: "var(--font-mono)",
             background: pStyle.bg,
             color: pStyle.color,
             border: `1px solid ${pStyle.border}`,
-            padding: "1.5px 5px",
+            padding: isCompact ? "1px 4px" : "1.5px 5px",
             borderRadius: "4px",
             whiteSpace: "nowrap",
             flexShrink: 0,
@@ -196,8 +199,9 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
         }}
       >
         <div
+          className="kpi-hero-num"
           style={{
-            fontSize: "20px",
+            fontSize: isCompact ? "17px" : "20px",
             fontWeight: 800,
             fontFamily: "var(--font-sans)",
             color: "#09090B",
@@ -214,7 +218,7 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
             <span style={{ display: "inline-flex", alignItems: "baseline" }}>
               {prefix && <span>{prefix}</span>}
               <NumberFlow value={numericValue} />
-              {suffix && <span style={{ fontSize: "14px", fontWeight: 700, marginLeft: "2px", color: "#64748B" }}>{suffix}</span>}
+              {suffix && <span style={{ fontSize: isCompact ? "12px" : "14px", fontWeight: 700, marginLeft: "2px", color: "#64748B" }}>{suffix}</span>}
             </span>
           ) : (
             "—"

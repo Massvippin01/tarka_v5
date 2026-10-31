@@ -35,7 +35,8 @@ export const GateRail: React.FC<GateRailProps> = ({
   isMerkleCompliant,
 }) => {
   const { setIntakeGate, toggleMutation, resetAllMutations } = useTarkaGlobal();
-  const { setProofStepIndex, setActiveDockTab } = useTarkaUiStore();
+  const { setProofStepIndex, setActiveDockTab, density } = useTarkaUiStore();
+  const isCompact = density === "compact";
   const [breakMenuOpen, setBreakMenuOpen] = useState(false);
 
   // Pure mathematical verdict evaluation
@@ -96,21 +97,21 @@ export const GateRail: React.FC<GateRailProps> = ({
     <div
       data-card="gate-rail"
       style={{
-        height: "64px",
-        minHeight: "64px",
-        maxHeight: "64px",
+        height: isCompact ? "48px" : "64px",
+        minHeight: isCompact ? "48px" : "64px",
+        maxHeight: isCompact ? "48px" : "64px",
         background: "#FFFFFF",
         border: `1px solid ${isHalted ? "#FECDD3" : "#E2E8F0"}`,
         borderRadius: "10px",
-        padding: "0 12px",
+        padding: isCompact ? "0 8px" : "0 12px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: "12px",
+        gap: isCompact ? "8px" : "12px",
         boxSizing: "border-box",
         position: "relative",
         boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
-        transition: "border-color 0.15s ease",
+        transition: "all 0.15s ease",
         containerType: "inline-size",
         containerName: "gaterail",
         width: "100%",
@@ -216,7 +217,7 @@ export const GateRail: React.FC<GateRailProps> = ({
                     background: isPassed ? "#FFFFFF" : isBlocking ? "#FFF1F2" : "#FFFBEB",
                     border: `1px solid ${isPassed ? "#CBD5E1" : isBlocking ? "#FECDD3" : "#FDE68A"}`,
                     borderRadius: "6px",
-                    height: "38px",
+                    height: isCompact ? "30px" : "38px",
                     padding: "0 6px",
                     display: "flex",
                     alignItems: "center",

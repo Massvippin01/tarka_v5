@@ -11,6 +11,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   FolderTree,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
@@ -41,6 +43,8 @@ export const TarkaGlobalShell: React.FC = () => {
     toggleSidebar,
     presentationMode,
     togglePresentationMode,
+    density,
+    setDensity,
   } = useTarkaUiStore();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
@@ -666,8 +670,98 @@ export const TarkaGlobalShell: React.FC = () => {
             })}
           </div>
 
-          {/* Right Header Controls: [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
+          {/* Right Header Controls: [Density Slider] · [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* View Density Slide Toggle: Standard vs Short / Small View */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#E2E8F0",
+                border: "1px solid #CBD5E1",
+                borderRadius: "20px",
+                padding: "2px",
+                height: "28px",
+                boxSizing: "border-box",
+                position: "relative",
+                userSelect: "none",
+                cursor: "pointer",
+              }}
+              role="radiogroup"
+              aria-label="Dashboard View Density"
+            >
+              {/* Sliding Background Indicator Pill */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  bottom: "2px",
+                  left: density === "comfortable" ? "2px" : "calc(50% + 1px)",
+                  width: "calc(50% - 3px)",
+                  background: "#FFFFFF",
+                  borderRadius: "16px",
+                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08)",
+                  transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+                  zIndex: 1,
+                  pointerEvents: "none",
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={() => setDensity("comfortable")}
+                role="radio"
+                aria-checked={density === "comfortable"}
+                title="Standard Comfortable View"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: density === "comfortable" ? "#0F172A" : "#64748B",
+                  fontWeight: density === "comfortable" ? 700 : 500,
+                  fontSize: "10.5px",
+                  padding: "2px 8px",
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  position: "relative",
+                  zIndex: 2,
+                  transition: "color 0.18s ease",
+                }}
+              >
+                <Maximize2 size={10} color={density === "comfortable" ? "#4F46E5" : "#64748B"} />
+                <span>Standard</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDensity("compact")}
+                role="radio"
+                aria-checked={density === "compact"}
+                title="Short / Small Dashboard View"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: density === "compact" ? "#0F172A" : "#64748B",
+                  fontWeight: density === "compact" ? 700 : 500,
+                  fontSize: "10.5px",
+                  padding: "2px 8px",
+                  borderRadius: "16px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  position: "relative",
+                  zIndex: 2,
+                  transition: "color 0.18s ease",
+                }}
+              >
+                <Minimize2 size={10} color={density === "compact" ? "#4F46E5" : "#64748B"} />
+                <span>Small View</span>
+              </button>
+            </div>
+
             {/* Live Judge Mutator Button */}
             <button
               type="button"
@@ -825,13 +919,16 @@ export const TarkaGlobalShell: React.FC = () => {
 
         {/* WORKSPACE CONTENT BODY */}
         <div
+          id="tarka-workspace-body"
+          className={density === "compact" ? "tarka-density-compact" : "tarka-density-comfortable"}
           style={{
-            flex: 1,
-            overflow: "hidden",
+            flex: "1 1 0%",
+            overflowY: "auto",
+            overflowX: "hidden",
             position: "relative",
             minHeight: 0,
             minWidth: 0,
-            height: "calc(100% - 44px)",
+            height: "100%",
           }}
         >
           {activeRoute === "intake" && <IntakeScreen />}

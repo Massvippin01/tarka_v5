@@ -25,7 +25,8 @@ export const IntakeScreen: React.FC = () => {
   useOverflowGuard();
 
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { activeDockTab, setActiveDockTab } = useTarkaUiStore();
+  const { activeDockTab, setActiveDockTab, density } = useTarkaUiStore();
+  const isCompact = density === "compact";
 
   const isRow14Tampered = !!mutations.alterBankRow14;
   const isForgedRrn = !!mutations.forgeRrnTimestamp;
@@ -204,10 +205,10 @@ export const IntakeScreen: React.FC = () => {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
-        padding: "10px 14px",
+        gap: isCompact ? "6px" : "10px",
+        padding: isCompact ? "6px 10px" : "10px 14px",
         height: "100%",
-        minHeight: 0,
+        minHeight: "560px",
         boxSizing: "border-box",
         overflow: "hidden",
         background: "var(--bento-canvas, #F4F6FB)",
@@ -218,17 +219,17 @@ export const IntakeScreen: React.FC = () => {
       <Toaster position="bottom-right" richColors />
 
       {/* =========================================================================
-          ROW 1: TOP 4 KPI CARDS (STRICT 80PX HEIGHT, #09090B HERO NUMBERS)
+          ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)
           ========================================================================= */}
       <section
         aria-label="Key Forensic Metrics"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: "10px",
-          height: "80px",
-          minHeight: "80px",
-          maxHeight: "80px",
+          gap: isCompact ? "6px" : "10px",
+          height: isCompact ? "64px" : "80px",
+          minHeight: isCompact ? "64px" : "80px",
+          maxHeight: isCompact ? "64px" : "80px",
           flexShrink: 0,
           boxSizing: "border-box",
         }}
@@ -297,14 +298,14 @@ export const IntakeScreen: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          ROW 2: FALSIFICATION GATE RAIL (STRICT 64PX HORIZONTAL STRIP)
+          ROW 2: FALSIFICATION GATE RAIL (64PX STANDARD / 48PX COMPACT)
           ========================================================================= */}
       <section
         aria-label="Falsification Gate Pipeline"
         style={{
-          height: "64px",
-          minHeight: "64px",
-          maxHeight: "64px",
+          height: isCompact ? "48px" : "64px",
+          minHeight: isCompact ? "48px" : "64px",
+          maxHeight: isCompact ? "48px" : "64px",
           flexShrink: 0,
           boxSizing: "border-box",
         }}

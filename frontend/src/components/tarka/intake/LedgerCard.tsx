@@ -983,6 +983,73 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             })}
           </tbody>
         </table>
+
+        {/* Ledger Conservation & Invariant Summary Box */}
+        <div
+          style={{
+            margin: "10px 10px 8px 10px",
+            background: "#F8FAFC",
+            border: "1px solid #E2E8F0",
+            borderRadius: "6px",
+            padding: "8px 10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              CBS Double-Entry Conservation Synthesis (SBI Finacle 10.x)
+            </span>
+            <span
+              style={{
+                fontSize: "8.5px",
+                fontWeight: 700,
+                fontFamily: "var(--font-mono)",
+                padding: "1px 5px",
+                borderRadius: "3px",
+                background: isRow14Tampered ? "#FFF1F2" : "#ECFDF5",
+                color: isRow14Tampered ? "#BE123C" : "#047857",
+                border: `1px solid ${isRow14Tampered ? "#FECDD3" : "#A7F3D0"}`,
+              }}
+            >
+              {isRow14Tampered ? "CONSERVATION VIOLATED (-₹2.00L)" : "CONSERVED (6/6 ROWS ✓)"}
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", fontSize: "10px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#64748B", fontSize: "9px" }}>Opening Balance</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+                ₹6,15,890.00
+              </div>
+            </div>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#64748B", fontSize: "9px" }}>Total Debits (5)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#BE123C", marginTop: "1px" }}>
+                -₹2,32,650.00
+              </div>
+            </div>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#64748B", fontSize: "9px" }}>Total Credits (1)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
+                +₹1,25,000.00
+              </div>
+            </div>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#64748B", fontSize: "9px" }}>Closing Balance</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: isRow14Tampered ? "#BE123C" : "#0F172A", marginTop: "1px" }}>
+                ₹{customRow14Balance ? (parseFloat(customRow14Balance) - 14200).toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "5,08,240.00"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+            <strong style={{ color: "#0F172A" }}>Mathematical Proof: </strong>
+            Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>k ∈ [11..16]</code> satisfies <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>Bal[k] = Bal[k-1] + Cr[k] - Dr[k]</code>.
+            {isRow14Tampered && " Discrepancy detected at Sequence #14 (Vikram Mule account debit)."}
+          </div>
+        </div>
       </div>
 
       {/* =========================================================================
