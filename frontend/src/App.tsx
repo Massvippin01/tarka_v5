@@ -6,6 +6,7 @@ import { TarkaGlobalShell } from "./components/shell/TarkaGlobalShell";
 import { InvestigationCanvas } from "./components/InvestigationCanvas";
 import "./styles/tokens.css";
 import "./styles/liquid-glass.css";
+import "./styles/bento-executive.css";
 import "./App.css";
 
 function App() {
