@@ -70,8 +70,8 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
         flexDirection: "column",
         justifyContent: "space-between",
         boxShadow: active
-          ? "0 0 0 2px rgba(79, 70, 229, 0.2), 0 1px 3px rgba(15, 23, 42, 0.04)"
-          : "0 1px 2px rgba(15, 23, 42, 0.03)",
+          ? "0 0 0 2px rgba(79, 70, 229, 0.2), 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.85)"
+          : "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.85)",
         cursor: onClick ? "pointer" : "default",
         userSelect: "none",
         transition: "all 0.15s ease",
@@ -169,7 +169,7 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
           </HoverCard.Root>
         </div>
 
-        {/* Status Pill */}
+        {/* Status Pill with Micro Pulse Indicator */}
         <span
           style={{
             fontSize: isCompact ? "8px" : "8.5px",
@@ -178,13 +178,26 @@ export const IntakeKpiCard: React.FC<IntakeKpiCardProps> = ({
             background: pStyle.bg,
             color: pStyle.color,
             border: `1px solid ${pStyle.border}`,
-            padding: isCompact ? "1px 4px" : "1.5px 5px",
+            padding: isCompact ? "1px 5px" : "1.5px 6px",
             borderRadius: "4px",
             whiteSpace: "nowrap",
             flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "3.5px",
           }}
         >
-          {pillText}
+          <span
+            style={{
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              background: pStyle.color,
+              boxShadow: `0 0 4px ${pStyle.color}`,
+              display: "inline-block",
+            }}
+          />
+          <span>{pillText}</span>
         </span>
       </div>
 

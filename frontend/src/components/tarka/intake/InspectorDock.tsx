@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Clock,
   FileText,
@@ -10,12 +10,12 @@ import {
   Dna,
 } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { scaleLinear } from "d3-scale";
 import { toast } from "sonner";
 import { useTarkaUiStore, type DockTab } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
+import { PrecisionVernierGauge, StripeSegmentedBar } from "../../ui/forensic-infographics";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -61,6 +61,9 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   const [merkleVerified, setMerkleVerified] = useState(true);
   const [isVerifyingPath, setIsVerifyingPath] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Tab 5 (Entities) state
+  const [hoveredEntity, setHoveredEntity] = useState<string | null>(null);
 
   const fullMerkleRoot = "0xb189f3a9712a45d886910384cf22da810842e09153b6fa034e3209847492c810";
   const tamperedMerkleRoot = "0xdeadbeef712a45d886910384cf22da810842e09153b6fa034e3209847492beef";
@@ -145,13 +148,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   const driftSec = isForgedRrn ? 3000 : 14.0;
   const isWithinTolerance = Math.abs(driftSec) <= 180;
 
-  // D3 scale for SVG drift ruler
-  const rulerWidth = 390;
-  const driftScale = useMemo(() => {
-    return scaleLinear().domain([-180, 180]).range([18, rulerWidth - 18]).clamp(true);
-  }, [rulerWidth]);
 
-  const needleX = driftScale(isForgedRrn ? 180 : driftSec);
 
   const handleDigitChange = (index: number, char: string) => {
     const val = char.slice(-1).toUpperCase();
@@ -661,29 +658,17 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
           </div>
 
-          {/* SVG Drift Ruler (64px) */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", marginBottom: "4px" }}>
-              <span>CBS Finacle ↔ NPCI Switch Clock Drift</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: isWithinTolerance ? "#047857" : "#BE123C" }}>
-                {driftSec > 0 ? `+${driftSec}` : driftSec}s / ±180s
-              </span>
-            </div>
-
-            <svg width="100%" height="28" viewBox={`0 0 ${rulerWidth} 28`}>
-              <rect x={18} y={8} width={rulerWidth - 36} height={8} rx={4} fill="#ECFDF5" stroke="#A7F3D0" strokeWidth={1} />
-              <line x1={rulerWidth / 2} y1={4} x2={rulerWidth / 2} y2={20} stroke="#94A3B8" strokeWidth={1.5} strokeDasharray="2 2" />
-              {[-180, -90, 0, 90, 180].map((t) => (
-                <g key={t}>
-                  <line x1={driftScale(t)} y1={6} x2={driftScale(t)} y2={18} stroke="#CBD5E1" strokeWidth={1} />
-                  <text x={driftScale(t)} y={26} textAnchor="middle" fontSize="8" fill="#94A3B8" fontFamily="monospace">
-                    {t > 0 ? `+${t}s` : `${t}s`}
-                  </text>
-                </g>
-              ))}
-              <circle cx={needleX} cy={12} r={5} fill={isWithinTolerance ? "#059669" : "#E11D48"} stroke="#FFFFFF" strokeWidth={1.5} />
-            </svg>
-          </div>
+          {/* Precision Vernier Clock-Drift Gauge */}
+          <PrecisionVernierGauge
+            min={-180}
+            max={180}
+            value={isForgedRrn ? 180 : driftSec}
+            feasibleRange={[-180, 180]}
+            unit="s"
+            title="CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync"
+            statusLabel={isWithinTolerance ? "IN SPEC (±180s) ✓" : "SKEW EXCEEDED ✗"}
+            isSat={isWithinTolerance}
+          />
 
           {/* Presets (Wrap-safe, Single/Multi Line) */}
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px", paddingTop: "2px" }}>
@@ -813,22 +798,32 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             gap: "10px",
           }}
         >
-          {/* Revision SVG Ruler */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", marginBottom: "4px" }}>
-              <span>victim_upi_receipt.pdf (84.2 KB)</span>
-              <span style={{ color: "#BE123C", fontWeight: 700 }}>2 %%EOF Trailers Found</span>
+          {/* Visual Binary File Map Bar (0x00000 to 0x15080) */}
+          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px", color: "#64748B", marginBottom: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontWeight: 700, color: "#0F172A" }}>victim_upi_receipt.pdf (84.2 KB)</span>
+                <span style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>0x00000..0x15080</span>
+              </div>
+              <span style={{ color: "#BE123C", fontWeight: 800, background: "#FFF1F2", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "3px" }}>
+                WARN: 2 %%EOF TRAILERS
+              </span>
             </div>
-            <svg width="100%" height="22" viewBox="0 0 380 22">
-              <rect x="0" y="2" width="310" height="18" rx="3" fill="#ECFDF5" stroke="#A7F3D0" strokeWidth={1} />
-              <text x="8" y="14" fontSize="8.5" fill="#047857" fontWeight="bold">
-                Rev 1: Finacle Original (0x00..0x14208) · %%EOF #1
-              </text>
-              <rect x="312" y="2" width="68" height="18" rx="3" fill="#FFF1F2" stroke="#FECDD3" strokeWidth={1} />
-              <text x="316" y="14" fontSize="8.5" fill="#BE123C" fontWeight="bold">
-                Rev 2: Canva
-              </text>
-            </svg>
+
+            <StripeSegmentedBar
+              height={20}
+              showLabels={false}
+              totalValue={0x15080}
+              segments={[
+                { id: "rev1", label: "Rev 1: Finacle Original (0x00..0x14208)", value: 0x14208, color: "#059669", tooltipText: "EOF #1 at 0x14208" },
+                { id: "rev2", label: "Rev 2: Canva Append (0x14209..0x15080)", value: 0x15080 - 0x14208, isHatched: true, color: "crimson", tooltipText: "EOF #2 at 0x15080 (Suppression Overwrite)" },
+              ]}
+            />
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", color: "#64748B", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
+              <span style={{ color: "#047857" }}>● Rev 1: Original Finacle (94.0%) · %%EOF #1</span>
+              <span style={{ color: "#BE123C" }}>● Rev 2: Canva Append (6.0%) · %%EOF #2</span>
+            </div>
           </div>
 
           {/* View Toggle */}
@@ -1374,9 +1369,20 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           </div>
 
           {/* Entity 1: Sunil Kumar (Victim) */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "7px", padding: "6px 8px" }}>
+          <div
+            onMouseEnter={() => setHoveredEntity("ENT-01")}
+            onMouseLeave={() => setHoveredEntity(null)}
+            style={{
+              background: "#FFFFFF",
+              border: hoveredEntity === "ENT-01" ? "1.5px solid #4F46E5" : "1px solid #E2E8F0",
+              borderRadius: "7px",
+              padding: "7px 9px",
+              boxShadow: hoveredEntity === "ENT-01" ? "0 0 0 3px rgba(79, 70, 229, 0.15)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: hoveredEntity === "ENT-01" ? "#4338CA" : "#0F172A" }}>
                 ENT-01 &middot; Sunil Kumar (Victim Origin)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 5px", borderRadius: "3px" }}>
@@ -1384,12 +1390,23 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A" }}>30910029101</code> &middot; MSISDN <code style={{ color: "#0F172A" }}>+91-9810044210</code> &middot; Handset Video Call Screenshot (Verified PII).
+              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : undefined }}>30910029101</code> &middot; MSISDN <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : undefined }}>+91-9810044210</code> &middot; Handset Video Call Screenshot (Verified PII).
             </div>
           </div>
 
           {/* Entity 2: Vikram Shah (L1 Mule) */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #FECDD3", borderRadius: "7px", padding: "6px 8px" }}>
+          <div
+            onMouseEnter={() => setHoveredEntity("ENT-02")}
+            onMouseLeave={() => setHoveredEntity(null)}
+            style={{
+              background: "#FFFFFF",
+              border: hoveredEntity === "ENT-02" ? "1.5px solid #E11D48" : "1px solid #FECDD3",
+              borderRadius: "7px",
+              padding: "7px 9px",
+              boxShadow: hoveredEntity === "ENT-02" ? "0 0 0 3px rgba(225, 29, 72, 0.15)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10px", fontWeight: 700, color: "#BE123C" }}>
                 ENT-02 &middot; Vikram Shah (Layer-1 Conduit)
@@ -1399,12 +1416,23 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C" }}>VIKRAM_MULE</code> &middot; VPA: <code style={{ color: "#BE123C" }}>vikram.pay@okaxis</code> &middot; MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> &middot; IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
+              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C", background: hoveredEntity === "ENT-02" ? "#FFE4E6" : undefined }}>VIKRAM_MULE</code> &middot; VPA: <code style={{ color: "#BE123C" }}>vikram.pay@okaxis</code> &middot; MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> &middot; IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
             </div>
           </div>
 
           {/* Entity 3 & 4: Rohit Verma & Sameer Khan (Cross-Actor Syndicate Link) */}
-          <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "7px", padding: "6px 8px" }}>
+          <div
+            onMouseEnter={() => setHoveredEntity("ENT-03")}
+            onMouseLeave={() => setHoveredEntity(null)}
+            style={{
+              background: "#FFFBEB",
+              border: hoveredEntity === "ENT-03" ? "1.5px solid #D97706" : "1px solid #FDE68A",
+              borderRadius: "7px",
+              padding: "7px 9px",
+              boxShadow: hoveredEntity === "ENT-03" ? "0 0 0 3px rgba(217, 119, 6, 0.15)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400E" }}>
                 ENT-03 &amp; ENT-04 &middot; Rohit Verma (L2A) &amp; Sameer Khan (L2B)
@@ -1419,7 +1447,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           </div>
 
           {/* Entity 5: Apex Electronics (Bona-Fide Hard Veto) */}
-          <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "7px", padding: "6px 8px" }}>
+          <div
+            onMouseEnter={() => setHoveredEntity("ENT-05")}
+            onMouseLeave={() => setHoveredEntity(null)}
+            style={{
+              background: "#F0FDF4",
+              border: hoveredEntity === "ENT-05" ? "1.5px solid #16A34A" : "1px solid #BBF7D0",
+              borderRadius: "7px",
+              padding: "7px 9px",
+              boxShadow: hoveredEntity === "ENT-05" ? "0 0 0 3px rgba(22, 163, 74, 0.15)" : "none",
+              transition: "all 0.15s ease",
+            }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10px", fontWeight: 700, color: "#166534" }}>
                 ENT-05 &middot; Apex Electronics Pvt Ltd (Bona-Fide Merchant)
@@ -1429,7 +1468,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#14532D", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Hard Veto Applied:</strong> Received &yen;1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
+              <strong>Hard Veto Applied:</strong> Received ₹1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
             </div>
           </div>
 

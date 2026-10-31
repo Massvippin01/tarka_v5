@@ -22,6 +22,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { type LedgerRowData } from "../../../utils/intakeFalsifier";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
+import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 
 export type ValidatedLedgerRow = LedgerRowData & {
   expectedBalance?: number;
@@ -451,6 +452,19 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           >
             Tier-3 Canva
           </span>
+
+          {/* Visual Suppression Bar */}
+          <div style={{ width: "130px", flexShrink: 0 }}>
+            <StripeSegmentedBar
+              height={14}
+              showLabels={false}
+              totalValue={215000}
+              segments={[
+                { id: "claimed", label: "Canva Claim", value: 15000, color: "#10B981" },
+                { id: "suppressed", label: "Suppressed Deficit", value: 200000, isHatched: true, color: "crimson", tooltipText: "Finacle CBS Overwrite" },
+              ]}
+            />
+          </div>
 
           <span
             style={{

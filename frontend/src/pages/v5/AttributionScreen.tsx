@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { BentoKpiCard } from "../../components/tarka/BentoPrimitives";
+import { AnimatedCounter, PrecisionVernierGauge } from "../../components/ui/forensic-infographics";
 import {
   getDot3920PortBlockDirective,
   getDotSimSwapDirective,
@@ -411,14 +412,52 @@ export const AttributionScreen: React.FC = () => {
               flexShrink: 0,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10.5px", color: "#64748B", fontWeight: 700 }}>
-              <span>Step 1: SBI (340)</span>
-              <span>Step 2: HDFC (41)</span>
-              <span>Step 3: Axis (6)</span>
-              <span>Step 4: Paytm (1 ★)</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+              {funnelStagesMeta.map((stage, idx) => {
+                const isChecked = !!activeSessions[stage.id];
+                const stageData = funnelResult.stages.find((s) => s.sessionId === stage.id);
+                const count = stageData ? stageData.intersectionSize : (isChecked ? stage.count : 0);
+                const isTarget = isChecked && count === 1 && !isPortDropped;
+                return (
+                  <div
+                    key={stage.id}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      background: isTarget ? "#ECFDF5" : isChecked ? "#F1F5F9" : "#F8FAFC",
+                      border: isTarget ? "1px solid #A7F3D0" : isChecked ? "1px solid #CBD5E1" : "1px dashed #CBD5E1",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: isTarget ? "#047857" : isChecked ? "#1E293B" : "#94A3B8",
+                      boxShadow: isTarget ? "0 0 0 1px rgba(16,185,129,0.3)" : "none",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <span style={{ fontSize: "8.5px", opacity: 0.7 }}>Step {idx + 1}:</span>
+                    <span>{stage.bank.includes("SBI") ? "SBI (Mule L1)" : stage.bank.includes("HDFC") ? "HDFC (Mule L2A)" : stage.bank.includes("Axis") ? "Axis (Mule L2B)" : "Paytm (Target Sink)"}</span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontWeight: 800,
+                        background: isTarget ? "#059669" : isChecked ? "#4F46E5" : "#94A3B8",
+                        color: "#FFFFFF",
+                        padding: "0.5px 5px",
+                        borderRadius: "3px",
+                        fontSize: "9px",
+                        marginLeft: "2px",
+                      }}
+                    >
+                      <AnimatedCounter value={count} duration={260} suffix={isTarget ? " ★" : ""} />
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* SVG Visual Funnel Bars */}
+            {/* SVG Visual Funnel Bars with Sankey Flow Taper Ribbons */}
             <svg
               width="100%"
               height={isCompact ? "75" : "88"}
@@ -432,10 +471,116 @@ export const AttributionScreen: React.FC = () => {
                 </pattern>
                 <linearGradient id="solidFunnelGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#4F46E5" />
+                  <stop offset="50%" stopColor="#2563EB" />
                   <stop offset="100%" stopColor="#059669" />
                 </linearGradient>
+                <linearGradient id="sankeyTaperGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#818CF8" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#34D399" stopOpacity="0.45" />
+                </linearGradient>
+                <style>{`
+                  @keyframes sankeySpinePulse {
+                    from { stroke-dashoffset: 16; }
+                    to { stroke-dashoffset: 0; }
+                  }
+                  .sankey-pulse-spine {
+                    animation: sankeySpinePulse 0.8s linear infinite;
+                  }
+                  @keyframes targetPulseAnim {
+                    0%, 100% { stroke-opacity: 0.4; }
+                    50% { stroke-opacity: 1; }
+                  }
+                  .target-pulse-stroke {
+                    animation: targetPulseAnim 1.5s ease-in-out infinite;
+                  }
+                `}</style>
               </defs>
 
+              {/* 1. Underlying Sankey Taper Ribbons Between Consecutive Columns */}
+              {funnelStagesMeta.map((stage, idx) => {
+                if (idx >= 3) return null;
+                const nextStage = funnelStagesMeta[idx + 1];
+                const isChecked = !!activeSessions[stage.id];
+                const isNextChecked = !!activeSessions[nextStage.id];
+
+                const stageData = funnelResult.stages.find((s) => s.sessionId === stage.id);
+                const nextData = funnelResult.stages.find((s) => s.sessionId === nextStage.id);
+
+                const count = stageData ? stageData.intersectionSize : (isChecked ? stage.count : 0);
+                const nextCount = nextData ? nextData.intersectionSize : (isNextChecked ? nextStage.count : 0);
+
+                const colWidth = 72;
+                const gap = 42;
+                const x1 = 16 + idx * (colWidth + gap) + colWidth;
+                const x2 = x1 + gap;
+
+                const maxH = 62;
+                const barH1 = isChecked
+                  ? isPortDropped ? maxH : Math.max((Math.log(count + 1) / Math.log(341)) * maxH, 10)
+                  : 4;
+                const y1 = 78 - barH1;
+
+                const barH2 = isNextChecked
+                  ? isPortDropped ? maxH : Math.max((Math.log(nextCount + 1) / Math.log(341)) * maxH, 10)
+                  : 4;
+                const y2 = 78 - barH2;
+
+                const ribbonActive = isChecked && isNextChecked;
+                const cpOffset = gap * 0.5;
+
+                const pathD = `M ${x1} ${y1} C ${x1 + cpOffset} ${y1}, ${x2 - cpOffset} ${y2}, ${x2} ${y2} L ${x2} 78 L ${x1} 78 Z`;
+                const spineD = `M ${x1} ${(y1 + 78)/2} C ${x1 + cpOffset} ${(y1 + 78)/2}, ${x2 - cpOffset} ${(y2 + 78)/2}, ${x2} ${(y2 + 78)/2}`;
+
+                return (
+                  <g key={`ribbon-${stage.id}`}>
+                    {/* Taper Flow Band */}
+                    <path
+                      d={pathD}
+                      fill={ribbonActive ? "url(#sankeyTaperGrad)" : "none"}
+                      opacity={ribbonActive ? 0.85 : 0.06}
+                      style={{ transition: "all 0.3s ease" }}
+                    />
+                    {/* Flowing Animated Pulse Spine */}
+                    {ribbonActive && (
+                      <path
+                        d={spineD}
+                        fill="none"
+                        stroke="#6366F1"
+                        strokeWidth="2"
+                        strokeDasharray="4 4"
+                        className="sankey-pulse-spine"
+                        opacity={0.75}
+                      />
+                    )}
+                    {/* Intersection Symbol Pill */}
+                    <g transform={`translate(${x1 + gap / 2}, 48)`}>
+                      <rect
+                        x="-10"
+                        y="-9"
+                        width="20"
+                        height="18"
+                        rx="5"
+                        fill={ribbonActive ? "#FFFFFF" : "#F8FAFC"}
+                        stroke={ribbonActive ? "#818CF8" : "#CBD5E1"}
+                        strokeWidth="1.2"
+                        style={{ filter: "drop-shadow(0 1px 2px rgba(15,23,42,0.08))" }}
+                      />
+                      <text
+                        x="0"
+                        y="3.5"
+                        textAnchor="middle"
+                        fill={ribbonActive ? "#4338CA" : "#94A3B8"}
+                        fontSize="10"
+                        fontWeight="800"
+                      >
+                        ∩
+                      </text>
+                    </g>
+                  </g>
+                );
+              })}
+
+              {/* 2. Visual Column Bars & Floating Badges */}
               {funnelStagesMeta.map((stage, idx) => {
                 const isChecked = !!activeSessions[stage.id];
                 const stageData = funnelResult.stages.find((s) => s.sessionId === stage.id);
@@ -457,6 +602,22 @@ export const AttributionScreen: React.FC = () => {
 
                 return (
                   <g key={stage.id}>
+                    {/* Ambient Aura for Isolated Target */}
+                    {isTarget && (
+                      <rect
+                        x={x - 2}
+                        y={14}
+                        width={colWidth + 4}
+                        height={maxH + 4}
+                        rx="7"
+                        fill="none"
+                        stroke="#10B981"
+                        strokeWidth="2"
+                        strokeDasharray="4 2"
+                        className="target-pulse-stroke"
+                      />
+                    )}
+
                     {/* Background Hatched Capacity Bar */}
                     <rect
                       x={x}
@@ -465,8 +626,8 @@ export const AttributionScreen: React.FC = () => {
                       height={maxH}
                       rx="5"
                       fill="url(#funnelHatchCompact)"
-                      stroke="#CBD5E1"
-                      strokeWidth="1"
+                      stroke={isTarget ? "#059669" : "#CBD5E1"}
+                      strokeWidth={isTarget ? "1.5" : "1"}
                     />
 
                     {/* Foreground Active Intersection Bar */}
@@ -484,13 +645,15 @@ export const AttributionScreen: React.FC = () => {
                     {/* Floating Count Badge */}
                     <g transform={`translate(${x + colWidth / 2}, ${y - 6})`}>
                       <rect
-                        x="-22"
+                        x="-24"
                         y="-13"
-                        width="44"
+                        width="48"
                         height="16"
                         rx="4"
                         fill={isTarget ? "#059669" : "#4F46E5"}
-                        style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
+                        stroke="#FFFFFF"
+                        strokeWidth="1.2"
+                        style={{ filter: "drop-shadow(0 2px 4px rgba(15,23,42,0.16))" }}
                       />
                       <text
                         x="0"
@@ -504,16 +667,6 @@ export const AttributionScreen: React.FC = () => {
                         {isChecked ? (isPortDropped ? "340" : isTarget ? "1 ★" : count) : "OFF"}
                       </text>
                     </g>
-
-                    {/* Set Intersection Connector ∩ between sequential stages */}
-                    {idx < 3 && (
-                      <g transform={`translate(${x + colWidth + gap / 2}, 46)`}>
-                        <circle cx="0" cy="0" r="8" fill="#EEF2FF" stroke="#C7D2FE" strokeWidth="1" />
-                        <text x="0" y="3.5" textAnchor="middle" fill="#4338CA" fontSize="9" fontWeight="800">
-                          ∩
-                        </text>
-                      </g>
-                    )}
                   </g>
                 );
               })}
@@ -809,82 +962,18 @@ export const AttributionScreen: React.FC = () => {
               </button>
             </div>
 
-            {/* Exact Z3 SMT Number Line Caliper Slider matching Image 4 */}
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 10px", flexShrink: 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
-                  Z3 SMT Clock-Offset Feasible Interval: [-1.2s, +0.8s]
-                </span>
-                <span
-                  style={{
-                    fontSize: "9.5px",
-                    color: isZ3Sat ? "#059669" : "#DC2626",
-                    fontWeight: 800,
-                    background: isZ3Sat ? "#ECFDF5" : "#FEF2F2",
-                    border: `1px solid ${isZ3Sat ? "#A7F3D0" : "#FECDD3"}`,
-                    padding: "1px 6px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {isZ3Sat ? "Z3 SOLVER: SAT ✓" : "Z3 SOLVER: UNSAT ✗"}
-                </span>
-              </div>
-
-              {/* Number Line Track with Feasible Interval Shading */}
-              <div style={{ position: "relative", height: "16px", background: "#E2E8F0", borderRadius: "8px", overflow: "hidden", margin: "4px 0" }}>
-                {/* Feasible Interval Shading: [-1.2s, +0.8s] spanning 38% to 58% of 10s range (-5 to +5) */}
-                <div style={{ position: "absolute", left: "38%", width: "20%", top: 0, bottom: 0, background: "rgba(16, 185, 129, 0.45)", borderRadius: "3px" }} />
-                {/* Center Line: 0.0s */}
-                <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "2px", background: "#64748B", zIndex: 2 }} />
-                {/* Active Marker Slider Dot */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `${((clockOffset + 5) / 10) * 100}%`,
-                    top: "2px",
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    background: isZ3Sat ? "#059669" : "#DC2626",
-                    border: "2px solid #FFFFFF",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                    zIndex: 5,
-                    transform: "translateX(-50%)",
-                    transition: "left 0.1s ease",
-                  }}
-                />
-              </div>
-
-              {/* Hidden Range Input for Draggable Interactivity */}
-              <input
-                type="range"
-                min="-5"
-                max="5"
-                step="0.1"
-                value={clockOffset}
-                onChange={(e) => setClockOffset(parseFloat(e.target.value))}
-                style={{
-                  width: "100%",
-                  height: "10px",
-                  opacity: 0,
-                  marginTop: "-16px",
-                  cursor: "ew-resize",
-                  position: "relative",
-                  zIndex: 10,
-                }}
-                title="Drag to test clock offset drift across NTP stratum-2 boundaries"
-              />
-
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                <span>-5.0s</span>
-                <span style={{ color: "#047857", fontWeight: 700 }}>-1.2s</span>
-                <span style={{ fontWeight: 800, color: isZ3Sat ? "#059669" : "#DC2626" }}>
-                  Δt = {clockOffset >= 0 ? `+${clockOffset.toFixed(1)}s` : `${clockOffset.toFixed(1)}s`} {clockOffset === 0 ? "(NTP Sync)" : ""}
-                </span>
-                <span style={{ color: "#047857", fontWeight: 700 }}>+0.8s</span>
-                <span>+5.0s</span>
-              </div>
-            </div>
+            {/* Precision Vernier Gauge Caliper Slider (Master v7.5) */}
+            <PrecisionVernierGauge
+              min={-5.0}
+              max={5.0}
+              value={clockOffset}
+              feasibleRange={[-1.2, 0.8]}
+              unit="s"
+              title="Z3 SMT Clock-Offset Feasible Interval: [-1.2s, +0.8s]"
+              statusLabel={isZ3Sat ? "Z3 SOLVER: SAT ✓" : "Z3 SOLVER: UNSAT ✗"}
+              isSat={isZ3Sat}
+              onChange={(val) => setClockOffset(val)}
+            />
 
             {/* SMT-LIB2 Script Code Box */}
             <div

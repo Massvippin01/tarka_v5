@@ -1,4 +1,5 @@
 import React from "react";
+import { AnimatedCounter } from "../ui/forensic-infographics";
 
 // ============================================================================
 // 1. BentoKpiCard — Compact FlowMail / ReUI Daylight Card (96px, #09090B Hero)
@@ -68,7 +69,7 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
         boxSizing: "border-box",
         overflow: "hidden",
       }}
@@ -141,10 +142,10 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
         {badgeText && (
           <span
             style={{
-              padding: "3px 9px",
+              padding: "2.5px 8px",
               borderRadius: "999px",
-              fontSize: "11px",
-              fontWeight: 600,
+              fontSize: "10.5px",
+              fontWeight: 700,
               whiteSpace: "nowrap",
               flexShrink: 0,
               background: badgeStyle.bg,
@@ -156,7 +157,17 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
               gap: "4px",
             }}
           >
-            {badgeText}
+            <span
+              style={{
+                width: "5px",
+                height: "5px",
+                borderRadius: "50%",
+                background: badgeStyle.text,
+                boxShadow: `0 0 4px ${badgeStyle.text}`,
+                display: "inline-block",
+              }}
+            />
+            <span>{badgeText}</span>
           </span>
         )}
       </div>
@@ -549,7 +560,7 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
   label,
   sublabel,
   summaryText,
-  color = "#059669",
+  color: _color = "#059669",
   segments = 18,
   size = 220,
   className = "",
@@ -577,6 +588,31 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
     >
       <div style={{ position: "relative", width: `${size}px`, height: `${size * 0.52 + 10}px`, margin: "0 auto" }}>
         <svg width={size} height={size * 0.55} viewBox={`0 0 ${size} ${size * 0.55}`} style={{ overflow: "visible" }}>
+          {/* 20 Precision Outer Radial Ticks */}
+          {Array.from({ length: 21 }).map((_, idx) => {
+            const tickAngle = 180 + idx * 9;
+            const toRad = (deg: number) => (deg * Math.PI) / 180;
+            const isMajor = idx % 5 === 0;
+            const rInner = radius + 9;
+            const rOuter = radius + (isMajor ? 16 : 13);
+            const x1 = center + rInner * Math.cos(toRad(tickAngle));
+            const y1 = center + rInner * Math.sin(toRad(tickAngle));
+            const x2 = center + rOuter * Math.cos(toRad(tickAngle));
+            const y2 = center + rOuter * Math.sin(toRad(tickAngle));
+            return (
+              <line
+                key={`tick-${idx}`}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke={isMajor ? "#64748B" : "#CBD5E1"}
+                strokeWidth={isMajor ? 1.5 : 0.8}
+                opacity={0.7}
+              />
+            );
+          })}
+
           {Array.from({ length: segments }).map((_, idx) => {
             const startAngle = 180 + idx * segmentAngle + 1.8;
             const endAngle = 180 + (idx + 1) * segmentAngle - 1.8;
@@ -588,10 +624,12 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
             const y2 = center + radius * Math.sin(toRad(endAngle));
 
             const isLit = idx < activeSegments;
-            // Gradient effect matching Salezy gauge: lighter blue/emerald to deep vibrant
-            const litColor = color === "#059669"
+            // Transition from crimson when leaking to vibrant emerald when sealed
+            const litColor = percentage >= 100
               ? `rgb(${Math.round(16 + (idx / segments) * 5)}, ${Math.round(185 - (idx / segments) * 35)}, ${Math.round(129 - (idx / segments) * 24)})`
-              : color;
+              : percentage >= 50
+              ? "#D97706"
+              : "#E11D48";
 
             return (
               <path
@@ -629,7 +667,7 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
               lineHeight: 1,
             }}
           >
-            {percentage.toFixed(1)}%
+            <AnimatedCounter value={percentage} decimals={1} suffix="%" />
           </div>
           <div
             style={{

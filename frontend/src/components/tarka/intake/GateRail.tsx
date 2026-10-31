@@ -188,19 +188,63 @@ export const GateRail: React.FC<GateRailProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Background Connecting Wire */}
-        <div
+        {/* Animated Signal Circuit Trace Line */}
+        <svg
           style={{
             position: "absolute",
             left: "5%",
             right: "5%",
             top: "50%",
-            height: "2px",
-            background: isHalted ? "#FECDD3" : "#E2E8F0",
-            zIndex: 0,
+            width: "90%",
+            height: "12px",
             transform: "translateY(-50%)",
+            pointerEvents: "none",
+            zIndex: 0,
+            overflow: "visible",
           }}
-        />
+        >
+          <defs>
+            <style>{`
+              @keyframes circuitTracePulse {
+                from { stroke-dashoffset: 24; }
+                to { stroke-dashoffset: 0; }
+              }
+              @keyframes breakerBlink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+              }
+              .trace-pulse-pass {
+                animation: circuitTracePulse 1.2s linear infinite;
+              }
+              .trace-pulse-halt {
+                animation: breakerBlink 0.6s ease-in-out infinite;
+              }
+            `}</style>
+          </defs>
+          {/* Base Wire Track */}
+          <line
+            x1="0"
+            y1="6"
+            x2="100%"
+            y2="6"
+            stroke={isHalted ? "#FECDD3" : "#E2E8F0"}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          {/* Animated Signal Stream */}
+          <line
+            x1="0"
+            y1="6"
+            x2="100%"
+            y2="6"
+            stroke={isHalted ? "#E11D48" : "#10B981"}
+            strokeWidth="2.5"
+            strokeDasharray={isHalted ? "12 8" : "4 8"}
+            strokeLinecap="round"
+            className={isHalted ? "trace-pulse-halt" : "trace-pulse-pass"}
+            opacity={0.85}
+          />
+        </svg>
 
         {invariants.map((inv, idx) => {
           const IconComp = getStationIcon(inv.id);
