@@ -116,18 +116,20 @@ export const TarkaGlobalShell: React.FC = () => {
       }}
     >
       {/* =========================================================================
-          1. LEFT SIDEBAR (256PX WIDTH, NATIVE ON #F4F4F5)
+          1. LEFT SIDEBAR (272PX WIDTH, NATIVE ON #F4F4F5)
           ========================================================================= */}
       <aside
         style={{
-          width: "256px",
+          width: "272px",
+          minWidth: "272px",
+          maxWidth: "272px",
           height: "100%",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
           flexShrink: 0,
           boxSizing: "border-box",
-          padding: "6px 4px 6px 6px",
+          padding: "6px 6px 6px 6px",
         }}
       >
         {/* Top: Brand, Case Combobox & Navigation */}
@@ -164,7 +166,7 @@ export const TarkaGlobalShell: React.FC = () => {
             <ReuiStatusBadge text="v5.0 BSA § 63" variant="indigo" dot={false} />
           </div>
 
-          {/* ReUI Case Combobox Button (D9: 1-line FIR chip + Title, zero wrapping) */}
+          {/* ReUI Case Combobox Button (D9 & C1: 2-line case selector, nowrap) */}
           <div
             title="FIR #149/2026 · Noida Cyber Crime Police Station · Digital Arrest Extortion Case"
             style={{
@@ -185,8 +187,8 @@ export const TarkaGlobalShell: React.FC = () => {
                 <span style={{ fontSize: "10px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 5px", borderRadius: "4px", whiteSpace: "nowrap" }}>
                   FIR #149/2026
                 </span>
-                <span style={{ fontSize: "10.5px", color: "#71717A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Noida Cyber
+                <span style={{ fontSize: "10.5px", fontWeight: 600, color: "#71717A", whiteSpace: "nowrap" }}>
+                  Noida Cyber Cell
                 </span>
               </div>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "#09090B", marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

@@ -8,6 +8,11 @@ import {
   AlertCircle,
   FileSpreadsheet,
   Shield,
+  ChevronRight,
+  ChevronDown,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { type LedgerRowData } from "../../../utils/intakeFalsifier";
 
@@ -28,6 +33,16 @@ export interface LedgerCardProps {
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
+// Deterministic row SHA-256 hashes for cryptographic proof inspection
+const ROW_HASHES: Record<number, string> = {
+  11: "a18f4019e078b61c8a14b5c772099307ef1968d04265ccf7c706bf9508bc5b51",
+  12: "d32840c1122a6111f1295b9c77109307ef1968d04265ccf7c706bf9508bc5b52",
+  13: "e43920f2133b7222f2306c0d88210418fa2079e15376dd08d817ca0619cd6c63",
+  14: "f54a31a3244c8333a3417d1e99321529ab318af26487ee19e928db1720de7d74",
+  15: "065b42b4355d9444b4528e2fa0432630bc429b037598ff20fa39ec2831ef8e85",
+  16: "176c53c5466ea555c5639f30b1543741cd530c1486a900310b4afd3942f09f96",
+};
+
 export const LedgerCard: React.FC<LedgerCardProps> = ({
   rows,
   isRow14Tampered,
@@ -40,8 +55,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
   searchInputRef,
 }) => {
   const [copiedHash, setCopiedHash] = useState(false);
+  const [copiedRowHash, setCopiedRowHash] = useState<number | null>(null);
   const [timeMode, setTimeMode] = useState<"IST" | "UTC">("IST");
   const [flashDownstream, setFlashDownstream] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const prevCustomBalRef = useRef(customRow14Balance);
 
   // Cascade pulse on rows 15-16 when row 14 balance is altered
@@ -54,29 +71,50 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
     }
   }, [customRow14Balance]);
 
+  const toggleRowExpanded = (seq: number) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [seq]: !prev[seq],
+    }));
+  };
+
   const handleCopySha = () => {
     navigator.clipboard.writeText("3f8a412e8b2c9d1109aa77f1b29c5e3170d496a793c12a884efb01449de1e9b1");
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
   };
 
-  const formatTimestamp = (iso: string) => {
+  const handleCopyRowHash = (seq: number, hash: string) => {
+    navigator.clipboard.writeText(hash);
+    setCopiedRowHash(seq);
+    setTimeout(() => setCopiedRowHash(null), 2000);
+  };
+
+  const formatTimestamp = (iso: string, forceMode?: "IST" | "UTC") => {
+    const mode = forceMode || timeMode;
     const parts = iso.split("T");
     const time = parts[1] || "";
-    if (timeMode === "UTC") {
+    if (mode === "UTC") {
       const [h, m, s] = time.split(":").map(Number);
       let totalMin = h * 60 + m - 330;
       if (totalMin < 0) totalMin += 1440;
       const utcH = Math.floor(totalMin / 60);
       const utcM = totalMin % 60;
-      return `${String(utcH).padStart(2, "0")}:${String(utcM).padStart(2, "0")}:${s ?? 0}Z`;
+      return `${String(utcH).padStart(2, "0")}:${String(utcM).padStart(2, "0")}:${String(s ?? 0).padStart(2, "0")}Z`;
     }
     return time;
   };
 
+  const handleBalanceBlur = () => {
+    const num = parseFloat(customRow14Balance);
+    if (!isNaN(num)) {
+      onCustomBalanceChange(num.toFixed(2));
+    }
+  };
+
   return (
     <div
-      className="bento-card"
+      className="bento-card ledger-card-container"
       style={{
         background: "#FFFFFF",
         border: "1px solid #E2E8F0",
@@ -87,7 +125,8 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
         flexDirection: "column",
         justifyContent: "space-between",
         boxSizing: "border-box",
-        height: "100%",
+        width: "100%",
+        minWidth: 0,
       }}
     >
       <div>
@@ -205,7 +244,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           }}
         >
           {/* Left: Search filter with '/' badge */}
-          <div style={{ position: "relative", width: "170px" }}>
+          <div style={{ position: "relative", width: "180px" }}>
             <Search
               size={11}
               color="#94A3B8"
@@ -414,31 +453,52 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
         </div>
 
         {/* =========================================================================
-            DATA GRID: FIXED COMPACT COLUMNS (NO HORIZONTAL SCROLL)
+            DATA GRID: FULL-PRECISION COLUMNS + CONTAINER QUERY RESPONSIVENESS
             ========================================================================= */}
-        <div style={{ overflowX: "hidden", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
-          <table style={{ tableLayout: "fixed", width: "100%", maxWidth: "100%", boxSizing: "border-box", borderCollapse: "collapse", textAlign: "left", fontSize: "10.5px" }}>
+        <div className="table-scroll-mask">
+          <table
+            style={{
+              tableLayout: "fixed",
+              width: "100%",
+              minWidth: "100%",
+              boxSizing: "border-box",
+              borderCollapse: "collapse",
+              textAlign: "left",
+              fontSize: "11px",
+            }}
+          >
             <colgroup>
-              <col style={{ width: "34px" }} />
-              <col style={{ width: "62px" }} />
-              <col style={{ width: "auto" }} />
-              <col style={{ width: "94px" }} />
-              <col style={{ width: "64px" }} />
-              <col style={{ width: "78px" }} />
-              <col style={{ width: "78px" }} />
-              <col style={{ width: "102px" }} />
-              <col style={{ width: "42px" }} />
+              <col style={{ width: "44px" }} />
+              <col style={{ width: "84px" }} />
+              <col style={{ minWidth: "300px", width: "auto" }} />
+              <col className="col-rrn-cquery" style={{ width: "136px" }} />
+              <col style={{ width: "92px" }} />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "120px" }} />
+              <col style={{ width: "132px" }} />
+              <col style={{ width: "40px" }} />
             </colgroup>
             <thead>
-              <tr style={{ height: "28px", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", color: "#64748B", fontWeight: 700, fontSize: "10px" }}>
+              <tr
+                style={{
+                  height: "28px",
+                  background: "#F8FAFC",
+                  borderBottom: "1px solid #E2E8F0",
+                  color: "#64748B",
+                  fontWeight: 700,
+                  fontSize: "10px",
+                }}
+              >
                 <th style={{ padding: "3px 4px", textAlign: "center", fontFamily: "var(--font-mono)" }}>Row</th>
-                <th style={{ padding: "3px 4px", fontFamily: "var(--font-mono)" }}>Time</th>
+                <th style={{ padding: "3px 6px", fontFamily: "var(--font-mono)" }}>Time</th>
                 <th style={{ padding: "3px 6px" }}>Counterparty & Narration</th>
-                <th style={{ padding: "3px 4px", fontFamily: "var(--font-mono)" }}>RRN / UTR</th>
-                <th style={{ padding: "3px 4px" }}>Rail</th>
-                <th style={{ padding: "3px 4px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Debit (₹)</th>
-                <th style={{ padding: "3px 4px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Credit (₹)</th>
-                <th style={{ padding: "3px 4px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Balance (₹)</th>
+                <th className="col-rrn-cquery" style={{ padding: "3px 6px", fontFamily: "var(--font-mono)" }}>
+                  RRN / UTR
+                </th>
+                <th style={{ padding: "3px 6px" }}>Rail</th>
+                <th style={{ padding: "3px 6px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Debit (₹)</th>
+                <th style={{ padding: "3px 6px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Credit (₹)</th>
+                <th style={{ padding: "3px 6px", textAlign: "right", fontFamily: "var(--font-mono)" }}>Balance (₹)</th>
                 <th style={{ padding: "3px 4px", textAlign: "center" }}>Status</th>
               </tr>
             </thead>
@@ -446,7 +506,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               {rows.map((row) => {
                 const isDisputed = row.sequenceNo === 14;
                 const isUnsat = row.status === "UNSAT" || (isDisputed && isRow14Tampered);
-                const isDownstream = (row.sequenceNo === 15 || row.sequenceNo === 16);
+                const isDownstream = row.sequenceNo === 15 || row.sequenceNo === 16;
+                const isExpanded = !!expandedRows[row.sequenceNo];
+                const rowHash = ROW_HASHES[row.sequenceNo] || "3f8a412e8b2c9d1109aa77f1b29c5e3170d496a7";
 
                 let rowBg = "transparent";
                 let rowBorderLeft = "3px solid transparent";
@@ -459,30 +521,65 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 }
 
                 return (
-                  <tr
-                    key={row.id}
-                    className={isDownstream && flashDownstream ? "flash-downstream" : ""}
-                    style={{
-                      height: "34px",
-                      background: rowBg,
-                      borderLeft: rowBorderLeft,
-                      borderBottom: "1px solid #F1F5F9",
-                      transition: "background-color 0.15s ease",
-                    }}
-                  >
-                    {/* Row Seq */}
-                    <td style={{ padding: "3px 4px", textAlign: "center", fontFamily: "var(--font-mono)", fontWeight: 700, color: "#64748B" }}>
-                      #{row.sequenceNo}
-                    </td>
+                  <React.Fragment key={row.id}>
+                    <tr
+                      className={isDownstream && flashDownstream ? "flash-downstream" : ""}
+                      style={{
+                        height: "34px",
+                        background: rowBg,
+                        borderLeft: rowBorderLeft,
+                        borderBottom: isExpanded ? "none" : "1px solid #F1F5F9",
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      {/* Row Seq + Expand Chevron */}
+                      <td style={{ padding: "3px 4px", textAlign: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2px" }}>
+                          <button
+                            type="button"
+                            onClick={() => toggleRowExpanded(row.sequenceNo)}
+                            aria-label={isExpanded ? `Collapse row #${row.sequenceNo}` : `Expand row #${row.sequenceNo}`}
+                            style={{
+                              border: "none",
+                              background: "transparent",
+                              padding: "1px",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              color: "#64748B",
+                            }}
+                          >
+                            {isExpanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                          </button>
+                          <span
+                            style={{
+                              fontFamily: "var(--font-mono)",
+                              fontWeight: 700,
+                              color: "#64748B",
+                              fontSize: "10.5px",
+                            }}
+                          >
+                            #{row.sequenceNo}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Timestamp */}
-                    <td style={{ padding: "3px 4px", fontFamily: "var(--font-mono)", fontSize: "10px", color: "#475569", whiteSpace: "nowrap" }}>
-                      {formatTimestamp(row.timestamp)}
-                    </td>
+                      {/* Timestamp */}
+                      <td
+                        style={{
+                          padding: "3px 6px",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "10.5px",
+                          color: "#475569",
+                          whiteSpace: "nowrap",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {formatTimestamp(row.timestamp)}
+                      </td>
 
-                    {/* Counterparty & Narration */}
-                    <td style={{ padding: "3px 6px", overflow: "hidden" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
+                      {/* Counterparty & Narration (Clean, no duplicate inline mule pill) */}
+                      <td style={{ padding: "3px 6px", overflow: "hidden" }}>
                         <span
                           style={{
                             fontWeight: isDisputed ? 700 : 600,
@@ -491,230 +588,394 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            minWidth: 0,
+                            display: "block",
                           }}
                           title={row.description}
                         >
                           {row.description}
                         </span>
-                        {isDisputed && (
-                          <span
-                            style={{
-                              fontSize: "8px",
-                              fontWeight: 700,
-                              padding: "1px 3px",
-                              borderRadius: "2px",
-                              background: isUnsat ? "#FFE4E6" : "#FEF3C7",
-                              color: isUnsat ? "#BE123C" : "#92400E",
-                              border: `1px solid ${isUnsat ? "#FECDD3" : "#FDE68A"}`,
-                              whiteSpace: "nowrap",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {isUnsat ? "Falsified" : "Mule"}
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* RRN / UTR dedicated column */}
-                    <td style={{ padding: "3px 4px", fontFamily: "var(--font-mono)", fontSize: "9.5px", overflow: "hidden" }}>
-                      {row.rrn !== "—" ? (
-                        <button
-                          type="button"
-                          onClick={() => onSelectRrn(row.rrn)}
-                          style={{
-                            border: "none",
-                            background: "transparent",
-                            color: "#475569",
-                            cursor: "pointer",
-                            padding: 0,
-                            fontFamily: "var(--font-mono)",
-                            fontSize: "9.5px",
-                            textAlign: "left",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            display: "block",
-                            width: "100%",
-                          }}
-                          title={`Click to inspect RRN ${row.rrn}`}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = "#4F46E5")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}
-                        >
-                          {row.rrn}
-                        </button>
-                      ) : (
-                        <span style={{ color: "#94A3B8" }}>—</span>
-                      )}
-                    </td>
-
-                    {/* Rail Pill */}
-                    <td style={{ padding: "3px 4px" }}>
-                      <span
+                      {/* RRN / UTR dedicated column (136px, full 16-char UTR fits) */}
+                      <td
+                        className="col-rrn-cquery"
                         style={{
-                          fontSize: "8.5px",
-                          fontWeight: 700,
-                          padding: "1px 4px",
-                          borderRadius: "3px",
+                          padding: "3px 6px",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "10.5px",
+                          overflow: "hidden",
                           whiteSpace: "nowrap",
-                          background:
-                            row.sequenceNo === 11
-                              ? "#F1F5F9"
-                              : row.sequenceNo === 13
-                              ? "#ECFDF5"
-                              : row.sequenceNo === 14
-                              ? isUnsat
-                                ? "#FFE4E6"
-                                : "#FEF3C7"
-                              : "#EEF2FF",
-                          color:
-                            row.sequenceNo === 11
-                              ? "#475569"
-                              : row.sequenceNo === 13
-                              ? "#047857"
-                              : row.sequenceNo === 14
-                              ? isUnsat
-                                ? "#BE123C"
-                                : "#92400E"
-                              : "#4338CA",
-                          border: `1px solid ${
-                            row.sequenceNo === 11
-                              ? "#E2E8F0"
-                              : row.sequenceNo === 13
-                              ? "#A7F3D0"
-                              : row.sequenceNo === 14
-                              ? isUnsat
-                                ? "#FECDD3"
-                                : "#FDE68A"
-                              : "#C7D2FE"
-                          }`,
                         }}
                       >
-                        {row.sequenceNo === 11
-                          ? "OPENING"
-                          : row.sequenceNo === 13
-                          ? "NEFT CR"
-                          : row.sequenceNo === 14
-                          ? "UPI MULE"
-                          : "RETAIL"}
-                      </span>
-                    </td>
-
-                    {/* Debit (₹) */}
-                    <td
-                      style={{
-                        padding: "3px 4px",
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 700,
-                        fontSize: "10.5px",
-                        color: "#BE123C",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {row.debit > 0
-                        ? `-₹${row.debit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "—"}
-                    </td>
-
-                    {/* Credit (₹) */}
-                    <td
-                      style={{
-                        padding: "3px 4px",
-                        textAlign: "right",
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 700,
-                        fontSize: "10.5px",
-                        color: "#047857",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {row.credit > 0
-                        ? `+₹${row.credit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : "—"}
-                    </td>
-
-                    {/* Balance (₹) (Inline editable on Row #14) */}
-                    <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: "var(--font-mono)", whiteSpace: "nowrap", overflow: "hidden" }}>
-                      {isDisputed ? (
-                        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: "2px" }}>
-                          <span style={{ color: "#94A3B8", fontSize: "9.5px" }}>₹</span>
-                          <input
-                            type="text"
-                            aria-label="Row #14 Closing Balance in Rupees"
-                            value={customRow14Balance}
-                            onChange={(e) => onCustomBalanceChange(e.target.value)}
-                            style={{
-                              width: "66px",
-                              height: "20px",
-                              padding: "1px 2px",
-                              textAlign: "right",
-                              fontFamily: "var(--font-mono)",
-                              fontSize: "9.5px",
-                              fontWeight: 700,
-                              borderRadius: "3px",
-                              border: isUnsat ? "1px solid #FECDD3" : "1px solid #F59E0B",
-                              background: isUnsat ? "#FFF1F2" : "#FFFFFF",
-                              color: isUnsat ? "#BE123C" : "#09090B",
-                              outline: "none",
-                              boxSizing: "border-box",
-                            }}
-                            title="Edit Row #14 closing balance to test mathematical falsification"
-                          />
+                        {row.rrn !== "—" ? (
                           <button
                             type="button"
-                            onClick={onResetRow14Balance}
+                            onClick={() => onSelectRrn(row.rrn)}
                             style={{
                               border: "none",
                               background: "transparent",
-                              color: "#94A3B8",
+                              color: "#475569",
                               cursor: "pointer",
-                              padding: "1px",
-                              display: "flex",
-                              alignItems: "center",
+                              padding: 0,
+                              fontFamily: "var(--font-mono)",
+                              fontSize: "10.5px",
+                              textAlign: "left",
+                              whiteSpace: "nowrap",
+                              display: "block",
+                              width: "100%",
                             }}
-                            title="Reset to original CBS balance (₹5,22,440.00)"
+                            title={`Click to inspect RRN ${row.rrn}`}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "#4F46E5")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}
                           >
-                            <RotateCcw size={9} />
+                            {row.rrn}
                           </button>
-                        </div>
-                      ) : (
+                        ) : (
+                          <span style={{ color: "#94A3B8" }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Rail Pill (92px) */}
+                      <td style={{ padding: "3px 6px" }}>
                         <span
                           style={{
+                            display: "inline-block",
+                            fontSize: "9px",
                             fontWeight: 700,
-                            fontSize: "10.5px",
-                            color: isUnsat ? "#BE123C" : "#09090B",
+                            padding: "1px 5px",
+                            borderRadius: "3px",
+                            whiteSpace: "nowrap",
+                            background:
+                              row.sequenceNo === 11
+                                ? "#F1F5F9"
+                                : row.sequenceNo === 13
+                                ? "#ECFDF5"
+                                : row.sequenceNo === 14
+                                ? isUnsat
+                                  ? "#FFE4E6"
+                                  : "#FEF3C7"
+                                : "#EEF2FF",
+                            color:
+                              row.sequenceNo === 11
+                                ? "#475569"
+                                : row.sequenceNo === 13
+                                ? "#047857"
+                                : row.sequenceNo === 14
+                                ? isUnsat
+                                  ? "#BE123C"
+                                  : "#92400E"
+                                : "#4338CA",
+                            border: `1px solid ${
+                              row.sequenceNo === 11
+                                ? "#E2E8F0"
+                                : row.sequenceNo === 13
+                                ? "#A7F3D0"
+                                : row.sequenceNo === 14
+                                ? isUnsat
+                                  ? "#FECDD3"
+                                  : "#FDE68A"
+                                : "#C7D2FE"
+                            }`,
                           }}
                         >
-                          ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {row.sequenceNo === 11
+                            ? "OPENING"
+                            : row.sequenceNo === 13
+                            ? "NEFT CR"
+                            : row.sequenceNo === 14
+                            ? "UPI MULE"
+                            : "RETAIL"}
                         </span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Status Pill */}
-                    <td style={{ padding: "3px 4px", textAlign: "center" }}>
-                      <span
+                      {/* Debit (₹) (120px) */}
+                      <td
                         style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "1px 4px",
-                          borderRadius: "3px",
-                          fontSize: "8.5px",
+                          padding: "3px 6px",
+                          textAlign: "right",
+                          fontFamily: "var(--font-mono)",
                           fontWeight: 700,
-                          background: isUnsat ? "#FFF1F2" : "#ECFDF5",
-                          color: isUnsat ? "#BE123C" : "#047857",
-                          border: `1px solid ${isUnsat ? "#FECDD3" : "#A7F3D0"}`,
+                          fontSize: "11px",
+                          color: "#BE123C",
                           whiteSpace: "nowrap",
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
-                        {isUnsat ? "FAIL ✗" : "VALID ✓"}
-                      </span>
-                    </td>
-                  </tr>
+                        {row.debit > 0
+                          ? `-₹${row.debit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : "—"}
+                      </td>
+
+                      {/* Credit (₹) (120px) */}
+                      <td
+                        style={{
+                          padding: "3px 6px",
+                          textAlign: "right",
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 700,
+                          fontSize: "11px",
+                          color: "#047857",
+                          whiteSpace: "nowrap",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {row.credit > 0
+                          ? `+₹${row.credit.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : "—"}
+                      </td>
+
+                      {/* Balance (₹) (132px, Inline editable on Row #14) */}
+                      <td
+                        style={{
+                          padding: "3px 6px",
+                          textAlign: "right",
+                          fontFamily: "var(--font-mono)",
+                          whiteSpace: "nowrap",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {isDisputed ? (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                              gap: "2px",
+                              width: "100%",
+                            }}
+                          >
+                            <span style={{ color: "#94A3B8", fontSize: "10px" }}>₹</span>
+                            <input
+                              type="text"
+                              aria-label="Row #14 Closing Balance in Rupees"
+                              value={customRow14Balance}
+                              onChange={(e) => onCustomBalanceChange(e.target.value)}
+                              onBlur={handleBalanceBlur}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleBalanceBlur();
+                                }
+                              }}
+                              style={{
+                                width: "78px",
+                                height: "21px",
+                                padding: "1px 3px",
+                                textAlign: "right",
+                                fontFamily: "var(--font-mono)",
+                                fontSize: "10.5px",
+                                fontWeight: 700,
+                                borderRadius: "3px",
+                                border: isUnsat ? "1px solid #FECDD3" : "1px solid #F59E0B",
+                                background: isUnsat ? "#FFF1F2" : "#FFFFFF",
+                                color: isUnsat ? "#BE123C" : "#09090B",
+                                outline: "none",
+                                boxSizing: "border-box",
+                              }}
+                              title="Edit Row #14 closing balance to test mathematical falsification"
+                            />
+                            <button
+                              type="button"
+                              onClick={onResetRow14Balance}
+                              style={{
+                                border: "none",
+                                background: "transparent",
+                                color: "#94A3B8",
+                                cursor: "pointer",
+                                padding: "1px",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              title="Reset to original CBS balance (₹5,22,440.00)"
+                            >
+                              <RotateCcw size={10} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span
+                            style={{
+                              fontWeight: 700,
+                              fontSize: "11px",
+                              color: isUnsat ? "#BE123C" : "#09090B",
+                            }}
+                          >
+                            ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Status Icon (40px, icon-only 32px with Tooltip) */}
+                      <td style={{ padding: "3px 4px", textAlign: "center" }}>
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "32px",
+                            height: "22px",
+                            borderRadius: "4px",
+                            background: isUnsat ? "#FFF1F2" : isDisputed ? "#FFFBEB" : "#ECFDF5",
+                            border: `1px solid ${isUnsat ? "#FECDD3" : isDisputed ? "#FDE68A" : "#A7F3D0"}`,
+                            position: "relative",
+                          }}
+                          title={
+                            isUnsat
+                              ? "FAIL ✗: Double-entry ledger balance mismatch"
+                              : isDisputed
+                              ? "SUSPECT ⚠: Counterparty flagged as Mule account (L1 Invariant)"
+                              : "VALID ✓: Mathematically conserved"
+                          }
+                          aria-label={isUnsat ? "FAIL ✗" : isDisputed ? "SUSPECT ⚠" : "VALID ✓"}
+                        >
+                          {isUnsat ? (
+                            <XCircle size={13} color="#E11D48" />
+                          ) : isDisputed ? (
+                            <AlertTriangle size={12} color="#D97706" />
+                          ) : (
+                            <CheckCircle2 size={13} color="#059669" />
+                          )}
+                          <span
+                            style={{
+                              position: "absolute",
+                              width: "1px",
+                              height: "1px",
+                              padding: 0,
+                              margin: "-1px",
+                              overflow: "hidden",
+                              clip: "rect(0,0,0,0)",
+                              border: 0,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {isUnsat ? "FAIL ✗" : isDisputed ? "SUSPECT ⚠" : "VALID ✓"}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Expandable Forensic Row Panel */}
+                    {isExpanded && (
+                      <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                        <td colSpan={9} style={{ padding: "6px 12px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "5px",
+                              fontSize: "10.5px",
+                              background: "#FFFFFF",
+                              border: "1px solid #E2E8F0",
+                              borderRadius: "6px",
+                              padding: "6px 10px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "8px",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                                <span style={{ fontWeight: 700, color: "#475569" }}>Raw CBS Record:</span>
+                                <code
+                                  style={{
+                                    fontFamily: "var(--font-mono)",
+                                    fontSize: "10px",
+                                    background: "#F1F5F9",
+                                    padding: "2px 6px",
+                                    borderRadius: "3px",
+                                    color: "#0F172A",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {`${row.sequenceNo},${row.timestamp},${row.description},${row.rrn},${row.debit.toFixed(2)},${row.credit.toFixed(2)},${row.balance.toFixed(2)}`}
+                                </code>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontSize: "10px", color: "#64748B" }}>UTC Timestamp:</span>
+                                <code
+                                  style={{
+                                    fontFamily: "var(--font-mono)",
+                                    fontSize: "10px",
+                                    color: "#0F172A",
+                                    background: "#F8FAFC",
+                                    padding: "1px 5px",
+                                    borderRadius: "3px",
+                                    border: "1px solid #E2E8F0",
+                                  }}
+                                >
+                                  {formatTimestamp(row.timestamp, "UTC")}
+                                </code>
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "8px",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontWeight: 700, color: "#475569" }}>Row Hash (SHA-256):</span>
+                                <code
+                                  style={{
+                                    fontFamily: "var(--font-mono)",
+                                    fontSize: "9.5px",
+                                    color: "#64748B",
+                                  }}
+                                >
+                                  {rowHash}
+                                </code>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyRowHash(row.sequenceNo, rowHash)}
+                                  title="Copy Row SHA-256 Hash"
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    cursor: "pointer",
+                                    color: copiedRowHash === row.sequenceNo ? "#059669" : "#94A3B8",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    padding: "1px",
+                                  }}
+                                >
+                                  {copiedRowHash === row.sequenceNo ? <Check size={11} /> : <Copy size={11} />}
+                                </button>
+                              </div>
+
+                              {row.rrn !== "—" && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectRrn(row.rrn)}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "3px",
+                                    fontSize: "10px",
+                                    fontWeight: 700,
+                                    color: "#4338CA",
+                                    background: "#EEF2FF",
+                                    border: "1px solid #C7D2FE",
+                                    padding: "2px 7px",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <span>Dissect #{row.rrn} in Lab</span>
+                                  <ExternalLink size={9} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -739,9 +1000,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
           <Shield size={11} color="#059669" />
-          <span>
-            Tier-1 HSM Conservation Verified · RBI Circular Compliant
-          </span>
+          <span>Tier-1 HSM Conservation Verified · RBI Circular Compliant</span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#94A3B8" }}>
           SBI-FINACLE-10.2-PROD

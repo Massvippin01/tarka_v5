@@ -310,3 +310,25 @@ body {
   0% { background-color: #FEF3C7; }
   100% { background-color: transparent; }
 }
+
+/* ==========================================================================
+   Ledger Card Container Query & Dynamic Responsive Styles
+   ========================================================================== */
+.ledger-card-container {
+  container-type: inline-size;
+  container-name: ledgercard;
+  width: 100%;
+}
+
+@container ledgercard (max-width: 1040px) {
+  .col-rrn-cquery {
+    display: none !important;
+  }
+}
+
+.table-scroll-mask {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+

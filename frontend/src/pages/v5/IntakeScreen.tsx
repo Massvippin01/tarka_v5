@@ -497,9 +497,9 @@ export const IntakeScreen: React.FC = () => {
           onClick={() => toggleMutation("forgeRrnTimestamp")}
         />
 
-        {/* KPI 3: Claim vs CBS Ledger Diff */}
+        {/* KPI 3: Claim vs CBS */}
         <IntakeKpiCard
-          title="Claim vs CBS Ledger Diff"
+          title="Claim vs CBS"
           heroText="-₹2,00,000.00"
           pillText="14.3× Suppressed"
           pillVariant="rose"
@@ -526,22 +526,25 @@ export const IntakeScreen: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          MAIN WORKBENCH: 2-COLUMN GRID (LEFT: LEDGER, RIGHT: STACKED FORENSICS & GATE)
-          Both columns align and stretch to the exact same baseline!
+          MAIN WORKBENCH: 2-COLUMN GRID (LEFT: LEDGER + GATE, RIGHT: RRN LAB + SHIELD)
           ========================================================================= */}
       <main
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 340px",
+          gridTemplateColumns: "minmax(0, 1fr) 420px",
           gap: "10px",
           flex: 1,
           alignItems: "stretch",
+          minWidth: 0,
         }}
       >
         {/* =======================================================================
-            LEFT COLUMN: SBI CORE BANKING LEDGER CARD
+            LEFT COLUMN: SBI CORE BANKING LEDGER + FALSIFICATION GATE
             ======================================================================= */}
-        <section aria-label="Core Banking Ledger" style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <section
+          aria-label="Core Banking Ledger and Falsification Gate"
+          style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "10px" }}
+        >
           <LedgerCard
             rows={displayRows}
             isRow14Tampered={isRow14Tampered}
@@ -556,19 +559,31 @@ export const IntakeScreen: React.FC = () => {
             onSearchChange={(val) => setSearchTerm(val)}
             searchInputRef={searchInputRef}
           />
+
+          <FalsificationGateCard
+            isRow14Valid={isRow14Valid}
+            isRrnValid={isRrnValid}
+            isReceiptConflicted={true}
+            isPdfAppended={true}
+            isMerkleCompliant={true}
+            onJumpToLedger={() => {
+              searchInputRef.current?.focus();
+            }}
+          />
         </section>
 
         {/* =======================================================================
-            RIGHT COLUMN: STACKED RRN DISSECTOR, INTEGRITY SHIELD, AND FALSIFICATION GATE
+            RIGHT COLUMN: STACKED RRN FORENSIC LAB & INTEGRITY SHIELD
             ======================================================================= */}
         <section
-          aria-label="Forensic Dissectors and Gate"
+          aria-label="Forensic Dissectors and Shield"
           style={{
-            minWidth: 0,
+            width: "420px",
+            minWidth: "420px",
+            maxWidth: "420px",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
-            justifyContent: "space-between",
           }}
         >
           {/* Card 1: NPCI RRN Dissector */}
@@ -585,18 +600,6 @@ export const IntakeScreen: React.FC = () => {
           <IntegrityShieldCard
             activeTab={activeTabDissector}
             onTabChange={(tab) => setActiveTabDissector(tab)}
-          />
-
-          {/* Card 3: Real-Time Falsification Gate */}
-          <FalsificationGateCard
-            isRow14Valid={isRow14Valid}
-            isRrnValid={isRrnValid}
-            isReceiptConflicted={true}
-            isPdfAppended={true}
-            isMerkleCompliant={true}
-            onJumpToLedger={() => {
-              searchInputRef.current?.focus();
-            }}
           />
         </section>
       </main>
