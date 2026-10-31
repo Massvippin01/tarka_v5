@@ -424,16 +424,50 @@ export const TaintEngineScreen: React.FC = () => {
               </span>
             </div>
 
-            {/* Salezy-Style Semi-Circular Segmented Gauge for Flow Containment */}
-            <div style={{ display: "flex", justifyContent: "center", margin: "-6px 0" }}>
+            {/* Executive Salezy-Style Radial Gauge with Dual Metric Anchors */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                borderRadius: "14px",
+                padding: "8px 12px 14px",
+              }}
+            >
               <SemiCircleGauge
                 percentage={containmentPct}
                 label="Recoverable Flow Contained"
-                sublabel={`Budget K = ${freezeBudgetK} Accounts`}
-                summaryText={engineState.minCut.isFreezeComplete ? "100% Flow Sealed" : "Leaking to Cashout Sink"}
+                sublabel={`Dinic Min-Cut Budget K = ${freezeBudgetK} Accounts`}
+                summaryText={engineState.minCut.isFreezeComplete ? "✓ 100% Flow Sealed · No Outward Leakage" : "⚠ Residual Leakage to Terminal Cashout Sink"}
                 color={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"}
-                size={170}
+                size={210}
               />
+
+              {/* Dual Metric Row (Matching Salezy Sales Overview) */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "10px",
+                  width: "100%",
+                  marginTop: "6px",
+                  paddingTop: "8px",
+                  borderTop: "1px solid #E2E8F0",
+                }}
+              >
+                <div style={{ textAlign: "center", background: "#FFFFFF", padding: "6px 8px", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+                  <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase", fontWeight: 700 }}>Total Fraud Outflow</div>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)" }}>₹5,00,000.00</div>
+                </div>
+                <div style={{ textAlign: "center", background: "#FFFFFF", padding: "6px 8px", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+                  <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase", fontWeight: 700 }}>Frozen in Lien</div>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>
+                    ₹{(500000 - engineState.minCut.residualLeakageAmount).toLocaleString("en-IN")}.00
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* 3 Accounting Rule Comparison Cards */}

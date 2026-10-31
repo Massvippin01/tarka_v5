@@ -8,8 +8,8 @@ import {
   FileCheck,
   Network,
   Key,
-  QrCode,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { SaasExecutiveKpiCard } from "../../components/tarka/SaasExecutiveKpiCard";
 import {
@@ -311,8 +311,8 @@ export const CourtProofScreen: React.FC = () => {
               </button>
             </div>
 
-            {/* 5 Evidence Artifact Checklist Rows */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {/* 5 Evidence Artifact Checklist Rows with Clean Scroll */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "175px", overflowY: "auto", paddingRight: "4px" }}>
               {artifacts.map((art) => {
                 const isTier1 = art.tier === "TIER_1_INDEPENDENT";
                 return (
@@ -492,15 +492,15 @@ export const CourtProofScreen: React.FC = () => {
                 ))}
               </div>
 
-              {/* Embedded SVG QR Seal */}
+              {/* Embedded Cryptographic QRCodeSVG Merkle Seal */}
               <div
                 style={{
-                  width: "82px",
-                  height: "82px",
+                  width: "84px",
+                  height: "84px",
                   background: "#FFFFFF",
                   border: "1px solid #E2E8F0",
                   borderRadius: "10px",
-                  padding: "6px",
+                  padding: "5px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -508,9 +508,14 @@ export const CourtProofScreen: React.FC = () => {
                   boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
                   flexShrink: 0,
                 }}
+                title={`SHA-256 Merkle Root: ${paperAnchor.merkleRootSha256}`}
               >
-                <QrCode size={52} color="#0F172A" />
-                <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", marginTop: "2px", textTransform: "uppercase" }}>
+                <QRCodeSVG
+                  value={`tarka://merkle/${paperAnchor.merkleRootSha256}?sig=${paperAnchor.ed25519SignatureHex.slice(0, 32)}`}
+                  size={58}
+                  level="M"
+                />
+                <span style={{ fontSize: "7.5px", fontWeight: 800, color: "#059669", marginTop: "3px", textTransform: "uppercase", letterSpacing: "0.2px" }}>
                   ED25519 SEAL
                 </span>
               </div>

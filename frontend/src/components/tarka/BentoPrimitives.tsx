@@ -356,26 +356,37 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
   label,
   sublabel,
   summaryText,
-  color = "var(--bento-emerald)",
+  color = "#059669",
   segments = 18,
-  size = 200,
+  size = 220,
   className = "",
 }) => {
   const activeSegments = Math.round((percentage / 100) * segments);
-  const radius = size * 0.42;
-  const strokeWidth = 10;
+  const radius = size * 0.40;
+  const strokeWidth = 11;
   const center = size / 2;
 
   // Arc angles (from -180 deg to 0 deg)
   const segmentAngle = 180 / segments;
 
   return (
-    <div className={`bento-card ${className}`} style={{ alignItems: "center", textAlign: "center", padding: "18px" }}>
-      <div style={{ position: "relative", width: `${size}px`, height: `${size * 0.58}px` }}>
-        <svg width={size} height={size * 0.65} viewBox={`0 0 ${size} ${size * 0.65}`}>
+    <div
+      className={className}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        padding: "10px 14px",
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ position: "relative", width: `${size}px`, height: `${size * 0.52 + 10}px`, margin: "0 auto" }}>
+        <svg width={size} height={size * 0.55} viewBox={`0 0 ${size} ${size * 0.55}`} style={{ overflow: "visible" }}>
           {Array.from({ length: segments }).map((_, idx) => {
-            const startAngle = 180 + idx * segmentAngle + 1.5;
-            const endAngle = 180 + (idx + 1) * segmentAngle - 1.5;
+            const startAngle = 180 + idx * segmentAngle + 1.8;
+            const endAngle = 180 + (idx + 1) * segmentAngle - 1.8;
             const toRad = (deg: number) => (deg * Math.PI) / 180;
 
             const x1 = center + radius * Math.cos(toRad(startAngle));
@@ -384,13 +395,17 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
             const y2 = center + radius * Math.sin(toRad(endAngle));
 
             const isLit = idx < activeSegments;
+            // Gradient effect matching Salezy gauge: lighter blue/emerald to deep vibrant
+            const litColor = color === "#059669"
+              ? `rgb(${Math.round(16 + (idx / segments) * 5)}, ${Math.round(185 - (idx / segments) * 35)}, ${Math.round(129 - (idx / segments) * 24)})`
+              : color;
 
             return (
               <path
                 key={idx}
                 d={`M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`}
                 fill="none"
-                stroke={isLit ? color : "var(--bento-card-border)"}
+                stroke={isLit ? litColor : "#E2E8F0"}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
               />
@@ -402,34 +417,43 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
         <div
           style={{
             position: "absolute",
-            bottom: "8px",
-            left: 0,
-            right: 0,
+            bottom: "0px",
+            left: "-20px",
+            right: "-20px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            pointerEvents: "none",
           }}
         >
           <div
             style={{
-              fontSize: "28px",
+              fontSize: "26px",
               fontWeight: 800,
               letterSpacing: "-0.5px",
-              color: "var(--bento-text-primary)",
+              color: "#0F172A",
               fontFamily: "'Plus Jakarta Sans', sans-serif",
               lineHeight: 1,
             }}
           >
             {percentage.toFixed(1)}%
           </div>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary)", marginTop: "4px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#64748B",
+              marginTop: "4px",
+              whiteSpace: "nowrap",
+            }}
+          >
             {label}
           </div>
         </div>
       </div>
 
       {sublabel && (
-        <div style={{ fontSize: "11px", color: "var(--bento-text-muted)", marginTop: "4px" }}>
+        <div style={{ fontSize: "11px", color: "#64748B", marginTop: "6px", fontWeight: 600 }}>
           {sublabel}
         </div>
       )}
@@ -437,14 +461,17 @@ export const SemiCircleGauge: React.FC<SemiCircleGaugeProps> = ({
       {summaryText && (
         <div
           style={{
-            marginTop: "12px",
-            padding: "8px 12px",
-            background: "var(--bento-canvas-subtle)",
+            marginTop: "10px",
+            padding: "6px 12px",
+            background: "#F8FAFC",
+            border: "1px solid #E2E8F0",
             borderRadius: "8px",
             fontSize: "11px",
-            fontWeight: 600,
-            color: "var(--bento-text-secondary)",
+            fontWeight: 700,
+            color: percentage >= 100 ? "#047857" : "#B45309",
             width: "100%",
+            maxWidth: "280px",
+            boxSizing: "border-box",
           }}
         >
           {summaryText}

@@ -97,17 +97,28 @@ export const SaasExecutiveKpiCard: React.FC<SaasKpiCardProps> = ({
         </span>
       </div>
 
-      {/* Middle Row: Giant Hero Number */}
+      {/* Middle Row: Hero Number with Dynamic Font Sizing to Prevent Multi-Line Wrapping */}
       <div
         style={{
-          fontSize: "28px",
+          fontSize:
+            metric.length > 16
+              ? "18px"
+              : metric.length > 12
+              ? "22px"
+              : metric.length > 8
+              ? "25px"
+              : "28px",
           fontWeight: 800,
           color: metricColor,
           letterSpacing: "-0.03em",
           lineHeight: 1.15,
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           margin: "6px 0 2px",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
+        title={metric}
       >
         {metric}
       </div>
@@ -128,3 +139,4 @@ export const SaasExecutiveKpiCard: React.FC<SaasKpiCardProps> = ({
     </div>
   );
 };
+

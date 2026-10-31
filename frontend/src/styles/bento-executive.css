@@ -4,7 +4,8 @@
    Supports Daylight Porcelain (Default) & Midnight/Obsidian Glass
    ========================================================================== */
 
-:root, [data-theme="porcelain"] {
+:root,
+[data-theme="porcelain"] {
   /* Daylight Executive Bento Canvas Tokens */
   --bento-canvas: #F4F6FB;
   --bento-canvas-subtle: #F1F5F9;
@@ -56,7 +57,8 @@
   --bento-nav-active-text: #4F46E5;
 }
 
-[data-theme="obsidian"], [data-theme="obsidian-glass"] {
+[data-theme="obsidian"],
+[data-theme="obsidian-glass"] {
   --bento-canvas: #07090E;
   --bento-canvas-subtle: #0D111A;
   --bento-card-bg: #10141F;
@@ -187,20 +189,47 @@
   width: 100%;
 }
 
-.col-span-3 { grid-column: span 3 / span 3; }
-.col-span-4 { grid-column: span 4 / span 4; }
-.col-span-5 { grid-column: span 5 / span 5; }
-.col-span-6 { grid-column: span 6 / span 6; }
-.col-span-7 { grid-column: span 7 / span 7; }
-.col-span-8 { grid-column: span 8 / span 8; }
-.col-span-9 { grid-column: span 9 / span 9; }
-.col-span-12 { grid-column: span 12 / span 12; }
+.col-span-3 {
+  grid-column: span 3 / span 3;
+}
+
+.col-span-4 {
+  grid-column: span 4 / span 4;
+}
+
+.col-span-5 {
+  grid-column: span 5 / span 5;
+}
+
+.col-span-6 {
+  grid-column: span 6 / span 6;
+}
+
+.col-span-7 {
+  grid-column: span 7 / span 7;
+}
+
+.col-span-8 {
+  grid-column: span 8 / span 8;
+}
+
+.col-span-9 {
+  grid-column: span 9 / span 9;
+}
+
+.col-span-12 {
+  grid-column: span 12 / span 12;
+}
 
 @media (max-width: 1280px) {
   .bento-grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .col-span-5, .col-span-7, .col-span-8, .col-span-4 {
+
+  .col-span-5,
+  .col-span-7,
+  .col-span-8,
+  .col-span-4 {
     grid-column: span 12 / span 12;
   }
 }
@@ -511,5 +540,3 @@
 .bento-table tr:hover td {
   background: #F8FAFC;
 }
-
-

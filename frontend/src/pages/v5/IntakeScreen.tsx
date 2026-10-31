@@ -213,96 +213,96 @@ export const IntakeScreen: React.FC = () => {
               </span>
             </div>
 
-            {/* Side-by-Side Comparison Boxes with Diagonal Hatched SVG Bars */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "12px", alignItems: "center" }}>
-              {/* Left Box: Submitted Phone Receipt (Tier 3) */}
-              <div
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: "12px",
-                  background: "#FFF1F2",
-                  border: "1px solid #FECDD3",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#BE123C", textTransform: "uppercase" }}>
-                    Suspect Phone Receipt
-                  </span>
-                  <span style={{ fontSize: "9.5px", background: "#FFE4E6", color: "#BE123C", padding: "1px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                    TIER 3 UNVERIFIED
-                  </span>
-                </div>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)" }}>
-                  ₹15,000.00
-                </div>
-                <div style={{ fontSize: "11px", color: "#64748B" }}>
-                  Claimed Time: <strong className="font-mono-tabular" style={{ color: "#BE123C" }}>{isRrnDrifted ? "10:50:00 IST (+50m)" : "10:50:00 IST"}</strong>
-                </div>
-
-                {/* Mini SVG Hatched Bar for 15k */}
-                <div style={{ width: "100%", height: "14px", background: "#FFE4E6", borderRadius: "4px", overflow: "hidden", marginTop: "4px" }}>
-                  <div className="hatch-pattern-rose" style={{ width: "14%", height: "100%", background: "#E11D48" }} />
-                </div>
-              </div>
-
-              {/* Center Connector Badge */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                <span
+              {/* Side-by-Side Comparison Boxes with High-End SaaS Comparison */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "12px", alignItems: "center" }}>
+                {/* Left Box: Submitted Phone Receipt (Tier 3) */}
+                <div
                   style={{
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    padding: "4px 8px",
-                    borderRadius: "8px",
-                    background: "#E11D48",
-                    color: "#FFFFFF",
-                    fontFamily: "var(--font-mono)",
-                    boxShadow: "0 2px 6px rgba(225,29,72,0.3)",
-                    whiteSpace: "nowrap",
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    background: "#FFF1F2",
+                    border: "1px solid #FECDD3",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
                   }}
                 >
-                  ≠ Δ ₹2,00,000 MISMATCH
-                </span>
-                <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 600 }}>
-                  Doctored by +1333%
-                </span>
-              </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#BE123C", textTransform: "uppercase" }}>
+                      Suspect Phone Receipt
+                    </span>
+                    <span style={{ fontSize: "9.5px", background: "#FFE4E6", color: "#BE123C", padding: "1px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                      TIER 3 UNVERIFIED
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)" }}>
+                    ₹15,000.00
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>
+                    Claimed Time: <strong className="font-mono-tabular" style={{ color: "#BE123C" }}>{isRrnDrifted ? "10:50:00 IST (+50m)" : "10:50:00 IST"}</strong>
+                  </div>
 
-              {/* Right Box: SBI Core Banking System (Tier 1) */}
-              <div
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: "12px",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#047857", textTransform: "uppercase" }}>
-                    SBI CBS Central Ledger
-                  </span>
-                  <span style={{ fontSize: "9.5px", background: "#D1FAE5", color: "#047857", padding: "1px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                    TIER 1 INDEPENDENT
-                  </span>
-                </div>
-                <div style={{ fontSize: "24px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>
-                  ₹2,15,000.00
-                </div>
-                <div style={{ fontSize: "11px", color: "#64748B" }}>
-                  Settled Time: <strong className="font-mono-tabular" style={{ color: "#047857" }}>10:00:14 IST (NTP Sync)</strong>
+                  {/* Visual Proportion Bar */}
+                  <div style={{ width: "100%", height: "10px", background: "#FFE4E6", borderRadius: "5px", overflow: "hidden", marginTop: "4px" }}>
+                    <div style={{ width: "7%", height: "100%", background: "#E11D48", borderRadius: "5px" }} />
+                  </div>
                 </div>
 
-                {/* Mini SVG Hatched Bar for 2.15L (100% width) */}
-                <div style={{ width: "100%", height: "14px", background: "#D1FAE5", borderRadius: "4px", overflow: "hidden", marginTop: "4px" }}>
-                  <div className="hatch-pattern-emerald" style={{ width: "100%", height: "100%", background: "#059669" }} />
+                {/* Center Connector Badge */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      padding: "4px 8px",
+                      borderRadius: "8px",
+                      background: "#E11D48",
+                      color: "#FFFFFF",
+                      fontFamily: "var(--font-mono)",
+                      boxShadow: "0 2px 6px rgba(225,29,72,0.3)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ≠ Δ ₹2,00,000 MISMATCH
+                  </span>
+                  <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 600 }}>
+                    Doctored by +1333%
+                  </span>
+                </div>
+
+                {/* Right Box: SBI Core Banking System (Tier 1) */}
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#047857", textTransform: "uppercase" }}>
+                      SBI CBS Central Ledger
+                    </span>
+                    <span style={{ fontSize: "9.5px", background: "#D1FAE5", color: "#047857", padding: "1px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                      TIER 1 INDEPENDENT
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>
+                    ₹2,15,000.00
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>
+                    Settled Time: <strong className="font-mono-tabular" style={{ color: "#047857" }}>10:00:14 IST (NTP Sync)</strong>
+                  </div>
+
+                  {/* Visual Proportion Bar */}
+                  <div style={{ width: "100%", height: "10px", background: "#D1FAE5", borderRadius: "5px", overflow: "hidden", marginTop: "4px" }}>
+                    <div style={{ width: "100%", height: "100%", background: "#059669", borderRadius: "5px" }} />
+                  </div>
                 </div>
               </div>
-            </div>
           </div>
 
           {/* CARD 3: BANK CSV RUNNING-BALANCE TABLE WITH HIGH-CONTRAST LEGIBILITY */}
@@ -393,18 +393,27 @@ export const IntakeScreen: React.FC = () => {
               </span>
             </div>
 
-            {/* 100% High-Contrast Legible Table */}
-            <div style={{ overflowX: "auto", borderRadius: "10px", border: "1px solid #E2E8F0" }}>
-              <table className="bento-table">
+            {/* 100% High-Contrast Legible Executive Table (Matching Salezy Recent Sales) */}
+            <div
+              style={{
+                overflowX: "auto",
+                overflowY: "auto",
+                maxHeight: "245px",
+                borderRadius: "10px",
+                border: "1px solid #E2E8F0",
+                background: "#FFFFFF",
+              }}
+            >
+              <table className="bento-table" style={{ width: "100%", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}>
                 <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Date</th>
-                    <th>Narration</th>
-                    <th style={{ textAlign: "right" }}>Debit (₹)</th>
-                    <th style={{ textAlign: "right" }}>Credit (₹)</th>
-                    <th style={{ textAlign: "right" }}>Balance (₹)</th>
-                    <th style={{ textAlign: "center" }}>Status</th>
+                  <tr style={{ background: "#F8FAFC", position: "sticky", top: 0, zIndex: 10 }}>
+                    <th style={{ width: "45px", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0" }}>Row</th>
+                    <th style={{ width: "95px", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>Date</th>
+                    <th style={{ padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0" }}>Narration</th>
+                    <th style={{ width: "100px", textAlign: "right", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>Debit (₹)</th>
+                    <th style={{ width: "100px", textAlign: "right", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>Credit (₹)</th>
+                    <th style={{ width: "110px", textAlign: "right", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>Balance (₹)</th>
+                    <th style={{ width: "95px", textAlign: "center", padding: "8px 10px", fontSize: "11px", fontWeight: 700, color: "#64748B", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -412,37 +421,59 @@ export const IntakeScreen: React.FC = () => {
                     <tr
                       key={r.rowNo}
                       style={{
-                        background: r.isTampered ? "#FFF1F2" : r.rowNo === 14 ? "#EEF2FF" : "#FFFFFF",
+                        background: r.isTampered ? "#FFF1F2" : r.rowNo === 14 ? "#F0F4FF" : "#FFFFFF",
+                        transition: "background 0.15s ease",
                       }}
                     >
-                      <td style={{ fontWeight: 800, color: "#0F172A" }}>#{r.rowNo}</td>
-                      <td style={{ color: "#475569" }}>{r.date}</td>
-                      <td style={{ maxWidth: "260px", color: r.isTampered ? "#BE123C" : "#0F172A", fontWeight: r.rowNo === 14 ? 700 : 500 }}>
+                      <td style={{ padding: "8px 10px", fontWeight: 800, color: "#0F172A", borderBottom: "1px solid #F1F5F9", fontFamily: "var(--font-mono)" }}>
+                        #{r.rowNo}
+                      </td>
+                      <td style={{ padding: "8px 10px", color: "#475569", borderBottom: "1px solid #F1F5F9", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
+                        {r.date}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 10px",
+                          color: r.isTampered ? "#BE123C" : "#0F172A",
+                          fontWeight: r.rowNo === 14 ? 700 : 500,
+                          borderBottom: "1px solid #F1F5F9",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          fontFamily: "var(--font-sans, inherit)",
+                          fontSize: "11.5px",
+                        }}
+                        title={r.description}
+                      >
                         {r.description}
                       </td>
-                      <td style={{ textAlign: "right", color: r.debit > 0 ? "#E11D48" : "#94A3B8", fontWeight: r.debit > 0 ? 700 : 400 }}>
+                      <td style={{ padding: "8px 10px", textAlign: "right", color: r.debit > 0 ? "#E11D48" : "#94A3B8", fontWeight: r.debit > 0 ? 700 : 400, borderBottom: "1px solid #F1F5F9", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
                         {r.debit > 0 ? `₹${r.debit.toLocaleString("en-IN")}` : "—"}
                       </td>
-                      <td style={{ textAlign: "right", color: r.credit > 0 ? "#059669" : "#94A3B8", fontWeight: r.credit > 0 ? 700 : 400 }}>
+                      <td style={{ padding: "8px 10px", textAlign: "right", color: r.credit > 0 ? "#059669" : "#94A3B8", fontWeight: r.credit > 0 ? 700 : 400, borderBottom: "1px solid #F1F5F9", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
                         {r.credit > 0 ? `₹${r.credit.toLocaleString("en-IN")}` : "—"}
                       </td>
                       <td
                         style={{
+                          padding: "8px 10px",
                           textAlign: "right",
                           fontWeight: 800,
                           color: r.isTampered ? "#BE123C" : "#0F172A",
-                          fontSize: "13px",
+                          fontSize: "12px",
+                          borderBottom: "1px solid #F1F5F9",
+                          whiteSpace: "nowrap",
+                          fontFamily: "var(--font-mono)",
                         }}
                       >
                         ₹{r.balance.toLocaleString("en-IN")}
                       </td>
-                      <td style={{ textAlign: "center" }}>
+                      <td style={{ padding: "8px 10px", textAlign: "center", borderBottom: "1px solid #F1F5F9", whiteSpace: "nowrap" }}>
                         {r.isTampered ? (
-                          <span style={{ fontSize: "10px", background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "2px 7px", borderRadius: "5px", fontWeight: 800 }}>
+                          <span style={{ fontSize: "9.5px", background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "2px 6px", borderRadius: "5px", fontWeight: 800 }}>
                             🚨 TAMPERED
                           </span>
                         ) : (
-                          <span style={{ fontSize: "10px", background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", padding: "2px 7px", borderRadius: "5px", fontWeight: 700 }}>
+                          <span style={{ fontSize: "9.5px", background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", padding: "2px 6px", borderRadius: "5px", fontWeight: 700 }}>
                             VALID ✓
                           </span>
                         )}
