@@ -7,6 +7,7 @@ import {
   Mic,
   FileDown,
   ChevronDown,
+  Lock,
 } from "lucide-react";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
@@ -27,12 +28,13 @@ export const TarkaGlobalShell: React.FC = () => {
     toggleMutation,
     resetAllMutations,
     activeMutationsCount,
+    intakeGate,
   } = useTarkaGlobal();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
 
-  // 4 Core Pipeline Navigation Items (RULE 2: Zero Truncation Executive Labels)
+  // 4 Core Pipeline Navigation Items (RULE 2 & DEFECT D9/F: Non-truncating + Gate Lock)
   const navItems = [
     {
       id: "intake" as TarkaRoute,
@@ -41,6 +43,8 @@ export const TarkaGlobalShell: React.FC = () => {
       subtitle: "Ledger & PDF Integrity",
       badgeText: mutations.alterBankRow14 ? "Fail" : "2",
       badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
+      tooltip: "2 open flags (Row #14 Extortion Debit + Canva PDF Trailer)",
+      isLocked: false,
     },
     {
       id: "attribution" as TarkaRoute,
@@ -49,6 +53,8 @@ export const TarkaGlobalShell: React.FC = () => {
       subtitle: "Port Funnel & IMEI Twin",
       badgeText: "✓",
       badgeVariant: "emerald" as const,
+      tooltip: intakeGate?.isHalted ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)" : "CGNAT & Hardware Twin Attribution",
+      isLocked: intakeGate?.isHalted,
     },
     {
       id: "taint-engine" as TarkaRoute,
@@ -57,6 +63,8 @@ export const TarkaGlobalShell: React.FC = () => {
       subtitle: "Dinic Min-Cut & §106",
       badgeText: "K=3",
       badgeVariant: "indigo" as const,
+      tooltip: intakeGate?.isHalted ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)" : "Taint DAG & BNSS Lien Requisition",
+      isLocked: intakeGate?.isHalted,
     },
     {
       id: "court-proof" as TarkaRoute,
@@ -65,6 +73,8 @@ export const TarkaGlobalShell: React.FC = () => {
       subtitle: "BSA §63(4) & CBI Memo",
       badgeText: "OK",
       badgeVariant: "emerald" as const,
+      tooltip: intakeGate?.isHalted ? "Engine locked: Halted at Falsification Gate (Falsify before Attribute)" : "Section 63(4) BSA Court Admissibility Bundle",
+      isLocked: intakeGate?.isHalted,
     },
   ];
 
@@ -154,8 +164,9 @@ export const TarkaGlobalShell: React.FC = () => {
             <ReuiStatusBadge text="v5.0 BSA § 63" variant="indigo" dot={false} />
           </div>
 
-          {/* ReUI Case Combobox Button */}
+          {/* ReUI Case Combobox Button (D9: 1-line FIR chip + Title, zero wrapping) */}
           <div
+            title="FIR #149/2026 · Noida Cyber Crime Police Station · Digital Arrest Extortion Case"
             style={{
               background: "#FFFFFF",
               border: "1px solid #E4E4E7",
@@ -166,17 +177,23 @@ export const TarkaGlobalShell: React.FC = () => {
               alignItems: "center",
               justifyContent: "space-between",
               cursor: "pointer",
+              minWidth: 0,
             }}
           >
-            <div>
-              <div style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#71717A" }}>
-                FIR #149/2026 · Noida Cyber Cell
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 5px", borderRadius: "4px", whiteSpace: "nowrap" }}>
+                  FIR #149/2026
+                </span>
+                <span style={{ fontSize: "10.5px", color: "#71717A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Noida Cyber
+                </span>
               </div>
-              <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#09090B", marginTop: "1px" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#09090B", marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Digital Arrest Extortion (₹2.15L)
               </div>
             </div>
-            <ChevronDown size={14} color="#71717A" />
+            <ChevronDown size={14} color="#71717A" style={{ flexShrink: 0 }} />
           </div>
 
           {/* Section 1: INVESTIGATION ENGINES */}
@@ -267,8 +284,11 @@ export const TarkaGlobalShell: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-                      <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                      {item.isLocked && <Lock size={12} color="#94A3B8" />}
+                      <span title={item.tooltip}>
+                        <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
+                      </span>
                     </div>
                   </button>
                 );
@@ -279,6 +299,7 @@ export const TarkaGlobalShell: React.FC = () => {
           {/* Section 2: INGESTED ARTIFACT TREE (ReUI File Tree) */}
           <div>
             <div
+              title="Tier-1 = Certified Bank Core/Switch/Telecom IPDR Gateway; Tier-2 = Corroborative; Tier-3 = Complainant Device Extraction"
               style={{
                 fontSize: "10.5px",
                 fontWeight: 700,
@@ -286,9 +307,14 @@ export const TarkaGlobalShell: React.FC = () => {
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
                 padding: "0 8px 6px 8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "help",
               }}
             >
-              Ingested Artifact Tree
+              <span>Ingested Artifact Tree</span>
+              <span style={{ fontSize: "9px", color: "#94A3B8", fontWeight: 700 }}>T1–T3 Tiers</span>
             </div>
 
             <div

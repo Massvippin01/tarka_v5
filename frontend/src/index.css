@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Noto+Sans+Devanagari:wght@600;700&family=Noto+Sans+Symbols+2&display=swap');
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 @import './styles/tokens.css';
 @import './styles/liquid-glass.css';
 @import './styles/bento-executive.css';
@@ -10,9 +11,9 @@ body,
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: var(--bento-canvas, #F3F5F9);
+  background-color: var(--bento-canvas, #F4F6FB);
   color: var(--bento-text-primary, #0F172A);
-  font-family: 'Plus Jakarta Sans', var(--font-sans);
+  font-family: 'Inter Variable', var(--font-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -29,7 +30,7 @@ h1, h2, h3, h4, h5, h6,
 .lg-btn,
 .bento-badge,
 .bento-btn {
-  font-family: 'Plus Jakarta Sans', var(--font-sans);
+  font-family: 'Inter Variable', var(--font-sans);
 }
 
 code,
@@ -38,7 +39,7 @@ kbd,
 samp,
 .font-mono-tabular,
 .mono-num {
-  font-family: 'JetBrains Mono', var(--font-mono);
+  font-family: 'JetBrains Mono Variable', var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

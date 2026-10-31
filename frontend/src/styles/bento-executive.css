@@ -18,26 +18,27 @@
   --reui-border-well: #E2E8F0;       /* Outer well border */
   --reui-border-inner: rgba(15, 23, 42, 0.06); /* Inner card border */
 
-  /* High-Definition Typography */
-  --reui-text-primary: #0F172A;      /* Slate-900: Razor-sharp headings, hero numbers */
-  --reui-text-secondary: #475569;    /* Slate-600: Body labels, explanations */
-  --reui-text-muted: #64748B;        /* Slate-500: Metadata, byte offsets, headers */
+  /* High-Definition Typography Tokens */
+  --reui-text-strong: #09090B;       /* Zinc-950: Razor-sharp primary headings and hero numbers */
+  --reui-text-primary: #0F172A;      /* Slate-900: Body headings, table numbers */
+  --reui-text-secondary: #475569;    /* Slate-600: Body labels, explanations (min contrast) */
+  --reui-text-muted: #64748B;        /* Slate-500: Metadata, captions (12px+ only) */
   --reui-text-inverse: #FFFFFF;
 
-  /* Executive Pastel Status Tokens */
+  /* Executive Semantic Status Tokens */
   --reui-emerald-bg: #ECFDF5;
   --reui-emerald-border: #A7F3D0;
-  --reui-emerald-text: #047857;
+  --reui-emerald-text: #059669;
   --reui-emerald-dot: #10B981;
 
   --reui-rose-bg: #FFF1F2;
   --reui-rose-border: #FECDD3;
-  --reui-rose-text: #BE123C;
+  --reui-rose-text: #E11D48;
   --reui-rose-dot: #F43F5E;
 
   --reui-amber-bg: #FFFBEB;
   --reui-amber-border: #FDE68A;
-  --reui-amber-text: #B45309;
+  --reui-amber-text: #D97706;
   --reui-amber-dot: #F59E0B;
 
   --reui-indigo-bg: #EEF2FF;
@@ -50,9 +51,31 @@
   --reui-purple-text: #6D28D9;
   --reui-purple-dot: #8B5CF6;
 
-  /* Fonts */
-  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* Shadcn Token Mappings for Intake Screen */
+  --background: #F4F6FB;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #475569;
+  --accent: #EEF2FF;
+  --accent-foreground: #4338CA;
+  --destructive: #E11D48;
+  --destructive-foreground: #FFFFFF;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F46E5;
+  --radius: 14px;
+
+  /* Local Air-Gapped Variable Fonts */
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
 }
 
 body {
@@ -66,7 +89,7 @@ body {
 }
 
 /* ==========================================================================
-   BENTO GRID & EXECUTIVE CARD ARCHITECTURE (SALEZY & FLOWMAIL STYLE)
+   BENTO GRID & EXECUTIVE CARD ARCHITECTURE
    ========================================================================== */
 
 .bento-grid-4 {
@@ -85,8 +108,8 @@ body {
 .bento-card {
   background: #FFFFFF;
   border: 1px solid var(--reui-border-strong);
-  border-radius: 16px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -96,58 +119,6 @@ body {
 .bento-card:hover {
   box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.06);
   border-color: #CBD5E1;
-}
-
-/* ReUI Double-Bezel Inset Card Architecture */
-.reui-card-well {
-  background: var(--reui-card-well);
-  border: 1px solid var(--reui-border-well);
-  border-radius: 16px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.reui-well-header {
-  padding: 8px 14px 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.reui-well-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #0F172A;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: -0.01em;
-}
-
-.reui-card-body {
-  background: var(--reui-card-bg);
-  border: 1px solid var(--reui-border-inner);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  padding: 16px 18px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.reui-well-footer {
-  padding: 6px 14px 2px 14px;
-  font-size: 11.5px;
-  color: var(--reui-text-muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -224,7 +195,7 @@ body {
 .reui-segmented-tabs {
   background: #F1F5F9;
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #E2E8F0;
   display: inline-flex;
   align-items: center;
@@ -234,11 +205,11 @@ body {
 .reui-tab-btn {
   border: none;
   background: transparent;
-  padding: 4px 11px;
-  border-radius: 7px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 11.5px;
   font-weight: 500;
-  color: #64748B;
+  color: #475569;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -250,9 +221,9 @@ body {
 
 .reui-tab-btn.active {
   background: #FFFFFF;
-  color: #0F172A;
+  color: #09090B;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 /* Keyboard Shortcut Keycap */
@@ -261,7 +232,7 @@ body {
   border: 1px solid #CBD5E1;
   border-bottom-width: 2px;
   border-radius: 5px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
@@ -275,46 +246,67 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.reui-hero-metric {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--reui-text-primary);
+/* Scoped Intake Screen Root */
+.tarka-intake-root {
   font-family: var(--font-sans);
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  color: var(--reui-text-primary);
 }
 
-/* Interactive Daylight Table */
-.daylight-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 12px;
+.tarka-intake-root * {
+  border-color: var(--border);
 }
 
-.daylight-table th {
-  background: #F8FAFC;
-  color: #64748B;
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 10px 14px;
-  border-bottom: 1px solid #E2E8F0;
-  text-align: left;
-}
+/* Table Column Widths & Compact Row Styles */
+.intake-table-col-row { width: 48px; min-width: 48px; max-width: 48px; }
+.intake-table-col-time { width: 96px; min-width: 96px; max-width: 96px; }
+.intake-table-col-counterparty { min-width: 260px; flex: 1; }
+.intake-table-col-rrn { width: 132px; min-width: 132px; max-width: 132px; }
+.intake-table-col-rail { width: 104px; min-width: 104px; max-width: 104px; }
+.intake-table-col-debit { width: 128px; min-width: 128px; max-width: 128px; text-align: right; }
+.intake-table-col-credit { width: 128px; min-width: 128px; max-width: 128px; text-align: right; }
+.intake-table-col-balance { width: 148px; min-width: 148px; max-width: 148px; text-align: right; }
+.intake-table-col-status { width: 44px; min-width: 44px; max-width: 44px; text-align: center; }
 
-.daylight-table td {
-  padding: 11px 14px;
-  border-bottom: 1px solid #F1F5F9;
-  color: #0F172A;
-  vertical-align: middle;
+/* Row States */
+.row-clean {
+  background-color: transparent;
+  transition: background-color 0.15s ease;
 }
-
-.daylight-table tr:last-child td {
-  border-bottom: none;
-}
-
-.daylight-table tr:hover td {
+.row-clean:hover {
   background-color: #F8FAFC;
+}
+
+.row-suspect {
+  border-left: 3px solid #D97706 !important;
+  background-color: #FFFDF5;
+  transition: background-color 0.15s ease;
+}
+.row-suspect:hover {
+  background-color: #FEF9C3;
+}
+
+.row-tampered {
+  border-left: 3px solid #E11D48 !important;
+  background-color: #FFF1F2 !important;
+  animation: shake 150ms ease-in-out;
+}
+
+.row-reordered {
+  border-left: 3px solid #D97706 !important;
+  background-color: #FFFBEB;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.flash-downstream {
+  animation: cascadePulse 600ms ease-out;
+}
+
+@keyframes cascadePulse {
+  0% { background-color: #FEF3C7; }
+  100% { background-color: transparent; }
 }

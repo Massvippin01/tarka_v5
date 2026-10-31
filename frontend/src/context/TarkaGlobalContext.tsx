@@ -27,6 +27,21 @@ export interface StatutoryPeriodInfo {
   hoursRemaining: number;
 }
 
+export interface IntakeGateInvariant {
+  id: "I1" | "I2" | "I3" | "I4" | "I5";
+  name: string;
+  status: "PASS" | "FAIL" | "WARN";
+  expectedVsObserved: string;
+  executionTimeMs: number;
+}
+
+export interface IntakeGateState {
+  isHalted: boolean;
+  haltedAt?: string;
+  invariants: IntakeGateInvariant[];
+  totalMs: number;
+}
+
 interface TarkaGlobalContextType {
   activeRoute: TarkaRoute;
   setActiveRoute: (route: TarkaRoute) => void;
@@ -46,7 +61,21 @@ interface TarkaGlobalContextType {
   toggleMutation: (key: keyof ActiveMutations) => void;
   resetAllMutations: () => void;
   activeMutationsCount: number;
+  intakeGate: IntakeGateState;
+  setIntakeGate: (gate: IntakeGateState | ((prev: IntakeGateState) => IntakeGateState)) => void;
 }
+
+const DEFAULT_INTAKE_GATE: IntakeGateState = {
+  isHalted: false,
+  invariants: [
+    { id: "I1", name: "Balance conservation", status: "PASS", expectedVsObserved: "Exact 0.00 error across 6 rows", executionTimeMs: 1.2 },
+    { id: "I2", name: "RRN grammar & clock", status: "PASS", expectedVsObserved: "Julian day 265 · Drift +14.0s (±180s)", executionTimeMs: 0.8 },
+    { id: "I3", name: "Cross-source agreement", status: "PASS", expectedVsObserved: "Receipt ₹15k vs True CBS ₹2.15L flagged", executionTimeMs: 0.9 },
+    { id: "I4", name: "PDF XRef integrity", status: "PASS", expectedVsObserved: "2 %%EOF markers detected (Canva layer)", executionTimeMs: 1.4 },
+    { id: "I5", name: "Merkle inclusion & privacy", status: "PASS", expectedVsObserved: "9,996 citizens masked · Root 0xb189...", executionTimeMs: 1.1 },
+  ],
+  totalMs: 5.4,
+};
 
 const DEFAULT_MUTATIONS: ActiveMutations = {
   alterBankRow14: false,
@@ -87,6 +116,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [mutations, setMutations] = useState<ActiveMutations>(DEFAULT_MUTATIONS);
+  const [intakeGate, setIntakeGate] = useState<IntakeGateState>(DEFAULT_INTAKE_GATE);
 
   const clockMinutes = useMemo(() => Math.round(timeOffsetHours * 60), [timeOffsetHours]);
 
@@ -221,6 +251,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         toggleMutation,
         resetAllMutations,
         activeMutationsCount,
+        intakeGate,
+        setIntakeGate,
       }}
     >
       {children}
