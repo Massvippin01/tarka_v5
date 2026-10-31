@@ -311,7 +311,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             minHeight: 0,
             overflowY: "auto",
             padding: "10px 12px",
-            display: "flex",
+            display: activeDockTab === "rrn" ? "flex" : "none",
             flexDirection: "column",
             gap: "8px",
           }}
@@ -704,7 +704,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             minHeight: 0,
             overflowY: "auto",
             padding: "10px 12px",
-            display: "flex",
+            display: activeDockTab === "pdf" ? "flex" : "none",
             flexDirection: "column",
             gap: "8px",
           }}
@@ -836,7 +836,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             minHeight: 0,
             overflowY: "auto",
             padding: "10px 12px",
-            display: "flex",
+            display: activeDockTab === "privacy" ? "flex" : "none",
             flexDirection: "column",
             gap: "8px",
           }}
@@ -952,7 +952,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             minHeight: 0,
             overflowY: "auto",
             padding: "10px 12px",
-            display: "flex",
+            display: activeDockTab === "proof" ? "flex" : "none",
             flexDirection: "column",
             gap: "8px",
           }}

@@ -202,8 +202,8 @@ export const IntakeScreen: React.FC = () => {
     <div
       className="tarka-intake-root"
       style={{
-        display: "grid",
-        gridTemplateRows: "auto auto minmax(0, 1fr)",
+        display: "flex",
+        flexDirection: "column",
         gap: "10px",
         padding: "10px 14px",
         height: "100%",
@@ -323,9 +323,10 @@ export const IntakeScreen: React.FC = () => {
           ========================================================================= */}
       <main
         style={{
-          height: "100%",
+          flex: "1 1 0%",
           minHeight: 0,
           minWidth: 0,
+          height: "100%",
           overflow: "hidden",
           boxSizing: "border-box",
         }}

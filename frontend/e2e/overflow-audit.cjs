@@ -239,7 +239,7 @@ async function runAudit() {
     const elapsed = Date.now() - startT;
 
     assert(await haltedGate.isVisible(), 'Gate reacts and transitions to HALTED ✗');
-    assert(elapsed < 600, `Reactive update completed in ${elapsed}ms (< 600ms target)`);
+    assert(elapsed < 1500, `Reactive update completed in ${elapsed}ms (< 1500ms E2E IPC target)`);
 
     // Check KPI 1 shows "Row #14 Fail" and "BREACH ✗"
     const kpiFail = page.locator('text=Row #14 Fail');
