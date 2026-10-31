@@ -783,3 +783,110 @@ export const SegmentedPillSwitcher: React.FC<SegmentedPillSwitcherProps> = ({
   );
 };
 
+// ============================================================================
+// 7. ReUI Micro-Primitives (Daylight Double-Bezel Precision Architecture)
+// ============================================================================
+
+export interface ReuiStatusBadgeProps {
+  text: string;
+  variant?: "emerald" | "rose" | "amber" | "indigo";
+  className?: string;
+  dot?: boolean;
+}
+
+export const ReuiStatusBadge: React.FC<ReuiStatusBadgeProps> = ({
+  text,
+  variant = "emerald",
+  className = "",
+  dot = true,
+}) => {
+  return (
+    <span className={`reui-status-badge ${variant} ${className}`}>
+      {dot && <span className="dot" />}
+      <span>{text}</span>
+    </span>
+  );
+};
+
+export interface ReuiSegmentedTabsProps {
+  options: { id: string; label: string }[];
+  activeId: string;
+  onChange: (id: string) => void;
+  className?: string;
+}
+
+export const ReuiSegmentedTabs: React.FC<ReuiSegmentedTabsProps> = ({
+  options,
+  activeId,
+  onChange,
+  className = "",
+}) => {
+  return (
+    <div className={`reui-segmented-tabs ${className}`}>
+      {options.map((opt) => {
+        const isActive = activeId === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            className={`reui-tab-btn ${isActive ? "active" : ""}`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+export interface ReuiKbdProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const ReuiKbd: React.FC<ReuiKbdProps> = ({ children, className = "" }) => {
+  return <kbd className={`reui-kbd ${className}`}>{children}</kbd>;
+};
+
+export interface ReuiDoubleBezelCardProps {
+  title: React.ReactNode;
+  icon?: React.ElementType;
+  headerRight?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  bodyStyle?: React.CSSProperties;
+  style?: React.CSSProperties;
+}
+
+export const ReuiDoubleBezelCard: React.FC<ReuiDoubleBezelCardProps> = ({
+  title,
+  icon: Icon,
+  headerRight,
+  footer,
+  children,
+  className = "",
+  bodyStyle,
+  style,
+}) => {
+  return (
+    <div className={`reui-card-well ${className}`} style={style}>
+      <div className="reui-well-header">
+        <div className="reui-well-title">
+          {Icon && <Icon size={14} color="#71717A" strokeWidth={2.2} />}
+          <span>{title}</span>
+        </div>
+        {headerRight && <div>{headerRight}</div>}
+      </div>
+
+      <div className="reui-card-body" style={bodyStyle}>
+        {children}
+      </div>
+
+      {footer && <div className="reui-well-footer">{footer}</div>}
+    </div>
+  );
+};
+
+

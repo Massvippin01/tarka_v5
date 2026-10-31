@@ -107,11 +107,10 @@ export const AttributionScreen: React.FC = () => {
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 52px)",
-        padding: "16px 20px",
+        minHeight: "100%",
+        padding: "16px 20px 32px 20px",
         gap: "14px",
         boxSizing: "border-box",
-        overflowY: "auto",
         background: "var(--bento-canvas, #F4F6FB)",
       }}
     >

@@ -1,1301 +1,1307 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useMemo } from "react";
 import {
-  Check,
-  ArrowDown,
-  Shield,
+  ShieldCheck,
   Clock,
-  Lock,
+  AlertTriangle,
+  FileCheck,
+  Search,
+  CheckCircle2,
+  XCircle,
   Zap,
+  Layers,
+  Split,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
+import { BentoKpiCard, ReuiStatusBadge } from "../../components/tarka/BentoPrimitives";
+import {
+  validateRunningBalance,
+  decodeRailReference,
+  type LedgerRowData,
+} from "../../utils/intakeFalsifier";
 
 export const IntakeScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const isRow14Tampered = mutations.alterBankRow14;
+  const isRow14Tampered = !!mutations.alterBankRow14;
+  const isForgedRrn = !!mutations.forgeRrnTimestamp;
 
-  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
-  const [tableSortAsc, setTableSortAsc] = useState<boolean>(false);
+  // Sorting & Filter State
+  const [sortPolarity, setSortPolarity] = useState<"ASC" | "DESC">("ASC");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [activeTabDissector, setActiveTabDissector] = useState<"pdf" | "cgnat">("pdf");
+  const [permuteActive, setPermuteActive] = useState<boolean>(false);
 
-  // 10 Column Events for Cashflow Discrepancy Chart
-  // (4 Historical T-minus Context + 6 Statement Events #11 to #16)
-  const chartEvents = [
-    { label: "T-4h", name: "Pre-Incident Baseline", cbs: 48, claim: 48, discrepancy: 0, tag: "NORMAL" },
-    { label: "T-3h", name: "Pre-Incident Steady", cbs: 52, claim: 52, discrepancy: 0, tag: "NORMAL" },
-    { label: "T-2h", name: "Pre-Incident Activity", cbs: 61, claim: 61, discrepancy: 0, tag: "NORMAL" },
-    { label: "T-1h", name: "Opening Ledger State", cbs: 61.5, claim: 61.5, discrepancy: 0, tag: "NORMAL" },
-    { label: "#11", name: "Row #11 Opening Balance", cbs: 61.5, claim: 61.5, discrepancy: 0, tag: "VERIFIED" },
-    { label: "#12", name: "Row #12 Grocery UPI", cbs: 61.2, claim: 61.2, discrepancy: 0, tag: "VERIFIED" },
-    { label: "#13", name: "Row #13 Salary Inflow", cbs: 73.7, claim: 73.7, discrepancy: 0, tag: "VERIFIED" },
-    {
-      label: "#14 !",
-      name: "Row #14 Extortion Transfer",
-      cbs: 21.5, // ₹2,15,000 true debit
-      claim: 1.5, // ₹15,000 suspect screenshot
-      discrepancy: -20.0, // -₹2.00 Lakhs discrepancy!
-      tag: "DISPUTED",
-    },
-    { label: "#15", name: "Row #15 Utility Bill", cbs: 51.8, claim: 51.8, discrepancy: 0, tag: "VERIFIED" },
-    { label: "#16", name: "Row #16 ATM Sweep", cbs: 50.8, claim: 50.8, discrepancy: 0, tag: "VERIFIED" },
+  // Editable Row #14 Balance State
+  const [customRow14Balance, setCustomRow14Balance] = useState<string>(
+    isRow14Tampered ? "322440.00" : "522440.00"
+  );
+
+  // Sync custom input with global mutation toggle
+  React.useEffect(() => {
+    setCustomRow14Balance(isRow14Tampered ? "322440.00" : "522440.00");
+  }, [isRow14Tampered]);
+
+  // Base Raw CBS Ledger Rows (SBI Finacle 10.x, Account #30981140029)
+  const rawRows: LedgerRowData[] = useMemo(() => {
+    const row14Val = parseFloat(customRow14Balance) || (isRow14Tampered ? 322440.0 : 522440.0);
+    const row15Bal = isRow14Tampered ? 318240.0 : 518240.0;
+    const row16Bal = isRow14Tampered ? 308240.0 : 508240.0;
+
+    const baseList: LedgerRowData[] = [
+      {
+        id: "CBS-011",
+        sequenceNo: 11,
+        timestamp: "2026-09-22T09:15:02",
+        description: "OPENING BALANCE B/F",
+        rrn: "—",
+        debit: 0.0,
+        credit: 0.0,
+        balance: 615890.0,
+      },
+      {
+        id: "CBS-012",
+        sequenceNo: 12,
+        timestamp: "2026-09-22T09:42:18",
+        description: "UPI/DR/6265091148/GROCERY_STORE",
+        rrn: "626509114820",
+        debit: 3450.0,
+        credit: 0.0,
+        balance: 612440.0,
+      },
+      {
+        id: "CBS-013",
+        sequenceNo: 13,
+        timestamp: permuteActive ? "2026-09-22T10:00:14" : "2026-09-22T09:55:00",
+        description: "NEFT/CR/SBIN26265/SALARY_CREDIT",
+        rrn: "SBIN260922123456",
+        debit: 0.0,
+        credit: 125000.0,
+        balance: 737440.0,
+      },
+      {
+        id: "CBS-014",
+        sequenceNo: 14,
+        timestamp: "2026-09-22T10:00:14",
+        description: "UPI/DR/626510149921/VIKRAM_MULE",
+        rrn: "626510149921",
+        debit: 215000.0,
+        credit: 0.0,
+        balance: row14Val,
+      },
+      {
+        id: "CBS-015",
+        sequenceNo: 15,
+        timestamp: "2026-09-22T10:14:32",
+        description: "UPI/DR/6265118821/ELECTRICITY_BILL",
+        rrn: "626511882194",
+        debit: 4200.0,
+        credit: 0.0,
+        balance: row15Bal,
+      },
+      {
+        id: "CBS-016",
+        sequenceNo: 16,
+        timestamp: "2026-09-22T10:28:45",
+        description: "IMPS/DR/6265129940/CASH_ATM_SWEEP",
+        rrn: "626512994031",
+        debit: 10000.0,
+        credit: 0.0,
+        balance: row16Bal,
+      },
+    ];
+
+    return sortPolarity === "ASC" ? baseList : [...baseList].reverse();
+  }, [sortPolarity, isRow14Tampered, customRow14Balance, permuteActive]);
+
+  // Mathematical Conservation Solver
+  const validationResult = useMemo(() => {
+    return validateRunningBalance(rawRows, sortPolarity);
+  }, [rawRows, sortPolarity]);
+
+  // NPCI RRN Dissector
+  const [rrnInput, setRrnInput] = useState<string>("626510149921");
+  const decodedRrn = useMemo(() => {
+    const claimedTime = isForgedRrn ? "2026-09-22T10:50:14" : "2026-09-22T10:00:14";
+    return decodeRailReference(rrnInput, claimedTime);
+  }, [rrnInput, isForgedRrn]);
+
+  // Filtered rows for presentation
+  const displayRows = useMemo(() => {
+    if (!searchTerm.trim()) return validationResult.rows;
+    const term = searchTerm.toLowerCase();
+    return validationResult.rows.filter(
+      (r) =>
+        r.description.toLowerCase().includes(term) ||
+        r.rrn.toLowerCase().includes(term) ||
+        r.id.toLowerCase().includes(term)
+    );
+  }, [validationResult.rows, searchTerm]);
+
+  // Conservation blocks (6 items #11 to #16)
+  const conservationSegments = [
+    { seq: "#11", ok: true },
+    { seq: "#12", ok: true },
+    { seq: "#13", ok: true },
+    { seq: "#14", ok: !isRow14Tampered && !validationResult.discrepantRowId },
+    { seq: "#15", ok: !isRow14Tampered && !validationResult.discrepantRowId },
+    { seq: "#16", ok: !isRow14Tampered && !validationResult.discrepantRowId },
   ];
-
-  // Donut Chart Segments for NPCI 12-Digit RRN Breakdown (#626510149921)
-  const rrnSegments = [
-    { name: "Year Digit", digits: "1d", value: "[6] 2026", color: "#10B981", pct: 8.33 },
-    { name: "Julian Day", digits: "3d", value: "[265] 22 Sep", color: "#34D399", pct: 25.0 },
-    { name: "Switch Hour", digits: "2d", value: "[10] 10:00", color: "#3B82F6", pct: 16.67 },
-    { name: "STAN Trace", digits: "6d", value: "#149921", color: "#8B5CF6", pct: 41.67 },
-    { name: "NTP Skew", digits: "OK", value: "+14.0s IST", color: "#F59E0B", pct: 8.33 },
-  ];
-
-  const donutRadius = 55;
-  const donutCircumference = 2 * Math.PI * donutRadius;
-
-  // CBS Ledger Transactions for Row 3 Center Table
-  const baseTransactions = [
-    {
-      date: "22 Sep · #12",
-      description: "UPI/DR/6265091148/GROCERY",
-      category: "Retail Debit",
-      categoryColor: { bg: "rgba(245, 158, 11, 0.15)", text: "#FBBF24" },
-      amount: "-₹3,450.00",
-      isCredit: false,
-      balance: "₹6,12,440.00",
-      isTampered: false,
-    },
-    {
-      date: "22 Sep · #13",
-      description: "NEFT/CR/SBIN26265/SALARY",
-      category: "Salary Inflow",
-      categoryColor: { bg: "rgba(16, 185, 129, 0.15)", text: "#34D399" },
-      amount: "+₹1,25,000.00",
-      isCredit: true,
-      balance: "₹7,37,440.00",
-      isTampered: false,
-    },
-    {
-      date: "22 Sep · #14",
-      description: "UPI/DR/626510149921/VIKRAM_MULE",
-      category: "Disputed RRN",
-      categoryColor: { bg: "rgba(239, 68, 68, 0.18)", text: "#F87171" },
-      amount: "-₹2,15,000.00",
-      isCredit: false,
-      balance: isRow14Tampered ? "₹3,22,440.00 !" : "₹5,22,440.00",
-      isTampered: isRow14Tampered,
-    },
-    {
-      date: "22 Sep · #15",
-      description: "UPI/DR/6265118821/UTILITY_BILL",
-      category: "Utility Bill",
-      categoryColor: { bg: "rgba(139, 92, 246, 0.15)", text: "#A78BFA" },
-      amount: "-₹4,200.00",
-      isCredit: false,
-      balance: isRow14Tampered ? "₹3,18,240.00" : "₹5,18,240.00",
-      isTampered: isRow14Tampered,
-    },
-    {
-      date: "22 Sep · #16",
-      description: "IMPS/DR/6265129940/ATM_SWEEP",
-      category: "Transfer",
-      categoryColor: { bg: "rgba(59, 130, 246, 0.15)", text: "#60A5FA" },
-      amount: "-₹10,000.00",
-      isCredit: false,
-      balance: isRow14Tampered ? "₹3,08,240.00" : "₹5,08,240.00",
-      isTampered: isRow14Tampered,
-    },
-  ];
-
-  const sortedTransactions = tableSortAsc
-    ? [...baseTransactions].reverse()
-    : baseTransactions;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "18px",
-        width: "100%",
-        maxWidth: "1480px",
-        margin: "0 auto",
+        gap: "14px",
+        padding: "16px 20px 32px 20px",
         boxSizing: "border-box",
+        minHeight: "100%",
+        background: "var(--bento-canvas, #F4F6FB)",
       }}
     >
       {/* =========================================================================
-          ROW 1: 4 EQUAL KPI CARDS (MODELED 1:1 ON TASKFORGE FINANCIAL METRICS)
+          PAGE SUBHEADER / CASE METADATA BAR
           ========================================================================= */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "18px",
-          height: "148px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px",
+          padding: "4px 2px",
         }}
       >
-        {/* CARD 1: VERIFIED CBS BALANCE (TASKFORGE TOTAL BALANCE CARD) */}
-        <div
-          style={{
-            position: "relative",
-            borderRadius: "18px",
-            background: "linear-gradient(135deg, #031A08 0%, #021406 50%, #010B03 100%)",
-            border: isRow14Tampered
-              ? "1px solid rgba(239, 68, 68, 0.4)"
-              : "1px solid rgba(16, 185, 129, 0.28)",
-            padding: "20px 22px",
-            boxShadow: "0 20px 60px rgba(0, 100, 60, 0.2)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            overflow: "hidden",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* Subtle top-right ambient blur glow */}
-          <div
-            style={{
-              position: "absolute",
-              top: "-50px",
-              right: "-40px",
-              width: "160px",
-              height: "140px",
-              background: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "18px",
-              filter: "blur(40px)",
-              pointerEvents: "none",
-            }}
-          />
-
-          <div>
-            <div style={{ fontSize: "13px", fontWeight: 500, color: "#8E9893" }}>
-              Verified CBS Balance
-            </div>
-            <div
-              className="tf-hero-number"
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <h1
               style={{
-                marginTop: "4px",
-                color: "#FFFFFF",
+                fontSize: "20px",
+                fontWeight: 800,
+                color: "#0F172A",
+                margin: 0,
+                letterSpacing: "-0.02em",
               }}
             >
-              {isRow14Tampered ? "₹3,22,440.00" : "₹5,22,440.00"}
-            </div>
+              Evidence Intake & Ledger Falsification
+            </h1>
+            <ReuiStatusBadge text="Z3 SMT VERIFIED" variant="emerald" />
           </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: isRow14Tampered ? "#EF4444" : "#10B981",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <span>{isRow14Tampered ? "▼" : "▲"}</span>
-              <span>
-                {isRow14Tampered
-                  ? "-₹2.00L Row #14 Δ"
-                  : "100% conserved (6/6 rows)"}
-              </span>
-            </div>
-
-            {/* Smooth SVG Bezier Spline Curve with glowing peak circle dot */}
-            <div style={{ position: "absolute", right: 0, bottom: "-4px" }}>
-              <svg width="130" height="55" viewBox="0 0 130 55" fill="none">
-                <path
-                  d="M4 48C18 15 38 60 58 35C75 15 92 50 126 6"
-                  stroke="#E2E8F0"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  opacity="0.85"
-                />
-                <circle
-                  cx="126"
-                  cy="6"
-                  r="5"
-                  fill="#FFFFFF"
-                  stroke="#10B981"
-                  strokeWidth="3"
-                  style={{
-                    filter: "drop-shadow(0 0 8px #10B981)",
-                  }}
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 2: SBI SETTLED DEBIT (TIER-1) (TASKFORGE INCOME CARD) */}
-        <div className="tf-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 500, color: "#8E9893" }}>
-                SBI Settled Debit (Tier-1)
-              </div>
-              <div className="tf-hero-number" style={{ marginTop: "4px" }}>
-                ₹2,15,000.00
-              </div>
-            </div>
-
-            {/* Circular Mint/Emerald Badge */}
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "50%",
-                background: "rgba(16, 185, 129, 0.15)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#10B981",
-              }}
-            >
-              <Check size={18} strokeWidth={2.5} />
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "#10B981", marginBottom: "6px" }}>
-              100% Finacle HSM Signed
-            </div>
-            <div className="tf-progress-track">
-              <div className="tf-progress-fill-emerald" style={{ width: "100%" }} />
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 3: CLAIMED SCREENSHOT (TIER-3) (TASKFORGE EXPENSES CARD) */}
-        <div className="tf-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 500, color: "#8E9893" }}>
-                Claimed Screenshot (Tier-3)
-              </div>
-              <div className="tf-hero-number" style={{ marginTop: "4px" }}>
-                ₹15,000.00
-              </div>
-            </div>
-
-            {/* Circular Rose/Coral Badge */}
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "50%",
-                background: "rgba(239, 68, 68, 0.15)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#EF4444",
-              }}
-            >
-              <ArrowDown size={18} strokeWidth={2.5} />
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "#EF4444", marginBottom: "6px" }}>
-              7% of True Debit (Δ ₹2.00L Hidden)
-            </div>
-            <div className="tf-progress-track">
-              <div className="tf-progress-fill-coral" style={{ width: "52%" }} />
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 4: CGNAT CITIZEN SHIELD (TASKFORGE SAVINGS CARD) */}
-        <div className="tf-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 500, color: "#8E9893" }}>
-                CGNAT Citizen Shield
-              </div>
-              <div className="tf-hero-number" style={{ marginTop: "4px" }}>
-                9,996 Masked
-              </div>
-            </div>
-
-            {/* Pill Badge BSA § 63 Merkle */}
-            <div
-              style={{
-                background: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                padding: "4px 10px",
-                borderRadius: "8px",
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#D4D4D8",
-              }}
-            >
-              BSA § 63 Merkle
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "#10B981", marginBottom: "6px" }}>
-              99.96% Innocent PII Blinded
-            </div>
-            <div className="tf-progress-track">
-              <div className="tf-progress-fill-emerald" style={{ width: "99.9%" }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          ROW 2: THE 3 SIGNATURE TASKFORGE INFOGRAPHIC CARDS
-          (3 Cols: Budgets | 5.5 Cols: Cashflow Overview | 3.5 Cols: Donut Breakdown)
-          ========================================================================= */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "3fr 5.5fr 3.5fr",
-          gap: "18px",
-        }}
-      >
-        {/* LEFT CARD (3 COLS): FORENSIC INTEGRITY GATES (TASKFORGE BUDGETS CARD) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-            <h2 className="tf-card-title" style={{ margin: 0 }}>
-              Forensic Integrity Gates
-            </h2>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#10B981" }}>
-              4 Active Rules
-            </span>
-          </div>
-
-          {/* 4 Clean Borderless Progress Items (NO nested boxes!) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* Item 1: Running-Balance Math */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#F8FAFC" }}>
-                    Running-Balance Math
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#8E9893", marginTop: "1px" }}>
-                    {isRow14Tampered ? "Row #14 Falsified Δ -₹2.00L" : "6 of 6 CBS Rows Conserved"}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: isRow14Tampered ? "#EF4444" : "#F8FAFC",
-                  }}
-                >
-                  {isRow14Tampered ? "50%" : "100%"}
-                </div>
-              </div>
-              <div className="tf-progress-track" style={{ marginTop: "6px" }}>
-                <div
-                  className={isRow14Tampered ? "tf-progress-fill-coral" : "tf-progress-fill-emerald"}
-                  style={{ width: isRow14Tampered ? "50%" : "100%" }}
-                />
-              </div>
-            </div>
-
-            {/* Item 2: NPCI RRN Clock Sync */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#F8FAFC" }}>
-                    NPCI RRN Clock Sync
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#8E9893", marginTop: "1px" }}>
-                    +14s of ±180s IST Window
-                  </div>
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#F8FAFC" }}>
-                  92%
-                </div>
-              </div>
-              <div className="tf-progress-track" style={{ marginTop: "6px" }}>
-                <div className="tf-progress-fill-emerald" style={{ width: "92%" }} />
-              </div>
-            </div>
-
-            {/* Item 3: PDF XRef Trailer Audit */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#F8FAFC" }}>
-                    PDF XRef Trailer Audit
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#8E9893", marginTop: "1px" }}>
-                    2 of 1 %%EOF Markers (Canva Overlay)
-                  </div>
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#EF4444" }}>
-                  50%
-                </div>
-              </div>
-              <div className="tf-progress-track" style={{ marginTop: "6px" }}>
-                <div className="tf-progress-fill-coral" style={{ width: "50%" }} />
-              </div>
-            </div>
-
-            {/* Item 4: Font Stream Authenticity */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#F8FAFC" }}>
-                    Font Stream Authenticity
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#8E9893", marginTop: "1px" }}>
-                    Row #14 Arial Glyph Swap
-                  </div>
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#F59E0B" }}>
-                  83%
-                </div>
-              </div>
-              <div className="tf-progress-track" style={{ marginTop: "6px" }}>
-                <div className="tf-progress-fill-amber" style={{ width: "83%" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CENTER CARD (5.5 COLS): LEDGER & CLAIM CASHFLOW OVERVIEW (TASKFORGE VERTICAL PILL-TRACK CHART) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-            <div>
-              <h2 className="tf-card-title" style={{ margin: 0 }}>
-                Ledger & Claim Discrepancy Overview
-              </h2>
-              <div style={{ marginTop: "8px" }}>
-                <div style={{ fontSize: "11.5px", color: "#8E9893" }}>
-                  Net Unaccounted Fraud Discrepancy
-                </div>
-                <div
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 700,
-                    color: "#EF4444",
-                    letterSpacing: "-0.02em",
-                    marginTop: "1px",
-                  }}
-                >
-                  -₹2,00,000.00
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
-              {/* Toggle Row #14 Tamper Pill Button */}
-              <button
-                type="button"
-                onClick={() => toggleMutation("alterBankRow14")}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "5px 12px",
-                  borderRadius: "6px",
-                  background: isRow14Tampered
-                    ? "rgba(239, 68, 68, 0.16)"
-                    : "rgba(16, 185, 129, 0.12)",
-                  border: isRow14Tampered
-                    ? "1px solid rgba(239, 68, 68, 0.35)"
-                    : "1px solid rgba(16, 185, 129, 0.25)",
-                  color: isRow14Tampered ? "#F87171" : "#10B981",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                <Zap size={11} color={isRow14Tampered ? "#EF4444" : "#10B981"} />
-                <span>{isRow14Tampered ? "Tamper Active" : "Toggle Row #14 Tamper"}</span>
-              </button>
-
-              {/* Legend */}
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#10B981" }} />
-                  <span style={{ fontSize: "11px", color: "#8E9893" }}>SBI CBS Settled</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#6EE7B7" }} />
-                  <span style={{ fontSize: "11px", color: "#8E9893" }}>Claimed / Reported</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Taskforge Vertical Pill-Track Chart Body (height: 190px) */}
-          <div style={{ position: "relative", height: "190px", marginTop: "12px" }}>
-            {/* Horizontal Grid Hairlines */}
-            {[0, 0.25, 0.5, 0.75, 1].map((frac, idx) => (
-              <div
-                key={idx}
-                style={{
-                  position: "absolute",
-                  left: "38px",
-                  right: 0,
-                  top: `${frac * 78}%`,
-                  borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-                }}
-              />
-            ))}
-
-            {/* Left Y-Axis Labels */}
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: "24px",
-                width: "36px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                fontSize: "9px",
-                color: "#71717A",
-                fontFamily: "var(--tf-font-mono)",
-              }}
-            >
-              <span>₹8L</span>
-              <span>₹4L</span>
-              <span>₹0</span>
-              <span>-₹2L</span>
-            </div>
-
-            {/* 10 Vertical Pill Tracks */}
-            <div
-              style={{
-                position: "absolute",
-                left: "44px",
-                right: 0,
-                top: 0,
-                bottom: 0,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-              }}
-            >
-              {chartEvents.map((evt, idx) => {
-                const isHovered = activeBarIndex === idx;
-                const isRow14 = evt.label === "#14 !";
-                const maxVal = 80; // Scale max in lakhs/10k
-                const cbsHeight = Math.max(14, (evt.cbs / maxVal) * 120);
-                const claimHeight = Math.max(8, (evt.claim / maxVal) * 120);
-
-                return (
-                  <div
-                    key={idx}
-                    onMouseEnter={() => setActiveBarIndex(idx)}
-                    onMouseLeave={() => setActiveBarIndex(null)}
-                    style={{
-                      position: "relative",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      width: "32px",
-                      height: "100%",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    {/* Tooltip on Hover */}
-                    <AnimatePresence>
-                      {isHovered && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                          transition={{ duration: 0.15 }}
-                          style={{
-                            position: "absolute",
-                            bottom: "165px",
-                            zIndex: 60,
-                            background: "#090E0C",
-                            border: "1px solid rgba(16, 185, 129, 0.3)",
-                            borderRadius: "10px",
-                            padding: "8px 12px",
-                            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.8)",
-                            whiteSpace: "nowrap",
-                            fontSize: "11px",
-                            pointerEvents: "none",
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, color: "#FFFFFF" }}>
-                            {evt.name} ({evt.label})
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px" }}>
-                            <span style={{ color: "#8E9893" }}>CBS Settled:</span>
-                            <span style={{ color: "#10B981", fontWeight: 700 }}>
-                              ₹{(evt.cbs * 10000).toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "2px" }}>
-                            <span style={{ color: "#8E9893" }}>Claimed / Rec:</span>
-                            <span style={{ color: "#6EE7B7", fontWeight: 700 }}>
-                              ₹{(evt.claim * 10000).toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                          {isRow14 && (
-                            <div style={{ marginTop: "4px", color: "#EF4444", fontWeight: 700 }}>
-                              Discrepancy: -₹2,00,000 (Falsified Screenshot)
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Dark Emerald Rounded Track with Paired Vertical Bars */}
-                    <div
-                      style={{
-                        width: "28px",
-                        height: "135px",
-                        background: isRow14
-                          ? "rgba(239, 68, 68, 0.12)"
-                          : isHovered
-                          ? "rgba(16, 185, 129, 0.18)"
-                          : "rgba(16, 185, 129, 0.08)",
-                        borderRadius: "8px",
-                        padding: "4px",
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        gap: "3px",
-                        boxSizing: "border-box",
-                        border: isRow14
-                          ? "1px solid rgba(239, 68, 68, 0.3)"
-                          : isHovered
-                          ? "1px solid rgba(16, 185, 129, 0.3)"
-                          : "1px solid transparent",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      {/* Bar 1: CBS Truth */}
-                      <div
-                        style={{
-                          width: "8px",
-                          height: `${cbsHeight}px`,
-                          borderRadius: "3px",
-                          background: isRow14
-                            ? "#EF4444"
-                            : "linear-gradient(180deg, #10B981 0%, #059669 100%)",
-                          boxShadow: isRow14
-                            ? "0 0 8px rgba(239, 68, 68, 0.5)"
-                            : "0 0 8px rgba(16, 185, 129, 0.3)",
-                          transition: "height 0.3s ease",
-                        }}
-                      />
-
-                      {/* Bar 2: Claim / Screenshot */}
-                      <div
-                        style={{
-                          width: "8px",
-                          height: `${claimHeight}px`,
-                          borderRadius: "3px",
-                          background: isRow14
-                            ? "rgba(239, 68, 68, 0.4)"
-                            : "linear-gradient(180deg, #6EE7B7 0%, #34D399 100%)",
-                          transition: "height 0.3s ease",
-                        }}
-                      />
-                    </div>
-
-                    {/* X-Axis Label */}
-                    <span
-                      style={{
-                        fontSize: "9.5px",
-                        fontWeight: isRow14 ? 700 : 500,
-                        color: isRow14 ? "#EF4444" : isHovered ? "#FFFFFF" : "#71717A",
-                        marginTop: "6px",
-                      }}
-                    >
-                      {evt.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT CARD (3.5 COLS): NPCI 12-DIGIT RRN BREAKDOWN (TASKFORGE DONUT CARD) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 className="tf-card-title" style={{ margin: 0 }}>
-              NPCI RRN #626510149921
-            </h2>
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#10B981",
-                background: "rgba(16, 185, 129, 0.12)",
-                padding: "2px 8px",
-                borderRadius: "6px",
-              }}
-            >
-              12 DIGITS
-            </span>
-          </div>
-
-          {/* Donut Chart + Breakdown List Body */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              marginTop: "10px",
-            }}
-          >
-            {/* Left: SVG Multi-Segment Donut Chart */}
-            <div
-              style={{
-                position: "relative",
-                width: "140px",
-                height: "140px",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg
-                width="140"
-                height="140"
-                viewBox="0 0 140 140"
-                style={{ transform: "rotate(-90deg)" }}
-              >
-                {rrnSegments.reduce<
-                  {
-                    element: React.ReactNode;
-                    offset: number;
-                  }[]
-                >((acc, seg, idx) => {
-                  const dash = (seg.pct / 100) * donutCircumference;
-                  const prevOffset =
-                    acc.length > 0 ? acc[acc.length - 1].offset : 0;
-                  const el = (
-                    <circle
-                      key={idx}
-                      cx="70"
-                      cy="70"
-                      r={donutRadius}
-                      fill="transparent"
-                      stroke={seg.color}
-                      strokeWidth={18}
-                      strokeDasharray={`${dash} ${donutCircumference}`}
-                      strokeDashoffset={-prevOffset}
-                      strokeLinecap="butt"
-                    />
-                  );
-                  acc.push({ element: el, offset: prevOffset + dash });
-                  return acc;
-                }, []).map((x) => x.element)}
-              </svg>
-
-              {/* Center Donut Hole Content */}
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  pointerEvents: "none",
-                }}
-              >
-                <span style={{ fontSize: "10px", fontWeight: 500, color: "#8E9893" }}>
-                  RRN Clock
-                </span>
+          <div style={{ fontSize: "12.5px", color: "#64748B", marginTop: "2px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <span>State Bank of India CBS Reconciliation · Sunil Kumar (A/c #30981140029) · FIR #149/2026</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#FFFFFF", padding: "2px 6px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", marginRight: "3px" }}>CBS Rows:</span>
+              {conservationSegments.map((s, idx) => (
                 <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: "#FFFFFF",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  10:00 IST
-                </span>
-              </div>
-            </div>
-
-            {/* Right: 5-Row Breakdown List */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-              {rrnSegments.map((item, idx) => (
-                <div
                   key={idx}
+                  title={`Row ${s.seq}: ${s.ok ? "Conservation Verified" : "Discrepancy Detected"}`}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    fontSize: "11px",
+                    display: "inline-block",
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "2px",
+                    background: s.ok ? "#10B981" : "#F43F5E",
                   }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span
-                      style={{
-                        width: "6px",
-                        height: "6px",
-                        borderRadius: "50%",
-                        background: item.color,
-                        boxShadow: `0 0 6px ${item.color}`,
-                      }}
-                    />
-                    <span style={{ color: "#D4D4D8" }}>{item.name}</span>
-                  </div>
-                  <span style={{ fontFamily: "var(--tf-font-mono)", color: "#FFFFFF", fontWeight: 600 }}>
-                    {item.value}
-                  </span>
-                </div>
+                />
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Footer Link */}
-          <div style={{ marginTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.05)", paddingTop: "8px" }}>
-            <span
+        {/* Quick Action Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* ASC / DESC Toggle */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "8px",
+              padding: "2px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSortPolarity("ASC")}
               style={{
-                fontSize: "11.5px",
-                fontWeight: 600,
-                color: "#10B981",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
+                border: "none",
+                background: sortPolarity === "ASC" ? "#F1F5F9" : "transparent",
+                color: sortPolarity === "ASC" ? "#0F172A" : "#64748B",
+                fontWeight: sortPolarity === "ASC" ? 700 : 500,
+                fontSize: "11px",
+                padding: "4px 9px",
+                borderRadius: "6px",
                 cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
-              Verify RRN against NPCI Switch →
-            </span>
+              ASC (Oldest First)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortPolarity("DESC")}
+              style={{
+                border: "none",
+                background: sortPolarity === "DESC" ? "#F1F5F9" : "transparent",
+                color: sortPolarity === "DESC" ? "#0F172A" : "#64748B",
+                fontWeight: sortPolarity === "DESC" ? 700 : 500,
+                fontSize: "11px",
+                padding: "4px 9px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              DESC (Newest First)
+            </button>
           </div>
+
+          {/* Permute Same-Sec Button */}
+          <button
+            type="button"
+            onClick={() => setPermuteActive((prev) => !prev)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              background: permuteActive ? "#EEF2FF" : "#FFFFFF",
+              border: permuteActive ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
+              color: permuteActive ? "#4338CA" : "#475569",
+              fontWeight: 600,
+              fontSize: "11.5px",
+              padding: "5px 11px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+            }}
+            title="Evaluate same-second permutations for sub-second ordering"
+          >
+            <Split size={13} color={permuteActive ? "#4F46E5" : "#64748B"} />
+            <span>Permute Same-Sec {permuteActive ? "(Active)" : ""}</span>
+          </button>
+
+          {/* Direct Row #14 Tamper Toggle */}
+          <button
+            type="button"
+            onClick={() => toggleMutation("alterBankRow14")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              background: isRow14Tampered ? "#FFF1F2" : "#FFFFFF",
+              border: isRow14Tampered ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+              color: isRow14Tampered ? "#BE123C" : "#475569",
+              fontWeight: 600,
+              fontSize: "11.5px",
+              padding: "5px 11px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+            }}
+          >
+            <Zap size={13} color={isRow14Tampered ? "#E11D48" : "#64748B"} />
+            <span>{isRow14Tampered ? "Tampered (-₹2.00L)" : "Toggle Row #14 Tamper"}</span>
+          </button>
         </div>
       </div>
 
       {/* =========================================================================
-          ROW 3: THE 3 BOTTOM CARDS
-          (3 Cols: PDF & Merkle | 5.5 Cols: CBS Ledger Table | 3.5 Cols: Admissibility)
+          ROW 1: 4 TOP BENTO KPI CARDS (MODELED ON SALEZY & FLOWMAIL EXECUTIVE KPIS)
+          ========================================================================= */}
+      <div className="bento-grid-4">
+        {/* Card 1: Double-Entry Conservation */}
+        <BentoKpiCard
+          title="Ledger Conservation"
+          metric={isRow14Tampered ? "Row #14 Fail" : "100% Valid"}
+          metricColor={isRow14Tampered ? "#E11D48" : "#059669"}
+          subtitle="6 CBS rows mathematically reconciled"
+          statusBadge={{
+            text: isRow14Tampered ? "INVARIANT BREACH" : "VERIFIED ✓",
+            variant: isRow14Tampered ? "rose" : "emerald",
+          }}
+          delta={{
+            value: isRow14Tampered ? "-₹2,00,000.00 Deficit" : "Bal[k-1]+Cr-Dr = Bal[k]",
+            isWarning: isRow14Tampered,
+            isPositive: !isRow14Tampered,
+          }}
+          icon={ShieldCheck}
+          iconColor={isRow14Tampered ? "#E11D48" : "#059669"}
+          iconBg={isRow14Tampered ? "#FFF1F2" : "#ECFDF5"}
+          sparklineData={isRow14Tampered ? [100, 100, 100, 20, 20, 20] : [100, 100, 100, 100, 100, 100]}
+        />
+
+        {/* Card 2: NPCI RRN Clock Sync */}
+        <BentoKpiCard
+          title="NPCI RRN Clock Sync"
+          metric="10:00:14 IST"
+          metricColor="#4F46E5"
+          subtitle="Julian Day 265 · Switch STAN #149921"
+          statusBadge={{
+            text: isForgedRrn ? "CLOCK DRIFT (+50m)" : "Δ +14s NTP SYNC",
+            variant: isForgedRrn ? "rose" : "indigo",
+          }}
+          delta={{
+            value: isForgedRrn ? "Outside ±180s Limit" : "In Spec: ±180s Window",
+            isWarning: isForgedRrn,
+            isPositive: !isForgedRrn,
+          }}
+          icon={Clock}
+          iconColor="#4F46E5"
+          iconBg="#EEF2FF"
+          sparklineData={[14, 14, 15, 14, 14, isForgedRrn ? 3000 : 14]}
+        />
+
+        {/* Card 3: Claim vs CBS Ledger Diff */}
+        <BentoKpiCard
+          title="Claim vs CBS Ledger Diff"
+          metric="-₹2,00,000.00"
+          metricColor="#E11D48"
+          subtitle="Receipt ₹15,000 vs True CBS ₹2,15,000"
+          statusBadge={{
+            text: "14.3× SUPPRESSION",
+            variant: "rose",
+          }}
+          delta={{
+            value: "Forged PDF Receipt",
+            isWarning: true,
+            label: "Canva Superimposed",
+          }}
+          icon={AlertTriangle}
+          iconColor="#E11D48"
+          iconBg="#FFF1F2"
+          sparklineData={[15, 15, 15, 215, 215, 215]}
+        />
+
+        {/* Card 4: PDF XRef & CGNAT Shield */}
+        <BentoKpiCard
+          title="PDF XRef & CGNAT Shield"
+          metric="9,996 / 10,000"
+          metricColor="#059669"
+          subtitle="Airtel IPDR masked · PDF Rev 2 Canva"
+          statusBadge={{
+            text: "MERKLE BLINDED",
+            variant: "emerald",
+          }}
+          delta={{
+            value: "DoT Cl. 39.20 Safe",
+            isPositive: true,
+            label: "Zero PII Leakage",
+          }}
+          icon={FileCheck}
+          iconColor="#7C3AED"
+          iconBg="#F5F3FF"
+          sparklineData={[9996, 9996, 9996, 9996, 9996, 9996]}
+        />
+      </div>
+
+      {/* =========================================================================
+          ROW 2: TWO-COLUMN WORKBENCH (7.5 COLS LEFT + 4.5 COLS RIGHT)
           ========================================================================= */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "3fr 5.5fr 3.5fr",
-          gap: "18px",
+          gridTemplateColumns: "1.65fr 1fr",
+          gap: "14px",
+          alignItems: "start",
         }}
       >
-        {/* BOTTOM-LEFT (3 COLS): PDF & MERKLE SIGNATURES (TASKFORGE UPCOMING BILLS) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-            <h2 className="tf-card-title" style={{ margin: 0 }}>
-              PDF & Merkle Signatures
-            </h2>
-            <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#10B981", cursor: "pointer" }}>
-              Inspect Proof
-            </span>
-          </div>
-
-          {/* 3 Ultra-Clean Rows Separated by Subtle Hairlines */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {/* Row 1: Rev 1 Finacle */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingBottom: "10px",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#F8FAFC" }}>
-                  Rev 1 · SBI Finacle PostScript
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "2px" }}>
-                  Offset 0x0000 · HSM Signed
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#10B981",
-                  background: "rgba(16, 185, 129, 0.12)",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                }}
-              >
-                ✓ VALID
-              </span>
-            </div>
-
-            {/* Row 2: Rev 2 Canva Overlay */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingBottom: "10px",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#F8FAFC" }}>
-                  Rev 2 · Incremental %%EOF
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "2px" }}>
-                  Offset 0x234FA · Canva Overlay
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#EF4444",
-                  background: "rgba(239, 68, 68, 0.12)",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                }}
-              >
-                +2.4pt Shift
-              </span>
-            </div>
-
-            {/* Row 3: BSA § 63 Merkle Root */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#F8FAFC" }}>
-                  BSA § 63 Merkle Root
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "2px" }}>
-                  10,000 Airtel CGNAT Rows
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "11.5px",
-                  fontWeight: 700,
-                  fontFamily: "var(--tf-font-mono)",
-                  color: "#10B981",
-                }}
-              >
-                b189...7492
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM-CENTER (5.5 COLS): CBS RUNNING-BALANCE TABLE (TASKFORGE TRANSACTION TABLE — ZERO SCROLLBARS) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "18px 22px",
-          }}
-        >
-          {/* Table Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-            <h2 className="tf-card-title" style={{ margin: 0 }}>
-              CBS Transaction Ledger
-            </h2>
-            <button
-              type="button"
-              onClick={() => setTableSortAsc((prev) => !prev)}
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#8E9893",
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                padding: "3px 8px",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
-            >
-              {tableSortAsc ? "ASC ↑" : "DESC ↓"}
-            </button>
-          </div>
-
-          {/* Table Column Headers */}
+        {/* =======================================================================
+            LEFT COLUMN (7.5 COLS): SBI FINACLE CBS DATA GRID & CONFLICT ENGINE
+            ======================================================================= */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* 1. TOP CROSS-SOURCE CONFLICT STRIP */}
           <div
+            className="bento-card"
             style={{
-              display: "grid",
-              gridTemplateColumns: "1.1fr 2fr 1.3fr 1.2fr 1.2fr",
-              paddingBottom: "8px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-              fontSize: "10.5px",
-              fontWeight: 600,
-              color: "#71717A",
+              padding: "14px 18px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
             }}
           >
-            <span>Date & Row</span>
-            <span>Description / UTR</span>
-            <span>Category</span>
-            <span>Amount</span>
-            <span style={{ textAlign: "right" }}>Running Balance</span>
-          </div>
-
-          {/* 5 Clean Airy Rows (Height: ~42px each, perfectly visible) */}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {sortedTransactions.map((tx, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.1fr 2fr 1.3fr 1.2fr 1.2fr",
-                  alignItems: "center",
-                  padding: "9px 0",
-                  borderBottom:
-                    idx < sortedTransactions.length - 1
-                      ? "1px solid rgba(255, 255, 255, 0.04)"
-                      : "none",
-                  fontSize: "11px",
-                }}
-              >
-                {/* Date & Row */}
-                <span style={{ color: "#8E9893", fontFamily: "var(--tf-font-mono)", fontSize: "10.5px" }}>
-                  {tx.date}
-                </span>
-
-                {/* Description / UTR */}
-                <span
-                  style={{
-                    color: tx.isTampered ? "#F87171" : "#FFFFFF",
-                    fontWeight: 600,
-                    fontFamily: "var(--tf-font-mono)",
-                    fontSize: "10.5px",
-                  }}
-                >
-                  {tx.description}
-                </span>
-
-                {/* Category Soft Pill */}
-                <div>
-                  <span
-                    style={{
-                      background: tx.categoryColor.bg,
-                      color: tx.categoryColor.text,
-                      padding: "2px 7px",
-                      borderRadius: "5px",
-                      fontSize: "9.5px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {tx.category}
-                  </span>
-                </div>
-
-                {/* Amount */}
-                <span
-                  style={{
-                    color: tx.isCredit ? "#10B981" : "#EF4444",
-                    fontWeight: 600,
-                    fontFamily: "var(--tf-font-mono)",
-                  }}
-                >
-                  {tx.amount}
-                </span>
-
-                {/* Running Balance */}
-                <span
-                  style={{
-                    textAlign: "right",
-                    color: tx.isTampered ? "#EF4444" : "#FFFFFF",
-                    fontWeight: 700,
-                    fontFamily: "var(--tf-font-mono)",
-                  }}
-                >
-                  {tx.balance}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "10px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Layers size={14} color="#64748B" />
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
+                  Cross-Source Evidentiary Conflict: Mobile Receipt vs. Core Banking Ledger
                 </span>
               </div>
-            ))}
+              <ReuiStatusBadge text="PRIMARY CONTRADICTION" variant="rose" />
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto 1fr",
+                alignItems: "center",
+                gap: "14px",
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                borderRadius: "12px",
+                padding: "12px 16px",
+              }}
+            >
+              {/* Suspect Mobile Receipt */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>
+                  Suspect Claimed Receipt (<span style={{ fontFamily: "var(--font-mono)" }}>victim_upi_receipt.pdf</span>)
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginTop: "2px" }}>
+                  <span style={{ fontSize: "22px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-sans)" }}>
+                    ₹15,000.00
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      fontWeight: 700,
+                      color: "#BE123C",
+                      background: "#FFE4E6",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    14.3× SUPPRESSED
+                  </span>
+                </div>
+                <div style={{ fontSize: "11px", color: "#94A3B8" }}>
+                  Complainant WhatsApp export · Canva altered layer
+                </div>
+              </div>
+
+              {/* Conflict Operator */}
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  background: "#FFF1F2",
+                  border: "1px solid #FECDD3",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#BE123C",
+                  fontSize: "18px",
+                  fontWeight: 900,
+                  flexShrink: 0,
+                }}
+              >
+                ≠
+              </div>
+
+              {/* Certified Core Banking System */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px", textAlign: "right" }}>
+                <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>
+                  Actual Core Banking Debit (<span style={{ fontFamily: "var(--font-mono)" }}>sbi_finacle_cbs.csv</span>)
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: "6px", marginTop: "2px" }}>
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      fontWeight: 700,
+                      color: "#047857",
+                      background: "#ECFDF5",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    TIER-1 FINACLE 10.x
+                  </span>
+                  <span style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-sans)" }}>
+                    ₹2,15,000.00
+                  </span>
+                </div>
+                <div style={{ fontSize: "11px", color: "#94A3B8" }}>
+                  State Bank of India Data Centre · SHA-256 HMAC
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. MATHEMATICAL INVARIANT FORMULA BANNER */}
+          <div
+            className="bento-card"
+            style={{
+              padding: "12px 18px",
+              background: isRow14Tampered ? "#FFF1F2" : "#F0FDF4",
+              border: isRow14Tampered ? "1px solid #FECDD3" : "1px solid #BBF7D0",
+              borderRadius: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {isRow14Tampered ? (
+                  <XCircle size={16} color="#BE123C" />
+                ) : (
+                  <CheckCircle2 size={16} color="#047857" />
+                )}
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono)",
+                    color: isRow14Tampered ? "#9F1239" : "#065F46",
+                  }}
+                >
+                  Formula: Bal[k] = Bal[k-1] + Credit[k] - Debit[k]
+                </span>
+              </div>
+
+              <div style={{ fontSize: "11.5px", fontWeight: 600, color: isRow14Tampered ? "#BE123C" : "#047857" }}>
+                {isRow14Tampered ? (
+                  <span>
+                    Row #14: ₹7,37,440 - ₹2,15,000 = <strong>₹5,22,440.00</strong> ≠ Reported <strong>₹3,22,440.00</strong> (Δ -₹2,00,000.00)
+                  </span>
+                ) : (
+                  <span>
+                    Row #14: ₹7,37,440 - ₹2,15,000 = <strong>₹5,22,440.00</strong> (Exact 0.00 error · Invariant Verified)
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. REUI FORENSIC DATA GRID (HIGH-CLARITY TABLE MATCHING SALEZY & HEALTH) */}
+          <div
+            className="bento-card"
+            style={{
+              overflow: "hidden",
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+            }}
+          >
+            {/* Table Toolbar */}
+            <div
+              style={{
+                padding: "12px 18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid #E2E8F0",
+                background: "#FFFFFF",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#0F172A" }}>
+                  SBI Core Banking Ledger (<span style={{ fontFamily: "var(--font-mono)" }}>sbi_finacle_cbs.csv</span>)
+                </span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#64748B",
+                    background: "#F1F5F9",
+                    padding: "1px 7px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {displayRows.length} Rows
+                </span>
+              </div>
+
+              {/* Search Bar */}
+              <div style={{ position: "relative", width: "220px" }}>
+                <Search
+                  size={13}
+                  color="#94A3B8"
+                  style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)" }}
+                />
+                <input
+                  type="text"
+                  placeholder="Filter rows, RRN..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "5px 10px 5px 28px",
+                    fontSize: "11.5px",
+                    borderRadius: "7px",
+                    border: "1px solid #CBD5E1",
+                    background: "#FAFAFA",
+                    color: "#0F172A",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Table Container */}
+            <div style={{ overflowX: "auto" }}>
+              <table className="daylight-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "42px" }}>#</th>
+                    <th style={{ width: "120px" }}>Timestamp</th>
+                    <th>Description & RRN</th>
+                    <th style={{ width: "105px" }}>Type</th>
+                    <th style={{ width: "110px", textAlign: "right" }}>Debit / Credit</th>
+                    <th style={{ width: "140px", textAlign: "right" }}>Closing Balance (₹)</th>
+                    <th style={{ width: "95px", textAlign: "center" }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayRows.map((row) => {
+                    const isDisputed = row.sequenceNo === 14;
+                    const isUnsat = row.status === "UNSAT" || (isDisputed && isRow14Tampered);
+
+                    return (
+                      <tr
+                        key={row.id}
+                        style={{
+                          backgroundColor: isUnsat
+                            ? "#FFF5F5"
+                            : isDisputed
+                            ? "#FEF2F2"
+                            : "transparent",
+                          transition: "background-color 0.15s ease",
+                        }}
+                      >
+                        {/* Sequence No */}
+                        <td style={{ fontWeight: 700, color: "#64748B", fontFamily: "var(--font-mono)" }}>
+                          #{row.sequenceNo}
+                        </td>
+
+                        {/* Timestamp */}
+                        <td style={{ fontFamily: "var(--font-mono)", fontSize: "11.5px", color: "#475569" }}>
+                          {row.timestamp.split("T")[1]}
+                        </td>
+
+                        {/* Description & RRN */}
+                        <td>
+                          <div style={{ fontWeight: 600, color: isDisputed ? "#BE123C" : "#0F172A" }}>
+                            {row.description}
+                          </div>
+                          {row.rrn !== "—" && (
+                            <div style={{ fontSize: "10.5px", fontFamily: "var(--font-mono)", color: "#64748B", marginTop: "1px" }}>
+                              RRN: {row.rrn}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Type Badge */}
+                        <td>
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              background:
+                                row.sequenceNo === 11
+                                  ? "#F1F5F9"
+                                  : row.sequenceNo === 13
+                                  ? "#ECFDF5"
+                                  : row.sequenceNo === 14
+                                  ? "#FFE4E6"
+                                  : "#EEF2FF",
+                              color:
+                                row.sequenceNo === 11
+                                  ? "#475569"
+                                  : row.sequenceNo === 13
+                                  ? "#047857"
+                                  : row.sequenceNo === 14
+                                  ? "#BE123C"
+                                  : "#4338CA",
+                            }}
+                          >
+                            {row.sequenceNo === 11
+                              ? "OPENING"
+                              : row.sequenceNo === 13
+                              ? "SALARY CR"
+                              : row.sequenceNo === 14
+                              ? "DISPUTED DR"
+                              : "RETAIL DR"}
+                          </span>
+                        </td>
+
+                        {/* Debit / Credit Amount */}
+                        <td
+                          style={{
+                            textAlign: "right",
+                            fontFamily: "var(--font-mono)",
+                            fontWeight: 700,
+                            color: row.credit > 0 ? "#047857" : row.debit > 0 ? "#BE123C" : "#64748B",
+                          }}
+                        >
+                          {row.credit > 0
+                            ? `+₹${row.credit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                            : row.debit > 0
+                            ? `-₹${row.debit.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+                            : "—"}
+                        </td>
+
+                        {/* Closing Balance (INTERACTIVE INPUT ON ROW #14) */}
+                        <td style={{ textAlign: "right" }}>
+                          {isDisputed ? (
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <input
+                                type="text"
+                                value={customRow14Balance}
+                                onChange={(e) => setCustomRow14Balance(e.target.value)}
+                                style={{
+                                  width: "106px",
+                                  textAlign: "right",
+                                  padding: "3px 6px",
+                                  fontSize: "12px",
+                                  fontWeight: 700,
+                                  fontFamily: "var(--font-mono)",
+                                  color: isUnsat ? "#BE123C" : "#0F172A",
+                                  background: isUnsat ? "#FFE4E6" : "#FFFFFF",
+                                  border: isUnsat ? "1px solid #FECDD3" : "1px solid #CBD5E1",
+                                  borderRadius: "6px",
+                                  outline: "none",
+                                }}
+                                title="Edit Row #14 closing balance to test mathematical falsification"
+                              />
+                            </div>
+                          ) : (
+                            <span
+                              style={{
+                                fontFamily: "var(--font-mono)",
+                                fontWeight: 700,
+                                color: isUnsat ? "#BE123C" : "#0F172A",
+                              }}
+                            >
+                              ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td style={{ textAlign: "center" }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
+                              fontSize: "10.5px",
+                              fontWeight: 700,
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              background: isUnsat ? "#FFF1F2" : "#ECFDF5",
+                              color: isUnsat ? "#BE123C" : "#047857",
+                              border: `1px solid ${isUnsat ? "#FECDD3" : "#A7F3D0"}`,
+                            }}
+                          >
+                            {isUnsat ? "FAIL ✗" : "VALID ✓"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer */}
+            <div
+              style={{
+                padding: "8px 18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "#F8FAFC",
+                borderTop: "1px solid #E2E8F0",
+                fontSize: "11px",
+                color: "#64748B",
+              }}
+            >
+              <span>SBI Finacle 10.2 Server: Branch Code 01489 (Noida Sec 62)</span>
+              <span>HMAC: 94a1...fe02 (Verified)</span>
+            </div>
           </div>
         </div>
 
-        {/* BOTTOM-RIGHT (3.5 COLS): EVIDENTIARY ADMISSIBILITY TARGETS (TASKFORGE FINANCIAL GOALS) */}
-        <div
-          className="tf-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-            <h2 className="tf-card-title" style={{ margin: 0 }}>
-              Evidentiary Admissibility
-            </h2>
-            <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#10B981" }}>
-              BSA § 63 Ready
-            </span>
+        {/* =======================================================================
+            RIGHT COLUMN (4.5 COLS): PROTOCOL PACKET DISSECTOR & BINARY XREF
+            ======================================================================= */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* CARD A: NPCI 12-DIGIT RRN PROTOCOL PACKET DISSECTOR */}
+          <div
+            className="bento-card"
+            style={{
+              padding: "16px 18px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "12px",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
+                  NPCI 12-Digit RRN Protocol Dissector
+                </div>
+                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "1px" }}>
+                  Standardized UPI/IMPS switch routing format
+                </div>
+              </div>
+              <ReuiStatusBadge
+                text={decodedRrn.admissibilityVerdict === "ADMISSIBLE" ? "SPEC COMPLIANT" : "CLOCK SKEW"}
+                variant={decodedRrn.admissibilityVerdict === "ADMISSIBLE" ? "emerald" : "rose"}
+              />
+            </div>
+
+            {/* Interactive RRN Input */}
+            <div style={{ marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="text"
+                  value={rrnInput}
+                  onChange={(e) => setRrnInput(e.target.value.trim())}
+                  maxLength={12}
+                  style={{
+                    flex: 1,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "16px",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #CBD5E1",
+                    background: "#FAFAFA",
+                    color: "#0F172A",
+                    outline: "none",
+                  }}
+                  title="Enter 12-digit UPI/IMPS RRN string (YDDDHHSSSSSS)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setRrnInput("626510149921")}
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    padding: "7px 10px",
+                    borderRadius: "7px",
+                    border: "1px solid #E2E8F0",
+                    background: "#F8FAFC",
+                    color: "#475569",
+                    cursor: "pointer",
+                  }}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* 4-Segment Byte Anatomy Ruler */}
+            <div style={{ marginBottom: "14px" }}>
+              <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", marginBottom: "6px" }}>
+                Packet Byte Anatomy (ISO-8583 Grammar)
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1.5fr 1.2fr 2fr",
+                  gap: "6px",
+                }}
+              >
+                {/* Byte 0 */}
+                <div
+                  style={{
+                    background: "#EEF2FF",
+                    border: "1px solid #C7D2FE",
+                    borderRadius: "8px",
+                    padding: "7px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#4338CA" }}>Byte 0 (Year)</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#3730A3", fontFamily: "var(--font-mono)" }}>
+                    [{rrnInput[0] || "?"}]
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#6366F1", marginTop: "1px" }}>
+                    20{rrnInput[0] ? `2${rrnInput[0]}` : "26"}
+                  </div>
+                </div>
+
+                {/* Bytes 1-3 */}
+                <div
+                  style={{
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    borderRadius: "8px",
+                    padding: "7px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857" }}>Bytes 1–3 (Julian)</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#065F46", fontFamily: "var(--font-mono)" }}>
+                    [{rrnInput.substring(1, 4) || "???"}]
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#10B981", marginTop: "1px" }}>
+                    Day {decodedRrn.julianDay || 265} (22 Sep)
+                  </div>
+                </div>
+
+                {/* Bytes 4-5 */}
+                <div
+                  style={{
+                    background: "#FFFBEB",
+                    border: "1px solid #FDE68A",
+                    borderRadius: "8px",
+                    padding: "7px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#B45309" }}>Bytes 4–5 (Hour)</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#92400E", fontFamily: "var(--font-mono)" }}>
+                    [{rrnInput.substring(4, 6) || "??"}]
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#F59E0B", marginTop: "1px" }}>
+                    {decodedRrn.hour || 10}:00 IST
+                  </div>
+                </div>
+
+                {/* Bytes 6-11 */}
+                <div
+                  style={{
+                    background: "#F5F3FF",
+                    border: "1px solid #DDD6FE",
+                    borderRadius: "8px",
+                    padding: "7px 8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#6D28D9" }}>Bytes 6–11 (STAN Trace)</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "#5B21B6", fontFamily: "var(--font-mono)" }}>
+                    [{rrnInput.substring(6, 12) || "??????"}]
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#8B5CF6", marginTop: "1px" }}>
+                    Switch Audit #{decodedRrn.sequence || "149921"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Graduated Clock Drift Scale (±180s NTP Boundary) */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: "11px",
+                  color: "#64748B",
+                  marginBottom: "4px",
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>NTP Switch Clock Offset (±180s Limit)</span>
+                <span style={{ fontWeight: 700, color: isForgedRrn ? "#BE123C" : "#047857" }}>
+                  {isForgedRrn ? "Δ +3,000s (+50 min) FORGED" : "Δ +14.0s (IN SPEC)"}
+                </span>
+              </div>
+
+              {/* Visual Ruler Track */}
+              <div
+                style={{
+                  position: "relative",
+                  height: "24px",
+                  background: "#F1F5F9",
+                  borderRadius: "6px",
+                  border: "1px solid #E2E8F0",
+                  overflow: "hidden",
+                }}
+              >
+                {/* In-Spec Safe Zone (-180s to +180s) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "25%",
+                    right: "25%",
+                    top: 0,
+                    bottom: 0,
+                    background: "rgba(16, 185, 129, 0.12)",
+                    borderLeft: "1px dashed #10B981",
+                    borderRight: "1px dashed #10B981",
+                  }}
+                />
+
+                {/* Center Zero Line */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: 0,
+                    bottom: 0,
+                    width: "2px",
+                    background: "#94A3B8",
+                  }}
+                />
+
+                {/* Indicator Pin */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: isForgedRrn ? "92%" : "54%",
+                    top: "3px",
+                    bottom: "3px",
+                    width: "8px",
+                    borderRadius: "4px",
+                    background: isForgedRrn ? "#E11D48" : "#4F46E5",
+                    boxShadow: isForgedRrn
+                      ? "0 0 8px rgba(225, 29, 72, 0.6)"
+                      : "0 0 6px rgba(79, 70, 229, 0.5)",
+                    transition: "all 0.3s ease",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "9.5px",
+                  color: "#94A3B8",
+                  marginTop: "3px",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                <span>-180s</span>
+                <span>-90s</span>
+                <span style={{ fontWeight: 700, color: "#64748B" }}>0s (NTP)</span>
+                <span>+90s</span>
+                <span>+180s</span>
+              </div>
+            </div>
           </div>
 
-          {/* 3 Horizontal Goal Rows with Dark Rounded Icon Square */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {/* Goal 1: Double-Entry Invariant */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* CARD B: BINARY PDF XREF AUDIT & CGNAT MERKLE SHIELD */}
+          <div
+            className="bento-card"
+            style={{
+              padding: "16px 18px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              flex: 1,
+            }}
+          >
+            {/* Header Tabs */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "12px",
+              }}
+            >
               <div
                 style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#10B981",
-                  flexShrink: 0,
+                  display: "inline-flex",
+                  background: "#F1F5F9",
+                  padding: "2px",
+                  borderRadius: "8px",
+                  border: "1px solid #E2E8F0",
                 }}
               >
-                <Shield size={18} strokeWidth={2.2} />
+                <button
+                  type="button"
+                  onClick={() => setActiveTabDissector("pdf")}
+                  style={{
+                    border: "none",
+                    background: activeTabDissector === "pdf" ? "#FFFFFF" : "transparent",
+                    color: activeTabDissector === "pdf" ? "#0F172A" : "#64748B",
+                    fontWeight: activeTabDissector === "pdf" ? 700 : 500,
+                    fontSize: "11px",
+                    padding: "4px 9px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    boxShadow: activeTabDissector === "pdf" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  }}
+                >
+                  PDF Binary XRef Audit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabDissector("cgnat")}
+                  style={{
+                    border: "none",
+                    background: activeTabDissector === "cgnat" ? "#FFFFFF" : "transparent",
+                    color: activeTabDissector === "cgnat" ? "#0F172A" : "#64748B",
+                    fontWeight: activeTabDissector === "cgnat" ? 700 : 500,
+                    fontSize: "11px",
+                    padding: "4px 9px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    boxShadow: activeTabDissector === "cgnat" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  }}
+                >
+                  CGNAT Merkle Shield
+                </button>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#FFFFFF" }}>
-                    Double-Entry Invariant
-                  </span>
-                  <span
+
+              <span style={{ fontSize: "11px", color: "#94A3B8", fontFamily: "var(--font-mono)" }}>
+                {activeTabDissector === "pdf" ? "victim_upi_receipt.pdf" : "airtel_cgnat_ipdr.csv"}
+              </span>
+            </div>
+
+            {/* TAB CONTENT 1: PDF BINARY XREF AUDIT */}
+            {activeTabDissector === "pdf" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11.5px", color: "#475569" }}>
+                  Binary Byte-Offset Timeline (<span style={{ fontFamily: "var(--font-mono)" }}>148,474 bytes total</span>):
+                </div>
+
+                {/* Byte Blocks */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {/* Block 1: Genuine PhonePe Generator */}
+                  <div
                     style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: isRow14Tampered ? "#EF4444" : "#10B981",
+                      background: "#F0FDF4",
+                      border: "1px solid #BBF7D0",
+                      borderRadius: "8px",
+                      padding: "8px 10px",
                     }}
                   >
-                    {isRow14Tampered ? "83%" : "100%"}
-                  </span>
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "1px" }}>
-                  {isRow14Tampered ? "₹3.08L of ₹5.08L Balance" : "₹5.08L of ₹5.08L Balance"}
-                </div>
-                <div className="tf-progress-track" style={{ marginTop: "5px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#065F46" }}>
+                        Revision 1 (0x00000000 – 0x00014208)
+                      </span>
+                      <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857", background: "#DCFCE7", padding: "1px 5px", borderRadius: "3px" }}>
+                        ORIGINAL %%EOF 1
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
+                      Producer: <strong style={{ color: "#065F46" }}>PhonePe UPI Gateway</strong> · Font: ArialMT · Debit ₹2,15,000.00
+                    </div>
+                  </div>
+
+                  {/* Block 2: Incremental Tamper Trailer */}
                   <div
-                    className={isRow14Tampered ? "tf-progress-fill-coral" : "tf-progress-fill-emerald"}
-                    style={{ width: isRow14Tampered ? "83%" : "100%" }}
-                  />
+                    style={{
+                      background: "#FFF1F2",
+                      border: "1px solid #FECDD3",
+                      borderRadius: "8px",
+                      padding: "8px 10px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#9F1239" }}>
+                        Revision 2 (0x00014209 – 0x000234FA)
+                      </span>
+                      <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#BE123C", background: "#FFE4E6", padding: "1px 5px", borderRadius: "3px" }}>
+                        INCREMENTAL TRAILER %%EOF 2
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
+                      Producer: <strong style={{ color: "#BE123C" }}>Canva / HelveticaModified</strong> · Overwrote stream to ₹15,000.00
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Goal 2: Switch RRN Window */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#10B981",
-                  flexShrink: 0,
-                }}
-              >
-                <Clock size={18} strokeWidth={2.2} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#FFFFFF" }}>
-                    Switch RRN Window
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#10B981" }}>
-                    92%
-                  </span>
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "1px" }}>
-                  +14s of ±180s Max Tolerance
-                </div>
-                <div className="tf-progress-track" style={{ marginTop: "5px" }}>
-                  <div className="tf-progress-fill-emerald" style={{ width: "92%" }} />
+                {/* Finding Summary */}
+                <div
+                  style={{
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
+                    fontSize: "11px",
+                    color: "#475569",
+                  }}
+                >
+                  <strong style={{ color: "#0F172A" }}>Forensic Finding:</strong> Incremental PDF trailer found after primary EOF. Text layer was re-rendered in web graphics software to conceal the actual ₹2,15,000 transaction.
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Goal 3: Citizen PII Redaction */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "10px",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#10B981",
-                  flexShrink: 0,
-                }}
-              >
-                <Lock size={18} strokeWidth={2.2} />
+            {/* TAB CONTENT 2: CGNAT MERKLE SHIELD */}
+            {activeTabDissector === "cgnat" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11.5px", color: "#475569" }}>
+                  Airtel CGNAT Public IP: <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700 }}>122.160.42.18</span> (Tower ID: NOIDA-SEC62)
+                </div>
+
+                {/* Merkle Tree Diagram */}
+                <div
+                  style={{
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "10px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  {/* Root */}
+                  <div
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #CBD5E1",
+                      borderRadius: "6px",
+                      padding: "4px 10px",
+                      fontSize: "10px",
+                      fontFamily: "var(--font-mono)",
+                      color: "#0F172A",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Merkle Root: 0x4f8a92e1...c03b
+                  </div>
+
+                  {/* Branches */}
+                  <div style={{ display: "flex", width: "100%", justifyContent: "space-around", gap: "8px" }}>
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#EEF2FF",
+                        border: "1px solid #C7D2FE",
+                        borderRadius: "6px",
+                        padding: "5px 6px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#4338CA" }}>Target Suspect Leaf</div>
+                      <div style={{ fontSize: "10px", color: "#3730A3", fontFamily: "var(--font-mono)" }}>
+                        Port 44321 → SESS-01
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "#ECFDF5",
+                        border: "1px solid #A7F3D0",
+                        borderRadius: "6px",
+                        padding: "5px 6px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#047857" }}>9,996 Blinded Citizens</div>
+                      <div style={{ fontSize: "10px", color: "#065F46", fontFamily: "var(--font-mono)" }}>
+                        Zero PII Disclosed
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: "#F0FDF4",
+                    border: "1px solid #BBF7D0",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
+                    fontSize: "11px",
+                    color: "#065F46",
+                  }}
+                >
+                  <strong style={{ color: "#047857" }}>DoT Clause 39.20 Compliant:</strong> 9,996 innocent citizen records are masked using cryptographic hashes. Court-admissible proof of inclusion is preserved without subpoenaing civilian CDRs.
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "11.5px", fontWeight: 600, color: "#FFFFFF" }}>
-                    Citizen PII Redaction
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#10B981" }}>
-                    99.9%
-                  </span>
-                </div>
-                <div style={{ fontSize: "10px", color: "#8E9893", marginTop: "1px" }}>
-                  9,996 of 10,000 Rows Blinded
-                </div>
-                <div className="tf-progress-track" style={{ marginTop: "5px" }}>
-                  <div className="tf-progress-fill-emerald" style={{ width: "99.9%" }} />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

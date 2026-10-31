@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import {
-  ScanLine,
-  Radio,
-  GitFork,
-  Scale,
-  Mic,
-  Search,
-  ChevronDown,
-  ShieldCheck,
+  Shield,
+  FileText,
   Zap,
+  RotateCcw,
+  Mic,
+  FileDown,
+  ChevronDown,
 } from "lucide-react";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
-import { LiveDemoSimulatorPopover } from "./LiveDemoSimulatorPopover";
+import { ReuiStatusBadge, ReuiKbd } from "../tarka/BentoPrimitives";
 import { IntakeScreen } from "../../pages/v5/IntakeScreen";
 import { AttributionScreen } from "../../pages/v5/AttributionScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
@@ -24,67 +22,78 @@ export const TarkaGlobalShell: React.FC = () => {
     setActiveRoute,
     activeCaseId,
     timeOffsetHours,
-    statutoryPeriod,
+    setTimeOffsetHours,
     mutations,
     toggleMutation,
+    resetAllMutations,
+    activeMutationsCount,
   } = useTarkaGlobal();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
 
-  // 4 Main Taskforge-Style Navigation Items
+  // 4 Core Pipeline Navigation Items
   const navItems = [
     {
       id: "intake" as TarkaRoute,
-      label: "1. Evidence Overview",
-      icon: ScanLine,
+      step: "01",
+      title: "Evidence & Ledger Falsifier",
+      subtitle: "Double-entry & PDF integrity",
+      badgeText: mutations.alterBankRow14 ? "Row #14 Fail" : "2 Alerts",
+      badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
+      kbd: "1",
     },
     {
       id: "attribution" as TarkaRoute,
-      label: "2. CGNAT Attribution",
-      icon: Radio,
+      step: "02",
+      title: "CGNAT & Device Attribution",
+      subtitle: "Port funnel & IMEI twin",
+      badgeText: "1 IMEI",
+      badgeVariant: "emerald" as const,
+      kbd: "2",
     },
     {
       id: "taint-engine" as TarkaRoute,
-      label: "3. Taint & Lien Flow",
-      icon: GitFork,
+      step: "03",
+      title: "Taint DAG & BNSS Liens",
+      subtitle: "Dinic min-cut & Sec 106",
+      badgeText: "K=3",
+      badgeVariant: "indigo" as const,
+      kbd: "3",
     },
     {
       id: "court-proof" as TarkaRoute,
-      label: "4. Court Proof Bundle",
-      icon: Scale,
+      step: "04",
+      title: "Section 63(4) Court Proof",
+      subtitle: "BIP-39 & CBI memo",
+      badgeText: "Ready",
+      badgeVariant: "emerald" as const,
+      kbd: "4",
     },
   ];
 
-  // Route Titles & Subtitles matching Taskforge
-  const routeMeta: Record<TarkaRoute, { title: string; subtitle: string }> = {
-    intake: {
-      title: "Evidence & Ledger Overview",
-      subtitle: `${activeCaseId} · Welcome back, Insp. Vikram! Here's your forensic intake overview.`,
-    },
-    attribution: {
-      title: "IP & Phone Attribution",
-      subtitle: `${activeCaseId} · CGNAT Candidate Funnel · IMEI Twin & Z3 Clock Synchronization.`,
-    },
-    "taint-engine": {
-      title: "Taint & Lien Flow",
-      subtitle: `${activeCaseId} · Time-Expanded DAG · Dinic Min-Cut & BNSS § 106 Targeted Freezes.`,
-    },
-    "court-proof": {
-      title: "Court Proof & Legal Dossier",
-      subtitle: `${activeCaseId} · BSA § 63(4) Certificates · BIP-39 Paper Anchor & CBI Syndicate Aggregation.`,
-    },
-    workstation: {
-      title: "Forensic Workstation",
-      subtitle: `${activeCaseId} · Complete Digital Evidence Workbench.`,
-    },
-    workflow: {
-      title: "Investigation Workflow",
-      subtitle: `${activeCaseId} · Multi-Agency Escalation & Timeline.`,
-    },
-  };
+  // Ingested File Tree Artifacts
+  const ingestedFiles = [
+    { name: "sbi_finacle_cbs.csv", tier: "T1", status: "emerald" as const, desc: "Finacle 10.x HSM Signed" },
+    { name: "victim_upi_receipt.pdf", tier: "T3", status: "rose" as const, desc: "XRef Incremental Canva Edit" },
+    { name: "npci_switch_raw.xml", tier: "T1", status: "emerald" as const, desc: "Central UPI Gateway Log" },
+    { name: "airtel_cgnat_ipdr.csv", tier: "T1", status: "emerald" as const, desc: "9,996 Citizens Masked" },
+    { name: "whatsapp_chat.txt", tier: "T3", status: "amber" as const, desc: "Uncertified Extortion Chat" },
+  ];
 
-  const currentMeta = routeMeta[activeRoute] || routeMeta.intake;
+  // Operational Clock Stepper Stages
+  const clockStages = [
+    { label: "T+0m Report", offset: 0, title: "FIR Ingestion" },
+    { label: "T+15m Sweep", offset: 0.25, title: "L1 Mule Freeze" },
+    { label: "T+2.5h NCRP Window", offset: 2.5, title: "Golden Hour SOP" },
+    { label: "T+48h Remand", offset: 48, title: "Sec 107 BNSS Filing" },
+  ];
+
+  const currentNav = navItems.find((n) => n.id === activeRoute) || navItems[0];
+
+  const handlePrintPdf = () => {
+    window.print();
+  };
 
   return (
     <div
@@ -92,416 +101,632 @@ export const TarkaGlobalShell: React.FC = () => {
         display: "flex",
         width: "100vw",
         height: "100vh",
-        background: "#050807",
-        backgroundImage:
-          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(16, 185, 129, 0.12), transparent 70%)",
-        color: "#F8FAFC",
+        background: "var(--reui-frame-bg, #F4F4F5)",
+        padding: "8px",
+        gap: "8px",
+        boxSizing: "border-box",
         overflow: "hidden",
-        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+        fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
       }}
     >
       {/* =========================================================================
-          1. LEFT SIDEBAR (220PX FIXED WIDTH, BORDERLESS ON #050807)
+          1. LEFT SIDEBAR (256PX WIDTH, NATIVE ON #F4F4F5)
           ========================================================================= */}
       <aside
         style={{
-          width: "220px",
+          width: "256px",
           height: "100%",
-          background: "#050807",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: "20px 14px",
-          boxSizing: "border-box",
           flexShrink: 0,
-          borderRight: "1px solid rgba(255, 255, 255, 0.05)",
-          zIndex: 50,
+          boxSizing: "border-box",
+          padding: "6px 4px 6px 6px",
         }}
       >
-        {/* Top: Brand Header & Nav List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Brand: Clean white title TARKA with subtle emerald dot */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "12px" }}>
-            <span
-              style={{
-                fontSize: "20px",
-                fontWeight: 800,
-                color: "#FFFFFF",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              TARKA
-            </span>
-            <span
-              style={{
-                width: "7px",
-                height: "7px",
-                borderRadius: "50%",
-                background: "#10B981",
-                boxShadow: "0 0 8px #10B981",
-                display: "inline-block",
-                marginTop: "2px",
-              }}
-            />
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#71717A",
-                marginLeft: "2px",
-              }}
-            >
-              v5.0
-            </span>
-          </div>
-
-          {/* Navigation Items (Airy, Taskforge Style with Glowing 3px Left Indicator) */}
-          <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {navItems.map((item) => {
-              const isActive = activeRoute === item.id;
-              const Icon = item.icon;
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveRoute(item.id)}
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "11px",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    background: isActive ? "rgba(16, 185, 129, 0.08)" : "transparent",
-                    color: isActive ? "#FFFFFF" : "#71717A",
-                    fontSize: "13px",
-                    fontWeight: isActive ? 600 : 500,
-                    border: "none",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: "all 0.15s ease",
-                    width: "100%",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "#D4D4D8";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.color = "#71717A";
-                  }}
-                >
-                  {/* Active 3px glowing Emerald vertical indicator bar on left edge */}
-                  {isActive && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: "15%",
-                        bottom: "15%",
-                        width: "3px",
-                        borderRadius: "0 3px 3px 0",
-                        background: "#10B981",
-                        boxShadow: "0 0 10px #10B981",
-                      }}
-                    />
-                  )}
-
-                  <Icon
-                    size={16}
-                    color={isActive ? "#10B981" : "#71717A"}
-                    strokeWidth={isActive ? 2.4 : 1.8}
-                  />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-
-            {/* Subtle Divider */}
-            <div
-              style={{
-                height: "1px",
-                background: "rgba(255, 255, 255, 0.05)",
-                margin: "12px 6px",
-              }}
-            />
-
-            {/* Secondary Utility Links */}
-            <button
-              type="button"
-              onClick={() => setVoiceOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "11px",
-                padding: "8px 14px",
-                borderRadius: "8px",
-                background: "transparent",
-                color: "#71717A",
-                fontSize: "12.5px",
-                fontWeight: 500,
-                border: "none",
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#D4D4D8")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#71717A")}
-            >
-              <Mic size={15} color="#71717A" />
-              <span>Sarvam Voice AI</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Bottom User Profile Card (Taskforge Alex Johnson Style) */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "10px 12px",
-            borderRadius: "12px",
-            background: "#0C1310",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #006b46 0%, #10B981 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#FFFFFF",
-                boxShadow: "0 0 10px rgba(16, 185, 129, 0.3)",
-              }}
-            >
-              VS
-            </div>
-            <div>
-              <div style={{ fontSize: "11.5px", fontWeight: 600, color: "#FFFFFF" }}>
-                Insp. Vikram
-              </div>
+        {/* Top: Brand, Case Combobox & Navigation */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {/* Brand Row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div
                 style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  color: "#10B981",
+                  width: "26px",
+                  height: "26px",
+                  borderRadius: "7px",
+                  background: "#4F46E5",
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
+                  justifyContent: "center",
+                  color: "#FFFFFF",
+                  boxShadow: "0 1px 3px rgba(79, 70, 229, 0.3)",
                 }}
               >
-                <span>CBI Cyber</span>
-                <span style={{ color: "#71717A" }}>·</span>
-                <span style={{ color: "#34D399" }}>ISO 17025</span>
+                <Shield size={15} strokeWidth={2.4} />
+              </div>
+              <span
+                style={{
+                  fontSize: "15px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.03em",
+                  color: "#09090B",
+                }}
+              >
+                TARKA
+              </span>
+            </div>
+            <ReuiStatusBadge text="v5.0 BSA § 63" variant="indigo" dot={false} />
+          </div>
+
+          {/* ReUI Case Combobox Button */}
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E4E4E7",
+              borderRadius: "10px",
+              padding: "8px 10px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              cursor: "pointer",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#71717A" }}>
+                FIR #149/2026 · Noida Cyber Cell
+              </div>
+              <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#09090B", marginTop: "1px" }}>
+                Digital Arrest Extortion (₹2.15L)
               </div>
             </div>
+            <ChevronDown size={14} color="#71717A" />
           </div>
-          <ChevronDown size={13} color="#71717A" />
+
+          {/* Section 1: INVESTIGATION ENGINES */}
+          <div>
+            <div
+              style={{
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: "#71717A",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                padding: "0 8px 6px 8px",
+              }}
+            >
+              Investigation Engines
+            </div>
+
+            <nav style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              {navItems.map((item) => {
+                const isActive = activeRoute === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveRoute(item.id)}
+                    style={{
+                      position: "relative",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 10px",
+                      borderRadius: "10px",
+                      background: isActive ? "#FFFFFF" : "transparent",
+                      border: isActive ? "1px solid #E4E4E7" : "1px solid transparent",
+                      boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
+                      color: "#09090B",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      transition: "all 0.12s ease",
+                    }}
+                  >
+                    {/* Active Left Indicator Bar */}
+                    {isActive && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: "0px",
+                          top: "20%",
+                          bottom: "20%",
+                          width: "3px",
+                          borderRadius: "0 3px 3px 0",
+                          background: "#4F46E5",
+                        }}
+                      />
+                    )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          fontFamily: "var(--font-mono)",
+                          color: isActive ? "#4F46E5" : "#71717A",
+                          background: isActive ? "#EEF2FF" : "rgba(0,0,0,0.04)",
+                          padding: "1px 5px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {item.step}
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: isActive ? 700 : 500,
+                            color: isActive ? "#09090B" : "#52525B",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: "10px", color: "#71717A", marginTop: "1px" }}>
+                          {item.subtitle}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                      <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} />
+                      <ReuiKbd>{item.kbd}</ReuiKbd>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Section 2: INGESTED ARTIFACT TREE (ReUI File Tree) */}
+          <div>
+            <div
+              style={{
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: "#71717A",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                padding: "0 8px 6px 8px",
+              }}
+            >
+              Ingested Artifact Tree
+            </div>
+
+            <div
+              style={{
+                marginLeft: "8px",
+                paddingLeft: "8px",
+                borderLeft: "1px solid #D4D4D8",
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+              }}
+            >
+              {ingestedFiles.map((f, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "11px",
+                    padding: "3px 4px",
+                    borderRadius: "6px",
+                    color: "#3F3F46",
+                  }}
+                  title={f.desc}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                    <FileText size={12} color="#71717A" />
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {f.name}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-mono)",
+                      padding: "1px 4px",
+                      borderRadius: "3px",
+                      background: f.status === "emerald" ? "#ECFDF5" : f.status === "rose" ? "#FFF1F2" : "#FFFBEB",
+                      color: f.status === "emerald" ? "#065F46" : f.status === "rose" ? "#9F1239" : "#92400E",
+                      border: `1px solid ${f.status === "emerald" ? "#A7F3D0" : f.status === "rose" ? "#FECDD3" : "#FDE68A"}`,
+                    }}
+                  >
+                    {f.tier}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Sidebar Footer: Examiner & Solver Telemetry */}
+        <div
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #E4E4E7",
+            borderRadius: "10px",
+            padding: "9px 10px",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "5px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10B981" }} />
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#09090B" }}>Z3 SMT Solver</span>
+            </div>
+            <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "#10B981", fontWeight: 600 }}>
+              ONLINE (3.8ms)
+            </span>
+          </div>
+
+          <div style={{ fontSize: "10px", color: "#71717A" }}>
+            CAS SHA-256 Chain: <strong style={{ color: "#065F46" }}>INTACT</strong>
+          </div>
+
+          <div
+            style={{
+              borderTop: "1px solid #F4F4F5",
+              paddingTop: "6px",
+              marginTop: "2px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B" }}>
+                Insp. Vikram Sharma
+              </div>
+              <div style={{ fontSize: "9.5px", color: "#71717A" }}>
+                Investigating Officer (IO)
+              </div>
+            </div>
+            <ReuiStatusBadge text="ISO 17025" variant="emerald" dot={false} />
+          </div>
         </div>
       </aside>
 
       {/* =========================================================================
-          2. MAIN CONTENT AREA (68PX HEADER + WORKSPACE CANVAS)
+          2. MAIN INSET WORKSPACE FRAME (#FAFAFA CANVAS WITH #FFFFFF INNER CARDS)
           ========================================================================= */}
       <div
         style={{
           flex: 1,
+          background: "var(--reui-canvas-bg, #FAFAFA)",
+          border: "1px solid var(--reui-border-strong, #E4E4E7)",
+          borderRadius: "14px",
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
           minWidth: 0,
           height: "100%",
-          overflow: "hidden",
         }}
       >
-        {/* TOP HEADER BAR (68PX HEIGHT, #050807 TRANSPARENT) */}
+        {/* TOP COMMAND HEADER (56PX HEIGHT) */}
         <header
           style={{
-            height: "68px",
-            padding: "0 28px",
+            height: "56px",
+            background: "#FFFFFF",
+            borderBottom: "1px solid #E4E4E7",
+            padding: "0 20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexShrink: 0,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-            background: "transparent",
             boxSizing: "border-box",
-            zIndex: 40,
+            zIndex: 30,
           }}
         >
-          {/* Left: Page Title (22px bold #FFFFFF) + Subtitle (13px #71717A) */}
-          <div>
-            <h1
-              style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                color: "#FFFFFF",
-                margin: 0,
-                letterSpacing: "-0.02em",
-                lineHeight: 1.2,
-              }}
-            >
-              {currentMeta.title}
-            </h1>
-            <p
-              style={{
-                fontSize: "12.5px",
-                fontWeight: 500,
-                color: "#71717A",
-                margin: "2px 0 0 0",
-              }}
-            >
-              {currentMeta.subtitle}
-            </p>
+          {/* Left Breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "#71717A" }}>
+              {activeCaseId}
+            </span>
+            <span style={{ color: "#D4D4D8" }}>/</span>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "#09090B" }}>
+              {currentNav.step}. {currentNav.title}
+            </span>
+            <ReuiStatusBadge text="FALSIFICATION GATE ACTIVE" variant="rose" />
           </div>
 
-          {/* Right: Search Input + Tamper Toggle Pill + Golden Hour Pill + Profile Badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {/* Dark Pill Search Input */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: "#0C1310",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "999px",
-                padding: "6px 14px",
-                width: "250px",
-                boxSizing: "border-box",
-              }}
-            >
-              <Search size={13} color="#71717A" strokeWidth={2.2} />
-              <input
-                type="text"
-                placeholder="Search RRN, UTR, IMEI..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  outline: "none",
-                  fontSize: "12px",
-                  color: "#FFFFFF",
-                  width: "100%",
-                  fontFamily: "inherit",
-                }}
-              />
-            </div>
+          {/* Center: ReUI Operational Clock Stepper */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#F4F4F5",
+              border: "1px solid #E4E4E7",
+              borderRadius: "8px",
+              padding: "2px 4px",
+            }}
+          >
+            {clockStages.map((stg, idx) => {
+              const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setTimeOffsetHours(stg.offset)}
+                  style={{
+                    border: "none",
+                    background: isCurrent ? "#FFFFFF" : "transparent",
+                    color: isCurrent ? "#09090B" : "#71717A",
+                    fontWeight: isCurrent ? 700 : 500,
+                    fontSize: "11px",
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    boxShadow: isCurrent ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "all 0.15s ease",
+                  }}
+                  title={stg.title}
+                >
+                  {isCurrent && (
+                    <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#4F46E5" }} />
+                  )}
+                  <span>{stg.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Live Demo Simulator Popover */}
-            <LiveDemoSimulatorPopover />
-
-            {/* Interactive [⚡ Tamper Row #14] Toggle Pill Button */}
+          {/* Right Header Actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Live Judge Mutator Button */}
             <button
               type="button"
-              onClick={() => toggleMutation("alterBankRow14")}
+              onClick={() => setMutatorRibbonOpen((prev) => !prev)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "7px 14px",
-                borderRadius: "999px",
-                background: mutations.alterBankRow14
-                  ? "rgba(239, 68, 68, 0.16)"
-                  : "rgba(16, 185, 129, 0.10)",
-                border: mutations.alterBankRow14
-                  ? "1px solid rgba(239, 68, 68, 0.35)"
-                  : "1px solid rgba(16, 185, 129, 0.25)",
-                color: mutations.alterBankRow14 ? "#F87171" : "#10B981",
-                fontSize: "12px",
+                background: activeMutationsCount > 0 ? "#FFF1F2" : "#F4F4F5",
+                border: activeMutationsCount > 0 ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                color: activeMutationsCount > 0 ? "#9F1239" : "#3F3F46",
                 fontWeight: 600,
+                fontSize: "11.5px",
+                borderRadius: "8px",
+                padding: "6px 11px",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
-              title="Toggle Row #14 ledger falsification (+₹2.00L dispute)"
             >
-              <Zap size={13} color={mutations.alterBankRow14 ? "#EF4444" : "#10B981"} />
-              <span>
-                {mutations.alterBankRow14 ? "Row #14 Tampered 🚨" : "Tamper Row #14"}
-              </span>
+              <Zap size={13} color={activeMutationsCount > 0 ? "#F43F5E" : "#71717A"} />
+              <span>Live Judge Mutator ({activeMutationsCount})</span>
+              <ChevronDown
+                size={12}
+                style={{
+                  transform: mutatorRibbonOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.15s ease",
+                }}
+              />
             </button>
 
-            {/* [T+2.5h Golden Hour ▾] Dropdown Pill */}
-            <div
+            {/* Sarvam Voice AI Button */}
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
-                padding: "7px 14px",
-                borderRadius: "999px",
-                background: "#0C1310",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                fontSize: "12px",
-                color: "#E2E8F0",
+                gap: "5px",
+                background: "#F4F4F5",
+                border: "1px solid #E4E4E7",
+                color: "#3F3F46",
+                fontWeight: 600,
+                fontSize: "11.5px",
+                borderRadius: "8px",
+                padding: "6px 11px",
                 cursor: "pointer",
               }}
             >
-              <span
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background:
-                    statutoryPeriod.code === "GOLDEN_HOUR" ? "#EF4444" : "#10B981",
-                  boxShadow:
-                    statutoryPeriod.code === "GOLDEN_HOUR"
-                      ? "0 0 6px #EF4444"
-                      : "0 0 6px #10B981",
-                }}
-              />
-              <span style={{ fontWeight: 600 }}>T+{timeOffsetHours.toFixed(1)}h</span>
-              <span style={{ color: "#71717A" }}>·</span>
-              <span style={{ color: "#8E9893" }}>{statutoryPeriod.label}</span>
-              <ChevronDown size={12} color="#71717A" />
-            </div>
+              <Mic size={13} color="#4F46E5" />
+              <span>Sarvam Voice AI</span>
+            </button>
 
-            {/* Inspector Avatar & ISO Tag */}
-            <div
+            {/* Export Section 63(4) PDF Button */}
+            <button
+              type="button"
+              onClick={handlePrintPdf}
               style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "4px 8px",
-                borderRadius: "999px",
-                background: "#0C1310",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                gap: "5px",
+                background: "#09090B",
+                border: "1px solid #09090B",
+                color: "#FFFFFF",
+                fontWeight: 600,
+                fontSize: "11.5px",
+                borderRadius: "8px",
+                padding: "6px 12px",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
               }}
             >
-              <div
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #006b46 0%, #10B981 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  color: "#FFFFFF",
-                }}
-              >
-                VS
-              </div>
-              <ShieldCheck size={14} color="#10B981" />
-            </div>
+              <FileDown size={13} />
+              <span>Export § 63(4) PDF</span>
+            </button>
           </div>
         </header>
 
-        {/* WORKSPACE VIEWPORT (FITS ALL 3 ROWS CLEANLY WITH ZERO SQUISHING) */}
+        {/* REUI HORIZONTAL MUTATOR RIBBON (SLIDES OUT DIRECTLY BELOW HEADER) */}
+        {mutatorRibbonOpen && (
+          <div
+            style={{
+              background: "#FFFFFF",
+              borderBottom: "1px solid #E4E4E7",
+              padding: "10px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+              zIndex: 20,
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#71717A", textTransform: "uppercase" }}>
+                6 Forensic Invariant Injections:
+              </span>
+
+              {/* 1. Tamper Row #14 Balance */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("alterBankRow14")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.alterBankRow14 ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                  background: mutations.alterBankRow14 ? "#FFF1F2" : "#F4F4F5",
+                  color: mutations.alterBankRow14 ? "#9F1239" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.alterBankRow14 ? "✓ 1. Row #14 Balance Tampered (-₹2.00L)" : "1. Tamper Row #14 Balance"}
+              </button>
+
+              {/* 2. Forge RRN Date */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("forgeRrnTimestamp")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.forgeRrnTimestamp ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                  background: mutations.forgeRrnTimestamp ? "#FFF1F2" : "#F4F4F5",
+                  color: mutations.forgeRrnTimestamp ? "#9F1239" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.forgeRrnTimestamp ? "✓ 2. RRN Date Drifted (+50m)" : "2. Forge RRN Date"}
+              </button>
+
+              {/* 3. Drop CGNAT Port */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("dropCgnatSourcePort")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.dropCgnatSourcePort ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                  background: mutations.dropCgnatSourcePort ? "#FFF1F2" : "#F4F4F5",
+                  color: mutations.dropCgnatSourcePort ? "#9F1239" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.dropCgnatSourcePort ? "✓ 3. Port Dropped (340 Subs)" : "3. Drop CGNAT Port"}
+              </button>
+
+              {/* 4. Trigger Hotspot TTL=63 */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("triggerHotspotCollision")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.triggerHotspotCollision ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                  background: mutations.triggerHotspotCollision ? "#FFF1F2" : "#F4F4F5",
+                  color: mutations.triggerHotspotCollision ? "#9F1239" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.triggerHotspotCollision ? "✓ 4. Hotspot TTL=63 Active" : "4. Trigger Hotspot TTL=63"}
+              </button>
+
+              {/* 5. Inject ₹2.5L Clean Deposit */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("injectMerchantCleanDeposit")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.injectMerchantCleanDeposit ? "1px solid #C7D2FE" : "1px solid #E4E4E7",
+                  background: mutations.injectMerchantCleanDeposit ? "#EEF2FF" : "#F4F4F5",
+                  color: mutations.injectMerchantCleanDeposit ? "#3730A3" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.injectMerchantCleanDeposit ? "✓ 5. LIBR Divergence Injected" : "5. Inject ₹2.5L Clean Deposit"}
+              </button>
+
+              {/* 6. Flip Custody Byte */}
+              <button
+                type="button"
+                onClick={() => toggleMutation("flipCustodyByte")}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  padding: "4px 9px",
+                  borderRadius: "6px",
+                  border: mutations.flipCustodyByte ? "1px solid #FECDD3" : "1px solid #E4E4E7",
+                  background: mutations.flipCustodyByte ? "#FFF1F2" : "#F4F4F5",
+                  color: mutations.flipCustodyByte ? "#9F1239" : "#3F3F46",
+                  cursor: "pointer",
+                }}
+              >
+                {mutations.flipCustodyByte ? "✓ 6. Merkle Byte Flipped" : "6. Flip Custody Byte"}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={resetAllMutations}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#71717A",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              <RotateCcw size={11} />
+              <span>Reset All</span>
+            </button>
+          </div>
+        )}
+
+        {/* WORKSPACE VIEWPORT */}
         <main
           style={{
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            padding: "20px 28px 36px 28px",
             boxSizing: "border-box",
             background: "transparent",
           }}

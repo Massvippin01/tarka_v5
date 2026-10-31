@@ -1,154 +1,320 @@
 /* ==========================================================================
-   TARKA v5.0 — TASKFORGE DARK OBSIDIAN-EMERALD BENTO DESIGN SYSTEM
-   Pixel-for-pixel match of Taskforge Executive Dashboard
-   Palette: #050807 Pitch Obsidian + #10B981 Emerald + Pure Crisp White #FFFFFF Hero Numbers
+   TARKA v5.0 — DAYLIGHT EXECUTIVE SAAS BENTO DESIGN SYSTEM
+   Inspired by Salezy, FlowMail, Noteflow, Health, and ReUI.io
+   Used by National Cyber Crime Research & Digital Evidence Falsification
    ========================================================================== */
 
 :root {
-  /* Taskforge Surface & Background Tokens */
-  --tf-bg: #050807;
-  --tf-canvas-glow: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(16, 185, 129, 0.12), transparent 70%);
-  --tf-card: linear-gradient(165deg, rgba(16, 26, 22, 0.92) 0%, rgba(9, 14, 12, 0.98) 100%);
-  --tf-card-sheen: radial-gradient(120% 100% at 0% 0%, rgba(16, 185, 129, 0.07) 0%, transparent 65%);
-  --tf-border: 1px solid rgba(16, 185, 129, 0.14);
-  --tf-border-hover: 1px solid rgba(16, 185, 129, 0.32);
-  --tf-card-radius: 18px;
-  --tf-card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  /* Core Daylight Surface & Frame Tokens */
+  --bento-canvas: #F4F6FB;           /* Soft daylight canvas background */
+  --reui-frame-bg: #F4F5F9;          /* Outer app shell and sidebar */
+  --reui-canvas-bg: #F8FAFC;         /* Inset main workspace canvas */
+  --reui-card-bg: #FFFFFF;           /* Crisp pristine white card surface */
+  --reui-card-well: #F4F5F9;         /* Recessed well background */
 
-  /* Taskforge Strict Typography Hierarchy */
-  --tf-hero-white: #FFFFFF;
-  --tf-title-light: #F8FAFC;
-  --tf-muted-label: #8E9893;
-  --tf-muted-subtext: #71717A;
+  /* Hairline Borders */
+  --reui-border-strong: #E2E8F0;     /* Slate-200: Crisp 1px structural hairlines */
+  --reui-border-subtle: #F1F5F9;     /* Slate-100: Table row and cell dividers */
+  --reui-border-well: #E2E8F0;       /* Outer well border */
+  --reui-border-inner: rgba(15, 23, 42, 0.06); /* Inner card border */
 
-  /* Taskforge Semantic Accents */
-  --tf-emerald: #10B981;
-  --tf-emerald-glow: 0 0 12px rgba(16, 185, 129, 0.45);
-  --tf-mint: #6EE7B7;
-  --tf-coral: #EF4444;
-  --tf-coral-glow: 0 0 12px rgba(239, 68, 68, 0.45);
-  --tf-amber: #F59E0B;
-  --tf-blue: #3B82F6;
-  --tf-purple: #8B5CF6;
+  /* High-Definition Typography */
+  --reui-text-primary: #0F172A;      /* Slate-900: Razor-sharp headings, hero numbers */
+  --reui-text-secondary: #475569;    /* Slate-600: Body labels, explanations */
+  --reui-text-muted: #64748B;        /* Slate-500: Metadata, byte offsets, headers */
+  --reui-text-inverse: #FFFFFF;
 
-  /* Font Families */
-  --tf-font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --tf-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  /* Executive Pastel Status Tokens */
+  --reui-emerald-bg: #ECFDF5;
+  --reui-emerald-border: #A7F3D0;
+  --reui-emerald-text: #047857;
+  --reui-emerald-dot: #10B981;
+
+  --reui-rose-bg: #FFF1F2;
+  --reui-rose-border: #FECDD3;
+  --reui-rose-text: #BE123C;
+  --reui-rose-dot: #F43F5E;
+
+  --reui-amber-bg: #FFFBEB;
+  --reui-amber-border: #FDE68A;
+  --reui-amber-text: #B45309;
+  --reui-amber-dot: #F59E0B;
+
+  --reui-indigo-bg: #EEF2FF;
+  --reui-indigo-border: #C7D2FE;
+  --reui-indigo-text: #4338CA;
+  --reui-indigo-solid: #4F46E5;
+
+  --reui-purple-bg: #F5F3FF;
+  --reui-purple-border: #DDD6FE;
+  --reui-purple-text: #6D28D9;
+  --reui-purple-dot: #8B5CF6;
+
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-/* Base Body Application Canvas */
 body {
-  background-color: var(--tf-bg);
-  background-image: var(--tf-canvas-glow);
-  color: var(--tf-title-light);
-  font-family: var(--tf-font-sans);
   margin: 0;
   padding: 0;
+  background-color: var(--reui-frame-bg);
+  color: var(--reui-text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Taskforge Card Utility */
-.tf-card {
-  background: var(--tf-card);
-  border: var(--tf-border);
-  border-radius: var(--tf-card-radius);
-  padding: 22px 24px;
-  box-shadow: var(--tf-card-shadow);
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+/* ==========================================================================
+   BENTO GRID & EXECUTIVE CARD ARCHITECTURE (SALEZY & FLOWMAIL STYLE)
+   ========================================================================== */
+
+.bento-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .bento-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid var(--reui-border-strong);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.bento-card:hover {
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.06);
+  border-color: #CBD5E1;
+}
+
+/* ReUI Double-Bezel Inset Card Architecture */
+.reui-card-well {
+  background: var(--reui-card-well);
+  border: 1px solid var(--reui-border-well);
+  border-radius: 16px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
 
-.tf-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--tf-card-sheen);
-  pointer-events: none;
-  border-radius: var(--tf-card-radius);
+.reui-well-header {
+  padding: 8px 14px 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.tf-card:hover {
-  border: var(--tf-border-hover);
-}
-
-/* Pure Crisp White 30px Hero Numbers */
-.tf-hero-number {
-  color: #FFFFFF !important;
-  font-size: 30px;
+.reui-well-title {
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  font-family: var(--tf-font-sans);
-}
-
-/* Taskforge Card Header Titles */
-.tf-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #F8FAFC;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   letter-spacing: -0.01em;
 }
 
-.tf-muted-text {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #8E9893;
-}
-
-/* Sleek 5px Progress Bar Track */
-.tf-progress-track {
-  width: 100%;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 999px;
-  overflow: hidden;
-  position: relative;
-}
-
-.tf-progress-fill-emerald {
-  height: 100%;
-  border-radius: 999px;
-  background: #10B981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.tf-progress-fill-coral {
-  height: 100%;
-  border-radius: 999px;
-  background: #EF4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.tf-progress-fill-amber {
-  height: 100%;
-  border-radius: 999px;
-  background: #F59E0B;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Hairline dividers between clean rows */
-.tf-hairline {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Taskforge Vertical Pill Tracks */
-.tf-pill-track {
-  background: rgba(16, 185, 129, 0.10);
-  border-radius: 8px;
-  padding: 4px;
+.reui-card-body {
+  background: var(--reui-card-bg);
+  border: 1px solid var(--reui-border-inner);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  padding: 16px 18px;
+  flex: 1;
   display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 100%;
+  flex-direction: column;
   box-sizing: border-box;
-  transition: background 0.15s ease;
 }
 
-.tf-pill-track:hover {
-  background: rgba(16, 185, 129, 0.18);
+.reui-well-footer {
+  padding: 6px 14px 2px 14px;
+  font-size: 11.5px;
+  color: var(--reui-text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   STATUS BADGES & PILLS
+   ========================================================================== */
+
+.reui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+
+.reui-status-badge.emerald {
+  background: var(--reui-emerald-bg);
+  border: 1px solid var(--reui-emerald-border);
+  color: var(--reui-emerald-text);
+}
+.reui-status-badge.emerald .dot {
+  background: var(--reui-emerald-dot);
+}
+
+.reui-status-badge.rose {
+  background: var(--reui-rose-bg);
+  border: 1px solid var(--reui-rose-border);
+  color: var(--reui-rose-text);
+}
+.reui-status-badge.rose .dot {
+  background: var(--reui-rose-dot);
+}
+
+.reui-status-badge.amber {
+  background: var(--reui-amber-bg);
+  border: 1px solid var(--reui-amber-border);
+  color: var(--reui-amber-text);
+}
+.reui-status-badge.amber .dot {
+  background: var(--reui-amber-dot);
+}
+
+.reui-status-badge.indigo {
+  background: var(--reui-indigo-bg);
+  border: 1px solid var(--reui-indigo-border);
+  color: var(--reui-indigo-text);
+}
+.reui-status-badge.indigo .dot {
+  background: var(--reui-indigo-solid);
+}
+
+.reui-status-badge.purple {
+  background: var(--reui-purple-bg);
+  border: 1px solid var(--reui-purple-border);
+  color: var(--reui-purple-text);
+}
+.reui-status-badge.purple .dot {
+  background: var(--reui-purple-dot);
+}
+
+.reui-status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Recessed Segmented Tabs */
+.reui-segmented-tabs {
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reui-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 11px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.reui-tab-btn:hover {
+  color: #0F172A;
+}
+
+.reui-tab-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Keyboard Shortcut Keycap */
+.reui-kbd {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  display: inline-block;
+}
+
+/* Monospace & Tabular Helpers */
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.reui-hero-metric {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--reui-text-primary);
+  font-family: var(--font-sans);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+/* Interactive Daylight Table */
+.daylight-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.daylight-table th {
+  background: #F8FAFC;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #E2E8F0;
+  text-align: left;
+}
+
+.daylight-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #0F172A;
+  vertical-align: middle;
+}
+
+.daylight-table tr:last-child td {
+  border-bottom: none;
+}
+
+.daylight-table tr:hover td {
+  background-color: #F8FAFC;
 }
