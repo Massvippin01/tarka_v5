@@ -9,8 +9,11 @@ import {
   Check,
   Sliders,
   DollarSign,
+  FileText,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
+import { SaasExecutiveKpiCard } from "../../components/tarka/SaasExecutiveKpiCard";
+import { SemiCircleGauge } from "../../components/tarka/BentoPrimitives";
 import {
   computeTaintEngine,
   generateBnssDrafts,
@@ -53,223 +56,121 @@ export const TaintEngineScreen: React.FC = () => {
 
   const isInjectClean = mutations.injectMerchantCleanDeposit;
 
+  // Containment percentage for gauge
+  const containmentPct = engineState.minCut.isFreezeComplete ? 100 : Math.round(((500000 - engineState.minCut.residualLeakageAmount) / 500000) * 100);
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
         height: "calc(100vh - 52px)",
-        padding: "10px 14px",
-        gap: "10px",
+        padding: "16px 20px",
+        gap: "14px",
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflowY: "auto",
+        background: "var(--bento-canvas, #F4F6FB)",
       }}
     >
-      {/* 1. SINGLE-LINE 4-PILL TELEMETRY STRIP (HEIGHT: 38PX, NO VERTICAL SCROLL) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "10px",
-          height: "38px",
-          flexShrink: 0,
-        }}
-      >
-        {/* Pill 1: Initial Victim Loss */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(225,29,72,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+      {/* 1. TOP 4 EXECUTIVE SAAS KPI METRIC CARDS (MIN-HEIGHT: 108PX) */}
+      <div className="saas-kpi-row">
+        <SaasExecutiveKpiCard
+          label="Victim Property Loss"
+          metric={`₹${(engineState.summary.initialVictimLoss / 100000).toFixed(2)}L`}
+          metricColor="#E11D48"
+          subtext="Capital stolen from complainant Sunil Kumar at T+0"
+          statusBadge={{
+            text: "FRAUD LOSS T+0",
+            variant: "rose",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <UserX size={14} color="#E11D48" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              DEFRAUDED LOSS
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#E11D48",
-              background: "rgba(225,29,72,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            ₹{(engineState.summary.initialVictimLoss / 100000).toFixed(2)}L (T+0 Loss)
-          </span>
-        </div>
+          icon={UserX}
+          iconColor="#E11D48"
+          iconBg="#FFF1F2"
+        />
 
-        {/* Pill 2: LIBR Recoverable */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(5,150,105,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="LIBR Recoverable Taint"
+          metric={`₹${(engineState.summary.librRecoverable / 100000).toFixed(2)}L`}
+          metricColor="#059669"
+          subtext="Protected under Roscoe v. Winder & Shree Balaji precedents"
+          statusBadge={{
+            text: "HC PRECEDENT CAPPED",
+            variant: "emerald",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Scale size={14} color="#059669" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              LIBR RECOVERABLE
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#059669",
-              background: "rgba(5,150,105,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            ₹{(engineState.summary.librRecoverable / 100000).toFixed(2)}L (ROSCOE V. WINDER)
-          </span>
-        </div>
+          icon={Scale}
+          iconColor="#059669"
+          iconBg="#ECFDF5"
+        />
 
-        {/* Pill 3: Dinic Min-Cut Freeze Status */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: engineState.minCut.isFreezeComplete ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(217,119,6,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="Dinic Min-Cut Freeze"
+          metric={engineState.minCut.isFreezeComplete ? `SAT (K=${freezeBudgetK})` : `LEAK (K=${freezeBudgetK})`}
+          metricColor={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"}
+          subtext={engineState.minCut.isFreezeComplete ? "100% flow sealed · Zero outward leakage to ATM exits" : `₹${(engineState.minCut.residualLeakageAmount / 100000).toFixed(2)}L escaping via Layer 2 Mule`}
+          statusBadge={{
+            text: engineState.minCut.isFreezeComplete ? "SEALED 100%" : "ESCAPE DETECTED",
+            variant: engineState.minCut.isFreezeComplete ? "emerald" : "amber",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Lock size={14} color={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"} />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              DINIC MIN-CUT FREEZE
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: engineState.minCut.isFreezeComplete ? "#059669" : "#D97706",
-              background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {engineState.minCut.isFreezeComplete ? `SAT (K=${freezeBudgetK}) · ZERO LEAKAGE` : `LEAKING ₹${(engineState.minCut.residualLeakageAmount / 100000).toFixed(2)}L`}
-          </span>
-        </div>
+          icon={Lock}
+          iconColor={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"}
+          iconBg={engineState.minCut.isFreezeComplete ? "#ECFDF5" : "#FFFBEB"}
+        />
 
-        {/* Pill 4: BNSS Statutory Split */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(79,70,229,0.25)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="BNSS 2023 Statutory Dual-Track"
+          metric="§ 106 & § 107"
+          metricColor="#4F46E5"
+          subtext="Proportional lien on fraud amount; innocent merchant safe"
+          statusBadge={{
+            text: "MERCHANT PROTECTED",
+            variant: "indigo",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <GitFork size={14} color="#4F46E5" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              BNSS 2023 DUAL-TRACK
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#4F46E5",
-              background: "rgba(79,70,229,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            § 106 LIEN & § 107 DEBIT FREEZE
-          </span>
-        </div>
+          icon={GitFork}
+          iconColor="#4F46E5"
+          iconBg="#EEF2FF"
+        />
       </div>
 
-      {/* 2. MAIN 12-COLUMN BENTO INFOGRAPHIC WORKSPACE (HEIGHT: CALC(100% - 48PX), OVERFLOW: HIDDEN) */}
+      {/* 2. MAIN 12-COLUMN BENTO GRID */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "10px",
+          gap: "14px",
           flex: 1,
           minHeight: 0,
         }}
       >
-        {/* LEFT COLUMN: 7 COLS (VISUAL MULE FLOW DIAGRAM + DINIC MIN-CUT SLIDER) */}
-        <div
-          style={{
-            gridColumn: "span 7",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
-          {/* CARD 1: VISUAL MULE MONEY TRAIL FLOW DIAGRAM (TE-DAG) */}
+        {/* LEFT COLUMN: 7 COLUMNS (VISUAL TE-DAG WITH BEZIER FLOW LINES + INNOCENT MERCHANT SPLIT BAR) */}
+        <div style={{ gridColumn: "span 7", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
+          {/* CARD 1: TIME-EXPANDED DAG (TE-DAG) MONEY TRAIL */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 60%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "12px",
             }}
           >
-            {/* Header with Title and Injection Button */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {/* Header with Title & Clean Deposit Injection Button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <GitFork size={15} color="#4F46E5" />
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <GitFork size={16} color="#4F46E5" />
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#0F172A" }}>
                     Time-Expanded DAG Money Trail & Node Classification
                   </span>
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#059669",
-                      background: "rgba(5,150,105,0.08)",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    ZERO CYCLES GUARANTEED
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>
+                    ZERO CYCLES
                   </span>
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                  Dynamic node expansion: Mule accounts vs Innocent Merchant GST distinction.
+                <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                  <strong>What this means for IO:</strong> Tracks fraud flow across layers while shielding legitimate businesses.
                 </div>
               </div>
 
@@ -279,287 +180,195 @@ export const TaintEngineScreen: React.FC = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "5px",
                   fontSize: "11px",
                   fontWeight: 700,
-                  padding: "4px 8px",
+                  padding: "5px 10px",
                   borderRadius: "6px",
-                  border: isInjectClean ? "1px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                  background: isInjectClean ? "rgba(5,150,105,0.12)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                  color: isInjectClean ? "#047857" : "var(--bento-text-secondary, #475569)",
+                  border: isInjectClean ? "1px solid #059669" : "1px solid #CBD5E1",
+                  background: isInjectClean ? "#ECFDF5" : "#F8FAFC",
+                  color: isInjectClean ? "#047857" : "#0F172A",
                   cursor: "pointer",
                 }}
-                title="Injects ₹2.5L clean commercial funds into Merchant account to prove LIBR protects innocent capital"
+                title="Injects ₹2.5L clean commercial funds to demonstrate LIBR protection"
               >
-                <DollarSign size={11} />
-                <span>{isInjectClean ? "Clean Deposit Injected (+₹2.5L)" : "Inject Clean Deposit (+₹2.5L)"}</span>
+                <DollarSign size={12} />
+                <span>{isInjectClean ? "Clean Funds Injected (+₹2.5L)" : "+ Inject Clean Deposit (+₹2.5L)"}</span>
               </button>
             </div>
 
-            {/* Visual Left-to-Right TE-DAG Pipeline Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.1fr 1fr 1.3fr",
-                gap: "8px",
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              {/* Column 1: Layer 0 Victim & Layer 1 Mule */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {/* Victim Node */}
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(225,29,72,0.04)",
-                    border: "1px solid rgba(225,29,72,0.25)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
+            {/* 3-Column Node Layout with Flow Indicators */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1.3fr", gap: "10px", position: "relative" }}>
+              {/* Column 1: Victim & Layer 1 Mule */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {/* Node 0: Victim */}
+                <div style={{ background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#E11D48", textTransform: "uppercase" }}>
-                      VICTIM SOURCE (T+0)
-                    </span>
-                    <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                      09:30 IST
-                    </span>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#BE123C", textTransform: "uppercase" }}>Victim Source</span>
+                    <span style={{ fontSize: "9.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>09:30 IST</span>
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Sunil Kumar (Victim)
-                  </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    SBI 30910029101
-                  </div>
-                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#E11D48", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Sunil Kumar</div>
+                  <div style={{ fontSize: "10.5px", color: "#64748B" }}>SBI 30910029101</div>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
                     -₹5,00,000.00
                   </div>
                 </div>
 
-                {/* Layer 1 Mule Node */}
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(217,119,6,0.06)",
-                    border: "1px solid rgba(217,119,6,0.3)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    flex: 1,
-                  }}
-                >
+                {/* Arrow indicator */}
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#4F46E5", background: "#EEF2FF", padding: "1px 6px", borderRadius: "4px" }}>
+                    ₹5,00,000 Outflow ↓
+                  </span>
+                </div>
+
+                {/* Node 1: Layer 1 Mule */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
-                      LAYER 1 MULE
-                    </span>
-                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
-                      § 107 FULL FREEZE
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>Mule Layer 1</span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "4px" }}>
+                      § 107 DEBIT FREEZE
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Vikram Shah
-                  </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    SBI 41088291083 (Dwell: 112s)
-                  </div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                    Total Inflow: ₹5,00,000
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Vikram Shah</div>
+                  <div style={{ fontSize: "10.5px", color: "#64748B" }}>SBI 41088291083 (Dwell: 112s)</div>
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Inflow: ₹5,00,000
                   </div>
                 </div>
               </div>
 
-              {/* Column 2: Layer 2 Mule Splits (A & B) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {/* Layer 2 Mule A */}
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(217,119,6,0.04)",
-                    border: "1px solid rgba(217,119,6,0.25)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    flex: 1,
-                  }}
-                >
+              {/* Column 2: Layer 2 Split Mules */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {/* Node 2A: Split Mule A */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
-                      MULE L2 (SPLIT A)
-                    </span>
-                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>Mule L2 (Split A)</span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "4px" }}>
                       § 107 FREEZE
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Rohit Verma
-                  </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    HDFC 5010029419920
-                  </div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                    Tainted: ₹3,00,000
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Rohit Verma</div>
+                  <div style={{ fontSize: "10.5px", color: "#64748B" }}>HDFC 5010029419920</div>
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    ₹3,00,000 Transferred
                   </div>
                 </div>
 
-                {/* Layer 2 Mule B */}
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(217,119,6,0.04)",
-                    border: "1px solid rgba(217,119,6,0.25)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    flex: 1,
-                  }}
-                >
+                {/* Connecting Arrow */}
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#64748B" }}>
+                    Split 60% / 40%
+                  </span>
+                </div>
+
+                {/* Node 2B: Split Mule B */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
-                      MULE L2 (SPLIT B)
-                    </span>
-                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#DC2626", background: "rgba(220,38,38,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>Mule L2 (Split B)</span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "4px" }}>
                       § 107 FREEZE
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Sameer Khan
-                  </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    AXIS 9140200410291
-                  </div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                    Tainted: ₹2,00,000
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Sameer Khan</div>
+                  <div style={{ fontSize: "10.5px", color: "#64748B" }}>AXIS 9140200410291</div>
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    ₹2,00,000 Transferred
                   </div>
                 </div>
               </div>
 
-              {/* Column 3: Layer 3 Terminal (Innocent Merchant & ATM Cashout) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {/* Innocent Merchant Node (GST Protected) */}
+              {/* Column 3: Innocent Merchant (GST Protected) & ATM Cashout */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {/* Node 3: Innocent Merchant */}
                 <div
                   style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(5,150,105,0.06)",
-                    border: "1px solid rgba(5,150,105,0.3)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    flex: 1.2,
+                    background: "#FFFFFF",
+                    border: "2px solid #059669",
+                    borderRadius: "10px",
+                    padding: "10px",
+                    boxShadow: "0 2px 8px rgba(5,150,105,0.08)",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Store size={11} color="#059669" />
-                      <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669", textTransform: "uppercase" }}>
-                        INNOCENT MERCHANT
+                      <Store size={12} color="#059669" />
+                      <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#047857", textTransform: "uppercase" }}>
+                        Innocent Merchant
                       </span>
                     </div>
-                    <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "rgba(5,150,105,0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0", padding: "1px 5px", borderRadius: "4px" }}>
                       § 106 LIEN ONLY
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>
                     Apex Electronics Pvt Ltd
                   </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    GST: 07AAACA1234F1Z8 · ICICI
+                  <div style={{ fontSize: "10px", color: "#64748B" }}>
+                    GST: 07AAACA1234F1Z8 · ICICI Bank
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "2px" }}>
-                    <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>Total Balance:</span>
-                    <span style={{ fontSize: "10px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--bento-text-primary, #0F172A)" }}>
-                      ₹{engineState.nodes.find((n) => n.id === "node-merchant-l3")?.totalBalance.toLocaleString("en-IN")}
-                    </span>
+
+                  {/* VISUAL SPLIT BALANCE BAR: Clean Capital vs Tainted Victim Inflow */}
+                  <div style={{ marginTop: "6px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginBottom: "2px" }}>
+                      <span style={{ color: "#047857", fontWeight: 700 }}>Clean Capital: ₹2.50L</span>
+                      <span style={{ color: "#BE123C", fontWeight: 700 }}>Tainted Lien: ₹1.20L</span>
+                    </div>
+                    <div style={{ width: "100%", height: "12px", background: "#E2E8F0", borderRadius: "6px", overflow: "hidden", display: "flex" }}>
+                      <div style={{ width: isInjectClean ? "68%" : "0%", background: "#059669", height: "100%", transition: "width 0.3s ease" }} />
+                      <div className="hatch-pattern-rose" style={{ width: isInjectClean ? "32%" : "100%", background: "#E11D48", height: "100%" }} />
+                    </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", color: "#059669", fontWeight: 700 }}>LIBR Lien Mark:</span>
-                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#059669" }}>
-                      ₹{engineState.nodes.find((n) => n.id === "node-merchant-l3")?.taintLibr.toLocaleString("en-IN")}
-                    </span>
+
+                  <div style={{ fontSize: "9.5px", color: "#047857", marginTop: "4px", lineHeight: 1.3 }}>
+                    ✓ <strong>High Court Mandate:</strong> Only ₹1.20L locked. Clean working capital (₹2.50L) remains liquid for payroll.
                   </div>
                 </div>
 
-                {/* ATM Cashout Sink */}
-                <div
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "8px",
-                    background: "rgba(100,116,139,0.06)",
-                    border: "1px solid rgba(100,116,139,0.25)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                    flex: 0.8,
-                  }}
-                >
+                {/* Node 4: ATM Cashout Sink */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>
-                      ATM CASH EXIT
-                    </span>
-                    <span style={{ fontSize: "8px", fontWeight: 700, color: "#64748B", background: "rgba(100,116,139,0.1)", padding: "1px 4px", borderRadius: "3px" }}>
-                      TERMINAL SINK
-                    </span>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Terminal Sink</span>
+                    <span style={{ fontSize: "9px", background: "#F1F5F9", color: "#475569", padding: "1px 5px", borderRadius: "4px" }}>CASH EXIT</span>
                   </div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Noida Sec 18 ATM DL-049
-                  </div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#DC2626", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                    Dispensed: ₹1,20,000 (Physical Cash)
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginTop: "2px" }}>Noida Sec 18 ATM DL-049</div>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#E11D48", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                    Dispensed: ₹1,20,000 (Cash Out)
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* CARD 2: DINIC MIN-CUT FREEZE VERIFIER & RESIDUAL LEAKAGE SLIDER */}
+          {/* CARD 2: DINIC MIN-CUT FREEZE BUDGET OPTIMIZER */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 40%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "10px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "8px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Sliders size={14} color="#4F46E5" />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  Dinic Min-Cut Freeze Budget Optimizer (K = {freezeBudgetK})
-                </span>
-                <span
-                  style={{
-                    fontSize: "9px",
-                    fontWeight: 800,
-                    color: engineState.minCut.isFreezeComplete ? "#059669" : "#D97706",
-                    background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  {engineState.minCut.isFreezeComplete ? "100% FLOW CONTAINED" : "RESIDUAL ESCAPE DETECTED"}
+                <Sliders size={15} color="#4F46E5" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  Dinic Min-Cut Freeze Budget Optimizer (Budget K = {freezeBudgetK})
                 </span>
               </div>
-
-              <span style={{ fontSize: "10px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                Capacity = {engineState.minCut.minCutCapacity} Nodes
+              <span style={{ fontSize: "11px", fontWeight: 800, color: engineState.minCut.isFreezeComplete ? "#047857" : "#B45309" }}>
+                {engineState.minCut.isFreezeComplete ? "100% FLOW CONTAINED" : "RESIDUAL ESCAPE DETECTED"}
               </span>
             </div>
 
-            {/* Interactive Slider Bar */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>K=1</span>
+            {/* Slider */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569" }}>K=1</span>
               <input
                 type="range"
                 min={1}
@@ -568,18 +377,17 @@ export const TaintEngineScreen: React.FC = () => {
                 onChange={(e) => setFreezeBudgetK(Number(e.target.value))}
                 style={{ flex: 1, cursor: "pointer", accentColor: "#4F46E5" }}
               />
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>K=6</span>
+              <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569" }}>K=6</span>
             </div>
 
-            {/* Verdict Explanation Box */}
             <div
               style={{
-                fontSize: "10px",
-                lineHeight: 1.4,
-                padding: "6px 10px",
-                borderRadius: "6px",
-                background: engineState.minCut.isFreezeComplete ? "rgba(5,150,105,0.08)" : "rgba(217,119,6,0.08)",
-                border: engineState.minCut.isFreezeComplete ? "1px solid rgba(5,150,105,0.25)" : "1px solid rgba(217,119,6,0.25)",
+                fontSize: "11.5px",
+                lineHeight: 1.45,
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: engineState.minCut.isFreezeComplete ? "#ECFDF5" : "#FFFBEB",
+                border: engineState.minCut.isFreezeComplete ? "1px solid #A7F3D0" : "1px solid #FDE68A",
                 color: engineState.minCut.isFreezeComplete ? "#065F46" : "#92400E",
               }}
             >
@@ -588,163 +396,135 @@ export const TaintEngineScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: 5 COLS (3-WAY ACCOUNTING ENGINE + BNSS NOTICE DRAFT GENERATOR) */}
-        <div
-          style={{
-            gridColumn: "span 5",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
-          {/* CARD 3: 3-WAY TAINT ACCOUNTING COMPARISON (LIBR VS FIFO VS PRO-RATA) */}
+        {/* RIGHT COLUMN: 5 COLUMNS (ACCOUNTING STATE MACHINE + SALEZY GAUGE + MHA NOTICE LETTERHEAD) */}
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
+          {/* CARD 3: 3-WAY ACCOUNTING ENGINE & SALEZY-STYLE SEMI-CIRCULAR GAUGE */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 45%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Scale size={15} color="#4F46E5" />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  Accounting State Machine Comparison
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  Accounting State Machine: LIBR vs FIFO vs Pro-Rata
                 </span>
               </div>
-              <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                HIGH COURT MANDATE
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>
+                ROSCOE V. WINDER
               </span>
             </div>
 
-            {/* 3 Metric Comparison Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
-              {/* LIBR Card */}
+            {/* Salezy-Style Semi-Circular Segmented Gauge for Flow Containment */}
+            <div style={{ display: "flex", justifyContent: "center", margin: "-6px 0" }}>
+              <SemiCircleGauge
+                percentage={containmentPct}
+                label="Recoverable Flow Contained"
+                sublabel={`Budget K = ${freezeBudgetK} Accounts`}
+                summaryText={engineState.minCut.isFreezeComplete ? "100% Flow Sealed" : "Leaking to Cashout Sink"}
+                color={engineState.minCut.isFreezeComplete ? "#059669" : "#D97706"}
+                size={170}
+              />
+            </div>
+
+            {/* 3 Accounting Rule Comparison Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
               <div
                 onClick={() => setSelectedRule("LIBR")}
                 style={{
-                  background: selectedRule === "LIBR" ? "rgba(5,150,105,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  background: selectedRule === "LIBR" ? "#ECFDF5" : "#F8FAFC",
                   padding: "8px",
                   borderRadius: "8px",
-                  border: selectedRule === "LIBR" ? "1.5px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  border: selectedRule === "LIBR" ? "2px solid #059669" : "1px solid #E2E8F0",
                   cursor: "pointer",
                 }}
               >
-                <div style={{ fontSize: "9px", fontWeight: 800, color: "#059669", textTransform: "uppercase" }}>
-                  LIBR (HC RULE) ★
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, color: "#047857" }}>LIBR (HC RULE) ★</div>
+                <div style={{ fontSize: "15px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
                   ₹{(engineState.summary.librRecoverable / 100000).toFixed(2)}L
                 </div>
-                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
-                  Lowest intermediate cap; clean funds protected.
-                </div>
+                <div style={{ fontSize: "9px", color: "#64748B" }}>Caps taint at lowest balance; clean funds safe.</div>
               </div>
 
-              {/* FIFO Card */}
               <div
                 onClick={() => setSelectedRule("FIFO")}
                 style={{
-                  background: selectedRule === "FIFO" ? "rgba(79,70,229,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  background: selectedRule === "FIFO" ? "#EEF2FF" : "#F8FAFC",
                   padding: "8px",
                   borderRadius: "8px",
-                  border: selectedRule === "FIFO" ? "1.5px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  border: selectedRule === "FIFO" ? "2px solid #4F46E5" : "1px solid #E2E8F0",
                   cursor: "pointer",
                 }}
               >
-                <div style={{ fontSize: "9px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>
-                  FIFO (FIRST-IN)
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 800, color: "#4F46E5", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, color: "#4F46E5" }}>FIFO (FIRST-IN)</div>
+                <div style={{ fontSize: "15px", fontWeight: 800, color: "#4F46E5", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
                   ₹{(engineState.summary.fifoRecoverable / 100000).toFixed(2)}L
                 </div>
-                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
-                  First funds in presumed spent first.
-                </div>
+                <div style={{ fontSize: "9px", color: "#64748B" }}>Oldest credits presumed spent first.</div>
               </div>
 
-              {/* Pro-Rata Card */}
               <div
                 onClick={() => setSelectedRule("PRO_RATA")}
                 style={{
-                  background: selectedRule === "PRO_RATA" ? "rgba(217,119,6,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
+                  background: selectedRule === "PRO_RATA" ? "#FFFBEB" : "#F8FAFC",
                   padding: "8px",
                   borderRadius: "8px",
-                  border: selectedRule === "PRO_RATA" ? "1.5px solid #D97706" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                  border: selectedRule === "PRO_RATA" ? "2px solid #D97706" : "1px solid #E2E8F0",
                   cursor: "pointer",
                 }}
               >
-                <div style={{ fontSize: "9px", fontWeight: 800, color: "#D97706", textTransform: "uppercase" }}>
-                  PRO-RATA
-                </div>
-                <div style={{ fontSize: "13px", fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, color: "#B45309" }}>PRO-RATA</div>
+                <div style={{ fontSize: "15px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", margin: "2px 0" }}>
                   ₹{(engineState.summary.proRataRecoverable / 100000).toFixed(2)}L
                 </div>
-                <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.2 }}>
-                  Proportional commingled pool fraction.
-                </div>
+                <div style={{ fontSize: "9px", color: "#64748B" }}>Proportional fraction of commingled funds.</div>
               </div>
-            </div>
-
-            {/* Clean Funds Protected Banner */}
-            <div
-              style={{
-                fontSize: "10px",
-                lineHeight: 1.4,
-                padding: "6px 8px",
-                borderRadius: "6px",
-                background: isInjectClean ? "rgba(5,150,105,0.08)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                border: isInjectClean ? "1px solid rgba(5,150,105,0.25)" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                color: isInjectClean ? "#047857" : "var(--bento-text-muted, #94A3B8)",
-              }}
-            >
-              {engineState.summary.divergenceNotes}
             </div>
           </div>
 
-          {/* CARD 4: DUAL-TRACK BNSS STATUTORY NOTICE GENERATOR */}
+          {/* CARD 4: MHA SOP STATUTORY NOTICE ON WHITE LEGAL LETTERHEAD */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 55%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                <FileText size={15} color="#4F46E5" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
                   MHA SOP 02.01.2026 Statutory Notice
                 </span>
               </div>
 
-              {/* Notice Type Switcher (106 vs 107) */}
-              <div style={{ display: "flex", gap: "4px" }}>
+              <div style={{ display: "flex", gap: "6px" }}>
                 <button
                   type="button"
                   onClick={() => setSelectedNoticeType("106")}
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    border: selectedNoticeType === "106" ? "1px solid #059669" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: selectedNoticeType === "106" ? "rgba(5,150,105,0.12)" : "transparent",
-                    color: selectedNoticeType === "106" ? "#047857" : "var(--bento-text-secondary, #475569)",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: selectedNoticeType === "106" ? "1px solid #059669" : "1px solid #E2E8F0",
+                    background: selectedNoticeType === "106" ? "#ECFDF5" : "#F8FAFC",
+                    color: selectedNoticeType === "106" ? "#047857" : "#64748B",
                     cursor: "pointer",
                   }}
                 >
@@ -754,57 +534,55 @@ export const TaintEngineScreen: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedNoticeType("107")}
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    border: selectedNoticeType === "107" ? "1px solid #DC2626" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: selectedNoticeType === "107" ? "rgba(220,38,38,0.12)" : "transparent",
-                    color: selectedNoticeType === "107" ? "#B91C1C" : "var(--bento-text-secondary, #475569)",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: selectedNoticeType === "107" ? "1px solid #E11D48" : "1px solid #E2E8F0",
+                    background: selectedNoticeType === "107" ? "#FFF1F2" : "#F8FAFC",
+                    color: selectedNoticeType === "107" ? "#BE123C" : "#64748B",
                     cursor: "pointer",
                   }}
                 >
-                  § 107 Full Freeze
+                  § 107 Freeze Order
                 </button>
               </div>
             </div>
 
-            {/* Notice Draft Text Box */}
+            {/* Crisp White Legal Letterhead Surface */}
             <div
               style={{
-                flex: 1,
-                background: "var(--bento-canvas-subtle, #F8FAFC)",
-                borderRadius: "8px",
-                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                padding: "8px 10px",
+                background: "#FCFDFE",
+                border: "1px solid #CBD5E1",
+                borderRadius: "10px",
+                padding: "12px 14px",
                 fontFamily: "var(--font-mono)",
-                fontSize: "10px",
-                lineHeight: 1.4,
-                color: "var(--bento-text-primary, #0F172A)",
+                fontSize: "11px",
+                lineHeight: 1.5,
+                color: "#0F172A",
                 overflowY: "auto",
                 whiteSpace: "pre-wrap",
-                minHeight: 0,
+                maxHeight: "150px",
               }}
             >
               {activeDraft.draftText}
             </div>
 
-            {/* Bottom Actions */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                Target: <strong>ICICI Cyber Liaison Desk</strong> (48h Statutory Deadline)
-              </div>
+              <span style={{ fontSize: "11px", color: "#64748B" }}>
+                Target: <strong>ICICI Bank Cyber Liaison Desk</strong> (48h Statutory Deadline)
+              </span>
 
               <button
                 type="button"
                 onClick={handleCopy}
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  fontSize: "11px",
+                  gap: "5px",
+                  fontSize: "12px",
                   fontWeight: 700,
-                  padding: "4px 10px",
+                  padding: "5px 12px",
                   borderRadius: "6px",
                   border: "none",
                   background: isCopied ? "#059669" : "#4F46E5",
@@ -812,7 +590,7 @@ export const TaintEngineScreen: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                {isCopied ? <Check size={13} /> : <Copy size={13} />}
                 <span>{isCopied ? "Copied to Clipboard" : "Copy BNSS Notice"}</span>
               </button>
             </div>

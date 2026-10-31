@@ -1,20 +1,90 @@
 /* ==========================================================================
-   SENTINELX PERMANENT FORENSIC DESIGN SYSTEM TOKENS
-   Approved Forensic Palette Family + 3 Synchronized Theme Modes:
-   - FORENSIC_PAPER (Warm Forensic Ivory)
-   - NIGHT_OPS (Dark Forensic Workstation)
-   - HIGH_CONTRAST (Tactical Monochrome Forensic)
-
-   Palette Mapping:
-   PRIMARY → Periwinkle (#5E6AD2)
-   VERIFIED → Fluorescent Lime (#10B981)
-   SENTINEL / CRITICAL → Coral/Magenta (#F43F5E)
-   GAP → Volt Amber (#F59E0B)
-   RESTRICTED → Deep Violet (#8B5CF6)
+   SENTINELX & TARKA v5.0 DESIGN SYSTEM TOKENS
+   Daylight Executive SaaS (Default) + Obsidian / Midnight Teal / High Contrast
    ========================================================================== */
 
-:root, [data-theme="obsidian-glass"], [data-theme="tarka"], [data-theme="night-ops"] {
-  /* TARKA Workstation Palette (Theme A: Obsidian Glass - Graphite-Black Base, Translucent Smoke, Electric Blue) */
+:root, [data-theme="porcelain"], [data-theme="daylight"], [data-theme="forensic-paper"] {
+  /* Daylight Executive SaaS Palette (Default - Linear / Stripe / Salezy / FlowMail) */
+  --bg-canonical: #F4F6FB;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F8FAFC;
+  --surface-elevated: #FFFFFF;
+  --surface-selected: #EEF2FF;
+  --surface-smoke: rgba(255, 255, 255, 0.88);
+
+  /* Clean Hairline Borders */
+  --border-structural: #E2E8F0;
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
+
+  /* High-Contrast Typography */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+
+  /* Executive Indigo Accent */
+  --color-electric-blue: #4F46E5;
+  --primary-accent: #4F46E5;
+  --primary-accent-subtle: #EEF2FF;
+
+  /* Approved Forensic Palette Family */
+  --color-primary-periwinkle: #4F46E5;
+  --color-verified-lime: #059669;
+  --color-sentinel-coral: #E11D48;
+  --color-gap-amber: #D97706;
+  --color-restricted-violet: #7C3AED;
+
+  /* Semantic State Tokens */
+  --status-verified: #059669;
+  --status-contradicted: #E11D48;
+  --status-critical: #E11D48;
+  --status-failure: #E11D48;
+  --status-gap: #D97706;
+  --status-restricted: #7C3AED;
+  --status-unknown: #64748B;
+
+  /* Sentinel Identity */
+  --sentinel-crimson: #E11D48;
+  --sentinel-dark-crimson: #BE123C;
+  --sentinel-coral: #E11D48;
+
+  /* Component Compatibility Aliases */
+  --evidence-teal: #059669;
+  --status-confirmed: #059669;
+  --status-documented: #059669;
+  --status-observed: #059669;
+  --status-inferred: #7C3AED;
+  --status-potential: #D97706;
+  --status-unresolved: #D97706;
+  --border-accent: #E11D48;
+  --text-accent: #E11D48;
+  --text-info: #475569;
+
+  /* Typography Families: Plus Jakarta Sans / JetBrains Mono */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-display: var(--font-sans);
+  --font-typewriter: var(--font-mono);
+  --font-devanagari: 'Noto Sans Devanagari', var(--font-sans);
+
+  /* Strict Compact Professional Sizing */
+  --font-size-meta: 12px;
+  --font-size-secondary: 13px;
+  --font-size-body: 14px;
+  --font-size-primary: 15px;
+  --font-size-section: 17px;
+  --font-size-contextual: 19px;
+  --font-size-workspace: 22px;
+  --font-size-case: 26px;
+
+  /* Minimal Precision Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+[data-theme="obsidian"], [data-theme="obsidian-glass"], [data-theme="tarka"], [data-theme="night-ops"] {
+  /* Dark Forensic Workstation Palette */
   --bg-canonical: #0C0E12;
   --surface-primary: #12141A;
   --surface-secondary: #161922;
@@ -22,31 +92,45 @@
   --surface-selected: #252A38;
   --surface-smoke: rgba(18, 22, 31, 0.72);
 
-  /* Structural Dividers & Architectural Rules */
   --border-structural: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-strong: rgba(255, 255, 255, 0.16);
 
-  /* High-Contrast Typography Legibility */
   --text-primary: #F3F4F6;
   --text-secondary: #9CA3AF;
   --text-muted: #6B7280;
 
-  /* Restrained Electric Blue Accent */
   --color-electric-blue: #2563EB;
   --primary-accent: #2563EB;
   --primary-accent-subtle: rgba(37, 99, 235, 0.15);
 
-  /* Typography Families: Geist UI, Technical Monospace with Symbol Fallbacks */
-  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Sans Symbols 2";
-  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, "Segoe UI Symbol", "Noto Sans Symbols 2";
+  --color-primary-periwinkle: #707DE8;
+  --color-verified-lime: #22C55E;
+  --color-sentinel-coral: #FB7185;
+  --color-gap-amber: #FBBF24;
+  --color-restricted-violet: #A78BFA;
+
+  --primary-accent: var(--color-primary-periwinkle);
+  --status-verified: var(--color-verified-lime);
+  --status-contradicted: var(--color-sentinel-coral);
+  --status-critical: var(--color-sentinel-coral);
+  --status-failure: var(--color-sentinel-coral);
+  --status-gap: var(--color-gap-amber);
+  --status-restricted: var(--color-restricted-violet);
+  --status-unknown: #71717A;
+
+  --sentinel-crimson: var(--color-sentinel-coral);
+  --sentinel-dark-crimson: #F43F5E;
+  --sentinel-coral: var(--color-sentinel-coral);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-display: var(--font-sans);
   --font-typewriter: var(--font-mono);
   --font-devanagari: 'Noto Sans Devanagari', var(--font-sans);
 }
 
 [data-theme="midnight-teal"] {
-  /* Theme C: Midnight Teal (Deep Mineral Forensic Workbench with Muted Teal Accents) */
   --bg-canonical: #070E12;
   --surface-primary: #0D181E;
   --surface-secondary: #122129;
@@ -73,140 +157,6 @@
   --color-restricted-violet: #8B5CF6;
 }
 
-[data-theme="porcelain"], [data-theme="forensic-paper"] {
-  /* Theme B: Porcelain (Bright, Minimal, High-Contrast Surface with Warm Ivory Tint) */
-  --bg-canonical: #F4F1EA;
-  --surface-primary: #FAF8F3;
-  --surface-secondary: #ECE8DF;
-  --surface-elevated: #FFFFFF;
-  --surface-selected: #E5E0D5;
-  --surface-smoke: rgba(250, 248, 243, 0.85);
-
-  --border-structural: #D8D2C7;
-  --border-subtle: #E5E0D6;
-  --border-strong: #BFB8AB;
-
-  --text-primary: #1E1D1A;
-  --text-secondary: #625E57;
-  --text-muted: #8C877E;
-
-  --primary-accent: #5E6AD2;
-  --primary-accent-subtle: rgba(94, 106, 210, 0.15);
-
-  /* Typography Legibility Scale (Ink) */
-  --text-primary: #1E1D1A;
-  --text-secondary: #625E57;
-  --text-muted: #8C877E;
-
-  /* Approved Forensic Palette Family */
-  --color-primary-periwinkle: #5E6AD2;
-  --color-verified-lime: #10B981;
-  --color-sentinel-coral: #F43F5E;
-  --color-gap-amber: #F59E0B;
-  --color-restricted-violet: #8B5CF6;
-
-  /* Semantic State Tokens */
-  --primary-accent: var(--color-primary-periwinkle);
-  --status-verified: var(--color-verified-lime);
-  --status-contradicted: var(--color-sentinel-coral);
-  --status-critical: var(--color-sentinel-coral);
-  --status-failure: var(--color-sentinel-coral);
-  --status-gap: var(--color-gap-amber);
-  --status-restricted: var(--color-restricted-violet);
-  --status-unknown: #625E57;
-
-  /* Sentinel Identity */
-  --sentinel-crimson: var(--color-sentinel-coral);
-  --sentinel-dark-crimson: #E11D48;
-  --sentinel-coral: var(--color-sentinel-coral);
-
-  /* Component Compatibility Aliases */
-  --evidence-teal: var(--color-verified-lime);
-  --status-confirmed: var(--color-verified-lime);
-  --status-documented: var(--color-verified-lime);
-  --status-observed: var(--color-verified-lime);
-  --status-inferred: var(--color-restricted-violet);
-  --status-potential: var(--color-gap-amber);
-  --status-unresolved: var(--color-gap-amber);
-  --border-accent: var(--color-sentinel-coral);
-  --text-accent: var(--color-sentinel-coral);
-  --text-info: #625E57;
-
-  /* Typography Families: Display Sans UI, Technical Monospace */
-  --font-display: var(--font-sans);
-  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Sans Symbols 2";
-  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, "Segoe UI Symbol", "Noto Sans Symbols 2";
-  --font-typewriter: var(--font-mono);
-  --font-devanagari: 'Noto Sans Devanagari', var(--font-sans);
-
-  /* Strict Compact Professional Sizing */
-  --font-size-meta: 12px;
-  --font-size-secondary: 13px;
-  --font-size-body: 14px;
-  --font-size-primary: 15px;
-  --font-size-section: 17px;
-  --font-size-contextual: 19px;
-  --font-size-workspace: 22px;
-  --font-size-case: 26px;
-
-  /* Minimal Precision Radii */
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
-}
-
-/* ==========================================================================
-   NIGHT_OPS (Dark Forensic Workstation Mode)
-   ========================================================================== */
-[data-theme="night-ops"] {
-  --bg-canonical: #121316;
-  --surface-primary: #181A1F;
-  --surface-secondary: #1F2229;
-  --surface-elevated: #282B34;
-  --surface-selected: #323642;
-
-  --border-structural: #2D313B;
-  --border-subtle: #242730;
-  --border-strong: #3D4250;
-
-  --text-primary: #EDEBE6;
-  --text-secondary: #A09D94;
-  --text-muted: #6B6860;
-
-  --color-primary-periwinkle: #707DE8;
-  --color-verified-lime: #22C55E;
-  --color-sentinel-coral: #FB7185;
-  --color-gap-amber: #FBBF24;
-  --color-restricted-violet: #A78BFA;
-
-  --primary-accent: var(--color-primary-periwinkle);
-  --status-verified: var(--color-verified-lime);
-  --status-contradicted: var(--color-sentinel-coral);
-  --status-critical: var(--color-sentinel-coral);
-  --status-failure: var(--color-sentinel-coral);
-  --status-gap: var(--color-gap-amber);
-  --status-restricted: var(--color-restricted-violet);
-  --status-unknown: #71717A;
-
-  --sentinel-crimson: var(--color-sentinel-coral);
-  --sentinel-dark-crimson: #F43F5E;
-  --sentinel-coral: var(--color-sentinel-coral);
-
-  --evidence-teal: var(--color-verified-lime);
-  --status-confirmed: var(--color-verified-lime);
-  --status-documented: var(--color-verified-lime);
-  --status-observed: var(--color-verified-lime);
-  --status-inferred: var(--color-restricted-violet);
-  --status-potential: var(--color-gap-amber);
-  --status-unresolved: var(--color-gap-amber);
-  --border-accent: var(--color-sentinel-coral);
-  --text-accent: var(--color-sentinel-coral);
-  --text-info: #A09D94;
-}
-
-/* ==========================================================================
-   HIGH_CONTRAST (Tactical Monochrome Forensic Mode)
-   ========================================================================== */
 [data-theme="high-contrast"] {
   --bg-canonical: #000000;
   --surface-primary: #0A0A0A;
@@ -236,19 +186,4 @@
   --status-gap: var(--color-gap-amber);
   --status-restricted: var(--color-restricted-violet);
   --status-unknown: #A3A3A3;
-
-  --sentinel-crimson: var(--color-sentinel-coral);
-  --sentinel-dark-crimson: #CC1F26;
-  --sentinel-coral: var(--color-sentinel-coral);
-
-  --evidence-teal: var(--color-verified-lime);
-  --status-confirmed: var(--color-verified-lime);
-  --status-documented: var(--color-verified-lime);
-  --status-observed: var(--color-verified-lime);
-  --status-inferred: var(--color-restricted-violet);
-  --status-potential: var(--color-gap-amber);
-  --status-unresolved: var(--color-gap-amber);
-  --border-accent: #FFFFFF;
-  --text-accent: #FFFFFF;
-  --text-info: #E5E5E5;
 }

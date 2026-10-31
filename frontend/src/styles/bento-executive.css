@@ -6,13 +6,13 @@
 
 :root, [data-theme="porcelain"] {
   /* Daylight Executive Bento Canvas Tokens */
-  --bento-canvas: #F3F5F9;
-  --bento-canvas-subtle: #EBEEF5;
+  --bento-canvas: #F4F6FB;
+  --bento-canvas-subtle: #F1F5F9;
   --bento-card-bg: #FFFFFF;
   --bento-card-surface: #F8FAFC;
-  --bento-card-border: rgba(15, 23, 42, 0.08);
+  --bento-card-border: #E2E8F0;
   --bento-card-border-hover: rgba(79, 70, 229, 0.25);
-  --bento-card-shadow: 0 2px 14px -4px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+  --bento-card-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
   --bento-card-shadow-hover: 0 10px 28px -6px rgba(15, 23, 42, 0.09), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
   --bento-radius: 16px;
   --bento-radius-sm: 8px;
@@ -21,38 +21,38 @@
   /* Typography Colors */
   --bento-text-primary: #0F172A;
   --bento-text-secondary: #475569;
-  --bento-text-muted: #94A3B8;
+  --bento-text-muted: #64748B;
   --bento-text-inverse: #FFFFFF;
 
   /* Tier-1 Executive Semantic Palette */
   --bento-indigo: #4F46E5;
-  --bento-indigo-subtle: rgba(79, 70, 229, 0.08);
-  --bento-indigo-border: rgba(79, 70, 229, 0.22);
+  --bento-indigo-subtle: #EEF2FF;
+  --bento-indigo-border: #C7D2FE;
 
   --bento-emerald: #059669;
-  --bento-emerald-subtle: rgba(5, 150, 105, 0.09);
-  --bento-emerald-border: rgba(5, 150, 105, 0.25);
+  --bento-emerald-subtle: #ECFDF5;
+  --bento-emerald-border: #A7F3D0;
 
   --bento-crimson: #E11D48;
-  --bento-crimson-subtle: rgba(225, 29, 72, 0.09);
-  --bento-crimson-border: rgba(225, 29, 72, 0.25);
+  --bento-crimson-subtle: #FFF1F2;
+  --bento-crimson-border: #FECDD3;
 
   --bento-amber: #D97706;
-  --bento-amber-subtle: rgba(217, 119, 6, 0.09);
-  --bento-amber-border: rgba(217, 119, 6, 0.25);
+  --bento-amber-subtle: #FFFBEB;
+  --bento-amber-border: #FDE68A;
 
   --bento-coral: #F97316;
-  --bento-coral-subtle: rgba(249, 115, 22, 0.09);
-  --bento-coral-border: rgba(249, 115, 22, 0.25);
+  --bento-coral-subtle: #FFF7ED;
+  --bento-coral-border: #FED7AA;
 
   --bento-slate: #64748B;
-  --bento-slate-subtle: rgba(100, 116, 139, 0.08);
-  --bento-slate-border: rgba(100, 116, 139, 0.2);
+  --bento-slate-subtle: #F1F5F9;
+  --bento-slate-border: #CBD5E1;
 
   --bento-sidebar-bg: #FFFFFF;
-  --bento-sidebar-border: rgba(15, 23, 42, 0.07);
-  --bento-nav-hover: rgba(15, 23, 42, 0.04);
-  --bento-nav-active: rgba(79, 70, 229, 0.08);
+  --bento-sidebar-border: #E2E8F0;
+  --bento-nav-hover: #F8FAFC;
+  --bento-nav-active: #EEF2FF;
   --bento-nav-active-text: #4F46E5;
 }
 
@@ -411,4 +411,105 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ==========================================================================
+   DAYLIGHT EXECUTIVE SAAS KPI ROW & DATA WELLS
+   ========================================================================== */
+
+.saas-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.saas-kpi-card {
+  background: var(--bento-card-bg, #FFFFFF);
+  border: 1px solid var(--bento-card-border, #E2E8F0);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 10px -2px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  min-height: 104px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.saas-kpi-card:hover {
+  border-color: rgba(79, 70, 229, 0.3);
+  box-shadow: 0 8px 22px -4px rgba(15, 23, 42, 0.08);
+}
+
+.well-slate {
+  background: var(--bento-card-surface, #F8FAFC);
+  border: 1px solid var(--bento-card-border, #E2E8F0);
+}
+
+.well-emerald {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+}
+
+.well-rose {
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+}
+
+.well-indigo {
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+}
+
+.well-amber {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+}
+
+.hatch-pattern {
+  background-image: repeating-linear-gradient(45deg, rgba(100, 116, 139, 0.07) 0px, rgba(100, 116, 139, 0.07) 4px, transparent 4px, transparent 8px);
+}
+
+.hatch-pattern-rose {
+  background-image: repeating-linear-gradient(45deg, rgba(225, 29, 72, 0.09) 0px, rgba(225, 29, 72, 0.09) 4px, transparent 4px, transparent 8px);
+}
+
+.hatch-pattern-emerald {
+  background-image: repeating-linear-gradient(45deg, rgba(5, 150, 105, 0.1) 0px, rgba(5, 150, 105, 0.1) 4px, transparent 4px, transparent 8px);
+}
+
+/* Crisp Executive Table */
+.bento-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bento-card-bg, #FFFFFF);
+  font-size: 12px;
+}
+
+.bento-table th {
+  background: var(--bento-card-surface, #F8FAFC);
+  color: var(--bento-text-secondary, #475569);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bento-card-border, #E2E8F0);
+  text-align: left;
+}
+
+.bento-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #F1F5F9;
+  color: var(--bento-text-primary, #0F172A);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.bento-table tr:hover td {
+  background: #F8FAFC;
+}
+
 

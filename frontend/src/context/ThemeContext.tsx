@@ -13,12 +13,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("sentinelx_theme");
-      if (stored === "obsidian" || stored === "obsidian-glass" || stored === "porcelain" || stored === "midnight-teal" || stored === "high-contrast") {
+      const stored = localStorage.getItem("tarka_v5_theme");
+      if (stored === "porcelain" || stored === "obsidian" || stored === "midnight-teal") {
         return stored as ThemeMode;
       }
-      if (stored === "forensic-paper") return "porcelain";
-      if (stored === "night-ops" || stored === "tarka") return "obsidian";
     }
     // Default to Daylight Executive Bento (porcelain)
     return "porcelain";
@@ -27,7 +25,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setTheme = (newTheme: ThemeMode) => {
     setThemeState(newTheme);
     if (typeof window !== "undefined") {
-      localStorage.setItem("sentinelx_theme", newTheme);
+      localStorage.setItem("tarka_v5_theme", newTheme);
       document.documentElement.setAttribute("data-theme", newTheme);
     }
   };

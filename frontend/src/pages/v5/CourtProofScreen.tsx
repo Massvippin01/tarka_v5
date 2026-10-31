@@ -8,8 +8,10 @@ import {
   FileCheck,
   Network,
   Key,
+  QrCode,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
+import { SaasExecutiveKpiCard } from "../../components/tarka/SaasExecutiveKpiCard";
 import {
   evaluateLeaveOneOut,
   generateBsa63SplitSchedules,
@@ -82,6 +84,7 @@ export const CourtProofScreen: React.FC = () => {
 
   const resetArtifacts = () => {
     setArtifacts(initialArtifacts);
+    setAlibis((prev) => prev.map((a) => ({ ...a, isChallenged: false })));
   };
 
   // Defense Alibi Challenges
@@ -177,207 +180,112 @@ export const CourtProofScreen: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         height: "calc(100vh - 52px)",
-        padding: "10px 14px",
-        gap: "10px",
+        padding: "16px 20px",
+        gap: "14px",
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflowY: "auto",
+        background: "var(--bento-canvas, #F4F6FB)",
       }}
     >
-      {/* 1. SINGLE-LINE 4-PILL TELEMETRY STRIP (HEIGHT: 38PX, NO VERTICAL SCROLL) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "10px",
-          height: "38px",
-          flexShrink: 0,
-        }}
-      >
-        {/* Pill 1: Admissibility Robustness */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: looResult.proofSurvives ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(225,29,72,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+      {/* 1. TOP 4 EXECUTIVE SAAS KPI METRIC CARDS (MIN-HEIGHT: 108PX) */}
+      <div className="saas-kpi-row">
+        <SaasExecutiveKpiCard
+          label="Evidentiary Robustness"
+          metric={`${looResult.confidenceScore}%`}
+          metricColor={looResult.proofSurvives ? "#059669" : "#E11D48"}
+          subtext={looResult.proofSurvives ? "Survives complete exclusion of secondary chats" : "Fatal defect: Independent institutional records excluded"}
+          statusBadge={{
+            text: looResult.proofSurvives ? "TIER-1 INDEPENDENT" : "SEVERED",
+            variant: looResult.proofSurvives ? "emerald" : "rose",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Scale size={14} color={looResult.proofSurvives ? "#059669" : "#E11D48"} />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              ADMISSIBILITY SCORE
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: looResult.proofSurvives ? "#059669" : "#E11D48",
-              background: looResult.proofSurvives ? "rgba(5,150,105,0.1)" : "rgba(225,29,72,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {looResult.confidenceScore}% ({looResult.proofSurvives ? "PROOF SURVIVES" : "SEVERED"})
-          </span>
-        </div>
+          icon={Scale}
+          iconColor={looResult.proofSurvives ? "#059669" : "#E11D48"}
+          iconBg={looResult.proofSurvives ? "#ECFDF5" : "#FFF1F2"}
+        />
 
-        {/* Pill 2: BSA § 63(4) Split Schedules */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(79,70,229,0.25)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="BSA § 63(4) Split Schedules"
+          metric="Parts A & B"
+          metricColor="#4F46E5"
+          subtext="Separates bank system logs from forensic expert analysis"
+          statusBadge={{
+            text: "PUNE BAR COMPLIANT",
+            variant: "indigo",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <FileCheck size={14} color="#4F46E5" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              BSA § 63(4) SCHEDULES
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#4F46E5",
-              background: "rgba(79,70,229,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            PARTS A & B READY (PUNE BAR)
-          </span>
-        </div>
+          icon={FileCheck}
+          iconColor="#4F46E5"
+          iconBg="#EEF2FF"
+        />
 
-        {/* Pill 3: Cryptographic Paper Anchor */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(16,185,129,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="Cryptographic Paper Anchor"
+          metric="24-Word BIP-39"
+          metricColor="#059669"
+          subtext="Ed25519 custodial hash seal verifiable without internet"
+          statusBadge={{
+            text: "OFFLINE VERIFIED",
+            variant: "emerald",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Key size={14} color="#059669" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              CRYPTO PAPER ANCHOR
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#059669",
-              background: "rgba(5,150,105,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            24-WORD BIP-39 + ED25519
-          </span>
-        </div>
+          icon={Key}
+          iconColor="#059669"
+          iconBg="#ECFDF5"
+        />
 
-        {/* Pill 4: CBI Syndicate Nexus */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(217,119,6,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="CBI Syndicate Match"
+          metric={cbiMemo.totalLossCroresStr}
+          metricColor="#D97706"
+          subtext="14 connected FIRs across 5 states via blind-index hashes"
+          statusBadge={{
+            text: "CBI TRANSFER READY",
+            variant: "amber",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Network size={14} color="#D97706" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              CBI MULTI-STATE NEXUS
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#D97706",
-              background: "rgba(217,119,6,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {cbiMemo.linkedFirCount} FIRS · {cbiMemo.totalLossCroresStr}
-          </span>
-        </div>
+          icon={Network}
+          iconColor="#D97706"
+          iconBg="#FFFBEB"
+        />
       </div>
 
-      {/* 2. MAIN 12-COLUMN BENTO INFOGRAPHIC WORKSPACE (HEIGHT: CALC(100% - 48PX), OVERFLOW: HIDDEN) */}
+      {/* 2. MAIN 12-COLUMN BENTO GRID */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "10px",
+          gap: "14px",
           flex: 1,
           minHeight: 0,
         }}
       >
-        {/* LEFT COLUMN: 6 COLS (LEAVE-ONE-OUT STRESS-TESTER & BIP-39 PAPER ANCHOR) */}
-        <div
-          style={{
-            gridColumn: "span 6",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
+        {/* LEFT COLUMN: 6 COLUMNS (LOO STRESS-TESTER & 24-WORD BIP-39 PAPER ANCHOR WITH QR SEAL) */}
+        <div style={{ gridColumn: "span 6", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
           {/* CARD 1: LIVE LEAVE-ONE-OUT (LOO) ADMISSIBILITY STRESS-TESTER */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 58%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "12px",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Scale size={15} color="#4F46E5" />
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Scale size={16} color="#4F46E5" />
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#0F172A" }}>
                     Live Leave-One-Out (LOO) Defense Stress-Tester
                   </span>
-                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", padding: "2px 6px", borderRadius: "4px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>
                     ARJUN PANDITRAO BENCH
                   </span>
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                  Toggle artifacts or alibis to stress-test prosecution reliance on Tier-1 independent records.
+                <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                  <strong>What this means for IO:</strong> Proves whether prosecution succeeds if defense excludes phone screenshots.
                 </div>
               </div>
 
@@ -390,29 +298,21 @@ export const CourtProofScreen: React.FC = () => {
                   gap: "4px",
                   fontSize: "11px",
                   fontWeight: 600,
-                  padding: "4px 8px",
+                  padding: "5px 10px",
                   borderRadius: "6px",
-                  border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                  background: "var(--bento-canvas-subtle, #F8FAFC)",
-                  color: "var(--bento-text-secondary, #475569)",
+                  border: "1px solid #CBD5E1",
+                  background: "#F8FAFC",
+                  color: "#0F172A",
                   cursor: "pointer",
                 }}
               >
-                <RotateCcw size={11} />
-                <span>Reset</span>
+                <RotateCcw size={12} />
+                <span>Reset Matrix</span>
               </button>
             </div>
 
-            {/* 5 Artifact Checklist Rows */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "5px",
-                flex: 1,
-                justifyContent: "space-around",
-              }}
-            >
+            {/* 5 Evidence Artifact Checklist Rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {artifacts.map((art) => {
                 const isTier1 = art.tier === "TIER_1_INDEPENDENT";
                 return (
@@ -422,25 +322,26 @@ export const CourtProofScreen: React.FC = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "5px 8px",
-                      borderRadius: "6px",
-                      background: art.isExcluded ? "rgba(225,29,72,0.04)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                      border: art.isExcluded ? "1px dashed rgba(225,29,72,0.3)" : "1px solid var(--bento-border-subtle, #E2E8F0)",
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      background: art.isExcluded ? "#FFF1F2" : "#F8FAFC",
+                      border: art.isExcluded ? "1px dashed #FECDD3" : "1px solid #E2E8F0",
                       opacity: art.isExcluded ? 0.6 : 1,
+                      transition: "all 0.15s ease",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <input
                         type="checkbox"
                         checked={!art.isExcluded}
                         onChange={() => toggleArtifact(art.id)}
-                        style={{ width: "13px", height: "13px", cursor: "pointer", accentColor: "#4F46E5", margin: 0 }}
+                        style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#4F46E5", margin: 0 }}
                       />
                       <div>
-                        <div style={{ fontSize: "11px", fontWeight: 700, color: art.isExcluded ? "#E11D48" : "var(--bento-text-primary, #0F172A)" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: art.isExcluded ? "#BE123C" : "#0F172A" }}>
                           {art.name}
                         </div>
-                        <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                        <div style={{ fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
                           SHA: {art.sha256.slice(0, 16)}... | Custodian: {art.custodian}
                         </div>
                       </div>
@@ -448,12 +349,13 @@ export const CourtProofScreen: React.FC = () => {
 
                     <span
                       style={{
-                        fontSize: "9px",
+                        fontSize: "9.5px",
                         fontWeight: 800,
-                        color: isTier1 ? "#059669" : "#64748B",
-                        background: isTier1 ? "rgba(5,150,105,0.1)" : "rgba(100,116,139,0.1)",
-                        padding: "2px 6px",
-                        borderRadius: "4px",
+                        color: isTier1 ? "#047857" : "#475569",
+                        background: isTier1 ? "#ECFDF5" : "#F1F5F9",
+                        border: isTier1 ? "1px solid #A7F3D0" : "1px solid #E2E8F0",
+                        padding: "2px 7px",
+                        borderRadius: "5px",
                       }}
                     >
                       {isTier1 ? "TIER-1 INDEPENDENT" : "TIER-2 CORROBORATIVE"}
@@ -464,64 +366,72 @@ export const CourtProofScreen: React.FC = () => {
             </div>
 
             {/* Defense Alibi Quick Challenge Buttons */}
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              {alibis.map((alibi) => (
-                <button
-                  key={alibi.id}
-                  type="button"
-                  onClick={() => toggleAlibi(alibi.id)}
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    border: alibi.isChallenged ? "1px solid #DC2626" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: alibi.isChallenged ? "rgba(220,38,38,0.1)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                    color: alibi.isChallenged ? "#B91C1C" : "var(--bento-text-secondary, #475569)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {alibi.name} {alibi.isChallenged ? "🚨" : ""}
-                </button>
-              ))}
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", marginBottom: "6px" }}>
+                Defense Cross-Examination Alibi Challenges:
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                {alibis.map((alibi) => (
+                  <button
+                    key={alibi.id}
+                    type="button"
+                    onClick={() => toggleAlibi(alibi.id)}
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      padding: "5px 10px",
+                      borderRadius: "6px",
+                      border: alibi.isChallenged ? "1px solid #E11D48" : "1px solid #CBD5E1",
+                      background: alibi.isChallenged ? "#FFF1F2" : "#F8FAFC",
+                      color: alibi.isChallenged ? "#BE123C" : "#0F172A",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {alibi.name} {alibi.isChallenged ? "🚨" : ""}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Prosecutor Cross-Examination Rebuttal Banner */}
+            {/* Prosecutor Cross-Examination Rebuttal Callout */}
             <div
               style={{
-                fontSize: "10px",
-                lineHeight: 1.4,
-                padding: "6px 8px",
-                borderRadius: "6px",
-                background: looResult.proofSurvives ? "rgba(5,150,105,0.08)" : "rgba(225,29,72,0.08)",
-                border: looResult.proofSurvives ? "1px solid rgba(5,150,105,0.25)" : "1px solid rgba(225,29,72,0.25)",
+                fontSize: "12px",
+                lineHeight: 1.5,
+                padding: "10px 14px",
+                borderRadius: "10px",
+                background: looResult.proofSurvives ? "#ECFDF5" : "#FFF1F2",
+                border: looResult.proofSurvives ? "1px solid #A7F3D0" : "1px solid #FECDD3",
                 color: looResult.proofSurvives ? "#065F46" : "#9F1239",
               }}
             >
+              <div style={{ fontWeight: 800, marginBottom: "2px", textTransform: "uppercase", fontSize: "11px" }}>
+                Prosecutor Courtroom Rebuttal:
+              </div>
               {looResult.prosecutorRebuttal}
             </div>
           </div>
 
-          {/* CARD 2: 24-WORD BIP-39 PAPER ANCHOR & OFFLINE VERIFY.HTML */}
+          {/* CARD 2: 24-WORD BIP-39 PAPER ANCHOR WITH EMBEDDED SVG QR SEAL */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 42%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "10px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Key size={14} color="#059669" />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  24-Word BIP-39 Paper Anchor & Offline HTML Exporter
+                <Key size={15} color="#059669" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  24-Word BIP-39 Cryptographic Paper Anchor & Offline HTML
                 </span>
               </div>
 
@@ -529,12 +439,12 @@ export const CourtProofScreen: React.FC = () => {
                 type="button"
                 onClick={handleDownloadOfflineVerify}
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  fontSize: "11px",
+                  gap: "5px",
+                  fontSize: "12px",
                   fontWeight: 700,
-                  padding: "3px 8px",
+                  padding: "5px 12px",
                   borderRadius: "6px",
                   border: "none",
                   background: "#0284C7",
@@ -542,83 +452,101 @@ export const CourtProofScreen: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                <Download size={11} />
+                <Download size={13} />
                 <span>Export verify.html</span>
               </button>
             </div>
 
-            {/* 24-Word Mnemonic Word Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(6, 1fr)",
-                gap: "4px",
-                padding: "6px",
-                background: "var(--bento-canvas-subtle, #F8FAFC)",
-                borderRadius: "6px",
-                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              }}
-            >
-              {paperAnchor.bip39Mnemonic.map((word, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    fontSize: "9px",
-                    fontFamily: "var(--font-mono)",
-                    padding: "2px 4px",
-                    borderRadius: "3px",
-                    background: "rgba(255,255,255,0.9)",
-                    border: "1px solid rgba(0,0,0,0.06)",
-                    color: "var(--bento-text-primary, #0F172A)",
-                    textAlign: "center",
-                  }}
-                >
-                  <span style={{ color: "var(--bento-text-muted, #94A3B8)", marginRight: "2px" }}>{idx + 1}.</span>
-                  {word}
-                </div>
-              ))}
+            {/* Split Grid: 4x6 Word Matrix on Left, SVG QR Seal on Right */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "14px", alignItems: "center" }}>
+              {/* 4x6 Word Matrix */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, 1fr)",
+                  gap: "5px",
+                  padding: "8px",
+                  background: "#F8FAFC",
+                  borderRadius: "10px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                {paperAnchor.bip39Mnemonic.map((word, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      fontSize: "10px",
+                      fontFamily: "var(--font-mono)",
+                      padding: "4px 6px",
+                      borderRadius: "5px",
+                      background: "#FFFFFF",
+                      border: "1px solid #E2E8F0",
+                      color: "#0F172A",
+                      textAlign: "center",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span style={{ color: "#94A3B8", marginRight: "3px" }}>{String(idx + 1).padStart(2, "0")}.</span>
+                    {word}
+                  </div>
+                ))}
+              </div>
+
+              {/* Embedded SVG QR Seal */}
+              <div
+                style={{
+                  width: "82px",
+                  height: "82px",
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "10px",
+                  padding: "6px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  flexShrink: 0,
+                }}
+              >
+                <QrCode size={52} color="#0F172A" />
+                <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", marginTop: "2px", textTransform: "uppercase" }}>
+                  ED25519 SEAL
+                </span>
+              </div>
             </div>
 
-            {/* SHA-256 Root & Ed25519 Seal */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
+            {/* Hashes Row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10.5px", color: "#64748B" }}>
               <span>Merkle Root: <strong className="font-mono-tabular" style={{ color: "#059669" }}>{paperAnchor.merkleRootSha256.slice(0, 24)}...</strong></span>
               <span>Ed25519 Sig: <strong className="font-mono-tabular" style={{ color: "#4F46E5" }}>{paperAnchor.ed25519SignatureHex.slice(0, 16)}...</strong></span>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: 6 COLS (BSA 63 SCHEDULES & CBI SYNDICATE NEXUS) */}
-        <div
-          style={{
-            gridColumn: "span 6",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
-          {/* CARD 3: BSA SECTION 63(4) SPLIT SCHEDULES (PARTS A & B) */}
+        {/* RIGHT COLUMN: 6 COLUMNS (BSA SECTION 63(4) COURT CERTIFICATE PREVIEW & CBI SYNDICATE MEMO) */}
+        <div style={{ gridColumn: "span 6", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
+          {/* CARD 3: BSA SECTION 63(4) SPLIT SCHEDULES ON CRISP WHITE COURT LETTERHEAD */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 58%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <FileCheck size={15} color="#4F46E5" />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                <FileCheck size={16} color="#4F46E5" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
                   BSA Section 63(4) Split Schedules
                 </span>
-                <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", padding: "2px 6px", borderRadius: "4px" }}>
+                <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#047857", background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "2px 6px", borderRadius: "4px" }}>
                   PUNE BAR COMPLIANT
                 </span>
               </div>
@@ -629,13 +557,13 @@ export const CourtProofScreen: React.FC = () => {
                   type="button"
                   onClick={() => setActiveBsaTab("partB")}
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 6px",
-                    borderRadius: "4px",
-                    border: activeBsaTab === "partB" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: activeBsaTab === "partB" ? "rgba(79,70,229,0.12)" : "transparent",
-                    color: activeBsaTab === "partB" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: activeBsaTab === "partB" ? "1px solid #4F46E5" : "1px solid #E2E8F0",
+                    background: activeBsaTab === "partB" ? "#EEF2FF" : "#F8FAFC",
+                    color: activeBsaTab === "partB" ? "#4338CA" : "#64748B",
                     cursor: "pointer",
                   }}
                 >
@@ -645,13 +573,13 @@ export const CourtProofScreen: React.FC = () => {
                   type="button"
                   onClick={() => setActiveBsaTab("bank")}
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 6px",
-                    borderRadius: "4px",
-                    border: activeBsaTab === "bank" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: activeBsaTab === "bank" ? "rgba(79,70,229,0.12)" : "transparent",
-                    color: activeBsaTab === "bank" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: activeBsaTab === "bank" ? "1px solid #4F46E5" : "1px solid #E2E8F0",
+                    background: activeBsaTab === "bank" ? "#EEF2FF" : "#F8FAFC",
+                    color: activeBsaTab === "bank" ? "#4338CA" : "#64748B",
                     cursor: "pointer",
                   }}
                 >
@@ -661,13 +589,13 @@ export const CourtProofScreen: React.FC = () => {
                   type="button"
                   onClick={() => setActiveBsaTab("isp")}
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     fontWeight: 700,
-                    padding: "3px 6px",
-                    borderRadius: "4px",
-                    border: activeBsaTab === "isp" ? "1px solid #4F46E5" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: activeBsaTab === "isp" ? "rgba(79,70,229,0.12)" : "transparent",
-                    color: activeBsaTab === "isp" ? "#4338CA" : "var(--bento-text-secondary, #475569)",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    border: activeBsaTab === "isp" ? "1px solid #4F46E5" : "1px solid #E2E8F0",
+                    background: activeBsaTab === "isp" ? "#EEF2FF" : "#F8FAFC",
+                    color: activeBsaTab === "isp" ? "#4338CA" : "#64748B",
                     cursor: "pointer",
                   }}
                 >
@@ -676,42 +604,40 @@ export const CourtProofScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Certificate Text Box */}
+            {/* Authentic White Court Certificate Preview */}
             <div
               style={{
-                flex: 1,
-                background: "var(--bento-canvas-subtle, #F8FAFC)",
-                borderRadius: "8px",
-                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                padding: "8px 10px",
+                background: "#FCFDFE",
+                border: "1px solid #CBD5E1",
+                borderRadius: "10px",
+                padding: "14px 16px",
                 fontFamily: "var(--font-mono)",
-                fontSize: "10px",
-                lineHeight: 1.4,
-                color: "var(--bento-text-primary, #0F172A)",
+                fontSize: "11px",
+                lineHeight: 1.5,
+                color: "#0F172A",
                 overflowY: "auto",
                 whiteSpace: "pre-wrap",
-                minHeight: 0,
+                maxHeight: "165px",
               }}
             >
               {currentScheduleText}
             </div>
 
-            {/* Bottom Actions */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                Tableau T8u Bridge (S/N TAB-88219-04) · SHA-256 (FIPS 180-4)
-              </div>
+              <span style={{ fontSize: "11px", color: "#64748B" }}>
+                Accreditation: <strong>MeitY Empanelled / ISO 17025</strong> · Tableau T8u Bridge TAB-88219-04
+              </span>
 
               <button
                 type="button"
                 onClick={handleCopySchedule}
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  fontSize: "11px",
+                  gap: "5px",
+                  fontSize: "12px",
                   fontWeight: 700,
-                  padding: "4px 10px",
+                  padding: "5px 12px",
                   borderRadius: "6px",
                   border: "none",
                   background: isScheduleCopied ? "#059669" : "#4F46E5",
@@ -719,88 +645,93 @@ export const CourtProofScreen: React.FC = () => {
                   cursor: "pointer",
                 }}
               >
-                {isScheduleCopied ? <Check size={12} /> : <Copy size={12} />}
-                <span>{isScheduleCopied ? "Copied" : "Copy Schedule"}</span>
+                {isScheduleCopied ? <Check size={13} /> : <Copy size={13} />}
+                <span>{isScheduleCopied ? "Copied" : "Copy Court Certificate"}</span>
               </button>
             </div>
           </div>
 
           {/* CARD 4: SALTED BLIND-INDEX CBI MULTI-STATE SYNDICATE AGGREGATION MEMO */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 42%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "10px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Network size={14} color="#D97706" />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                <Network size={15} color="#D97706" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
                   Salted Blind-Index (HMAC-SHA256) CBI Syndicate Memo
                 </span>
               </div>
-              <span style={{ fontSize: "9px", fontWeight: 700, color: "#D97706", background: "rgba(217,119,6,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                PII-PRESERVING AGGREGATION
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#B45309", background: "#FFFBEB", border: "1px solid #FDE68A", padding: "2px 6px", borderRadius: "4px" }}>
+                PII-PRESERVING
               </span>
             </div>
 
-            {/* Syndicate Header Bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                {cbiMemo.syndicateName}
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono)" }}>
-                {cbiMemo.totalLossCroresStr} ({cbiMemo.linkedFirCount} Connected FIRs)
-              </span>
-            </div>
-
-            {/* 4 Blind-Indexed Entity Cards */}
+            {/* Bold Summary Banner */}
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: "6px",
-                flex: 1,
-                minHeight: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: "#FFFBEB",
+                border: "1px solid #FDE68A",
               }}
             >
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#92400E" }}>
+                {cbiMemo.syndicateName}
+              </span>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#D97706", fontFamily: "var(--font-mono)" }}>
+                {cbiMemo.totalLossCroresStr} · 14 Connected FIRs
+              </span>
+            </div>
+
+            {/* 2x2 White Sub-Card Grid for Cross-State Match Clusters */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
               {cbiMemo.blindIndexedEntities.map((ent, idx) => (
                 <div
                   key={idx}
                   style={{
-                    background: "var(--bento-canvas-subtle, #F8FAFC)",
-                    padding: "5px 8px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle, #E2E8F0)",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "8px 10px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--bento-text-muted, #94A3B8)" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B" }}>
                       {ent.entityType} MATCH
                     </span>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#059669" }}>
                       {ent.matchesCount} FIRs
                     </span>
                   </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-secondary, #475569)", fontFamily: "var(--font-mono)" }}>
+                  <div style={{ fontSize: "10px", color: "#0F172A", fontFamily: "var(--font-mono)", fontWeight: 700, margin: "2px 0" }}>
                     {ent.blindIndexHash}
                   </div>
-                  <div style={{ fontSize: "8px", color: "var(--bento-text-muted, #94A3B8)" }}>
+                  <div style={{ fontSize: "9.5px", color: "#64748B" }}>
                     {ent.locations[0]}
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div style={{ fontSize: "11px", color: "#475569", background: "#F1F5F9", padding: "6px 10px", borderRadius: "6px" }}>
+              <strong>Mandatory CBI Transfer Triggered:</strong> Syndicate loss crosses ₹10 Crore threshold across Delhi, Maharashtra, Karnataka, and UP under Delhi Special Police Establishment Act § 6.
             </div>
           </div>
         </div>

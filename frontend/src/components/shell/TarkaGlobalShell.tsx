@@ -79,14 +79,14 @@ export const TarkaGlobalShell: React.FC = () => {
                 width: "28px",
                 height: "28px",
                 borderRadius: "7px",
-                background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                background: "linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#FFFFFF",
                 fontWeight: 900,
                 fontSize: "14px",
-                boxShadow: "0 2px 4px rgba(37,99,235,0.25)",
+                boxShadow: "0 2px 6px rgba(79,70,229,0.25)",
               }}
             >
               T
@@ -98,8 +98,8 @@ export const TarkaGlobalShell: React.FC = () => {
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
-                background: "rgba(37, 99, 235, 0.1)",
-                color: "#2563EB",
+                background: "#EEF2FF",
+                color: "#4F46E5",
                 padding: "2px 6px",
                 borderRadius: "4px",
                 fontFamily: "var(--font-mono)",
@@ -125,7 +125,7 @@ export const TarkaGlobalShell: React.FC = () => {
               color: "var(--bento-text-secondary, #334155)",
             }}
           >
-            <Briefcase size={12} color="#2563EB" />
+            <Briefcase size={12} color="#4F46E5" />
             <span style={{ fontWeight: 700, color: "var(--bento-text-main, #0F172A)" }}>{activeCaseId}</span>
             <span style={{ color: "var(--bento-text-muted, #94A3B8)" }}>·</span>
             <span>Digital Arrest Extortion (₹2,15,000 Loss)</span>
@@ -271,9 +271,9 @@ export const TarkaGlobalShell: React.FC = () => {
                     gap: "10px",
                     padding: "10px 12px",
                     borderRadius: "10px",
-                    border: isActive ? "1px solid rgba(37, 99, 235, 0.3)" : "1px solid transparent",
-                    background: isActive ? "rgba(37, 99, 235, 0.08)" : "transparent",
-                    color: isActive ? "#2563EB" : "var(--bento-text-secondary, #475569)",
+                    border: isActive ? "1px solid #C7D2FE" : "1px solid transparent",
+                    background: isActive ? "#EEF2FF" : "transparent",
+                    color: isActive ? "#4F46E5" : "var(--bento-text-secondary, #475569)",
                     cursor: "pointer",
                     textAlign: "left",
                     transition: "all 0.15s ease",

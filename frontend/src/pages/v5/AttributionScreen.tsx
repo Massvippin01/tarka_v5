@@ -12,6 +12,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
+import { SaasExecutiveKpiCard } from "../../components/tarka/SaasExecutiveKpiCard";
 import {
   solveCgnatFunnel,
   analyzeDualSimHardware,
@@ -69,10 +70,10 @@ export const AttributionScreen: React.FC = () => {
 
   // Visual funnel bar configuration
   const funnelStagesMeta = [
-    { id: "SESS-01", bank: "SBI Mule L1", time: "02:18:04 UTC", ip: "100.72.14.89:44321", count: 340, widthPct: 100, color: "#64748B", bg: "rgba(100,116,139,0.12)" },
-    { id: "SESS-02", bank: "HDFC Mule L2", time: "02:21:19 UTC", ip: "100.72.14.89:44389", count: 41, widthPct: 42, color: "#3B82F6", bg: "rgba(59,130,246,0.14)" },
-    { id: "SESS-03", bank: "Axis Mule L3", time: "02:24:51 UTC", ip: "100.72.14.89:44810", count: 6, widthPct: 18, color: "#6366F1", bg: "rgba(99,102,241,0.15)" },
-    { id: "SESS-04", bank: "Paytm Sink", time: "02:28:10 UTC", ip: "100.72.14.89:45102", count: 1, widthPct: 8, color: "#059669", bg: "rgba(5,150,105,0.18)" },
+    { id: "SESS-01", bank: "SBI Mule L1", time: "02:18:04 UTC", ip: "100.72.14.89:44321", count: 340, widthPct: 100, color: "#64748B" },
+    { id: "SESS-02", bank: "HDFC Mule L2", time: "02:21:19 UTC", ip: "100.72.14.89:44389", count: 41, widthPct: 42, color: "#3B82F6" },
+    { id: "SESS-03", bank: "Axis Mule L3", time: "02:24:51 UTC", ip: "100.72.14.89:44810", count: 6, widthPct: 18, color: "#6366F1" },
+    { id: "SESS-04", bank: "Paytm Sink", time: "02:28:10 UTC", ip: "100.72.14.89:45102", count: 1, widthPct: 8, color: "#059669" },
   ];
 
   return (
@@ -81,217 +82,112 @@ export const AttributionScreen: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         height: "calc(100vh - 52px)",
-        padding: "10px 14px",
-        gap: "10px",
+        padding: "16px 20px",
+        gap: "14px",
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflowY: "auto",
+        background: "var(--bento-canvas, #F4F6FB)",
       }}
     >
-      {/* 1. SINGLE-LINE 4-PILL TELEMETRY STRIP (HEIGHT: 38PX, NO VERTICAL SCROLL) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "10px",
-          height: "38px",
-          flexShrink: 0,
-        }}
-      >
-        {/* Pill 1: CGNAT Candidate Isolation */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: funnelResult.finalCandidateCount === 1 ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(217,119,6,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+      {/* 1. TOP 4 EXECUTIVE SAAS KPI METRIC CARDS (MIN-HEIGHT: 108PX) */}
+      <div className="saas-kpi-row">
+        <SaasExecutiveKpiCard
+          label="CGNAT Candidates"
+          metric={funnelResult.finalCandidateCount === 1 ? "1 Handset ★" : `${funnelResult.finalCandidateCount} Ambiguous`}
+          metricColor={funnelResult.finalCandidateCount === 1 ? "#059669" : "#D97706"}
+          subtext={funnelResult.finalCandidateCount === 1 ? "Collapsed from 340 handsets across 4 towers" : "Missing source port prevents exact candidate convergence"}
+          statusBadge={{
+            text: funnelResult.finalCandidateCount === 1 ? "INDIVIDUATED" : "AMBIGUOUS POOL",
+            variant: funnelResult.finalCandidateCount === 1 ? "emerald" : "amber",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Radio size={14} color={funnelResult.finalCandidateCount === 1 ? "#059669" : "#D97706"} />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              CGNAT CANDIDATES
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: funnelResult.finalCandidateCount === 1 ? "#059669" : "#D97706",
-              background: funnelResult.finalCandidateCount === 1 ? "rgba(5,150,105,0.1)" : "rgba(217,119,6,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {funnelResult.finalCandidateCount === 1 ? "1 UNIQUE SUBSCRIBER ★" : `${funnelResult.finalCandidateCount} AMBIGUOUS`}
-          </span>
-        </div>
+          icon={Radio}
+          iconColor={funnelResult.finalCandidateCount === 1 ? "#059669" : "#D97706"}
+          iconBg={funnelResult.finalCandidateCount === 1 ? "#ECFDF5" : "#FFFBEB"}
+        />
 
-        {/* Pill 2: Coincidental Match Probability */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: "1px solid rgba(99,102,241,0.25)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="Coincidental Odds"
+          metric={funnelResult.coincidentalRatio}
+          metricColor="#4F46E5"
+          subtext="P = 1.4 × 10⁻⁷ multi-mule login concurrency"
+          statusBadge={{
+            text: "BEYOND DOUBT",
+            variant: "indigo",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Cpu size={14} color="#6366F1" />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              COINCIDENTAL ODDS
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: "#4F46E5",
-              background: "rgba(79,70,229,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {funnelResult.coincidentalRatio} (1-in-7.14M)
-          </span>
-        </div>
+          icon={Cpu}
+          iconColor="#4F46E5"
+          iconBg="#EEF2FF"
+        />
 
-        {/* Pill 3: Hotspot Tethering (TTL) */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: hotspotResult.isHotspotDetected ? "1px solid rgba(225,29,72,0.3)" : "1px solid rgba(5,150,105,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="Hotspot Tethering (TTL)"
+          metric={hotspotResult.isHotspotDetected ? "TTL = 63" : "TTL = 64"}
+          metricColor={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"}
+          subtext={hotspotResult.isHotspotDetected ? "1-hop decrement detected through accomplice phone" : "Direct cellular 4G/5G connection to base station"}
+          statusBadge={{
+            text: hotspotResult.isHotspotDetected ? "PROXY DETECTED" : "DIRECT LINK",
+            variant: hotspotResult.isHotspotDetected ? "rose" : "emerald",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Wifi size={14} color={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"} />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              HOTSPOT TETHER (TTL)
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: hotspotResult.isHotspotDetected ? "#E11D48" : "#059669",
-              background: hotspotResult.isHotspotDetected ? "rgba(225,29,72,0.1)" : "rgba(5,150,105,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {hotspotResult.isHotspotDetected ? "TTL 63 (COLLISION DETECTED)" : "TTL 64 (DIRECT 4G/5G)"}
-          </span>
-        </div>
+          icon={Wifi}
+          iconColor={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"}
+          iconBg={hotspotResult.isHotspotDetected ? "#FFF1F2" : "#ECFDF5"}
+        />
 
-        {/* Pill 4: Dual-SIM Hardware Twin */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 12px",
-            borderRadius: "8px",
-            background: "var(--bento-card-bg, #FFFFFF)",
-            border: dualSimResult.isHardwareTwin ? "1px solid rgba(5,150,105,0.3)" : "1px solid rgba(225,29,72,0.3)",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+        <SaasExecutiveKpiCard
+          label="Dual-SIM Hardware Twin"
+          metric={dualSimResult.hardwareModel}
+          metricColor="#059669"
+          subtext="TAC 35891110 matches Slots 1 & 2 on same chipset"
+          statusBadge={{
+            text: "TAC TWIN CONFIRMED",
+            variant: "emerald",
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Smartphone size={14} color={dualSimResult.isHardwareTwin ? "#059669" : "#E11D48"} />
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-              DUAL-SIM HARDWARE TWIN
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 800,
-              color: dualSimResult.isHardwareTwin ? "#059669" : "#E11D48",
-              background: dualSimResult.isHardwareTwin ? "rgba(5,150,105,0.1)" : "rgba(225,29,72,0.1)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            {dualSimResult.isHardwareTwin ? "TAC 35891110 (M34 5G)" : "MISMATCH"}
-          </span>
-        </div>
+          icon={Smartphone}
+          iconColor="#059669"
+          iconBg="#ECFDF5"
+        />
       </div>
 
-      {/* 2. MAIN 12-COLUMN BENTO INFOGRAPHIC WORKSPACE (HEIGHT: CALC(100% - 48PX), OVERFLOW: HIDDEN) */}
+      {/* 2. MAIN 12-COLUMN BENTO GRID */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "10px",
+          gap: "14px",
           flex: 1,
           minHeight: 0,
         }}
       >
-        {/* LEFT COLUMN: 7 COLS (CGNAT FUNNEL + UPI DEVICE XML / JA4) */}
-        <div
-          style={{
-            gridColumn: "span 7",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
-          {/* CARD 1: PROGRESSIVE CGNAT CANDIDATE INTERSECTION FUNNEL (340 -> 41 -> 6 -> 1) */}
+        {/* LEFT COLUMN: 7 COLUMNS (CGNAT FUNNEL + UPI DEVICE XML / JA4) */}
+        <div style={{ gridColumn: "span 7", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
+          {/* CARD 1: INTERACTIVE CGNAT CANDIDATE INTERSECTION FUNNEL (340 -> 41 -> 6 -> 1) */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 58%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
-            {/* Header with Title and Simulation Buttons */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {/* Header with Title, Badge, and Action Buttons */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Target size={15} color="#4F46E5" />
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                    Interactive CGNAT Candidate Intersection Funnel
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Target size={16} color="#4F46E5" />
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#0F172A" }}>
+                    Interactive CGNAT Candidate Intersection Funnel (340 → 41 → 6 → 1)
                   </span>
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      color: "#4F46E5",
-                      background: "rgba(79,70,229,0.08)",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                    }}
-                  >
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#4F46E5", background: "#EEF2FF", padding: "2px 6px", borderRadius: "4px" }}>
                     DOT CLAUSE 39.20
                   </span>
                 </div>
-                <div style={{ fontSize: "11px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                  Mathematical candidate collapse: Tower IP pool intersection across 4 mule logins.
+                <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                  <strong>What this means for IO:</strong> Mobile carriers assign the same IP to 340 phones simultaneously. But across 4 bank logins, only <strong>1 unique handset</strong> was active.
                 </div>
               </div>
 
@@ -305,17 +201,17 @@ export const AttributionScreen: React.FC = () => {
                     gap: "4px",
                     fontSize: "11px",
                     fontWeight: 700,
-                    padding: "4px 8px",
+                    padding: "5px 10px",
                     borderRadius: "6px",
-                    border: isPortDropped ? "1px solid #D97706" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: isPortDropped ? "rgba(217,119,6,0.12)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                    color: isPortDropped ? "#B45309" : "var(--bento-text-secondary, #475569)",
+                    border: isPortDropped ? "1px solid #D97706" : "1px solid #CBD5E1",
+                    background: isPortDropped ? "#FFFBEB" : "#F8FAFC",
+                    color: isPortDropped ? "#B45309" : "#0F172A",
                     cursor: "pointer",
                   }}
-                  title="Simulates ISP omitting source port in IPDR, leaving ambiguous pool of 340 subscribers"
+                  title="Simulates ISP omitting source port in IPDR"
                 >
-                  <Radio size={11} />
-                  <span>{isPortDropped ? "Port Dropped (Ambiguous)" : "Drop Source Port"}</span>
+                  <Radio size={12} />
+                  <span>{isPortDropped ? "Source Port Dropped" : "Drop Source Port"}</span>
                 </button>
 
                 <button
@@ -327,31 +223,22 @@ export const AttributionScreen: React.FC = () => {
                     gap: "4px",
                     fontSize: "11px",
                     fontWeight: 600,
-                    padding: "4px 8px",
+                    padding: "5px 10px",
                     borderRadius: "6px",
-                    border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                    background: "var(--bento-canvas-subtle, #F8FAFC)",
-                    color: "var(--bento-text-secondary, #475569)",
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    color: "#0F172A",
                     cursor: "pointer",
                   }}
-                  title="Reset all 4 login sessions"
                 >
-                  <RotateCcw size={11} />
+                  <RotateCcw size={12} />
                   <span>Reset</span>
                 </button>
               </div>
             </div>
 
-            {/* 4 Funnel Horizontal Bars */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-                flex: 1,
-                justifyContent: "space-around",
-              }}
-            >
+            {/* 4 Funnel Rows with Diagonal Hatched Background + Solid Gradient Bar */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {funnelStagesMeta.map((stage, idx) => {
                 const isChecked = !!activeSessions[stage.id];
                 const stageData = funnelResult.stages.find((s) => s.sessionId === stage.id);
@@ -364,50 +251,63 @@ export const AttributionScreen: React.FC = () => {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
-                      padding: "6px 10px",
-                      borderRadius: "8px",
-                      background: isTarget ? "rgba(5,150,105,0.06)" : (isChecked ? "var(--bento-canvas-subtle, #F8FAFC)" : "rgba(0,0,0,0.01)"),
-                      border: isTarget ? "1px solid rgba(5,150,105,0.3)" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                      opacity: isChecked ? 1 : 0.45,
+                      gap: "12px",
+                      padding: "8px 12px",
+                      borderRadius: "10px",
+                      background: isTarget ? "#ECFDF5" : isChecked ? "#F8FAFC" : "#F1F5F9",
+                      border: isTarget ? "1px solid #A7F3D0" : "1px solid #E2E8F0",
+                      opacity: isChecked ? 1 : 0.5,
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    {/* Session Checkbox & Step Label */}
+                    {/* Checkbox */}
                     <input
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleSession(stage.id)}
-                      style={{ width: "14px", height: "14px", cursor: "pointer", accentColor: "#4F46E5", margin: 0 }}
-                      title="Include/Exclude this mule login session"
+                      style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#4F46E5", margin: 0 }}
                     />
 
-                    <div style={{ width: "135px", flexShrink: 0 }}>
-                      <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+                    {/* Step Info */}
+                    <div style={{ width: "130px", flexShrink: 0 }}>
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                         Step {idx + 1}: {stage.bank}
                       </div>
-                      <div style={{ fontSize: "10px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+                      <div style={{ fontSize: "10.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
                         {stage.time}
                       </div>
                     </div>
 
-                    {/* Proportional Funnel Bar */}
-                    <div style={{ flex: 1, position: "relative", height: "20px", background: "rgba(0,0,0,0.04)", borderRadius: "4px", overflow: "hidden", display: "flex", alignItems: "center" }}>
+                    {/* Proportional Bar with Hatched Pattern */}
+                    <div
+                      style={{
+                        flex: 1,
+                        position: "relative",
+                        height: "24px",
+                        background: "#E2E8F0",
+                        borderRadius: "6px",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                      className="hatch-pattern"
+                    >
                       <div
                         style={{
                           height: "100%",
                           width: `${isChecked ? (isPortDropped ? 100 : stage.widthPct) : 0}%`,
-                          background: isTarget ? "linear-gradient(90deg, #10B981 0%, #059669 100%)" : stage.color,
-                          borderRadius: "4px",
+                          background: isTarget ? "linear-gradient(90deg, #10B981 0%, #059669 100%)" : "linear-gradient(90deg, #4F46E5 0%, #3B82F6 100%)",
+                          borderRadius: "6px",
                           transition: "width 0.3s ease",
                         }}
                       />
                       <span
                         style={{
                           position: "absolute",
-                          left: "8px",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          color: (isChecked && stage.widthPct > 25) ? "#FFFFFF" : "var(--bento-text-primary, #0F172A)",
+                          left: "10px",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          color: (isChecked && stage.widthPct > 25) ? "#FFFFFF" : "#0F172A",
                           fontFamily: "var(--font-mono)",
                         }}
                       >
@@ -415,13 +315,13 @@ export const AttributionScreen: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* IP & Tower Details */}
-                    <div style={{ width: "160px", textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)", fontFamily: "var(--font-mono)" }}>
+                    {/* Public CGNAT IP & Location */}
+                    <div style={{ width: "170px", textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
                         {stage.ip}
                       </div>
-                      <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)" }}>
-                        DL-TWR-891 · Sector 4 Rohini
+                      <div style={{ fontSize: "10px", color: "#64748B" }}>
+                        Airtel DL-TWR-891 · Vasant Kunj
                       </div>
                     </div>
                   </div>
@@ -429,115 +329,106 @@ export const AttributionScreen: React.FC = () => {
               })}
             </div>
 
-            {/* Bottom Mathematical Invariant Banner */}
+            {/* Verdict Callout Banner */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "6px 10px",
-                borderRadius: "6px",
-                background: funnelResult.finalCandidateCount === 1 ? "rgba(5,150,105,0.07)" : "rgba(217,119,6,0.07)",
-                border: funnelResult.finalCandidateCount === 1 ? "1px solid rgba(5,150,105,0.25)" : "1px solid rgba(217,119,6,0.25)",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: funnelResult.finalCandidateCount === 1 ? "#ECFDF5" : "#FFFBEB",
+                border: funnelResult.finalCandidateCount === 1 ? "1px solid #A7F3D0" : "1px solid #FDE68A",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {funnelResult.finalCandidateCount === 1 ? <ShieldCheck size={14} color="#059669" /> : <ShieldAlert size={14} color="#D97706" />}
-                <span style={{ fontSize: "11px", fontWeight: 700, color: funnelResult.finalCandidateCount === 1 ? "#059669" : "#B45309" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {funnelResult.finalCandidateCount === 1 ? <ShieldCheck size={16} color="#059669" /> : <ShieldAlert size={16} color="#D97706" />}
+                <span style={{ fontSize: "12px", fontWeight: 700, color: funnelResult.finalCandidateCount === 1 ? "#047857" : "#B45309" }}>
                   {funnelResult.finalCandidateCount === 1
-                    ? "UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { IMEI 358911104829104 }"
-                    : `AMBIGUOUS SUBSCRIBER POOL: ${funnelResult.finalCandidateCount} CANDIDATES SATISFIABLE`}
+                    ? "UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI 358911104829104 }"
+                    : `AMBIGUOUS POOL: ${funnelResult.finalCandidateCount} CANDIDATES SATISFIABLE`}
                 </span>
               </div>
-              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
+              <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", fontWeight: 700, color: "#475569" }}>
                 P = 1.40 × 10⁻⁷ (Beyond Reasonable Doubt)
               </span>
             </div>
           </div>
 
-          {/* CARD 2: UPI 2.0 <Device> XML & JA4 TLS CLIENT FINGERPRINT DUAL-ANCHOR */}
+          {/* CARD 2: UPI 2.0 <Device> XML & JA4 TLS FINGERPRINT DUAL-ANCHOR */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 42%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "10px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Layers size={14} color="#4F46E5" />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  UPI 2.0 &lt;Device&gt; XML & JA4 TLS Fingerprint Dual-Anchor
-                </span>
-                <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                  NPCI CENTRAL LOG
+                <Layers size={15} color="#4F46E5" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  UPI 2.0 &lt;Device&gt; XML & JA4 Client TLS Fingerprint Dual-Anchor
                 </span>
               </div>
-              <span style={{ fontSize: "10px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                Cryptographic App-to-Network Anchor
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>
+                NPCI CENTRAL SWITCH
               </span>
             </div>
 
-            {/* XML Snippet Box */}
+            {/* Clean Light Syntax-Highlighted XML Pill */}
             <div
               style={{
-                background: "#0F172A",
-                padding: "8px 10px",
-                borderRadius: "6px",
-                border: "1px solid #1E293B",
-                overflow: "hidden",
-                flexShrink: 0,
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                padding: "10px 14px",
+                borderRadius: "10px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                lineHeight: 1.5,
+                color: "#0F172A",
               }}
             >
-              <div style={{ fontSize: "9px", color: "#64748B", textTransform: "uppercase", marginBottom: "2px", fontWeight: 700 }}>
-                NPCI UPI 2.0 Decrypted Switch Payload:
-              </div>
-              <code style={{ fontSize: "10px", color: "#38BDF8", fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>
-                {canonicalData.deviceXml.rawXml}
-              </code>
+              <span style={{ color: "#4F46E5", fontWeight: 700 }}>&lt;Device</span>{" "}
+              <span style={{ color: "#059669" }}>mobile=</span><span style={{ color: "#0284C7" }}>"+919871234567"</span>{" "}
+              <span style={{ color: "#059669" }}>geocode=</span><span style={{ color: "#0284C7" }}>"28.5244,77.1588"</span>{" "}
+              <span style={{ color: "#059669" }}>location=</span><span style={{ color: "#0284C7" }}>"Sector 4 Rohini DL"</span>{" "}
+              <span style={{ color: "#059669" }}>ip=</span><span style={{ color: "#0284C7" }}>"100.72.14.89"</span>{" "}
+              <span style={{ color: "#059669" }}>app=</span><span style={{ color: "#0284C7" }}>"org.npci.mule"</span>{" "}
+              <span style={{ color: "#4F46E5", fontWeight: 700 }}>/&gt;</span>
             </div>
 
-            {/* 4 Metadata Badges in Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "6px",
-                flex: 1,
-                alignItems: "center",
-              }}
-            >
-              <div style={{ background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-                <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>Registered MSISDN</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)", fontFamily: "var(--font-mono)" }}>
+            {/* 4 Identity Anchors in Clean White Sub-Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px" }}>
+                <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase" }}>Registered MSISDN</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
                   {canonicalData.deviceXml.mobile}
                 </div>
               </div>
 
-              <div style={{ background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-                <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>Switch Tower Geocode</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)", fontFamily: "var(--font-mono)" }}>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px" }}>
+                <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase" }}>Switch Tower Geocode</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
                   {canonicalData.deviceXml.geocode}
                 </div>
               </div>
 
-              <div style={{ background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-                <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>Identified Handset</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px" }}>
+                <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase" }}>Device Model</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>
                   {canonicalData.deviceXml.deviceModel}
                 </div>
               </div>
 
-              <div style={{ background: "rgba(5,150,105,0.06)", padding: "6px 8px", borderRadius: "6px", border: "1px solid rgba(5,150,105,0.25)" }}>
-                <div style={{ fontSize: "9px", color: "#059669", textTransform: "uppercase", fontWeight: 700 }}>JA4 Client Fingerprint</div>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "#059669", fontFamily: "var(--font-mono)" }}>
+              <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "8px", padding: "8px" }}>
+                <div style={{ fontSize: "10px", color: "#047857", textTransform: "uppercase", fontWeight: 700 }}>JA4 TLS Fingerprint</div>
+                <div style={{ fontSize: "11px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>
                   {canonicalData.deviceXml.ja4Fingerprint.slice(0, 14)}... (MATCH)
                 </div>
               </div>
@@ -545,36 +436,27 @@ export const AttributionScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: 5 COLS (HOTSPOT TETHERING DIAGRAM + DUAL-SIM TAC TWIN / Z3 SMT) */}
-        <div
-          style={{
-            gridColumn: "span 5",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            minHeight: 0,
-          }}
-        >
-          {/* CARD 3: WI-FI HOTSPOT TETHERING COLLISION DETECTOR (TTL DIAGRAM) */}
+        {/* RIGHT COLUMN: 5 COLUMNS (HOTSPOT DIAGRAM + DUAL-SIM TWIN) */}
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "14px", minHeight: 0 }}>
+          {/* CARD 3: WI-FI HOTSPOT TETHERING COLLISION (VISUAL 3-NODE SIGNAL DIAGRAM) */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 50%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Wifi size={15} color={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"} />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  Wi-Fi Hotspot Tethering Collision
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  Wi-Fi Hotspot Tethering Collision (TTL Analysis)
                 </span>
               </div>
 
@@ -587,102 +469,92 @@ export const AttributionScreen: React.FC = () => {
                   gap: "4px",
                   fontSize: "11px",
                   fontWeight: 700,
-                  padding: "4px 8px",
+                  padding: "5px 10px",
                   borderRadius: "6px",
-                  border: hotspotResult.isHotspotDetected ? "1px solid #E11D48" : "1px solid var(--bento-border-subtle, #E2E8F0)",
-                  background: hotspotResult.isHotspotDetected ? "rgba(225,29,72,0.12)" : "var(--bento-canvas-subtle, #F8FAFC)",
-                  color: hotspotResult.isHotspotDetected ? "#BE123C" : "var(--bento-text-secondary, #475569)",
+                  border: hotspotResult.isHotspotDetected ? "1px solid #E11D48" : "1px solid #CBD5E1",
+                  background: hotspotResult.isHotspotDetected ? "#FFF1F2" : "#F8FAFC",
+                  color: hotspotResult.isHotspotDetected ? "#BE123C" : "#0F172A",
                   cursor: "pointer",
                 }}
               >
-                <span>{hotspotResult.isHotspotDetected ? "Tethering Active" : "Simulate Hotspot"}</span>
+                <span>{hotspotResult.isHotspotDetected ? "Tethering Active" : "Simulate Hotspot Tethering"}</span>
               </button>
             </div>
 
-            {/* Visual TTL Hop Infographic */}
+            {/* Visual 3-Node Signal Flow Diagram */}
             <div
               style={{
-                flex: 1,
-                background: "var(--bento-canvas-subtle, #F8FAFC)",
-                borderRadius: "8px",
-                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                padding: "8px 10px",
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                borderRadius: "12px",
+                padding: "14px 12px",
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 0,
+                gap: "10px",
               }}
             >
-              {/* Network Packet Hop Diagram */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
-                {/* Device 1: Fraudster Handset */}
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>Fraud Handset</div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>Samsung M34</div>
-                  <div style={{ fontSize: "10px", fontWeight: 800, color: "#3B82F6", fontFamily: "var(--font-mono)" }}>Init TTL: 64</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                {/* Node 1: Fraudster Handset */}
+                <div style={{ textAlign: "center", flex: 1, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px" }}>
+                  <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase", fontWeight: 700 }}>Fraud Handset</div>
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>Samsung M34</div>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#4F46E5", fontFamily: "var(--font-mono)" }}>Init TTL: 64</div>
                 </div>
 
-                {/* Hop Arrow with Tethering Badge */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-                  <span
-                    style={{
-                      fontSize: "8px",
-                      fontWeight: 800,
-                      color: hotspotResult.isHotspotDetected ? "#E11D48" : "#64748B",
-                      background: hotspotResult.isHotspotDetected ? "rgba(225,29,72,0.1)" : "rgba(0,0,0,0.05)",
-                      padding: "1px 4px",
-                      borderRadius: "3px",
-                    }}
-                  >
-                    {hotspotResult.isHotspotDetected ? "Wi-Fi AP (-1 TTL)" : "Direct Link"}
+                {/* Signal Hop 1 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 6px" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 800, color: hotspotResult.isHotspotDetected ? "#E11D48" : "#64748B", background: hotspotResult.isHotspotDetected ? "#FFE4E6" : "#E2E8F0", padding: "1px 5px", borderRadius: "3px" }}>
+                    {hotspotResult.isHotspotDetected ? "Wi-Fi (-1 Hop)" : "Direct 4G"}
                   </span>
                   <ArrowRight size={14} color={hotspotResult.isHotspotDetected ? "#E11D48" : "#94A3B8"} />
                 </div>
 
-                {/* Device 2: Accomplice Gateway (If Detected) */}
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>
-                    {hotspotResult.isHotspotDetected ? "Accomplice Proxy" : "Cellular Gateway"}
+                {/* Node 2: Accomplice Gateway (or Direct Link) */}
+                <div
+                  style={{
+                    textAlign: "center",
+                    flex: 1,
+                    background: hotspotResult.isHotspotDetected ? "#FFF1F2" : "#FFFFFF",
+                    border: hotspotResult.isHotspotDetected ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    padding: "8px",
+                  }}
+                >
+                  <div style={{ fontSize: "10px", color: hotspotResult.isHotspotDetected ? "#BE123C" : "#64748B", textTransform: "uppercase", fontWeight: 700 }}>
+                    {hotspotResult.isHotspotDetected ? "Accomplice AP" : "Direct Link"}
                   </div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: hotspotResult.isHotspotDetected ? "#E11D48" : "var(--bento-text-primary, #0F172A)" }}>
-                    {hotspotResult.isHotspotDetected ? hotspotResult.accompliceHandset : "Direct 4G Link"}
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: hotspotResult.isHotspotDetected ? "#BE123C" : "#0F172A" }}>
+                    {hotspotResult.isHotspotDetected ? hotspotResult.accompliceHandset : "Cellular Direct"}
                   </div>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
-                    {hotspotResult.isHotspotDetected ? hotspotResult.bssid : "No Proxy"}
+                  <div style={{ fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
+                    {hotspotResult.isHotspotDetected ? hotspotResult.bssid : "No Gateway"}
                   </div>
                 </div>
 
-                {/* Hop Arrow to Tower */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                {/* Signal Hop 2 */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 6px" }}>
                   <ArrowRight size={14} color="#94A3B8" />
                 </div>
 
-                {/* Tower Node */}
-                <div style={{ textAlign: "center", flex: 1 }}>
-                  <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", textTransform: "uppercase" }}>Airtel Tower</div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>DL-TWR-891</div>
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      color: hotspotResult.isHotspotDetected ? "#E11D48" : "#059669",
-                      fontFamily: "var(--font-mono)",
-                    }}
-                  >
+                {/* Node 3: Airtel Tower */}
+                <div style={{ textAlign: "center", flex: 1, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px" }}>
+                  <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase", fontWeight: 700 }}>Airtel Tower</div>
+                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>DL-TWR-891</div>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: hotspotResult.isHotspotDetected ? "#E11D48" : "#059669", fontFamily: "var(--font-mono)" }}>
                     Observed: {hotspotResult.ttlObserved}
                   </div>
                 </div>
               </div>
 
-              {/* Anomaly Summary Alert */}
+              {/* Anomaly Callout Box */}
               <div
                 style={{
-                  fontSize: "10px",
-                  lineHeight: 1.4,
-                  padding: "5px 8px",
-                  borderRadius: "6px",
-                  background: hotspotResult.isHotspotDetected ? "rgba(225,29,72,0.08)" : "rgba(5,150,105,0.08)",
-                  border: hotspotResult.isHotspotDetected ? "1px solid rgba(225,29,72,0.2)" : "1px solid rgba(5,150,105,0.2)",
+                  fontSize: "11.5px",
+                  lineHeight: 1.45,
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  background: hotspotResult.isHotspotDetected ? "#FFF1F2" : "#ECFDF5",
+                  border: hotspotResult.isHotspotDetected ? "1px solid #FECDD3" : "1px solid #A7F3D0",
                   color: hotspotResult.isHotspotDetected ? "#9F1239" : "#065F46",
                 }}
               >
@@ -691,113 +563,82 @@ export const AttributionScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* CARD 4: DUAL-SIM HARDWARE TWIN & Z3 SMT CLOCK-OFFSET TIMELINE */}
+          {/* CARD 4: DUAL-SIM HARDWARE TWIN & Z3 SMT CLOCK-OFFSET */}
           <div
+            className="bento-card"
             style={{
-              flex: "1 1 50%",
-              background: "var(--bento-card-bg, #FFFFFF)",
-              borderRadius: "12px",
-              border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-              padding: "12px 14px",
+              padding: "16px 20px",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px -4px rgba(15, 23, 42, 0.05)",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: 0,
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Smartphone size={15} color="#4F46E5" />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)" }}>
-                  Dual-SIM Hardware Twin & Z3 SMT
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
+                  Dual-SIM Hardware Twin & Z3 SMT Bounds
                 </span>
               </div>
-              <span style={{ fontSize: "9px", fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.1)", padding: "2px 6px", borderRadius: "4px" }}>
-                15-DIGIT LUHN CHECK
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: "4px" }}>
+                15-DIGIT MOD-10 LUHN
               </span>
             </div>
 
             {/* Side-by-Side Dual-SIM Slots */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-              {/* Slot 1 */}
-              <div style={{ background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
-                  <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontWeight: 700 }}>SLOT 1 (AIRTEL)</span>
-                  <span style={{ fontSize: "9px", color: "#059669", fontWeight: 800 }}>LUHN VALID ✓</span>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 700 }}>SLOT 1 (AIRTEL)</span>
+                  <span style={{ fontSize: "10px", color: "#059669", fontWeight: 800 }}>LUHN VALID ✓</span>
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)", fontFamily: "var(--font-mono)" }}>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
                   {imei1}
                 </div>
-                <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", marginTop: "2px" }}>
+                <div style={{ fontSize: "10.5px", color: "#64748B", marginTop: "2px" }}>
                   TAC: <strong className="font-mono-tabular" style={{ color: "#4F46E5" }}>{dualSimResult.tac1}</strong>
                 </div>
               </div>
 
-              {/* Slot 2 */}
-              <div style={{ background: "var(--bento-canvas-subtle, #F8FAFC)", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--bento-border-subtle, #E2E8F0)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
-                  <span style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontWeight: 700 }}>SLOT 2 (JIO)</span>
-                  <span style={{ fontSize: "9px", color: "#059669", fontWeight: 800 }}>LUHN VALID ✓</span>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 700 }}>SLOT 2 (JIO)</span>
+                  <span style={{ fontSize: "10px", color: "#059669", fontWeight: 800 }}>LUHN VALID ✓</span>
                 </div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--bento-text-primary, #0F172A)", fontFamily: "var(--font-mono)" }}>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
                   {imei2}
                 </div>
-                <div style={{ fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", marginTop: "2px" }}>
+                <div style={{ fontSize: "10.5px", color: "#64748B", marginTop: "2px" }}>
                   TAC: <strong className="font-mono-tabular" style={{ color: "#4F46E5" }}>{dualSimResult.tac2}</strong>
                 </div>
               </div>
             </div>
 
             {/* Z3 SMT Clock-Offset Graphic */}
-            <div
-              style={{
-                flex: 1,
-                background: "var(--bento-canvas-subtle, #F8FAFC)",
-                borderRadius: "8px",
-                border: "1px solid var(--bento-border-subtle, #E2E8F0)",
-                padding: "8px 10px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 0,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--bento-text-secondary, #475569)" }}>
-                  Z3 SMT Clock-Offset Bound: [-1.2s, +0.8s]
+            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569" }}>
+                  Z3 SMT Clock-Offset Tolerance: [-1.2s, +0.8s]
                 </span>
-                <span style={{ fontSize: "9px", color: "#059669", fontWeight: 700 }}>
-                  SATISFIABLE (CONGRUENT)
+                <span style={{ fontSize: "10px", color: "#059669", fontWeight: 800 }}>
+                  SATISFIABLE ✓
                 </span>
               </div>
 
               {/* Offset Visual Bar */}
-              <div style={{ position: "relative", height: "12px", background: "#E2E8F0", borderRadius: "6px", overflow: "hidden" }}>
-                {/* Center 0 Line */}
+              <div style={{ position: "relative", height: "14px", background: "#E2E8F0", borderRadius: "7px", overflow: "hidden", marginBottom: "4px" }}>
                 <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "2px", background: "#64748B", zIndex: 2 }} />
-                {/* SMT Bound Window */}
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "38%",
-                    width: "24%",
-                    top: 0,
-                    bottom: 0,
-                    background: "rgba(16, 185, 129, 0.45)",
-                    borderRadius: "4px",
-                  }}
-                />
+                <div style={{ position: "absolute", left: "38%", width: "24%", top: 0, bottom: 0, background: "rgba(16, 185, 129, 0.45)", borderRadius: "4px" }} />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: "var(--bento-text-muted, #94A3B8)", fontFamily: "var(--font-mono)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
                 <span>-2.0s</span>
                 <span>Δt = 0.0s (NTP Synchronized)</span>
                 <span>+2.0s</span>
-              </div>
-
-              <div style={{ fontSize: "10px", color: "var(--bento-text-muted, #94A3B8)", lineHeight: 1.3 }}>
-                SIM-swap occurred <strong style={{ color: "#E11D48" }}>18 minutes</strong> prior to first transaction; device IMEI and JA4 fingerprint remained physically identical.
               </div>
             </div>
           </div>
