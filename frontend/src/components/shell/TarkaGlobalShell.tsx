@@ -580,7 +580,13 @@ export const TarkaGlobalShell: React.FC = () => {
             {/* Export Section 63(4) PDF Button */}
             <button
               type="button"
-              onClick={handlePrintPdf}
+              disabled={intakeGate?.isHalted}
+              onClick={intakeGate?.isHalted ? undefined : handlePrintPdf}
+              title={
+                intakeGate?.isHalted
+                  ? "Export disabled: Evidence pipeline halted at Falsification Gate (Falsify before Attribute)"
+                  : "Export Section 63(4) Forensic Certificate PDF"
+              }
               style={{
                 height: "32px",
                 display: "inline-flex",
@@ -593,9 +599,11 @@ export const TarkaGlobalShell: React.FC = () => {
                 fontSize: "12px",
                 borderRadius: "8px",
                 padding: "0 12px",
-                cursor: "pointer",
+                cursor: intakeGate?.isHalted ? "not-allowed" : "pointer",
+                opacity: intakeGate?.isHalted ? 0.45 : 1,
                 boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
                 whiteSpace: "nowrap",
+                transition: "opacity 0.15s ease",
               }}
             >
               <FileDown size={13} />
