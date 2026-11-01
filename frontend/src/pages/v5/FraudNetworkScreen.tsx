@@ -1,3 +1,4 @@
+import { EvidenceNetworkGraph, type EdgeFilterType, type GraphLayoutMode } from "../../components/tarka/network/EvidenceNetworkGraph";
 import React, { useState, useMemo } from "react";
 import {
   Network,
@@ -7,14 +8,6 @@ import {
   FileText,
   Copy,
   Check,
-  Zap,
-  Radio,
-  Layers,
-  CircleDot,
-  Shield,
-  Smartphone,
-  Server,
-  Building,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
@@ -24,12 +17,9 @@ import {
   StoryBanner,
   SectionCard,
   ScaleBar,
-  useFocusStore,
 } from "../../components/tarka/kit";
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 
-type EdgeType = "all" | "tether" | "ja4" | "caf" | "c2";
-type LayoutMode = "layered" | "radial";
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
@@ -42,9 +32,8 @@ export const FraudNetworkScreen: React.FC = () => {
     return detectHotspotCollision(observed, 64);
   }, [isHotspotActive]);
 
-  const { selectedNodeId, setSelectedNodeId } = useFocusStore();
-  const [edgeFilter, setEdgeFilter] = useState<EdgeType>("all");
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("layered");
+  const [edgeFilter, setEdgeFilter] = useState<EdgeFilterType>("all");
+  const [layoutMode, setLayoutMode] = useState<GraphLayoutMode>("layered");
   const [isCopied, setIsCopied] = useState(false);
   const [isXmlCopied, setIsXmlCopied] = useState(false);
 
@@ -82,49 +71,6 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
     toast.success("UPI 2.0 <Device> XML stanza copied!");
     setTimeout(() => setIsXmlCopied(false), 2000);
   };
-
-  // Node Positions Definition for Layered Layout (viewBox 0 0 740 340)
-  const layeredNodes: Record<string, { x: number; y: number; title: string; subtitle: string; tag: string; color: string; icon: any }> = {
-    "NODE-TWR": { x: 90, y: 35, title: "Airtel DL-TWR-891", subtitle: "Rohini Sec 4 · Azimuth 120°", tag: "CELL TOWER", color: "#0284C7", icon: Radio },
-    "NODE-KP": { x: 370, y: 35, title: "Poco X5 AP (74:DA:38:A2:11:BC)", subtitle: isHotspotActive ? "TTL=63 Tethered (-1 Hop)" : "TTL=64 Direct Cellular", tag: "KINGPIN CONTROLLER", color: "#E11D48", icon: Smartphone },
-    "NODE-C2": { x: 650, y: 35, title: "Telegram C2 @c2_bot", subtitle: "IP: 103.21.144.92 · Port 443", tag: "C2 WEBHOOK", color: "#BE123C", icon: Server },
-    "NODE-JA4": { x: 230, y: 145, title: "JA4 Client TLS Anchor", subtitle: "t13d1516h2_8daaf6 · 4/4 Match", tag: "TLS 1.3 PASS", color: "#10B981", icon: Cpu },
-    "NODE-CAF": { x: 510, y: 145, title: "Shared CAF Introducer", subtitle: "Mewat Telecom Retailer #4401", tag: "SIM SYNDICATE", color: "#F59E0B", icon: Building },
-    "NODE-M1": { x: 80, y: 265, title: "Vikram Shah (L1)", subtitle: "SBI · Inflow ₹5,00,000", tag: "§107 FROZEN", color: "#8B5CF6", icon: Shield },
-    "NODE-M2A": { x: 270, y: 265, title: "Rohit Verma (L2A)", subtitle: "HDFC · Fwd ₹1,80,000", tag: "§107 FROZEN", color: "#6366F1", icon: Shield },
-    "NODE-M2B": { x: 470, y: 265, title: "Sameer Khan (L2B)", subtitle: "AXIS · ATM ₹1,20,000", tag: "§107 FROZEN", color: "#F59E0B", icon: Shield },
-    "NODE-SINK": { x: 660, y: 265, title: "Paytm Sink #1109", subtitle: "Terminal Escrow Cache", tag: "SEALED EXIT", color: "#059669", icon: Shield },
-  };
-
-  // Radial Node Positions (Center at 370, 170, Radius 130)
-  const radialNodes: Record<string, { x: number; y: number; title: string; subtitle: string; tag: string; color: string; icon: any }> = {
-    "NODE-KP": { x: 370, y: 170, title: "Poco X5 AP (74:DA:38:A2:11:BC)", subtitle: isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct", tag: "KINGPIN CLUSTER", color: "#E11D48", icon: Smartphone },
-    "NODE-TWR": { x: 370, y: 35, title: "DL-TWR-891", subtitle: "Airtel Tower", tag: "TOWER", color: "#0284C7", icon: Radio },
-    "NODE-C2": { x: 550, y: 65, title: "Telegram @c2_bot", subtitle: "C2 Webhook", tag: "C2", color: "#BE123C", icon: Server },
-    "NODE-CAF": { x: 600, y: 170, title: "CAF Introducer", subtitle: "Mewat SIM Pool", tag: "CAF", color: "#F59E0B", icon: Building },
-    "NODE-SINK": { x: 550, y: 275, title: "Paytm #1109", subtitle: "Terminal Sink", tag: "SINK", color: "#059669", icon: Shield },
-    "NODE-M2B": { x: 370, y: 305, title: "Sameer Khan", subtitle: "AXIS Mule", tag: "L2B", color: "#F59E0B", icon: Shield },
-    "NODE-M2A": { x: 190, y: 275, title: "Rohit Verma", subtitle: "HDFC Mule", tag: "L2A", color: "#6366F1", icon: Shield },
-    "NODE-M1": { x: 140, y: 170, title: "Vikram Shah", subtitle: "SBI Mule L1", tag: "L1", color: "#8B5CF6", icon: Shield },
-    "NODE-JA4": { x: 190, y: 65, title: "JA4 TLS Anchor", subtitle: "t13d1516h2", tag: "JA4", color: "#10B981", icon: Cpu },
-  };
-
-  const activeNodes = layoutMode === "layered" ? layeredNodes : radialNodes;
-
-  // Edge Specifications
-  const edges = [
-    { from: "NODE-TWR", to: "NODE-KP", type: "tether" as EdgeType, color: "#0284C7", label: "Cell Link (TTL 64)", width: 2.5, dashed: false },
-    { from: "NODE-KP", to: "NODE-M1", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63 (-1 Hop)" : "TTL 64 Direct", width: 3, dashed: isHotspotActive },
-    { from: "NODE-KP", to: "NODE-M2A", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63" : "Direct", width: 2.5, dashed: isHotspotActive },
-    { from: "NODE-KP", to: "NODE-M2B", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63" : "Direct", width: 2.5, dashed: isHotspotActive },
-    { from: "NODE-KP", to: "NODE-C2", type: "c2" as EdgeType, color: "#BE123C", label: "OTP Forwarded", width: 2, dashed: true },
-    { from: "NODE-JA4", to: "NODE-M1", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
-    { from: "NODE-JA4", to: "NODE-M2A", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
-    { from: "NODE-JA4", to: "NODE-M2B", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
-    { from: "NODE-JA4", to: "NODE-SINK", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2, dashed: false },
-    { from: "NODE-CAF", to: "NODE-M2B", type: "caf" as EdgeType, color: "#F59E0B", label: "Same CAF Introducer", width: 2, dashed: true },
-    { from: "NODE-CAF", to: "NODE-SINK", type: "caf" as EdgeType, color: "#F59E0B", label: "Same Introducer", width: 2, dashed: true },
-  ];
 
   return (
     <div
@@ -243,316 +189,62 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             ===================================================================== */}
         <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
           <SectionCard
-            title="Connected Multi-Layer Actor Topology Graph"
+            title="Fraud-Network & Actor Relationship Topology Graph"
             subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 kingpin infrastructure cluster."
             icon={Network}
             iconColor="#4F46E5"
-            badgeText={layoutMode === "layered" ? "3-TIER LAYERED" : "RADIAL ORBIT"}
-            badgeVariant="indigo"
-            provenanceTooltip="Synthesized graph joining Airtel CDR, NPCI Switch logs, and BSSID telemetry."
-            actionSlot={
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {/* Edge Filter Chips */}
-                <div style={{ display: "flex", alignItems: "center", gap: "3px", background: "#F1F5F9", padding: "2px", borderRadius: "6px" }}>
-                  {(["all", "tether", "ja4", "caf", "c2"] as EdgeType[]).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setEdgeFilter(type)}
-                      style={{
-                        padding: "2px 6px",
-                        borderRadius: "4px",
-                        fontSize: "9px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        border: "none",
-                        background: edgeFilter === type ? "#FFFFFF" : "transparent",
-                        color: edgeFilter === type ? "#0F172A" : "#64748B",
-                        boxShadow: edgeFilter === type ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Layout Mode Toggle */}
-                <div style={{ display: "flex", alignItems: "center", gap: "2px", background: "#F1F5F9", padding: "2px", borderRadius: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setLayoutMode("layered")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3px",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      border: "none",
-                      background: layoutMode === "layered" ? "#FFFFFF" : "transparent",
-                      color: layoutMode === "layered" ? "#4F46E5" : "#64748B",
-                      boxShadow: layoutMode === "layered" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                    }}
-                    title="Switch to 3-tier layered architecture"
-                  >
-                    <Layers size={10} />
-                    <span>Layered</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLayoutMode("radial")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3px",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      border: "none",
-                      background: layoutMode === "radial" ? "#FFFFFF" : "transparent",
-                      color: layoutMode === "radial" ? "#4F46E5" : "#64748B",
-                      boxShadow: layoutMode === "radial" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                    }}
-                    title="Switch to radial orbit view"
-                  >
-                    <CircleDot size={10} />
-                    <span>Radial</span>
-                  </button>
-                </div>
-
-                {/* Hotspot Simulation Mutator */}
-                <button
-                  type="button"
-                  onClick={() => toggleMutation("triggerHotspotCollision")}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "9.5px",
-                    fontWeight: 700,
-                    padding: "3px 8px",
-                    borderRadius: "5px",
-                    border: isHotspotActive ? "1.5px solid #E11D48" : "1px solid #CBD5E1",
-                    background: isHotspotActive ? "#FFF1F2" : "#FFFFFF",
-                    color: isHotspotActive ? "#BE123C" : "#0F172A",
-                    cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                  }}
-                  title="Simulate TTL decrement (TTL=63) from Wi-Fi Hotspot tethering"
-                >
-                  <Zap size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
-                  <span>{isHotspotActive ? "Hotspot Active (TTL=63)" : "⚡ Simulate Hotspot"}</span>
-                </button>
-              </div>
-            }
+            badgeText={isHotspotActive ? "HOTSPOT COLLISION (TTL=63)" : "DIRECT INGRESS (TTL=64)"}
+            badgeVariant={isHotspotActive ? "rose" : "emerald"}
+            provenanceTooltip="Multi-modal graph correlating Airtel CGNAT IPDR, NPCI Switch XML, and Mewat CAF files."
           >
-            {/* The Responsive Topology SVG & Interactive Node Canvas */}
-            <div
-              style={{
-                flex: "1 1 0%",
-                minHeight: 0,
-                position: "relative",
-                background: "#F8FAFC",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-                overflow: "hidden",
-                boxSizing: "border-box",
-              }}
-            >
-              {/* SVG Connecting Flow Lines (Physically Connecting Handles) */}
-              <svg
-                width="100%"
-                height="100%"
-                viewBox="0 0 740 340"
-                preserveAspectRatio="none"
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+              <div
+                style={{
+                  flex: "1 1 0%",
+                  minHeight: 0,
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  background: "#FAFCFF",
+                  position: "relative",
+                }}
               >
-                <defs>
-                  <style>{`
-                    @keyframes netEdgePulse {
-                      from { stroke-dashoffset: 24; }
-                      to { stroke-dashoffset: 0; }
-                    }
-                    .edge-dash-stream {
-                      animation: netEdgePulse 1.2s linear infinite;
-                    }
-                  `}</style>
-                  <marker id="netArrowIndigo" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4F46E5" />
-                  </marker>
-                  <marker id="netArrowPurple" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#8B5CF6" />
-                  </marker>
-                  <marker id="netArrowEmerald" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10B981" />
-                  </marker>
-                  <marker id="netArrowAmber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F59E0B" />
-                  </marker>
-                  <marker id="netArrowRose" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#E11D48" />
-                  </marker>
-                </defs>
+                <EvidenceNetworkGraph
+                  isHotspotActive={isHotspotActive}
+                  onToggleHotspot={() => toggleMutation("triggerHotspotCollision")}
+                  edgeFilter={edgeFilter}
+                  onEdgeFilterChange={setEdgeFilter}
+                  layoutMode={layoutMode}
+                  onLayoutModeChange={setLayoutMode}
+                />
+              </div>
 
-                {/* Render Edges */}
-                {edges.map((e, idx) => {
-                  if (edgeFilter !== "all" && edgeFilter !== e.type) return null;
-
-                  const src = activeNodes[e.from];
-                  const dst = activeNodes[e.to];
-                  if (!src || !dst) return null;
-
-                  const x1 = src.x;
-                  const y1 = src.y;
-                  const x2 = dst.x;
-                  const y2 = dst.y;
-
-                  // Smooth cubic bezier with midpoint label
-                  const dx = x2 - x1;
-                  const dy = y2 - y1;
-                  const mx = (x1 + x2) / 2;
-                  const my = (y1 + y2) / 2;
-                  const cp1x = x1 + dx * 0.2;
-                  const cp1y = y1 + dy * 0.5;
-                  const cp2x = x2 - dx * 0.2;
-                  const cp2y = y2 - dy * 0.5;
-
-                  const pathD = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
-
-                  const isEdgeActive = selectedNodeId === e.from || selectedNodeId === e.to;
-                  const markerId =
-                    e.color === "#10B981"
-                      ? "url(#netArrowEmerald)"
-                      : e.color === "#F59E0B"
-                      ? "url(#netArrowAmber)"
-                      : e.color === "#E11D48" || e.color === "#BE123C"
-                      ? "url(#netArrowRose)"
-                      : e.color === "#8B5CF6"
-                      ? "url(#netArrowPurple)"
-                      : "url(#netArrowIndigo)";
-
-                  return (
-                    <g key={idx}>
-                      <path
-                        d={pathD}
-                        fill="none"
-                        stroke={e.color}
-                        strokeWidth={isEdgeActive ? e.width + 1 : e.width}
-                        strokeDasharray={e.dashed || isHotspotActive ? "6 3" : undefined}
-                        className={isHotspotActive ? "edge-dash-stream" : undefined}
-                        opacity={isEdgeActive ? 1 : 0.75}
-                        markerEnd={markerId}
-                        style={{ transition: "all 0.25s ease" }}
-                      />
-                      {/* Edge Label Chip */}
-                      <g transform={`translate(${mx}, ${my})`}>
-                        <rect
-                          x="-28"
-                          y="-8"
-                          width="56"
-                          height="16"
-                          rx="4"
-                          fill="#FFFFFF"
-                          stroke={e.color}
-                          strokeWidth="1"
-                          style={{ filter: "drop-shadow(0 1px 2px rgba(15,23,42,0.06))" }}
-                        />
-                        <text
-                          x="0"
-                          y="3"
-                          textAnchor="middle"
-                          fill={e.color}
-                          fontSize="7.5"
-                          fontWeight="800"
-                          fontFamily="var(--font-mono, monospace)"
-                        >
-                          {e.label}
-                        </text>
-                      </g>
-                    </g>
-                  );
-                })}
-              </svg>
-
-              {/* DOM Node Cards */}
-              {Object.entries(activeNodes).map(([nodeId, n]) => {
-                const isSelected = selectedNodeId === nodeId;
-                const IconComponent = n.icon;
-
-                return (
-                  <div
-                    key={nodeId}
-                    onClick={() => setSelectedNodeId(nodeId)}
-                    style={{
-                      position: "absolute",
-                      left: `${(n.x / 740) * 100}%`,
-                      top: `${(n.y / 340) * 100}%`,
-                      transform: "translate(-50%, -50%)",
-                      background: isSelected ? "#FFFFFF" : "#FFFFFF",
-                      border: isSelected ? `2px solid ${n.color}` : "1px solid #CBD5E1",
-                      borderRadius: "8px",
-                      padding: "6px 9px",
-                      boxShadow: isSelected ? `0 0 0 3px ${n.color}25, 0 4px 10px rgba(0,0,0,0.08)` : "0 1px 3px rgba(15,23,42,0.04)",
-                      cursor: "pointer",
-                      zIndex: isSelected ? 20 : 10,
-                      minWidth: "120px",
-                      maxWidth: "180px",
-                      boxSizing: "border-box",
-                      transition: "all 0.18s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                        <IconComponent size={11} color={n.color} />
-                        <span style={{ fontSize: "7.5px", fontWeight: 800, color: n.color, textTransform: "uppercase" }}>
-                          {n.tag}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: n.color }} />
-                      )}
-                    </div>
-                    <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A", marginTop: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {n.title}
-                    </div>
-                    <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {n.subtitle}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Bottom Status Ticker */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                fontSize: "10.5px",
-                color: "#312E81",
-                marginTop: "6px",
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Check size={13} color="#4F46E5" />
-                <span style={{ fontWeight: 700 }}>
-                  Syndicate Discovery SAT: All 4 account sessions share JA4 client hash <code>t13d1516h2_8daaf6</code> and co-locate at BSSID <code>74:DA:38:A2:11:BC</code>.
+              {/* Bottom Status Ticker */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  background: "#EEF2FF",
+                  border: "1px solid #C7D2FE",
+                  fontSize: "10.5px",
+                  color: "#312E81",
+                  marginTop: "6px",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Check size={13} color="#4F46E5" />
+                  <span style={{ fontWeight: 700 }}>
+                    Syndicate Discovery SAT: All 4 account sessions share JA4 client hash <code>t13d1516h2_8daaf6</code> and co-locate at BSSID <code>74:DA:38:A2:11:BC</code>.
+                  </span>
+                </div>
+                <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4F46E5" }}>
+                  P &lt; 1.4 × 10⁻⁷
                 </span>
               </div>
-              <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4F46E5" }}>
-                P &lt; 1.4 × 10⁻⁷
-              </span>
             </div>
           </SectionCard>
         </div>

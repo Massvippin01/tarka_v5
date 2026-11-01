@@ -254,3 +254,4 @@ if old_gauge_call in dock_content:
 
 open('src/components/tarka/intake/InspectorDock.tsx', 'w', encoding='utf-8').write(dock_content)
 print('InspectorDock.tsx updated with non-overlapping ScaleBar!')
+

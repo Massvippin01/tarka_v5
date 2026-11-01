@@ -134,3 +134,4 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
     </div>
   );
 };
+

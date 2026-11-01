@@ -52,3 +52,4 @@ export const VerdictChip: React.FC<VerdictChipProps> = ({
     </span>
   );
 };
+

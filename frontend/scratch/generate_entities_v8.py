@@ -607,3 +607,4 @@ export const EntityResolutionScreen: React.FC = () => {
 with open('src/pages/v5/EntityResolutionScreen.tsx', 'w', encoding='utf-8') as f:
     f.write(code)
 print('EntityResolutionScreen.tsx rewritten cleanly!')
+

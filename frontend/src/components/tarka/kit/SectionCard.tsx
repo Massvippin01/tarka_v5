@@ -198,3 +198,4 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     </section>
   );
 };
+

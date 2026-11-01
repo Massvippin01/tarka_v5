@@ -137,3 +137,4 @@ export const GlossaryTerm: React.FC<GlossaryTermProps> = ({
     </HoverCard.Root>
   );
 };
+

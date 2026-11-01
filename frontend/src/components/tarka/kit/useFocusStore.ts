@@ -33,3 +33,4 @@ export const useFocusStore = create<FocusState>((set) => ({
   activeEvidenceHash: null,
   setActiveEvidenceHash: (hash) => set({ activeEvidenceHash: hash }),
 }));
+

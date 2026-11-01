@@ -704,7 +704,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               title="Air-Gap Compliance: Zero external runtime network requests or CDNs"
             >
               <Lock size={10} color="#059669" />
-              <span>🔒 Air-Gap Verified · 0 External Calls</span>
+              <span>Air-Gap Verified</span>
             </span>
           </div>
 

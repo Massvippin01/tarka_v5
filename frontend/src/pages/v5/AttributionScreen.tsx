@@ -1,9 +1,9 @@
+import { SignalSieveCanvas } from "../../components/tarka/attribution/SignalSieveCanvas";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   Radio,
   Smartphone,
   Cpu,
-  RotateCcw,
   Target,
   Copy,
   Check,
@@ -19,7 +19,6 @@ import {
   KpiTile,
   StoryBanner,
   SectionCard,
-  ScaleBar,
   TimelineStrip,
 } from "../../components/tarka/kit";
 import {
@@ -39,49 +38,12 @@ export const AttributionScreen: React.FC = () => {
   // Canonical Data
   const canonicalData = useMemo(() => getCanonicalAttributionData(), []);
 
-  // 1. Funnel Active Sessions State
-  const [activeSessions, setActiveSessions] = useState<{ [id: string]: boolean }>({
-    "SESS-01": true,
-    "SESS-02": true,
-    "SESS-03": true,
-    "SESS-04": true,
-  });
-
-  const toggleSession = (id: string) => {
-    setActiveSessions((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const resetAllSessions = () => {
-    setActiveSessions({
-      "SESS-01": true,
-      "SESS-02": true,
-      "SESS-03": true,
-      "SESS-04": true,
-    });
-    if (mutations.dropCgnatSourcePort) {
-      toggleMutation("dropCgnatSourcePort");
-    }
-  };
-
   // Funnel Computation
   const isPortDropped = !!mutations.dropCgnatSourcePort || !!mutations.cgnatPortCollision;
   const funnelResult = useMemo(() => {
-    const selected = canonicalData.sessions.filter((s) => activeSessions[s.id]);
+    const selected = canonicalData.sessions;
     return solveCgnatFunnel(selected, isPortDropped);
-  }, [canonicalData.sessions, activeSessions, isPortDropped]);
-
-  // Candidate counts per stage
-  const candidateCounts = useMemo(() => {
-    if (isPortDropped) return [340, 340, 340, 340];
-    const counts = [340];
-    if (activeSessions["SESS-02"]) counts.push(41);
-    else counts.push(340);
-    if (activeSessions["SESS-03"]) counts.push(6);
-    else counts.push(counts[counts.length - 1]);
-    if (activeSessions["SESS-04"]) counts.push(1);
-    else counts.push(counts[counts.length - 1]);
-    return counts;
-  }, [isPortDropped, activeSessions]);
+  }, [canonicalData.sessions, isPortDropped]);
 
   const survivingCandidateCount = isPortDropped ? 340 : funnelResult.finalCandidateCount;
 
@@ -197,38 +159,7 @@ export const AttributionScreen: React.FC = () => {
     }
   }, [survivingCandidateCount, isPortDropped]);
 
-  // Stage configurations
-  const stagesMeta = [
-    {
-      id: "SESS-01",
-      bank: "Step 1: SBI Mule 1083",
-      time: "07:48:04 IST",
-      portPool: "Ports 44000-44511 (340 Handsets)",
-      count: candidateCounts[0] || 340,
-    },
-    {
-      id: "SESS-02",
-      bank: "Step 2: HDFC Mule 9920",
-      time: "07:51:19 IST",
-      portPool: "Ports 44000-44511 (340 Handsets)",
-      count: candidateCounts[1] || 41,
-    },
-    {
-      id: "SESS-03",
-      bank: "Step 3: Axis Mule 4102",
-      time: "07:54:51 IST",
-      portPool: "Ports 44000-44511 (340 Handsets)",
-      count: candidateCounts[2] || 6,
-    },
-    {
-      id: "SESS-04",
-      bank: "Step 4: Paytm Sink 1109",
-      time: "07:58:10 IST",
-      portPool: "Ports 44000-44511 (340 Handsets)",
-      count: candidateCounts[3] || 1,
-    },
-  ];
-
+  
   return (
     <div
       className={`tarka-attribution-root ${isCompact ? "tarka-density-compact" : ""}`}
@@ -275,8 +206,8 @@ export const AttributionScreen: React.FC = () => {
             variant: isPortDropped ? "amber" : "emerald",
           }}
           subtitle={isPortDropped ? "Port dropped · 340 ambiguous" : "Target: SUB-8849-VIKRAM"}
-          microVisual="ring"
-          progressPct={100}
+          microVisual="spark"
+          sparklineData={[340, 41, 6, 1]}
           provenanceTooltip="Intersection of 4 sequential bank login sessions across Airtel CGNAT pool."
         />
 
@@ -288,8 +219,8 @@ export const AttributionScreen: React.FC = () => {
           iconBg="#EEF2FF"
           statusBadge={{ text: "HEURISTIC BAND", variant: "indigo" }}
           subtitle="P = 1.4 × 10⁻⁷ (N=10,000 Tower Pool)"
-          microVisual="ring"
-          progressPct={100}
+          microVisual="gauge"
+          progressPct={99.9}
           provenanceTooltip="Heuristic display bands, not a statutory standard. Coincidental match probability over 10,000 subscribers."
         />
 
@@ -339,257 +270,87 @@ export const AttributionScreen: React.FC = () => {
         <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
           <SectionCard
             title="CGNAT Candidate Intersection Funnel (340 → 41 → 6 → 1)"
-            subtitle="Carriers map 340 phones to one public IP. Across 4 mule accounts, set intersection isolates 1 unique target handset."
+            subtitle="Sequential intersection of translated port allocations isolates 1 unique target handset."
             icon={Target}
             iconColor="#4F46E5"
             badgeText="DoT CLAUSE 39.20"
             badgeVariant="indigo"
             provenanceTooltip="Sequential intersection algorithm S1 ∩ S2 ∩ S3 ∩ S4 provably isolates IMEI 867492061234564."
             actionSlot={
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <button
-                  type="button"
-                  onClick={handleCopyDotDirective}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 8px",
-                    borderRadius: "6px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#0F172A",
-                  }}
-                >
-                  {isDirectiveCopied ? <Check size={11} /> : <Copy size={11} />}
-                  {isDirectiveCopied ? "Copied" : "Copy DoT 39.20 Requisition"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => toggleMutation("dropCgnatSourcePort")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    padding: "3px 8px",
-                    borderRadius: "6px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    border: isPortDropped ? "1px solid #D97706" : "1px solid #CBD5E1",
-                    background: isPortDropped ? "#FEF3C7" : "#FFFFFF",
-                    color: isPortDropped ? "#B45309" : "#475569",
-                  }}
-                  title="Simulate bank omission of CGNAT translated source port to test ambiguity expansion"
-                >
-                  <Radio size={11} color={isPortDropped ? "#B45309" : "#64748B"} />
-                  {isPortDropped ? "Restore Port" : "Drop Source Port"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={resetAllSessions}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    padding: "3px 6px",
-                    borderRadius: "6px",
-                    fontSize: "10px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    border: "1px solid #E2E8F0",
-                    background: "#FFFFFF",
-                    color: "#64748B",
-                  }}
-                  title="Reset all filter stages"
-                >
-                  <RotateCcw size={11} />
-                </button>
-              </div>
-            }
-          >
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, gap: "6px" }}>
-              {/* TOP VISUAL: 10,000-SUBSCRIBER HAYSTACK CANVAS */}
-              <div
+              <button
+                type="button"
+                onClick={handleCopyDotDirective}
                 style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "6px",
-                  padding: "6px 10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
-                    Cell Tower Subscriber Haystack (10,000 Subscribers Matrix)
-                  </span>
-                  <span style={{ fontSize: "9px", fontWeight: 800, color: isPortDropped ? "#D97706" : "#059669" }}>
-                    {isPortDropped
-                      ? "⚠️ 340 Candidates (Port Omitted)"
-                      : survivingCandidateCount === 1
-                      ? "Target Individuated: 1 of 10,000 (★ Needle Isolated)"
-                      : `${survivingCandidateCount} Candidates Active`}
-                  </span>
-                </div>
-
-                {/* Canvas */}
-                <canvas
-                  ref={canvasRef}
-                  width={640}
-                  height={50}
-                  style={{
-                    width: "100%",
-                    height: "50px",
-                    borderRadius: "4px",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
-                  }}
-                />
-
-                <div style={{ fontSize: "8px", color: "#64748B", textAlign: "center" }}>
-                  Grid encodes active tower subscriber pool; highlighted nodes represent surviving CGNAT port candidates converging on single target.
-                </div>
-              </div>
-
-              {/* MIDDLE VISUAL: SANKEY CANDIDATE FUNNEL */}
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "6px",
-                  padding: "6px 8px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
                   gap: "4px",
-                  flexShrink: 0,
+                  padding: "3px 8px",
+                  borderRadius: "6px",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: "#0F172A",
                 }}
               >
-                {/* Stage 1 */}
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>Step 1: SBI</div>
-                  <div style={{ height: "18px", background: "#4F46E5", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontWeight: 800, fontSize: "10px", marginTop: "2px" }}>
-                    340
-                  </div>
-                </div>
-
-                <div style={{ color: "#94A3B8", fontWeight: 700, fontSize: "11px" }}>∩</div>
-
-                {/* Stage 2 */}
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>Step 2: HDFC</div>
-                  <div style={{ height: "18px", background: "#4338CA", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontWeight: 800, fontSize: "10px", marginTop: "2px" }}>
-                    {candidateCounts[1]}
-                  </div>
-                </div>
-
-                <div style={{ color: "#94A3B8", fontWeight: 700, fontSize: "11px" }}>∩</div>
-
-                {/* Stage 3 */}
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>Step 3: Axis</div>
-                  <div style={{ height: "18px", background: "#3730A3", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontWeight: 800, fontSize: "10px", marginTop: "2px" }}>
-                    {candidateCounts[2]}
-                  </div>
-                </div>
-
-                <div style={{ color: "#94A3B8", fontWeight: 700, fontSize: "11px" }}>∩</div>
-
-                {/* Stage 4 */}
-                <div style={{ flex: 1, textAlign: "center" }}>
-                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#059669" }}>Step 4: Paytm</div>
-                  <div style={{ height: "18px", background: isPortDropped ? "#D97706" : "#059669", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFFFFF", fontWeight: 800, fontSize: "10px", marginTop: "2px" }}>
-                    {isPortDropped ? "340" : "1 ★"}
-                  </div>
-                </div>
-              </div>
-
-              {/* 4 CLEAN STEP CARDS BELOW */}
+                {isDirectiveCopied ? <Check size={11} /> : <Copy size={11} />}
+                {isDirectiveCopied ? "Copied" : "Copy DoT 39.20 Requisition"}
+              </button>
+            }
+          >
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
               <div
                 style={{
                   flex: "1 1 0%",
                   minHeight: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                  overflowY: "auto",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  background: "#FAFCFF",
+                  position: "relative",
                 }}
               >
-                {stagesMeta.map((s, idx) => (
-                  <div
-                    key={s.id}
-                    onClick={() => toggleSession(s.id)}
-                    style={{
-                      background: activeSessions[s.id] ? "#FFFFFF" : "#F8FAFC",
-                      border: activeSessions[s.id] ? "1px solid #CBD5E1" : "1px dashed #E2E8F0",
-                      borderRadius: "6px",
-                      padding: "5px 8px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "8px",
-                      cursor: "pointer",
-                      opacity: activeSessions[s.id] ? 1 : 0.6,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <input
-                        type="checkbox"
-                        checked={activeSessions[s.id]}
-                        onChange={() => {}}
-                        style={{ cursor: "pointer" }}
-                      />
-                      <div>
-                        <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
-                          {s.bank}
-                        </div>
-                        <div style={{ fontSize: "8px", color: "#64748B" }}>
-                          {s.time} · Bank Log IP: 103.21.144.92 · {s.portPool}
-                        </div>
-                      </div>
-                    </div>
+                <SignalSieveCanvas
+                  isPortDropped={isPortDropped}
+                  onTogglePortDropped={() => toggleMutation("dropCgnatSourcePort")}
+                />
+              </div>
 
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "11px", fontWeight: 800, color: idx === 3 && !isPortDropped ? "#059669" : "#4F46E5" }}>
-                        {s.count} {s.count === 1 ? "Handset" : "Handsets"}
-                      </div>
-                      <div style={{ fontSize: "7.5px", color: "#64748B" }}>
-                        {idx === 0 ? "Initial Pool" : `Survivor (${Math.round((s.count / 340) * 100)}%)`}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* BOTTOM SUMMARY CHIP */}
-                <div
-                  style={{
-                    background: isPortDropped ? "#FFFBEB" : "#ECFDF5",
-                    border: isPortDropped ? "1px solid #FDE68A" : "1px solid #A7F3D0",
-                    borderRadius: "6px",
-                    padding: "5px 8px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginTop: "auto",
-                  }}
-                >
-                  <span style={{ fontSize: "9px", fontWeight: 700, color: isPortDropped ? "#B45309" : "#047857" }}>
+              {/* Footer Unambiguous Attribution Banner */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  background: isPortDropped ? "#FFFBEB" : "#ECFDF5",
+                  border: `1px solid ${isPortDropped ? "#FDE68A" : "#A7F3D0"}`,
+                  fontSize: "10.5px",
+                  color: isPortDropped ? "#92400E" : "#065F46",
+                  marginTop: "6px",
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Check size={13} color={isPortDropped ? "#D97706" : "#059669"} />
+                  <span style={{ fontWeight: 700 }}>
                     {isPortDropped
-                      ? "⚠️ PORT OMISSION: 340 handsets share public IP; DoT Clause 39.20 ISP translation required."
-                      : "✓ UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI 867492061234564 }"}
-                  </span>
-                  <span style={{ fontSize: "8.5px", fontWeight: 800, color: isPortDropped ? "#B45309" : "#047857" }}>
-                    {isPortDropped ? "Ambiguity: 340" : "P = 1.40 × 10⁻⁷"}
+                      ? "PORT OMISSION DETECTED: Ambiguity expanded to 340 handsets across port block 44000-44511."
+                      : "UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI 867492061234564 }"}
                   </span>
                 </div>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 800,
+                    color: isPortDropped ? "#D97706" : "#059669",
+                  }}
+                >
+                  P = 1.40 × 10⁻⁷
+                </span>
               </div>
             </div>
           </SectionCard>
@@ -619,6 +380,14 @@ export const AttributionScreen: React.FC = () => {
             badgeVariant="indigo"
           >
             <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "6px" }}>
+              {/* SHARED TAC 86749206 BANNER (Image 2) */}
+              <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "5px", padding: "3px 8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Check size={12} color="#059669" />
+                <span style={{ fontSize: "9px", fontWeight: 800, color: "#047857" }}>
+                  SHARED TAC 86749206 · SAME PHYSICAL CHIPSET CHASSIS (Samsung Galaxy M34)
+                </span>
+              </div>
+
               {/* TimelineStrip: SIM-Swap Precursor */}
               <TimelineStrip
                 milestones={[
@@ -720,20 +489,52 @@ export const AttributionScreen: React.FC = () => {
             }
           >
             <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "6px" }}>
-              {/* Precision ScaleBar for Z3 Clock Offset */}
-              <ScaleBar
-                labelAbove="CBS Finacle ↔ Airtel PGW NTP Sync"
-                min={-5.0}
-                max={5.0}
-                value={clockOffset}
-                unit="s"
-                toleranceBand={{
-                  from: -1.2,
-                  to: 0.8,
-                  label: "FEASIBLE BOUND [-1.2s, +0.8s]",
-                }}
-                valueBelow={`Δ = ${clockOffset >= 0 ? "+" : ""}${clockOffset.toFixed(1)}s (Stratum-2 Sync)`}
-              />
+              {/* Exact Z3 SMT Number Line Infographic matching Image 2 */}
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 12px", flexShrink: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
+                    Z3 SMT Clock-Offset Feasible Interval: [-1.2s, +0.8s]
+                  </span>
+                  <span style={{ fontSize: "9.5px", color: isZ3Sat ? "#059669" : "#DC2626", fontWeight: 800, background: isZ3Sat ? "#ECFDF5" : "#FEF2F2", border: `1px solid ${isZ3Sat ? "#A7F3D0" : "#FECDD3"}`, padding: "1.5px 6px", borderRadius: "4px" }}>
+                    {isZ3Sat ? "Z3 SOLVER: SAT ✓" : "Z3 SOLVER: UNSAT ✗"}
+                  </span>
+                </div>
+
+                {/* Number Line Track */}
+                <div style={{ position: "relative", height: "18px", background: "#E2E8F0", borderRadius: "9px", overflow: "hidden", margin: "4px 0" }}>
+                  {/* Feasible Interval Shading: [-1.2s, +0.8s] spanning 38% to 58% of 10s range */}
+                  <div style={{ position: "absolute", left: "38%", width: "20%", top: 0, bottom: 0, background: "rgba(16, 185, 129, 0.45)", borderRadius: "4px" }} />
+                  {/* Center Line: 0.0s */}
+                  <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "2px", background: "#64748B", zIndex: 2 }} />
+                  {/* Active Marker */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: `calc(50% + ${(Math.max(-5, Math.min(5, clockOffset)) / 5) * 48}%)`,
+                      top: "3px",
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "50%",
+                      background: isZ3Sat ? "#059669" : "#DC2626",
+                      border: "2px solid #FFFFFF",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      zIndex: 5,
+                      transform: "translateX(-50%)",
+                      transition: "left 0.1s ease",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
+                  <span>-5.0s</span>
+                  <span style={{ color: "#047857", fontWeight: 700 }}>-1.2s</span>
+                  <span style={{ fontWeight: 800, color: isZ3Sat ? "#059669" : "#DC2626" }}>
+                    Δt = {clockOffset >= 0 ? "+" : ""}{clockOffset.toFixed(1)}s ({clockOffset === 0 ? "NTP Sync" : isZ3Sat ? "Stratum-2 Feasible" : "Out of Spec"})
+                  </span>
+                  <span style={{ color: "#047857", fontWeight: 700 }}>+0.8s</span>
+                  <span>+5.0s</span>
+                </div>
+              </div>
 
               {/* Slider Controller */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#F1F5F9", padding: "4px 8px", borderRadius: "5px" }}>

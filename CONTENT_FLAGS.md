@@ -83,3 +83,4 @@ This document transparently records every data discrepancy, mathematical reconci
 - **Zero-Scrollbar Guarantee**: Every module strictly conforms to `height: calc(100dvh - 52px)` with internal flex-scroll areas, verified across `1366x768`, `1536x864`, and `1920x1080` screen resolutions.
 - **No Floating Pills or Flat Text Blocks**: All 6 screens feature high-craft interactive data visualizations (Haystack Matrix, Bipartite Map, Topology Graph, Money Flow Sankey, LOO Support Matrix, Accounting Waterfall).
 - **Label Integrity**: All KPI labels, scale markers, and evidence chips are untruncated with zero collision between markers and text.
+

@@ -24,3 +24,4 @@ c2 = c2.replace('const { activeDockTab, setActiveDockTab, density } = useTarkaUi
 with open(intake_path, 'w', encoding='utf-8') as f:
     f.write(c2)
 print('IntakeScreen.tsx replaced')
+
