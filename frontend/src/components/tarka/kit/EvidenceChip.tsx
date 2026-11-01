@@ -31,7 +31,9 @@ export const EvidenceChip: React.FC<EvidenceChipProps> = ({
     <HoverCard.Root openDelay={120} closeDelay={150}>
       <HoverCard.Trigger asChild>
         <span
-          className={`evidence-chip ${className}`}
+          role="button"
+          tabIndex={0}
+          className={`evidence-chip hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${className}`}
           style={{
             display: "inline-flex",
             alignItems: "center",

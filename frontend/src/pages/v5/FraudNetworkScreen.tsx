@@ -23,14 +23,17 @@ import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
 
-  const isHotspotActive = !!mutations.triggerHotspotCollision;
+  const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
+  const bssid = activeDiscoveredCluster?.bssidHotspot || "74:DA:38:A2:11:BC";
+
+  const isHotspotActive = activeDiscoveredCluster?.packetTtl === 63 || !!mutations.triggerHotspotCollision;
   const hotspotResult = useMemo(() => {
-    const observed = isHotspotActive ? 63 : 64;
+    const observed = activeDiscoveredCluster?.packetTtl || (isHotspotActive ? 63 : 64);
     return detectHotspotCollision(observed, 64);
-  }, [isHotspotActive]);
+  }, [isHotspotActive, activeDiscoveredCluster]);
 
   const [edgeFilter, setEdgeFilter] = useState<EdgeFilterType>("all");
   const [isCopied, setIsCopied] = useState(false);
@@ -192,9 +195,9 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
             subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 controller cluster."
             icon={Network}
             iconColor="#4F46E5"
-            badgeText={isHotspotActive ? "HOTSPOT COLLISION (TTL=63)" : "DIRECT INGRESS (TTL=64)"}
+            badgeText={isHotspotActive ? "CORROBORATED TETHERING (TTL=63)" : "DIRECT INGRESS (TTL=64)"}
             badgeVariant={isHotspotActive ? "rose" : "emerald"}
-            provenanceTooltip="Multi-modal graph correlating Airtel CGNAT IPDR, NPCI Switch XML, and Mewat CAF files."
+            provenanceTooltip="Corroborated Tethering Proof (3-Factor Convergence: TTL=63 + BSSID + JA4 TLS)."
           >
             <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
               <div
@@ -235,7 +238,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <ShieldCheck size={13} color="#4F46E5" />
                   <span style={{ fontWeight: 700 }}>
-                    Syndicate Discovery SAT: All 4 account sessions share JA4 client hash <code>t13d1516h2_8daaf6</code> and co-locate at BSSID <code>74:DA:38:A2:11:BC</code>.
+                    Corroborated Tethering Proof (3-Factor Convergence): 1. IPv4 TTL=63 (Î”TTL = -1 hop) Â· 2. Shared AP BSSID <code>74:DA:38:A2:11:BC</code> Â· 3. JA4 Fingerprint <code>t13d1516h2_8daaf6</code> across all 4 mule logins.
                   </span>
                 </div>
                 <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4F46E5" }}>
@@ -263,6 +266,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
               <button
                 type="button"
                 onClick={handleCopyXml}
+                className="hover:border-indigo-400 enabled:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -301,8 +305,8 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
                 <span style={{ color: "#4338CA" }}>&lt;Device </span>
                 <span style={{ color: "#047857" }}>mobile</span>=<span style={{ color: "#B45309" }}>"919871123941"</span>{" "}
                 <span style={{ color: "#047857" }}>geocode</span>=<span style={{ color: "#B45309" }}>"28.5355,77.3910"</span>{" "}
-                <span style={{ color: "#047857" }}>bssid</span>=<span style={{ color: "#E11D48", fontWeight: 700 }}>"74:DA:38:A2:11:BC"</span>{" "}
-                <span style={{ color: "#047857" }}>tls_ja4</span>=<span style={{ color: "#4338CA", fontWeight: 700 }}>"t13d1516h2_8daaf6"</span>{" "}
+                <span style={{ color: "#047857" }}>bssid</span>=<span style={{ color: "#E11D48", fontWeight: 700 }}>"{bssid}"</span>{" "}
+                <span style={{ color: "#047857" }}>tls_ja4</span>=<span style={{ color: "#4338CA", fontWeight: 700 }}>"{ja4}"</span>{" "}
                 <span style={{ color: "#4338CA" }}>/&gt;</span>
               </div>
 
@@ -336,7 +340,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
                   </tr>
                   <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
                     <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>bssid</td>
-                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#BE123C", fontWeight: 700 }}>74:DA:38:A2:11:BC</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#BE123C", fontWeight: 700 }}>{bssid}</td>
                     <td style={{ padding: "3px 5px" }}>
                       <span style={{ background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
                         PSP Telemetry
@@ -345,7 +349,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
                   </tr>
                   <tr>
                     <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>tls_ja4</td>
-                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#4338CA", fontWeight: 700 }}>t13d1516h2_8daaf6</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#4338CA", fontWeight: 700 }}>{ja4}</td>
                     <td style={{ padding: "3px 5px" }}>
                       <span style={{ background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
                         Airtel PGW TLS
@@ -378,6 +382,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
                 <button
                   type="button"
                   onClick={handleCopyI4cReport}
+                  className="hover:bg-indigo-700 enabled:active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",

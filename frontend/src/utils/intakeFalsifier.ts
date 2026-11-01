@@ -242,7 +242,7 @@ export function decodeRailReference(
         raw: clean,
         rail: "UPI",
         isValid: false,
-        formatDescription: "12-digit NPCI UPI/IMPS RRN (YDDDHHSSSSSS)",
+        formatDescription: "12-digit ISO 8583 DE-37 / NPCI UDIR (YDDDHHSSSSSS)",
         year: baseYear,
         julianDay,
         hour,
@@ -279,7 +279,7 @@ export function decodeRailReference(
       raw: clean,
       rail: "UPI",
       isValid: true,
-      formatDescription: "12-digit NPCI UPI/IMPS Reference (YDDDHHSSSSSS)",
+      formatDescription: "12-digit ISO 8583 DE-37 / NPCI UDIR Reference (YDDDHHSSSSSS)",
       year: baseYear,
       julianDay,
       hour,
@@ -329,10 +329,10 @@ export function decodeRailReference(
     raw: clean,
     rail: "UNKNOWN",
     isValid: false,
-    formatDescription: "Non-standard payment reference",
+    formatDescription: "UNKNOWN_FORMAT (Expected 12-digit ISO 8583 DE-37 / NPCI UDIR, 22-char RTGS, or 16-char NEFT)",
     midnightRolloverGuard: false,
     admissibilityVerdict: "MALFORMED_REGEX",
-    admissibilityNotes: "Failed regex match for 12-digit UPI/IMPS, 22-char RTGS, or 16-char NEFT format.",
+    admissibilityNotes: "Failed regex match: Non-standard payment grammar. Expected ISO 8583 DE-37 (YDDDHHSSSSSS) or RBI UTR.",
   };
 }
 

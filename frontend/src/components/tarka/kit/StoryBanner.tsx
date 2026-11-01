@@ -90,6 +90,7 @@ export const StoryBanner: React.FC<StoryBannerProps> = ({
         <button
           type="button"
           onClick={toggleExplainSimply}
+          className="hover:border-indigo-400 hover:shadow-xs active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-transform"
           style={{
             display: "inline-flex",
             alignItems: "center",

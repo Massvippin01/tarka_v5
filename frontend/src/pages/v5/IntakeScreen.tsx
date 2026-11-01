@@ -25,7 +25,7 @@ export const IntakeScreen: React.FC = () => {
   useOverflowGuard();
 
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { setActiveDockTab, density } = useTarkaUiStore();
+  const { setActiveDockTab, density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const isRow14Tampered = !!mutations.alterBankRow14;
@@ -47,10 +47,21 @@ export const IntakeScreen: React.FC = () => {
   // Search input ref for keyboard shortcut '/'
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync custom input with global mutation toggle
+  // Sync custom input with global mutation toggle or discovered cluster
   useEffect(() => {
-    setCustomRow14Balance(isRow14Tampered ? "322440.00" : "522440.00");
-  }, [isRow14Tampered]);
+    if (activeDiscoveredCluster) {
+      if (activeDiscoveredCluster.forgedRrnRows?.[0]?.rrn) {
+        setRrnInput(activeDiscoveredCluster.forgedRrnRows[0].rrn);
+      }
+      if (activeDiscoveredCluster.doctoredBalanceRows?.[0]) {
+        const d = activeDiscoveredCluster.doctoredBalanceRows[0];
+        const errorVal = d.claimedBalError ?? (d as any).claimed_bal_error ?? 200000;
+        setCustomRow14Balance(isRow14Tampered ? (836550 - errorVal).toFixed(2) : "836550.00");
+      }
+    } else {
+      setCustomRow14Balance(isRow14Tampered ? "322440.00" : "522440.00");
+    }
+  }, [isRow14Tampered, activeDiscoveredCluster]);
 
   // Global Keyboard Shortcuts (/ search, T toggle tamper, P permute, Esc clear)
   useEffect(() => {
@@ -99,8 +110,72 @@ export const IntakeScreen: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isRow14Tampered, toggleMutation]);
 
-  // Base Raw CBS Ledger Rows (SBI Finacle 10.x, Account #30981140029)
+  // Base Raw CBS Ledger Rows (SBI Finacle 10.x, Account #30981140029 or Discovered Cluster)
   const rawRows: LedgerRowData[] = useMemo(() => {
+    if (activeDiscoveredCluster) {
+      const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
+      const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
+      const doctored = activeDiscoveredCluster.doctoredBalanceRows?.[0];
+      const forgedRrn = activeDiscoveredCluster.forgedRrnRows?.[0];
+
+      const claimedError = doctored ? (doctored.claimedBalError ?? (doctored as any).claimed_bal_error ?? 200000) : 200000;
+      const bookedDebit1 = doctored ? (doctored.bookedDebit ?? (doctored as any).booked_debit ?? 280000) : 280000;
+      const stolenTotal = activeDiscoveredCluster.totalDrained || 840000;
+      const bookedDebit2 = Math.max(0, stolenTotal - bookedDebit1);
+
+      const bal0 = 1120000.0;
+      const bal1 = bal0 - 3450.0; // 1116550
+      const bal2 = bal1 - bookedDebit1; // 836550 booked
+      const parsedCustom = parseFloat(String(customRow14Balance).replace(/,/g, ""));
+      const validCustom = !isNaN(parsedCustom) ? parsedCustom : bal2;
+      const rowTamperedBal = isRow14Tampered ? (bal2 - claimedError) : validCustom;
+      const bal3 = Math.max(0, rowTamperedBal - bookedDebit2);
+
+      const clusterRows: LedgerRowData[] = [
+        {
+          id: "CBS-001",
+          sequenceNo: 1,
+          timestamp: "2026-09-22T09:15:02",
+          description: `OPENING BALANCE B/F [${victim}]`,
+          rrn: "—",
+          debit: 0.0,
+          credit: 0.0,
+          balance: bal0,
+        },
+        {
+          id: "CBS-002",
+          sequenceNo: 2,
+          timestamp: "2026-09-22T09:42:18",
+          description: "UPI/DR/6265091148/GROCERY_STORE",
+          rrn: "626509114820",
+          debit: 3450.0,
+          credit: 0.0,
+          balance: bal1,
+        },
+        {
+          id: doctored ? (doctored.txId ?? (doctored as any).tx_id ?? "TXN-0014205") : "TXN-0014205",
+          sequenceNo: 3,
+          timestamp: "2026-09-22T10:00:14",
+          description: `UPI/DR/${forgedRrn ? forgedRrn.rrn : "610514882109"}/${conduit}`,
+          rrn: forgedRrn ? forgedRrn.rrn : "610514882109",
+          debit: bookedDebit1,
+          credit: 0.0,
+          balance: rowTamperedBal,
+        },
+        {
+          id: "CBS-004",
+          sequenceNo: 4,
+          timestamp: "2026-09-22T10:14:32",
+          description: `UPI/DR/626510149921/${conduit}`,
+          rrn: "626510149921",
+          debit: bookedDebit2,
+          credit: 0.0,
+          balance: bal3,
+        },
+      ];
+      return sortPolarity === "ASC" ? clusterRows : [...clusterRows].reverse();
+    }
+
     const row14Val = parseFloat(customRow14Balance) || (isRow14Tampered ? 322440.0 : 522440.0);
     const row15Bal = isRow14Tampered ? 318240.0 : 518240.0;
     const row16Bal = isRow14Tampered ? 308240.0 : 508240.0;

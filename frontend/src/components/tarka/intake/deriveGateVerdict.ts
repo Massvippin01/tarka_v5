@@ -66,12 +66,14 @@ export function deriveGateVerdict(input: InvariantEvaluationInput): GateVerdictR
     },
     {
       id: "I2",
-      name: "NPCI RRN Clock Sync",
+      name: "ISO 8583 RRN Clock Drift",
       severity: "FLAGGING",
       passed: input.i2_rrnClockSync,
-      formula: "|Δt_NTP| ≤ 180s",
-      expected: "Within ±180s window vs switch",
-      observed: input.i2_rrnClockSync ? "Δ +14.0s (In Spec ✓)" : "Δ +3,000s (>180s SKEW ✗)",
+      formula: "ISO 8583 DE-37 / UDIR (YDDDHHSSSSSS) |Δt| ≤ 180s",
+      expected: "Baseline: Switch 10:00:00 vs CBS 10:00:14 (Δt = +14s, ±180s PASS)",
+      observed: input.i2_rrnClockSync
+        ? "Baseline Verified: Δt = +14.0s (Within ±180s NPCI Spec ✓)"
+        : "Mutated Stress-Test: 10:00:14 vs 10:50:14 (Δt = +3,000s / +50m > 180s SKEW ✗)",
       latencyMs: 0.2,
     },
     {
@@ -80,8 +82,10 @@ export function deriveGateVerdict(input: InvariantEvaluationInput): GateVerdictR
       severity: "BLOCKING",
       passed: input.i3_cbsSwitchMatch,
       formula: "CBS.Debit == Switch.Settlement",
-      expected: "₹2,15,000.00 Certified Debit",
-      observed: input.i3_cbsSwitchMatch ? "Matched ₹2,15,000.00 ✓" : "Discrepancy: Suppressed to ₹15,000 in claim ✗",
+      expected: "₹2,15,000.00 Certified Debit (Debit #1 of ₹5.00L Loss)",
+      observed: input.i3_cbsSwitchMatch
+        ? "Matched ₹2,15,000.00 ✓ (Reconciled with Switch RRN 626510149921)"
+        : "Discrepancy: Suppressed to ₹15,000 in victim claim (Δ ₹2.00L Deficit) ✗",
       latencyMs: 0.3,
     },
     {
@@ -89,19 +93,23 @@ export function deriveGateVerdict(input: InvariantEvaluationInput): GateVerdictR
       name: "PDF Revision Integrity",
       severity: "FLAGGING",
       passed: input.i4_pdfRevisionIntegrity,
-      formula: "Trailer.Count == 1",
-      expected: "1 %%EOF Trailer (Original HSM Stream)",
-      observed: input.i4_pdfRevisionIntegrity ? "Clean 1 Trailer ✓" : "2 Trailers (Canva Appended Overwrite @ 0x14209 ✗)",
+      formula: "Trailer.Count == 1 (Single %%EOF Token)",
+      expected: "1 %%EOF Trailer (Original Bank HSM Stream)",
+      observed: input.i4_pdfRevisionIntegrity
+        ? "Clean 1 Trailer ✓"
+        : "2 Trailers Detected (Canva Appended Overwrite @ 0x14209 ✗)",
       latencyMs: 0.6,
     },
     {
       id: "I5",
-      name: "CGNAT Privacy Inclusion",
+      name: "HMAC Pseudonymization + Merkle Inclusion",
       severity: "BLOCKING",
       passed: input.i5_cgnatMerklePrivacy,
-      formula: "DoT Clause 39.20 Inclusion Proof",
-      expected: "Zero innocent civilian leak",
-      observed: input.i5_cgnatMerklePrivacy ? "9,996 Records Blinded ✓" : "Merkle Proof Validation Failed ✗",
+      formula: "HMAC-SHA-256(K_escrow, MSISDN || IMSI) + RFC-6962 Inclusion Proof",
+      expected: "Stage 5A: 9,996 innocent subscribers masked · Stage 5B: 4 target rows in 10k dump",
+      observed: input.i5_cgnatMerklePrivacy
+        ? "Stage 5A: 9,996 Civilians Masked under Escrow · Stage 5B: RFC-6962 Root 0xb189... Validated ✓"
+        : "Merkle Inclusion Proof Failed or Escrow Key Mismatch ✗",
       latencyMs: 0.5,
     },
   ];

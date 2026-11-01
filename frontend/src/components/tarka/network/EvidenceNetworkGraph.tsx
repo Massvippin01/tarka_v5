@@ -215,6 +215,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => onEdgeFilterChange(tab.id)}
+                className="hover:border-indigo-300 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                 style={{
                   fontSize: "10.5px",
                   fontWeight: isActive ? 700 : 500,
@@ -239,6 +240,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           <button
             type="button"
             onClick={onToggleHotspot}
+            className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             style={{
               display: "inline-flex",
               alignItems: "center",

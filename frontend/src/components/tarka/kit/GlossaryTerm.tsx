@@ -78,7 +78,9 @@ export const GlossaryTerm: React.FC<GlossaryTermProps> = ({
     <HoverCard.Root openDelay={100} closeDelay={150}>
       <HoverCard.Trigger asChild>
         <span
-          className={`glossary-term ${className}`}
+          role="term"
+          tabIndex={0}
+          className={`glossary-term focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-xs ${className}`}
           style={{
             borderBottom: "1.5px dotted #6366F1",
             cursor: "help",

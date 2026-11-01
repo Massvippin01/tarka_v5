@@ -19,6 +19,7 @@ import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
+import { ScaleBar } from "../kit/ScaleBar";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -213,6 +214,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* TAB 1: RRN */}
           <Tabs.Trigger
             value="rrn"
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,border-color,transform] duration-150 ease-out"
             style={{
               border: activeDockTab === "rrn" ? "1px solid #CBD5E1" : "1px solid transparent",
               borderRadius: "6px",
@@ -238,6 +240,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* TAB 2: PDF */}
           <Tabs.Trigger
             value="pdf"
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,border-color,transform] duration-150 ease-out"
             style={{
               border: activeDockTab === "pdf" ? "1px solid #CBD5E1" : "1px solid transparent",
               borderRadius: "6px",
@@ -275,6 +278,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* TAB 3: PRIVACY */}
           <Tabs.Trigger
             value="privacy"
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,border-color,transform] duration-150 ease-out"
             style={{
               border: activeDockTab === "privacy" ? "1px solid #CBD5E1" : "1px solid transparent",
               borderRadius: "6px",
@@ -312,6 +316,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* TAB 4: PROOF */}
           <Tabs.Trigger
             value="proof"
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,border-color,transform] duration-150 ease-out"
             style={{
               border: activeDockTab === "proof" ? "1px solid #CBD5E1" : "1px solid transparent",
               borderRadius: "6px",
@@ -349,6 +354,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* TAB 5: ENTITIES */}
           <Tabs.Trigger
             value="entities"
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,border-color,transform] duration-150 ease-out"
             style={{
               border: activeDockTab === "entities" ? "1px solid #CBD5E1" : "1px solid transparent",
               borderRadius: "6px",
@@ -436,7 +442,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   border: `1px solid ${decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "#A7F3D0" : "#FECDD3"}`,
                 }}
               >
-                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "ADMISSIBLE EVIDENCE ✓" : "FLAGGED SKEW ✗"}
+                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "Integrity checks pass ✓" : "FLAGGED SKEW ✗"}
               </span>
 
               <select
@@ -735,83 +741,33 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
           </div>
 
-          {/* Precision NTP Vernier Caliper Scale */}
+          {/* Precision NTP Vernier Caliper ScaleBar (Clean Non-Overlapping Bounds) */}
           <div
             style={{
               background: "#FFFFFF",
               border: "1px solid #E2E8F0",
               borderRadius: "8px",
-              padding: "8px 10px",
+              padding: "10px 12px",
               display: "flex",
               flexDirection: "column",
-              gap: "6px",
+              gap: "8px",
+              boxShadow: "0 1px 3px rgba(15, 23, 42, 0.02)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>
-                CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync
-              </span>
-              <span
-                style={{
-                  fontSize: "8.5px",
-                  fontWeight: 800,
-                  fontFamily: "var(--font-mono)",
-                  color: isWithinTolerance ? "#047857" : "#BE123C",
-                  background: isWithinTolerance ? "#ECFDF5" : "#FFE4E6",
-                  padding: "1px 6px",
-                  borderRadius: "3px",
-                }}
-              >
-                {isWithinTolerance ? "ADMISSIBLE BOUND: [−180s, +180s]" : "OUT OF BOUNDS: > 180s"}
-              </span>
-            </div>
-
-            {/* SVG Vernier Caliper Ruler */}
-            <div style={{ position: "relative", width: "100%", height: "36px" }}>
-              <svg width="100%" height="36" style={{ overflow: "visible" }}>
-                {/* Background Track */}
-                <rect x="0" y="10" width="100%" height="16" rx="4" fill="#F1F5F9" />
-                
-                {/* Admissible Band (Green Corridor) */}
-                <rect x="15%" y="10" width="70%" height="16" rx="2" fill="#D1FAE5" opacity="0.8" />
-                
-                {/* Center Zero Tick */}
-                <line x1="50%" y1="6" x2="50%" y2="30" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="2 2" />
-                
-                {/* Boundary Marks (-180s, +180s) */}
-                <line x1="15%" y1="8" x2="15%" y2="28" stroke="#059669" strokeWidth="1.5" />
-                <line x1="85%" y1="8" x2="85%" y2="28" stroke="#059669" strokeWidth="1.5" />
-
-                {/* Needle Indicator */}
-                {/* Calculate position: center is 50%, range [-240, +240] mapped to [0%, 100%] */}
-                {(() => {
-                  const clamped = Math.max(-240, Math.min(240, driftSec));
-                  const pct = 50 + (clamped / 240) * 35;
-                  const needleColor = isWithinTolerance ? "#059669" : "#E11D48";
-                  return (
-                    <g transform={`translate(${pct}%, 0)`}>
-                      <line x1="0" y1="4" x2="0" y2="32" stroke={needleColor} strokeWidth="2.5" />
-                      <circle cx="0" cy="18" r="4" fill="#FFFFFF" stroke={needleColor} strokeWidth="2" />
-                    </g>
-                  );
-                })()}
-              </svg>
-
-              {/* Numeric Ruler Labels */}
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", fontFamily: "var(--font-mono)", color: "#64748B", marginTop: "-4px" }}>
-                <span>-240s</span>
-                <span style={{ color: "#047857", fontWeight: 700 }}>-180s</span>
-                <span>0s</span>
-                <span style={{ color: "#047857", fontWeight: 700 }}>+180s</span>
-                <span>+240s</span>
-              </div>
-            </div>
-
-            {/* Readout */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "9.5px", color: "#475569" }}>
-              <span>Measured Drift: <strong style={{ color: isWithinTolerance ? "#047857" : "#BE123C", fontFamily: "var(--font-mono)" }}>Δ = {driftSec > 0 ? "+" : ""}{driftSec}.0s</strong></span>
-              <span style={{ fontSize: "8.5px", color: "#64748B" }}>Stratum-2 Atomic Precision</span>
-            </div>
+            <ScaleBar
+              min={-240}
+              max={240}
+              value={driftSec}
+              unit="s"
+              toleranceBand={{
+                from: -180,
+                to: 180,
+                label: "ADMISSIBLE BOUND (±180s)",
+              }}
+              labelAbove="CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync"
+              valueBelow={`Δ = ${driftSec > 0 ? "+" : ""}${driftSec}.0s (Stratum-2 Atomic Precision)`}
+              height={14}
+            />
           </div>
 
           {/* Interactive Preset Buttons */}
@@ -1171,16 +1127,21 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           {/* HiDPI Canvas Blinding Matrix */}
           <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", marginBottom: "4px" }}>
-              <span style={{ fontWeight: 700, color: "#0F172A" }}>DoT Clause 39.20 IPDR Matrix (10,000 Citizens)</span>
-              <span style={{ color: "#4338CA", fontWeight: 800 }}>4 Suspect Ports Revealed</span>
+              <span style={{ fontWeight: 700, color: "#0F172A" }}>
+                Stage 5A: Keyed HMAC Pseudonymization (9,996 Civilians Masked under Nodal Escrow)
+              </span>
+              <span style={{ color: "#4338CA", fontWeight: 800 }}>4 Suspect Ports Unmasked</span>
             </div>
             <canvas ref={canvasRef} style={{ width: "100%", height: "48px", borderRadius: "4px", background: "#FFFFFF", border: "1px solid #E2E8F0", display: "block" }} />
+            <div style={{ fontSize: "9px", color: "#64748B", marginTop: "4px" }}>
+              Formula: <code>HMAC-SHA-256(K_escrow, MSISDN || IMSI)</code> — Protects civilian subscriber identities under DoT License Clause 39.20.
+            </div>
           </div>
 
           {/* Stat Trio */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", textAlign: "center" }}>
             <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
-              <div style={{ fontSize: "9px", color: "#64748B" }}>Masked Citizens</div>
+              <div style={{ fontSize: "9px", color: "#64748B" }}>Masked Citizens (Stage 5A)</div>
               <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)", marginTop: "2px" }}>9,996 (99.96%)</div>
             </div>
             <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
@@ -1188,8 +1149,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#4338CA", fontFamily: "var(--font-mono)", marginTop: "2px" }}>4 Suspects</div>
             </div>
             <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
-              <div style={{ fontSize: "9px", color: "#64748B" }}>DoT Exposure</div>
-              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", marginTop: "2px" }}>0.04% Safe ✓</div>
+              <div style={{ fontSize: "9px", color: "#64748B" }}>RFC-6962 Inclusion (Stage 5B)</div>
+              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", marginTop: "2px" }}>Root Intact ✓</div>
             </div>
           </div>
 

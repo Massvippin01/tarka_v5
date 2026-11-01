@@ -5,6 +5,7 @@ export interface VerdictChipProps {
   status: "holds" | "violated" | "advisory" | "lien" | "sealed";
   label: string;
   code?: string;
+  onClick?: () => void;
   className?: string;
 }
 
@@ -12,6 +13,7 @@ export const VerdictChip: React.FC<VerdictChipProps> = ({
   status,
   label,
   code,
+  onClick,
   className = "",
 }) => {
   const statusStyles = {
@@ -27,7 +29,24 @@ export const VerdictChip: React.FC<VerdictChipProps> = ({
 
   return (
     <span
-      className={`verdict-chip ${className}`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={`verdict-chip ${
+        onClick
+          ? "cursor-pointer hover:shadow-xs active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+          : ""
+      } ${className}`}
       style={{
         display: "inline-flex",
         alignItems: "center",

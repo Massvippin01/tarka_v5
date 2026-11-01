@@ -130,6 +130,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
                       <span
+                        role="img"
+                        aria-label="Provenance Information"
                         style={{
                           fontSize: "10px",
                           color: "#94A3B8",

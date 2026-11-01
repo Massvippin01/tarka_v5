@@ -39,7 +39,7 @@ type FlowViewType = "sankey" | "dag";
 
 export const TaintEngineScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   // Active 2-Mode Workspace (Default: Mode 1 Interactive Taint DAG)
@@ -112,7 +112,11 @@ export const TaintEngineScreen: React.FC = () => {
           ========================================================================= */}
       <StoryBanner
         screenId="taint"
-        takeaway="Dinic Min-Cut freezes K=3 accounts isolating 100% of outward flow; LIBR doctrine secures ₹3,80,000 recoverable capital while shielding innocent commercial capital."
+        takeaway={
+          activeDiscoveredCluster
+            ? `Dinic Min-Cut isolates outward flow; LIBR doctrine secures ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} recoverable capital while shielding innocent commercial capital.`
+            : "Dinic Min-Cut freezes K=3 accounts isolating 100% of outward flow; LIBR doctrine secures ₹3,80,000 recoverable capital while shielding innocent commercial capital."
+        }
         evidenceChips={[
           { tier: "T1", label: "ICICI Finacle CBS", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
           { tier: "T1", label: "SBI Switch RRN", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
@@ -133,28 +137,40 @@ export const TaintEngineScreen: React.FC = () => {
       >
         <KpiTile
           title="Victim loss"
-          value="₹5,00,000"
+          value={activeDiscoveredCluster ? `₹${activeDiscoveredCluster.totalDrained.toLocaleString()}` : "₹5,00,000"}
           icon={DollarSign}
           iconColor="#E11D48"
           iconBg="#FFE4E6"
           statusBadge={{ text: "T+0 DEBIT", variant: "rose" }}
-          subtitle="SBI Core Banking"
+          subtitle={activeDiscoveredCluster ? `Victim: ${activeDiscoveredCluster.victimAccount}` : "2 Linked Extortion Debits"}
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Total fraudulent debit from complainant Sunil Kumar (SBI A/c 30910029101)."
+          provenanceTooltip={
+            activeDiscoveredCluster
+              ? `Defrauded victim outflow of ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} entering ${activeDiscoveredCluster.layer1Conduit} conduit.`
+              : "Sunil Kumar suffered 2 linked debits: Debit #1 ₹2,15,000 (Row #14) + Debit #2 ₹2,85,000 (Row #15) = ₹5,00,000 total loss entering Vikram Shah conduit."
+          }
         />
 
         <KpiTile
           title="Recoverable"
-          value={`₹${(recModel.netRecoverableSum / 100000).toFixed(2)}L`}
+          value={
+            activeDiscoveredCluster
+              ? `₹${(activeDiscoveredCluster.librRecoverableLien / 100000).toFixed(2)}L`
+              : `₹${(recModel.netRecoverableSum / 100000).toFixed(2)}L`
+          }
           icon={Scale}
           iconColor="#059669"
           iconBg="#ECFDF5"
-          statusBadge={{ text: "76% POOL", variant: "emerald" }}
+          statusBadge={{ text: "LIBR LIEN", variant: "emerald" }}
           subtitle="LIBR doctrine"
           microVisual="ring"
           progressPct={recModel.recoveryPotentialPct}
-          provenanceTooltip="Judicial Lowest Intermediate Balance Rule (LIBR) caps lien at ₹3.80L after deducting ₹1.20L irreversible ATM cashout."
+          provenanceTooltip={
+            activeDiscoveredCluster
+              ? `Judicial Lowest Intermediate Balance Rule (LIBR) caps specific lien at ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} on merchant.`
+              : "Judicial Lowest Intermediate Balance Rule (LIBR) caps lien at ₹3.80L after deducting ₹1.20L irreversible ATM cashout."
+          }
         />
 
         <KpiTile
@@ -172,15 +188,23 @@ export const TaintEngineScreen: React.FC = () => {
 
         <KpiTile
           title="Innocent shielded"
-          value={isInjectClean ? "₹2,50,000" : "₹0"}
+          value={
+            activeDiscoveredCluster
+              ? `₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()}`
+              : (isInjectClean ? "₹2,50,000" : "₹0")
+          }
           icon={ShieldCheck}
           iconColor="#0284C7"
           iconBg="#F0F9FF"
-          statusBadge={{ text: isInjectClean ? "GST ACTIVE" : "§106 ONLY", variant: isInjectClean ? "emerald" : "indigo" }}
-          subtitle="Apex Electronics"
+          statusBadge={{ text: (activeDiscoveredCluster || isInjectClean) ? "GST ACTIVE" : "§106 ONLY", variant: (activeDiscoveredCluster || isInjectClean) ? "emerald" : "indigo" }}
+          subtitle={
+            activeDiscoveredCluster?.innocentMerchant
+              ? activeDiscoveredCluster.innocentMerchant.replace(/_/g, " ").slice(0, 18)
+              : "Apex Electronics"
+          }
           microVisual="ring"
-          progressPct={isInjectClean ? 100 : 0}
-          provenanceTooltip="Section 106 specific lien attaches only to ₹1.80L tainted inflow, shielding innocent working capital."
+          progressPct={(activeDiscoveredCluster || isInjectClean) ? 100 : 0}
+          provenanceTooltip="Section 106 specific lien attaches only to tainted inflow, shielding innocent working capital."
         />
       </div>
 
@@ -327,6 +351,7 @@ export const TaintEngineScreen: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleCopyNotice}
+                      className="hover:bg-indigo-700 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-all"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -426,6 +451,7 @@ export const TaintEngineScreen: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFlowViewType("sankey")}
+                      className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,box-shadow,transform] duration-150 ease-out"
                       style={{
                         padding: "2px 8px",
                         borderRadius: "4px",
@@ -443,6 +469,7 @@ export const TaintEngineScreen: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFlowViewType("dag")}
+                      className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,box-shadow,transform] duration-150 ease-out"
                       style={{
                         padding: "2px 8px",
                         borderRadius: "4px",
@@ -463,6 +490,7 @@ export const TaintEngineScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => toggleMutation("injectMerchantCleanDeposit")}
+                    className="hover:border-emerald-400 enabled:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                     style={{
                       display: "flex",
                       alignItems: "center",

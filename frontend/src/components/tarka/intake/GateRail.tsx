@@ -70,10 +70,10 @@ export const GateRail: React.FC<GateRailProps> = ({
 
   const shortNames: Record<InvariantId, string> = {
     I1: "Balance",
-    I2: "RRN clock",
+    I2: "ISO 8583 RRN",
     I3: "Settlement",
-    I4: "PDF revision",
-    I5: "Privacy",
+    I4: "PDF %%EOF",
+    I5: "HMAC / Merkle",
   };
 
   const getStationIcon = (id: InvariantId) => {
@@ -219,6 +219,11 @@ export const GateRail: React.FC<GateRailProps> = ({
               .trace-pulse-halt {
                 animation: breakerBlink 0.6s ease-in-out infinite;
               }
+              @media (prefers-reduced-motion: reduce) {
+                .trace-pulse-pass, .trace-pulse-halt {
+                  animation: none !important;
+                }
+              }
             `}</style>
           </defs>
           {/* Base Wire Track */}
@@ -257,6 +262,7 @@ export const GateRail: React.FC<GateRailProps> = ({
                 <button
                   type="button"
                   data-station={inv.id}
+                  className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
                   onClick={() => handleStationClick(idx)}
                   style={{
                     position: "relative",
@@ -272,7 +278,6 @@ export const GateRail: React.FC<GateRailProps> = ({
                     gap: "4px",
                     cursor: "pointer",
                     boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-                    transition: "all 0.12s ease",
                     minWidth: 0,
                   }}
                 >
@@ -476,6 +481,7 @@ export const GateRail: React.FC<GateRailProps> = ({
             });
           }}
           title="Copy pre-filled §94 BNSS statutory directive to SBI Nodal Officer"
+          className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
           style={{
             fontSize: "10px",
             fontWeight: 700,
@@ -500,6 +506,7 @@ export const GateRail: React.FC<GateRailProps> = ({
           type="button"
           onClick={resetAllMutations}
           title="Reset all invariants to clean baseline"
+          className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
           style={{
             fontSize: "10px",
             fontWeight: 600,

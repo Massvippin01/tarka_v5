@@ -20,6 +20,7 @@ import {
   StoryBanner,
   SectionCard,
   TimelineStrip,
+  ScaleBar,
 } from "../../components/tarka/kit";
 import {
   getDot3920PortBlockDirective,
@@ -32,8 +33,14 @@ import {
 
 export const AttributionScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const targetImei = activeDiscoveredCluster?.convergedImei || "867492061234564";
+  const targetTac = targetImei.slice(0, 8);
+  const funnelTitle = activeDiscoveredCluster?.cgnatCandidatesCollapsed
+    ? `CGNAT Candidate Intersection Funnel (${activeDiscoveredCluster.cgnatCandidatesCollapsed})`
+    : "CGNAT Candidate Intersection Funnel (340 → 41 → 6 → 1)";
 
   // Canonical Data
   const canonicalData = useMemo(() => getCanonicalAttributionData(), []);
@@ -269,13 +276,13 @@ export const AttributionScreen: React.FC = () => {
             ===================================================================== */}
         <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
           <SectionCard
-            title="CGNAT Candidate Intersection Funnel (340 → 41 → 6 → 1)"
+            title={funnelTitle}
             subtitle="Sequential intersection of translated port allocations isolates 1 unique target handset."
             icon={Target}
             iconColor="#4F46E5"
             badgeText="DoT CLAUSE 39.20"
             badgeVariant="indigo"
-            provenanceTooltip="Sequential intersection algorithm S1 ∩ S2 ∩ S3 ∩ S4 provably isolates IMEI 867492061234564."
+            provenanceTooltip={`Sequential intersection algorithm S1 ∩ S2 ∩ S3 ∩ S4 provably isolates IMEI ${targetImei}.`}
             actionSlot={
               <button
                 type="button"
@@ -338,7 +345,7 @@ export const AttributionScreen: React.FC = () => {
                   <span style={{ fontWeight: 700 }}>
                     {isPortDropped
                       ? "PORT OMISSION DETECTED: Ambiguity expanded to 340 handsets across port block 44000-44511."
-                      : "UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI 867492061234564 }"}
+                      : `UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI ${targetImei} }`}
                   </span>
                 </div>
                 <span
@@ -380,11 +387,11 @@ export const AttributionScreen: React.FC = () => {
             badgeVariant="indigo"
           >
             <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "6px" }}>
-              {/* SHARED TAC 86749206 BANNER (Image 2) */}
+              {/* SHARED TAC BANNER */}
               <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "5px", padding: "3px 8px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <Check size={12} color="#059669" />
                 <span style={{ fontSize: "9px", fontWeight: 800, color: "#047857" }}>
-                  SHARED TAC 86749206 · SAME PHYSICAL CHIPSET CHASSIS (Samsung Galaxy M34)
+                  SHARED TAC {targetTac} · SAME PHYSICAL CHIPSET CHASSIS ({targetTac.startsWith("3599") ? "Samsung Galaxy S23" : "Samsung Galaxy M34"})
                 </span>
               </div>
 
@@ -414,7 +421,7 @@ export const AttributionScreen: React.FC = () => {
                     Physical Handset Motherboard: Samsung Galaxy M34 5G
                   </span>
                   <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
-                    SHARED TAC: 86749206 ✓
+                    SHARED TAC: {targetTac} ✓
                   </span>
                 </div>
 
@@ -427,7 +434,7 @@ export const AttributionScreen: React.FC = () => {
                   <rect x="18" y="15" width="165" height="36" rx="5" fill="#FEF2F2" stroke="#FECDD3" strokeWidth="1" />
                   <text x="25" y="27" fill="#E11D48" fontSize="8" fontWeight="bold">SLOT 1 (AIRTEL · FRAUD SIM)</text>
                   <text x="25" y="42" fill="#0F172A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
-                    86749206 123456 <tspan fill="#059669">4</tspan>
+                    {targetTac} {targetImei.slice(8, 14)} <tspan fill="#059669">{targetImei.slice(14, 15) || "4"}</tspan>
                   </text>
                   <text x="145" y="42" fill="#059669" fontSize="8" fontWeight="bold">LUHN ✓</text>
 
@@ -435,7 +442,7 @@ export const AttributionScreen: React.FC = () => {
                   <rect x="217" y="15" width="165" height="36" rx="5" fill="#EEF2FF" stroke="#C7D2FE" strokeWidth="1" />
                   <text x="224" y="27" fill="#4338CA" fontSize="8" fontWeight="bold">SLOT 2 (JIO · PERSONAL SIM)</text>
                   <text x="224" y="42" fill="#0F172A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
-                    86749206 123457 <tspan fill="#059669">2</tspan>
+                    {targetTac} {targetImei.slice(8, 14)} <tspan fill="#059669">2</tspan>
                   </text>
                   <text x="344" y="42" fill="#059669" fontSize="8" fontWeight="bold">LUHN ✓</text>
 
@@ -450,8 +457,15 @@ export const AttributionScreen: React.FC = () => {
                   </text>
                 </svg>
 
-                <div style={{ fontSize: "8px", color: "#64748B" }}>
-                  Airtel and Jio IMEIs differ by exactly +1 sequential serial unit on the same Exynos 1280 fabrication tray, proving physical dual-SIM hardware twin.
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px", background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#0F172A" }}>
+                    3-Way Multi-Modal Hardware & Radio Binding:
+                  </div>
+                  <div style={{ fontSize: "8px", color: "#475569", lineHeight: "1.3" }}>
+                    1. <strong>GSMA TAC:</strong> <code>{targetTac}</code> confirms {targetTac.startsWith("3599") ? "Samsung Galaxy S23" : "Samsung Galaxy M34 5G"} chassis.<br />
+                    2. <strong>3GPP Sequential Allocation:</strong> IMEI₁ (...{targetImei.slice(-3)}) and IMEI₂ (...2) differ by ΔSN = +1.<br />
+                    3. <strong>Co-Located Radio Telemetry:</strong> Both SIMs co-registered on Cell ID <code>DL-TWR-891-S2</code> with identical Timing Advance (TA = 2, ~156m radius) and overlapping VLR attach logs.
+                  </div>
                 </div>
               </div>
             </div>
@@ -490,50 +504,21 @@ export const AttributionScreen: React.FC = () => {
           >
             <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "6px" }}>
               {/* Exact Z3 SMT Number Line Infographic matching Image 2 */}
-              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 12px", flexShrink: 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
-                    Z3 SMT Clock-Offset Feasible Interval: [-1.2s, +0.8s]
-                  </span>
-                  <span style={{ fontSize: "9.5px", color: isZ3Sat ? "#059669" : "#DC2626", fontWeight: 800, background: isZ3Sat ? "#ECFDF5" : "#FEF2F2", border: `1px solid ${isZ3Sat ? "#A7F3D0" : "#FECDD3"}`, padding: "1.5px 6px", borderRadius: "4px" }}>
-                    {isZ3Sat ? "Z3 SOLVER: SAT ✓" : "Z3 SOLVER: UNSAT ✗"}
-                  </span>
-                </div>
-
-                {/* Number Line Track */}
-                <div style={{ position: "relative", height: "18px", background: "#E2E8F0", borderRadius: "9px", overflow: "hidden", margin: "4px 0" }}>
-                  {/* Feasible Interval Shading: [-1.2s, +0.8s] spanning 38% to 58% of 10s range */}
-                  <div style={{ position: "absolute", left: "38%", width: "20%", top: 0, bottom: 0, background: "rgba(16, 185, 129, 0.45)", borderRadius: "4px" }} />
-                  {/* Center Line: 0.0s */}
-                  <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "2px", background: "#64748B", zIndex: 2 }} />
-                  {/* Active Marker */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: `calc(50% + ${(Math.max(-5, Math.min(5, clockOffset)) / 5) * 48}%)`,
-                      top: "3px",
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "50%",
-                      background: isZ3Sat ? "#059669" : "#DC2626",
-                      border: "2px solid #FFFFFF",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                      zIndex: 5,
-                      transform: "translateX(-50%)",
-                      transition: "left 0.1s ease",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                  <span>-5.0s</span>
-                  <span style={{ color: "#047857", fontWeight: 700 }}>-1.2s</span>
-                  <span style={{ fontWeight: 800, color: isZ3Sat ? "#059669" : "#DC2626" }}>
-                    Δt = {clockOffset >= 0 ? "+" : ""}{clockOffset.toFixed(1)}s ({clockOffset === 0 ? "NTP Sync" : isZ3Sat ? "Stratum-2 Feasible" : "Out of Spec"})
-                  </span>
-                  <span style={{ color: "#047857", fontWeight: 700 }}>+0.8s</span>
-                  <span>+5.0s</span>
-                </div>
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "10px 12px", flexShrink: 0 }}>
+                <ScaleBar
+                  min={-5}
+                  max={5}
+                  value={clockOffset}
+                  unit="s"
+                  toleranceBand={{
+                    from: -1.2,
+                    to: 0.8,
+                    label: "FEASIBLE INTERVAL [-1.2s, +0.8s]",
+                  }}
+                  labelAbove="Z3 SMT Clock-Offset Feasible Interval: [-1.2s, +0.8s]"
+                  valueBelow={`Δt = ${clockOffset >= 0 ? "+" : ""}${clockOffset.toFixed(2)}s (${clockOffset === 0 ? "NTP Sync" : isZ3Sat ? "Stratum-2 Feasible ✓" : "Out of Spec ✗"})`}
+                  height={16}
+                />
               </div>
 
               {/* Slider Controller */}
@@ -552,7 +537,7 @@ export const AttributionScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setClockOffset(0.0)}
-                  style={{ fontSize: "8px", fontWeight: 700, padding: "2px 5px", borderRadius: "3px", border: "1px solid #CBD5E1", background: "#FFFFFF", cursor: "pointer" }}
+                  className="hover:border-indigo-400 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out" style={{ fontSize: "8px", fontWeight: 700, padding: "2px 5px", borderRadius: "3px", border: "1px solid #CBD5E1", background: "#FFFFFF", cursor: "pointer" }}
                 >
                   Reset NTP (0.0s)
                 </button>

@@ -214,7 +214,7 @@ export function layoutNetwork(
       id: "acc-vikram",
       label: "Vikram Shah (L1)",
       sublabel: "SBI 41088291083",
-      role: "L1 Inflow",
+      role: "Layer-1 Inflow Receiver",
       category: "account",
       cx: cxM1,
       cy: yRowC,
@@ -238,7 +238,7 @@ export function layoutNetwork(
       id: "acc-rohit",
       label: "Rohit Verma (L2A)",
       sublabel: "HDFC 5010029419920",
-      role: "L2A Split",
+      role: "Layer-2A Split Conduit",
       category: "account",
       cx: cxM2a,
       cy: yRowC,
@@ -262,7 +262,7 @@ export function layoutNetwork(
       id: "acc-sameer",
       label: "Sameer Khan (L2B)",
       sublabel: "AXIS 9140200410291",
-      role: "L2B Cashout",
+      role: "Layer-2B Cashout Conduit",
       category: "account",
       cx: cxM2b,
       cy: yRowC,
@@ -286,7 +286,7 @@ export function layoutNetwork(
       id: "acc-sink",
       label: "Paytm Sink #1109",
       sublabel: "Terminal Escrow Cache",
-      role: "Terminal Escrow",
+      role: "Terminal Escrow Account",
       category: "account",
       cx: cxSink,
       cy: yRowC,
@@ -486,3 +486,4 @@ export function layoutNetwork(
     edges,
   };
 }
+

@@ -1,9 +1,14 @@
 import { create } from "zustand";
+import type { DiscoveredFraudCluster } from "../utils/publicDatasetAdapters";
 
 export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
 export type UiDensity = "comfortable" | "compact";
 
 export interface TarkaUiState {
+  // Discovered Cluster active in 6-screen workbench
+  activeDiscoveredCluster: DiscoveredFraudCluster | null;
+  setActiveDiscoveredCluster: (cluster: DiscoveredFraudCluster | null) => void;
+
   // Sidebar state
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -39,6 +44,16 @@ export interface TarkaUiState {
   // Command palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
+
+  // Benchmark Lab Drawer
+  benchmarkLabOpen: boolean;
+  setBenchmarkLabOpen: (open: boolean) => void;
+  toggleBenchmarkLab: () => void;
+
+  // Public Dataset Benchmark Modal
+  publicDatasetModalOpen: boolean;
+  setPublicDatasetModalOpen: (open: boolean) => void;
+  togglePublicDatasetModal: () => void;
 }
 
 export const useTarkaUiStore = create<TarkaUiState>((set) => {
@@ -51,6 +66,9 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     : "comfortable";
 
   return {
+    activeDiscoveredCluster: null,
+    setActiveDiscoveredCluster: (cluster) => set({ activeDiscoveredCluster: cluster }),
+
     sidebarCollapsed: initialCollapsed,
     setSidebarCollapsed: (collapsed) => {
       localStorage.setItem("tarka_sidebar_collapsed", String(collapsed));
@@ -90,5 +108,13 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
 
     commandPaletteOpen: false,
     setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+
+    benchmarkLabOpen: false,
+    setBenchmarkLabOpen: (open) => set({ benchmarkLabOpen: open }),
+    toggleBenchmarkLab: () => set((state) => ({ benchmarkLabOpen: !state.benchmarkLabOpen })),
+
+    publicDatasetModalOpen: false,
+    setPublicDatasetModalOpen: (open) => set({ publicDatasetModalOpen: open }),
+    togglePublicDatasetModal: () => set((state) => ({ publicDatasetModalOpen: !state.publicDatasetModalOpen })),
   };
 });

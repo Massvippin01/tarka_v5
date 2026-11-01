@@ -23,6 +23,8 @@ export interface KpiTileProps {
   sparklineData?: number[];
   provenanceTooltip?: string;
   onClick?: () => void;
+  disabled?: boolean;
+  isLoading?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -40,10 +42,42 @@ export const KpiTile: React.FC<KpiTileProps> = ({
   microVisual = "ring",
   progressPct = 100,
   provenanceTooltip,
+  onClick,
+  disabled = false,
+  isLoading = false,
   className = "",
   style,
 }) => {
   const isNumber = typeof value === "number";
+
+  if (isLoading) {
+    return (
+      <div
+        className={`kpi-tile-skeleton animate-pulse ${className}`}
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "12px",
+          padding: "8px 12px",
+          minHeight: "68px",
+          maxHeight: "76px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          ...style,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#F1F5F9" }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+            <div style={{ width: "60%", height: "10px", background: "#F1F5F9", borderRadius: "3px" }} />
+            <div style={{ width: "40%", height: "18px", background: "#F1F5F9", borderRadius: "4px" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const badgeColors = {
     emerald: { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" },
@@ -59,7 +93,25 @@ export const KpiTile: React.FC<KpiTileProps> = ({
 
   return (
     <div
-      className={`kpi-tile group ${className}`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick && !disabled ? 0 : undefined}
+      onClick={!disabled ? onClick : undefined}
+      onKeyDown={
+        onClick && !disabled
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      aria-disabled={disabled}
+      className={`kpi-tile group ${
+        onClick && !disabled
+          ? "cursor-pointer hover:border-indigo-400 hover:shadow-sm active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+          : ""
+      } ${disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""} ${className}`}
       style={{
         background: "#FFFFFF",
         border: "1px solid #E2E8F0",
@@ -75,7 +127,7 @@ export const KpiTile: React.FC<KpiTileProps> = ({
         boxSizing: "border-box",
         position: "relative",
         overflow: "hidden",
-        transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+        transition: "border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease",
         ...style,
       }}
     >
@@ -122,6 +174,8 @@ export const KpiTile: React.FC<KpiTileProps> = ({
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
                     <span
+                      role="img"
+                      aria-label="Provenance Information"
                       style={{
                         fontSize: "9px",
                         color: "#94A3B8",

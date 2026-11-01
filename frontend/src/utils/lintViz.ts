@@ -113,8 +113,8 @@ export function lintViz(root: HTMLElement): LintResult {
       const screenPt = pt.matrixTransform(ctm);
 
       for (const textEl of textElements) {
-        // Skip endpoint node labels and intentional centerline ribbon labels with halos
-        if (textEl.closest(".node-card, .evidence-hub, .sankey-node, .ribbon-label")) continue;
+        // Skip endpoint node labels
+        if (textEl.closest(".node-card, .evidence-hub, .sankey-node")) continue;
 
         const tRect = textEl.getBoundingClientRect();
         if (

@@ -314,6 +314,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               cursor: "pointer",
               transition: "all 0.15s ease",
             }}
+            className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             title="Toggle chronological sorting (ASC / DESC)"
           >
             {sortPolarity}
@@ -339,6 +340,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               boxShadow: permuteActive ? "0 0 0 2px rgba(99, 102, 241, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
+            className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             title="Permute same-second timestamps to test topological conservation invariant [P]"
           >
             <Split size={12} color={permuteActive ? "#4F46E5" : "#64748B"} />
@@ -364,6 +366,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               alignItems: "center",
               gap: "3px",
             }}
+            className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             title="Toggle timestamp zone between IST (+5:30) and UTC (Z)"
           >
             <Clock size={10} color="#64748B" />
@@ -387,6 +390,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                   justifyContent: "center",
                   cursor: "pointer",
                 }}
+                className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                 title="More ledger details & evidence hash"
               >
                 <MoreHorizontal size={13} />
@@ -599,6 +603,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               cursor: "pointer",
               whiteSpace: "nowrap",
             }}
+            className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             title="Copy pre-filled statutory requisition to SBI Nodal Officer under Section 94 BNSS"
           >
             <FileText size={10} color="#4F46E5" />
@@ -615,6 +620,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
+          overscrollBehavior: "contain",
           position: "relative",
           width: "100%",
         }}

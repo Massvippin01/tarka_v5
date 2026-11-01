@@ -371,6 +371,47 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Exact Commingling & LIBR Accounting Ledger for L2C (Apex Electronics Pvt Ltd) */}
+        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", marginTop: "6px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+            <span style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A" }}>Apex Electronics LIBR Ledger (ICICI 001405008129)</span>
+            <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>Roscoe v. Winder</span>
+          </div>
+          <table style={{ width: "100%", fontSize: "8px", fontFamily: "var(--font-mono)", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ color: "#64748B", borderBottom: "1px solid #E2E8F0" }}>
+                <th style={{ textAlign: "left", padding: "2px" }}>Sequence</th>
+                <th style={{ textAlign: "right", padding: "2px" }}>Credit/Debit</th>
+                <th style={{ textAlign: "right", padding: "2px" }}>Tainted Hold</th>
+                <th style={{ textAlign: "right", padding: "2px" }}>Clean Shielded</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ padding: "2px" }}>1. Opening Balance</td>
+                <td style={{ textAlign: "right", padding: "2px" }}>₹1,10,000</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#64748B" }}>₹0</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#059669", fontWeight: 700 }}>₹1,10,000</td>
+              </tr>
+              <tr>
+                <td style={{ padding: "2px" }}>2. Inward Fraud Debit</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48" }}>+₹1,80,000</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48", fontWeight: 800 }}>₹1,80,000</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#059669" }}>₹1,10,000</td>
+              </tr>
+              <tr>
+                <td style={{ padding: "2px" }}>3. Clean POS Settlement</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#059669" }}>+₹1,40,000</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48", fontWeight: 800 }}>₹1,80,000</td>
+                <td style={{ textAlign: "right", padding: "2px", color: "#059669", fontWeight: 800 }}>₹2,50,000</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{ fontSize: "7.5px", color: "#475569", marginTop: "3px", borderTop: "1px dashed #CBD5E1", paddingTop: "2px" }}>
+            <strong>Sum Check:</strong> ₹2.00L (HDFC) + ₹1.80L (ICICI Lien) = <strong>₹3,80,000 Recoverable (76%)</strong> + ₹1,20,000 ATM Cashout (24%) = <strong>₹5,00,000 Total Loss (100% Reconciled)</strong>
+          </div>
+        </div>
       </div>
 
       {/* =========================================================================
@@ -407,6 +448,7 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
         <button
           type="button"
           onClick={onOpenOrders}
+          className="hover:bg-indigo-700 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-all"
           style={{
             display: "inline-flex",
             alignItems: "center",

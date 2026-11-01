@@ -14,6 +14,12 @@ import {
   Maximize2,
   Minimize2,
   Copy,
+  Plus,
+  ArrowLeft,
+  FileUp,
+  AlertTriangle,
+  Database,
+  Clock,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
@@ -26,6 +32,11 @@ import { AttributionScreen } from "../../pages/v5/AttributionScreen";
 import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
 import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
+import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
+import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
+import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
+import { BenchmarkLabDrawer } from "../tarka/benchmark/BenchmarkLabDrawer";
+import { PublicDatasetBenchmarkModal } from "../tarka/benchmark/PublicDatasetBenchmarkModal";
 import { SarvamVoiceModal } from "../tarka/SarvamVoiceModal";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 
@@ -40,7 +51,14 @@ export const TarkaGlobalShell: React.FC = () => {
     resetAllMutations,
     activeMutationsCount,
     intakeGate,
+    caseWorkspaces,
+    activeCaseId,
+    selectCaseWorkspace,
+    openNewCaseModal,
+    openEvidenceModal,
   } = useTarkaGlobal();
+
+  const activeCase = caseWorkspaces.find((c) => c.caseId === activeCaseId) || caseWorkspaces[0];
 
   const {
     sidebarCollapsed,
@@ -49,11 +67,16 @@ export const TarkaGlobalShell: React.FC = () => {
     togglePresentationMode,
     density,
     setDensity,
+    toggleBenchmarkLab,
+    togglePublicDatasetModal,
+    activeDiscoveredCluster,
+    setActiveDiscoveredCluster,
   } = useTarkaUiStore();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
   const [goldenHourOpen, setGoldenHourOpen] = useState<boolean>(false);
+  const [clockPopoverOpen, setClockPopoverOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
 
   const getCompiledGoldenHourDirectives = () => {
@@ -109,20 +132,34 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         e.preventDefault();
         togglePresentationMode();
       } else if (e.altKey && !isInput) {
-        if (e.key === "1") { e.preventDefault(); setActiveRoute("intake"); }
+        if (e.key === "0") { e.preventDefault(); setActiveRoute("workspace"); }
+        else if (e.key === "1") { e.preventDefault(); setActiveRoute("intake"); }
         else if (e.key === "2") { e.preventDefault(); setActiveRoute("entities"); }
         else if (e.key === "3") { e.preventDefault(); setActiveRoute("attribution"); }
         else if (e.key === "4") { e.preventDefault(); setActiveRoute("network"); }
         else if (e.key === "5") { e.preventDefault(); setActiveRoute("taint-engine"); }
         else if (e.key === "6") { e.preventDefault(); setActiveRoute("court-proof"); }
+        else if (e.key === "b" || e.key === "B") { e.preventDefault(); toggleBenchmarkLab(); }
+        else if (e.key === "d" || e.key === "D") { e.preventDefault(); togglePublicDatasetModal(); }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, togglePresentationMode, setActiveRoute]);
+  }, [toggleSidebar, togglePresentationMode, setActiveRoute, toggleBenchmarkLab, togglePublicDatasetModal]);
 
   // 6 Core PS4 Deliverable Pipeline Navigation Items
   const navItems = [
+    {
+      id: "workspace" as TarkaRoute,
+      step: "00",
+      title: "Station Command & Workspaces Hub",
+      shortTitle: "Command Hub",
+      subtitle: "Bento Workspaces",
+      badgeText: `${caseWorkspaces.length} Cases`,
+      badgeVariant: "indigo" as const,
+      tooltip: "Multi-Case Command Workspace & Intake Hub (Alt+0)",
+      isLocked: false,
+    },
     {
       id: "intake" as TarkaRoute,
       step: "01",
@@ -301,7 +338,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  title="FIR #149/2026 · Noida Cyber Crime PS · Digital Arrest Extortion (₹2.15L)"
+                  title={`${activeCase?.firNumber || "Case"} · ${activeCase?.policeStation || ""} · ${activeCase?.title || ""}`}
+                  className="hover:border-slate-300 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
                   style={{
                     background: "#F8FAFC",
                     border: "1px solid #E2E8F0",
@@ -319,17 +357,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                         <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 4px", borderRadius: "3px" }}>
-                          FIR #149/2026
+                          {activeCase?.firNumber || "CASE"}
                         </span>
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#64748B" }}>Noida</span>
+                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#64748B" }}>
+                          {activeCase?.policeStation ? activeCase.policeStation.split(" ")[0] : "Station"}
+                        </span>
                       </div>
                       <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        Digital Arrest (₹2.15L)
+                        {activeCase?.title ? activeCase.title.slice(0, 22) : "Digital Arrest"}...
                       </div>
                     </div>
                   ) : (
                     <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
-                      149
+                      {activeCase?.firNumber ? activeCase.firNumber.replace(/[^0-9]/g, "").slice(0, 3) || "001" : "001"}
                     </span>
                   )}
                   {isExpanded && <ChevronDown size={12} color="#71717A" />}
@@ -345,25 +385,87 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     background: "#FFFFFF",
                     border: "1px solid #E2E8F0",
                     borderRadius: "10px",
-                    padding: "12px 14px",
+                    padding: "10px 12px",
                     boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
-                    width: "280px",
+                    width: "300px",
                     zIndex: 9999,
                     fontFamily: "var(--font-sans)",
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4338CA", background: "#EEF2FF", padding: "2px 6px", borderRadius: "4px" }}>
-                        FIR #149/2026
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        SWITCH ACTIVE CASE WORKSPACE
                       </span>
-                      <ReuiStatusBadge text="ACTIVE CASE" variant="emerald" dot={true} />
+                      <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" dot={false} />
                     </div>
-                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#09090B" }}>
-                      Digital Arrest Extortion (₹2.15L)
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "220px", overflowY: "auto" }}>
+                      {caseWorkspaces.map((cw) => {
+                        const isCurrent = cw.caseId === activeCaseId;
+                        return (
+                          <div
+                            key={cw.caseId}
+                            onClick={() => selectCaseWorkspace(cw.caseId, activeRoute === "workspace" ? "workspace" : cw.currentStage)}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "2px",
+                              padding: "6px 8px",
+                              borderRadius: "6px",
+                              background: isCurrent ? "#EEF2FF" : "#F8FAFC",
+                              border: isCurrent ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#4338CA" : "#334155" }}>
+                                {cw.firNumber}
+                              </span>
+                              {cw.goldenHourRemainingMins > 0 ? (
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#B45309", background: "#FEF3C7", padding: "1px 4px", borderRadius: "3px" }}>
+                                  ⚡ {cw.goldenHourRemainingMins}m
+                                </span>
+                              ) : isCurrent ? (
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+                                  ACTIVE
+                                </span>
+                              ) : null}
+                            </div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {cw.title}
+                            </div>
+                            <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                              {cw.policeStation.split(",")[0]} · {cw.complainantName}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div style={{ fontSize: "11px", color: "#64748B", lineHeight: 1.3 }}>
-                      Noida Cyber Crime Police Station · Complainant: Sunil Kumar · Incident: 22-09-2026
+
+                    <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "6px", display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        onClick={openNewCaseModal}
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                          padding: "5px 8px",
+                          borderRadius: "6px",
+                          background: "#4F46E5",
+                          color: "#FFFFFF",
+                          border: "none",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Plus size={12} />
+                        <span>New Case Workspace</span>
+                      </button>
                     </div>
                   </div>
                   <Popover.Arrow style={{ fill: "#FFFFFF" }} />
@@ -381,6 +483,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     type="button"
                     onClick={() => setActiveRoute(item.id)}
                     title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
+                    className="hover:bg-slate-100/70 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
                     style={{
                       position: "relative",
                       display: "flex",
@@ -465,6 +568,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <button
                   type="button"
                   title="Inspect Ingested Artifact Tree (T1/T2/T3 Tiers)"
+                  className="hover:bg-slate-100 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -619,6 +723,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={toggleSidebar}
               title={`Toggle Sidebar Rail (Ctrl+B) — Currently ${sidebarCollapsed ? "Collapsed (56px)" : "Expanded (232px)"}`}
+              className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -660,7 +765,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           height: "100%",
         }}
       >
-        {/* TOP COMMAND HEADER (STRICT 48PX SINGLE-LINE, ZERO WRAPPING) */}
+        {/* TOP COMMAND HEADER (STRICT 44PX SINGLE-LINE, ZERO WRAPPING) */}
         <header
           style={{
             height: "44px",
@@ -668,94 +773,174 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             maxHeight: "44px",
             background: "#FFFFFF",
             borderBottom: "1px solid #E2E8F0",
-            padding: "0 14px",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, max-content) minmax(280px, 1fr) max-content",
+            padding: "0 12px",
+            display: "flex",
             alignItems: "center",
-            gap: "12px",
+            justifyContent: "space-between",
+            gap: "10px",
             flexShrink: 0,
             boxSizing: "border-box",
             whiteSpace: "nowrap",
             zIndex: 20,
           }}
         >
-          {/* Left: Breadcrumb FIR #149/2026 / Engine Title + Z3 Verified */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-            <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#64748B" }}>
-              FIR #149/2026
-            </span>
-            <span style={{ color: "#CBD5E1" }}>/</span>
-            <span style={{ fontSize: "13px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em" }}>
-              {currentNav.title}
-            </span>
-            <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
+          {/* Left: Breadcrumb / Active Case Switcher / Engine Title + Z3 Verified */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flexShrink: 1 }}>
+            {activeRoute === "workspace" ? (
+              <>
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 800, background: "#EEF2FF", padding: "1px 6px", borderRadius: "4px", border: "1px solid #C7D2FE", flexShrink: 0 }}>
+                  COMMAND HUB
+                </span>
+                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
+                <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", flexShrink: 0 }}>
+                  Workspaces
+                </span>
+                <span className="hidden md:inline-flex flex-shrink-0">
+                  <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" />
+                </span>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveRoute("workspace")}
+                  title="Return to Station Workspaces Hub (Alt+0)"
+                  className="hover:bg-slate-100 hover:text-indigo-600 px-2 py-0.5 rounded text-slate-500 font-mono text-[11px] font-semibold transition-colors flex items-center gap-1 border border-transparent hover:border-slate-200 flex-shrink-0"
+                >
+                  <ArrowLeft size={11} />
+                  <span className="hidden sm:inline">Workspaces (Alt+0)</span>
+                </button>
+                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700, background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
+                  {activeCase?.firNumber || "CASE"}
+                </span>
+                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
+                <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {currentNav.title}
+                </span>
+                <span className="hidden md:inline-flex flex-shrink-0">
+                  <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
+                </span>
+              </>
+            )}
+
             <span
               style={{
-                fontSize: "10px",
+                fontSize: "9.5px",
                 fontWeight: 800,
                 color: "#047857",
                 background: "#ECFDF5",
                 border: "1px solid #A7F3D0",
-                padding: "2px 7px",
+                padding: "1px 6px",
                 borderRadius: "4px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "3px",
+                flexShrink: 0,
               }}
-              title="Air-Gap Compliance: Zero external runtime network requests or CDNs"
+              title="Air-Gap Compliance: Zero external runtime network requests, connect-src 'none' enforced (BSA 2023 §63)"
             >
               <Lock size={10} color="#059669" />
-              <span>Air-Gap Verified</span>
+              <span>AIR-GAP</span>
             </span>
           </div>
 
-          {/* Center: Operational Clock Stepper */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2px",
-              background: "#F8FAFC",
-              border: "1px solid #E2E8F0",
-              borderRadius: "6px",
-              padding: "2px",
-              flexShrink: 0,
-            }}
-          >
-            {clockStages.map((stg, idx) => {
-              const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
-              return (
+          {/* Center: Operational Timeline Stage Popover (Screens 01-06) */}
+          {activeRoute !== "workspace" && (
+            <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
+              <Popover.Trigger asChild>
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => setTimeOffsetHours(stg.offset)}
+                  title="Operational Timeline Calibration (Click to jump between T+0m to T+48h)"
+                  className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                   style={{
-                    border: "none",
-                    background: isCurrent ? "#FFFFFF" : "transparent",
-                    color: isCurrent ? "#09090B" : "#64748B",
-                    fontWeight: isCurrent ? 700 : 500,
-                    fontSize: "11px",
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    boxShadow: isCurrent ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
-                    display: "flex",
+                    height: "28px",
+                    display: "inline-flex",
                     alignItems: "center",
+                    gap: "5px",
+                    background: "#F8FAFC",
+                    border: "1px solid #CBD5E1",
+                    color: "#0F172A",
+                    fontWeight: 700,
+                    fontSize: "11px",
+                    borderRadius: "6px",
+                    padding: "0 8px",
+                    cursor: "pointer",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <Clock size={12} color="#4F46E5" />
+                  <span style={{ fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                    {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
+                  </span>
+                  <ChevronDown size={11} color="#64748B" />
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  align="center"
+                  sideOffset={6}
+                  style={{
+                    width: "290px",
+                    background: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
+                    padding: "8px",
+                    zIndex: 100,
+                    display: "flex",
+                    flexDirection: "column",
                     gap: "4px",
                   }}
-                  title={stg.title}
                 >
-                  {isCurrent && (
-                    <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#4F46E5" }} />
-                  )}
-                  <span>{stg.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <div style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                    OPERATIONAL TIMELINE CALIBRATION
+                  </div>
+                  {clockStages.map((stg, idx) => {
+                    const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setTimeOffsetHours(stg.offset);
+                          setClockPopoverOpen(false);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "6px 8px",
+                          borderRadius: "5px",
+                          border: isCurrent ? "1px solid #C7D2FE" : "1px solid transparent",
+                          background: isCurrent ? "#EEF2FF" : "transparent",
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: isCurrent ? "#4338CA" : "#0F172A" }}>
+                            {stg.label}
+                          </div>
+                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                            {stg.title}
+                          </div>
+                        </div>
+                        {isCurrent && (
+                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
+          )}
 
           {/* Right Header Controls: [Density Slider] · [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, justifySelf: "end" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
             {/* View Density Slide Toggle: Standard vs Short / Small View */}
             <div
               style={{
@@ -797,6 +982,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 role="radio"
                 aria-checked={density === "comfortable"}
                 title="Standard Comfortable View"
+                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
                 style={{
                   border: "none",
                   background: "transparent",
@@ -824,6 +1010,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 role="radio"
                 aria-checked={density === "compact"}
                 title="Short / Small Dashboard View"
+                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
                 style={{
                   border: "none",
                   background: "transparent",
@@ -851,6 +1038,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Popover.Trigger asChild>
                 <button
                   type="button"
+                  className="hover:bg-amber-100/80 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
                   style={{
                     height: "28px",
                     display: "inline-flex",
@@ -968,6 +1156,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setMutatorRibbonOpen((prev) => !prev)}
+              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 height: "28px",
                 display: "inline-flex",
@@ -988,10 +1177,89 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <ChevronDown size={11} />
             </button>
 
+            {/* Benchmark Lab Drawer Trigger */}
+            <button
+              type="button"
+              onClick={toggleBenchmarkLab}
+              className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
+              style={{
+                height: "28px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "#ECFDF5",
+                border: "1px solid #A7F3D0",
+                color: "#065F46",
+                fontWeight: 700,
+                fontSize: "11px",
+                borderRadius: "6px",
+                padding: "0 7px",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
+              }}
+            >
+              <Zap size={11} color="#059669" />
+              <span>Lab</span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  padding: "1px 3px",
+                  borderRadius: "3px",
+                  background: "#D1FAE5",
+                  color: "#047857",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                Alt+B
+              </span>
+            </button>
+
+            {/* Public Dataset Benchmark Trigger */}
+            <button
+              type="button"
+              onClick={togglePublicDatasetModal}
+              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              title="Open Public Dataset Benchmark (PaySim, IBM AML, IEEE-CIS) (Alt+D)"
+              style={{
+                height: "28px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "#EEF2FF",
+                border: "1px solid #C7D2FE",
+                color: "#3730A3",
+                fontWeight: 700,
+                fontSize: "11px",
+                borderRadius: "6px",
+                padding: "0 7px",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+              }}
+            >
+              <Database size={11} color="#4F46E5" />
+              <span className="hidden xl:inline">Public</span>
+              <span>Datasets</span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  padding: "1px 3px",
+                  borderRadius: "3px",
+                  background: "#E0E7FF",
+                  color: "#4338CA",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                Alt+D
+              </span>
+            </button>
+
             {/* Voice AI */}
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
+              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              title="Voice AI Assistant"
               style={{
                 height: "28px",
                 display: "inline-flex",
@@ -1003,12 +1271,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 7px",
                 cursor: "pointer",
               }}
             >
               <Mic size={11} color="#64748B" />
-              <span>Voice AI</span>
+              <span className="hidden 2xl:inline">Voice AI</span>
             </button>
 
             {/* Export §63 PDF */}
@@ -1016,6 +1284,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               disabled={intakeGate?.isHalted}
               onClick={handlePrintPdf}
+              className="hover:bg-slate-800 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title={
                 intakeGate?.isHalted
                   ? "Export disabled: Falsification Gate halted downstream admissibility"
@@ -1032,13 +1301,38 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
-                padding: "0 10px",
+                padding: "0 8px",
                 cursor: intakeGate?.isHalted ? "not-allowed" : "pointer",
                 boxShadow: intakeGate?.isHalted ? "none" : "0 1px 2px rgba(0,0,0,0.1)",
               }}
             >
               <FileDown size={11} />
-              <span>Export §63 PDF</span>
+              <span>Export §63</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openEvidenceModal(activeCaseId)}
+              title="Insert & Quarantine Forensic Evidence Exhibit (WebCrypto Hashing)"
+              className="hover:bg-indigo-700 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              style={{
+                height: "28px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "0 8px",
+                borderRadius: "6px",
+                border: "1px solid #4338CA",
+                background: "#4F46E5",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: 700,
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+              }}
+            >
+              <FileUp size={11} />
+              <span>+ Evidence</span>
             </button>
           </div>
         </header>
@@ -1149,6 +1443,185 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
         )}
 
+        {/* LIVE DISCOVERED CLUSTER FROM REAL STREAMING BENCHMARK BANNER */}
+        {activeDiscoveredCluster && (
+          <div
+            style={{
+              background: "#064E3B",
+              borderBottom: "1px solid #059669",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#ECFDF5",
+              zIndex: 15,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span style={{ display: "inline-flex", width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontWeight: 800, letterSpacing: "0.03em", fontFamily: "var(--font-mono)", color: "#A7F3D0" }}>
+                🟢 LIVE DISCOVERED CLUSTER: {activeDiscoveredCluster.id} ({activeDiscoveredCluster.name})
+              </span>
+              <span style={{ color: "#6EE7B7" }}>·</span>
+              <span>Extracted from: <strong style={{ color: "#FFFFFF" }}>{activeDiscoveredCluster.sourceDataset} (100k Stream)</strong></span>
+              <span style={{ color: "#6EE7B7" }}>·</span>
+              <span>Drained: <strong style={{ color: "#FDE047" }}>₹{activeDiscoveredCluster.totalDrained.toLocaleString()}</strong></span>
+              <span style={{ color: "#6EE7B7" }}>·</span>
+              <span>LIBR Recoverable: <strong style={{ color: "#6EE7B7" }}>₹{activeDiscoveredCluster.librRecoverableLien.toLocaleString()}</strong></span>
+              <span style={{ color: "#6EE7B7" }}>·</span>
+              <span>Converged Device: <strong style={{ fontFamily: "var(--font-mono)", color: "#E0E7FF" }}>{activeDiscoveredCluster.convergedImei || "N/A"}</strong></span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveDiscoveredCluster(null);
+                selectCaseWorkspace("CASE-2026-001", "intake");
+                toast.info("Returned to base investigation CASE-2026-001");
+              }}
+              style={{
+                background: "#047857",
+                border: "1px solid #10B981",
+                color: "#FFFFFF",
+                padding: "2px 8px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              ✕ Exit Discovered Cluster
+            </button>
+          </div>
+        )}
+
+        {/* 1. PERSISTENT SANDBOX STRESS-TEST MODE WARNING BANNER */}
+        {activeMutationsCount > 0 && (
+          <div
+            style={{
+              background: "#FFFBEB",
+              borderBottom: "1px solid #FCD34D",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#B45309",
+              zIndex: 15,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <AlertTriangle size={15} color="#D97706" />
+              <span>
+                ⚠️ SANDBOX STRESS-TEST MODE ACTIVE (Original Evidence Immutable · Signed Simulation Receipt Generated)
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  color: "#92400E",
+                  background: "#FEF3C7",
+                  padding: "1px 6px",
+                  borderRadius: "3px",
+                  border: "1px solid #FDE68A",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                {activeMutationsCount} Active Mutator{activeMutationsCount > 1 ? "s" : ""}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={resetAllMutations}
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #F59E0B",
+                color: "#B45309",
+                padding: "3px 10px",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              }}
+            >
+              Reset All Mutators
+            </button>
+          </div>
+        )}
+
+        {/* 2. STATUTORY EVIDENTIARY HALT BANNER (BLOCKS S03–S06 WHEN INTAKE GATE IS HALTED) */}
+        {intakeGate.isHalted &&
+          activeRoute !== "workspace" &&
+          activeRoute !== "intake" &&
+          activeRoute !== "entities" && (
+            <div
+              style={{
+                background: "#FFF1F2",
+                borderBottom: "1px solid #FECDD3",
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexShrink: 0,
+                fontSize: "11px",
+                color: "#BE123C",
+                zIndex: 15,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "4px",
+                    background: "#FFE4E6",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#E11D48",
+                    fontWeight: 900,
+                    fontSize: "13px",
+                  }}
+                >
+                  ⛔
+                </div>
+                <div>
+                  <span style={{ fontWeight: 800 }}>
+                    PIPELINE HALTED: Upstream Invariant Violation Detected
+                  </span>
+                  <span style={{ marginLeft: "6px", color: "#9F1239" }}>
+                    — Cannot Generate Admissible §63(4) Output on Unreconciled or Tampered Telemetry. Downstream attribution & certificates locked until resolved in Screen 01.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveRoute("intake")}
+                style={{
+                  background: "#E11D48",
+                  color: "#FFFFFF",
+                  border: "none",
+                  padding: "4px 12px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontSize: "10.5px",
+                  fontWeight: 800,
+                  boxShadow: "0 1px 3px rgba(225, 29, 72, 0.3)",
+                }}
+              >
+                Resolve in Intake (Alt+1) →
+              </button>
+            </div>
+          )}
+
         {/* WORKSPACE CONTENT BODY */}
         <div
           id="tarka-workspace-body"
@@ -1157,12 +1630,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             flex: "1 1 0%",
             overflowY: "auto",
             overflowX: "hidden",
+            overscrollBehavior: "contain",
             position: "relative",
             minHeight: 0,
             minWidth: 0,
             height: "100%",
           }}
         >
+          {activeRoute === "workspace" && <CaseWorkspaceScreen />}
           {activeRoute === "intake" && <IntakeScreen />}
           {activeRoute === "entities" && <EntityResolutionScreen />}
           {activeRoute === "attribution" && <AttributionScreen />}
@@ -1172,10 +1647,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         </div>
       </div>
 
+      {/* Live Cryptographic Evidence Intake & Case Modals */}
+      <EvidenceIntakeModal />
+      <NewCaseModal />
+      <BenchmarkLabDrawer />
+      <PublicDatasetBenchmarkModal />
+
       {/* Voice Assistant Modal */}
       {voiceOpen && (
         <SarvamVoiceModal
-          caseId="CASE-2026-001"
+          caseId={activeCaseId || "CASE-2026-001"}
           isOpen={voiceOpen}
           onClose={() => setVoiceOpen(false)}
         />

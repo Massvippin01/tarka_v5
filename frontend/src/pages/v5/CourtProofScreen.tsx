@@ -27,12 +27,23 @@ import {
   type CaseArtifact,
   type AlibiChallenge,
 } from "../../utils/courtProofEngine";
+import {
+  getBnss106PoliceSpecificLienNotice,
+  getBnss107JudicialAttachmentApplication,
+} from "../../utils/statutoryDirectives";
 
 type DossierTab = "loo" | "certificates" | "syndicate";
 
 export const CourtProofScreen: React.FC = () => {
-  const { density } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
+  const imei = activeDiscoveredCluster?.convergedImei || "867492061234564";
+  const tac = imei.slice(0, 8);
+  const recoverableLien = activeDiscoveredCluster
+    ? `₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()}`
+    : "₹3,80,000";
 
   const [activeDossierTab, setActiveDossierTab] = useState<DossierTab>("loo");
   const [auditSentenceIdx, setAuditSentenceIdx] = useState<number>(0);
@@ -200,13 +211,17 @@ export const CourtProofScreen: React.FC = () => {
     return generateBsa63SplitSchedules("CASE-2026-001");
   }, []);
 
-  const [activeBsaTab, setActiveBsaTab] = useState<"partB" | "bank" | "isp" | "handset">("partB");
+  const [activeBsaTab, setActiveBsaTab] = useState<
+    "partB" | "bank" | "isp" | "handset" | "bnss106" | "bnss107"
+  >("partB");
 
   const currentScheduleText = useMemo(() => {
     if (activeBsaTab === "partB") return bsaSchedules.partB_ForensicExpert;
     if (activeBsaTab === "bank") return bsaSchedules.partA_BankNodal;
     if (activeBsaTab === "isp") return bsaSchedules.partA_IspRouter;
-    return bsaSchedules.partA_Handset;
+    if (activeBsaTab === "handset") return bsaSchedules.partA_Handset;
+    if (activeBsaTab === "bnss106") return getBnss106PoliceSpecificLienNotice();
+    return getBnss107JudicialAttachmentApplication();
   }, [activeBsaTab, bsaSchedules]);
 
   const [isScheduleCopied, setIsScheduleCopied] = useState(false);
@@ -243,8 +258,8 @@ export const CourtProofScreen: React.FC = () => {
   const strNarrativeSentences = [
     "Investigation across 14 linked FIRs reveals a centralized cyber-fraud syndicate operating under Jamtara-Noida Nexus #CBI-2026-CYBER-09.",
     "Aggregated fraud loss across UP, Maharashtra, Karnataka, Gujarat, and Delhi exceeds ₹10.42 Crore, satisfying mandatory transfer criteria under Section 6 of the Delhi Special Police Establishment (DSPE) Act, 1946.",
-    "Primary infrastructure controller is linked via identical JA4 TLS fingerprint (t13d1516h2_8daaf6) and physical dual-SIM motherboard TAC (86749206).",
-    "Statutory liens under Section 106 BNSS have successfully frozen ₹3,80,000 in immediate recoverable assets while shielding innocent merchant working capital.",
+    `Primary infrastructure controller is linked via identical JA4 TLS fingerprint (${ja4}) and physical dual-SIM motherboard TAC (${tac}).`,
+    `Statutory liens under Section 106 BNSS have successfully frozen ${recoverableLien} in immediate recoverable assets while shielding innocent merchant working capital.`,
   ];
 
   return (
@@ -352,6 +367,7 @@ export const CourtProofScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveDossierTab("loo")}
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out"
             style={{
               padding: "3px 10px",
               borderRadius: "5px",
@@ -369,6 +385,7 @@ export const CourtProofScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveDossierTab("certificates")}
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out"
             style={{
               padding: "3px 10px",
               borderRadius: "5px",
@@ -386,6 +403,7 @@ export const CourtProofScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveDossierTab("syndicate")}
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out"
             style={{
               padding: "3px 10px",
               borderRadius: "5px",
@@ -726,13 +744,15 @@ export const CourtProofScreen: React.FC = () => {
               }
             >
               <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, gap: "6px" }}>
-                {/* Schedule Sub-tabs */}
-                <div style={{ display: "flex", gap: "4px" }}>
+                {/* Schedule & Statutory Sub-tabs */}
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                   {[
                     { id: "partB", label: "Schedule B · Forensic Examiner" },
                     { id: "bank", label: "Schedule A · SBI Finacle Nodal" },
                     { id: "isp", label: "Schedule A · Airtel PGW / CGNAT" },
                     { id: "handset", label: "Schedule A · Handset Seizure" },
+                    { id: "bnss106", label: "§106 BNSS · Police Specific Lien" },
+                    { id: "bnss107", label: "§107 BNSS · Judicial Attachment" },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -778,7 +798,7 @@ export const CourtProofScreen: React.FC = () => {
             </SectionCard>
           </div>
 
-          {/* RIGHT 4 COLS: QR SEAL + 24-WORD DIGEST + STANDALONE VERIFY.HTML */}
+          {/* RIGHT 4 COLS: QR SEAL + PGP READOUT + 24-WORD DIGEST + STANDALONE VERIFY.HTML */}
           <div style={{ gridColumn: "span 4", height: "100%", minHeight: 0 }}>
             <SectionCard
               title="Air-Gap Paper Seal & Standalone Verifier"
@@ -805,10 +825,23 @@ export const CourtProofScreen: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Courtroom Phonetic Readout Aid (PGP Word List) */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "8px" }}>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", marginBottom: "3px" }}>
+                    Courtroom Phonetic Readout Aid (64-Bit Prefix):
+                  </div>
+                  <div style={{ fontSize: "9.5px", fontFamily: "monospace", color: "#4F46E5", fontWeight: 700, lineHeight: 1.4 }}>
+                    {paperAnchor.phoneticReadout}
+                  </div>
+                  <div style={{ fontSize: "8px", color: "#64748B", marginTop: "2px" }}>
+                    Standardized PGP/NATO phonetic vocabulary for unambiguous judicial transcription.
+                  </div>
+                </div>
+
                 {/* 24-Word BIP-39 Phonetic Verification Mnemonic */}
                 <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "8px" }}>
                   <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
-                    24-Word Phonetic Audit Digest (BIP-39):
+                    24-Word Paper Anchor Mnemonic:
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px" }}>
                     {paperAnchor.bip39Mnemonic.slice(0, 12).map((word, idx) => (
@@ -823,6 +856,7 @@ export const CourtProofScreen: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleExportVerifyHtml}
+                  className="hover:bg-emerald-700 enabled:active:scale-[0.96] transition-[background-color,box-shadow,transform] duration-150 ease-out"
                   style={{
                     width: "100%",
                     padding: "7px 10px",

@@ -29,6 +29,8 @@ npm-debug.log*
 .tempmediaStorage/
 *.webm
 *.webp
+*.png
+frontend/tmp/
 .pytest_cache/
 backups/
 

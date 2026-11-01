@@ -994,7 +994,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 gap: "4px",
               }}
             >
-              <Shield size={10} color="#34D399" /> 🔒 100% Air-Gapped On-Device Speech Synthesis (0 External API Calls)
+              <Shield size={10} color="#34D399" /> 🔒 On-Premise Air-Gapped Indic Speech Engine (Local Quantized INT4 ONNX / WebGPU Worker · 0 External API Calls)
             </span>
           </div>
           <button

@@ -58,3 +58,4 @@ describe("layoutNetwork geometry and port contract", () => {
     expect(layoutJa4Only.edges.length).toBe(5); // hero->hub + 4 accounts
   });
 });
+

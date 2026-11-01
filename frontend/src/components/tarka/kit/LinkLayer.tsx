@@ -124,6 +124,11 @@ export const LinkLayer: React.FC<LinkLayerProps> = ({
           .link-animated-dash {
             animation: linkDashAnim 1s linear infinite;
           }
+          @media (prefers-reduced-motion: reduce) {
+            .link-animated-dash {
+              animation: none !important;
+            }
+          }
         `}</style>
         <marker
           id="linkArrowIndigo"

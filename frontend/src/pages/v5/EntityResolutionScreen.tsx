@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dna,
   Users,
@@ -124,10 +124,84 @@ const CANONICAL_ENTITIES: CanonicalEntity[] = [
 ];
 
 export const EntityResolutionScreen: React.FC = () => {
-  const { density } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const [selectedEntityId, setSelectedEntityId] = useState<string>("ENT-02");
+
+  const canonicalEntities: CanonicalEntity[] = useMemo(() => {
+    if (!activeDiscoveredCluster) return CANONICAL_ENTITIES;
+
+    const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
+    const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
+    const l2a = activeDiscoveredCluster.layer2SplitConduits?.[0] || "ICICI_MULE_PRIYA_SHARMA";
+    const l2b = activeDiscoveredCluster.layer2SplitConduits?.[1] || "HDFC_MULE_DEV_PATEL";
+    const merchant = activeDiscoveredCluster.innocentMerchant || "ICICI_MERCH_METRO_GOLD_GST";
+    const gstin = activeDiscoveredCluster.merchantGstin || "07AAACA1234F1Z8";
+    const imei = activeDiscoveredCluster.convergedImei || "359988007766552";
+    const ja4 = activeDiscoveredCluster.convergedJa4 || "t13d1516h2_99aabbccddeeff01";
+    const bssid = activeDiscoveredCluster.bssidHotspot || "AA:BB:CC:11:22:33";
+
+    return [
+      {
+        id: "ENT-01",
+        name: victim.replace(/_/g, " "),
+        role: "Complainant Victim",
+        roleBadge: "VICTIM ORIGIN",
+        roleColor: "indigo",
+        fraudScore: 0,
+        tokens: [`A/c: ${victim}`, "Complainant Target", "Defrauded Inflow Origin"],
+        summary: `Victim account defrauded for ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} outflow across multi-hop syndicate.`,
+        subScores: { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 },
+      },
+      {
+        id: "ENT-02",
+        name: conduit.replace(/_/g, " "),
+        role: "Layer-1 Primary Mule",
+        roleBadge: "L1 CONDUIT MULE",
+        roleColor: "rose",
+        fraudScore: 98,
+        tokens: [`A/c: ${conduit}`, `Chassis IMEI: ${imei}`, `JA4 TLS: ${ja4}`],
+        summary: `Primary pass-through conduit receiving full ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} victim inflow and layering across L2 mules.`,
+        subScores: { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 },
+      },
+      {
+        id: "ENT-03",
+        name: l2a.replace(/_/g, " "),
+        role: "Layer-2A Split Mule",
+        roleBadge: "L2 SPLIT CONDUIT",
+        roleColor: "amber",
+        fraudScore: 94,
+        tokens: [`A/c: ${l2a}`, `JA4 TLS: ${ja4}`, "Split Layering Node"],
+        summary: `Layer-2 conduit receiving split tranche; transferred tainted funds to merchant for bullion purchase.`,
+        subScores: { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 },
+      },
+      {
+        id: "ENT-04",
+        name: l2b.replace(/_/g, " "),
+        role: "Layer-2B Cashout Mule",
+        roleBadge: "L2 CASHOUT SINK",
+        roleColor: "amber",
+        fraudScore: 94,
+        tokens: [`A/c: ${l2b}`, `Hotspot BSSID: ${bssid}`, "ATM Cashout Transit"],
+        summary: `Layer-2 cashout mule; executed ATM withdrawal at ${activeDiscoveredCluster.atmCashoutSink || "ATM_GURUGRAM_CYBERHUB_09"}.`,
+        subScores: { velocity: 96, deviceOverlap: 94, structuring: 92, kycDiscrepancy: 90 },
+      },
+      {
+        id: "ENT-05",
+        name: merchant.replace(/_/g, " "),
+        role: "Bona-Fide Merchant",
+        roleBadge: "✓ HARD VETO SHIELD",
+        roleColor: "emerald",
+        isHardVeto: true,
+        hardVetoReason: `Active GSTIN ${gstin} · Verified retail bullion ledger · Clean deposit ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} shielded under LIBR.`,
+        fraudScore: 4,
+        tokens: [`GSTIN: ${gstin}`, `A/c: ${merchant}`, "Clean Turnover Shielded"],
+        summary: `Innocent retail merchant. LIBR doctrine applies specific lien of ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} while protecting ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} clean capital.`,
+        subScores: { velocity: 4, deviceOverlap: 0, structuring: 6, kycDiscrepancy: 0 },
+      },
+    ];
+  }, [activeDiscoveredCluster]);
   const [selectedTokenType, setSelectedTokenType] = useState<string>("ALL");
   const [isCopied, setIsCopied] = useState(false);
 
@@ -136,7 +210,7 @@ export const EntityResolutionScreen: React.FC = () => {
     return t.sourceType === selectedTokenType;
   });
 
-  const selectedEntity = CANONICAL_ENTITIES.find((e) => e.id === selectedEntityId) || CANONICAL_ENTITIES[1];
+  const selectedEntity = canonicalEntities.find((e) => e.id === selectedEntityId) || canonicalEntities[1];
 
   const handleCopyDirective = () => {
     navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
@@ -265,6 +339,7 @@ export const EntityResolutionScreen: React.FC = () => {
                     key={type}
                     type="button"
                     onClick={() => setSelectedTokenType(type)}
+                    className="hover:border-indigo-400 enabled:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-[background-color,border-color,color,transform] duration-150 ease-out"
                     style={{
                       padding: "2px 6px",
                       borderRadius: "4px",
@@ -294,7 +369,7 @@ export const EntityResolutionScreen: React.FC = () => {
               }}
             >
               {/* LEFT COLUMN: RAW TOKENS */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px", overflowY: "auto", paddingRight: "2px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", overflowY: "auto", overscrollBehavior: "contain", paddingRight: "2px" }}>
                 <div style={{ fontSize: "9px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", marginBottom: "2px" }}>
                   Raw Extracted Tokens ({filteredTokens.length})
                 </div>
@@ -334,12 +409,12 @@ export const EntityResolutionScreen: React.FC = () => {
               </div>
 
               {/* RIGHT COLUMN: CANONICAL ENTITIES */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", overflowY: "auto", paddingRight: "2px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", overflowY: "auto", overscrollBehavior: "contain", paddingRight: "2px" }}>
                 <div style={{ fontSize: "9px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", marginBottom: "2px" }}>
                   Canonical Investigative Profiles (5)
                 </div>
 
-                {CANONICAL_ENTITIES.map((entity) => {
+                {canonicalEntities.map((entity) => {
                   const isSelected = entity.id === selectedEntityId;
                   const border = isSelected
                     ? entity.isHardVeto
@@ -568,6 +643,7 @@ export const EntityResolutionScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCopyDirective}
+                className="hover:bg-indigo-700 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-all"
                 style={{
                   width: "100%",
                   padding: "7px 12px",

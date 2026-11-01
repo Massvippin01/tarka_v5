@@ -131,4 +131,45 @@ Directives:
 Issued under seal of Investigating Officer, Noida Cyber Crime PS.`;
 }
 
+export function getBnss106PoliceSpecificLienNotice(): string {
+  return `POLICE SPECIFIC DEBIT LIEN NOTICE UNDER SECTION 106 BNSS, 2023 & I4C CFCFRMS
+From: Investigating Officer, Cyber Crime Police Station, Noida (#UP-16)
+To: Nodal Officer, ICICI Bank Ltd., Bandra-Kurla Complex, Mumbai
+Case Ref: FIR #149/2026 · Noida Cyber Crime PS (Complainant: Sunil Kumar)
+Date/Time: 2026-09-22 10:45:00 IST
+
+SUBJECT: SPECIFIC LIEN ON ₹1,80,000.00 IN A/C 001405008129 (APEX ELECTRONICS PVT LTD) WITH FORTHWITH REPORT TO MAGISTRATE UNDER §106(3) BNSS
+
+1. Reference is made to inward Layer-2 credit of ₹1,80,000.00 received at 10:14:32 IST from conduit Rohit Verma (HDFC 5010029419920) traceable to extorted funds of Sunil Kumar.
+2. In exercise of powers under Section 106(1) of Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023:
+   (a) You are directed to mark an IMMEDIATE SPECIFIC DEBIT LIEN of EXACTLY ₹1,80,000.00 on Account No. 001405008129 (Apex Electronics Pvt Ltd, GSTIN: 07AAACA1234F1Z8).
+   (b) DO NOT FREEZE THE ENTIRE ACCOUNT. The balance of ₹2,50,000.00 clean commercial operating capital is protected under the doctrine of Roscoe v. Winder [1915] 1 Ch 62 and shall remain operational for legitimate commercial transactions.
+3. STATUTORY COMPLIANCE DECLARATION: As mandated by Section 106(3) BNSS, a forthwith report of this operational lien has been transmitted to the Chief Judicial Magistrate, Gautam Buddha Nagar.
+
+Issued under the official seal of Insp. R. K. Sharma (IO-409), Noida Cyber Crime PS.`;
+}
+
+export function getBnss107JudicialAttachmentApplication(): string {
+  return `IN THE COURT OF CHIEF JUDICIAL MAGISTRATE / SPECIAL JUDGE, GAUTAM BUDDHA NAGAR
+APPLICATION UNDER SECTION 107 BNSS, 2023 FOR PROVISIONAL ATTACHMENT & RESTITUTION
+Case Ref: FIR #149/2026 · Cyber Crime PS, Noida
+In Re: State (NCPCR / 1930 Samanvaya) v. Vikram Shah & Others
+
+APPLICATION FOR ATTACHMENT OF PROCEEDS OF CRIME (§107(1)) & RESTORATION TO VICTIM (§107(6)–(7))
+
+Most Respectfully Showeth:
+1. That during investigation into extortion of ₹5,00,000.00 from Complainant Sunil Kumar, TARKA forensic engine has identified ₹3,80,000.00 as proceeds of crime currently held in:
+   (a) HDFC Bank A/c 5010029419920 (Rohit Verma) — ₹2,00,000.00 (100% Tainted Mule Balance)
+   (b) ICICI Bank A/c 001405008129 (Apex Electronics) — ₹1,80,000.00 (Specific Lien Hold)
+2. COUNTERSIGNATURE OF SUPERINTENDENT OF POLICE (§107(1)):
+   This application is submitted with the prior written concurrence and countersignature of the Deputy Commissioner of Police (Crime / Cyber), Noida.
+3. PRAYERS:
+   (a) Issue a 14-day Show Cause Notice under Section 107(2) BNSS to account holders as to why the said funds should not be attached.
+   (b) Pass an Order of Attachment under Section 107(4) BNSS over ₹3,80,000.00.
+   (c) Direct restoration and restitution of the attached ₹3,80,000.00 to Complainant Sunil Kumar under Section 107(6) and 107(7) BNSS.
+
+APPLICANT: Investigating Officer, Noida Cyber Crime PS
+COUNTERSIGNED: Deputy Commissioner of Police (Cyber), Gautam Buddha Nagar`;
+}
+
 
