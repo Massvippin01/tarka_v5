@@ -24,13 +24,12 @@ export const StoryBanner: React.FC<StoryBannerProps> = ({
     <div
       className={`story-banner ${className}`}
       style={{
-        height: "36px",
         minHeight: "36px",
-        maxHeight: "36px",
+        maxHeight: "56px",
         background: "#FFFFFF",
         border: "1px solid #E2E8F0",
         borderRadius: "8px",
-        padding: "0 12px",
+        padding: "4px 12px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -43,7 +42,7 @@ export const StoryBanner: React.FC<StoryBannerProps> = ({
       }}
     >
       {/* Left: Takeaway sentence (passes 5-Second Test) */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: "1 1 0%" }}>
         <div
           style={{
             width: "18px",
@@ -59,13 +58,16 @@ export const StoryBanner: React.FC<StoryBannerProps> = ({
           <Sparkles size={11} color="#4F46E5" />
         </div>
         <div
+          title={typeof takeaway === "string" ? takeaway : undefined}
           style={{
-            fontSize: "11.5px",
+            fontSize: "11px",
             fontWeight: 600,
             color: "#0F172A",
-            whiteSpace: "nowrap",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            textOverflow: "ellipsis",
+            lineHeight: 1.35,
             letterSpacing: "-0.01em",
           }}
         >
@@ -74,7 +76,7 @@ export const StoryBanner: React.FC<StoryBannerProps> = ({
       </div>
 
       {/* Right Controls: Evidence Chips & Explain Simply Toggle */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", flexShrink: 0 }}>
         {/* Evidence Chips */}
         {evidenceChips.length > 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>

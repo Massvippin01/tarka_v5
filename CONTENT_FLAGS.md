@@ -65,6 +65,30 @@ This document transparently records every data discrepancy, mathematical reconci
 
 ---
 
+### Entry CF-04: Round R6 Graph Rescue & Mathematical Reconciliation
+- **Screens**: `04 Fraud-Network & Actor Relationships` (`?view=network`) & `05 Transaction Flow & Mule Taint DAG` (`?view=taint-engine`)
+- **Fields**: Central Node Naming, Edge Port Allocations, Recovery Model Selector, Golden-Hour Decay Curve
+- **Previously Shown (Legacy)**:
+  - Central node colloquially named "Kingpin" (conflating device infrastructure with a human actor).
+  - 14 textual edge labels colliding with lines and node cards.
+  - Semicircle gauge claiming "100% Flow Contained / ₹5,00,000 Frozen in Lien", contradicting the irreversible ₹1.20L ATM cashout.
+  - Sankey ribbons rendered as disjointed paths with HTML cards overlapping flows.
+- **Mathematically Derived Truth**:
+  - Central node renamed to **"Controller device cluster"** with sublabel specifying burner handset (Samsung Galaxy M34 via IMEI tail) and portable Wi-Fi AP (Poco X5 via BSSID `74:DA:38:A2:11:BC`).
+  - **Zero edge labels at rest**: edge meaning is communicated strictly via color (violet = tether, emerald = JA4, amber = CAF, rose = C2), legend, and hover tooltip.
+  - **3 Dedicated Top Ports** at x-offsets `[-44px, 0px, +44px]` on the 4 account cards guarantee zero arrowhead collisions.
+  - Single selector `recoveryModel(isInjectClean, freezeBudgetK)` strictly drives all KPIs, Sankey, decay chart, and right support panel:
+    - Gross Loss: `₹5,00,000`
+    - Irreversible ATM Cashout: `₹1,20,000` (24%)
+    - Mule Retention: `₹2,00,000` (40%, §107 Hold)
+    - Merchant Lien: `₹1,80,000` (36%, §106 Specific Lien)
+    - Net Recovery Potential: `₹3,80,000` (76%)
+  - **Sankey Ribbons**: Drawn with `d3.sankeyLinkHorizontal()` centerlines (`stroke-width = link.width`), node labels placed as SVG `<text>` with 3px white halo, and sinks cleanly aligned in the dedicated right-hand gutter (`W-240..W`).
+  - **Golden-Hour Decay Chart**: Integrated ECharts step-area chart with green holdable area, explicit step at T+18m (-₹1.20L ATM cashout), and actual lien marker at T+2.5h.
+  - **Automated Geometry Linter (`lintViz`)**: Rigorously verified with zero text-vs-text overlaps, zero text-vs-path collisions, and `data-lint="pass"` at both `1536x864` and `1920x1080`.
+
+---
+
 ## 2. Statutory Directives & Evidence Integrity Alignment
 
 | Module | Forensic Standard | Statutory Anchor | Enforcement in TARKA v8.0 |

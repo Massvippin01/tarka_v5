@@ -158,8 +158,9 @@ export const KpiTile: React.FC<KpiTileProps> = ({
 
           {/* Numeral Value Row */}
           <div
+            data-testid="kpi-value"
             style={{
-              fontSize: "19px",
+              fontSize: "clamp(15px, 1.4vw, 19px)",
               fontWeight: 800,
               color: "#0F172A",
               fontFamily: "var(--font-sans)",

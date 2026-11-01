@@ -145,3 +145,4 @@ if html_layer_start != -1 and dialog_start != -1:
     print("Replaced with SVG nodes successfully!")
 else:
     print("Not found! html_layer_start:", html_layer_start, "dialog_start:", dialog_start)
+

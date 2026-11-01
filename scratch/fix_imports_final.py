@@ -29,3 +29,4 @@ tc = tc.replace('  const netRecoverable = 380000; // Truthful derived recovery p
 with open(path_taint, 'w', encoding='utf-8') as f:
     f.write(tc)
 print('TAINT IMPORTS FIXED')
+

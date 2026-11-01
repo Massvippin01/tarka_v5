@@ -177,3 +177,4 @@ if start_idx != -1 and end_idx != -1:
     print("SUCCESSFULLY REPLACED STEPPER WITH HATCHED BARS AND ∩ CONNECTORS")
 else:
     print(f"FAILED TO LOCATE INDICES: start={start_idx}, end={end_idx}")
+

@@ -1,0 +1,76 @@
+<USER_REQUEST>
+ROLE
+Principal frontend engineer + data-viz specialist on TARKA v5.0. ROUND R6 "GRAPH RESCUE 2". Round R5 failed visibly (screenshots attached): labels sit on lines, ribbons render as blobs, HTML cards cover the chart, the right panel contradicts the KPI. The approach is replaced, not patched.
+
+STRATEGY CHANGE (non-negotiable)
+S1 Layout-as-data. For these fixed small graphs, write PURE layout functions (`layoutNetwork(W,H)`, a sankey spec for d3-sankey) with unit tests asserting geometry. No ELK, no auto-layout engine, no edge-bundle "buses". Remove elkjs if unused. Plain SVG for edges/ribbons + absolutely-positioned HTML nodes from the SAME numbers (ResizeObserver supplies W,H). React Flow may stay only as a pan/zoom shell if simpler.
+S2 Labels live on NODES, not edges. ZERO edge labels at rest. Edge meaning = colour + legend + hover tooltip.
+S3 Sankey ribbons use `d3.sankeyLinkHorizontal()` centerlines with stroke-width = link.width. No custom ribbon geometry. Labels are SVG <text> with a white halo. No HTML cards over the chart. Node details open in a side drawer.
+S4 Visual self-review loop with a STOP RULE. After each phase: run Playwright, screenshot the hero at 1536x864 and 1920x1080, VIEW the PNGs, list every defect you see (overlap, clipped text, wrong shape, dead space, contradictions), fix, repeat until the list is empty. Do not start the next phase until the geometry lint passes and your screenshot review is clean. Attach the final crops.
+
+CONSTRAINTS
+Never change falsifier math, mutators, backend or legal text. Visuals read state via pure selectors (Vitest). Air-gap. Light tokens from the design system. Keep data-testids. Anything illustrative is badged "Illustrative". Values that conflict with what's already on screen are resolved by the single selector below and logged in CONTENT_FLAGS.md.
+
+MODULE A: NETWORK GRAPH (Network view)
+Naming: the central node is "Controller device cluster" (never "Kingpin": a device is not a person). Subtitle: burner handset (model + IMEI tail) via hotspot AP (model + BSSID). Tether state comes from ONE toggle driving KPI + graph + evidence rows: direct (TTL 64, tether evidence hidden) vs tethered (TTL 64→63, tether evidence shown).
+Canvas: fills the card (flex:1, min 760x460). Toolbar (filters, Graph|Matrix, Simulate, Replay, View as table) is a SEPARATE 44px strip above the canvas, never overlaying nodes; it wraps cleanly.
+Fixed geometry (fractions of W,H; round to whole px):
+ Row A (cy=.14H): Cell tower DL-TWR-891 (cx=.13W) · Controller cluster HERO card 280x84 (cx=.50W; the only BorderBeam on the screen) · Telegram C2 @c2_bot (cx=.87W). Short straight edges A↔hero; put any short text ("TTL 64 ✓", "OTP exfil") INSIDE the node's subtitle, not on the edge.
+ Row B (cy=.50H): three evidence hubs, 56px circles with a strength ring and an icon: Wi-Fi tether (cx=.22W, violet), JA4 TLS fingerprint (cx=.50W, emerald), Shared CAF introducer (cx=.78W, amber). A two-line caption BELOW each hub ("Wi-Fi tether · 4/4"), 12px with white halo, with a reserved 40px clear zone under the hub where no edge may pass.
+ Row C (cy=.84H): four account cards 176x64 (cx=.14W,.38W,.62W,.86W): Vikram L1, Rohit L2A, Sameer L2B, Paytm sink: icon, name, role, status dot; amounts on hover only.
+Edges: cubic Béziers with vertical tangents `M x1,y1 C x1,ym x2,ym x2,y2` (ym = midpoint), 2.25px, 3px white halo underneath (crossings read as hops), arrowheads end exactly on ports. Hero→each hub: one edge. Hub→account: one edge per covered account (from state). Each account card top has THREE ports at x offsets −44/0/+44 (Wi-Fi / JA4 / CAF order) so arrowheads never overlap. Solid = deterministic evidence, dashed = probabilistic (e.g. CAF 2/4). Colours: tether violet, JA4 emerald, CAF amber, C2 rose.
+Interaction: hover or focus a node/edge = highlight its neighbourhood, dim the rest to 15%, HoverCard (evidence artefacts, tier chip, provenance chip); click = Evidence Sheet (SHA-256, source, "open in ledger/entities"); filters ALL/TETHER/JA4/CAF/C2 animate edges in/out (200 ms) WITHOUT re-layout; "Replay Discovery" draws evidence in discovery order with a mini timeline; Tab/arrows walk the graph; "View as table".
+Matrix view (default if lint fails; keep as a toggle either way): rows = evidence types (Wi-Fi tether, JA4, CAF, C2 OTP forward, same tower), columns = 4 accounts + "Strength"; filled dot = linked; row total "4/4"; click a cell = Evidence Sheet.
+Radial mode: drop it unless it passes the same lint.
+Right column: (1) UPI Device XML card shrinks to its content; every attribute carries a provenance chip (NPCI Device XML / PSP TLS telemetry / tower log / illustrative). Add a compact "Evidence provenance" table underneath so no dead space remains. (2) Cross-state card = ECharts cumulative-exposure waterfall by state (UP, MH, KA, GJ, DL; values and FIR counts from state) with a ₹10.00 Cr threshold line; the bar that crosses the line is highlighted ("DL tips it over the mandate"). Chart is flex:1; the total moves into the card title; no overlay labels.
+
+MODULE B: MONEY FLOW SANKEY (Taint view)
+Build with d3-sankey: nodes = Victim, Vikram, Rohit, Sameer, Apex (merchant), Rohit retained, Sameer retained, ATM cashed out; links from the flow graph. extent [[8,32],[W−240,H−32]]; nodeAlign justify; nodeWidth 14; nodePadding 40 (>= 28); iterations 64; nodeSort keeps Rohit above Sameer; sinks ordered Apex, Rohit retained, ATM, Sameer retained.
+Draw order: gradient ribbons (source→target colour via userSpaceOnUse), then node rects. Ribbon opacity .55; hover = .9 on the path, rest .15.
+Colour by legal treatment: cashed out rose ("unrecoverable") · §107 attach amber · §106 lien-only sky · clean inflow emerald (shown only when injected, visibly excluded from the lien).
+Labels (SVG, halo): node name + amount ABOVE each bar for columns 0–2; sinks get a right-hand gutter (W−240..W) with name, amount, % of stolen and a treatment chip. Ribbon amount labels sit at t=0.40 of the ribbon centerline and only if link.width >= 22px (else on hover). Scissor markers sit at t=0.72 on the CUT ribbons only, 20px, never overlapping labels (assert in lint) and tracking the K slider live.
+Interaction: hover = highlight the full path, tooltip (amount, % of stolen, timestamp, treatment, rule); click = pin and open the Node Drawer (full card content, bank/account, legal basis, ledger rows; focus store links to Entities/Ledger); "Replay cascade" animates a front along ribbons using TE-DAG timestamps; cashed-out node pulses rose; keyboard focus on nodes/links; "View as table".
+Decay chart ("Recoverable capital over time"): ECharts step-area, >= 170px tall, y axis 0..₹5L with ticks, piecewise x axis (0–3h expanded to ~85% of the width, a visible axis break, then 3h–24h compressed), ticks T+0 · T+18m · T+1h · T+2.5h · T+3h · | · T+24h with no overlaps. The step at the ATM cash-out (−₹1.20L) is clearly visible and labelled; the actual-lien marker at T+2.5h; shading: emerald = holdable, rose = already gone. Annotation pills sit ABOVE the plot, collision-checked. A draggable "freeze at T+X" cursor updates the Sankey to its as-of state; the Case Clock moves the same cursor. If timestamps are missing from state, hide the chart and say why.
+
+MODULE C: RECOVERY MODEL PANEL (Taint right column; replaces the 100% gauge)
+ONE selector `recoveryModel()` derived from the flow graph feeds the KPIs, Sankey, decay chart and this panel. All must show the same ₹ values; reconcile and log any conflict.
+ 1. "Where the ₹5.00L is now": a single stacked ScaleBar (100% width): Cashed out ₹1.20L | Held in mule accounts ₹2.00L | Merchant lien ₹1.80L, with labels below. Callout: "Recovery potential ₹3.80L (76%)".
+ 2. Containment vs recovery as two separate indicators: containment = four pips (open exits 0/4); recovery = progress bar. Remove "Frozen in lien ₹5,00,000" and "100% Flow Contained" unless they match the model.
+ 3. LIBR / FIFO / Pro-rata: grouped bars per account on ONE axis (equal at baseline; they diverge live after the clean deposit is injected); selected rule highlighted. A short note "equal until funds commingle".
+ 4. SOP clock as a horizontal TimelineStrip (24h → 7d → 15d → 90d), with the current stage computed from the Case Clock.
+ 5. When a node is selected, the panel shows the Node Drawer; otherwise the model. The CTA "Draft BNSS §106/§107 Orders" is pinned at the bottom; the panel fills the height with no empty gap > 24px.
+
+MODULE D: SHELL FIXES (all views; do first, 30 minutes)
+ - KPI tiles: hero value <= 12 characters (qualifiers go in the caption; e.g. "4 → 1" + "mules → cluster", "TTL 64" + "direct cellular"); text auto-fits via clamp()/container query; never ellipsis. Remove empty rings or bind them to real fractions.
+ - Header: `grid-template-columns: minmax(0,max-content) minmax(0,1fr) max-content`; chips in the left cluster collapse into the ⋯ menu when narrow (ResizeObserver); Case Clock centred, min 280px, shrinks to dots; nothing is absolutely positioned over anything.
+ - Story banner: wraps to two lines (line-clamp-2 with a tooltip for the full text); evidence chips drop to a second row when narrow.
+
+GEOMETRY LINT (mandatory; implement as `lintViz(root)` + Playwright; paste real output)
+Run on Network (ALL, TETHER, JA4, CAF, C2; direct and tethered; Matrix) and Sankey (clean deposit on/off; K=1..6; cursor at T+0, T+18m, T+2.5h, T+24h) at 1366x768, 1536x864 and 1920x1080:
+ a) Text-vs-text: no overlapping bounding boxes (pad 2px).
+ b) Text-vs-path: sample every path at 24+ points via getPointAtLength; no point inside any label's box.
+ c) Path-vs-node: no edge/ribbon intersects a non-endpoint node rect.
+ d) Ribbons: endpoints within 1px of their node bars; the path bbox height <= chart height (no blobs or loops); stroke widths match the value scale within 2%.
+ e) Clipped text: scrollWidth <= clientWidth; no ellipsis on amounts or labels; min font 12px.
+ f) Dead space: hero and panels fill their cards within 24px.
+ g) Consistency: the same ₹ figures appear in KPI, Sankey, decay chart and panel (assert via `recoveryModel`).
+ h) `data-lint="pass"` on each hero in every state. A failure blocks the phase.
+Plus Vitest geometry tests for `layoutNetwork`. axe: zero serious/critical.
+
+PROCESS
+Phase 0: read the current Network/Taint components; post a plan of <= 25 lines (data bindings, what is removed, what falls back to "illustrative"). Phase 1: Module D + the lint harness. Phase 2: Module A (graph + matrix). Phase 3: Module B. Phase 4: Module C. After each phase: lint output, before/after crops at 1536x864 and 1920x1080, and your written defect review. Ask nothing unless blocked.
+
+DELIVERABLES
+Changed files, lint output, before/after crops per phase, CONTENT_FLAGS.md, a list of anything hidden for lack of state data, deviations with reasons.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-11-01T15:10:00+05:30.
+
+The user's current state is as follows:
+Other open documents:
+- e:\Tarka_v3\tarka\frontend\src\styles\liquid-glass.css (LANGUAGE_UNSPECIFIED)
+- e:\Tarka_v3\tarka\frontend\src\components\graphs\ProvenanceDAGView.tsx (LANGUAGE_UNSPECIFIED)
+- e:\Tarka_v3\tarka\frontend\src\styles\tokens.css (LANGUAGE_UNSPECIFIED)
+- e:\Tarka_v3\tarka\frontend\src\index.css (LANGUAGE_UNSPECIFIED)
+- e:\Tarka_v3\tarka\frontend\index.html (LANGUAGE_UNSPECIFIED)
+</ADDITIONAL_METADATA>

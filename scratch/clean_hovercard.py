@@ -7,3 +7,4 @@ c = c.replace('const isAccount = node.category === "account";\n', '')
 with open(p, 'w', encoding='utf-8') as f:
     f.write(c)
 print('Cleaned HoverCard in EvidenceNetworkGraph')
+

@@ -8,9 +8,8 @@ import {
   Scissors,
   Sparkles,
   Table as TableIcon,
-  Clock,
 } from "lucide-react";
-import { useFocusStore } from "../kit";
+import { lintViz } from "../../../utils/lintViz";
 
 export interface MoneyFlowSankeyGraphProps {
   freezeBudgetK: number;
@@ -18,6 +17,8 @@ export interface MoneyFlowSankeyGraphProps {
   isInjectClean: boolean;
   onToggleInjectClean: () => void;
   selectedRule: "LIBR" | "FIFO" | "PRO_RATA";
+  selectedNodeId?: string | null;
+  onSelectNode?: (nodeId: string | null) => void;
 }
 
 interface CustomNodeData {
@@ -28,6 +29,7 @@ interface CustomNodeData {
   treatment: "frozen" | "lien" | "cashout" | "clean" | "victim";
   balance: number;
   statute: string;
+  column: number;
 }
 
 interface CustomLinkData {
@@ -40,19 +42,19 @@ interface CustomLinkData {
   pct: number;
 }
 
-
 export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
   freezeBudgetK,
   isInjectClean,
   onToggleInjectClean,
+  selectedNodeId,
+  onSelectNode,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 840, height: 320 });
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 840, height: 280 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const [isTableView, setIsTableView] = useState(false);
-
-  const { selectedNodeId, setSelectedNodeId } = useFocusStore();
 
   // ResizeObserver for dynamic fit
   useEffect(() => {
@@ -69,7 +71,18 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  // Register dev hook
+  // Lint viz on layout change
+  useEffect(() => {
+    if (canvasRef.current) {
+      const result = lintViz(canvasRef.current);
+      console.log("LINT VIZ SANKEY VIOLATIONS:", result.violations);
+      if (canvasRef.current.parentElement) {
+        canvasRef.current.parentElement.setAttribute("data-lint", result.passed ? "pass" : "fail");
+      }
+    }
+  }, [dimensions, freezeBudgetK, isInjectClean, isTableView]);
+
+  // Expose dev stats
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.__tarkaViz = window.__tarkaViz || {};
@@ -91,57 +104,64 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
     const rawNodes: CustomNodeData[] = [
       {
         id: "sunil",
-        name: "Sunil Kumar (Victim)",
+        name: "Sunil Kumar",
         subname: "SBI 30910029101",
         category: "victim",
         treatment: "victim",
         balance: 500000,
         statute: "Victim Origin",
+        column: 0,
       },
       {
         id: "vikram",
-        name: "Vikram Shah (L1 Mule)",
+        name: "Vikram Shah",
         subname: "SBI 41088291083",
         category: "mule",
         treatment: "frozen",
         balance: 500000,
         statute: "§107 BNSS Complete Hold",
+        column: 1,
       },
       {
         id: "rohit",
-        name: "Rohit Verma (L2A)",
+        name: "Rohit Verma",
         subname: "HDFC 5010029419920",
         category: "mule",
         treatment: "frozen",
         balance: 300000,
         statute: "§107 BNSS Split Conduit",
+        column: 2,
       },
       {
         id: "sameer",
-        name: "Sameer Khan (L2B)",
+        name: "Sameer Khan",
         subname: "AXIS 9140200410291",
         category: "mule",
         treatment: "frozen",
         balance: 200000,
         statute: "§107 BNSS Cashout Conduit",
+        column: 2,
       },
+      // Sinks (Column 3)
       {
         id: "apex",
-        name: "Apex Electronics Pvt Ltd",
+        name: "Apex Electronics",
         subname: "ICICI · GSTIN 07AAACA1234F1Z8",
         category: "merchant",
         treatment: "lien",
         balance: isInjectClean ? 430000 : 180000,
-        statute: "§106 BNSS Specific Lien",
+        statute: "§106 Lien",
+        column: 3,
       },
       {
         id: "rohit_hold",
-        name: "Rohit Retained Hold",
-        subname: "HDFC Account Residual",
+        name: "Rohit HDFC Hold",
+        subname: "HDFC 5010029419920",
         category: "hold",
         treatment: "frozen",
         balance: 120000,
-        statute: "§107 BNSS Judicial Hold",
+        statute: "§107 Hold",
+        column: 3,
       },
       {
         id: "atm",
@@ -150,21 +170,23 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         category: "cashout",
         treatment: "cashout",
         balance: 120000,
-        statute: "Dispensed Cash Out",
+        statute: "Cash Out",
+        column: 3,
       },
       {
         id: "sameer_hold",
-        name: "Sameer Retained Hold",
-        subname: "AXIS Account Residual",
+        name: "Sameer Axis Hold",
+        subname: "AXIS 9140200410291",
         category: "hold",
         treatment: "frozen",
         balance: 80000,
-        statute: "§107 BNSS Judicial Hold",
+        statute: "§107 Hold",
+        column: 3,
       },
     ];
 
     if (isInjectClean) {
-      rawNodes.push({
+      rawNodes.unshift({
         id: "clean",
         name: "Clean Revenue Inflow",
         subname: "Commercial POS Settlements",
@@ -172,13 +194,10 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         treatment: "clean",
         balance: 250000,
         statute: "LIBR Protected Capital",
+        column: 0,
       });
     }
 
-    // Cut status determined by freezeBudgetK:
-    // K >= 1 cuts Rohit->Apex (₹1.80L)
-    // K >= 2 cuts Rohit->Hold (₹1.20L)
-    // K >= 3 cuts Sameer->Hold (₹80K) - 100% contained!
     const rawLinks: CustomLinkData[] = [
       {
         source: "sunil",
@@ -186,7 +205,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         value: 500000,
         treatment: "outflow",
         isCut: false,
-        label: "₹5.00L Outflow (100%)",
+        label: "₹5.00L (100%)",
         pct: 100,
       },
       {
@@ -213,7 +232,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         value: 180000,
         treatment: "lien",
         isCut: freezeBudgetK >= 1,
-        label: "₹1.80L §106 Lien",
+        label: "₹1.80L §106",
         pct: 36,
       },
       {
@@ -222,7 +241,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         value: 120000,
         treatment: "frozen",
         isCut: freezeBudgetK >= 2,
-        label: "₹1.20L §107 Hold",
+        label: "₹1.20L §107",
         pct: 24,
       },
       {
@@ -230,8 +249,8 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         target: "atm",
         value: 120000,
         treatment: "cashout",
-        isCut: false, // ATM cashout is an irreversible exit
-        label: "₹1.20L Cash Out ⚠️",
+        isCut: false,
+        label: "₹1.20L Cash",
         pct: 24,
       },
       {
@@ -240,7 +259,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         value: 80000,
         treatment: "frozen",
         isCut: freezeBudgetK >= 3,
-        label: "₹80K §107 Hold",
+        label: "₹80K §107",
         pct: 16,
       },
     ];
@@ -252,7 +271,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         value: 250000,
         treatment: "clean",
         isCut: false,
-        label: "+₹2.50L Clean Working Capital",
+        label: "+₹2.50L Clean",
         pct: 50,
       });
     }
@@ -276,15 +295,16 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
       pct: l.pct,
     }));
 
-    const w = Math.max(680, dimensions.width - 24);
-    const h = Math.max(220, dimensions.height - 120);
+    const w = Math.max(740, dimensions.width);
+    const h = Math.max(220, dimensions.height - 44);
 
+    // extent [[56, 36], [W - 240, H - 36]] ensures dedicated right gutter for sinks and room for Sunil on left
     const sankeyGenerator = d3Sankey<any, any>()
       .nodeWidth(14)
-      .nodePadding(28)
+      .nodePadding(36)
       .extent([
-        [160, 24],
-        [w - 180, h - 24],
+        [56, 36],
+        [w - 240, h - 36],
       ])
       .nodeAlign(sankeyJustify)
       .iterations(64);
@@ -301,16 +321,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
     }
   }, [rawData, dimensions]);
 
-  // Link Color Gradient Helper
-  const getLinkGradient = (link: any) => {
-    if (link.treatment === "clean") return "url(#sankey-grad-clean)";
-    if (link.treatment === "lien") return "url(#sankey-grad-lien)";
-    if (link.treatment === "cashout") return "url(#sankey-grad-cashout)";
-    if (link.treatment === "frozen") return "url(#sankey-grad-frozen)";
-    return "url(#sankey-grad-outflow)";
-  };
-
-  // Treatment Palette
+  // Treatment Colors
   const treatmentColors: Record<string, string> = {
     victim: "#E11D48",
     frozen: "#D97706",
@@ -323,15 +334,22 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
   return (
     <div
       ref={containerRef}
+      className="hero-canvas-container"
+      data-testid="hero-canvas"
       style={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        minHeight: 0,
+        minHeight: 260,
+        width: "100%",
         position: "relative",
+        background: "#FAFCFF",
+        overflow: "hidden",
       }}
     >
-      {/* TOOLBAR HEADER ROW */}
+      {/* =========================================================================
+          TOOLBAR STRIP (44px, SEPARATE ROW)
+          ========================================================================= */}
       <div
         style={{
           display: "flex",
@@ -339,17 +357,20 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "8px",
-          padding: "6px 12px",
+          height: 44,
+          padding: "0 12px",
           background: "#FFFFFF",
           borderBottom: "1px solid #E2E8F0",
           fontSize: "11px",
+          flexShrink: 0,
+          zIndex: 10,
         }}
       >
-        {/* Left: View Mode & Rule Badges */}
+        {/* Left: Engine Badges */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span
             style={{
-              fontSize: "9px",
+              fontSize: "9.5px",
               fontWeight: 800,
               padding: "2px 6px",
               borderRadius: "4px",
@@ -359,12 +380,12 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               fontFamily: "var(--font-mono)",
             }}
           >
-            D3-SANKEY 64-ITERS · ZERO CYCLES
+            D3-SANKEY · ZERO CYCLES
           </span>
 
           <span
             style={{
-              fontSize: "9px",
+              fontSize: "9.5px",
               fontWeight: 700,
               padding: "2px 6px",
               borderRadius: "4px",
@@ -379,9 +400,8 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
           </span>
         </div>
 
-        {/* Right: Controls & Mutators */}
+        {/* Right: Mutators & Table Switcher */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          {/* Inject Clean Deposit Mutator */}
           <button
             type="button"
             onClick={onToggleInjectClean}
@@ -391,7 +411,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               gap: "4px",
               fontSize: "10px",
               fontWeight: 700,
-              padding: "2px 8px",
+              padding: "3px 8px",
               borderRadius: "5px",
               border: isInjectClean ? "1.5px solid #10B981" : "1px solid #CBD5E1",
               background: isInjectClean ? "#ECFDF5" : "#FFFFFF",
@@ -404,7 +424,6 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
             <span>{isInjectClean ? "Clean Deposit Active (+₹2.5L)" : "+ Inject Clean Deposit (+₹2.5L)"}</span>
           </button>
 
-          {/* Table Toggle */}
           <button
             type="button"
             onClick={() => setIsTableView(!isTableView)}
@@ -414,9 +433,9 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               gap: "3px",
               fontSize: "10px",
               fontWeight: 600,
-              padding: "2px 6px",
+              padding: "3px 8px",
               borderRadius: "5px",
-              border: "1px solid #E2E8F0",
+              border: "1px solid #CBD5E1",
               background: isTableView ? "#EEF2FF" : "#FFFFFF",
               color: isTableView ? "#4338CA" : "#64748B",
               cursor: "pointer",
@@ -428,8 +447,232 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         </div>
       </div>
 
-      {/* VIEW AS TABLE MODE */}
-      {isTableView ? (
+      {/* =========================================================================
+          VIEW MODE 1: PURE SVG SANKEY (ZERO HTML CARDS OVER THE CANVAS)
+          ========================================================================= */}
+      {!isTableView ? (
+        <div
+          ref={canvasRef}
+          style={{
+            flex: "1 1 0%",
+            minHeight: 0,
+            position: "relative",
+            width: "100%",
+            height: "calc(100% - 44px)",
+            overflow: "hidden",
+            background: "#FAFCFF",
+          }}
+        >
+          {sankeyData && (
+            <svg
+              width="100%"
+              height="100%"
+              viewBox={`0 0 ${Math.max(740, dimensions.width)} ${Math.max(220, dimensions.height - 44)}`}
+              preserveAspectRatio="xMidYMid meet"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            >
+              <defs>
+                {/* Flow Ribbon Gradients */}
+                <linearGradient id="sankey-grad-outflow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.55" />
+                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.55" />
+                </linearGradient>
+
+                <linearGradient id="sankey-grad-frozen" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#B45309" stopOpacity="0.5" />
+                </linearGradient>
+
+                <linearGradient id="sankey-grad-lien" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#B45309" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#0284C7" stopOpacity="0.6" />
+                </linearGradient>
+
+                <linearGradient id="sankey-grad-cashout" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#B45309" stopOpacity="0.45" />
+                  <stop offset="100%" stopColor="#BE123C" stopOpacity="0.65" />
+                </linearGradient>
+
+                <linearGradient id="sankey-grad-clean" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#059669" stopOpacity="0.65" />
+                </linearGradient>
+              </defs>
+
+              {/* 1. DRAW SANKEY FLOW RIBBONS (Gradient Centerlines, stroke-width = link.width) */}
+              {sankeyData.links.map((link: any, idx: number) => {
+                const pathD = sankeyLinkHorizontal()(link);
+                if (!pathD) return null;
+
+                const isHovered = hoveredLinkId === `link-${idx}`;
+                const isConnected =
+                  hoveredNodeId === link.source.id || hoveredNodeId === link.target.id;
+                const opacity =
+                  hoveredLinkId || hoveredNodeId
+                    ? isHovered || isConnected
+                      ? 0.92
+                      : 0.15
+                    : 0.55;
+
+                // Points along centerline: t=0.40 for text label, t=0.72 for scissor cut
+                const x0 = link.source.x1 || 0;
+                const x1 = link.target.x0 || 0;
+                const y0 = link.y0 || 0;
+                const y1 = link.y1 || 0;
+
+                const textX = x0 + (x1 - x0) * 0.40;
+                const textY = y0 + (y1 - y0) * 0.40;
+
+                const cutX = x0 + (x1 - x0) * 0.72;
+                const cutY = y0 + (y1 - y0) * 0.72;
+
+                const gradId =
+                  link.treatment === "clean"
+                    ? "url(#sankey-grad-clean)"
+                    : link.treatment === "lien"
+                    ? "url(#sankey-grad-lien)"
+                    : link.treatment === "cashout"
+                    ? "url(#sankey-grad-cashout)"
+                    : link.treatment === "frozen"
+                    ? "url(#sankey-grad-frozen)"
+                    : "url(#sankey-grad-outflow)";
+
+                return (
+                  <g
+                    key={`link-${idx}`}
+                    onMouseEnter={() => setHoveredLinkId(`link-${idx}`)}
+                    onMouseLeave={() => setHoveredLinkId(null)}
+                    style={{ cursor: "pointer", transition: "opacity 0.2s ease" }}
+                  >
+                    <path
+                      className="sankey-ribbon"
+                      d={pathD}
+                      fill="none"
+                      stroke={gradId}
+                      strokeWidth={Math.max(2, link.width || 0)}
+                      opacity={opacity}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Ribbon amount label at t=0.40 (only if width >= 20px or hovered) */}
+                    {((link.width || 0) >= 20 || isHovered) && (
+                      <text
+                        className="ribbon-label"
+                        x={textX}
+                        y={textY}
+                        fill="#0F172A"
+                        fontSize="9"
+                        fontWeight="800"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{
+                          paintOrder: "stroke",
+                          stroke: "#FFFFFF",
+                          strokeWidth: "3.5px",
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          pointerEvents: "none",
+                        }}
+                      >
+                        {link.label}
+                      </text>
+                    )}
+
+                    {/* Scissor markers at t=0.72 on CUT ribbons only (tracking K slider live) */}
+                    {link.isCut && (
+                      <g transform={`translate(${cutX - 10}, ${cutY - 10})`}>
+                        <circle cx="10" cy="10" r="10" fill="#FFFFFF" stroke="#4F46E5" strokeWidth="1.5" />
+                        <Scissors x="4" y="4" size={12} color="#4F46E5" />
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* 2. DRAW VERTICAL NODE BARS & LABELS */}
+              {sankeyData.nodes.map((node: any) => {
+                const color = treatmentColors[node.category] || "#64748B";
+                const isHovered = hoveredNodeId === node.id;
+                const isSelected = selectedNodeId === node.id;
+                const isSink = node.column === 3;
+                const barHeight = Math.max(8, node.y1 - node.y0);
+
+                return (
+                  <g
+                    key={`node-${node.id}`}
+                    className="sankey-node"
+                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() => onSelectNode && onSelectNode(isSelected ? null : node.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {/* Node Bar Rect */}
+                    <rect
+                      x={node.x0}
+                      y={node.y0}
+                      width={node.x1 - node.x0}
+                      height={barHeight}
+                      fill={color}
+                      rx="3"
+                      stroke={isSelected ? "#0F172A" : isHovered ? color : "#FFFFFF"}
+                      strokeWidth={isSelected ? 2.5 : 1}
+                      style={{
+                        transition: "all 0.2s ease",
+                        filter: node.category === "cashout" ? "drop-shadow(0 0 6px rgba(225,29,72,0.4))" : undefined,
+                      }}
+                    />
+
+                    {/* Column 0-2: Labels ABOVE the bar with white halo */}
+                    {!isSink && (
+                      <g transform={`translate(${node.x0 + (node.x1 - node.x0) / 2}, ${node.y0 - 8})`}>
+                        <text
+                          x="0"
+                          y="-2"
+                          fill="#0F172A"
+                          fontSize="9.5"
+                          fontWeight="800"
+                          textAnchor="middle"
+                          style={{
+                            paintOrder: "stroke",
+                            stroke: "#FFFFFF",
+                            strokeWidth: "3px",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {node.name} · <tspan fill={color} fontWeight="800" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan>
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Column 3 (Sinks): Render in right-hand gutter (W-240..W) */}
+                    {isSink && (
+                      <g transform={`translate(${node.x1 + 10}, ${node.y0 + barHeight / 2})`}>
+                        <text
+                          x="0"
+                          y="0"
+                          fill="#0F172A"
+                          fontSize="9.5"
+                          fontWeight="800"
+                          dominantBaseline="central"
+                          style={{
+                            paintOrder: "stroke",
+                            stroke: "#FFFFFF",
+                            strokeWidth: "3px",
+                            pointerEvents: "none",
+                          }}
+                        >
+                          {node.name} · <tspan fill={color} fontWeight="800" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan> <tspan fontSize="8.5" fill="#64748B" fontWeight="600">({Math.round((node.balance / 500000) * 100)}% · {node.statute})</tspan>
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          )}
+        </div>
+      ) : (
+        /* VIEW AS TABLE MODE */
         <div style={{ flex: "1 1 0%", minHeight: 0, overflowY: "auto", padding: "12px", background: "#FFFFFF" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", textAlign: "left" }}>
             <thead>
@@ -495,312 +738,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
             </tbody>
           </table>
         </div>
-      ) : (
-        /* SANKEY CANVAS VIEWPORT */
-        <div style={{ flex: "1 1 0%", minHeight: 0, position: "relative", overflow: "hidden", background: "#FAFCFF" }}>
-          {sankeyData && (
-            <svg
-              width="100%"
-              height="100%"
-              viewBox={`0 0 ${Math.max(680, dimensions.width - 24)} ${Math.max(220, dimensions.height - 120)}`}
-              preserveAspectRatio="xMidYMid meet"
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-            >
-              <defs>
-                {/* Flow Ribbon Gradients */}
-                <linearGradient id="sankey-grad-outflow" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#E11D48" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#D97706" stopOpacity="0.5" />
-                </linearGradient>
-
-                <linearGradient id="sankey-grad-frozen" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#D97706" stopOpacity="0.45" />
-                  <stop offset="100%" stopColor="#B45309" stopOpacity="0.45" />
-                </linearGradient>
-
-                <linearGradient id="sankey-grad-lien" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#B45309" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#0284C7" stopOpacity="0.55" />
-                </linearGradient>
-
-                <linearGradient id="sankey-grad-cashout" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#B45309" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#BE123C" stopOpacity="0.6" />
-                </linearGradient>
-
-                <linearGradient id="sankey-grad-clean" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
-                </linearGradient>
-              </defs>
-
-              {/* RENDER SANKEY FLOW RIBBONS */}
-              {sankeyData.links.map((link: any, idx: number) => {
-                const pathD = sankeyLinkHorizontal()(link);
-                if (!pathD) return null;
-
-                const isHovered = hoveredLinkId === `link-${idx}`;
-                const isConnected =
-                  hoveredNodeId === link.source.id || hoveredNodeId === link.target.id;
-                const opacity =
-                  hoveredLinkId || hoveredNodeId
-                    ? isHovered || isConnected
-                      ? 0.95
-                      : 0.15
-                    : 0.7;
-
-                // Midpoint for Scissors / Cut Marker
-                const midX = ((link.source.x1 || 0) + (link.target.x0 || 0)) / 2;
-                const midY = ((link.y0 || 0) + (link.y1 || 0)) / 2;
-
-                return (
-                  <g
-                    key={`link-${idx}`}
-                    onMouseEnter={() => setHoveredLinkId(`link-${idx}`)}
-                    onMouseLeave={() => setHoveredLinkId(null)}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s ease" }}
-                  >
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke={getLinkGradient(link)}
-                      strokeWidth={Math.max(2, link.width || 0)}
-                      opacity={opacity}
-                      strokeLinecap="round"
-                    />
-
-                    {/* Ribbon Text Label with 3px White Halo */}
-                    {(link.width || 0) >= 12 && (
-                      <text
-                        x={midX}
-                        y={midY}
-                        fill="#0F172A"
-                        fontSize="8.5"
-                        fontWeight="700"
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        style={{
-                          paintOrder: "stroke",
-                          stroke: "#FFFFFF",
-                          strokeWidth: "3px",
-                          strokeLinecap: "round",
-                          strokeLinejoin: "round",
-                          pointerEvents: "none",
-                        }}
-                      >
-                        {link.label}
-                      </text>
-                    )}
-
-                    {/* Dinic Min-Cut Scissors Badge */}
-                    {link.isCut && (
-                      <g transform={`translate(${midX - 10}, ${midY - 10})`}>
-                        <circle cx="10" cy="10" r="10" fill="#FFFFFF" stroke="#4F46E5" strokeWidth="1.5" />
-                        <Scissors x="4" y="4" size={12} color="#4F46E5" />
-                      </g>
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* RENDER VERTICAL SANKEY NODE BARS */}
-              {sankeyData.nodes.map((node: any, idx: number) => {
-                const color = treatmentColors[node.category] || "#64748B";
-                const isHovered = hoveredNodeId === node.id;
-                const isSelected = selectedNodeId === node.id;
-
-                return (
-                  <g
-                    key={`node-bar-${idx}`}
-                    onMouseEnter={() => setHoveredNodeId(node.id)}
-                    onMouseLeave={() => setHoveredNodeId(null)}
-                    onClick={() => setSelectedNodeId(node.id)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <rect
-                      x={node.x0}
-                      y={node.y0}
-                      width={node.x1 - node.x0}
-                      height={Math.max(6, node.y1 - node.y0)}
-                      fill={color}
-                      rx="3"
-                      stroke={isSelected ? "#0F172A" : isHovered ? color : "#FFFFFF"}
-                      strokeWidth={isSelected ? 2 : 1}
-                      style={{ transition: "all 0.2s ease" }}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
-          )}
-
-          {/* HTML POSITIONED NODE CARDS (ZERO OVERLAPS WITH RIBBONS) */}
-          {sankeyData && (
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-              {sankeyData.nodes.map((node: any) => {
-                const isLeft = node.x0 < dimensions.width * 0.28;
-                const isRight = node.x1 > dimensions.width * 0.65;
-                const isHovered = hoveredNodeId === node.id;
-                const color = treatmentColors[node.category] || "#4F46E5";
-
-                let cardLeft = node.x0;
-                let cardTop = node.y0;
-
-                if (isLeft) {
-                  // Position card strictly to the LEFT of node bar
-                  cardLeft = Math.max(8, node.x0 - 150);
-                  cardTop = Math.max(10, node.y0 - 8);
-                } else if (isRight) {
-                  // Position card strictly to the RIGHT of node bar
-                  cardLeft = node.x1 + 12;
-                  cardTop = Math.max(10, node.y0 - 8);
-                } else {
-                  // Intermediate node (Vikram, Rohit, Sameer): place above node bar
-                  cardLeft = node.x0 - 45;
-                  cardTop = Math.max(10, node.y0 - 46);
-                }
-
-                return (
-                  <div
-                    key={`card-${node.id}`}
-                    onMouseEnter={() => setHoveredNodeId(node.id)}
-                    onMouseLeave={() => setHoveredNodeId(null)}
-                    onClick={() => setSelectedNodeId(node.id)}
-                    style={{
-                      position: "absolute",
-                      left: `${cardLeft}px`,
-                      top: `${cardTop}px`,
-                      width: isLeft || isRight ? "142px" : "130px",
-                      background: "#FFFFFF",
-                      border: isHovered ? `1.5px solid ${color}` : "1px solid #E2E8F0",
-                      borderRadius: "6px",
-                      padding: "4px 7px",
-                      boxShadow: isHovered ? `0 4px 12px ${color}25` : "0 1px 3px rgba(15,23,42,0.06)",
-                      cursor: "pointer",
-                      pointerEvents: "auto",
-                      zIndex: isHovered ? 30 : 20,
-                      transition: "all 0.18s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span
-                        style={{
-                          fontSize: "9.5px",
-                          fontWeight: 700,
-                          color: "#0F172A",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {node.name}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "8px", color: "#64748B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {node.subname}
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "2px",
-                        fontSize: "8px",
-                        fontWeight: 700,
-                        color,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "3px",
-                      }}
-                    >
-                      <span>{node.statute}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       )}
-
-      {/* =========================================================================
-          GOLDEN-HOUR DECAY CURVE (ECHARTS / PRECISION SVG STEP-AREA)
-          ========================================================================= */}
-      <div
-        style={{
-          height: "90px",
-          minHeight: "90px",
-          maxHeight: "90px",
-          background: "#FFFFFF",
-          borderTop: "1px solid #E2E8F0",
-          padding: "6px 12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "2px",
-          boxSizing: "border-box",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Clock size={11} color="#059669" />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#0F172A" }}>
-              Golden-Hour Recovery Capital Decay Curve (T+0 to T+24h)
-            </span>
-            <span style={{ fontSize: "8.5px", color: "#64748B" }}>
-              (Drag cursor to simulate freeze at as-of timestamp)
-            </span>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "9px" }}>
-            <span style={{ color: "#E11D48", fontWeight: 700 }}>T+18m: Noida ATM DL-049 Cashout (-₹1.20L)</span>
-            <span style={{ color: "#059669", fontWeight: 800 }}>T+2.5h: §106/107 Freeze Placed (₹3.80L Secured)</span>
-          </div>
-        </div>
-
-        {/* Precision Step-Area SVG */}
-        <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
-          <svg width="100%" height="100%" viewBox="0 0 760 55" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="decay-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
-                <stop offset="100%" stopColor="#10B981" stopOpacity="0.05" />
-              </linearGradient>
-            </defs>
-
-            {/* Step Decay Curve:
-                T+0m (x=20) -> T+18m (x=160): ₹5.00L (y=10)
-                T+18m (x=160) cashout drop to ₹3.80L (y=24)
-                T+18m -> T+2.5h (x=380): ₹3.80L (y=24)
-                T+2.5h freeze hold: stays flat at ₹3.80L to T+24h (x=740)
-            */}
-            <path
-              d="M 20 10 L 160 10 L 160 24 L 380 24 L 740 24 L 740 50 L 20 50 Z"
-              fill="url(#decay-fill)"
-            />
-            <path
-              d="M 20 10 L 160 10 L 160 24 L 380 24 L 740 24"
-              fill="none"
-              stroke="#059669"
-              strokeWidth="2.5"
-            />
-
-            {/* ATM Drop Marker */}
-            <circle cx="160" cy="24" r="4" fill="#BE123C" />
-            <line x1="160" y1="10" x2="160" y2="50" stroke="#BE123C" strokeWidth="1" strokeDasharray="2 2" />
-
-            {/* Statutory Freeze Marker at T+2.5h */}
-            <circle cx="380" cy="24" r="4" fill="#4F46E5" />
-            <line x1="380" y1="6" x2="380" y2="50" stroke="#4F46E5" strokeWidth="1.5" strokeDasharray="3 3" />
-            <text x="385" y="14" fill="#4338CA" fontSize="8" fontWeight="800">
-              T+2.5h Statutory Lien
-            </text>
-
-            {/* Axes */}
-            <line x1="20" y1="50" x2="740" y2="50" stroke="#CBD5E1" strokeWidth="1" />
-            <text x="20" y="48" fill="#64748B" fontSize="7.5">T+0m (₹5.00L)</text>
-            <text x="160" y="48" fill="#BE123C" fontSize="7.5">T+18m ATM Cashout</text>
-            <text x="380" y="48" fill="#4F46E5" fontSize="7.5">T+2.5h §106/107 Lien</text>
-            <text x="700" y="48" fill="#64748B" fontSize="7.5">T+24h (₹3.80L)</text>
-          </svg>
-        </div>
-      </div>
     </div>
   );
 };

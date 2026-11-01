@@ -140,3 +140,4 @@ if old_c1_header in ac:
     with open(attrib_path, 'w', encoding='utf-8') as f:
         f.write(ac)
     print("ATTRIBUTION CHASSIS BANNER ADDED")
+

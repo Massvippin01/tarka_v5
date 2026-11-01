@@ -669,9 +669,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             background: "#FFFFFF",
             borderBottom: "1px solid #E2E8F0",
             padding: "0 14px",
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "minmax(0, max-content) minmax(280px, 1fr) max-content",
             alignItems: "center",
-            justifyContent: "space-between",
+            gap: "12px",
             flexShrink: 0,
             boxSizing: "border-box",
             whiteSpace: "nowrap",
@@ -754,7 +755,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
 
           {/* Right Header Controls: [Density Slider] · [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, justifySelf: "end" }}>
             {/* View Density Slide Toggle: Standard vs Short / Small View */}
             <div
               style={{

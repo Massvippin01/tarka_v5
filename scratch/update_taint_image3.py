@@ -536,3 +536,4 @@ if old_dag_view in c:
     print("TAINT CONNECTED DAG VIEW UPDATED WITH 5-COLUMN SVG WIRES")
 else:
     print("OLD DAG VIEW NOT FOUND")
+

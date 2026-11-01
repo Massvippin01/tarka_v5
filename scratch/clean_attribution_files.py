@@ -72,3 +72,4 @@ with open(p_attr, "w", encoding="utf-8") as f:
     f.write(c)
 
 print("Cleaned both files successfully!")
+

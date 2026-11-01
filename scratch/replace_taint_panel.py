@@ -152,3 +152,4 @@ c = c[:idx1] + new_panel + c[idx2:]
 with open(path, 'w', encoding='utf-8') as f:
     f.write(c)
 print('SUCCESSFULLY REPLACED RIGHT PANEL')
+

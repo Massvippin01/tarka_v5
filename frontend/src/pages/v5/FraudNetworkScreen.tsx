@@ -1,4 +1,3 @@
-import { EvidenceNetworkGraph, type EdgeFilterType, type GraphLayoutMode } from "../../components/tarka/network/EvidenceNetworkGraph";
 import React, { useState, useMemo } from "react";
 import {
   Network,
@@ -8,6 +7,7 @@ import {
   FileText,
   Copy,
   Check,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
@@ -16,10 +16,10 @@ import {
   KpiTile,
   StoryBanner,
   SectionCard,
-  ScaleBar,
 } from "../../components/tarka/kit";
+import { EvidenceNetworkGraph, type EdgeFilterType } from "../../components/tarka/network/EvidenceNetworkGraph";
+import { CrossStateWaterfall } from "../../components/tarka/network/CrossStateWaterfall";
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
-
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
@@ -33,7 +33,6 @@ export const FraudNetworkScreen: React.FC = () => {
   }, [isHotspotActive]);
 
   const [edgeFilter, setEdgeFilter] = useState<EdgeFilterType>("all");
-  const [layoutMode, setLayoutMode] = useState<GraphLayoutMode>("layered");
   const [isCopied, setIsCopied] = useState(false);
   const [isXmlCopied, setIsXmlCopied] = useState(false);
 
@@ -93,7 +92,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       <StoryBanner
         takeaway={
           <span>
-            <strong>Kingpin Handset (Samsung M34 · IMEI 86749206...)</strong> physically tethered 4 mule bank accounts across Delhi/Noida cell sectors via shared portable Wi-Fi AP & identical JA4 TLS client fingerprint.
+            <strong>Controller device cluster (Samsung M34 · IMEI 86749206...)</strong> physically tethered 4 mule bank accounts across Delhi/Noida cell sectors via shared portable Wi-Fi AP & identical JA4 TLS client fingerprint.
           </span>
         }
         evidenceChips={[
@@ -104,7 +103,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       />
 
       {/* =========================================================================
-          ROW 1: TOP 4 EXECUTIVE KPI TILES (FULL UNTRUNCATED LABELS)
+          ROW 1: TOP 4 EXECUTIVE KPI TILES (<= 12 CHAR HERO VALUE)
           ========================================================================= */}
       <div
         style={{
@@ -116,12 +115,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       >
         <KpiTile
           title="Actors linked"
-          value="4 Mules → 1 Cluster"
+          value="4 → 1"
           icon={Network}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
-          statusBadge={{ text: "MULTI-MODAL GRAPH", variant: "indigo" }}
-          subtitle="Common Hotspot & TLS Controller"
+          statusBadge={{ text: "MULTI-MODAL", variant: "indigo" }}
+          subtitle="4 mules → 1 cluster"
           microVisual="ring"
           progressPct={100}
           provenanceTooltip="Deterministic set-intersection of BSSID, JA4 TLS, and cell tower coordinates."
@@ -129,7 +128,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
 
         <KpiTile
           title="Tethering proof"
-          value={hotspotResult.isHotspotDetected ? "TTL = 63 (Hotspot AP)" : "TTL = 64 (Direct Cellular)"}
+          value={hotspotResult.isHotspotDetected ? "TTL 63" : "TTL 64"}
           icon={Wifi}
           iconColor={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"}
           iconBg={hotspotResult.isHotspotDetected ? "#FFF1F2" : "#ECFDF5"}
@@ -138,33 +137,33 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             variant: hotspotResult.isHotspotDetected ? "rose" : "emerald",
             dot: true,
           }}
-          subtitle={hotspotResult.isHotspotDetected ? "Hop Count: 2 (-1 PGW Decrement)" : "Single Hop Direct Cellular"}
+          subtitle={hotspotResult.isHotspotDetected ? "hotspot AP (-1 hop)" : "direct cellular"}
           microVisual="ring"
           progressPct={hotspotResult.isHotspotDetected ? 100 : 80}
           provenanceTooltip="DoT Clause 39.20 IPDR packet inspection at Airtel PGW Gateway 103.21.144.92."
         />
 
         <KpiTile
-          title="TLS fingerprint match"
-          value="JA4 Match 4/4"
+          title="TLS fingerprint"
+          value="4/4 Match"
           icon={Cpu}
           iconColor="#059669"
           iconBg="#ECFDF5"
           statusBadge={{ text: "TLS 1.3 PASS", variant: "emerald" }}
-          subtitle="t13d1516h2_8daaf6 Client Binary"
+          subtitle="JA4 client hash"
           microVisual="ring"
           progressPct={100}
           provenanceTooltip="Exact JA4 hash match across all 4 CBS banking sessions proves same modified app."
         />
 
         <KpiTile
-          title="Inter-state linkage"
-          value="14 FIRs · 5 States"
+          title="Inter-state pool"
+          value="₹10.42 Cr"
           icon={Share2}
           iconColor="#B45309"
           iconBg="#FEF3C7"
-          statusBadge={{ text: "₹10.42 CR POOL", variant: "amber" }}
-          subtitle="UP, MH, KA, GJ, DL (Exceeds CBI Mandate)"
+          statusBadge={{ text: "14 FIRs", variant: "amber" }}
+          subtitle="5 states (exceeds CBI)"
           microVisual="ring"
           progressPct={100}
           provenanceTooltip="I4C Samanvaya HMAC blind-index correlation crossing CBI ₹10.00 Cr statutory threshold."
@@ -190,7 +189,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
         <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
           <SectionCard
             title="Fraud-Network & Actor Relationship Topology Graph"
-            subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 kingpin infrastructure cluster."
+            subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 controller cluster."
             icon={Network}
             iconColor="#4F46E5"
             badgeText={isHotspotActive ? "HOTSPOT COLLISION (TTL=63)" : "DIRECT INGRESS (TTL=64)"}
@@ -214,8 +213,6 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
                   onToggleHotspot={() => toggleMutation("triggerHotspotCollision")}
                   edgeFilter={edgeFilter}
                   onEdgeFilterChange={setEdgeFilter}
-                  layoutMode={layoutMode}
-                  onLayoutModeChange={setLayoutMode}
                 />
               </div>
 
@@ -236,7 +233,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Check size={13} color="#4F46E5" />
+                  <ShieldCheck size={13} color="#4F46E5" />
                   <span style={{ fontWeight: 700 }}>
                     Syndicate Discovery SAT: All 4 account sessions share JA4 client hash <code>t13d1516h2_8daaf6</code> and co-locate at BSSID <code>74:DA:38:A2:11:BC</code>.
                   </span>
@@ -250,10 +247,10 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
         </div>
 
         {/* =====================================================================
-            RIGHT SUPPORT PANEL (5 COLUMNS): LIGHT-MODE XML & I4C SAMANVAYA BAR
+            RIGHT SUPPORT PANEL (5 COLUMNS): XML PROVENANCE & ECHARTS WATERFALL
             ===================================================================== */}
-        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "10px", height: "100%", minHeight: 0 }}>
-          {/* Card 1: Light-Mode <Device> XML & Telemetry Provenance */}
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "8px", height: "100%", minHeight: 0 }}>
+          {/* Card 1: UPI Device XML card with compact Provenance table (Shrinks to content) */}
           <SectionCard
             title="UPI 2.0 <Device> XML & Provenance"
             subtitle="NPCI Central Switch telemetry stanza linking handset to network"
@@ -261,6 +258,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             iconColor="#4F46E5"
             badgeText="NPCI SWITCH T1"
             badgeVariant="emerald"
+            style={{ height: "auto", flexShrink: 0 }}
             actionSlot={
               <button
                 type="button"
@@ -284,146 +282,124 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
               </button>
             }
           >
-            {/* Light-Mode Syntax Highlighted Code Box */}
-            <div
-              style={{
-                background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-                borderRadius: "6px",
-                padding: "8px 10px",
-                fontFamily: "var(--font-mono, monospace)",
-                fontSize: "10px",
-                lineHeight: 1.5,
-                color: "#1E293B",
-                overflowX: "auto",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
-              }}
-            >
-              <span style={{ color: "#4338CA" }}>&lt;Device </span>
-              <span style={{ color: "#047857" }}>mobile</span>=<span style={{ color: "#B45309" }}>"919871123941"</span>{" "}
-              <span style={{ color: "#047857" }}>geocode</span>=<span style={{ color: "#B45309" }}>"28.5355,77.3910"</span>{" "}
-              <span style={{ color: "#047857" }}>bssid</span>=<span style={{ color: "#E11D48", fontWeight: 700 }}>"74:DA:38:A2:11:BC"</span>{" "}
-              <span style={{ color: "#047857" }}>tls_ja4</span>=<span style={{ color: "#4338CA", fontWeight: 700 }}>"t13d1516h2_8daaf6"</span>{" "}
-              <span style={{ color: "#4338CA" }}>/&gt;</span>
-            </div>
-
-            {/* Explicit Provenance Chips Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "8px" }}>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748B", fontWeight: 700 }}>REGISTERED MSISDN</span>
-                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>NPCI T1</span>
-                </div>
-                <div style={{ fontWeight: 800, color: "#0F172A", marginTop: "1px", fontFamily: "var(--font-mono)" }}>+91-98711-23941</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {/* Syntax Highlighted Code Box */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "5px",
+                  padding: "6px 8px",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: "9.5px",
+                  lineHeight: 1.4,
+                  color: "#1E293B",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all",
+                }}
+              >
+                <span style={{ color: "#4338CA" }}>&lt;Device </span>
+                <span style={{ color: "#047857" }}>mobile</span>=<span style={{ color: "#B45309" }}>"919871123941"</span>{" "}
+                <span style={{ color: "#047857" }}>geocode</span>=<span style={{ color: "#B45309" }}>"28.5355,77.3910"</span>{" "}
+                <span style={{ color: "#047857" }}>bssid</span>=<span style={{ color: "#E11D48", fontWeight: 700 }}>"74:DA:38:A2:11:BC"</span>{" "}
+                <span style={{ color: "#047857" }}>tls_ja4</span>=<span style={{ color: "#4338CA", fontWeight: 700 }}>"t13d1516h2_8daaf6"</span>{" "}
+                <span style={{ color: "#4338CA" }}>/&gt;</span>
               </div>
 
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748B", fontWeight: 700 }}>TOWER GEOCODE</span>
-                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TOWER T1</span>
-                </div>
-                <div style={{ fontWeight: 800, color: "#0F172A", marginTop: "1px", fontFamily: "var(--font-mono)" }}>28.5355° N, 77.3910° E</div>
-              </div>
-
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748B", fontWeight: 700 }}>TETHERED BSSID</span>
-                  <span style={{ fontSize: "7.5px", background: "#EEF2FF", color: "#4338CA", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TLS T1</span>
-                </div>
-                <div style={{ fontWeight: 800, color: "#BE123C", marginTop: "1px", fontFamily: "var(--font-mono)" }}>74:DA:38:A2:11:BC</div>
-              </div>
-
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#64748B", fontWeight: 700 }}>JA4 CLIENT HASH</span>
-                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TLS T1</span>
-                </div>
-                <div style={{ fontWeight: 800, color: "#4F46E5", marginTop: "1px", fontFamily: "var(--font-mono)" }}>t13d1516h2...</div>
-              </div>
+              {/* Compact Evidence Provenance Table */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9px" }}>
+                <thead>
+                  <tr style={{ background: "#F1F5F9", borderBottom: "1px solid #CBD5E1", color: "#475569" }}>
+                    <th style={{ padding: "3px 5px", textAlign: "left", fontWeight: 700 }}>Attribute</th>
+                    <th style={{ padding: "3px 5px", textAlign: "left", fontWeight: 700 }}>Value</th>
+                    <th style={{ padding: "3px 5px", textAlign: "left", fontWeight: 700 }}>Provenance Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>mobile</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)" }}>+91-98711-23941</td>
+                    <td style={{ padding: "3px 5px" }}>
+                      <span style={{ background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
+                        NPCI Switch T1
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>geocode</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)" }}>28.5355°N, 77.3910°E</td>
+                    <td style={{ padding: "3px 5px" }}>
+                      <span style={{ background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
+                        Tower BTS Log
+                      </span>
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
+                    <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>bssid</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#BE123C", fontWeight: 700 }}>74:DA:38:A2:11:BC</td>
+                    <td style={{ padding: "3px 5px" }}>
+                      <span style={{ background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
+                        PSP Telemetry
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: "3px 5px", fontWeight: 700, color: "#334155" }}>tls_ja4</td>
+                    <td style={{ padding: "3px 5px", fontFamily: "var(--font-mono)", color: "#4338CA", fontWeight: 700 }}>t13d1516h2_8daaf6</td>
+                    <td style={{ padding: "3px 5px" }}>
+                      <span style={{ background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
+                        Airtel PGW TLS
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </SectionCard>
 
-          {/* Card 2: Cross-State Exposure & I4C Samanvaya Bar */}
+          {/* Card 2: ECharts Cumulative Exposure Waterfall (flex: 1) */}
           <SectionCard
-            title="Cross-State Syndicate & I4C Samanvaya"
-            subtitle="Blind-index correlation across 14 FIRs in 5 states (Exceeds CBI Mandate)"
+            title="Cross-State Syndicate (₹10.42 Cr Total)"
+            subtitle="Cumulative exposure across 14 FIRs (Exceeds CBI Mandate ₹10.00 Cr)"
             icon={Share2}
             iconColor="#B45309"
-            badgeText="₹10.42 CR SYNDICATE"
-            badgeVariant="amber"
+            badgeText="CBI REQUISITION SAT"
+            badgeVariant="rose"
+            style={{ flex: "1 1 0%", minHeight: 0 }}
           >
-            {/* Stacked Horizontal State Exposure ScaleBar */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <ScaleBar
-                min={0}
-                max={12}
-                value={10.42}
-                unit=" Cr"
-                labelAbove="Inter-State Exposure vs CBI Mandate (₹10.00 Cr)"
-                valueBelow="Syndicate Total: ₹10.42 Cr (CBI Requisition SAT)"
-                thresholdLine={{ value: 10.0, label: "₹10.00 Cr CBI Mandate", color: "#DC2626" }}
-                zones={[
-                  { from: 0, to: 3.85, color: "#3B82F6", label: "UP: ₹3.85Cr (5 FIRs)" },
-                  { from: 3.85, to: 6.45, color: "#6366F1", label: "MH: ₹2.60Cr (3 FIRs)" },
-                  { from: 6.45, to: 8.40, color: "#8B5CF6", label: "KA: ₹1.95Cr (3 FIRs)" },
-                  { from: 8.40, to: 9.62, color: "#F59E0B", label: "GJ: ₹1.22Cr (2 FIRs)" },
-                  { from: 9.62, to: 10.42, color: "#10B981", label: "DL: ₹0.80Cr (1 FIR)" },
-                ]}
-                height={16}
-              />
-
-              {/* State Chips Breakdown */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "4px", marginTop: "4px" }}>
-                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#3B82F6" }}>UP (5)</div>
-                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹3.85Cr</div>
-                </div>
-                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#6366F1" }}>MH (3)</div>
-                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹2.60Cr</div>
-                </div>
-                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#8B5CF6" }}>KA (3)</div>
-                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹1.95Cr</div>
-                </div>
-                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#F59E0B" }}>GJ (2)</div>
-                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹1.22Cr</div>
-                </div>
-                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#10B981" }}>DL (1)</div>
-                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹0.80Cr</div>
-                </div>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+              {/* ECharts Waterfall Canvas */}
+              <div style={{ flex: "1 1 0%", minHeight: 120 }}>
+                <CrossStateWaterfall height="100%" />
               </div>
-            </div>
 
-            {/* Action Button: Copy I4C Report */}
-            <div style={{ marginTop: "auto", paddingTop: "8px" }}>
-              <button
-                type="button"
-                onClick={handleCopyI4cReport}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  width: "100%",
-                  padding: "7px 12px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: isCopied ? "#059669" : "#4F46E5",
-                  color: "#FFFFFF",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                {isCopied ? <Check size={12} /> : <FileText size={12} />}
-                <span>{isCopied ? "Report Copied to Clipboard" : "📋 Copy Inter-State Syndicate Report (I4C Format)"}</span>
-              </button>
+              {/* Bottom Action CTA */}
+              <div style={{ paddingTop: "6px", borderTop: "1px solid #E2E8F0", marginTop: "auto", flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={handleCopyI4cReport}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    width: "100%",
+                    padding: "6px 10px",
+                    borderRadius: "5px",
+                    border: "none",
+                    background: isCopied ? "#059669" : "#4F46E5",
+                    color: "#FFFFFF",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
+                    transition: "background 0.15s ease",
+                  }}
+                >
+                  {isCopied ? <Check size={12} /> : <FileText size={12} />}
+                  <span>{isCopied ? "Report Copied to Clipboard" : "📋 Copy Inter-State Syndicate Report (I4C Format)"}</span>
+                </button>
+              </div>
             </div>
           </SectionCard>
         </div>
