@@ -8,6 +8,9 @@ import {
   Check,
   Info,
   Dna,
+  Calendar,
+  Layers,
+  Activity,
 } from "lucide-react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { toast } from "sonner";
@@ -16,7 +19,6 @@ import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
-import { ScaleBar } from "../kit";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -149,8 +151,6 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   const driftSec = isForgedRrn ? 3000 : 14.0;
   const isWithinTolerance = Math.abs(driftSec) <= 180;
 
-
-
   const handleDigitChange = (index: number, char: string) => {
     const val = char.slice(-1).toUpperCase();
     if (!/^[0-9A-Z]$/.test(val) && val !== "") return;
@@ -179,6 +179,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         minWidth: 0,
         boxSizing: "border-box",
         overflow: "hidden",
+        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.03)",
       }}
     >
       <Tabs.Root
@@ -192,7 +193,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         }}
       >
         {/* =====================================================================
-            TAB BAR (EQUAL WIDTH, NOWRAP, 44PX)
+            TAB BAR (EXECUTIVE SEGMENTED CONTROLS, 44PX)
             ===================================================================== */}
         <Tabs.List
           style={{
@@ -203,132 +204,188 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             gridTemplateColumns: "repeat(5, 1fr)",
             borderBottom: "1px solid #E2E8F0",
             background: "#F8FAFC",
+            padding: "4px 6px",
+            gap: "4px",
             boxSizing: "border-box",
             flexShrink: 0,
           }}
         >
+          {/* TAB 1: RRN */}
           <Tabs.Trigger
             value="rrn"
             style={{
-              border: "none",
-              borderBottom: activeDockTab === "rrn" ? "2px solid #4F46E5" : "2px solid transparent",
+              border: activeDockTab === "rrn" ? "1px solid #CBD5E1" : "1px solid transparent",
+              borderRadius: "6px",
               background: activeDockTab === "rrn" ? "#FFFFFF" : "transparent",
-              color: activeDockTab === "rrn" ? "#09090B" : "#64748B",
-              fontWeight: activeDockTab === "rrn" ? 700 : 500,
+              color: activeDockTab === "rrn" ? "#0F172A" : "#64748B",
+              fontWeight: activeDockTab === "rrn" ? 800 : 600,
               fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "3px",
-              padding: "0 2px",
+              gap: "4px",
+              padding: "0 4px",
               whiteSpace: "nowrap",
+              boxShadow: activeDockTab === "rrn" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.15s ease",
             }}
           >
-            <Clock size={11} color={activeDockTab === "rrn" ? "#4F46E5" : "#64748B"} />
+            <Clock size={12} color={activeDockTab === "rrn" ? "#4F46E5" : "#64748B"} />
             <span>RRN</span>
           </Tabs.Trigger>
 
+          {/* TAB 2: PDF */}
           <Tabs.Trigger
             value="pdf"
             style={{
-              border: "none",
-              borderBottom: activeDockTab === "pdf" ? "2px solid #E11D48" : "2px solid transparent",
+              border: activeDockTab === "pdf" ? "1px solid #CBD5E1" : "1px solid transparent",
+              borderRadius: "6px",
               background: activeDockTab === "pdf" ? "#FFFFFF" : "transparent",
-              color: activeDockTab === "pdf" ? "#09090B" : "#64748B",
-              fontWeight: activeDockTab === "pdf" ? 700 : 500,
+              color: activeDockTab === "pdf" ? "#0F172A" : "#64748B",
+              fontWeight: activeDockTab === "pdf" ? 800 : 600,
               fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "3px",
-              padding: "0 2px",
+              padding: "0 3px",
               whiteSpace: "nowrap",
+              boxShadow: activeDockTab === "pdf" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.15s ease",
             }}
           >
-            <FileText size={11} color={activeDockTab === "pdf" ? "#E11D48" : "#64748B"} />
+            <FileText size={12} color={activeDockTab === "pdf" ? "#BE123C" : "#64748B"} />
             <span>PDF</span>
-            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FFE4E6", color: "#BE123C", padding: "0.5px 3px", borderRadius: "3px" }}>
+            <span
+              style={{
+                fontSize: "7.5px",
+                fontWeight: 800,
+                background: "#FFE4E6",
+                color: "#BE123C",
+                padding: "1px 4px",
+                borderRadius: "3px",
+              }}
+            >
               2 %%EOF
             </span>
           </Tabs.Trigger>
 
+          {/* TAB 3: PRIVACY */}
           <Tabs.Trigger
             value="privacy"
             style={{
-              border: "none",
-              borderBottom: activeDockTab === "privacy" ? "2px solid #059669" : "2px solid transparent",
+              border: activeDockTab === "privacy" ? "1px solid #CBD5E1" : "1px solid transparent",
+              borderRadius: "6px",
               background: activeDockTab === "privacy" ? "#FFFFFF" : "transparent",
-              color: activeDockTab === "privacy" ? "#09090B" : "#64748B",
-              fontWeight: activeDockTab === "privacy" ? 700 : 500,
+              color: activeDockTab === "privacy" ? "#0F172A" : "#64748B",
+              fontWeight: activeDockTab === "privacy" ? 800 : 600,
               fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "3px",
-              padding: "0 2px",
+              padding: "0 3px",
               whiteSpace: "nowrap",
+              boxShadow: activeDockTab === "privacy" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.15s ease",
             }}
           >
-            <ShieldCheck size={11} color={activeDockTab === "privacy" ? "#059669" : "#64748B"} />
+            <ShieldCheck size={12} color={activeDockTab === "privacy" ? "#059669" : "#64748B"} />
             <span>Privacy</span>
-            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "0.5px 3px", borderRadius: "3px" }}>
+            <span
+              style={{
+                fontSize: "7.5px",
+                fontWeight: 800,
+                background: "#EEF2FF",
+                color: "#4338CA",
+                padding: "1px 4px",
+                borderRadius: "3px",
+              }}
+            >
               9.9k
             </span>
           </Tabs.Trigger>
 
+          {/* TAB 4: PROOF */}
           <Tabs.Trigger
             value="proof"
             style={{
-              border: "none",
-              borderBottom: activeDockTab === "proof" ? "2px solid #7C3AED" : "2px solid transparent",
+              border: activeDockTab === "proof" ? "1px solid #CBD5E1" : "1px solid transparent",
+              borderRadius: "6px",
               background: activeDockTab === "proof" ? "#FFFFFF" : "transparent",
-              color: activeDockTab === "proof" ? "#09090B" : "#64748B",
-              fontWeight: activeDockTab === "proof" ? 700 : 500,
+              color: activeDockTab === "proof" ? "#0F172A" : "#64748B",
+              fontWeight: activeDockTab === "proof" ? 800 : 600,
               fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "3px",
-              padding: "0 2px",
+              padding: "0 3px",
               whiteSpace: "nowrap",
+              boxShadow: activeDockTab === "proof" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.15s ease",
             }}
           >
-            <CheckCircle2 size={11} color={activeDockTab === "proof" ? "#7C3AED" : "#64748B"} />
+            <CheckCircle2 size={12} color={activeDockTab === "proof" ? "#7C3AED" : "#64748B"} />
             <span>Proof</span>
+            <span
+              style={{
+                fontSize: "7.5px",
+                fontWeight: 800,
+                background: "#F5F3FF",
+                color: "#7C3AED",
+                padding: "1px 4px",
+                borderRadius: "3px",
+              }}
+            >
+              Z3
+            </span>
           </Tabs.Trigger>
 
+          {/* TAB 5: ENTITIES */}
           <Tabs.Trigger
             value="entities"
             style={{
-              border: "none",
-              borderBottom: activeDockTab === "entities" ? "2px solid #0D9488" : "2px solid transparent",
+              border: activeDockTab === "entities" ? "1px solid #CBD5E1" : "1px solid transparent",
+              borderRadius: "6px",
               background: activeDockTab === "entities" ? "#FFFFFF" : "transparent",
-              color: activeDockTab === "entities" ? "#09090B" : "#64748B",
-              fontWeight: activeDockTab === "entities" ? 700 : 500,
+              color: activeDockTab === "entities" ? "#0F172A" : "#64748B",
+              fontWeight: activeDockTab === "entities" ? 800 : 600,
               fontSize: "10.5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "3px",
-              padding: "0 2px",
+              padding: "0 3px",
               whiteSpace: "nowrap",
+              boxShadow: activeDockTab === "entities" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              transition: "all 0.15s ease",
             }}
           >
-            <Dna size={11} color={activeDockTab === "entities" ? "#0D9488" : "#64748B"} />
+            <Dna size={12} color={activeDockTab === "entities" ? "#0D9488" : "#64748B"} />
             <span>Entities</span>
-            <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#CCFBF1", color: "#0F766E", padding: "0.5px 3px", borderRadius: "3px" }}>
+            <span
+              style={{
+                fontSize: "7.5px",
+                fontWeight: 800,
+                background: "#CCFBF1",
+                color: "#0F766E",
+                padding: "1px 4px",
+                borderRadius: "3px",
+              }}
+            >
               18→5
             </span>
           </Tabs.Trigger>
         </Tabs.List>
 
         {/* =====================================================================
-            TAB 1: RRN FORENSIC LAB
+            TAB 1: RRN FORENSIC LAB & PACKET DISSECTOR
             ===================================================================== */}
         <Tabs.Content
           value="rrn"
@@ -336,7 +393,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "14px 16px",
+            padding: "12px 14px",
             display: activeDockTab === "rrn" ? "flex" : "none",
             flexDirection: "column",
             gap: "10px",
@@ -344,7 +401,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
         >
           {/* Header Controls: Rail Toggle + Grammar Select */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
-            <div style={{ display: "flex", background: "#F1F5F9", borderRadius: "4px", padding: "1px" }}>
+            <div style={{ display: "flex", background: "#F1F5F9", borderRadius: "5px", padding: "2px" }}>
               {(["UPI", "NEFT", "RTGS"] as const).map((r) => (
                 <button
                   key={r}
@@ -353,15 +410,16 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   style={{
                     border: "none",
                     background: selectedRail === r ? "#FFFFFF" : "transparent",
-                    color: selectedRail === r ? "#09090B" : "#64748B",
-                    fontWeight: selectedRail === r ? 700 : 500,
-                    fontSize: "9px",
-                    padding: "2px 6px",
-                    borderRadius: "3px",
+                    color: selectedRail === r ? "#0F172A" : "#64748B",
+                    fontWeight: selectedRail === r ? 800 : 500,
+                    fontSize: "9.5px",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
                     cursor: "pointer",
+                    boxShadow: selectedRail === r ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                   }}
                 >
-                  {r === "UPI" ? "UPI/IMPS" : r}
+                  {r === "UPI" ? "UPI / IMPS" : r}
                 </button>
               ))}
             </div>
@@ -370,15 +428,15 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               <span
                 style={{
                   fontSize: "9px",
-                  fontWeight: 700,
-                  padding: "2px 6px",
+                  fontWeight: 800,
+                  padding: "2px 7px",
                   borderRadius: "4px",
                   background: decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "#ECFDF5" : "#FFF1F2",
                   color: decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "#047857" : "#BE123C",
                   border: `1px solid ${decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "#A7F3D0" : "#FECDD3"}`,
                 }}
               >
-                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "Integrity checks pass" : "FLAGGED"}
+                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "ADMISSIBLE EVIDENCE ✓" : "FLAGGED SKEW ✗"}
               </span>
 
               <select
@@ -403,24 +461,41 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
           </div>
 
-          {/* Segmented InputOTP (12 Cells with min-w-[22px] max-w-[34px] to guarantee no overflow) */}
+          {/* Modern 12-Digit NPCI Protocol Packet Dissector */}
           <div
             style={{
               background: "#F8FAFC",
               border: "1px solid #E2E8F0",
               borderRadius: "8px",
-              padding: "6px 4px 4px 4px",
+              padding: "8px 10px",
               display: "flex",
               flexDirection: "column",
-              gap: "3px",
+              gap: "6px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%" }}>
-              {/* Year */}
+            {/* Structural Segment Labels */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 3fr 2fr 6fr", gap: "4px", textAlign: "center" }}>
+              <div style={{ fontSize: "8px", fontWeight: 800, color: "#4338CA", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Year (1D)
+              </div>
+              <div style={{ fontSize: "8px", fontWeight: 800, color: "#047857", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Julian Day (3D)
+              </div>
+              <div style={{ fontSize: "8px", fontWeight: 800, color: "#B45309", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Hour (2D)
+              </div>
+              <div style={{ fontSize: "8px", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Switch STAN (6D)
+              </div>
+            </div>
+
+            {/* Input Cells */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 3fr 2fr 6fr", gap: "4px" }}>
+              {/* Year Segment */}
               <div
                 onMouseEnter={() => setHoveredDigitSegment("year")}
                 onMouseLeave={() => setHoveredDigitSegment(null)}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flex: "1 1 0", minWidth: "22px", maxWidth: "34px" }}
+                style={{ display: "flex", justifyContent: "center" }}
               >
                 <input
                   type="text"
@@ -430,254 +505,317 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   aria-label="RRN Year digit"
                   style={{
                     width: "100%",
-                    height: "30px",
+                    height: "32px",
                     textAlign: "center",
                     fontFamily: "var(--font-mono)",
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 800,
                     color: "#4338CA",
-                    background: "#FFFFFF",
+                    background: "#EEF2FF",
                     border: "1.5px solid #C7D2FE",
-                    borderRadius: "4px",
+                    borderRadius: "5px",
                     outline: "none",
                   }}
                 />
-                <span style={{ fontSize: "7.5px", fontFamily: "var(--font-mono)", color: "#64748B", fontWeight: 700 }}>
-                  Y
-                </span>
               </div>
 
-              {/* Julian Day (3 digits) */}
+              {/* Julian Day Segment (3 digits) */}
               <div
                 onMouseEnter={() => setHoveredDigitSegment("day")}
                 onMouseLeave={() => setHoveredDigitSegment(null)}
-                style={{ display: "flex", gap: "2px", flex: "3 1 0" }}
+                style={{ display: "flex", gap: "2px" }}
               >
                 {[1, 2, 3].map((idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flex: "1 1 0", minWidth: "22px", maxWidth: "34px" }}>
-                    <input
-                      type="text"
-                      maxLength={1}
-                      value={digits[idx]}
-                      onChange={(e) => handleDigitChange(idx, e.target.value)}
-                      aria-label={`RRN Julian day digit ${idx}`}
-                      style={{
-                        width: "100%",
-                        height: "30px",
-                        textAlign: "center",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "13px",
-                        fontWeight: 800,
-                        color: isJulianValid ? "#047857" : "#BE123C",
-                        background: "#FFFFFF",
-                        border: `1.5px solid ${isJulianValid ? "#A7F3D0" : "#FECDD3"}`,
-                        borderRadius: "4px",
-                        outline: "none",
-                      }}
-                    />
-                    <span style={{ fontSize: "7.5px", fontFamily: "var(--font-mono)", color: "#64748B", fontWeight: 700 }}>
-                      {idx === 2 ? "DDD" : "·"}
-                    </span>
-                  </div>
+                  <input
+                    key={idx}
+                    type="text"
+                    maxLength={1}
+                    value={digits[idx]}
+                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    aria-label={`RRN Julian day digit ${idx}`}
+                    style={{
+                      width: "100%",
+                      height: "32px",
+                      textAlign: "center",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      color: isJulianValid ? "#047857" : "#BE123C",
+                      background: "#ECFDF5",
+                      border: `1.5px solid ${isJulianValid ? "#A7F3D0" : "#FECDD3"}`,
+                      borderRadius: "5px",
+                      outline: "none",
+                    }}
+                  />
                 ))}
               </div>
 
-              {/* Hour (2 digits) */}
+              {/* Hour Segment (2 digits) */}
               <div
                 onMouseEnter={() => setHoveredDigitSegment("hour")}
                 onMouseLeave={() => setHoveredDigitSegment(null)}
-                style={{ display: "flex", gap: "2px", flex: "2 1 0" }}
+                style={{ display: "flex", gap: "2px" }}
               >
                 {[4, 5].map((idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flex: "1 1 0", minWidth: "22px", maxWidth: "34px" }}>
-                    <input
-                      type="text"
-                      maxLength={1}
-                      value={digits[idx]}
-                      onChange={(e) => handleDigitChange(idx, e.target.value)}
-                      aria-label={`RRN Hour digit ${idx - 3}`}
-                      style={{
-                        width: "100%",
-                        height: "30px",
-                        textAlign: "center",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "13px",
-                        fontWeight: 800,
-                        color: isHourValid ? "#B45309" : "#BE123C",
-                        background: "#FFFFFF",
-                        border: `1.5px solid ${isHourValid ? "#FDE68A" : "#FECDD3"}`,
-                        borderRadius: "4px",
-                        outline: "none",
-                      }}
-                    />
-                    <span style={{ fontSize: "7.5px", fontFamily: "var(--font-mono)", color: "#64748B", fontWeight: 700 }}>
-                      {idx === 4 ? "HH" : "·"}
-                    </span>
-                  </div>
+                  <input
+                    key={idx}
+                    type="text"
+                    maxLength={1}
+                    value={digits[idx]}
+                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    aria-label={`RRN Hour digit ${idx - 3}`}
+                    style={{
+                      width: "100%",
+                      height: "32px",
+                      textAlign: "center",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      color: isHourValid ? "#B45309" : "#BE123C",
+                      background: "#FFFBEB",
+                      border: `1.5px solid ${isHourValid ? "#FDE68A" : "#FECDD3"}`,
+                      borderRadius: "5px",
+                      outline: "none",
+                    }}
+                  />
                 ))}
               </div>
 
-              {/* STAN (6 digits) */}
+              {/* STAN Segment (6 digits) */}
               <div
                 onMouseEnter={() => setHoveredDigitSegment("stan")}
                 onMouseLeave={() => setHoveredDigitSegment(null)}
-                style={{ display: "flex", gap: "2px", flex: "6 1 0" }}
+                style={{ display: "flex", gap: "2px" }}
               >
                 {[6, 7, 8, 9, 10, 11].map((idx) => (
-                  <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flex: "1 1 0", minWidth: "20px", maxWidth: "32px" }}>
-                    <input
-                      type="text"
-                      maxLength={1}
-                      value={digits[idx]}
-                      onChange={(e) => handleDigitChange(idx, e.target.value)}
-                      aria-label={`RRN STAN digit ${idx - 5}`}
-                      style={{
-                        width: "100%",
-                        height: "30px",
-                        textAlign: "center",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#0F172A",
-                        background: "#FFFFFF",
-                        border: "1.5px solid #CBD5E1",
-                        borderRadius: "4px",
-                        outline: "none",
-                      }}
-                    />
-                    <span style={{ fontSize: "7.5px", fontFamily: "var(--font-mono)", color: "#64748B", fontWeight: 700 }}>
-                      {idx === 8 ? "STAN" : "·"}
-                    </span>
-                  </div>
+                  <input
+                    key={idx}
+                    type="text"
+                    maxLength={1}
+                    value={digits[idx]}
+                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    aria-label={`RRN STAN digit ${idx - 5}`}
+                    style={{
+                      width: "100%",
+                      height: "32px",
+                      textAlign: "center",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#0F172A",
+                      background: "#FFFFFF",
+                      border: "1.5px solid #CBD5E1",
+                      borderRadius: "5px",
+                      outline: "none",
+                    }}
+                  />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* 4-Row Anatomy List */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px", border: "1px solid #E2E8F0", borderRadius: "6px", overflow: "hidden" }}>
-            {/* Row 1: Date */}
+          {/* 4-Tile Telemetry Grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+            {/* Tile 1: Julian Day */}
             <div
               onMouseEnter={() => setHoveredDigitSegment("day")}
               onMouseLeave={() => setHoveredDigitSegment(null)}
               style={{
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 8px",
-                background: hoveredDigitSegment === "day" || hoveredDigitSegment === "year" ? "#F1F5F9" : "#FFFFFF",
-                fontSize: "11px",
-                borderBottom: "1px solid #F1F5F9",
+                background: hoveredDigitSegment === "day" ? "#F1F5F9" : "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                transition: "all 0.15s ease",
               }}
             >
-              <span style={{ color: "#475569", fontWeight: 600 }}>Julian Day:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "#0F172A" }}>
-                {isJulianValid ? `Day 265 → 22 Sep ${fullYear}` : "Invalid"}
-              </span>
-              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
-                Match
-              </span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "9px", color: "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "3px" }}>
+                  <Calendar size={10} color="#047857" />
+                  <span>Julian Day</span>
+                </span>
+                <span style={{ fontSize: "8px", fontWeight: 800, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+                  MATCH ✓
+                </span>
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>
+                Day 265 → 22 Sep {fullYear}
+              </div>
             </div>
 
-            {/* Row 2: Hour */}
+            {/* Tile 2: Switch Hour */}
             <div
               onMouseEnter={() => setHoveredDigitSegment("hour")}
               onMouseLeave={() => setHoveredDigitSegment(null)}
               style={{
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 8px",
                 background: hoveredDigitSegment === "hour" ? "#F1F5F9" : "#FFFFFF",
-                fontSize: "11px",
-                borderBottom: "1px solid #F1F5F9",
+                border: "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                transition: "all 0.15s ease",
               }}
             >
-              <span style={{ color: "#475569", fontWeight: 600 }}>Switch Hour:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "#0F172A" }}>
-                {hourDigits}:00 IST Window
-              </span>
-              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#B45309", background: "#FEF3C7", padding: "1px 5px", borderRadius: "3px" }}>
-                Advisory
-              </span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "9px", color: "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "3px" }}>
+                  <Clock size={10} color="#B45309" />
+                  <span>Switch Hour Window</span>
+                </span>
+                <span style={{ fontSize: "8px", fontWeight: 800, color: "#B45309", background: "#FEF3C7", padding: "1px 4px", borderRadius: "3px" }}>
+                  IN BOUNDS ✓
+                </span>
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>
+                {hourDigits}:00 – {hourDigits}:59 IST
+              </div>
             </div>
 
-            {/* Row 3: STAN */}
+            {/* Tile 3: Switch STAN */}
             <div
               onMouseEnter={() => setHoveredDigitSegment("stan")}
               onMouseLeave={() => setHoveredDigitSegment(null)}
               style={{
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 8px",
                 background: hoveredDigitSegment === "stan" ? "#F1F5F9" : "#FFFFFF",
-                fontSize: "11px",
-                borderBottom: "1px solid #F1F5F9",
+                border: "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                transition: "all 0.15s ease",
               }}
             >
-              <span style={{ color: "#475569", fontWeight: 600 }}>Switch STAN:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "#0F172A" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "9px", color: "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "3px" }}>
+                  <Layers size={10} color="#4338CA" />
+                  <span>NPCI Switch STAN</span>
+                </span>
+                <span style={{ fontSize: "8px", fontWeight: 800, color: "#4338CA", background: "#EEF2FF", padding: "1px 4px", borderRadius: "3px" }}>
+                  AUDIT TRACE ✓
+                </span>
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>
                 #{stanDigits}
-              </span>
-              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#4338CA", background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px" }}>
-                Traceable
-              </span>
+              </div>
             </div>
 
-            {/* Row 4: NTP Drift */}
+            {/* Tile 4: NTP Clock Drift */}
             <div
               style={{
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0 8px",
                 background: "#FFFFFF",
-                fontSize: "11px",
+                border: `1px solid ${isWithinTolerance ? "#E2E8F0" : "#FECDD3"}`,
+                borderRadius: "6px",
+                padding: "6px 8px",
               }}
             >
-              <span style={{ color: "#475569", fontWeight: 600 }}>NTP Drift:</span>
-              <span style={{ fontFamily: "var(--font-mono)", color: "#0F172A" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "9px", color: "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "3px" }}>
+                  <Activity size={10} color={isWithinTolerance ? "#059669" : "#E11D48"} />
+                  <span>NTP Clock Drift</span>
+                </span>
+                <span
+                  style={{
+                    fontSize: "8px",
+                    fontWeight: 800,
+                    color: isWithinTolerance ? "#047857" : "#BE123C",
+                    background: isWithinTolerance ? "#ECFDF5" : "#FFE4E6",
+                    padding: "1px 4px",
+                    borderRadius: "3px",
+                  }}
+                >
+                  {isWithinTolerance ? "IN SPEC (±180s) ✓" : "SKEW BREACH ✗"}
+                </span>
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  color: isWithinTolerance ? "#0F172A" : "#BE123C",
+                  marginTop: "2px",
+                }}
+              >
                 Δ {driftSec > 0 ? `+${driftSec}` : driftSec}s (CBS ↔ Switch)
+              </div>
+            </div>
+          </div>
+
+          {/* Precision NTP Vernier Caliper Scale */}
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "8px",
+              padding: "8px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>
+                CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync
               </span>
               <span
                 style={{
                   fontSize: "8.5px",
-                  fontWeight: 700,
+                  fontWeight: 800,
+                  fontFamily: "var(--font-mono)",
                   color: isWithinTolerance ? "#047857" : "#BE123C",
                   background: isWithinTolerance ? "#ECFDF5" : "#FFE4E6",
-                  padding: "1px 5px",
+                  padding: "1px 6px",
                   borderRadius: "3px",
                 }}
               >
-                {isWithinTolerance ? "In spec" : "Skew ✗"}
+                {isWithinTolerance ? "ADMISSIBLE BOUND: [−180s, +180s]" : "OUT OF BOUNDS: > 180s"}
               </span>
+            </div>
+
+            {/* SVG Vernier Caliper Ruler */}
+            <div style={{ position: "relative", width: "100%", height: "36px" }}>
+              <svg width="100%" height="36" style={{ overflow: "visible" }}>
+                {/* Background Track */}
+                <rect x="0" y="10" width="100%" height="16" rx="4" fill="#F1F5F9" />
+                
+                {/* Admissible Band (Green Corridor) */}
+                <rect x="15%" y="10" width="70%" height="16" rx="2" fill="#D1FAE5" opacity="0.8" />
+                
+                {/* Center Zero Tick */}
+                <line x1="50%" y1="6" x2="50%" y2="30" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="2 2" />
+                
+                {/* Boundary Marks (-180s, +180s) */}
+                <line x1="15%" y1="8" x2="15%" y2="28" stroke="#059669" strokeWidth="1.5" />
+                <line x1="85%" y1="8" x2="85%" y2="28" stroke="#059669" strokeWidth="1.5" />
+
+                {/* Needle Indicator */}
+                {/* Calculate position: center is 50%, range [-240, +240] mapped to [0%, 100%] */}
+                {(() => {
+                  const clamped = Math.max(-240, Math.min(240, driftSec));
+                  const pct = 50 + (clamped / 240) * 35;
+                  const needleColor = isWithinTolerance ? "#059669" : "#E11D48";
+                  return (
+                    <g transform={`translate(${pct}%, 0)`}>
+                      <line x1="0" y1="4" x2="0" y2="32" stroke={needleColor} strokeWidth="2.5" />
+                      <circle cx="0" cy="18" r="4" fill="#FFFFFF" stroke={needleColor} strokeWidth="2" />
+                    </g>
+                  );
+                })()}
+              </svg>
+
+              {/* Numeric Ruler Labels */}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", fontFamily: "var(--font-mono)", color: "#64748B", marginTop: "-4px" }}>
+                <span>-240s</span>
+                <span style={{ color: "#047857", fontWeight: 700 }}>-180s</span>
+                <span>0s</span>
+                <span style={{ color: "#047857", fontWeight: 700 }}>+180s</span>
+                <span>+240s</span>
+              </div>
+            </div>
+
+            {/* Readout */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "9.5px", color: "#475569" }}>
+              <span>Measured Drift: <strong style={{ color: isWithinTolerance ? "#047857" : "#BE123C", fontFamily: "var(--font-mono)" }}>Δ = {driftSec > 0 ? "+" : ""}{driftSec}.0s</strong></span>
+              <span style={{ fontSize: "8.5px", color: "#64748B" }}>Stratum-2 Atomic Precision</span>
             </div>
           </div>
 
-          {/* Non-Overlapping Precision Clock-Drift ScaleBar */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-            <ScaleBar
-              labelAbove="CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync"
-              min={-180}
-              max={180}
-              value={isForgedRrn ? 180 : driftSec}
-              unit="s"
-              toleranceBand={{
-                from: -180,
-                to: 180,
-                label: "ADMISSIBLE BOUND (±180s)",
-              }}
-              valueBelow={`Δ = ${driftSec > 0 ? "+" : ""}${driftSec}.0s (Stratum-2 Sync)`}
-            />
-          </div>
-
-          {/* Presets (Wrap-safe, Single/Multi Line) */}
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px", paddingTop: "2px" }}>
+          {/* Interactive Preset Buttons */}
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "5px" }}>
             <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B" }}>Presets:</span>
             <button
               type="button"
@@ -685,56 +823,91 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 onResetRrn();
                 if (isForgedRrn) onToggleForgeRrn();
               }}
-              style={{ padding: "2px 6px", fontSize: "9.5px", fontWeight: 600, borderRadius: "4px", border: "1px solid #A7F3D0", background: "#ECFDF5", color: "#047857", cursor: "pointer" }}
+              style={{
+                padding: "3px 8px",
+                fontSize: "9.5px",
+                fontWeight: 600,
+                borderRadius: "4px",
+                border: "1px solid #A7F3D0",
+                background: "#ECFDF5",
+                color: "#047857",
+                cursor: "pointer",
+              }}
             >
               Authentic (+14s)
             </button>
             <button
               type="button"
               onClick={() => onRrnChange("626410149921")}
-              style={{ padding: "2px 6px", fontSize: "9.5px", fontWeight: 600, borderRadius: "4px", border: "1px solid #FECDD3", background: "#FFF1F2", color: "#BE123C", cursor: "pointer" }}
+              style={{
+                padding: "3px 8px",
+                fontSize: "9.5px",
+                fontWeight: 600,
+                borderRadius: "4px",
+                border: "1px solid #FECDD3",
+                background: "#FFF1F2",
+                color: "#BE123C",
+                cursor: "pointer",
+              }}
             >
               Day shifted (-1d)
             </button>
             <button
               type="button"
               onClick={onToggleForgeRrn}
-              style={{ padding: "2px 6px", fontSize: "9.5px", fontWeight: 600, borderRadius: "4px", border: "1px solid #FDE68A", background: "#FFFBEB", color: "#B45309", cursor: "pointer" }}
+              style={{
+                padding: "3px 8px",
+                fontSize: "9.5px",
+                fontWeight: 600,
+                borderRadius: "4px",
+                border: isForgedRrn ? "1.5px solid #E11D48" : "1px solid #FDE68A",
+                background: isForgedRrn ? "#FFF1F2" : "#FFFBEB",
+                color: isForgedRrn ? "#BE123C" : "#B45309",
+                cursor: "pointer",
+              }}
             >
               {isForgedRrn ? "Reset Skew" : "Hour mismatch (+50m)"}
             </button>
             <button
               type="button"
               onClick={() => onRrnChange("626600001001")}
-              style={{ padding: "2px 6px", fontSize: "9.5px", fontWeight: 600, borderRadius: "4px", border: "1px solid #E2E8F0", background: "#F8FAFC", color: "#475569", cursor: "pointer" }}
+              style={{
+                padding: "3px 8px",
+                fontSize: "9.5px",
+                fontWeight: 600,
+                borderRadius: "4px",
+                border: "1px solid #E2E8F0",
+                background: "#F8FAFC",
+                color: "#475569",
+                cursor: "pointer",
+              }}
             >
               Midnight rollover
             </button>
           </div>
 
-          {/* NPCI Switch Admissibility Telemetry Card */}
+          {/* NPCI Switch Telemetry HSM Stamp */}
           <div
             style={{
               background: "#F8FAFC",
               border: "1px solid #E2E8F0",
-              borderRadius: "6px",
-              padding: "8px 10px",
+              borderRadius: "8px",
+              padding: "10px 12px",
               display: "flex",
               flexDirection: "column",
               gap: "6px",
-              marginTop: "2px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A" }}>
                 NPCI Switch Telemetry & Audit Trail
               </span>
               <span
                 style={{
                   fontSize: "8.5px",
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontFamily: "var(--font-mono)",
-                  padding: "1px 5px",
+                  padding: "1px 6px",
                   borderRadius: "3px",
                   background: isWithinTolerance ? "#ECFDF5" : "#FFF1F2",
                   color: isWithinTolerance ? "#047857" : "#BE123C",
@@ -746,26 +919,26 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "10px" }}>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>Gateway Route</div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>Gateway Route</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
                   NPCI-UPI-GW-MUM-02
                 </div>
               </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>Settlement Window</div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>Settlement Window</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
                   Cycle 04 (10:00–10:15 IST)
                 </div>
               </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>Cipher Suite</div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>Cipher Suite</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
                   ECDSA P-256 / SHA-256
                 </div>
               </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>STAN Collision Check</div>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>STAN Collision Check</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
                   0 Collisions in 24h ✓
                 </div>
@@ -774,13 +947,13 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
             <div
               style={{
-                fontSize: "9.5px",
+                fontSize: "9px",
                 color: "#475569",
                 background: "#FFFFFF",
                 border: "1px solid #E2E8F0",
                 borderRadius: "4px",
-                padding: "4px 6px",
-                lineHeight: 1.3,
+                padding: "5px 8px",
+                lineHeight: 1.35,
               }}
             >
               <strong style={{ color: "#0F172A" }}>Section 63(4) BSA Note: </strong>
@@ -798,7 +971,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "14px 16px",
+            padding: "12px 14px",
             display: activeDockTab === "pdf" ? "flex" : "none",
             flexDirection: "column",
             gap: "10px",
@@ -808,10 +981,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px", color: "#64748B", marginBottom: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontWeight: 700, color: "#0F172A" }}>victim_upi_receipt.pdf (84.2 KB)</span>
+                <span style={{ fontWeight: 800, color: "#0F172A" }}>victim_upi_receipt.pdf (84.2 KB)</span>
                 <span style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>0x00000..0x15080</span>
               </div>
-              <span style={{ color: "#BE123C", fontWeight: 800, background: "#FFF1F2", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "3px" }}>
+              <span style={{ color: "#BE123C", fontWeight: 800, background: "#FFF1F2", border: "1px solid #FECDD3", padding: "1px 6px", borderRadius: "3px" }}>
                 WARN: 2 %%EOF TRAILERS
               </span>
             </div>
@@ -834,7 +1007,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
 
           {/* View Toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "inline-flex", background: "#F1F5F9", borderRadius: "4px", padding: "1px" }}>
+            <div style={{ display: "inline-flex", background: "#F1F5F9", borderRadius: "4px", padding: "2px" }}>
               {(["rev1", "rev2", "diff"] as const).map((m) => (
                 <button
                   key={m}
@@ -843,15 +1016,15 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   style={{
                     border: "none",
                     background: pdfViewMode === m ? "#FFFFFF" : "transparent",
-                    color: pdfViewMode === m ? "#09090B" : "#64748B",
-                    fontWeight: pdfViewMode === m ? 700 : 500,
+                    color: pdfViewMode === m ? "#0F172A" : "#64748B",
+                    fontWeight: pdfViewMode === m ? 800 : 500,
                     fontSize: "9.5px",
-                    padding: "2px 7px",
+                    padding: "2px 8px",
                     borderRadius: "3px",
                     cursor: "pointer",
                   }}
                 >
-                  {m === "rev1" ? "Rev 1" : m === "rev2" ? "Rev 2" : "Diff"}
+                  {m === "rev1" ? "Rev 1" : m === "rev2" ? "Rev 2" : "Diff View"}
                 </button>
               ))}
             </div>
@@ -894,7 +1067,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
           </div>
 
-          {/* Light Slate Token Strip */}
+          {/* Token Strip */}
           <div style={{ padding: "5px 8px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "5px", fontFamily: "var(--font-mono)", fontSize: "10px" }}>
               <span style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", color: "#047857", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
@@ -924,13 +1097,13 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </button>
           </div>
 
-          {/* Verdict Row */}
-          <div style={{ padding: "6px 10px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "6px", fontSize: "10px", color: "#92400E" }}>
+          {/* Quarantine Verdict Box */}
+          <div style={{ padding: "8px 10px", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "6px", fontSize: "10px", color: "#92400E" }}>
             <strong>Quarantine Verdict: </strong>
-            Receipt quarantined (Tier-3) → excluded from attribution; proceeding with Tier-1 bank evidence (Gate I4).
+            Receipt quarantined (Tier-3 Canva edit) → excluded from attribution; proceeding with Tier-1 Core Banking evidence (Falsification Gate I4).
           </div>
 
-          {/* Dual-Stream Byte-Level Forensic Details */}
+          {/* Dual-Stream Hashes */}
           <div
             style={{
               background: "#F8FAFC",
@@ -943,7 +1116,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>
                 Cryptographic Revision Hashes (SHA-256)
               </span>
               <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#BE123C", background: "#FFE4E6", padding: "1px 5px", borderRadius: "3px" }}>
@@ -973,7 +1146,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </div>
             </div>
 
-            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "5px 8px" }}>
               <strong style={{ color: "#0F172A" }}>Forensic Finding: </strong>
               The claimant PDF file contains 2 distinct %%EOF trailers. Canva added an updated xref table modifying the visual text layer from ₹2,15,000 to ₹15,000 while leaving the underlying stream intact.
             </div>
@@ -989,48 +1162,48 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "14px 16px",
+            padding: "12px 14px",
             display: activeDockTab === "privacy" ? "flex" : "none",
             flexDirection: "column",
             gap: "10px",
           }}
         >
           {/* HiDPI Canvas Blinding Matrix */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", marginBottom: "3px" }}>
-              <span>DoT Clause 39.20 IPDR Matrix (10,000 Citizens)</span>
-              <span style={{ color: "#4338CA", fontWeight: 700 }}>4 Suspect Ports Revealed</span>
+          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#64748B", marginBottom: "4px" }}>
+              <span style={{ fontWeight: 700, color: "#0F172A" }}>DoT Clause 39.20 IPDR Matrix (10,000 Citizens)</span>
+              <span style={{ color: "#4338CA", fontWeight: 800 }}>4 Suspect Ports Revealed</span>
             </div>
             <canvas ref={canvasRef} style={{ width: "100%", height: "48px", borderRadius: "4px", background: "#FFFFFF", border: "1px solid #E2E8F0", display: "block" }} />
           </div>
 
           {/* Stat Trio */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", textAlign: "center" }}>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "4px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
               <div style={{ fontSize: "9px", color: "#64748B" }}>Masked Citizens</div>
-              <div style={{ fontSize: "12px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)" }}>9,996 (99.96%)</div>
+              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#047857", fontFamily: "var(--font-mono)", marginTop: "2px" }}>9,996 (99.96%)</div>
             </div>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "4px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
               <div style={{ fontSize: "9px", color: "#64748B" }}>Revealed Ports</div>
-              <div style={{ fontSize: "12px", fontWeight: 800, color: "#4338CA", fontFamily: "var(--font-mono)" }}>4 Suspects</div>
+              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#4338CA", fontFamily: "var(--font-mono)", marginTop: "2px" }}>4 Suspects</div>
             </div>
-            <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "4px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 4px" }}>
               <div style={{ fontSize: "9px", color: "#64748B" }}>DoT Exposure</div>
-              <div style={{ fontSize: "12px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)" }}>0.04% Safe ✓</div>
+              <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", marginTop: "2px" }}>0.04% Safe ✓</div>
             </div>
           </div>
 
-          {/* Merkle Proof Tree with WebCrypto */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {/* Merkle Proof Tree */}
+          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px", display: "flex", flexDirection: "column", gap: "6px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>
                 Merkle Tree Root (SHA-256)
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                 <span
                   style={{
                     fontSize: "8.5px",
-                    fontWeight: 700,
+                    fontWeight: 800,
                     padding: "1px 5px",
                     borderRadius: "3px",
                     background: merkleVerified ? "#ECFDF5" : "#FFF1F2",
@@ -1045,10 +1218,10 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   type="button"
                   onClick={() => setIsSiblingTampered((p) => !p)}
                   style={{
-                    padding: "1px 4px",
+                    padding: "2px 6px",
                     fontSize: "8.5px",
                     fontWeight: 600,
-                    borderRadius: "3px",
+                    borderRadius: "4px",
                     border: isSiblingTampered ? "1px solid #FECDD3" : "1px solid #CBD5E1",
                     background: isSiblingTampered ? "#FFF1F2" : "#FFFFFF",
                     color: isSiblingTampered ? "#BE123C" : "#64748B",
@@ -1060,7 +1233,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "2px 6px", borderRadius: "4px", fontFamily: "var(--font-mono)", fontSize: "9.5px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "4px 8px", borderRadius: "5px", fontFamily: "var(--font-mono)", fontSize: "9.5px" }}>
               <span>{isSiblingTampered ? tamperedMerkleRoot : fullMerkleRoot}</span>
               <button
                 type="button"
@@ -1071,7 +1244,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 }}
                 style={{ border: "none", background: "transparent", cursor: "pointer", color: "#64748B" }}
               >
-                {copiedRoot ? <Check size={10} color="#059669" /> : <Copy size={10} />}
+                {copiedRoot ? <Check size={11} color="#059669" /> : <Copy size={11} />}
               </button>
             </div>
 
@@ -1080,9 +1253,9 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               disabled={isVerifyingPath}
               onClick={handleVerifyPath}
               style={{
-                marginTop: "4px",
-                height: "24px",
-                borderRadius: "4px",
+                marginTop: "2px",
+                height: "26px",
+                borderRadius: "5px",
                 border: "1px solid #C7D2FE",
                 background: "#EEF2FF",
                 color: "#4338CA",
@@ -1100,7 +1273,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             style={{
               background: "#F8FAFC",
               border: "1px solid #E2E8F0",
-              borderRadius: "6px",
+              borderRadius: "8px",
               padding: "8px 10px",
               display: "flex",
               flexDirection: "column",
@@ -1108,30 +1281,30 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>
                 DoT Clause 39.20 Safe Harbor Compliance
               </span>
-              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
+              <span style={{ fontSize: "8.5px", fontWeight: 800, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
                 AIR-GAP ATTESTED
               </span>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "10px" }}>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>Citizen Masking Rate</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>Citizen Masking Rate</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, color: "#047857", marginTop: "1px" }}>
                   99.96% (9,996 / 10,000)
                 </div>
               </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-                <div style={{ color: "#64748B", fontSize: "9px" }}>Target Disclosures</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#4338CA", marginTop: "1px" }}>
+              <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 8px" }}>
+                <div style={{ color: "#64748B", fontSize: "8.5px" }}>Target Disclosures</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4338CA", marginTop: "1px" }}>
                   4 Allocated Ports Only
                 </div>
               </div>
             </div>
 
-            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+            <div style={{ fontSize: "9px", color: "#475569", lineHeight: 1.35, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "5px 8px" }}>
               <strong style={{ color: "#0F172A" }}>Judicial Privacy Guarantee: </strong>
               Zero innocent citizen communications or identities are exposed to IOs or court record, complying with High Court privacy mandates and DoT IPDR rules.
             </div>
@@ -1147,14 +1320,14 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "14px 16px",
+            padding: "12px 14px",
             display: activeDockTab === "proof" ? "flex" : "none",
             flexDirection: "column",
             gap: "10px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: "#09090B" }}>
+            <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A" }}>
               Z3 Mathematical Invariant Solvers (I1–I5)
             </span>
             <button
@@ -1163,7 +1336,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               style={{
                 fontSize: "10px",
                 fontWeight: 600,
-                padding: "2px 6px",
+                padding: "3px 8px",
                 borderRadius: "4px",
                 border: "1px solid #E2E8F0",
                 background: "#FFFFFF",
@@ -1250,7 +1423,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   style={{
                     fontSize: "8px",
                     fontWeight: 700,
-                    padding: "1px 4px",
+                    padding: "1px 5px",
                     borderRadius: "3px",
                     background: item.severity === "BLOCKING" ? "#FFE4E6" : "#FEF3C7",
                     color: item.severity === "BLOCKING" ? "#BE123C" : "#92400E",
@@ -1264,7 +1437,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                 {item.formula}
               </div>
 
-              <div style={{ fontSize: "9.5px", color: item.passed ? "#047857" : "#BE123C", fontWeight: 600, marginTop: "2px" }}>
+              <div style={{ fontSize: "9.5px", color: item.passed ? "#047857" : "#BE123C", fontWeight: 700, marginTop: "2px" }}>
                 {item.observed}
               </div>
 
@@ -1274,9 +1447,9 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                     type="button"
                     onClick={item.onBreak}
                     style={{
-                      padding: "2px 6px",
+                      padding: "2px 7px",
                       fontSize: "9px",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       borderRadius: "3px",
                       border: "1px solid #CBD5E1",
                       background: "#FFFFFF",
@@ -1296,24 +1469,23 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             style={{
               background: "#F8FAFC",
               border: "1px solid #E2E8F0",
-              borderRadius: "6px",
-              padding: "8px 10px",
+              borderRadius: "8px",
+              padding: "10px 12px",
               display: "flex",
               flexDirection: "column",
               gap: "6px",
-              marginTop: "2px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
+              <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A" }}>
                 Z3 SMT Invariant Solver Verification
               </span>
               <span
                 style={{
                   fontSize: "8.5px",
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontFamily: "var(--font-mono)",
-                  padding: "1px 5px",
+                  padding: "1px 6px",
                   borderRadius: "3px",
                   background: isRow14Tampered || isForgedRrn ? "#FFF1F2" : "#ECFDF5",
                   color: isRow14Tampered || isForgedRrn ? "#BE123C" : "#047857",
@@ -1324,7 +1496,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               </span>
             </div>
 
-            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+            <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "5px 8px" }}>
               <strong style={{ color: "#0F172A" }}>Judicial Order Direction: </strong>
               {isRow14Tampered
                 ? "Falsification gate has halted downstream attribution engines. Row #14 contains an unsat mathematical deficit of ₹2,00,000.00."
@@ -1342,8 +1514,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             flex: 1,
             minHeight: 0,
             overflowY: "auto",
-            padding: "14px 16px",
-            display: "flex",
+            padding: "12px 14px",
+            display: activeDockTab === "entities" ? "flex" : "none",
             flexDirection: "column",
             gap: "10px",
           }}
@@ -1353,24 +1525,24 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             style={{
               background: "#F0FDFA",
               border: "1px solid #99F6E4",
-              borderRadius: "7px",
-              padding: "7px 10px",
+              borderRadius: "8px",
+              padding: "8px 10px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
             <div>
-              <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F766E", display: "flex", alignItems: "center", gap: "5px" }}>
+              <div style={{ fontSize: "11.5px", fontWeight: 800, color: "#0F766E", display: "flex", alignItems: "center", gap: "5px" }}>
                 <Dna size={13} color="#0D9488" />
                 <span>Deterministic Entity Extraction & Resolution Matrix</span>
               </div>
               <div style={{ fontSize: "8.5px", color: "#115E59", marginTop: "1px" }}>
-                18 noisy raw identifiers extracted across 4 evidence files &rarr; Resolved into 5 Canonical Entities with Hard Veto logic.
+                18 noisy raw identifiers extracted across 4 evidence files → Resolved into 5 Canonical Entities with Hard Veto logic.
               </div>
             </div>
             <span style={{ fontSize: "9px", fontWeight: 800, background: "#CCFBF1", color: "#0F766E", padding: "1.5px 6px", borderRadius: "4px" }}>
-              18 &rarr; 5 ENTITIES
+              18 → 5 ENTITIES
             </span>
           </div>
 
@@ -1382,21 +1554,21 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: "#FFFFFF",
               border: hoveredEntity === "ENT-01" ? "1.5px solid #4F46E5" : "1px solid #E2E8F0",
               borderRadius: "7px",
-              padding: "7px 9px",
+              padding: "8px 10px",
               boxShadow: hoveredEntity === "ENT-01" ? "0 0 0 3px rgba(79, 70, 229, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: hoveredEntity === "ENT-01" ? "#4338CA" : "#0F172A" }}>
-                ENT-01 &middot; Sunil Kumar (Victim Origin)
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: hoveredEntity === "ENT-01" ? "#4338CA" : "#0F172A" }}>
+                ENT-01 · Sunil Kumar (Victim Origin)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 5px", borderRadius: "3px" }}>
                 VICTIM COMPLAINANT
               </span>
             </div>
-            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : undefined }}>30910029101</code> &middot; MSISDN <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : undefined }}>+91-9810044210</code> &middot; Handset Video Call Screenshot (Verified PII).
+            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "3px", lineHeight: 1.35 }}>
+              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>30910029101</code> · MSISDN <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>+91-9810044210</code> · Handset Video Call Screenshot (Verified PII).
             </div>
           </div>
 
@@ -1408,25 +1580,25 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: "#FFFFFF",
               border: hoveredEntity === "ENT-02" ? "1.5px solid #E11D48" : "1px solid #FECDD3",
               borderRadius: "7px",
-              padding: "7px 9px",
+              padding: "8px 10px",
               boxShadow: hoveredEntity === "ENT-02" ? "0 0 0 3px rgba(225, 29, 72, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#BE123C" }}>
-                ENT-02 &middot; Vikram Shah (Layer-1 Conduit)
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#BE123C" }}>
+                ENT-02 · Vikram Shah (Layer-1 Conduit)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "3px" }}>
                 L1 CONDUIT MULE
               </span>
             </div>
-            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C", background: hoveredEntity === "ENT-02" ? "#FFE4E6" : undefined }}>VIKRAM_MULE</code> &middot; VPA: <code style={{ color: "#BE123C" }}>vikram.pay@okaxis</code> &middot; MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> &middot; IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
+            <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "3px", lineHeight: 1.35 }}>
+              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>VIKRAM_MULE</code> · VPA: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>vikram.pay@okaxis</code> · MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> · IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
             </div>
           </div>
 
-          {/* Entity 3 & 4: Rohit Verma & Sameer Khan (Cross-Actor Syndicate Link) */}
+          {/* Entity 3 & 4: Rohit Verma & Sameer Khan */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-03")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1434,25 +1606,25 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: "#FFFBEB",
               border: hoveredEntity === "ENT-03" ? "1.5px solid #D97706" : "1px solid #FDE68A",
               borderRadius: "7px",
-              padding: "7px 9px",
+              padding: "8px 10px",
               boxShadow: hoveredEntity === "ENT-03" ? "0 0 0 3px rgba(217, 119, 6, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400E" }}>
-                ENT-03 &amp; ENT-04 &middot; Rohit Verma (L2A) &amp; Sameer Khan (L2B)
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#92400E" }}>
+                ENT-03 &amp; ENT-04 · Rohit Verma (L2A) &amp; Sameer Khan (L2B)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", border: "1px solid #FCD34D", padding: "1px 5px", borderRadius: "3px" }}>
                 CROSS-ACTOR SYNDICATE HIT
               </span>
             </div>
-            <div style={{ fontSize: "8.5px", color: "#78350F", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Syndicate Linkage Alert:</strong> Different KYC names &amp; accounts (HDFC <code style={{ color: "#92400E" }}>5010029419920</code> &amp; AXIS <code style={{ color: "#92400E" }}>9140200410291</code>), but linked via identical <strong>JA4 TLS Fingerprint (t13d1516h2_8daaf6)</strong> and shared <strong>Wi-Fi Hotspot BSSID (74:DA:38:A2:11:BC)</strong>.
+            <div style={{ fontSize: "8.5px", color: "#78350F", marginTop: "3px", lineHeight: 1.35 }}>
+              <strong>Syndicate Linkage Alert:</strong> Different KYC names &amp; accounts (HDFC <code style={{ color: "#92400E", background: "#FEF3C7", padding: "0 2px" }}>5010029419920</code> &amp; AXIS <code style={{ color: "#92400E", background: "#FEF3C7", padding: "0 2px" }}>9140200410291</code>), but linked via identical <strong>JA4 TLS Fingerprint (t13d1516h2_8daaf6)</strong> and shared <strong>Wi-Fi Hotspot BSSID (74:DA:38:A2:11:BC)</strong>.
             </div>
           </div>
 
-          {/* Entity 5: Apex Electronics (Bona-Fide Hard Veto) */}
+          {/* Entity 5: Apex Electronics (Hard Veto) */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-05")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1460,21 +1632,21 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               background: "#F0FDF4",
               border: hoveredEntity === "ENT-05" ? "1.5px solid #16A34A" : "1px solid #BBF7D0",
               borderRadius: "7px",
-              padding: "7px 9px",
+              padding: "8px 10px",
               boxShadow: hoveredEntity === "ENT-05" ? "0 0 0 3px rgba(22, 163, 74, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#166534" }}>
-                ENT-05 &middot; Apex Electronics Pvt Ltd (Bona-Fide Merchant)
+              <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#166534" }}>
+                ENT-05 · Apex Electronics Pvt Ltd (Bona-Fide Merchant)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#DCFCE7", color: "#15803D", border: "1px solid #86EFAC", padding: "1px 5px", borderRadius: "3px" }}>
-                &check; HARD VETO PROTECTION
+                ✓ HARD VETO PROTECTION
               </span>
             </div>
-            <div style={{ fontSize: "8.5px", color: "#14532D", marginTop: "2px", lineHeight: 1.35 }}>
-              <strong>Hard Veto Applied:</strong> Received ₹1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
+            <div style={{ fontSize: "8.5px", color: "#14532D", marginTop: "3px", lineHeight: 1.35 }}>
+              <strong>Hard Veto Applied:</strong> Received ₹1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534", background: "#DCFCE7", padding: "0 2px" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
             </div>
           </div>
 
@@ -1483,7 +1655,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             type="button"
             onClick={() => {
               navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
-              toast.success("Copied § 94 BNSS KYC/CAF Requisition to clipboard!", {
+              toast.success("Copied §94 BNSS KYC/CAF Requisition to clipboard!", {
                 description: "Statutory order for 5 resolved targets served to SBI, HDFC, Axis, ICICI and Airtel.",
                 duration: 3500,
               });
@@ -1492,8 +1664,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "5px",
-              padding: "6px 10px",
+              gap: "6px",
+              padding: "7px 12px",
               borderRadius: "6px",
               border: "1px solid #0D9488",
               background: "#0D9488",
@@ -1506,7 +1678,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             }}
           >
             <Copy size={11} />
-            <span>&copy; Copy &sect;94 BNSS Cross-Bank KYC/CAF Resolution Directive</span>
+            <span>Copy §94 BNSS Cross-Bank KYC/CAF Resolution Directive</span>
           </button>
         </Tabs.Content>
       </Tabs.Root>

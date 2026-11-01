@@ -6,7 +6,6 @@ import {
   Check,
   RotateCcw,
   ExternalLink,
-  AlertCircle,
   FileSpreadsheet,
   Shield,
   ChevronRight,
@@ -17,6 +16,9 @@ import {
   MoreHorizontal,
   Split,
   FileText,
+  Clock,
+  ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { type LedgerRowData } from "../../../utils/intakeFalsifier";
@@ -79,7 +81,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
 
   const row14Ref = useRef<HTMLTableRowElement | null>(null);
 
-  // Auto-scroll row 14 into view on short viewports if tampered
+  // Auto-scroll row 14 into view if tampered
   useEffect(() => {
     if (isRow14Tampered && row14Ref.current) {
       row14Ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -127,7 +129,15 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
     }
   };
 
-  const rowHeight = density === "compact" ? 36 : 42;
+  const rowHeight = density === "compact" ? 34 : 38;
+
+  // Double-entry calculation
+  const openingBal = 615890.0;
+  const totalCredits = 125000.0;
+  const totalDebits = 232650.0;
+  const expectedClosing = openingBal + totalCredits - totalDebits; // 508,240.00
+  const actualClosing = isRow14Tampered ? 308240.0 : 508240.0;
+  const residual = actualClosing - expectedClosing; // 0 or -200,000
 
   return (
     <div
@@ -137,7 +147,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
         background: "#FFFFFF",
         border: "1px solid #E2E8F0",
         borderRadius: "10px",
-        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.03)",
         display: "flex",
         flexDirection: "column",
         height: "100%",
@@ -148,14 +158,14 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       }}
     >
       {/* =========================================================================
-          TOOLBAR (SINGLE ROW, 44PX)
+          TOOLBAR (44PX)
           ========================================================================= */}
       <div
         style={{
           height: "44px",
           minHeight: "44px",
           maxHeight: "44px",
-          padding: "0 10px",
+          padding: "0 12px",
           borderBottom: "1px solid #E2E8F0",
           background: "#FFFFFF",
           display: "flex",
@@ -167,53 +177,79 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           boxSizing: "border-box",
         }}
       >
-        {/* Left: Title + Tier Badge + Filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            <FileSpreadsheet size={15} color="#059669" />
-            <span style={{ fontSize: "13px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em" }}>
-              SBI Core Banking Ledger
-            </span>
-            <span
+        {/* Left: Title + Provenance Badges + Quick Filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <div
               style={{
-                fontSize: "9px",
-                fontWeight: 700,
-                color: "#047857",
+                width: "24px",
+                height: "24px",
+                borderRadius: "5px",
                 background: "#ECFDF5",
                 border: "1px solid #A7F3D0",
-                padding: "1px 5px",
-                borderRadius: "3px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              Tier-1 HSM
-            </span>
+              <FileSpreadsheet size={13} color="#059669" />
+            </div>
+            <div>
+              <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>
+                SBI Core Banking Ledger
+              </span>
+              <span
+                style={{
+                  marginLeft: "6px",
+                  fontSize: "8.5px",
+                  fontWeight: 700,
+                  color: "#047857",
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  padding: "1px 5px",
+                  borderRadius: "3px",
+                  verticalAlign: "middle",
+                }}
+              >
+                Tier-1 HSM Certified
+              </span>
+            </div>
           </div>
 
-          {/* Quick Filter */}
-          <div style={{ position: "relative", width: "160px", flexShrink: 1 }}>
+          {/* Sleek Search Input */}
+          <div style={{ position: "relative", width: "170px", flexShrink: 1 }}>
             <Search
               size={11}
               color="#94A3B8"
-              style={{ position: "absolute", left: "6px", top: "50%", transform: "translateY(-50%)" }}
+              style={{ position: "absolute", left: "7px", top: "50%", transform: "translateY(-50%)" }}
             />
             <input
               ref={searchInputRef}
               type="text"
               aria-label="Filter ledger rows by UTR, narration, or RRN"
-              placeholder="Filter UTR... (/)"
+              placeholder="Filter UTR, RRN... (/)"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               style={{
                 width: "100%",
-                height: "24px",
-                padding: "0 18px 0 20px",
+                height: "26px",
+                padding: "0 22px 0 24px",
                 fontSize: "11px",
-                borderRadius: "4px",
+                borderRadius: "5px",
                 border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
+                background: "#F8FAFC",
                 color: "#0F172A",
                 outline: "none",
                 boxSizing: "border-box",
+                transition: "border-color 0.15s ease, background 0.15s ease",
+              }}
+              onFocus={(e) => {
+                e.target.style.background = "#FFFFFF";
+                e.target.style.borderColor = "#4F46E5";
+              }}
+              onBlur={(e) => {
+                e.target.style.background = "#F8FAFC";
+                e.target.style.borderColor = "#CBD5E1";
               }}
             />
             {searchTerm ? (
@@ -222,14 +258,14 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 onClick={() => onSearchChange("")}
                 style={{
                   position: "absolute",
-                  right: "4px",
+                  right: "6px",
                   top: "50%",
                   transform: "translateY(-50%)",
                   border: "none",
                   background: "transparent",
                   color: "#64748B",
                   cursor: "pointer",
-                  fontSize: "11px",
+                  fontSize: "12px",
                 }}
                 title="Clear filter (Esc)"
               >
@@ -239,13 +275,18 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               <span
                 style={{
                   position: "absolute",
-                  right: "5px",
+                  right: "6px",
                   top: "50%",
                   transform: "translateY(-50%)",
-                  fontSize: "8.5px",
+                  fontSize: "9px",
                   fontFamily: "var(--font-mono)",
                   color: "#94A3B8",
                   pointerEvents: "none",
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "2px",
+                  padding: "0 3px",
+                  lineHeight: "14px",
                 }}
               >
                 /
@@ -261,16 +302,17 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             type="button"
             onClick={onTogglePolarity}
             style={{
-              height: "24px",
-              padding: "0 7px",
-              borderRadius: "4px",
+              height: "26px",
+              padding: "0 8px",
+              borderRadius: "5px",
               border: "1px solid #CBD5E1",
-              background: "#F8FAFC",
+              background: "#FFFFFF",
               color: "#334155",
               fontSize: "10.5px",
               fontWeight: 700,
               fontFamily: "var(--font-mono)",
               cursor: "pointer",
+              transition: "all 0.15s ease",
             }}
             title="Toggle chronological sorting (ASC / DESC)"
           >
@@ -282,10 +324,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             type="button"
             onClick={onTogglePermute}
             style={{
-              height: "24px",
-              padding: "0 7px",
-              borderRadius: "4px",
-              border: permuteActive ? "1px solid #C7D2FE" : "1px solid #CBD5E1",
+              height: "26px",
+              padding: "0 8px",
+              borderRadius: "5px",
+              border: permuteActive ? "1px solid #818CF8" : "1px solid #CBD5E1",
               background: permuteActive ? "#EEF2FF" : "#FFFFFF",
               color: permuteActive ? "#4338CA" : "#475569",
               fontSize: "10.5px",
@@ -294,10 +336,12 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
+              boxShadow: permuteActive ? "0 0 0 2px rgba(99, 102, 241, 0.15)" : "none",
+              transition: "all 0.15s ease",
             }}
-            title="Permute same-second timestamps [P]"
+            title="Permute same-second timestamps to test topological conservation invariant [P]"
           >
-            <Split size={11} color={permuteActive ? "#4F46E5" : "#64748B"} />
+            <Split size={12} color={permuteActive ? "#4F46E5" : "#64748B"} />
             <span>Permute</span>
           </button>
 
@@ -306,38 +350,25 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             type="button"
             onClick={() => setTimeMode((m) => (m === "IST" ? "UTC" : "IST"))}
             style={{
-              height: "24px",
-              padding: "0 6px",
-              borderRadius: "4px",
+              height: "26px",
+              padding: "0 7px",
+              borderRadius: "5px",
               border: "1px solid #CBD5E1",
-              background: "#F8FAFC",
+              background: "#FFFFFF",
               color: "#0F172A",
               fontSize: "10px",
               fontFamily: "var(--font-mono)",
               fontWeight: 700,
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
             }}
             title="Toggle timestamp zone between IST (+5:30) and UTC (Z)"
           >
-            {timeMode}
+            <Clock size={10} color="#64748B" />
+            <span>{timeMode}</span>
           </button>
-
-          {/* Invariant Equation Chip */}
-          <span
-            style={{
-              fontSize: "9.5px",
-              fontWeight: 700,
-              fontFamily: "var(--font-mono)",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              background: isRow14Tampered ? "#FFF1F2" : "#ECFDF5",
-              color: isRow14Tampered ? "#BE123C" : "#047857",
-              border: `1px solid ${isRow14Tampered ? "#FECDD3" : "#A7F3D0"}`,
-            }}
-            title="Double-entry conservation invariant formula"
-          >
-            {isRow14Tampered ? "Bal[14] ≠ Exp (-₹2.00L) ✗" : "Bal[k] = Bal[k-1]+Cr-Dr ✓"}
-          </span>
 
           {/* More Menu ⋯ */}
           <Popover.Root open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
@@ -345,9 +376,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               <button
                 type="button"
                 style={{
-                  height: "24px",
-                  width: "24px",
-                  borderRadius: "4px",
+                  height: "26px",
+                  width: "26px",
+                  borderRadius: "5px",
                   border: "1px solid #CBD5E1",
                   background: "#FFFFFF",
                   color: "#64748B",
@@ -370,16 +401,21 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                   background: "#FFFFFF",
                   border: "1px solid #E2E8F0",
                   borderRadius: "8px",
-                  padding: "8px 10px",
-                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-                  width: "260px",
+                  padding: "10px 12px",
+                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)",
+                  width: "280px",
                   zIndex: 9999,
                   fontFamily: "var(--font-sans)",
                 }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px" }}>
-                  <div style={{ fontWeight: 700, color: "#09090B" }}>File Provenance</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#475569", background: "#F8FAFC", padding: "3px 6px", borderRadius: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "11px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>Evidence Chain of Custody</span>
+                    <span style={{ fontSize: "8.5px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
+                      TIER-1 CBS
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#334155", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "4px 8px", borderRadius: "4px" }}>
                     sbi_finacle_cbs.csv (6 rows)
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -393,14 +429,15 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                         cursor: "pointer",
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "3px",
-                        fontSize: "9.5px",
+                        gap: "4px",
+                        fontSize: "10px",
                         color: "#4338CA",
                         fontFamily: "var(--font-mono)",
+                        fontWeight: 600,
                       }}
                     >
-                      <span>sha256: 3f8a…e9b1</span>
-                      {copiedHash ? <Check size={10} color="#059669" /> : <Copy size={10} />}
+                      <span>3f8a…e9b1</span>
+                      {copiedHash ? <Check size={11} color="#059669" /> : <Copy size={11} />}
                     </button>
                   </div>
                 </div>
@@ -412,149 +449,149 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       </div>
 
       {/* =========================================================================
-          STREAMLINED DISCREPANCY & DIRECTIVE ACTION BAR (SINGLE ROW, 36PX)
+          HIGH-IMPACT FORENSIC DISCREPANCY SPOTLIGHT (38PX)
           ========================================================================= */}
       <div
         style={{
-          padding: "0 12px",
-          height: "36px",
-          minHeight: "36px",
-          maxHeight: "36px",
-          background: "rgba(255, 241, 242, 0.75)",
+          padding: "0 10px",
+          height: "38px",
+          minHeight: "38px",
+          maxHeight: "38px",
+          background: "linear-gradient(90deg, rgba(255,241,242,0.95) 0%, rgba(254,243,199,0.5) 45%, rgba(240,253,250,0.85) 100%)",
           borderBottom: "1px solid #FECDD3",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: "10px",
+          gap: "8px",
           fontSize: "11px",
           flexShrink: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* Left: Claim vs CBS Finacle values */}
+        {/* Left: Claimed vs Certified CBS Values */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, overflow: "hidden" }}>
-          <AlertCircle size={13} color="#E11D48" style={{ flexShrink: 0 }} />
-          <span style={{ color: "#475569", whiteSpace: "nowrap" }}>Claim:</span>
-          <strong style={{ color: "#BE123C", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-            ₹15,000.00
-          </strong>
-          <span
-            style={{
-              fontSize: "8.5px",
-              fontWeight: 700,
-              color: "#BE123C",
-              background: "#FFE4E6",
-              border: "1px solid #FECDD3",
-              padding: "0.5px 4px",
-              borderRadius: "3px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Tier-3 Canva
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+            <ShieldAlert size={13} color="#BE123C" />
+            <span style={{ color: "#64748B", fontWeight: 600, fontSize: "10px" }}>Claimed:</span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontWeight: 800,
+                color: "#BE123C",
+                fontSize: "11px",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              ₹15,000.00
+            </span>
+            <span
+              style={{
+                fontSize: "8px",
+                fontWeight: 800,
+                color: "#BE123C",
+                background: "#FFE4E6",
+                border: "1px solid #FECDD3",
+                padding: "0.5px 4px",
+                borderRadius: "3px",
+              }}
+            >
+              Canva
+            </span>
+          </div>
 
-          {/* Visual Suppression Bar */}
-          <div style={{ width: "130px", flexShrink: 0 }}>
+          {/* Visual Mini Suppression Bar */}
+          <div style={{ width: "80px", flexShrink: 0 }}>
             <StripeSegmentedBar
-              height={14}
+              height={11}
               showLabels={false}
               totalValue={215000}
               segments={[
-                { id: "claimed", label: "Canva Claim", value: 15000, color: "#10B981" },
-                { id: "suppressed", label: "Suppressed Deficit", value: 200000, isHatched: true, color: "crimson", tooltipText: "Finacle CBS Overwrite" },
+                { id: "claimed", label: "Claim", value: 15000, color: "#10B981" },
+                { id: "suppressed", label: "Deficit", value: 200000, isHatched: true, color: "crimson" },
               ]}
             />
           </div>
 
+          {/* Highlight Badge */}
           <span
             style={{
-              fontSize: "10px",
+              fontSize: "9px",
               fontWeight: 800,
-              color: "#BE123C",
+              color: "#9F1239",
               background: "#FFFFFF",
-              border: "1px solid #FECDD3",
-              padding: "0.5px 6px",
+              border: "1px solid #FDA4AF",
+              padding: "1px 6px",
               borderRadius: "4px",
               whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            ≠ Δ ₹2,00,000.00 Hidden Deficit (14.3×)
+            ≠ Δ ₹2.00L Deficit (14.3×)
           </span>
 
-          <span style={{ color: "#475569", whiteSpace: "nowrap" }}>Finacle CBS:</span>
-          <strong style={{ color: "#047857", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-            ₹2,15,000.00
-          </strong>
-          <button
-            type="button"
-            onClick={() => {
-              onSelectRrn("626510149921");
-              setActiveDockTab("rrn");
-            }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "2px",
-              fontSize: "9.5px",
-              fontFamily: "var(--font-mono)",
-              fontWeight: 700,
-              color: "#047857",
-              background: "#ECFDF5",
-              border: "1px solid #A7F3D0",
-              padding: "0.5px 5px",
-              borderRadius: "3px",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-            title="Inspect RRN in Forensic Lab"
-          >
-            <span>#626510149921</span>
-            <ExternalLink size={9} />
-          </button>
+          <ArrowRight size={10} color="#64748B" style={{ flexShrink: 0 }} />
+
+          {/* Finacle CBS Invariant */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+            <span style={{ color: "#64748B", fontWeight: 600, fontSize: "10px" }}>CBS Booked:</span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontWeight: 800,
+                color: "#047857",
+                fontSize: "11px",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              ₹2,15,000.00
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                onSelectRrn("626510149921");
+                setActiveDockTab("rrn");
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "2px",
+                fontSize: "9px",
+                fontFamily: "var(--font-mono)",
+                fontWeight: 700,
+                color: "#047857",
+                background: "#ECFDF5",
+                border: "1px solid #A7F3D0",
+                padding: "1px 5px",
+                borderRadius: "3px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+              title="Inspect UTR 626510149921 in RRN Dissector"
+            >
+              <span>#626510149921</span>
+              <ExternalLink size={8} />
+            </button>
+          </div>
         </div>
 
-        {/* Right: Naive IO vs TARKA View + Actionable §94 Directive Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          {/* Naive IO vs TARKA Invariant View Badge */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "9px",
-              background: "#FFFFFF",
-              border: "1px solid #CBD5E1",
-              borderRadius: "12px",
-              padding: "1px 8px",
-              color: "#334155",
-              whiteSpace: "nowrap",
-            }}
-            title="Contrast between manual inspection error and TARKA automated mathematical verification"
-          >
-            <span style={{ color: "#BE123C", fontWeight: 700 }}>Naive IO:</span>
-            <span>₹15,000</span>
-            <span style={{ color: "#4F46E5", fontWeight: 800 }}>⟶</span>
-            <span style={{ color: "#047857", fontWeight: 800 }}>TARKA Invariant:</span>
-            <span>₹2,15,000 Debit + Dual %%EOF</span>
-          </div>
-
-          {/* Actionable §94 BNSS Directive Copy Button */}
+        {/* Right: Copy §94 BNSS Order */}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
           <button
             type="button"
             onClick={() => {
               navigator.clipboard.writeText(getBnss94CbsDirective());
-              toast.success("Copied §94 BNSS CBS Verification Directive to clipboard!", {
-                description: "Statutory requisition for UTR 626510149921 with ₹2.00L delta & dual %%EOF offsets.",
+              toast.success("Copied §94 BNSS CBS Directive to clipboard", {
+                description: "Statutory requisition for UTR 626510149921 with ₹2.00L delta and dual %%EOF offsets.",
                 duration: 3500,
               });
             }}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "4px",
-              fontSize: "10px",
+              gap: "3px",
+              fontSize: "9.5px",
               fontWeight: 700,
-              padding: "2.5px 8px",
+              padding: "2.5px 7px",
               borderRadius: "4px",
               border: "1px solid #C7D2FE",
               background: "#EEF2FF",
@@ -562,16 +599,16 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               cursor: "pointer",
               whiteSpace: "nowrap",
             }}
-            title="Copy pre-filled statutory requisition to SBI Nodal Officer under Section 94 BNSS / Section 91 CrPC"
+            title="Copy pre-filled statutory requisition to SBI Nodal Officer under Section 94 BNSS"
           >
-            <FileText size={11} color="#4F46E5" />
-            <span>📋 Copy §94 BNSS Directive</span>
+            <FileText size={10} color="#4F46E5" />
+            <span>Copy §94 Order</span>
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          DATA GRID (TANSTACK / COLGROUP + CONTAINER QUERY VISIBILITY)
+          DATA GRID (TABLE)
           ========================================================================= */}
       <div
         style={{
@@ -595,11 +632,11 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             <col style={{ width: "40px" }} />
             <col style={{ width: "72px" }} />
             <col style={{ width: "auto" }} />
-            <col className="col-rrn-cquery" style={{ width: "136px" }} />
-            <col className="col-rail-cquery" style={{ width: "88px" }} />
-            <col style={{ width: "108px" }} />
-            <col style={{ width: "108px" }} />
-            <col style={{ width: "120px" }} />
+            <col className="col-rrn-cquery" style={{ width: "128px" }} />
+            <col className="col-rail-cquery" style={{ width: "84px" }} />
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "114px" }} />
             <col style={{ width: "32px" }} />
           </colgroup>
 
@@ -610,20 +647,22 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 borderBottom: "1px solid #E2E8F0",
                 color: "#64748B",
                 fontWeight: 700,
-                fontSize: "11px",
+                fontSize: "10px",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
               }}
             >
               <th style={{ padding: "2px 4px", textAlign: "center", fontFamily: "var(--font-mono)" }}>Row</th>
-              <th style={{ padding: "2px 4px", fontFamily: "var(--font-mono)" }}>Time</th>
-              <th style={{ padding: "2px 6px" }}>Counterparty & Narration</th>
+              <th style={{ padding: "2px 6px", fontFamily: "var(--font-mono)" }}>Time ({timeMode})</th>
+              <th style={{ padding: "2px 8px" }}>Counterparty & Narration</th>
               <th className="col-rrn-cquery" style={{ padding: "2px 6px", fontFamily: "var(--font-mono)" }}>
                 UTR / RRN
               </th>
-              <th className="col-rail-cquery" style={{ padding: "2px 4px" }}>Rail</th>
-              <th style={{ padding: "2px 6px", textAlign: "right" }}>Debit (₹)</th>
-              <th style={{ padding: "2px 6px", textAlign: "right" }}>Credit (₹)</th>
-              <th style={{ padding: "2px 6px", textAlign: "right" }}>Balance (₹)</th>
-              <th style={{ padding: "2px 2px", textAlign: "center" }}>Stat</th>
+              <th className="col-rail-cquery" style={{ padding: "2px 6px" }}>Rail</th>
+              <th style={{ padding: "2px 8px", textAlign: "right" }}>Debit (₹)</th>
+              <th style={{ padding: "2px 8px", textAlign: "right" }}>Credit (₹)</th>
+              <th style={{ padding: "2px 8px", textAlign: "right" }}>Balance (₹)</th>
+              <th style={{ padding: "2px 4px", textAlign: "center" }}>Stat</th>
             </tr>
           </thead>
 
@@ -634,13 +673,13 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               const isExpanded = !!expandedRows[row.sequenceNo];
               const rowHash = ROW_HASHES[row.sequenceNo] || "3f8a412e8b2c9d1109aa77f1b29c5e3170d496a7";
 
-              let rowBg = "transparent";
+              let rowBg = "#FFFFFF";
               let rowBorderLeft = "3px solid transparent";
               if (isUnsat) {
                 rowBg = "#FFF1F2";
                 rowBorderLeft = "3px solid #E11D48";
               } else if (isDisputed) {
-                rowBg = "rgba(254, 243, 199, 0.18)";
+                rowBg = "rgba(254, 243, 199, 0.22)";
                 rowBorderLeft = "3px solid #F59E0B";
               }
 
@@ -686,7 +725,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                     {/* Time */}
                     <td
                       style={{
-                        padding: "2px 4px",
+                        padding: "2px 6px",
                         fontFamily: "var(--font-mono)",
                         fontSize: "11px",
                         color: "#475569",
@@ -698,13 +737,13 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                     </td>
 
                     {/* Counterparty & Narration */}
-                    <td style={{ padding: "2px 6px", overflow: "hidden" }}>
+                    <td style={{ padding: "2px 8px", overflow: "hidden" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
                         <span
                           style={{
                             fontWeight: isDisputed ? 700 : 500,
-                            color: isDisputed ? "#09090B" : "#1E293B",
-                            fontSize: "12px",
+                            color: isDisputed ? "#0F172A" : "#334155",
+                            fontSize: "11.5px",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -718,16 +757,16 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                           <span
                             style={{
                               fontSize: "8.5px",
-                              fontWeight: 700,
+                              fontWeight: 800,
                               background: "#FEF3C7",
                               color: "#92400E",
                               border: "1px solid #FDE68A",
-                              padding: "0.5px 5px",
+                              padding: "1px 6px",
                               borderRadius: "3px",
                               whiteSpace: "nowrap",
                               flexShrink: 0,
                             }}
-                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah (Paired with Tranche 2 IMPS on Screen 3)"
+                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah"
                           >
                             Tranche 1 of ₹5.00L Outflow
                           </span>
@@ -756,7 +795,8 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                           style={{
                             border: "none",
                             background: "transparent",
-                            color: "#475569",
+                            color: isDisputed ? "#4338CA" : "#475569",
+                            fontWeight: isDisputed ? 700 : 500,
                             cursor: "pointer",
                             padding: 0,
                             fontFamily: "var(--font-mono)",
@@ -766,7 +806,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                           }}
                           title={`Inspect RRN ${row.rrn} in Dock`}
                           onMouseEnter={(e) => (e.currentTarget.style.color = "#4F46E5")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = isDisputed ? "#4338CA" : "#475569")}
                         >
                           {row.rrn}
                         </button>
@@ -776,13 +816,13 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                     </td>
 
                     {/* Rail Badge (88px) */}
-                    <td className="col-rail-cquery" style={{ padding: "2px 4px" }}>
+                    <td className="col-rail-cquery" style={{ padding: "2px 6px" }}>
                       <span
                         style={{
                           display: "inline-block",
                           fontSize: "9px",
                           fontWeight: 700,
-                          padding: "1px 5px",
+                          padding: "1px 6px",
                           borderRadius: "3px",
                           whiteSpace: "nowrap",
                           background:
@@ -828,16 +868,17 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                       </span>
                     </td>
 
-                    {/* Debit (108px) */}
+                    {/* Debit (112px) */}
                     <td
                       style={{
-                        padding: "2px 6px",
+                        padding: "2px 8px",
                         textAlign: "right",
-                        fontWeight: 700,
-                        fontSize: "12px",
-                        color: "#BE123C",
+                        fontWeight: row.debit > 0 ? 800 : 500,
+                        fontSize: "11.5px",
+                        color: row.debit > 0 ? "#BE123C" : "#94A3B8",
                         whiteSpace: "nowrap",
                         fontVariantNumeric: "tabular-nums",
+                        fontFamily: "var(--font-mono)",
                       }}
                     >
                       {row.debit > 0
@@ -845,16 +886,17 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                         : "—"}
                     </td>
 
-                    {/* Credit (108px) */}
+                    {/* Credit (112px) */}
                     <td
                       style={{
-                        padding: "2px 6px",
+                        padding: "2px 8px",
                         textAlign: "right",
-                        fontWeight: 700,
-                        fontSize: "12px",
-                        color: "#047857",
+                        fontWeight: row.credit > 0 ? 800 : 500,
+                        fontSize: "11.5px",
+                        color: row.credit > 0 ? "#047857" : "#94A3B8",
                         whiteSpace: "nowrap",
                         fontVariantNumeric: "tabular-nums",
+                        fontFamily: "var(--font-mono)",
                       }}
                     >
                       {row.credit > 0
@@ -862,18 +904,18 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                         : "—"}
                     </td>
 
-                    {/* Balance (120px) */}
+                    {/* Balance (124px) */}
                     <td
                       style={{
-                        padding: "2px 6px",
+                        padding: "2px 8px",
                         textAlign: "right",
                         whiteSpace: "nowrap",
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
                       {isDisputed ? (
-                        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: "2px" }}>
-                          <span style={{ color: "#94A3B8", fontSize: "11px" }}>₹</span>
+                        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: "3px" }}>
+                          <span style={{ color: "#64748B", fontSize: "11px", fontWeight: 700 }}>₹</span>
                           <input
                             type="text"
                             aria-label="Row #14 Closing Balance in Rupees"
@@ -884,20 +926,21 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                               if (e.key === "Enter") handleBalanceCommit();
                             }}
                             style={{
-                              width: "74px",
-                              height: "21px",
-                              padding: "1px 3px",
+                              width: "78px",
+                              height: "23px",
+                              padding: "1px 4px",
                               textAlign: "right",
-                              fontFamily: "var(--font-sans)",
+                              fontFamily: "var(--font-mono)",
                               fontSize: "11.5px",
-                              fontWeight: 700,
-                              borderRadius: "3px",
-                              border: isUnsat ? "1px solid #FECDD3" : "1px solid #F59E0B",
+                              fontWeight: 800,
+                              borderRadius: "4px",
+                              border: isUnsat ? "1.5px solid #E11D48" : "1.5px solid #F59E0B",
                               background: isUnsat ? "#FFF1F2" : "#FFFFFF",
-                              color: isUnsat ? "#BE123C" : "#09090B",
+                              color: isUnsat ? "#BE123C" : "#0F172A",
                               outline: "none",
                               boxSizing: "border-box",
                               fontVariantNumeric: "tabular-nums",
+                              boxShadow: isUnsat ? "0 0 0 2px rgba(225, 29, 72, 0.15)" : "none",
                             }}
                             title="Edit Row #14 closing balance to test mathematical falsification"
                           />
@@ -907,23 +950,25 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                             style={{
                               border: "none",
                               background: "transparent",
-                              color: "#94A3B8",
+                              color: "#64748B",
                               cursor: "pointer",
-                              padding: "1px",
+                              padding: "2px",
                               display: "flex",
                               alignItems: "center",
+                              borderRadius: "3px",
                             }}
-                            title="Reset to ₹5,22,440.00"
+                            title="Reset to genuine ₹5,22,440.00"
                           >
-                            <RotateCcw size={10} />
+                            <RotateCcw size={11} />
                           </button>
                         </div>
                       ) : (
                         <span
                           style={{
-                            fontWeight: 700,
-                            fontSize: "12px",
-                            color: isUnsat ? "#BE123C" : "#09090B",
+                            fontWeight: 800,
+                            fontSize: "11.5px",
+                            color: isUnsat ? "#BE123C" : "#0F172A",
+                            fontFamily: "var(--font-mono)",
                           }}
                         >
                           ₹{row.balance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -931,14 +976,14 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                       )}
                     </td>
 
-                    {/* Status (32px) */}
-                    <td style={{ padding: "2px 2px", textAlign: "center" }}>
+                    {/* Status (36px) */}
+                    <td style={{ padding: "2px 4px", textAlign: "center" }}>
                       <div
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          width: "28px",
+                          width: "26px",
                           height: "22px",
                           borderRadius: "4px",
                           background: isUnsat ? "#FFF1F2" : isDisputed ? "#FFFBEB" : "#ECFDF5",
@@ -983,7 +1028,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                   {/* Row Expansion Sub-Row */}
                   {isExpanded && (
                     <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
-                      <td colSpan={9} style={{ padding: "6px 10px" }}>
+                      <td colSpan={9} style={{ padding: "6px 12px" }}>
                         <div
                           style={{
                             display: "flex",
@@ -998,7 +1043,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                         >
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                              <span style={{ fontWeight: 700, color: "#475569" }}>Raw Record:</span>
+                              <span style={{ fontWeight: 700, color: "#475569" }}>Raw CBS Record:</span>
                               <code
                                 style={{
                                   fontFamily: "var(--font-mono)",
@@ -1062,13 +1107,13 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
-                                  gap: "3px",
+                                  gap: "4px",
                                   fontSize: "10.5px",
                                   fontWeight: 700,
                                   color: "#4338CA",
                                   background: "#EEF2FF",
                                   border: "1px solid #C7D2FE",
-                                  padding: "2px 7px",
+                                  padding: "2px 8px",
                                   borderRadius: "4px",
                                   cursor: "pointer",
                                 }}
@@ -1088,70 +1133,216 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           </tbody>
         </table>
 
-        {/* Ledger Conservation & Invariant Summary Box - 4-Bar Accounting Waterfall */}
+        {/* =========================================================================
+            CBS DOUBLE-ENTRY CONSERVATION SYNTHESIS WATERFALL CARD
+            ========================================================================= */}
         <div
           style={{
-            margin: "10px 10px 8px 10px",
+            margin: "10px 12px 10px 12px",
             background: "#F8FAFC",
             border: "1px solid #E2E8F0",
-            borderRadius: "6px",
-            padding: "8px 10px",
+            borderRadius: "8px",
+            padding: "10px 12px",
             display: "flex",
             flexDirection: "column",
-            gap: "6px",
+            gap: "8px",
+            boxShadow: "0 1px 2px rgba(15,23,42,0.03)",
           }}
         >
+          {/* Header Row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
-              Double-Entry Conservation Accounting Waterfall
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>
+                Double-Entry Balance Conservation Synthesis (SBI Finacle 10.x)
+              </span>
+              <span style={{ fontSize: "9px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
+                Account #30981140029
+              </span>
+            </div>
+
+            {/* LED Status Badge */}
             <span
               style={{
-                fontSize: "8.5px",
+                fontSize: "9px",
                 fontWeight: 800,
                 fontFamily: "var(--font-mono)",
-                padding: "1px 6px",
-                borderRadius: "3px",
-                background: isRow14Tampered ? "#FFF1F2" : "#ECFDF5",
-                color: isRow14Tampered ? "#BE123C" : "#047857",
-                border: `1px solid ${isRow14Tampered ? "#FECDD3" : "#A7F3D0"}`,
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background: residual === 0 ? "#ECFDF5" : "#FFF1F2",
+                color: residual === 0 ? "#047857" : "#BE123C",
+                border: `1px solid ${residual === 0 ? "#A7F3D0" : "#FECDD3"}`,
+                boxShadow: residual === 0 ? "0 0 0 2px rgba(16, 185, 129, 0.1)" : "0 0 0 2px rgba(225, 29, 72, 0.1)",
               }}
             >
-              {isRow14Tampered ? "Residual: -₹2,00,000.00 ✗" : "Residual: ₹0.00 ✓"}
+              {residual === 0 ? "CONSERVED: Δ = ₹0.00 ✓" : `UNSAT DEFICIT: Δ -₹${Math.abs(residual).toLocaleString("en-IN", { minimumFractionDigits: 2 })} ✗`}
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "8.5px" }}>Opening Balance</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#0F172A", marginTop: "1px" }}>
+          {/* Connected Algebraic Formula Waterfall */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr",
+              gap: "6px",
+              alignItems: "center",
+            }}
+          >
+            {/* 1. Opening Balance */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+              }}
+            >
+              <div style={{ color: "#64748B", fontSize: "9px", fontWeight: 600 }}>Opening Balance B/F</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#0F172A", marginTop: "2px" }}>
                 ₹6,15,890.00
               </div>
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid #BBF7D0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#166534", fontSize: "8.5px" }}>+ Total Credits (1)</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#15803D", marginTop: "1px" }}>
+
+            {/* + Connector */}
+            <div
+              style={{
+                width: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: 800,
+                color: "#475569",
+              }}
+            >
+              +
+            </div>
+
+            {/* 2. Total Credits */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #A7F3D0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                boxShadow: "0 1px 2px rgba(16, 185, 129, 0.05)",
+              }}
+            >
+              <div style={{ color: "#047857", fontSize: "9px", fontWeight: 700 }}>Total Credits (1)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#047857", marginTop: "2px" }}>
                 +₹1,25,000.00
               </div>
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid #FECDD3", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#991B1B", fontSize: "8.5px" }}>− Total Debits (5)</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#E11D48", marginTop: "1px" }}>
+
+            {/* − Connector */}
+            <div
+              style={{
+                width: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: 800,
+                color: "#475569",
+              }}
+            >
+              −
+            </div>
+
+            {/* 3. Total Debits */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #FECDD3",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                boxShadow: "0 1px 2px rgba(225, 29, 72, 0.05)",
+              }}
+            >
+              <div style={{ color: "#BE123C", fontSize: "9px", fontWeight: 700 }}>Total Debits (5)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#BE123C", marginTop: "2px" }}>
                 −₹2,32,650.00
               </div>
             </div>
-            <div style={{ background: "#FFFFFF", border: isRow14Tampered ? "1.5px solid #FECDD3" : "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "8.5px" }}>Closing Balance</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: isRow14Tampered ? "#BE123C" : "#0F172A", marginTop: "1px" }}>
-                ₹{customRow14Balance ? (parseFloat(customRow14Balance) - 14200).toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "5,08,240.00"}
+
+            {/* = Connector */}
+            <div
+              style={{
+                width: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: 800,
+                color: "#475569",
+              }}
+            >
+              =
+            </div>
+
+            {/* 4. Closing Balance */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                border: residual !== 0 ? "1.5px solid #E11D48" : "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 8px",
+                boxShadow: residual !== 0 ? "0 0 0 2px rgba(225, 29, 72, 0.15)" : "0 1px 2px rgba(0,0,0,0.02)",
+              }}
+            >
+              <div style={{ color: residual !== 0 ? "#BE123C" : "#64748B", fontSize: "9px", fontWeight: 600 }}>
+                {residual !== 0 ? "Tampered Closing" : "Reconciled Closing"}
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  color: residual !== 0 ? "#BE123C" : "#0F172A",
+                  marginTop: "2px",
+                }}
+              >
+                ₹{actualClosing.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: "9px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-            <strong style={{ color: "#0F172A" }}>Mathematical Proof: </strong>
-            Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>k ∈ [11..16]</code> satisfies <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>Bal[k] = Bal[k-1] + Cr[k] - Dr[k]</code>.
-            {isRow14Tampered && " Discrepancy detected at Sequence #14 (Vikram Mule account debit)."}
+          {/* Mathematical Invariant Statement */}
+          <div
+            style={{
+              fontSize: "9.5px",
+              color: "#475569",
+              lineHeight: 1.35,
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: "5px",
+              padding: "5px 8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <strong style={{ color: "#0F172A" }}>Mathematical Proof: </strong>
+              Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>k ∈ [11..16]</code> satisfies double-entry conservation invariant <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>Bal[k] = Bal[k-1] + Cr[k] − Dr[k]</code>.
+            </div>
+            {residual !== 0 && (
+              <span style={{ fontSize: "9px", fontWeight: 800, color: "#BE123C", background: "#FFE4E6", padding: "1px 6px", borderRadius: "3px", flexShrink: 0, marginLeft: "8px" }}>
+                BREACH AT SEQ #14
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1164,7 +1355,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           height: "28px",
           minHeight: "28px",
           maxHeight: "28px",
-          padding: "0 10px",
+          padding: "0 12px",
           background: "#F8FAFC",
           borderTop: "1px solid #E2E8F0",
           display: "flex",
@@ -1181,7 +1372,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           <span>Tier-1 HSM Conservation Verified · Cryptographic Chain of Custody</span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "9.5px", color: "#94A3B8" }}>
-          FINACLE-10-AUDIT
+          SBI-FINACLE-10.2-PROD
         </span>
       </div>
     </div>
