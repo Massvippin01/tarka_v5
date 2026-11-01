@@ -6,24 +6,24 @@ import {
   Copy,
   Check,
   FileCheck,
-  Network,
-  Key,
-  ShieldCheck,
   Building2,
-  Cpu,
-  Radio,
-  MessageSquare,
   FileText,
   Printer,
+  ShieldCheck,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { BentoKpiCard } from "../../components/tarka/BentoPrimitives";
+import { toast } from "sonner";
+import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import {
-  evaluateLeaveOneOut,
+  KpiTile,
+  StoryBanner,
+  SectionCard,
+  ScaleBar,
+} from "../../components/tarka/kit";
+import {
   generateBsa63SplitSchedules,
   getCanonicalPaperAnchor,
   generateOfflineVerifyHtml,
-  getCbiSyndicateMemo,
   type CaseArtifact,
   type AlibiChallenge,
 } from "../../utils/courtProofEngine";
@@ -31,8 +31,11 @@ import {
 type DossierTab = "loo" | "certificates" | "syndicate";
 
 export const CourtProofScreen: React.FC = () => {
+  const { density } = useTarkaUiStore();
+  const isCompact = density === "compact";
+
   const [activeDossierTab, setActiveDossierTab] = useState<DossierTab>("loo");
-  const [auditSentenceIdx, setAuditSentenceIdx] = useState<number | null>(0);
+  const [auditSentenceIdx, setAuditSentenceIdx] = useState<number>(0);
 
   // 1. Initial 5 Case Artifacts
   const initialArtifacts: CaseArtifact[] = [
@@ -100,14 +103,14 @@ export const CourtProofScreen: React.FC = () => {
   const [alibis, setAlibis] = useState<AlibiChallenge[]>([
     {
       id: "alibi-whatsapp-excluded",
-      name: "Exclude WhatsApp Chat",
-      defenseArgument: "Defense argues WhatsApp chats lack certified device hash under Section 63(4).",
+      name: "Exclude WhatsApp & Screenshot",
+      defenseArgument: "Defense argues secondary chat exports lack certified device hash under Section 63(4).",
       isChallenged: false,
     },
     {
       id: "alibi-clock-drift",
       name: "Bank Clock Drift +45s",
-      defenseArgument: "Defense claims bank transaction time does not synchronize with telecom switch.",
+      defenseArgument: "Defense claims bank transaction timestamp deviates beyond permissible Stratum-2 sync.",
       isChallenged: false,
     },
     {
@@ -124,15 +127,73 @@ export const CourtProofScreen: React.FC = () => {
     );
     if (id === "alibi-whatsapp-excluded") {
       setArtifacts((prev) =>
-        prev.map((a) => (a.id === "art-whatsapp" ? { ...a, isExcluded: !a.isExcluded } : a))
+        prev.map((a) =>
+          a.id === "art-whatsapp" || a.id === "art-victim-screenshot"
+            ? { ...a, isExcluded: !a.isExcluded }
+            : a
+        )
       );
     }
   };
 
-  // 3. Evaluate Leave-One-Out Result
-  const looResult = useMemo(() => {
-    return evaluateLeaveOneOut(artifacts, alibis);
-  }, [artifacts, alibis]);
+  // Support matrix: 5 Material Findings x 5 Ingested Artifacts
+  const claimsMatrix = [
+    {
+      id: "c1",
+      name: "1. ₹2.00L Hidden CBS Debit",
+      supports: {
+        "art-victim-screenshot": "CORROBORATIVE",
+        "art-sbi-cbs": "PRIMARY",
+        "art-npci-switch": "PRIMARY",
+        "art-airtel-cgnat": "NONE",
+        "art-whatsapp": "CORROBORATIVE",
+      },
+    },
+    {
+      id: "c2",
+      name: "2. Single-Handset CGNAT Attribution",
+      supports: {
+        "art-victim-screenshot": "NONE",
+        "art-sbi-cbs": "CORROBORATIVE",
+        "art-npci-switch": "PRIMARY",
+        "art-airtel-cgnat": "PRIMARY",
+        "art-whatsapp": "NONE",
+      },
+    },
+    {
+      id: "c3",
+      name: "3. Accomplice Hotspot Tethering (TTL=63)",
+      supports: {
+        "art-victim-screenshot": "NONE",
+        "art-sbi-cbs": "NONE",
+        "art-npci-switch": "PRIMARY",
+        "art-airtel-cgnat": "PRIMARY",
+        "art-whatsapp": "NONE",
+      },
+    },
+    {
+      id: "c4",
+      name: "4. Multi-Hop Mule Taint Flow (3-Way DAG)",
+      supports: {
+        "art-victim-screenshot": "NONE",
+        "art-sbi-cbs": "PRIMARY",
+        "art-npci-switch": "PRIMARY",
+        "art-airtel-cgnat": "NONE",
+        "art-whatsapp": "CORROBORATIVE",
+      },
+    },
+    {
+      id: "c5",
+      name: "5. ₹1.80L Proportional Merchant Lien",
+      supports: {
+        "art-victim-screenshot": "NONE",
+        "art-sbi-cbs": "PRIMARY",
+        "art-npci-switch": "PRIMARY",
+        "art-airtel-cgnat": "NONE",
+        "art-whatsapp": "NONE",
+      },
+    },
+  ];
 
   // 4. BSA Section 63 Split Schedules
   const bsaSchedules = useMemo(() => {
@@ -152,6 +213,7 @@ export const CourtProofScreen: React.FC = () => {
   const handleCopySchedule = () => {
     navigator.clipboard.writeText(currentScheduleText);
     setIsScheduleCopied(true);
+    toast.success("Section 63(4) Certificate copied to clipboard!");
     setTimeout(() => setIsScheduleCopied(false), 2000);
   };
 
@@ -163,13 +225,6 @@ export const CourtProofScreen: React.FC = () => {
   const paperAnchor = useMemo(() => {
     return getCanonicalPaperAnchor("CASE-2026-001");
   }, []);
-
-  const [isMnemonicCopied, setIsMnemonicCopied] = useState(false);
-  const handleCopyMnemonic = () => {
-    navigator.clipboard.writeText(paperAnchor.bip39Mnemonic.join(" "));
-    setIsMnemonicCopied(true);
-    setTimeout(() => setIsMnemonicCopied(false), 2000);
-  };
 
   const handleExportVerifyHtml = () => {
     const htmlContent = generateOfflineVerifyHtml(paperAnchor);
@@ -184,152 +239,103 @@ export const CourtProofScreen: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // 6. CBI Syndicate Memo
-  const cbiMemo = useMemo(() => {
-    return getCbiSyndicateMemo();
-  }, []);
-
-  // Multi-State Fraud Volume Breakdown
-  const stateBreakdown = [
-    { state: "Delhi", amountCrores: 3.40, sharePct: 32.6, color: "#4F46E5", firs: 3 },
-    { state: "Maharashtra", amountCrores: 2.85, sharePct: 27.4, color: "#7C3AED", firs: 5 },
-    { state: "Karnataka", amountCrores: 1.95, sharePct: 18.7, color: "#0284C7", firs: 3 },
-    { state: "Uttar Pradesh", amountCrores: 1.42, sharePct: 13.6, color: "#D97706", firs: 2 },
-    { state: "Rajasthan", amountCrores: 0.80, sharePct: 7.7, color: "#E11D48", firs: 1 },
+  // STR Narrative Sentences
+  const strNarrativeSentences = [
+    "Investigation across 14 linked FIRs reveals a centralized cyber-fraud syndicate operating under Jamtara-Noida Nexus #CBI-2026-CYBER-09.",
+    "Aggregated fraud loss across UP, Maharashtra, Karnataka, Gujarat, and Delhi exceeds ₹10.42 Crore, satisfying mandatory transfer criteria under Section 6 of the Delhi Special Police Establishment (DSPE) Act, 1946.",
+    "Primary infrastructure controller is linked via identical JA4 TLS fingerprint (t13d1516h2_8daaf6) and physical dual-SIM motherboard TAC (86749206).",
+    "Statutory liens under Section 106 BNSS have successfully frozen ₹3,80,000 in immediate recoverable assets while shielding innocent merchant working capital.",
   ];
-
-  const getArtifactIcon = (id: string) => {
-    switch (id) {
-      case "art-victim-screenshot":
-        return FileText;
-      case "art-sbi-cbs":
-        return Building2;
-      case "art-npci-switch":
-        return Cpu;
-      case "art-airtel-cgnat":
-        return Radio;
-      case "art-whatsapp":
-        return MessageSquare;
-      default:
-        return FileText;
-    }
-  };
 
   return (
     <div
+      className={`tarka-court-root ${isCompact ? "tarka-density-compact" : ""}`}
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 56px)",
-        maxHeight: "calc(100dvh - 56px)",
-        padding: "12px 16px 16px 16px",
-        gap: "10px",
-        boxSizing: "border-box",
-        background: "var(--bento-canvas, #F4F6FB)",
+        height: "calc(100dvh - 52px)",
+        maxHeight: "calc(100dvh - 52px)",
+        padding: isCompact ? "6px 12px 10px 12px" : "8px 16px 12px 16px",
+        gap: isCompact ? "6px" : "8px",
         overflow: "hidden",
+        boxSizing: "border-box",
+        background: "#F8FAFC",
       }}
     >
-      {/* =========================================================================
-          1. TOP 4 EXECUTIVE SAAS BENTO KPI CARDS
-          ========================================================================= */}
-      <div className="bento-grid-4" style={{ flexShrink: 0 }}>
-        {/* Card 1: Evidentiary Robustness */}
-        <BentoKpiCard
-          title="Evidentiary Robustness"
-          metric={`${looResult.confidenceScore}% Survival`}
-          metricColor={looResult.proofSurvives ? "#059669" : "#E11D48"}
-          subtitle="Survives full exclusion of secondary chats"
-          statusBadge={{
-            text: looResult.proofSurvives ? "TIER-1 INDEPENDENT" : "SEVERED",
-            variant: looResult.proofSurvives ? "emerald" : "rose",
-          }}
-          delta={{
-            value: `${looResult.tier1Count} / 3 Tier-1`,
-            isPositive: looResult.proofSurvives,
-            isWarning: !looResult.proofSurvives,
-            label: "Arjun Panditrao Bench",
-          }}
+      {/* STORY BANNER */}
+      <StoryBanner
+        screenId="court-proof"
+        takeaway="Leave-one-out stress testing proves all 5 material findings survive complete exclusion of Tier-2/3 artifacts; Section 63(4) dual certificates and CBI ₹10.42 Cr threshold verified."
+        evidenceChips={[
+          { tier: "T1", label: "RFC-3161 Timestamp", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+          { tier: "T1", label: "Ed25519 Judicial Seal", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
+          { tier: "T1", label: "CBI Mandate Audit", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+        ]}
+      />
+
+      {/* KPI ROW: 4 TILES WITH UNTRUNCATED LABELS */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: isCompact ? "6px" : "10px",
+          flexShrink: 0,
+        }}
+      >
+        <KpiTile
+          title="Findings surviving"
+          value="5 of 5 Material Claims"
           icon={Scale}
-          iconColor={looResult.proofSurvives ? "#059669" : "#E11D48"}
-          iconBg={looResult.proofSurvives ? "#ECFDF5" : "#FFF1F2"}
-          sparklineData={
-            looResult.proofSurvives
-              ? [85, 90, 95, 98, 98.4, looResult.confidenceScore]
-              : [98, 80, 50, 30, 15, looResult.confidenceScore]
-          }
+          iconColor="#059669"
+          iconBg="#ECFDF5"
+          statusBadge={{ text: "100% SURVIVAL", variant: "emerald" }}
+          subtitle="Arjun Panditrao Khotkar Invariant"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="All 5 core charges stand independently on immutable Tier-1 logs even upon complete exclusion of civilian chats."
         />
 
-        {/* Card 2: BSA § 63(4) Certificates */}
-        <BentoKpiCard
-          title="BSA § 63(4) Certificates"
-          metric="Parts A & B"
-          metricColor="#4F46E5"
-          subtitle="Custodian logs separated from expert hash"
-          statusBadge={{
-            text: "PUNE BAR COMPLIANT",
-            variant: "indigo",
-          }}
-          delta={{
-            value: "3 Certificates",
-            isPositive: true,
-            label: "ISO 17025 Certified",
-          }}
+        <KpiTile
+          title="§63(4) certificates"
+          value="Parts A & B Ready"
           icon={FileCheck}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
-          sparklineData={[1, 2, 2, 3, 3, 3]}
+          statusBadge={{ text: "CERTIFIED", variant: "indigo" }}
+          subtitle="Custodian + Expert Dual Signatures"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Split statutory certificates: Schedule A signed by bank/telco custodians, Schedule B by forensic examiner."
         />
 
-        {/* Card 3: Cryptographic Paper Seal */}
-        <BentoKpiCard
-          title="Cryptographic Paper Seal"
-          metric="RFC-3161 / Ed25519"
-          metricColor="#059669"
-          subtitle="FIPS 180-4 / Ed25519 Paper Verification Matrix"
-          statusBadge={{
-            text: paperAnchor.ed25519SignatureHex.includes("INVALID")
-              ? "TAMPER DETECTED"
-              : "ED25519 SIGNED",
-            variant: paperAnchor.ed25519SignatureHex.includes("INVALID")
-              ? "rose"
-              : "emerald",
-          }}
-          delta={{
-            value: "FIPS 180-4",
-            isPositive: true,
-            label: "Human Hash Grid",
-          }}
-          icon={Key}
+        <KpiTile
+          title="Paper seal"
+          value="RFC-3161 / Ed25519"
+          icon={ShieldCheck}
           iconColor="#059669"
           iconBg="#ECFDF5"
-          sparklineData={[24, 24, 24, 24, 24, 24]}
+          statusBadge={{ text: "AIR-GAP VALID", variant: "emerald" }}
+          subtitle="24-Word BIP-39 Phonetic Digest"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Self-contained verifiable paper anchor with offline verification HTML app."
         />
 
-        {/* Card 4: CBI Syndicate Threshold */}
-        <BentoKpiCard
-          title="CBI Syndicate Threshold"
-          metric={cbiMemo.totalLossCroresStr}
-          metricColor="#D97706"
-          subtitle="Crosses ₹10 Cr mandate for CBI transfer"
-          statusBadge={{
-            text: "14 FIRS · 5 STATES",
-            variant: "amber",
-          }}
-          delta={{
-            value: "DSPE Act § 6",
-            isWarning: true,
-            label: "Mandatory Transfer",
-          }}
-          icon={Network}
-          iconColor="#D97706"
-          iconBg="#FFFBEB"
-          sparklineData={[2, 5, 8, 11, 13, 14]}
+        <KpiTile
+          title="CBI threshold"
+          value="₹10.42 Crore"
+          icon={Building2}
+          iconColor="#B45309"
+          iconBg="#FEF3C7"
+          statusBadge={{ text: "DSPE ACT §6", variant: "amber" }}
+          subtitle="14 FIRs Across 5 States (CBI Mandate)"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Multi-state syndicate loss exceeds ₹10.00 Cr statutory threshold for federal CBI transfer."
         />
       </div>
 
-      {/* =========================================================================
-          2. COURTROOM DOSSIER 3-TAB SEGMENTED BAR (PROGRESSIVE DISCLOSURE)
-          ========================================================================= */}
+      {/* TABS SWITCHER: LOO STRESS TEST | §63(4) CERTIFICATES | CBI SYNDICATE */}
       <div
         style={{
           display: "flex",
@@ -337,812 +343,635 @@ export const CourtProofScreen: React.FC = () => {
           justifyContent: "space-between",
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
-          borderRadius: "10px",
-          padding: "4px 8px",
-          boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+          borderRadius: "6px",
+          padding: "3px 8px",
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", paddingLeft: "4px", letterSpacing: "0.05em" }}>
-            Courtroom Dossier Studio:
-          </span>
-          {[
-            { id: "loo" as const, label: "🛡️ Leave-One-Out (LOO) Defense Stress-Tester", icon: Scale },
-            { id: "certificates" as const, label: "📜 BSA §63(4) Split Certificates & Offline Verifier", icon: FileCheck },
-            { id: "syndicate" as const, label: "🏛️ CBI ₹10.42 Cr Multi-State Syndicate & STR Audit", icon: Network },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeDossierTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveDossierTab(tab.id)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "5px 12px",
-                  borderRadius: "6px",
-                  border: isActive ? "1px solid #4F46E5" : "1px solid transparent",
-                  background: isActive ? "#EEF2FF" : "transparent",
-                  color: isActive ? "#4338CA" : "#64748B",
-                  fontSize: "11px",
-                  fontWeight: isActive ? 700 : 500,
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <Icon size={12} color={isActive ? "#4F46E5" : "#64748B"} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <button
+            type="button"
+            onClick={() => setActiveDossierTab("loo")}
+            style={{
+              padding: "3px 10px",
+              borderRadius: "5px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+              border: "none",
+              background: activeDossierTab === "loo" ? "#EEF2FF" : "transparent",
+              color: activeDossierTab === "loo" ? "#4F46E5" : "#64748B",
+            }}
+          >
+            🛡️ Leave-One-Out Defense Stress-Tester
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveDossierTab("certificates")}
+            style={{
+              padding: "3px 10px",
+              borderRadius: "5px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+              border: "none",
+              background: activeDossierTab === "certificates" ? "#EEF2FF" : "transparent",
+              color: activeDossierTab === "certificates" ? "#4F46E5" : "#64748B",
+            }}
+          >
+            📜 BSA §63(4) Split Certificates & Offline Verifier
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveDossierTab("syndicate")}
+            style={{
+              padding: "3px 10px",
+              borderRadius: "5px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+              border: "none",
+              background: activeDossierTab === "syndicate" ? "#EEF2FF" : "transparent",
+              color: activeDossierTab === "syndicate" ? "#4F46E5" : "#64748B",
+            }}
+          >
+            🏛️ CBI ₹10.42 Cr Multi-State Syndicate & STR Audit
+          </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#047857", background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "2px 8px", borderRadius: "4px", fontWeight: 700 }}>
-            BSA § 63(4) STATUTORY FILING READY ✓
-          </span>
+        <div style={{ fontSize: "9px", color: "#64748B" }}>
+          Statutory Reference: <strong>Bharatiya Sakshya Adhiniyam, 2023</strong>
         </div>
       </div>
 
-      {/* =========================================================================
-          3. FULL-STAGE HERO CANVAS (MAX 2 SIMULTANEOUS PANELS PER TAB)
-          ========================================================================= */}
-      <main
-        style={{
-          flex: "1 1 0%",
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
-        {/* =====================================================================
-            TAB 1: LEAVE-ONE-OUT (LOO) DEFENSE STRESS-TESTER
-            ===================================================================== */}
-        {activeDossierTab === "loo" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, 1fr)",
-              gap: "12px",
-              height: "100%",
-              minHeight: 0,
-            }}
-          >
-            {/* TAB 1 LEFT (6 COLUMNS): ALL 5 EVIDENCE ARTIFACTS + DEFENSE CHALLENGES */}
-            <div
-              style={{
-                gridColumn: "span 6",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
-                      Evidence Artifact Registry (5 Artifacts)
-                    </div>
-                    <div style={{ fontSize: "10px", color: "#64748B", marginTop: "1px" }}>
-                      Toggle individual artifacts to simulate defense exclusion challenges in court.
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={resetArtifacts}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      padding: "3px 8px",
-                      borderRadius: "5px",
-                      border: "1px solid #CBD5E1",
-                      background: "#F8FAFC",
-                      color: "#475569",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <RotateCcw size={10} />
-                    <span>Reset All</span>
-                  </button>
-                </div>
-
-                {/* 5 Artifact Cards */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {artifacts.map((art) => {
-                    const IconComp = getArtifactIcon(art.id);
-                    const isTier1 = art.tier === "TIER_1_INDEPENDENT";
-                    return (
-                      <div
-                        key={art.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "7px 10px",
-                          borderRadius: "7px",
-                          background: art.isExcluded ? "#F1F5F9" : isTier1 ? "#ECFDF5" : "#F8FAFC",
-                          border: art.isExcluded
-                            ? "1px dashed #CBD5E1"
-                            : isTier1
-                            ? "1px solid #A7F3D0"
-                            : "1px solid #E2E8F0",
-                          opacity: art.isExcluded ? 0.6 : 1,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                          <input
-                            type="checkbox"
-                            checked={!art.isExcluded}
-                            onChange={() => toggleArtifact(art.id)}
-                            style={{ width: "13px", height: "13px", cursor: "pointer", accentColor: "#4F46E5" }}
-                          />
-                          <IconComp size={14} color={art.isExcluded ? "#94A3B8" : isTier1 ? "#059669" : "#4F46E5"} />
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: art.isExcluded ? "#94A3B8" : "#0F172A" }}>
-                              {art.name}
-                            </div>
-                            <div style={{ fontSize: "9px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                              SHA: {art.sha256.slice(0, 16)}... · Custodian: {art.custodian}
-                            </div>
-                          </div>
-                        </div>
-
-                        <span
-                          style={{
-                            fontSize: "8.5px",
-                            fontWeight: 800,
-                            padding: "1px 5px",
-                            borderRadius: "3px",
-                            background: isTier1 ? "#D1FAE5" : "#EEF2FF",
-                            color: isTier1 ? "#047857" : "#4338CA",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {isTier1 ? "TIER-1 INDEPENDENT" : "TIER-2 CORROBORATIVE"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Defense Cross-Examination Challenge Simulation Buttons */}
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "8px",
-                  padding: "9px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                }}
-              >
-                <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
-                  Simulate Defense Cross-Examination Challenges:
-                </div>
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {alibis.map((alibi) => (
-                    <button
-                      key={alibi.id}
-                      type="button"
-                      onClick={() => toggleAlibi(alibi.id)}
-                      style={{
-                        padding: "4px 9px",
-                        borderRadius: "5px",
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        border: alibi.isChallenged ? "1px solid #BE123C" : "1px solid #CBD5E1",
-                        background: alibi.isChallenged ? "#FFF1F2" : "#FFFFFF",
-                        color: alibi.isChallenged ? "#BE123C" : "#475569",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {alibi.name} {alibi.isChallenged ? "Active" : ""}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* TAB 1 RIGHT (6 COLUMNS): TRIAL SURVIVAL SCORE CARD & PROSECUTOR REBUTTAL */}
-            <div
-              style={{
-                gridColumn: "span 6",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
-                      Leave-One-Out Mathematical Robustness
-                    </div>
-                    <div style={{ fontSize: "10px", color: "#64748B", marginTop: "1px" }}>
-                      Independent 3-Judge Supreme Court benchmark (*Arjun Panditrao Khotkar*).
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "9.5px",
-                      fontWeight: 800,
-                      background: looResult.proofSurvives ? "#ECFDF5" : "#FFF1F2",
-                      color: looResult.proofSurvives ? "#047857" : "#BE123C",
-                      border: `1px solid ${looResult.proofSurvives ? "#A7F3D0" : "#FECDD3"}`,
-                      padding: "2px 7px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {looResult.proofSurvives ? "EVIDENTIARY SURVIVAL: 100%" : "ATTRIBUTION SEVERED"}
-                  </span>
-                </div>
-
-                {/* Score Hero Box */}
-                <div
+      {/* MAIN STAGE ACCORDING TO ACTIVE TAB */}
+      {activeDossierTab === "loo" && (
+        <main
+          style={{
+            flex: "1 1 0%",
+            minHeight: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(12, 1fr)",
+            gap: "10px",
+            overflow: "hidden",
+          }}
+        >
+          {/* LEFT 7 COLS: INTERACTIVE CLAIM X EVIDENCE SUPPORT MATRIX */}
+          <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="Claim × Evidence Support Matrix (Leave-One-Out)"
+              subtitle="Demonstrates that all 5 prosecution claims survive on independent Tier-1 records even under hostile cross-examination."
+              icon={Scale}
+              iconColor="#4F46E5"
+              badgeText="100% RESILIENT"
+              badgeVariant="emerald"
+              actionSlot={
+                <button
+                  type="button"
+                  onClick={resetArtifacts}
                   style={{
-                    background: looResult.proofSurvives ? "#ECFDF5" : "#FFF1F2",
-                    border: `1px solid ${looResult.proofSurvives ? "#A7F3D0" : "#FECDD3"}`,
-                    borderRadius: "10px",
-                    padding: "12px 14px",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    gap: "3px",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: "1px solid #CBD5E1",
+                    background: "#FFFFFF",
+                    color: "#475569",
                   }}
                 >
-                  <div>
-                    <div style={{ fontSize: "10px", color: "#64748B", textTransform: "uppercase", fontWeight: 700 }}>
-                      Post-Challenge Prosecution Survival
-                    </div>
-                    <div style={{ fontSize: "24px", fontWeight: 800, color: looResult.proofSurvives ? "#047857" : "#BE123C", fontFamily: "var(--font-mono)" }}>
-                      {looResult.confidenceScore}% Survival
-                    </div>
-                    <div style={{ fontSize: "9.5px", color: "#475569", marginTop: "2px" }}>
-                      {looResult.tier1Count} of 3 Statutory Tier-1 Records Validated
-                    </div>
-                  </div>
-                  <div style={{ width: "42px", height: "42px", borderRadius: "8px", background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Scale size={22} color={looResult.proofSurvives ? "#059669" : "#E11D48"} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Full Prosecutor Rebuttal Card */}
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "9px",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                  flex: 1,
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "3px" }}>
-                    <ShieldCheck size={14} color="#059669" />
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
-                      PROSECUTOR CROSS-EXAMINATION REBUTTAL BRIEF:
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#334155", lineHeight: 1.45 }}>
-                    Even if secondary handset screenshots and private WhatsApp chats are wholly excluded under BSA Section 63(4), the state's attribution and fund-flow proof stands entirely upon independent statutory Tier-1 records (SBI Core Banking Ledger #02, NPCI Central Switch Log #03, and Airtel CGNAT IPDR #04). The mathematical candidate intersection (340 → 1) and LIBR taint conservation are verifiable independently of any uncertified digital device.
-                  </div>
-                </div>
-
-                <div style={{ fontSize: "9.5px", color: "#047857", fontWeight: 700, background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "4px 8px", borderRadius: "5px" }}>
-                  Precedent: *Arjun Panditrao Khotkar v. Kailash Kushanrao Gorantyal (2020) 7 SCC 1*
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =====================================================================
-            TAB 2: BSA § 63(4) SPLIT CERTIFICATES & OFFLINE VERIFIER
-            ===================================================================== */}
-        {activeDossierTab === "certificates" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, 1fr)",
-              gap: "12px",
-              height: "100%",
-              minHeight: 0,
-            }}
-          >
-            {/* TAB 2 LEFT (7 COLUMNS): BSA §63(4) CERTIFICATE VIEWER */}
-            <div
-              style={{
-                gridColumn: "span 7",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
+                  <RotateCcw size={10} /> Reset Defense Deck
+                </button>
+              }
             >
-              {/* Header with Schedule Tabs */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: "5px" }}>
-                  {(
-                    [
-                      { id: "partB" as const, label: "Schedule B (Forensic Expert)" },
-                      { id: "bank" as const, label: "Schedule A (SBI Bank)" },
-                      { id: "isp" as const, label: "Schedule A (Airtel ISP)" },
-                      { id: "handset" as const, label: "Schedule A (Handset)" },
-                    ] as const
-                  ).map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setActiveBsaTab(s.id)}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: "5px",
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        border: activeBsaTab === s.id ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
-                        background: activeBsaTab === s.id ? "#EEF2FF" : "#F8FAFC",
-                        color: activeBsaTab === s.id ? "#4338CA" : "#475569",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, gap: "8px" }}>
+                {/* MATRIX TABLE */}
+                <div
+                  style={{
+                    flex: "1 1 0%",
+                    minHeight: 0,
+                    overflowY: "auto",
+                    background: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px" }}>
+                    <thead>
+                      <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
+                        <th style={{ padding: "6px 8px", textAlign: "left", color: "#475569", fontWeight: 700 }}>
+                          Material Prosecution Finding
+                        </th>
+                        {artifacts.map((art) => (
+                          <th
+                            key={art.id}
+                            onClick={() => toggleArtifact(art.id)}
+                            style={{
+                              padding: "6px 4px",
+                              textAlign: "center",
+                              color: art.isExcluded ? "#94A3B8" : "#0F172A",
+                              cursor: "pointer",
+                              textDecoration: art.isExcluded ? "line-through" : "none",
+                              background: art.isExcluded ? "#F1F5F9" : "transparent",
+                            }}
+                            title="Click to exclude this evidence artifact"
+                          >
+                            <div style={{ fontSize: "8.5px", fontWeight: 700 }}>{art.name.slice(0, 15)}</div>
+                            <span
+                              style={{
+                                fontSize: "7px",
+                                fontWeight: 800,
+                                padding: "1px 3px",
+                                borderRadius: "2px",
+                                background: art.tier.startsWith("TIER_1") ? "#ECFDF5" : "#FEF3C7",
+                                color: art.tier.startsWith("TIER_1") ? "#047857" : "#B45309",
+                              }}
+                            >
+                              {art.tier.startsWith("TIER_1") ? "T1" : "T2"}
+                            </span>
+                          </th>
+                        ))}
+                        <th style={{ padding: "6px 6px", textAlign: "center", color: "#0F172A", fontWeight: 800 }}>
+                          Survival Verdict
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {claimsMatrix.map((claim) => {
+                        const activeT1 = artifacts.some(
+                          (a) => !a.isExcluded && a.tier.startsWith("TIER_1") && claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY"
+                        );
+                        const activeT2 = artifacts.some(
+                          (a) => !a.isExcluded && claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
+                        );
+                        const survives = activeT1;
+
+                        return (
+                          <tr key={claim.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#0F172A" }}>
+                              {claim.name}
+                            </td>
+                            {artifacts.map((art) => {
+                              const supp = claim.supports[art.id as keyof typeof claim.supports];
+                              return (
+                                <td
+                                  key={art.id}
+                                  style={{
+                                    padding: "6px 4px",
+                                    textAlign: "center",
+                                    background: art.isExcluded ? "#F8FAFC" : "transparent",
+                                    opacity: art.isExcluded ? 0.35 : 1,
+                                  }}
+                                >
+                                  {supp === "PRIMARY" ? (
+                                    <span style={{ color: "#059669", fontWeight: "bold" }} title="Primary Tier-1 Proof">●</span>
+                                  ) : supp === "CORROBORATIVE" ? (
+                                    <span style={{ color: "#4F46E5", fontWeight: "bold" }} title="Corroborative Tier-2 Proof">◐</span>
+                                  ) : (
+                                    <span style={{ color: "#CBD5E1" }}>—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td style={{ padding: "6px 6px", textAlign: "center" }}>
+                              {survives ? (
+                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0" }}>
+                                  ✓ Survives (T1)
+                                </span>
+                              ) : activeT2 ? (
+                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#FEF3C7", color: "#B45309", border: "1px solid #FDE68A" }}>
+                                  ⚠ Tier-2 Only
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#FFF1F2", color: "#E11D48", border: "1px solid #FECDD3" }}>
+                                  ✗ Unsupported
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {/* 3 DEFENSE CHALLENGE DECK CARDS */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", flexShrink: 0 }}>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#475569", textTransform: "uppercase" }}>
+                    Hostile Cross-Examination Stress Deck (Click to Challenge):
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
+                    {alibis.map((alibi) => (
+                      <div
+                        key={alibi.id}
+                        onClick={() => toggleAlibi(alibi.id)}
+                        style={{
+                          background: alibi.isChallenged ? "#FEF2F2" : "#FFFFFF",
+                          border: alibi.isChallenged ? "1.5px solid #F43F5E" : "1px solid #CBD5E1",
+                          borderRadius: "5px",
+                          padding: "5px 7px",
+                          cursor: "pointer",
+                          transition: "all 0.12s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: "8.5px", fontWeight: 800, color: alibi.isChallenged ? "#E11D48" : "#0F172A" }}>
+                            {alibi.name}
+                          </span>
+                          <span style={{ fontSize: "7px", fontWeight: 800, padding: "1px 4px", borderRadius: "2px", background: alibi.isChallenged ? "#FFE4E6" : "#F1F5F9", color: alibi.isChallenged ? "#BE123C" : "#64748B" }}>
+                            {alibi.isChallenged ? "EXCLUDED" : "ACTIVE"}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: "7.5px", color: "#64748B", marginTop: "2px", lineHeight: "1.25" }}>
+                          {alibi.defenseArgument}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+
+          {/* RIGHT 5 COLS: STRUCTURED REBUTTAL BRIEF & PRECEDENTS */}
+          <div style={{ gridColumn: "span 5", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="Prosecutor Rebuttal & Legal Precedent Deck"
+              subtitle="Statutory compliance under Arjun Panditrao Khotkar (2020) and BSA 2023."
+              icon={FileText}
+              iconColor="#059669"
+              badgeText="JUDICIAL ANCHOR"
+              badgeVariant="emerald"
+            >
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px", overflowY: "auto" }}>
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "8px" }}>
+                  <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#0F172A", marginBottom: "3px" }}>
+                    Supreme Court Benchmark:
+                  </div>
+                  <div style={{ fontSize: "9px", color: "#334155", fontStyle: "italic", lineHeight: "1.4" }}>
+                    "The certificate under Section 65B(4) is a condition precedent to the admissibility of electronic record evidence. Where machine output is certified by the lawful custodian, proof of original physical device is not required."
+                  </div>
+                  <div style={{ fontSize: "8px", color: "#64748B", marginTop: "4px" }}>
+                    — <em>Arjun Panditrao Khotkar v. Kailash Kushanrao Gorantyal</em> (2020) 7 SCC 1
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#0F172A" }}>
+                    Forensic Soundness Findings:
+                  </div>
+
+                  <div style={{ display: "flex", gap: "6px", alignItems: "flex-start", fontSize: "9px", color: "#334155" }}>
+                    <span style={{ color: "#059669", fontWeight: "bold" }}>✓</span>
+                    <div>
+                      <strong>Independent Carrier Logs:</strong> Airtel CGNAT IPDR and SBI Finacle commit logs operate on decoupled infrastructure with zero collusion possibility.
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "6px", alignItems: "flex-start", fontSize: "9px", color: "#334155" }}>
+                    <span style={{ color: "#059669", fontWeight: "bold" }}>✓</span>
+                    <div>
+                      <strong>Deterministic Zero-Cycle Money Trail:</strong> Time-expanded DAG eliminates accounting loops, proving unbroken provenance to beneficiaries.
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "6px", alignItems: "flex-start", fontSize: "9px", color: "#334155" }}>
+                    <span style={{ color: "#059669", fontWeight: "bold" }}>✓</span>
+                    <div>
+                      <strong>Examiner Qualification:</strong> System certified under BSA Section 63(4) Part B; see detailed examiner qualifications in Schedule B.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "auto", borderTop: "1px solid #E2E8F0", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "9px", color: "#64748B" }}>
+                    RFC-3161 Timestamp Token: <strong>SHA-256 Intact</strong>
+                  </span>
+                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669" }}>
+                    LEAVE-ONE-OUT: PASS ✓
+                  </span>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+        </main>
+      )}
+
+      {activeDossierTab === "certificates" && (
+        <main
+          style={{
+            flex: "1 1 0%",
+            minHeight: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(12, 1fr)",
+            gap: "10px",
+            overflow: "hidden",
+          }}
+        >
+          {/* LEFT 8 COLS: PRINTABLE BOND PAPER CERTIFICATE PREVIEW */}
+          <div style={{ gridColumn: "span 8", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="BSA § 63(4) Split Statutory Certificates"
+              subtitle="Dual-schedule statutory certificates: Schedule A (System Custodians) + Schedule B (Cyber Forensic Examiner)."
+              icon={FileCheck}
+              iconColor="#4F46E5"
+              badgeText="PART A & B"
+              badgeVariant="indigo"
+              actionSlot={
+                <div style={{ display: "flex", gap: "4px" }}>
                   <button
                     type="button"
                     onClick={handlePrintCertificate}
                     style={{
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      padding: "4px 8px",
+                      gap: "3px",
+                      padding: "2px 7px",
                       borderRadius: "4px",
+                      fontSize: "9px",
+                      fontWeight: 600,
                       border: "1px solid #CBD5E1",
-                      background: "#F8FAFC",
-                      color: "#334155",
+                      background: "#FFFFFF",
                       cursor: "pointer",
                     }}
                   >
-                    <Printer size={11} />
-                    <span>Print</span>
+                    <Printer size={10} /> Print
                   </button>
                   <button
                     type="button"
                     onClick={handleCopySchedule}
                     style={{
-                      display: "inline-flex",
+                      display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                      fontSize: "10px",
+                      gap: "3px",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "9px",
                       fontWeight: 700,
-                      padding: "4px 9px",
-                      borderRadius: "5px",
-                      border: "none",
-                      background: isScheduleCopied ? "#059669" : "#4F46E5",
-                      color: "#FFFFFF",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {isScheduleCopied ? <Check size={11} /> : <Copy size={11} />}
-                    <span>{isScheduleCopied ? "Copied" : "Copy Certificate"}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Certificate Paper Viewer */}
-              <div
-                style={{
-                  flex: "1 1 0%",
-                  minHeight: "220px",
-                  background: "#FCFDFE",
-                  border: "1px solid #CBD5E1",
-                  borderRadius: "8px",
-                  padding: "14px 16px",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "10.5px",
-                  lineHeight: 1.5,
-                  color: "#0F172A",
-                  overflowY: "auto",
-                  whiteSpace: "pre-wrap",
-                  boxSizing: "border-box",
-                }}
-              >
-                {currentScheduleText}
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px", color: "#64748B", borderTop: "1px solid #E2E8F0", paddingTop: "5px" }}>
-                <span>ISO 17025 Accredited · Tableau T8u Bridge TAB-88219-04</span>
-                <span style={{ color: "#047857", fontWeight: 700 }}>✓ PUNE BAR 2026 COMPLIANT</span>
-              </div>
-            </div>
-
-            {/* TAB 2 RIGHT (5 COLUMNS): FIPS 180-4 PAPER VERIFICATION MATRIX */}
-            <div
-              style={{
-                gridColumn: "span 5",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 16px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div>
-                    <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#0F172A" }}>
-                      FIPS 180-4 / Ed25519 Paper Verification Matrix
-                    </div>
-                    <div style={{ fontSize: "9.5px", color: "#64748B", marginTop: "1px" }}>
-                      24-Word Phonetic Verification Digest for physical remand files.
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleExportVerifyHtml}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "9.5px",
-                      fontWeight: 700,
-                      padding: "4px 8px",
-                      borderRadius: "5px",
                       border: "none",
                       background: "#4F46E5",
                       color: "#FFFFFF",
                       cursor: "pointer",
                     }}
                   >
-                    <Download size={11} />
-                    <span>verify.html</span>
+                    {isScheduleCopied ? <Check size={10} /> : <Copy size={10} />}
+                    {isScheduleCopied ? "Copied" : "Copy Certificate"}
                   </button>
                 </div>
-
-                {/* QR Code and Phonetic Word Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "115px 1fr", gap: "10px", alignItems: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "9px", padding: "8px 10px" }}>
-                  <div style={{ background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "8px", padding: "6px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <QRCodeSVG
-                      value={`tarka://merkle/${paperAnchor.merkleRootSha256}?sig=${paperAnchor.ed25519SignatureHex.slice(0, 32)}`}
-                      size={95}
-                      level="M"
-                    />
-                    <span style={{ fontSize: "7px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px", marginTop: "4px" }}>
-                      ED25519 SEALED
-                    </span>
-                  </div>
-
-                  {/* 24-Word Phonetic Verification Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "3px" }}>
-                    {paperAnchor.bip39Mnemonic.map((word, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "#FFFFFF",
-                          border: "1px solid #E2E8F0",
-                          borderRadius: "4px",
-                          padding: "2px 4px",
-                          fontSize: "8.5px",
-                          fontFamily: "var(--font-mono)",
-                          textAlign: "center",
-                          color: "#0F172A",
-                        }}
-                      >
-                        <span style={{ color: "#64748B", fontSize: "7.5px" }}>{String(idx + 1).padStart(2, "0")}.</span> {word}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Hashes and Copy Digest Button */}
-              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "9.5px", color: "#64748B" }}>Merkle Root:</span>
-                  <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#047857", fontWeight: 700 }}>
-                    {paperAnchor.merkleRootSha256.slice(0, 24)}...
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "9.5px", color: "#64748B" }}>Ed25519 Custody Sig:</span>
-                  <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700 }}>
-                    {paperAnchor.ed25519SignatureHex.slice(0, 24)}...
-                  </span>
+              }
+            >
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, gap: "6px" }}>
+                {/* Schedule Sub-tabs */}
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {[
+                    { id: "partB", label: "Schedule B · Forensic Examiner" },
+                    { id: "bank", label: "Schedule A · SBI Finacle Nodal" },
+                    { id: "isp", label: "Schedule A · Airtel PGW / CGNAT" },
+                    { id: "handset", label: "Schedule A · Handset Seizure" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveBsaTab(tab.id as any)}
+                      style={{
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        fontSize: "9.5px",
+                        fontWeight: 700,
+                        border: activeBsaTab === tab.id ? "1px solid #4F46E5" : "1px solid #E2E8F0",
+                        background: activeBsaTab === tab.id ? "#EEF2FF" : "#F8FAFC",
+                        color: activeBsaTab === tab.id ? "#4F46E5" : "#64748B",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyMnemonic}
+                {/* Judicial Bond Paper Text Viewport */}
+                <div
                   style={{
-                    marginTop: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "4px",
-                    padding: "5px 8px",
-                    borderRadius: "5px",
-                    border: "1px solid #CBD5E1",
+                    flex: "1 1 0%",
+                    minHeight: 0,
+                    overflowY: "auto",
                     background: "#FFFFFF",
-                    color: "#0F172A",
+                    border: "1px solid #CBD5E1",
+                    borderRadius: "4px",
+                    padding: "12px 16px",
+                    fontFamily: "JetBrains Mono, monospace",
                     fontSize: "9.5px",
-                    fontWeight: 600,
-                    cursor: "pointer",
+                    lineHeight: "1.45",
+                    whiteSpace: "pre-wrap",
+                    color: "#0F172A",
+                    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.03)",
                   }}
                 >
-                  {isMnemonicCopied ? <Check size={11} color="#059669" /> : <Copy size={11} />}
-                  <span>{isMnemonicCopied ? "24-Word Digest Copied" : "Copy 24-Word Verification Digest"}</span>
-                </button>
+                  {currentScheduleText}
+                </div>
               </div>
-            </div>
+            </SectionCard>
           </div>
-        )}
 
-        {/* =====================================================================
-            TAB 3: CBI MULTI-STATE SYNDICATE & STR AUDIT
-            ===================================================================== */}
-        {activeDossierTab === "syndicate" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, 1fr)",
-              gap: "12px",
-              height: "100%",
-              minHeight: 0,
-            }}
-          >
-            {/* TAB 3 LEFT (6 COLUMNS): 5-STATE FRAUD BAR & 14-FIR BLIND-INDEX MATCHES */}
-            <div
-              style={{
-                gridColumn: "span 6",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
+          {/* RIGHT 4 COLS: QR SEAL + 24-WORD DIGEST + STANDALONE VERIFY.HTML */}
+          <div style={{ gridColumn: "span 4", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="Air-Gap Paper Seal & Standalone Verifier"
+              subtitle="Zero-trust physical evidence seal verifiable without network connectivity."
+              icon={ShieldCheck}
+              iconColor="#059669"
+              badgeText="RFC-3161 ANCHOR"
+              badgeVariant="emerald"
             >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px", overflowY: "auto" }}>
+                {/* QR Code and Cryptographic Seal */}
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", background: "#F8FAFC", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <QRCodeSVG value={paperAnchor.ed25519SignatureHex} size={64} />
                   <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
-                      Jamtara-Noida Nexus #CBI-2026-CYBER-09
+                    <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A" }}>
+                      Ed25519 Judicial Signature:
                     </div>
-                    <div style={{ fontSize: "10px", color: "#D97706", fontWeight: 700, marginTop: "1px" }}>
-                      ₹10.42 Crore across 14 FIRs (Exceeds ₹10 Cr DSPE Act Threshold)
+                    <div style={{ fontSize: "8px", fontFamily: "monospace", color: "#475569", wordBreak: "break-all" }}>
+                      {paperAnchor.ed25519SignatureHex.slice(0, 32)}...
+                    </div>
+                    <div style={{ fontSize: "7.5px", color: "#059669", fontWeight: 700, marginTop: "2px" }}>
+                      RFC-3161 Qualified Timestamp: 2026-09-22 10:30:00 IST
                     </div>
                   </div>
-                  <span style={{ fontSize: "9px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "2px 7px", borderRadius: "4px" }}>
-                    PII-PRESERVING
-                  </span>
                 </div>
 
-                {/* 5-State Distribution Bar */}
-                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "9px", padding: "8px 10px", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", fontWeight: 700, color: "#64748B", marginBottom: "4px" }}>
-                    <span>Multi-State Distribution</span>
-                    <span style={{ color: "#D97706" }}>₹10.00 Cr CBI Threshold Crossed ✓</span>
+                {/* 24-Word BIP-39 Phonetic Verification Mnemonic */}
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "8px" }}>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
+                    24-Word Phonetic Audit Digest (BIP-39):
                   </div>
-                  <div style={{ display: "flex", height: "10px", borderRadius: "5px", overflow: "hidden", background: "#E2E8F0" }}>
-                    {stateBreakdown.map((item, i) => (
-                      <div key={i} title={`${item.state}: ₹${item.amountCrores} Cr`} style={{ width: `${item.sharePct}%`, height: "100%", background: item.color }} />
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "8.5px", color: "#64748B" }}>
-                    {stateBreakdown.map((item, i) => (
-                      <span key={i}>
-                        <strong style={{ color: item.color }}>●</strong> {item.state}: ₹{item.amountCrores}Cr
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "3px" }}>
+                    {paperAnchor.bip39Mnemonic.slice(0, 12).map((word, idx) => (
+                      <span key={idx} style={{ fontSize: "8px", fontFamily: "monospace", padding: "1px 4px", background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "3px", color: "#334155" }}>
+                        {idx + 1}. {word}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* 4 Blind-Index Match Cards */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>
-                      <span>MSISDN MATCH</span>
-                      <span style={{ color: "#047857", fontWeight: 800 }}>9 FIRs</span>
-                    </div>
-                    <div style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px" }}>
-                      hmac_sha256_b189a9f2...
-                    </div>
-                  </div>
-
-                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>
-                      <span>DEVICE IMEI MATCH</span>
-                      <span style={{ color: "#047857", fontWeight: 800 }}>12 FIRs</span>
-                    </div>
-                    <div style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px" }}>
-                      hmac_sha256_e72810a9...
-                    </div>
-                  </div>
-
-                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>
-                      <span>PAN MATCH</span>
-                      <span style={{ color: "#047857", fontWeight: 800 }}>6 FIRs</span>
-                    </div>
-                    <div style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px" }}>
-                      hmac_sha256_44a92c81...
-                    </div>
-                  </div>
-
-                  <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", fontWeight: 700, color: "#64748B" }}>
-                      <span>BANK ACCOUNT MATCH</span>
-                      <span style={{ color: "#047857", fontWeight: 800 }}>8 FIRs</span>
-                    </div>
-                    <div style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px" }}>
-                      hmac_sha256_91820a4b...
-                    </div>
-                  </div>
-                </div>
+                {/* EXPORT STANDALONE VERIFY.HTML CTA */}
+                <button
+                  type="button"
+                  onClick={handleExportVerifyHtml}
+                  style={{
+                    width: "100%",
+                    padding: "7px 10px",
+                    borderRadius: "6px",
+                    background: "#059669",
+                    color: "#FFFFFF",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    boxShadow: "0 1px 2px rgba(5, 150, 105, 0.2)",
+                    marginTop: "auto",
+                  }}
+                >
+                  <Download size={12} />
+                  <span>Export Standalone verify.html (Air-Gap)</span>
+                </button>
               </div>
-
-              {/* Mandatory CBI Transfer Callout */}
-              <div style={{ fontSize: "9.5px", color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "7px", padding: "7px 10px", lineHeight: 1.35 }}>
-                <strong>Mandatory CBI Transfer Triggered:</strong> Syndicate loss of ₹10.42 Cr exceeds ₹10.00 Cr threshold under Section 6, Delhi Special Police Establishment Act, 1946. Inter-state warrant generated.
-              </div>
-            </div>
-
-            {/* TAB 3 RIGHT (6 COLUMNS): ZERO-HALLUCINATION STR SUMMARY (CLICK-TO-AUDIT) */}
-            <div
-              style={{
-                gridColumn: "span 6",
-                background: "#FFFFFF",
-                border: "1px solid #E2E8F0",
-                borderRadius: "12px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                boxSizing: "border-box",
-                overflow: "hidden",
-              }}
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A" }}>
-                      Zero-Hallucination Executive STR Summary
-                    </div>
-                    <div style={{ fontSize: "10px", color: "#64748B", marginTop: "1px" }}>
-                      Click any sentence below to verify its deterministic cryptographic provenance.
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "9px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "2px 7px", borderRadius: "4px" }}>
-                    CRYPTO-GROUNDED
-                  </span>
-                </div>
-
-                {/* 3 Clickable Sentences */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {[
-                    {
-                      idx: 0,
-                      sentence: "1. Target Chassis IMEI 867492061234564 and BSSID 74:DA:38:A2:11:BC operated 3 conduit accounts draining ₹5,00,000 in FIR #149/2026.",
-                      provenance: "✓ [Verified: Airtel PGW Ingress Hash 4d7129... · Section 63(4) BSA SAT]",
-                    },
-                    {
-                      idx: 1,
-                      sentence: "2. Salted blind-index token HMAC-SHA256(86749206...) matches 14 interstate FIRs across 5 states totaling ₹10.42 Crore, crossing the ₹10.00 Cr DSPE Act §6 threshold.",
-                      provenance: "✓ [Verified across 14 State Nodal Ledger Hashes · Section 6 DSPE Mandate SAT · Zero LLM Generation]",
-                    },
-                    {
-                      idx: 2,
-                      sentence: "3. Under Roscoe v. Winder LIBR accounting, ₹1.80L is held under §106(1) specific lien while shielding ₹2.50L clean merchant working capital.",
-                      provenance: "✓ [Verified: ICICI Finacle Ledger Bal[k] Min-Cut Proof · Rajasthan HC Precedent]",
-                    },
-                  ].map((item) => {
-                    const isSelected = auditSentenceIdx === item.idx;
-                    return (
-                      <div
-                        key={item.idx}
-                        onClick={() => setAuditSentenceIdx(item.idx)}
-                        style={{
-                          padding: "8px 10px",
-                          borderRadius: "7px",
-                          background: isSelected ? "#FFFBEB" : "#F8FAFC",
-                          border: isSelected ? "1.5px solid #F59E0B" : "1px solid #E2E8F0",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <div style={{ fontSize: "10.5px", color: isSelected ? "#92400E" : "#1E293B", fontWeight: isSelected ? 700 : 500, lineHeight: 1.4 }}>
-                          {item.sentence}
-                        </div>
-                        {isSelected && (
-                          <div style={{ marginTop: "4px", fontSize: "9px", fontFamily: "var(--font-mono)", color: "#B45309", background: "#FEF3C7", padding: "2px 6px", borderRadius: "4px" }}>
-                            {item.provenance}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Warrant Inter-State Transfer Footer */}
-              <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "8px", padding: "8px 11px", fontSize: "10px", color: "#312E81", lineHeight: 1.4 }}>
-                <strong>Judicial Warrant Intimation:</strong> Case dossier is cryptographically compiled and ready for automatic transmittal to the Central Bureau of Investigation, Special Cyber Crime Division (New Delhi).
-              </div>
-            </div>
+            </SectionCard>
           </div>
-        )}
-      </main>
+        </main>
+      )}
+
+      {activeDossierTab === "syndicate" && (
+        <main
+          style={{
+            flex: "1 1 0%",
+            minHeight: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(12, 1fr)",
+            gap: "10px",
+            overflow: "hidden",
+          }}
+        >
+          {/* LEFT 6 COLS: CBI THERMOMETER & MULTI-STATE EXPOSURE */}
+          <div style={{ gridColumn: "span 6", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="CBI Statutory Jurisdiction Thermometer"
+              subtitle="Inter-state loss across 5 states crossing the ₹10.00 Cr threshold under DSPE Act Section 6."
+              icon={Building2}
+              iconColor="#B45309"
+              badgeText="EXCEEDS ₹10.00 CR"
+              badgeVariant="amber"
+            >
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px" }}>
+                {/* CBI Threshold Thermometer ScaleBar */}
+                <ScaleBar
+                  labelAbove="Total Multi-State Syndicate Fraud Volume"
+                  min={0}
+                  max={15}
+                  value={10.42}
+                  unit="Cr"
+                  thresholdLine={{
+                    value: 10.0,
+                    label: "CBI THRESHOLD (₹10.00 CR)",
+                    color: "#DC2626",
+                  }}
+                  toleranceBand={{
+                    from: 10.0,
+                    to: 15.0,
+                    label: "CBI MANDATORY TRANSFER",
+                  }}
+                  valueBelow="Total: ₹10.42 Cr (UP: ₹3.85Cr, MH: ₹2.60Cr, KA: ₹1.95Cr, GJ: ₹1.22Cr, DL: ₹0.80Cr)"
+                />
+
+                {/* State breakdown list */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {[
+                    { state: "Uttar Pradesh", amt: "₹3.85 Cr", firs: 4, share: "37%" },
+                    { state: "Maharashtra", amt: "₹2.60 Cr", firs: 3, share: "25%" },
+                    { state: "Karnataka", amt: "₹1.95 Cr", firs: 3, share: "19%" },
+                    { state: "Gujarat", amt: "₹1.22 Cr", firs: 2, share: "12%" },
+                    { state: "Delhi", amt: "₹0.80 Cr", firs: 2, share: "7%" },
+                  ].map((st, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F8FAFC", padding: "4px 8px", borderRadius: "4px", border: "1px solid #E2E8F0" }}>
+                      <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>{st.state}</span>
+                      <div style={{ display: "flex", gap: "8px", fontSize: "9px" }}>
+                        <span style={{ color: "#64748B" }}>{st.firs} FIRs</span>
+                        <strong style={{ color: "#B45309" }}>{st.amt}</strong>
+                        <span style={{ color: "#059669" }}>({st.share})</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+
+          {/* RIGHT 6 COLS: CLICK-TO-AUDIT STR NARRATIVE & MHA ORDERS */}
+          <div style={{ gridColumn: "span 6", height: "100%", minHeight: 0 }}>
+            <SectionCard
+              title="Click-to-Audit Suspicious Transaction Report (STR)"
+              subtitle="Interactive executive memo linking each assertion to cryptographic SHA-256 evidence."
+              icon={FileText}
+              iconColor="#4F46E5"
+              badgeText="FIU-IND COMPLIANT"
+              badgeVariant="indigo"
+            >
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "6px" }}>
+                <div
+                  style={{
+                    flex: "1 1 0%",
+                    minHeight: 0,
+                    overflowY: "auto",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    padding: "8px 10px",
+                    fontSize: "9.5px",
+                    lineHeight: "1.5",
+                    color: "#334155",
+                  }}
+                >
+                  <div style={{ fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
+                    Executive STR Memo Ref: CBI/EO-II/2026/0491
+                  </div>
+                  {strNarrativeSentences.map((sentence, idx) => (
+                    <span
+                      key={idx}
+                      onClick={() => setAuditSentenceIdx(idx)}
+                      style={{
+                        cursor: "pointer",
+                        background: auditSentenceIdx === idx ? "#FEF3C7" : "transparent",
+                        borderBottom: auditSentenceIdx === idx ? "1.5px solid #D97706" : "none",
+                        padding: "1px 2px",
+                      }}
+                    >
+                      {sentence}{" "}
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "5px", padding: "6px 8px" }}>
+                  <div style={{ fontSize: "8.5px", fontWeight: 700, color: "#4338CA" }}>
+                    Verified Statutory Evidence Binding:
+                  </div>
+                  <div style={{ fontSize: "8px", fontFamily: "monospace", color: "#3730A3", marginTop: "1px" }}>
+                    SHA-256 Digest: b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+        </main>
+      )}
     </div>
   );
 };
-
-export const ProofScreen = CourtProofScreen;

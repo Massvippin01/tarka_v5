@@ -15,7 +15,7 @@ import {
   decodeRailReference,
   type LedgerRowData,
 } from "../../utils/intakeFalsifier";
-import { IntakeKpiCard } from "../../components/tarka/intake/IntakeKpiCard";
+import { KpiTile, StoryBanner } from "../../components/tarka/kit";
 import { GateRail } from "../../components/tarka/intake/GateRail";
 import { LedgerCard } from "../../components/tarka/intake/LedgerCard";
 import { InspectorDock } from "../../components/tarka/intake/InspectorDock";
@@ -25,7 +25,7 @@ export const IntakeScreen: React.FC = () => {
   useOverflowGuard();
 
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { activeDockTab, setActiveDockTab, density } = useTarkaUiStore();
+  const { setActiveDockTab, density } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const isRow14Tampered = !!mutations.alterBankRow14;
@@ -218,7 +218,18 @@ export const IntakeScreen: React.FC = () => {
     >
       <Toaster position="bottom-right" richColors />
 
-      {/* =========================================================================
+            {/* STORY BANNER */}
+      <StoryBanner
+        screenId="intake"
+        takeaway="CBS double-entry invariant falsifies purported ₹15,000 victim receipt, proving unbooked ₹2,00,000 deficit and Tier-1 HSM tamper."
+        evidenceChips={[
+          { tier: "T1", label: "SBI Finacle CBS", hash: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567" },
+          { tier: "T1", label: "NPCI Switch STAN", hash: "9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd" },
+          { tier: "T3", label: "Victim Screenshot", hash: "c89148bc92019482019a84719284102948192841029481928410294819284102" },
+        ]}
+      />
+
+{/* =========================================================================
           ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)
           ========================================================================= */}
       <section
@@ -227,72 +238,72 @@ export const IntakeScreen: React.FC = () => {
           display: "grid",
           gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
           gap: isCompact ? "6px" : "10px",
-          height: isCompact ? "64px" : "80px",
-          minHeight: isCompact ? "64px" : "80px",
-          maxHeight: isCompact ? "64px" : "80px",
           flexShrink: 0,
           boxSizing: "border-box",
         }}
       >
-        {/* KPI 1: Double-Entry Conservation */}
-        <IntakeKpiCard
-          title="Ledger Conservation"
-          heroText={isRow14Tampered ? "Row #14 Fail" : "100% Valid"}
-          pillText={isRow14Tampered ? "BREACH ✗" : "✓ 6/6 Reconciled"}
-          pillVariant={isRow14Tampered ? "rose" : "emerald"}
-          metaText="Bal[k] = Bal[k-1] + Cr - Dr"
+        <KpiTile
+          title="Ledger conservation"
+          value={isRow14Tampered ? "Row #14 Fail" : "100% Valid"}
           icon={ShieldCheck}
           iconColor={isRow14Tampered ? "#E11D48" : "#059669"}
-          iconBg={isRow14Tampered ? "#FFF1F2" : "#ECFDF5"}
-          tooltipText="Double-entry conservation solver: 6 CBS rows reconciled in 0.4ms"
+          iconBg={isRow14Tampered ? "#FFE4E6" : "#ECFDF5"}
+          statusBadge={{
+            text: isRow14Tampered ? "BREACH ✗" : "6/6 RECONCILED",
+            variant: isRow14Tampered ? "rose" : "emerald",
+          }}
+          subtitle="Bal[k] = Bal[k-1] + Cr - Dr"
+          microVisual="ring"
+          progressPct={isRow14Tampered ? 83 : 100}
+          provenanceTooltip="Double-entry conservation solver: 6 CBS rows reconciled in 0.4ms."
           onClick={() => toggleMutation("alterBankRow14")}
         />
 
-        {/* KPI 2: NPCI RRN Clock Sync */}
-        <IntakeKpiCard
-          title="NPCI RRN Clock Sync"
-          heroText="10:00:14 IST"
-          pillText={isForgedRrn ? "CLOCK SKEW" : "Δ +14s IST"}
-          pillVariant={isForgedRrn ? "rose" : "indigo"}
-          metaText="Julian Day 265 · STAN #149921"
+        <KpiTile
+          title="NPCI RRN clock sync"
+          value={isForgedRrn ? "10:50:14 IST" : "10:00:14 IST"}
           icon={Clock}
-          iconColor="#4F46E5"
-          iconBg="#EEF2FF"
-          tooltipText="NPCI UPI Switch timestamp decoded directly from 12-digit RRN"
-          active={activeDockTab === "rrn"}
+          iconColor={isForgedRrn ? "#E11D48" : "#4F46E5"}
+          iconBg={isForgedRrn ? "#FFE4E6" : "#EEF2FF"}
+          statusBadge={{
+            text: isForgedRrn ? "CLOCK SKEW" : "Δ +14s (IN SPEC)",
+            variant: isForgedRrn ? "rose" : "indigo",
+          }}
+          subtitle="Julian Day 265 · STAN #149921"
+          microVisual="ring"
+          progressPct={isForgedRrn ? 20 : 100}
+          provenanceTooltip="NPCI UPI Switch timestamp decoded directly from 12-digit RRN."
           onClick={() => {
             setActiveDockTab("rrn");
             toggleMutation("forgeRrnTimestamp");
           }}
         />
 
-        {/* KPI 3: Claim vs CBS */}
-        <IntakeKpiCard
-          title="Claim vs CBS"
-          heroText="-₹2,00,000.00"
-          pillText="14.3× Suppressed"
-          pillVariant="rose"
-          metaText="Canva Superimposed Overwrite"
+        <KpiTile
+          title="Claim vs. booked"
+          value="-₹2,00,000.00"
           icon={AlertTriangle}
           iconColor="#E11D48"
-          iconBg="#FFF1F2"
-          tooltipText="Receipt claimed ₹15,000 vs actual SBI Finacle ledger debit of ₹2,15,000"
-          active={activeDockTab === "pdf"}
+          iconBg="#FFE4E6"
+          statusBadge={{ text: "14.3× SUPPRESSED", variant: "rose" }}
+          subtitle="Claimed: ₹15K vs CBS: ₹2.15L"
+          microVisual="ring"
+          progressPct={7}
+          provenanceTooltip="Canva receipt overwrote genuine ₹2,15,000 CBS debit with fraudulent ₹15,000 text."
           onClick={() => setActiveDockTab("pdf")}
         />
 
-        {/* KPI 4: Evidence Integrity */}
-        <IntakeKpiCard
-          title="Evidence Integrity"
-          heroText="9,996 / 10,000"
-          pillText="99.96% Blinded"
-          pillVariant="emerald"
-          metaText="DoT Cl. 39.20 Safe · 2 %%EOF"
+        <KpiTile
+          title="Civilian PII blinded"
+          value="9,996 / 10,000"
           icon={FileCheck}
-          iconColor="#7C3AED"
-          iconBg="#F5F3FF"
-          tooltipText="Dual %%EOF trailers detected; 9,996 innocent citizens blinded in CGNAT pool"
-          active={activeDockTab === "privacy"}
+          iconColor="#059669"
+          iconBg="#ECFDF5"
+          statusBadge={{ text: "99.96% BLINDED", variant: "emerald" }}
+          subtitle="Air-Gap Zero External Calls"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Deterministic SHA-256 HMAC pseudonymization blinds innocent telecom subscribers."
           onClick={() => setActiveDockTab("privacy")}
         />
       </section>

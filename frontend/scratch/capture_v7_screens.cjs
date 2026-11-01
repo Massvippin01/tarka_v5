@@ -58,3 +58,4 @@ main().catch((err) => {
   console.error("Error capturing v7 screens:", err);
   process.exit(1);
 });
+

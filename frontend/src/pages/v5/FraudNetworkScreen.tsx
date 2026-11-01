@@ -7,14 +7,29 @@ import {
   FileText,
   Copy,
   Check,
-  CheckCircle2,
   Zap,
+  Radio,
+  Layers,
+  CircleDot,
+  Shield,
+  Smartphone,
+  Server,
+  Building,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
-import { BentoKpiCard } from "../../components/tarka/BentoPrimitives";
+import {
+  KpiTile,
+  StoryBanner,
+  SectionCard,
+  ScaleBar,
+  useFocusStore,
+} from "../../components/tarka/kit";
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
+
+type EdgeType = "all" | "tether" | "ja4" | "caf" | "c2";
+type LayoutMode = "layered" | "radial";
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
@@ -27,7 +42,9 @@ export const FraudNetworkScreen: React.FC = () => {
     return detectHotspotCollision(observed, 64);
   }, [isHotspotActive]);
 
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("NODE-KP");
+  const { selectedNodeId, setSelectedNodeId } = useFocusStore();
+  const [edgeFilter, setEdgeFilter] = useState<EdgeType>("all");
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("layered");
   const [isCopied, setIsCopied] = useState(false);
   const [isXmlCopied, setIsXmlCopied] = useState(false);
 
@@ -39,7 +56,7 @@ Generated: 2026-09-22 10:30:00 IST | Classification: LAW ENFORCEMENT SENSITIVE
 [SYNDICATE INFRASTRUCTURE CLUSTER LINKAGE]
 Primary Infrastructure Controller:
 • Accomplice Wi-Fi Hotspot BSSID: 74:DA:38:A2:11:BC (Poco X5 Pro AP)
-• Ingress Gateway: Airtel PGW (103.21.144.92) | Decremented TTL: 63 (Hop Count = 2)
+• Ingress Gateway: Airtel PGW (103.21.144.92) | Decremented TTL: ${isHotspotActive ? "63 (Hop Count = 2)" : "64 (Direct)"}
 • Client TLS Anchor: JA4 = t13d1516h2_8daaf6 (Identical across 4 Bank Sessions)
 
 [CONTROLLED MULE ENTITIES (4 TARGETS)]
@@ -50,7 +67,7 @@ Primary Infrastructure Controller:
 
 [INTER-STATE CORRELATION]
 Blind Index HMAC-SHA256 Match across 14 FIRs (UP, MH, KA, GJ, DL)
-Total Syndicate Transaction Exposure: ₹10,42,18,900.00`;
+Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate ₹10.00 Cr)`;
 
     navigator.clipboard.writeText(report);
     setIsCopied(true);
@@ -66,83 +83,150 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00`;
     setTimeout(() => setIsXmlCopied(false), 2000);
   };
 
+  // Node Positions Definition for Layered Layout (viewBox 0 0 740 340)
+  const layeredNodes: Record<string, { x: number; y: number; title: string; subtitle: string; tag: string; color: string; icon: any }> = {
+    "NODE-TWR": { x: 90, y: 35, title: "Airtel DL-TWR-891", subtitle: "Rohini Sec 4 · Azimuth 120°", tag: "CELL TOWER", color: "#0284C7", icon: Radio },
+    "NODE-KP": { x: 370, y: 35, title: "Poco X5 AP (74:DA:38:A2:11:BC)", subtitle: isHotspotActive ? "TTL=63 Tethered (-1 Hop)" : "TTL=64 Direct Cellular", tag: "KINGPIN CONTROLLER", color: "#E11D48", icon: Smartphone },
+    "NODE-C2": { x: 650, y: 35, title: "Telegram C2 @c2_bot", subtitle: "IP: 103.21.144.92 · Port 443", tag: "C2 WEBHOOK", color: "#BE123C", icon: Server },
+    "NODE-JA4": { x: 230, y: 145, title: "JA4 Client TLS Anchor", subtitle: "t13d1516h2_8daaf6 · 4/4 Match", tag: "TLS 1.3 PASS", color: "#10B981", icon: Cpu },
+    "NODE-CAF": { x: 510, y: 145, title: "Shared CAF Introducer", subtitle: "Mewat Telecom Retailer #4401", tag: "SIM SYNDICATE", color: "#F59E0B", icon: Building },
+    "NODE-M1": { x: 80, y: 265, title: "Vikram Shah (L1)", subtitle: "SBI · Inflow ₹5,00,000", tag: "§107 FROZEN", color: "#8B5CF6", icon: Shield },
+    "NODE-M2A": { x: 270, y: 265, title: "Rohit Verma (L2A)", subtitle: "HDFC · Fwd ₹1,80,000", tag: "§107 FROZEN", color: "#6366F1", icon: Shield },
+    "NODE-M2B": { x: 470, y: 265, title: "Sameer Khan (L2B)", subtitle: "AXIS · ATM ₹1,20,000", tag: "§107 FROZEN", color: "#F59E0B", icon: Shield },
+    "NODE-SINK": { x: 660, y: 265, title: "Paytm Sink #1109", subtitle: "Terminal Escrow Cache", tag: "SEALED EXIT", color: "#059669", icon: Shield },
+  };
+
+  // Radial Node Positions (Center at 370, 170, Radius 130)
+  const radialNodes: Record<string, { x: number; y: number; title: string; subtitle: string; tag: string; color: string; icon: any }> = {
+    "NODE-KP": { x: 370, y: 170, title: "Poco X5 AP (74:DA:38:A2:11:BC)", subtitle: isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct", tag: "KINGPIN CLUSTER", color: "#E11D48", icon: Smartphone },
+    "NODE-TWR": { x: 370, y: 35, title: "DL-TWR-891", subtitle: "Airtel Tower", tag: "TOWER", color: "#0284C7", icon: Radio },
+    "NODE-C2": { x: 550, y: 65, title: "Telegram @c2_bot", subtitle: "C2 Webhook", tag: "C2", color: "#BE123C", icon: Server },
+    "NODE-CAF": { x: 600, y: 170, title: "CAF Introducer", subtitle: "Mewat SIM Pool", tag: "CAF", color: "#F59E0B", icon: Building },
+    "NODE-SINK": { x: 550, y: 275, title: "Paytm #1109", subtitle: "Terminal Sink", tag: "SINK", color: "#059669", icon: Shield },
+    "NODE-M2B": { x: 370, y: 305, title: "Sameer Khan", subtitle: "AXIS Mule", tag: "L2B", color: "#F59E0B", icon: Shield },
+    "NODE-M2A": { x: 190, y: 275, title: "Rohit Verma", subtitle: "HDFC Mule", tag: "L2A", color: "#6366F1", icon: Shield },
+    "NODE-M1": { x: 140, y: 170, title: "Vikram Shah", subtitle: "SBI Mule L1", tag: "L1", color: "#8B5CF6", icon: Shield },
+    "NODE-JA4": { x: 190, y: 65, title: "JA4 TLS Anchor", subtitle: "t13d1516h2", tag: "JA4", color: "#10B981", icon: Cpu },
+  };
+
+  const activeNodes = layoutMode === "layered" ? layeredNodes : radialNodes;
+
+  // Edge Specifications
+  const edges = [
+    { from: "NODE-TWR", to: "NODE-KP", type: "tether" as EdgeType, color: "#0284C7", label: "Cell Link (TTL 64)", width: 2.5, dashed: false },
+    { from: "NODE-KP", to: "NODE-M1", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63 (-1 Hop)" : "TTL 64 Direct", width: 3, dashed: isHotspotActive },
+    { from: "NODE-KP", to: "NODE-M2A", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63" : "Direct", width: 2.5, dashed: isHotspotActive },
+    { from: "NODE-KP", to: "NODE-M2B", type: "tether" as EdgeType, color: "#8B5CF6", label: isHotspotActive ? "TTL 64→63" : "Direct", width: 2.5, dashed: isHotspotActive },
+    { from: "NODE-KP", to: "NODE-C2", type: "c2" as EdgeType, color: "#BE123C", label: "OTP Forwarded", width: 2, dashed: true },
+    { from: "NODE-JA4", to: "NODE-M1", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
+    { from: "NODE-JA4", to: "NODE-M2A", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
+    { from: "NODE-JA4", to: "NODE-M2B", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2.5, dashed: false },
+    { from: "NODE-JA4", to: "NODE-SINK", type: "ja4" as EdgeType, color: "#10B981", label: "JA4 4/4 Match", width: 2, dashed: false },
+    { from: "NODE-CAF", to: "NODE-M2B", type: "caf" as EdgeType, color: "#F59E0B", label: "Same CAF Introducer", width: 2, dashed: true },
+    { from: "NODE-CAF", to: "NODE-SINK", type: "caf" as EdgeType, color: "#F59E0B", label: "Same Introducer", width: 2, dashed: true },
+  ];
+
   return (
     <div
       className={`tarka-fraud-network-root ${isCompact ? "tarka-density-compact" : ""}`}
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 56px)",
-        maxHeight: "calc(100dvh - 56px)",
-        padding: isCompact ? "8px 12px 12px 12px" : "12px 16px 16px 16px",
-        gap: isCompact ? "8px" : "10px",
+        height: "calc(100dvh - 52px)",
+        maxHeight: "calc(100dvh - 52px)",
+        padding: isCompact ? "6px 12px 10px 12px" : "8px 14px 12px 14px",
+        gap: isCompact ? "6px" : "8px",
         boxSizing: "border-box",
-        background: "var(--bento-canvas, #F4F6FB)",
+        background: "#F8FAFC",
         overflow: "hidden",
       }}
     >
       {/* =========================================================================
-          ROW 1: TOP 4 EXECUTIVE KPI METRIC CARDS
+          ROW 0: STORY BANNER (PASSES 5-SECOND TEST)
           ========================================================================= */}
-      <div className="bento-grid-4" style={{ flexShrink: 0 }}>
-        <BentoKpiCard
-          title="Syndicate Actors Linked"
-          metric="4 Mules → 1 Cluster"
-          metricColor="#4F46E5"
-          statusBadge={{ text: "MULTI-MODAL GRAPH", variant: "indigo" }}
-          meta="Infrastructure Core"
-          subtitle="Common Hotspot & TLS Controller"
+      <StoryBanner
+        takeaway={
+          <span>
+            <strong>Kingpin Handset (Samsung M34 · IMEI 86749206...)</strong> physically tethered 4 mule bank accounts across Delhi/Noida cell sectors via shared portable Wi-Fi AP & identical JA4 TLS client fingerprint.
+          </span>
+        }
+        evidenceChips={[
+          { tier: "T1", label: "Airtel PGW IPDR", hash: "63a9b18204e112aa894451299cbf", detail: "Packet hop inspection confirming TTL=63 hotspot decrement" },
+          { tier: "T1", label: "NPCI Device XML", hash: "89c20491823091ffeed891241aa", detail: "BSSID 74:DA:38:A2:11:BC captured in bank session telemetry" },
+          { tier: "T1", label: "Tower DL-TWR-891", hash: "339109bbcf12498214aa8823190", detail: "Sector 4 Rohini cell tower coverage radius" },
+        ]}
+      />
+
+      {/* =========================================================================
+          ROW 1: TOP 4 EXECUTIVE KPI TILES (FULL UNTRUNCATED LABELS)
+          ========================================================================= */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "8px",
+          flexShrink: 0,
+        }}
+      >
+        <KpiTile
+          title="Actors linked"
+          value="4 Mules → 1 Cluster"
           icon={Network}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
-          sparklineData={[1, 2, 3, 4, 4, 4]}
+          statusBadge={{ text: "MULTI-MODAL GRAPH", variant: "indigo" }}
+          subtitle="Common Hotspot & TLS Controller"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Deterministic set-intersection of BSSID, JA4 TLS, and cell tower coordinates."
         />
 
-        <BentoKpiCard
-          title="Packet Tethering Proof"
-          metric={hotspotResult.isHotspotDetected ? "TTL = 63 (Tethered)" : "TTL = 64 (Direct)"}
-          metricColor={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"}
-          statusBadge={{
-            text: hotspotResult.isHotspotDetected ? "TETHERED AP" : "DIRECT 4G/5G",
-            variant: hotspotResult.isHotspotDetected ? "rose" : "emerald",
-          }}
-          meta="BSSID 74:DA:38..."
-          subtitle="Poco X5 Portable Wi-Fi AP"
+        <KpiTile
+          title="Tethering proof"
+          value={hotspotResult.isHotspotDetected ? "TTL = 63 (Hotspot AP)" : "TTL = 64 (Direct Cellular)"}
           icon={Wifi}
           iconColor={hotspotResult.isHotspotDetected ? "#E11D48" : "#059669"}
           iconBg={hotspotResult.isHotspotDetected ? "#FFF1F2" : "#ECFDF5"}
-          sparklineData={hotspotResult.isHotspotDetected ? [64, 64, 64, 63, 63, 63] : [64, 64, 64, 64, 64, 64]}
+          statusBadge={{
+            text: hotspotResult.isHotspotDetected ? "TETHERED AP" : "DIRECT 4G/5G",
+            variant: hotspotResult.isHotspotDetected ? "rose" : "emerald",
+            dot: true,
+          }}
+          subtitle={hotspotResult.isHotspotDetected ? "Hop Count: 2 (-1 PGW Decrement)" : "Single Hop Direct Cellular"}
+          microVisual="ring"
+          progressPct={hotspotResult.isHotspotDetected ? 100 : 80}
+          provenanceTooltip="DoT Clause 39.20 IPDR packet inspection at Airtel PGW Gateway 103.21.144.92."
         />
 
-        <BentoKpiCard
-          title="App-Layer TLS Anchor"
-          metric="JA4 Match (4/4)"
-          metricColor="#059669"
-          statusBadge={{ text: "TLS 1.3 PASS", variant: "emerald" }}
-          meta="t13d1516h2_8daaf6"
-          subtitle="Identical banking client binary"
+        <KpiTile
+          title="TLS fingerprint match"
+          value="JA4 Match 4/4"
           icon={Cpu}
           iconColor="#059669"
           iconBg="#ECFDF5"
-          sparklineData={[1, 2, 3, 4, 4, 4]}
+          statusBadge={{ text: "TLS 1.3 PASS", variant: "emerald" }}
+          subtitle="t13d1516h2_8daaf6 Client Binary"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="Exact JA4 hash match across all 4 CBS banking sessions proves same modified app."
         />
 
-        <BentoKpiCard
-          title="Inter-State I4C Linkage"
-          metric="14 FIRs (5 States)"
-          metricColor="#B45309"
-          statusBadge={{ text: "₹10.42 CR POOL", variant: "amber" }}
-          meta="UP, MH, KA, GJ, DL"
-          subtitle="Pratibimb Blind-Index Cross Match"
+        <KpiTile
+          title="Inter-state linkage"
+          value="14 FIRs · 5 States"
           icon={Share2}
           iconColor="#B45309"
           iconBg="#FEF3C7"
-          sparklineData={[2, 5, 8, 11, 14, 14]}
+          statusBadge={{ text: "₹10.42 CR POOL", variant: "amber" }}
+          subtitle="UP, MH, KA, GJ, DL (Exceeds CBI Mandate)"
+          microVisual="ring"
+          progressPct={100}
+          provenanceTooltip="I4C Samanvaya HMAC blind-index correlation crossing CBI ₹10.00 Cr statutory threshold."
         />
       </div>
 
       {/* =========================================================================
-          ROW 2: 2-PANEL EXECUTIVE STAGE (LEFT 7 COLS GRAPH + RIGHT 5 COLS DISSECTOR)
+          ROW 2: MAIN STAGE (7 COLS HERO TOPOLOGY + 5 COLS DISSECTOR)
           ========================================================================= */}
       <main
         style={{
@@ -150,278 +234,342 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00`;
           minHeight: 0,
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "12px",
+          gap: "10px",
           overflow: "hidden",
         }}
       >
         {/* =====================================================================
-            LEFT HERO CANVAS (7 COLUMNS): INTERACTIVE FRAUD-NETWORK TOPOLOGY
+            LEFT HERO CARD (7 COLUMNS): CONNECTED ACTOR TOPOLOGY GRAPH
             ===================================================================== */}
-        <div
-          style={{
-            gridColumn: "span 7",
-            background: "#FFFFFF",
-            border: "1px solid #E2E8F0",
-            borderRadius: "14px",
-            padding: isCompact ? "10px 14px" : "14px 18px",
-            boxShadow: "0 2px 8px -2px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            gap: "10px",
-            height: "100%",
-            minHeight: 0,
-            boxSizing: "border-box",
-            overflow: "hidden",
-          }}
-        >
-          {/* Header & Controls */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Network size={15} color="#4F46E5" />
-              </div>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", letterSpacing: "-0.01em" }}>
-                  Fraud-Network & Actor Relationship Topology Graph
+        <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
+          <SectionCard
+            title="Connected Multi-Layer Actor Topology Graph"
+            subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 kingpin infrastructure cluster."
+            icon={Network}
+            iconColor="#4F46E5"
+            badgeText={layoutMode === "layered" ? "3-TIER LAYERED" : "RADIAL ORBIT"}
+            badgeVariant="indigo"
+            provenanceTooltip="Synthesized graph joining Airtel CDR, NPCI Switch logs, and BSSID telemetry."
+            actionSlot={
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {/* Edge Filter Chips */}
+                <div style={{ display: "flex", alignItems: "center", gap: "3px", background: "#F1F5F9", padding: "2px", borderRadius: "6px" }}>
+                  {(["all", "tether", "ja4", "caf", "c2"] as EdgeType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEdgeFilter(type)}
+                      style={{
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        border: "none",
+                        background: edgeFilter === type ? "#FFFFFF" : "transparent",
+                        color: edgeFilter === type ? "#0F172A" : "#64748B",
+                        boxShadow: edgeFilter === type ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ fontSize: "10px", color: "#64748B", marginTop: "1px" }}>
-                  Discovers hidden structural links tying 4 disparate mule accounts to 1 kingpin infrastructure cluster.
+
+                {/* Layout Mode Toggle */}
+                <div style={{ display: "flex", alignItems: "center", gap: "2px", background: "#F1F5F9", padding: "2px", borderRadius: "6px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("layered")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: "none",
+                      background: layoutMode === "layered" ? "#FFFFFF" : "transparent",
+                      color: layoutMode === "layered" ? "#4F46E5" : "#64748B",
+                      boxShadow: layoutMode === "layered" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    }}
+                    title="Switch to 3-tier layered architecture"
+                  >
+                    <Layers size={10} />
+                    <span>Layered</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLayoutMode("radial")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: "none",
+                      background: layoutMode === "radial" ? "#FFFFFF" : "transparent",
+                      color: layoutMode === "radial" ? "#4F46E5" : "#64748B",
+                      boxShadow: layoutMode === "radial" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    }}
+                    title="Switch to radial orbit view"
+                  >
+                    <CircleDot size={10} />
+                    <span>Radial</span>
+                  </button>
                 </div>
+
+                {/* Hotspot Simulation Mutator */}
+                <button
+                  type="button"
+                  onClick={() => toggleMutation("triggerHotspotCollision")}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "9.5px",
+                    fontWeight: 700,
+                    padding: "3px 8px",
+                    borderRadius: "5px",
+                    border: isHotspotActive ? "1.5px solid #E11D48" : "1px solid #CBD5E1",
+                    background: isHotspotActive ? "#FFF1F2" : "#FFFFFF",
+                    color: isHotspotActive ? "#BE123C" : "#0F172A",
+                    cursor: "pointer",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                  }}
+                  title="Simulate TTL decrement (TTL=63) from Wi-Fi Hotspot tethering"
+                >
+                  <Zap size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
+                  <span>{isHotspotActive ? "Hotspot Active (TTL=63)" : "⚡ Simulate Hotspot"}</span>
+                </button>
               </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                type="button"
-                onClick={() => toggleMutation("triggerHotspotCollision")}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  padding: "3.5px 8px",
-                  borderRadius: "5px",
-                  border: isHotspotActive ? "1.5px solid #E11D48" : "1px solid #CBD5E1",
-                  background: isHotspotActive ? "#FFF1F2" : "#F8FAFC",
-                  color: isHotspotActive ? "#BE123C" : "#0F172A",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-                }}
-              >
-                <Zap size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
-                <span>{isHotspotActive ? "Hotspot Active (TTL=63)" : "⚡ Simulate Hotspot (TTL=63)"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Multi-Edge Network Diagram */}
-          <div
-            style={{
-              flex: "1 1 0%",
-              minHeight: "220px",
-              background: "#F8FAFC",
-              border: "1px solid #E2E8F0",
-              borderRadius: "10px",
-              padding: "12px",
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              boxSizing: "border-box",
-              overflow: "hidden",
-            }}
+            }
           >
-            {/* Top Node: Kingpin Hotspot AP */}
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div
-                onClick={() => setSelectedNodeId("NODE-KP")}
-                style={{
-                  background: selectedNodeId === "NODE-KP" ? "#FFF1F2" : "#FFFFFF",
-                  border: selectedNodeId === "NODE-KP" ? "2px solid #E11D48" : "1px solid #FECDD3",
-                  borderRadius: "8px",
-                  padding: "8px 14px",
-                  boxShadow: "0 2px 6px rgba(225,29,72,0.12)",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  maxWidth: "340px",
-                  width: "100%",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#BE123C", textTransform: "uppercase" }}>
-                    Kingpin Controller Cluster
-                  </span>
-                  <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#FFE4E6", color: "#BE123C", padding: "1px 5px", borderRadius: "3px" }}>
-                    TETHERED BSSID
-                  </span>
-                </div>
-                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>
-                  Poco X5 Portable Wi-Fi AP (74:DA:38:A2:11:BC)
-                </div>
-                <div style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "#BE123C", marginTop: "1px" }}>
-                  Airtel Cell Tower DL-TWR-891 · PGW Ingress TTL: {isHotspotActive ? "63 (Hop Decrement)" : "64"}
-                </div>
-              </div>
-            </div>
-
-            {/* SVG Connecting Flow Lines with 4 Color-Coded Edge Types */}
-            <svg
-              width="100%"
-              height="100"
-              viewBox="0 0 520 100"
-              preserveAspectRatio="none"
-              style={{ overflow: "visible", margin: "4px 0" }}
+            {/* The Responsive Topology SVG & Interactive Node Canvas */}
+            <div
+              style={{
+                flex: "1 1 0%",
+                minHeight: 0,
+                position: "relative",
+                background: "#F8FAFC",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+                overflow: "hidden",
+                boxSizing: "border-box",
+              }}
             >
-              <defs>
-                <marker id="netArrowPurple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#8B5CF6" />
-                </marker>
-                <marker id="netArrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#3B82F6" />
-                </marker>
-                <marker id="netArrowAmber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F59E0B" />
-                </marker>
-              </defs>
-
-              {/* Edge to Mule 1 (Vikram) */}
-              <path d="M 260 0 C 260 40, 70 40, 70 95" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeDasharray={isHotspotActive ? "4 2" : "none"} markerEnd="url(#netArrowPurple)" />
-              {/* Edge to Mule 2A (Rohit) */}
-              <path d="M 260 0 C 260 40, 200 40, 200 95" fill="none" stroke="#3B82F6" strokeWidth="2" markerEnd="url(#netArrowBlue)" />
-              {/* Edge to Mule 2B (Sameer) */}
-              <path d="M 260 0 C 260 40, 330 40, 330 95" fill="none" stroke="#3B82F6" strokeWidth="2" markerEnd="url(#netArrowBlue)" />
-              {/* Edge to Mule 3 (Paytm Sink) */}
-              <path d="M 260 0 C 260 40, 460 40, 460 95" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="3 3" markerEnd="url(#netArrowAmber)" />
-            </svg>
-
-            {/* Bottom Row: 4 Mule Nodes */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-              {/* Mule 1 */}
-              <div
-                onClick={() => setSelectedNodeId("NODE-M1")}
-                style={{
-                  background: selectedNodeId === "NODE-M1" ? "#EEF2FF" : "#FFFFFF",
-                  border: selectedNodeId === "NODE-M1" ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
-                  borderRadius: "7px",
-                  padding: "6px 8px",
-                  cursor: "pointer",
-                }}
+              {/* SVG Connecting Flow Lines (Physically Connecting Handles) */}
+              <svg
+                width="100%"
+                height="100%"
+                viewBox="0 0 740 340"
+                preserveAspectRatio="none"
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "visible" }}
               >
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#BE123C" }}>L1 MULE</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>Vikram Shah</div>
-                <div style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>SBI · ₹5.00L In</div>
-                <div style={{ fontSize: "8px", color: "#8B5CF6", fontWeight: 700, marginTop: "2px" }}>🟣 BSSID Tether</div>
-              </div>
+                <defs>
+                  <style>{`
+                    @keyframes netEdgePulse {
+                      from { stroke-dashoffset: 24; }
+                      to { stroke-dashoffset: 0; }
+                    }
+                    .edge-dash-stream {
+                      animation: netEdgePulse 1.2s linear infinite;
+                    }
+                  `}</style>
+                  <marker id="netArrowIndigo" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4F46E5" />
+                  </marker>
+                  <marker id="netArrowPurple" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#8B5CF6" />
+                  </marker>
+                  <marker id="netArrowEmerald" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10B981" />
+                  </marker>
+                  <marker id="netArrowAmber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F59E0B" />
+                  </marker>
+                  <marker id="netArrowRose" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#E11D48" />
+                  </marker>
+                </defs>
 
-              {/* Mule 2A */}
-              <div
-                onClick={() => setSelectedNodeId("NODE-M2A")}
-                style={{
-                  background: selectedNodeId === "NODE-M2A" ? "#EEF2FF" : "#FFFFFF",
-                  border: selectedNodeId === "NODE-M2A" ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
-                  borderRadius: "7px",
-                  padding: "6px 8px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#B45309" }}>L2A MULE</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>Rohit Verma</div>
-                <div style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>HDFC · ₹3.00L</div>
-                <div style={{ fontSize: "8px", color: "#3B82F6", fontWeight: 700, marginTop: "2px" }}>🔵 JA4 TLS Match</div>
-              </div>
+                {/* Render Edges */}
+                {edges.map((e, idx) => {
+                  if (edgeFilter !== "all" && edgeFilter !== e.type) return null;
 
-              {/* Mule 2B */}
-              <div
-                onClick={() => setSelectedNodeId("NODE-M2B")}
-                style={{
-                  background: selectedNodeId === "NODE-M2B" ? "#EEF2FF" : "#FFFFFF",
-                  border: selectedNodeId === "NODE-M2B" ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
-                  borderRadius: "7px",
-                  padding: "6px 8px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#B45309" }}>L2B MULE</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>Sameer Khan</div>
-                <div style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>AXIS · ₹2.00L</div>
-                <div style={{ fontSize: "8px", color: "#3B82F6", fontWeight: 700, marginTop: "2px" }}>🔵 JA4 + Azimuth</div>
-              </div>
+                  const src = activeNodes[e.from];
+                  const dst = activeNodes[e.to];
+                  if (!src || !dst) return null;
 
-              {/* Sink */}
-              <div
-                onClick={() => setSelectedNodeId("NODE-SINK")}
-                style={{
-                  background: selectedNodeId === "NODE-SINK" ? "#EEF2FF" : "#FFFFFF",
-                  border: selectedNodeId === "NODE-SINK" ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
-                  borderRadius: "7px",
-                  padding: "6px 8px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#047857" }}>TERMINAL</div>
-                <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>Paytm Sink 1109</div>
-                <div style={{ fontSize: "8.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>Escrow Cache</div>
-                <div style={{ fontSize: "8px", color: "#F59E0B", fontWeight: 700, marginTop: "2px" }}>🟠 Shared Introducer</div>
-              </div>
+                  const x1 = src.x;
+                  const y1 = src.y;
+                  const x2 = dst.x;
+                  const y2 = dst.y;
+
+                  // Smooth cubic bezier with midpoint label
+                  const dx = x2 - x1;
+                  const dy = y2 - y1;
+                  const mx = (x1 + x2) / 2;
+                  const my = (y1 + y2) / 2;
+                  const cp1x = x1 + dx * 0.2;
+                  const cp1y = y1 + dy * 0.5;
+                  const cp2x = x2 - dx * 0.2;
+                  const cp2y = y2 - dy * 0.5;
+
+                  const pathD = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+
+                  const isEdgeActive = selectedNodeId === e.from || selectedNodeId === e.to;
+                  const markerId =
+                    e.color === "#10B981"
+                      ? "url(#netArrowEmerald)"
+                      : e.color === "#F59E0B"
+                      ? "url(#netArrowAmber)"
+                      : e.color === "#E11D48" || e.color === "#BE123C"
+                      ? "url(#netArrowRose)"
+                      : e.color === "#8B5CF6"
+                      ? "url(#netArrowPurple)"
+                      : "url(#netArrowIndigo)";
+
+                  return (
+                    <g key={idx}>
+                      <path
+                        d={pathD}
+                        fill="none"
+                        stroke={e.color}
+                        strokeWidth={isEdgeActive ? e.width + 1 : e.width}
+                        strokeDasharray={e.dashed || isHotspotActive ? "6 3" : undefined}
+                        className={isHotspotActive ? "edge-dash-stream" : undefined}
+                        opacity={isEdgeActive ? 1 : 0.75}
+                        markerEnd={markerId}
+                        style={{ transition: "all 0.25s ease" }}
+                      />
+                      {/* Edge Label Chip */}
+                      <g transform={`translate(${mx}, ${my})`}>
+                        <rect
+                          x="-28"
+                          y="-8"
+                          width="56"
+                          height="16"
+                          rx="4"
+                          fill="#FFFFFF"
+                          stroke={e.color}
+                          strokeWidth="1"
+                          style={{ filter: "drop-shadow(0 1px 2px rgba(15,23,42,0.06))" }}
+                        />
+                        <text
+                          x="0"
+                          y="3"
+                          textAnchor="middle"
+                          fill={e.color}
+                          fontSize="7.5"
+                          fontWeight="800"
+                          fontFamily="var(--font-mono, monospace)"
+                        >
+                          {e.label}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* DOM Node Cards */}
+              {Object.entries(activeNodes).map(([nodeId, n]) => {
+                const isSelected = selectedNodeId === nodeId;
+                const IconComponent = n.icon;
+
+                return (
+                  <div
+                    key={nodeId}
+                    onClick={() => setSelectedNodeId(nodeId)}
+                    style={{
+                      position: "absolute",
+                      left: `${(n.x / 740) * 100}%`,
+                      top: `${(n.y / 340) * 100}%`,
+                      transform: "translate(-50%, -50%)",
+                      background: isSelected ? "#FFFFFF" : "#FFFFFF",
+                      border: isSelected ? `2px solid ${n.color}` : "1px solid #CBD5E1",
+                      borderRadius: "8px",
+                      padding: "6px 9px",
+                      boxShadow: isSelected ? `0 0 0 3px ${n.color}25, 0 4px 10px rgba(0,0,0,0.08)` : "0 1px 3px rgba(15,23,42,0.04)",
+                      cursor: "pointer",
+                      zIndex: isSelected ? 20 : 10,
+                      minWidth: "120px",
+                      maxWidth: "180px",
+                      boxSizing: "border-box",
+                      transition: "all 0.18s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "4px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <IconComponent size={11} color={n.color} />
+                        <span style={{ fontSize: "7.5px", fontWeight: 800, color: n.color, textTransform: "uppercase" }}>
+                          {n.tag}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: n.color }} />
+                      )}
+                    </div>
+                    <div style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A", marginTop: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {n.title}
+                    </div>
+                    <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "0.5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {n.subtitle}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
 
-          {/* Forensic Linkage Summary Bar */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "6px 12px",
-              borderRadius: "8px",
-              background: "#EEF2FF",
-              border: "1px solid #C7D2FE",
-              fontSize: "10.5px",
-              color: "#312E81",
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <CheckCircle2 size={14} color="#4F46E5" />
-              <span>
-                <strong>Syndicate Discovery SAT:</strong> All 4 account sessions share JA4 fingerprint <code>t13d1516h2_8daaf6</code> and are co-located at BSSID <code>74:DA:38:A2:11:BC</code> (TTL={isHotspotActive ? "63" : "64"}).
+            {/* Bottom Status Ticker */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                background: "#EEF2FF",
+                border: "1px solid #C7D2FE",
+                fontSize: "10.5px",
+                color: "#312E81",
+                marginTop: "6px",
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Check size={13} color="#4F46E5" />
+                <span style={{ fontWeight: 700 }}>
+                  Syndicate Discovery SAT: All 4 account sessions share JA4 client hash <code>t13d1516h2_8daaf6</code> and co-locate at BSSID <code>74:DA:38:A2:11:BC</code>.
+                </span>
+              </div>
+              <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4F46E5" }}>
+                P &lt; 1.4 × 10⁻⁷
               </span>
             </div>
-            <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#4338CA" }}>
-              P &lt; 1.4 × 10⁻⁷
-            </span>
-          </div>
+          </SectionCard>
         </div>
 
         {/* =====================================================================
-            RIGHT INSPECTOR DOCK (5 COLUMNS): UPI XML & I4C SAMANVAYA EXPORT
+            RIGHT SUPPORT PANEL (5 COLUMNS): LIGHT-MODE XML & I4C SAMANVAYA BAR
             ===================================================================== */}
-        <div
-          style={{
-            gridColumn: "span 5",
-            background: "#FFFFFF",
-            border: "1px solid #E2E8F0",
-            borderRadius: "14px",
-            padding: isCompact ? "10px 14px" : "14px 16px",
-            boxShadow: "0 2px 8px -2px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            gap: "10px",
-            height: "100%",
-            minHeight: 0,
-            boxSizing: "border-box",
-            overflow: "hidden",
-          }}
-        >
-          {/* Card 1: UPI 2.0 <Device> XML Dissector */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px 12px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>
-                UPI 2.0 &lt;Device&gt; XML & JA4 TLS Anchor
-              </span>
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "10px", height: "100%", minHeight: 0 }}>
+          {/* Card 1: Light-Mode <Device> XML & Telemetry Provenance */}
+          <SectionCard
+            title="UPI 2.0 <Device> XML & Provenance"
+            subtitle="NPCI Central Switch telemetry stanza linking handset to network"
+            icon={FileText}
+            iconColor="#4F46E5"
+            badgeText="NPCI SWITCH T1"
+            badgeVariant="emerald"
+            actionSlot={
               <button
                 type="button"
                 onClick={handleCopyXml}
@@ -429,121 +577,163 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00`;
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  padding: "2.5px 7px",
-                  borderRadius: "4px",
+                  fontSize: "9.5px",
+                  fontWeight: 700,
+                  padding: "3px 7px",
+                  borderRadius: "5px",
                   border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#334155",
+                  background: isXmlCopied ? "#ECFDF5" : "#F8FAFC",
+                  color: isXmlCopied ? "#047857" : "#0F172A",
                   cursor: "pointer",
                 }}
               >
-                {isXmlCopied ? <Check size={11} color="#059669" /> : <Copy size={11} />}
-                <span>{isXmlCopied ? "XML Copied" : "Copy XML"}</span>
+                {isXmlCopied ? <Check size={11} /> : <Copy size={11} />}
+                <span>{isXmlCopied ? "Copied" : "Copy XML"}</span>
               </button>
-            </div>
-
-            {/* XML Snippet */}
+            }
+          >
+            {/* Light-Mode Syntax Highlighted Code Box */}
             <div
               style={{
-                background: "#0F172A",
-                color: "#38BDF8",
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
                 borderRadius: "6px",
                 padding: "8px 10px",
-                fontFamily: "var(--font-mono)",
-                fontSize: "9.5px",
-                lineHeight: 1.4,
+                fontFamily: "var(--font-mono, monospace)",
+                fontSize: "10px",
+                lineHeight: 1.5,
+                color: "#1E293B",
                 overflowX: "auto",
-                whiteSpace: "nowrap",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
               }}
             >
-              <span style={{ color: "#F43F5E" }}>&lt;Device</span>{" "}
-              <span style={{ color: "#34D399" }}>mobile=</span><span style={{ color: "#FCD34D" }}>"919871123941"</span>{" "}
-              <span style={{ color: "#34D399" }}>geocode=</span><span style={{ color: "#FCD34D" }}>"28.5355,77.3910"</span>{" "}
-              <span style={{ color: "#34D399" }}>bssid=</span><span style={{ color: "#FCD34D" }}>"74:DA:38:A2:11:BC"</span>{" "}
-              <span style={{ color: "#34D399" }}>tls_ja4=</span><span style={{ color: "#FCD34D" }}>"t13d1516h2_8daaf6"</span>{" "}
-              <span style={{ color: "#F43F5E" }}>/&gt;</span>
+              <span style={{ color: "#4338CA" }}>&lt;Device </span>
+              <span style={{ color: "#047857" }}>mobile</span>=<span style={{ color: "#B45309" }}>"919871123941"</span>{" "}
+              <span style={{ color: "#047857" }}>geocode</span>=<span style={{ color: "#B45309" }}>"28.5355,77.3910"</span>{" "}
+              <span style={{ color: "#047857" }}>bssid</span>=<span style={{ color: "#E11D48", fontWeight: 700 }}>"74:DA:38:A2:11:BC"</span>{" "}
+              <span style={{ color: "#047857" }}>tls_ja4</span>=<span style={{ color: "#4338CA", fontWeight: 700 }}>"t13d1516h2_8daaf6"</span>{" "}
+              <span style={{ color: "#4338CA" }}>/&gt;</span>
             </div>
 
-            {/* 4 Anchor Points */}
+            {/* Explicit Provenance Chips Grid */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "8px" }}>
               <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <span style={{ color: "#64748B" }}>REGISTERED MSISDN:</span>
-                <div style={{ fontWeight: 700, color: "#0F172A" }}>+91-98711-23941</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748B", fontWeight: 700 }}>REGISTERED MSISDN</span>
+                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>NPCI T1</span>
+                </div>
+                <div style={{ fontWeight: 800, color: "#0F172A", marginTop: "1px", fontFamily: "var(--font-mono)" }}>+91-98711-23941</div>
               </div>
+
               <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <span style={{ color: "#64748B" }}>TOWER GEOCODE:</span>
-                <div style={{ fontWeight: 700, color: "#0F172A" }}>28.5355° N, 77.3910° E</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748B", fontWeight: 700 }}>TOWER GEOCODE</span>
+                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TOWER T1</span>
+                </div>
+                <div style={{ fontWeight: 800, color: "#0F172A", marginTop: "1px", fontFamily: "var(--font-mono)" }}>28.5355° N, 77.3910° E</div>
               </div>
+
               <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <span style={{ color: "#64748B" }}>HANDSET CHASSIS:</span>
-                <div style={{ fontWeight: 700, color: "#0F172A" }}>SM-M346B/DS (Galaxy M34)</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748B", fontWeight: 700 }}>TETHERED BSSID</span>
+                  <span style={{ fontSize: "7.5px", background: "#EEF2FF", color: "#4338CA", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TLS T1</span>
+                </div>
+                <div style={{ fontWeight: 800, color: "#BE123C", marginTop: "1px", fontFamily: "var(--font-mono)" }}>74:DA:38:A2:11:BC</div>
               </div>
+
               <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", padding: "5px 7px", borderRadius: "5px", fontSize: "9px" }}>
-                <span style={{ color: "#64748B" }}>JA4 CLIENT HASH:</span>
-                <div style={{ fontWeight: 700, color: "#4F46E5", fontFamily: "var(--font-mono)" }}>t13d1516h2...</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ color: "#64748B", fontWeight: 700 }}>JA4 CLIENT HASH</span>
+                  <span style={{ fontSize: "7.5px", background: "#ECFDF5", color: "#047857", padding: "0.5px 3.5px", borderRadius: "3px", fontWeight: 800 }}>TLS T1</span>
+                </div>
+                <div style={{ fontWeight: 800, color: "#4F46E5", marginTop: "1px", fontFamily: "var(--font-mono)" }}>t13d1516h2...</div>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Card 2: 4-Edge Relationship Legend */}
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "10px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", marginBottom: "2px" }}>
-              Cross-Actor Relationship Edges:
-            </span>
-            <div style={{ fontSize: "9.5px", color: "#334155" }}>
-              🟣 <strong>Edge 1 (Wi-Fi Tethering):</strong> TTL 64 &rarr; 63 decrement isolates common router hardware.
-            </div>
-            <div style={{ fontSize: "9.5px", color: "#334155" }}>
-              🔵 <strong>Edge 2 (JA4 TLS 1.3):</strong> Exact hash across 4 CBS sessions confirms single modified app client.
-            </div>
-            <div style={{ fontSize: "9.5px", color: "#334155" }}>
-              🟠 <strong>Edge 3 (Guarantor / CAF):</strong> Shared telecom retailer introducer in Nuh/Mewat corridor.
-            </div>
-            <div style={{ fontSize: "9.5px", color: "#334155" }}>
-              🔴 <strong>Edge 4 (C2 Telegram Webhook):</strong> Intercepted victim OTP forwarded to bot <code>@c2_bot</code>.
-            </div>
-          </div>
+          {/* Card 2: Cross-State Exposure & I4C Samanvaya Bar */}
+          <SectionCard
+            title="Cross-State Syndicate & I4C Samanvaya"
+            subtitle="Blind-index correlation across 14 FIRs in 5 states (Exceeds CBI Mandate)"
+            icon={Share2}
+            iconColor="#B45309"
+            badgeText="₹10.42 CR SYNDICATE"
+            badgeVariant="amber"
+          >
+            {/* Stacked Horizontal State Exposure ScaleBar */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <ScaleBar
+                min={0}
+                max={12}
+                value={10.42}
+                unit=" Cr"
+                labelAbove="Inter-State Exposure vs CBI Mandate (₹10.00 Cr)"
+                valueBelow="Syndicate Total: ₹10.42 Cr (CBI Requisition SAT)"
+                thresholdLine={{ value: 10.0, label: "₹10.00 Cr CBI Mandate", color: "#DC2626" }}
+                zones={[
+                  { from: 0, to: 3.85, color: "#3B82F6", label: "UP: ₹3.85Cr (5 FIRs)" },
+                  { from: 3.85, to: 6.45, color: "#6366F1", label: "MH: ₹2.60Cr (3 FIRs)" },
+                  { from: 6.45, to: 8.40, color: "#8B5CF6", label: "KA: ₹1.95Cr (3 FIRs)" },
+                  { from: 8.40, to: 9.62, color: "#F59E0B", label: "GJ: ₹1.22Cr (2 FIRs)" },
+                  { from: 9.62, to: 10.42, color: "#10B981", label: "DL: ₹0.80Cr (1 FIR)" },
+                ]}
+                height={16}
+              />
 
-          {/* Card 3: Actionable I4C Samanvaya Export */}
-          <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "10px", padding: "10px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: "#4338CA" }}>
-                I4C Samanvaya / Pratibimb Export
-              </span>
-              <span style={{ fontSize: "8.5px", fontWeight: 800, color: "#4F46E5", background: "#E0E7FF", padding: "1px 5px", borderRadius: "3px" }}>
-                INTER-STATE DOSSIER
-              </span>
+              {/* State Chips Breakdown */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "4px", marginTop: "4px" }}>
+                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#3B82F6" }}>UP (5)</div>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹3.85Cr</div>
+                </div>
+                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#6366F1" }}>MH (3)</div>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹2.60Cr</div>
+                </div>
+                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#8B5CF6" }}>KA (3)</div>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹1.95Cr</div>
+                </div>
+                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#F59E0B" }}>GJ (2)</div>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹1.22Cr</div>
+                </div>
+                <div style={{ textAlign: "center", background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
+                  <div style={{ fontSize: "8px", fontWeight: 800, color: "#10B981" }}>DL (1)</div>
+                  <div style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>₹0.80Cr</div>
+                </div>
+              </div>
             </div>
 
-            <div style={{ fontSize: "9.5px", color: "#3730A3", lineHeight: 1.35 }}>
-              Generates standardized statutory intelligence memo linking this FIR to 14 active cases in UP, MH, KA, GJ, and DL.
+            {/* Action Button: Copy I4C Report */}
+            <div style={{ marginTop: "auto", paddingTop: "8px" }}>
+              <button
+                type="button"
+                onClick={handleCopyI4cReport}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  width: "100%",
+                  padding: "7px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: isCopied ? "#059669" : "#4F46E5",
+                  color: "#FFFFFF",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                {isCopied ? <Check size={12} /> : <FileText size={12} />}
+                <span>{isCopied ? "Report Copied to Clipboard" : "📋 Copy Inter-State Syndicate Report (I4C Format)"}</span>
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleCopyI4cReport}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "5px",
-                padding: "6px 10px",
-                borderRadius: "6px",
-                border: "none",
-                background: isCopied ? "#059669" : "#4F46E5",
-                color: "#FFFFFF",
-                fontSize: "10.5px",
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
-              }}
-            >
-              {isCopied ? <Check size={12} /> : <FileText size={12} />}
-              <span>{isCopied ? "Report Copied" : "📋 Copy Inter-State Syndicate Report (I4C Format)"}</span>
-            </button>
-          </div>
+          </SectionCard>
         </div>
       </main>
     </div>

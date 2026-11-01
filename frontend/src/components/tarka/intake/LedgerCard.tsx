@@ -1088,7 +1088,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           </tbody>
         </table>
 
-        {/* Ledger Conservation & Invariant Summary Box */}
+        {/* Ledger Conservation & Invariant Summary Box - 4-Bar Accounting Waterfall */}
         <div
           style={{
             margin: "10px 10px 8px 10px",
@@ -1103,52 +1103,52 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#0F172A" }}>
-              CBS Double-Entry Conservation Synthesis (SBI Finacle 10.x)
+              Double-Entry Conservation Accounting Waterfall
             </span>
             <span
               style={{
                 fontSize: "8.5px",
-                fontWeight: 700,
+                fontWeight: 800,
                 fontFamily: "var(--font-mono)",
-                padding: "1px 5px",
+                padding: "1px 6px",
                 borderRadius: "3px",
                 background: isRow14Tampered ? "#FFF1F2" : "#ECFDF5",
                 color: isRow14Tampered ? "#BE123C" : "#047857",
                 border: `1px solid ${isRow14Tampered ? "#FECDD3" : "#A7F3D0"}`,
               }}
             >
-              {isRow14Tampered ? "CONSERVATION VIOLATED (-₹2.00L)" : "CONSERVED (6/6 ROWS ✓)"}
+              {isRow14Tampered ? "Residual: -₹2,00,000.00 ✗" : "Residual: ₹0.00 ✓"}
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px", fontSize: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
             <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "9px" }}>Opening Balance</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>
+              <div style={{ color: "#64748B", fontSize: "8.5px" }}>Opening Balance</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#0F172A", marginTop: "1px" }}>
                 ₹6,15,890.00
               </div>
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "9px" }}>Total Debits (5)</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#BE123C", marginTop: "1px" }}>
-                -₹2,32,650.00
-              </div>
-            </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "9px" }}>Total Credits (1)</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857", marginTop: "1px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #BBF7D0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#166534", fontSize: "8.5px" }}>+ Total Credits (1)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#15803D", marginTop: "1px" }}>
                 +₹1,25,000.00
               </div>
             </div>
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
-              <div style={{ color: "#64748B", fontSize: "9px" }}>Closing Balance</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: isRow14Tampered ? "#BE123C" : "#0F172A", marginTop: "1px" }}>
+            <div style={{ background: "#FFFFFF", border: "1px solid #FECDD3", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#991B1B", fontSize: "8.5px" }}>− Total Debits (5)</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: "#E11D48", marginTop: "1px" }}>
+                −₹2,32,650.00
+              </div>
+            </div>
+            <div style={{ background: "#FFFFFF", border: isRow14Tampered ? "1.5px solid #FECDD3" : "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+              <div style={{ color: "#64748B", fontSize: "8.5px" }}>Closing Balance</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "10.5px", color: isRow14Tampered ? "#BE123C" : "#0F172A", marginTop: "1px" }}>
                 ₹{customRow14Balance ? (parseFloat(customRow14Balance) - 14200).toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "5,08,240.00"}
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
+          <div style={{ fontSize: "9px", color: "#475569", lineHeight: 1.3, background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "4px", padding: "4px 6px" }}>
             <strong style={{ color: "#0F172A" }}>Mathematical Proof: </strong>
             Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>k ∈ [11..16]</code> satisfies <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "0 3px" }}>Bal[k] = Bal[k-1] + Cr[k] - Dr[k]</code>.
             {isRow14Tampered && " Discrepancy detected at Sequence #14 (Vikram Mule account debit)."}
@@ -1178,10 +1178,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
           <Shield size={11} color="#059669" />
-          <span>Tier-1 HSM Conservation Verified · RBI Circular Compliant</span>
+          <span>Tier-1 HSM Conservation Verified · Cryptographic Chain of Custody</span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "9.5px", color: "#94A3B8" }}>
-          SBI-FINACLE-10.2-PROD
+          FINACLE-10-AUDIT
         </span>
       </div>
     </div>

@@ -15,7 +15,8 @@ import { useTarkaUiStore, type DockTab } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
-import { PrecisionVernierGauge, StripeSegmentedBar } from "../../ui/forensic-infographics";
+import { StripeSegmentedBar } from "../../ui/forensic-infographics";
+import { ScaleBar } from "../kit";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -377,7 +378,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   border: `1px solid ${decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "#A7F3D0" : "#FECDD3"}`,
                 }}
               >
-                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "ADMISSIBLE" : "FLAGGED"}
+                {decodedRrn?.admissibilityVerdict === "ADMISSIBLE" ? "Integrity checks pass" : "FLAGGED"}
               </span>
 
               <select
@@ -658,17 +659,22 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </div>
           </div>
 
-          {/* Precision Vernier Clock-Drift Gauge */}
-          <PrecisionVernierGauge
-            min={-180}
-            max={180}
-            value={isForgedRrn ? 180 : driftSec}
-            feasibleRange={[-180, 180]}
-            unit="s"
-            title="CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync"
-            statusLabel={isWithinTolerance ? "IN SPEC (±180s) ✓" : "SKEW EXCEEDED ✗"}
-            isSat={isWithinTolerance}
-          />
+          {/* Non-Overlapping Precision Clock-Drift ScaleBar */}
+          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
+            <ScaleBar
+              labelAbove="CBS Finacle ↔ NPCI Switch NTP Stratum-2 Sync"
+              min={-180}
+              max={180}
+              value={isForgedRrn ? 180 : driftSec}
+              unit="s"
+              toleranceBand={{
+                from: -180,
+                to: 180,
+                label: "ADMISSIBLE BOUND (±180s)",
+              }}
+              valueBelow={`Δ = ${driftSec > 0 ? "+" : ""}${driftSec}.0s (Stratum-2 Sync)`}
+            />
+          </div>
 
           {/* Presets (Wrap-safe, Single/Multi Line) */}
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px", paddingTop: "2px" }}>
