@@ -285,9 +285,42 @@ export class UniversalCsvParser {
     this.detectedType = detectPublicDatasetFormat(headerLine);
   }
 
+  private cachedTokens: string[] = [];
+
+  public parseLine(line: string, rowNum: number): { rawRow: RawStreamRow; groundTruthFraud: boolean } {
+    this.cachedTokens.length = 0;
+    let start = 0;
+    const len = line.length;
+    let inQuotes = false;
+    for (let i = 0; i < len; i++) {
+      const c = line.charCodeAt(i);
+      if (c === 34) {
+        inQuotes = !inQuotes;
+      } else if (c === 44 && !inQuotes) {
+        this.cachedTokens.push(line.substring(start, i));
+        start = i + 1;
+      }
+    }
+    this.cachedTokens.push(line.substring(start));
+    return this.parseRow(this.cachedTokens, rowNum);
+  }
+
   public parseRow(tokens: string[], rowNum: number): { rawRow: RawStreamRow; groundTruthFraud: boolean } {
-    const get = (idx: number, fallback = "") =>
-      idx >= 0 && idx < tokens.length ? tokens[idx].trim().replace(/^["']|["']$/g, "") : fallback;
+    const get = (idx: number, fallback = "") => {
+      if (idx >= 0 && idx < tokens.length) {
+        let t = tokens[idx].trim();
+        const len = t.length;
+        if (len >= 2) {
+          const first = t.charCodeAt(0);
+          const last = t.charCodeAt(len - 1);
+          if ((first === 34 && last === 34) || (first === 39 && last === 39)) {
+            t = t.substring(1, len - 1);
+          }
+        }
+        return t;
+      }
+      return fallback;
+    };
 
     const getNum = (idx: number, fallback = 0) => {
       const v = get(idx, "");
