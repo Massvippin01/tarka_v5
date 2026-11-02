@@ -20,3 +20,4 @@ const path = require('path');
   console.log(text);
   await browser.close();
 })();
+

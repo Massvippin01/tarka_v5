@@ -123,8 +123,8 @@ export interface DiscoveredFraudCluster {
   }>;
   discoveredAtStep?: number;
   sourceDataset?: string;
-  doctoredBalanceRows?: Array<{ rowNum: number; txId: string; srcAcct: string; bookedDebit: number; claimedBalError: number }>;
-  forgedRrnRows?: Array<{ rowNum: number; rrn: string; txTimestamp: string; reason: string }>;
+  doctoredBalanceRows?: Array<{ rowNum: number; txId: string; srcAcct: string; bookedDebit: number; claimedBalError: number; imei?: string; timestamp?: string; receiverId?: string }>;
+  forgedRrnRows?: Array<{ rowNum: number; rrn: string; txTimestamp: string; reason: string; amount?: number; imei?: string; senderId?: string; receiverId?: string; txId?: string }>;
 }
 
 export interface PublicBenchmarkSummary {
@@ -155,6 +155,10 @@ export interface PublicBenchmarkSummary {
     graph: number;
     telemetry: number;
   };
+  currentScanRow?: number;
+  scanTickerText?: string;
+  chunkThroughputHistory?: number[];
+  heapMbHistory?: number[];
 }
 
 /**
@@ -404,8 +408,8 @@ export class StreamingForensicPipeline {
   public onUnflagRow?: (rowNum: number) => void;
 
   private flaggedRows = new Map<number, number>(); // rowNum -> vectorMask
-  private doctoredBalanceRows: Array<{ rowNum: number; txId: string; srcAcct: string; bookedDebit: number; claimedBalError: number }> = [];
-  private forgedRrnRows: Array<{ rowNum: number; rrn: string; txTimestamp: string; reason: string }> = [];
+  private doctoredBalanceRows: Array<{ rowNum: number; txId: string; srcAcct: string; bookedDebit: number; claimedBalError: number; imei?: string; timestamp?: string; receiverId?: string }> = [];
+  private forgedRrnRows: Array<{ rowNum: number; rrn: string; txTimestamp: string; reason: string; amount?: number; imei?: string; senderId?: string; receiverId?: string; txId?: string }> = [];
   private totalLibrCapitalSaved = 0;
 
   private activeSyndicates = new Map<string, InternalSyndicateTrack>();
@@ -453,6 +457,9 @@ export class StreamingForensicPipeline {
           srcAcct: row.senderId,
           bookedDebit: row.amount,
           claimedBalError: balanceDeficitOrig,
+          imei: row.imei,
+          timestamp: row.timestamp,
+          receiverId: row.receiverId,
         });
       }
     }
@@ -476,6 +483,11 @@ export class StreamingForensicPipeline {
             rrn: row.rrn,
             txTimestamp: row.timestamp,
             reason: rrnReason,
+            amount: row.amount,
+            imei: row.imei,
+            senderId: row.senderId,
+            receiverId: row.receiverId,
+            txId: row.txId,
           });
         }
       }
@@ -778,17 +790,18 @@ export class StreamingForensicPipeline {
         totalDrained: r.bookedDebit,
         librRecoverableLien: r.claimedBalError,
         merchantShieldedAmount: 0,
-        accountsInvolved: [r.srcAcct],
+        accountsInvolved: [r.srcAcct, r.receiverId || "MULE"].filter(Boolean),
         hops: 1,
+        convergedImei: r.imei,
         enginesTriggered: ["I1 Balance Falsifier", "§94 BNSS Order"],
         evidenceRows: [
           {
             txId: r.txId,
             rowNum: r.rowNum,
             step: r.rowNum,
-            timestamp: "2026-09-22T10:00:14+05:30",
+            timestamp: r.timestamp || "2026-09-22T10:00:14+05:30",
             senderId: r.srcAcct,
-            receiverId: "MULE",
+            receiverId: r.receiverId || "MULE",
             amount: r.bookedDebit,
             rail: "UPI",
             deficit: r.claimedBalError,
@@ -804,22 +817,23 @@ export class StreamingForensicPipeline {
         id: `RRN-0${idx + 1}`,
         name: `Forged NPCI Switch RRN (${r.rrn})`,
         topology: "I2_RRN_FORGERY",
-        victimAccount: "NPCI Switch Gateway",
-        totalDrained: 0,
-        librRecoverableLien: 0,
+        victimAccount: r.senderId || "NPCI Switch Gateway",
+        totalDrained: r.amount || 0,
+        librRecoverableLien: r.amount || 0,
         merchantShieldedAmount: 0,
-        accountsInvolved: ["NPCI_UPI_SWITCH"],
+        accountsInvolved: [r.senderId || "NPCI_UPI_SWITCH", r.receiverId || "ORIGIN_BANK"].filter(Boolean),
         hops: 1,
+        convergedImei: r.imei,
         enginesTriggered: ["I2 RRN Validator", "Switch Desync"],
         evidenceRows: [
           {
-            txId: `TXN-${r.rowNum}`,
+            txId: r.txId || `TXN-${r.rowNum}`,
             rowNum: r.rowNum,
             step: r.rowNum,
             timestamp: r.txTimestamp,
-            senderId: "NPCI_GATEWAY",
-            receiverId: "ORIGIN_BANK",
-            amount: 0,
+            senderId: r.senderId || "NPCI_GATEWAY",
+            receiverId: r.receiverId || "ORIGIN_BANK",
+            amount: r.amount || 0,
             rail: "UPI",
             deficit: 0,
             reason: r.reason,
