@@ -52,7 +52,98 @@ export interface DiagnosticCheckItem {
   latencyMs: number;
 }
 
-export const BenchmarkLabScreen: React.FC = () => {
+class BenchmarkLabErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("[BenchmarkLabErrorBoundary] Caught rendering error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            flex: "1 1 0%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#F8FAFC",
+            padding: "24px",
+            fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "520px",
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "#FEF2F2",
+                color: "#E11D48",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "12px",
+              }}
+            >
+              <AlertCircle size={24} />
+            </div>
+            <h2 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>
+              Benchmark Lab Display Recovered
+            </h2>
+            <p style={{ fontSize: "12px", color: "#64748B", marginBottom: "16px", lineHeight: "1.5" }}>
+              An error occurred during dataset rendering ({this.state.error?.message || "Unknown error"}). The pipeline remains intact.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              style={{
+                background: "#4F46E5",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 16px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Reload Benchmark Lab
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const BenchmarkLabScreenInner: React.FC = () => {
   const { setActivePage, setActiveDiscoveredCluster } = useTarkaUiStore();
   const { registerDiscoveredCase, selectCaseWorkspace, setActiveRoute } = useTarkaGlobal();
 
@@ -329,6 +420,10 @@ export const BenchmarkLabScreen: React.FC = () => {
       file,
       paced: speedMode === "PACED",
     } as PublicStreamerCommand);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleStop = () => {
@@ -395,7 +490,7 @@ export const BenchmarkLabScreen: React.FC = () => {
 
     // 1. Synthesize real CBS Ledger CSV with cryptographic seal
     const csvHeader = "Row,Timestamp,TxID,Type,Amount,SenderAccount,ReceiverAccount,OldBalOrig,NewBalOrig,OldBalDest,NewBalDest,UTR_RRN,Status\n";
-    const csvRows = cluster.evidenceRows.map((e, idx) =>
+    const csvRows = (cluster.evidenceRows ?? []).map((e, idx) =>
       `${idx + 1},${e.timestamp},${e.txId},${e.rail},${e.amount},${e.senderId},${e.receiverId},${e.amount + 1000},1000,500,${e.amount + 500},626510${String(149900 + idx)},CONDUIT_TRANSFER`
     ).join("\n");
     const cbsContent = new TextEncoder().encode(csvHeader + csvRows);
@@ -409,7 +504,7 @@ export const BenchmarkLabScreen: React.FC = () => {
 
     // 3. Synthesize NPCI UPI 2.0 XML Schema
     const xmlContent = new TextEncoder().encode(
-      `<UPIPaymentSession UTR="626510149921" BSSID="74:DA:38:A2:11:BC" JA4="${cluster.convergedJa4 || "t13d1516h2_8daaf6"}" Scheme="UPI2.0"><Payer VPA="${cluster.victimAccount}@sbi"/><Payee VPA="${cluster.accountsInvolved[1] || "mule"}@hdfc"/><Amount currency="INR">${cluster.totalDrained}</Amount></UPIPaymentSession>`
+      `<UPIPaymentSession UTR="626510149921" BSSID="74:DA:38:A2:11:BC" JA4="${cluster.convergedJa4 || "t13d1516h2_8daaf6"}" Scheme="UPI2.0"><Payer VPA="${cluster.victimAccount}@sbi"/><Payee VPA="${cluster.accountsInvolved?.[1] || "mule"}@hdfc"/><Amount currency="INR">${cluster.totalDrained}</Amount></UPIPaymentSession>`
     );
     const xmlSha256 = await computeSha256Hex(xmlContent.buffer);
 
@@ -425,7 +520,7 @@ export const BenchmarkLabScreen: React.FC = () => {
       ingestedAtIst: new Date().toLocaleTimeString("en-IN", { hour12: false }) + " IST",
       custodianNode: "Kaggle Public Dataset Web Worker Profiler",
       gateStatus: "PASS",
-      gateDetail: `Extracted ${cluster.evidenceRows.length} transactions across ${cluster.accountsInvolved.length} accounts. LIBR Recoverable: ₹${cluster.librRecoverableLien.toLocaleString()}.`,
+      gateDetail: `Extracted ${(cluster.evidenceRows ?? []).length} transactions across ${(cluster.accountsInvolved ?? []).length} accounts. LIBR Recoverable: ₹${cluster.librRecoverableLien.toLocaleString()}.`,
     };
 
     const cgnatArtifact: IngestedArtifact = {
@@ -1745,7 +1840,7 @@ export const BenchmarkLabScreen: React.FC = () => {
                   </div>
                   <div>
                     <span style={{ color: "#64748B" }}>Sub-Graph: </span>
-                    <strong style={{ color: "#4F46E5" }}>{activeCluster.accountsInvolved.length} Nodes · {activeCluster.hops || 1} Hops</strong>
+                    <strong style={{ color: "#4F46E5" }}>{(activeCluster.accountsInvolved ?? []).length} Nodes · {activeCluster.hops || 1} Hops</strong>
                   </div>
                 </div>
 
@@ -1789,7 +1884,7 @@ export const BenchmarkLabScreen: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {activeCluster.evidenceRows.map((row, idx) => (
+                      {(activeCluster.evidenceRows ?? []).map((row, idx) => (
                         <tr key={idx} style={{ borderBottom: "1px solid #F1F5F9", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
                           <td style={{ padding: "4px 6px", fontWeight: 700, color: "#4F46E5" }}>#{row.rowNum}</td>
                           <td style={{ padding: "4px 6px", color: "#334155" }}>{row.txId}</td>
@@ -2094,11 +2189,11 @@ export const BenchmarkLabScreen: React.FC = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                         {cluster.evidenceRows && cluster.evidenceRows.length > 0 && (
                           <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#475569", background: "#F1F5F9", border: "1px solid #E2E8F0", padding: "1px 4px", borderRadius: "3px" }}>
-                            #{cluster.evidenceRows[0].rowNum}–#{cluster.evidenceRows[cluster.evidenceRows.length - 1].rowNum}
+                            #{cluster.evidenceRows[0]?.rowNum ?? 0}–#{cluster.evidenceRows[cluster.evidenceRows.length - 1]?.rowNum ?? 0}
                           </span>
                         )}
                         <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "#059669", background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
-                          {cluster.hops || 1} HOPS · {cluster.accountsInvolved.length} NODES
+                          {cluster.hops || 1} HOPS · {(cluster.accountsInvolved ?? []).length} NODES
                         </span>
                       </div>
                     </div>
@@ -2134,7 +2229,7 @@ export const BenchmarkLabScreen: React.FC = () => {
                     {/* Row 3: Engines Triggered & 1-Click Promote Button */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "2px" }}>
                       <div style={{ display: "flex", gap: "3px", flexWrap: "wrap" }}>
-                        {cluster.enginesTriggered.map((eng) => (
+                        {(cluster.enginesTriggered ?? ["Graph Engine"]).map((eng) => (
                           <span
                             key={eng}
                             style={{
@@ -2187,3 +2282,9 @@ export const BenchmarkLabScreen: React.FC = () => {
     </div>
   );
 };
+
+export const BenchmarkLabScreen: React.FC = () => (
+  <BenchmarkLabErrorBoundary>
+    <BenchmarkLabScreenInner />
+  </BenchmarkLabErrorBoundary>
+);
