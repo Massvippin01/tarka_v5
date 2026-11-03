@@ -25,7 +25,7 @@ import {
 
 export type PublicStreamerCommand =
   | {
-      type: "STREAM_FILE";
+      type: "STREAM_FILE" | "START_FILE_STREAM";
       file: File;
       paced?: boolean;
     }
@@ -90,7 +90,7 @@ self.onmessage = async (e: MessageEvent<PublicStreamerCommand>) => {
 
   if (cmd.type === "STREAM_REPLICA") {
     await runReplicaStream(cmd.preset, cmd.rowCount ?? 100000, !!cmd.paced);
-  } else if (cmd.type === "STREAM_FILE") {
+  } else if (cmd.type === "STREAM_FILE" || cmd.type === "START_FILE_STREAM") {
     await runChunkedFileStream(cmd.file, !!cmd.paced);
   }
 };
@@ -120,6 +120,23 @@ async function runReplicaStream(preset: "PAYSIM_100K" | "IBM_AML_100K", totalRow
   const pipeline = new StreamingForensicPipeline();
 
   const handleFlagRow = (rowNum: number, vectorMask: number) => {
+    if (flaggedRowsMap.size >= 5000) {
+      const it = flaggedRowsMap.keys();
+      for (let i = 0; i < 500; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        flaggedRowsMap.delete(k);
+      }
+    }
+    if (groundTruthSet.size >= 5000) {
+      const it = groundTruthSet.keys();
+      for (let i = 0; i < 500; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        groundTruthSet.delete(k);
+      }
+    }
+
     const existingMask = flaggedRowsMap.get(rowNum) || 0;
     const newMask = existingMask | vectorMask;
     flaggedRowsMap.set(rowNum, newMask);
@@ -308,6 +325,23 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
   const pipeline = new StreamingForensicPipeline();
 
   const handleFlagRow = (rowNum: number, vectorMask: number) => {
+    if (flaggedRowsMap.size >= 5000) {
+      const it = flaggedRowsMap.keys();
+      for (let i = 0; i < 500; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        flaggedRowsMap.delete(k);
+      }
+    }
+    if (groundTruthSet.size >= 5000) {
+      const it = groundTruthSet.keys();
+      for (let i = 0; i < 500; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        groundTruthSet.delete(k);
+      }
+    }
+
     const existingMask = flaggedRowsMap.get(rowNum) || 0;
     const newMask = existingMask | vectorMask;
     flaggedRowsMap.set(rowNum, newMask);
@@ -364,7 +398,7 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
 
   const topAnomalies: AnomalyCluster[] = [];
 
-  const CHUNK_SIZE = 4 * 1024 * 1024; // 4 MB chunk
+  const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB chunk (Fix 2)
   let offset = 0;
   const decoder = new TextDecoder("utf-8");
   let leftoverText = "";
@@ -463,6 +497,15 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
       if (!universalParser) continue;
       processed++;
 
+      // FAST ASCII LINE & NUMBER SCANNER (Fix 2)
+      // Skips 99.9% of normal rows in large CSVs without string/object allocation
+      const fast = universalParser.fastScanLine(line, processed);
+      if (fast.isFastClean) {
+        if (fast.isMerchant) merchantShieldedCount++;
+        runningTn++;
+        continue;
+      }
+
       const { rawRow, groundTruthFraud } = universalParser.parseLine(line, processed);
 
       if (universalParser.hasGroundTruth) {
@@ -513,6 +556,9 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
         await new Promise((r) => setTimeout(r, 40));
       }
     }
+
+    // Yield to event loop every 2 MB chunk so V8 performs incremental GC immediately (Fix 2)
+    await new Promise((r) => setTimeout(r, 0));
   }
 
   // Handle any remaining leftover line at end of file
