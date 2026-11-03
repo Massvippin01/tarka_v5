@@ -16,6 +16,9 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
+  Search,
+  ArrowUpDown,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
@@ -23,6 +26,7 @@ import { useTarkaGlobal, type IngestedArtifact, type CaseWorkspace } from "../..
 import type {
   PublicBenchmarkSummary,
   DiscoveredFraudCluster,
+  ForensicTypologyBucket,
 } from "../../utils/publicDatasetAdapters";
 import type { PublicStreamerCommand } from "../../workers/publicDatasetStreamer.worker";
 import {
@@ -55,6 +59,11 @@ export const BenchmarkLabScreen: React.FC = () => {
 
   // Center Chart Mode: Auto-switch between CGNAT decay and Throughput/Heap curve
   const [centerChartMode, setCenterChartMode] = useState<"AUTO" | "CGNAT" | "THROUGHPUT">("AUTO");
+
+  // Typology Filter & Search / Sort state
+  const [selectedTypology, setSelectedTypology] = useState<"ALL" | ForensicTypologyBucket>("ALL");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"AMOUNT" | "HOPS" | "ROW">("AMOUNT");
 
   // Diagnostics state
   const [diagnosticRunning, setDiagnosticRunning] = useState<boolean>(false);
@@ -146,14 +155,15 @@ export const BenchmarkLabScreen: React.FC = () => {
     };
   }, []);
 
-  // Sort discoveredClusters so multi-hop syndicates (RING-01..N) appear FIRST, followed by LEDGER and RRN
+  // Sort discoveredClusters so multi-hop syndicates (RING-01..N) appear FIRST, followed by PAIR, LEDGER, and RRN
   const sortedClusters = React.useMemo(() => {
     if (!summary?.discoveredClusters) return [];
     const getCategoryPriority = (id: string) => {
       if (id.startsWith("RING")) return 1;
-      if (id.startsWith("LEDGER")) return 2;
-      if (id.startsWith("RRN")) return 3;
-      return 4;
+      if (id.startsWith("PAIR")) return 2;
+      if (id.startsWith("LEDGER")) return 3;
+      if (id.startsWith("RRN")) return 4;
+      return 5;
     };
     return [...summary.discoveredClusters].sort((a, b) => {
       const pA = getCategoryPriority(a.id);
@@ -165,14 +175,82 @@ export const BenchmarkLabScreen: React.FC = () => {
     });
   }, [summary?.discoveredClusters]);
 
-  // Auto-select first discovered cluster when available or list changes
-  useEffect(() => {
-    if (sortedClusters.length > 0) {
-      if (!selectedCluster || !sortedClusters.some((c) => c.id === selectedCluster.id)) {
-        setSelectedCluster(sortedClusters[0]);
+  // Counts for each of the 5 typology buckets
+  const typologyCounts = React.useMemo(() => {
+    const list = summary?.discoveredClusters || [];
+    return {
+      all: list.length,
+      rings: list.filter((c) => c.typologyBucket === "RING_TOPOLOGY").length,
+      paired: list.filter((c) => c.typologyBucket === "PAIRED_DRAIN").length,
+      smurf: list.filter((c) => c.typologyBucket === "SMURFING_SPLIT").length,
+      telemetry: list.filter(
+        (c) =>
+          c.typologyBucket === "TELEMETRY_COLLISION" ||
+          (c.convergedImei && c.funnelStages && c.funnelStages.length > 0)
+      ).length,
+      ledger: list.filter((c) => c.typologyBucket === "LEDGER_INVARIANT").length,
+    };
+  }, [summary?.discoveredClusters]);
+
+  // Filtered and Sorted Clusters according to active Typology Tab, Search Query, and Sort By
+  const filteredClusters = React.useMemo(() => {
+    if (!summary?.discoveredClusters) return [];
+    let list = [...summary.discoveredClusters];
+
+    if (selectedTypology !== "ALL") {
+      if (selectedTypology === "TELEMETRY_COLLISION") {
+        list = list.filter(
+          (c) =>
+            c.typologyBucket === "TELEMETRY_COLLISION" ||
+            (c.convergedImei && c.funnelStages && c.funnelStages.length > 0)
+        );
+      } else {
+        list = list.filter((c) => c.typologyBucket === selectedTypology);
       }
     }
-  }, [sortedClusters, selectedCluster]);
+
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
+      list = list.filter((c) => {
+        if (c.id.toLowerCase().includes(q)) return true;
+        if (c.name.toLowerCase().includes(q)) return true;
+        if (c.victimAccount.toLowerCase().includes(q)) return true;
+        if (c.convergedImei?.toLowerCase().includes(q)) return true;
+        if (c.accountsInvolved.some((a) => a.toLowerCase().includes(q))) return true;
+        if (c.evidenceRows.some((e) => e.txId.toLowerCase().includes(q) || e.senderId.toLowerCase().includes(q) || e.receiverId.toLowerCase().includes(q))) return true;
+        return false;
+      });
+    }
+
+    list.sort((a, b) => {
+      if (sortBy === "AMOUNT") {
+        return b.totalDrained - a.totalDrained;
+      }
+      if (sortBy === "HOPS") {
+        const hopsA = a.hops || 1;
+        const hopsB = b.hops || 1;
+        if (hopsB !== hopsA) return hopsB - hopsA;
+        return b.totalDrained - a.totalDrained;
+      }
+      if (sortBy === "ROW") {
+        const rowA = a.evidenceRows[0]?.rowNum ?? 0;
+        const rowB = b.evidenceRows[0]?.rowNum ?? 0;
+        return rowA - rowB;
+      }
+      return 0;
+    });
+
+    return list;
+  }, [summary?.discoveredClusters, selectedTypology, searchQuery, sortBy]);
+
+  // Auto-select first discovered cluster when available or list changes
+  useEffect(() => {
+    if (filteredClusters.length > 0) {
+      if (!selectedCluster || !filteredClusters.some((c) => c.id === selectedCluster.id)) {
+        setSelectedCluster(filteredClusters[0]);
+      }
+    }
+  }, [filteredClusters, selectedCluster]);
 
   // Reset cluster list scroll position to top on every stream update
   useEffect(() => {
@@ -1457,18 +1535,50 @@ export const BenchmarkLabScreen: React.FC = () => {
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <FileText size={14} color="#4F46E5" />
                 <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
-                  VERBATIM CSV ROW &amp; PROOF INSPECTOR
+                  VERBATIM SUB-GRAPH &amp; PROOF INSPECTOR
                 </span>
               </div>
               {activeCluster && (
-                <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", background: "#4F46E5", color: "#FFFFFF", padding: "1px 6px", borderRadius: "3px" }}>
-                  {activeCluster.id}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 800,
+                      fontFamily: "var(--font-mono)",
+                      background: activeCluster.typologyBucket === "RING_TOPOLOGY" ? "#FEF2F2" : activeCluster.typologyBucket === "PAIRED_DRAIN" ? "#FFFBEB" : activeCluster.typologyBucket === "SMURFING_SPLIT" ? "#F5F3FF" : activeCluster.typologyBucket === "TELEMETRY_COLLISION" ? "#ECFEFF" : "#F0FDF4",
+                      color: activeCluster.typologyBucket === "RING_TOPOLOGY" ? "#B91C1C" : activeCluster.typologyBucket === "PAIRED_DRAIN" ? "#B45309" : activeCluster.typologyBucket === "SMURFING_SPLIT" ? "#6D28D9" : activeCluster.typologyBucket === "TELEMETRY_COLLISION" ? "#0E7490" : "#15803D",
+                      border: "1px solid #E2E8F0",
+                      padding: "1px 5px",
+                      borderRadius: "3px",
+                    }}
+                  >
+                    {activeCluster.typologyBucket === "RING_TOPOLOGY" ? "🕸️ MULTI-HOP RING" : activeCluster.typologyBucket === "PAIRED_DRAIN" ? "💸 PAIRED DRAIN" : activeCluster.typologyBucket === "SMURFING_SPLIT" ? "🔀 SMURFING SPLIT" : activeCluster.typologyBucket === "TELEMETRY_COLLISION" ? "📡 TELEMETRY HIT" : "⚖️ LEDGER INVARIANT"}
+                  </span>
+                  <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", background: "#4F46E5", color: "#FFFFFF", padding: "1px 6px", borderRadius: "3px" }}>
+                    {activeCluster.id}
+                  </span>
+                </div>
               )}
             </div>
 
             {activeCluster ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: "1 1 0%", minHeight: 0 }}>
+                {/* Metric Strip */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "5px 8px", fontSize: "10px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                  <div>
+                    <span style={{ color: "#64748B" }}>Total Drained: </span>
+                    <strong style={{ color: "#BE123C" }}>₹{activeCluster.totalDrained.toLocaleString()}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#64748B" }}>LIBR Lien §106: </span>
+                    <strong style={{ color: "#047857" }}>₹{activeCluster.librRecoverableLien.toLocaleString()}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#64748B" }}>Sub-Graph: </span>
+                    <strong style={{ color: "#4F46E5" }}>{activeCluster.accountsInvolved.length} Nodes · {activeCluster.hops || 1} Hops</strong>
+                  </div>
+                </div>
+
                 {/* Invariant Equation Strip */}
                 <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "6px", padding: "6px 8px", fontSize: "10px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
                   <div style={{ fontWeight: 800, color: "#312E81", marginBottom: "2px" }}>
@@ -1481,11 +1591,17 @@ export const BenchmarkLabScreen: React.FC = () => {
                     {activeCluster.topology === "FAN_OUT_SMURFING" && (
                       `§107 Rapid Police Freeze: Outflow ₹${activeCluster.totalDrained.toLocaleString()} smurfed (< ₹1,00,000 splits) across mule accounts within Golden Hour.`
                     )}
+                    {activeCluster.topology === "PAIRED_TRANSFER_CASHOUT" && (
+                      `Paired Mule Cashout Invariant: Instant transfer of ₹${activeCluster.totalDrained.toLocaleString()} followed by matching cash-out extraction within ±1 step.`
+                    )}
                     {activeCluster.topology === "I1_BALANCE_TAMPER" && (
                       `I1 Balance Conservation Falsifier: Claimed Balance != OldBal - Amount (Deficit Δ = ₹${activeCluster.librRecoverableLien.toLocaleString()}).`
                     )}
                     {activeCluster.topology === "I2_RRN_FORGERY" && (
                       `I2 RRN Desync Falsifier: 12-digit switch Julian Day != Transaction Timestamp Day. Forged electronic record.`
+                    )}
+                    {activeCluster.topology === "CGNAT_SHARED_DEVICE_DRAIN" && (
+                      `CGNAT Port-Pool Convergence: Handset collision (${activeCluster.convergedImei || "IMEI"}) links disparate bank nodes under single physical control.`
                     )}
                   </div>
                 </div>
@@ -1517,6 +1633,31 @@ export const BenchmarkLabScreen: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Prominent Micro-Case Extraction & Sub-Graph Workbench Action */}
+                <button
+                  type="button"
+                  onClick={() => handlePromoteClusterToWorkbench(activeCluster)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    padding: "7px 12px",
+                    borderRadius: "6px",
+                    background: "linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)",
+                    border: "none",
+                    color: "#FFFFFF",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 4px rgba(79, 70, 229, 0.25)",
+                    letterSpacing: "0.02em",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span>🚀 Isolate &amp; Load Sub-Graph into 6-Screen Workbench</span>
+                </button>
               </div>
             ) : (
               <div style={{ padding: "30px 10px", textAlign: "center", color: "#64748B", fontSize: "11px" }}>
@@ -1547,12 +1688,144 @@ export const BenchmarkLabScreen: React.FC = () => {
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <Microscope size={14} color="#4F46E5" />
               <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
-                DISCOVERED FRAUD CLUSTERS ({sortedClusters.length})
+                DISCOVERED FRAUD CLUSTERS ({filteredClusters.length} / {sortedClusters.length})
               </span>
             </div>
             <span style={{ fontSize: "9.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-              Multi-Hop &amp; Invariant Sort
+              5-Typology Bulk Segregation
             </span>
+          </div>
+
+          {/* Typology Filter Tabs (Feature A) */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "3px",
+              background: "#F1F5F9",
+              padding: "2px",
+              borderRadius: "6px",
+              border: "1px solid #E2E8F0",
+              overflowX: "auto",
+              flexShrink: 0,
+            }}
+          >
+            {[
+              { id: "ALL", label: "All", count: typologyCounts.all },
+              { id: "RING_TOPOLOGY", label: "🕸️ Rings", count: typologyCounts.rings },
+              { id: "PAIRED_DRAIN", label: "💸 Paired", count: typologyCounts.paired },
+              { id: "SMURFING_SPLIT", label: "🔀 Smurf", count: typologyCounts.smurf },
+              { id: "TELEMETRY_COLLISION", label: "📡 Telem", count: typologyCounts.telemetry },
+              { id: "LEDGER_INVARIANT", label: "⚖️ Ledger", count: typologyCounts.ledger },
+            ].map((tab) => {
+              const isActive = selectedTypology === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedTypology(tab.id as any)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    padding: "3px 6px",
+                    borderRadius: "4px",
+                    border: "none",
+                    background: isActive ? "#FFFFFF" : "transparent",
+                    color: isActive ? "#4F46E5" : "#64748B",
+                    fontWeight: isActive ? 800 : 600,
+                    fontSize: "9px",
+                    fontFamily: "var(--font-mono)",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    style={{
+                      background: isActive ? "#EEF2FF" : "#E2E8F0",
+                      color: isActive ? "#4338CA" : "#64748B",
+                      padding: "0.5px 3.5px",
+                      borderRadius: "3px",
+                      fontSize: "8px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Instant Search & Sort Controls (Feature B) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* Search Input */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                flex: "1 1 0%",
+                background: "#F8FAFC",
+                border: "1px solid #CBD5E1",
+                borderRadius: "5px",
+                padding: "3px 7px",
+              }}
+            >
+              <Search size={11} color="#64748B" style={{ flexShrink: 0 }} />
+              <input
+                type="text"
+                placeholder="Search account, IMEI, UTR, or Cluster ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  fontSize: "9.5px",
+                  color: "#0F172A",
+                  width: "100%",
+                  fontFamily: "var(--font-mono)",
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0, display: "flex" }}
+                >
+                  <X size={10} color="#94A3B8" />
+                </button>
+              )}
+            </div>
+
+            {/* Sort Selector */}
+            <div style={{ display: "flex", alignItems: "center", gap: "3px", flexShrink: 0 }}>
+              <ArrowUpDown size={11} color="#64748B" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                style={{
+                  border: "1px solid #CBD5E1",
+                  borderRadius: "5px",
+                  background: "#FFFFFF",
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  color: "#334155",
+                  padding: "3px 5px",
+                  outline: "none",
+                  cursor: "pointer",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                <option value="AMOUNT">Amount (₹)</option>
+                <option value="HOPS">Hops</option>
+                <option value="ROW">Row #</option>
+              </select>
+            </div>
           </div>
 
           {/* Clusters List */}
@@ -1565,23 +1838,35 @@ export const BenchmarkLabScreen: React.FC = () => {
               display: "flex",
               flexDirection: "column",
               gap: "8px",
-              paddingTop: "4px",
+              paddingTop: "2px",
               paddingBottom: "8px",
               paddingRight: "2px",
             }}
           >
-            {sortedClusters.length === 0 ? (
+            {filteredClusters.length === 0 ? (
               <div style={{ padding: "40px 16px", textAlign: "center", fontSize: "11px", color: "#64748B" }}>
                 <Microscope size={28} color="#94A3B8" style={{ margin: "0 auto 8px auto" }} />
-                <div style={{ fontWeight: 700, color: "#334155" }}>No Clusters Discovered Yet</div>
+                <div style={{ fontWeight: 700, color: "#334155" }}>No Matching Clusters Found</div>
                 <div style={{ fontSize: "10px", marginTop: "4px" }}>
-                  Click <strong>[⚡ Run 100k PaySim]</strong> or upload a blind test CSV to trigger graph extraction.
+                  {sortedClusters.length === 0
+                    ? "Click [⚡ Run 100k PaySim] or upload a blind test CSV to trigger graph extraction."
+                    : "No clusters match current typology filter or search query."}
                 </div>
               </div>
             ) : (
-              sortedClusters.map((cluster) => {
+              filteredClusters.map((cluster) => {
                 const isSelected = selectedCluster?.id === cluster.id;
                 const hasFunnel = cluster.funnelStages && cluster.funnelStages.length > 0;
+                const typologyTag =
+                  cluster.typologyBucket === "RING_TOPOLOGY"
+                    ? "🕸️ RING"
+                    : cluster.typologyBucket === "PAIRED_DRAIN"
+                    ? "💸 PAIRED"
+                    : cluster.typologyBucket === "SMURFING_SPLIT"
+                    ? "🔀 SMURF"
+                    : cluster.typologyBucket === "TELEMETRY_COLLISION"
+                    ? "📡 TELEMETRY"
+                    : "⚖️ LEDGER";
 
                 return (
                   <div
@@ -1600,7 +1885,7 @@ export const BenchmarkLabScreen: React.FC = () => {
                       boxShadow: isSelected ? "0 2px 6px rgba(16, 185, 129, 0.15)" : "0 1px 2px rgba(0,0,0,0.03)",
                     }}
                   >
-                    {/* Row 1: ID, Name, Range & Hops */}
+                    {/* Row 1: ID, Typology, Name, Range & Hops */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                         <span
@@ -1616,6 +1901,20 @@ export const BenchmarkLabScreen: React.FC = () => {
                           }}
                         >
                           {cluster.id}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "8.5px",
+                            fontWeight: 800,
+                            fontFamily: "var(--font-mono)",
+                            background: cluster.typologyBucket === "RING_TOPOLOGY" ? "#FEF2F2" : cluster.typologyBucket === "PAIRED_DRAIN" ? "#FFFBEB" : cluster.typologyBucket === "SMURFING_SPLIT" ? "#F5F3FF" : cluster.typologyBucket === "TELEMETRY_COLLISION" ? "#ECFEFF" : "#F0FDF4",
+                            color: cluster.typologyBucket === "RING_TOPOLOGY" ? "#B91C1C" : cluster.typologyBucket === "PAIRED_DRAIN" ? "#B45309" : cluster.typologyBucket === "SMURFING_SPLIT" ? "#6D28D9" : cluster.typologyBucket === "TELEMETRY_COLLISION" ? "#0E7490" : "#15803D",
+                            border: "1px solid #E2E8F0",
+                            padding: "0.5px 3.5px",
+                            borderRadius: "3px",
+                          }}
+                        >
+                          {typologyTag}
                         </span>
                         <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
                           {cluster.name}

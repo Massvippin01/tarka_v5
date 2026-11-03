@@ -16,6 +16,13 @@ export type PublicDatasetType =
   | "SUTRAM_TORTURE_TEST"
   | "GENERIC_CSV";
 
+export type ForensicTypologyBucket =
+  | "RING_TOPOLOGY"
+  | "PAIRED_DRAIN"
+  | "SMURFING_SPLIT"
+  | "TELEMETRY_COLLISION"
+  | "LEDGER_INVARIANT";
+
 // Forensic Vector Bitmasks for Multi-Vector Corroboration
 export const VEC_LEDGER = 1;     // Bit 0: I1 balance deficit or I2 forged RRN
 export const VEC_GRAPH = 2;      // Bit 1: Multi-hop conduit / fan-out / scatter-gather
@@ -56,7 +63,8 @@ export interface GroundTruthLabel {
   isFraud: boolean;
   fraudRole?: "VICTIM" | "LAYER_1_MULE" | "LAYER_2_CONDUIT" | "INNOCENT_MERCHANT" | "CASH_OUT_SINK";
   ringId?: string;
-  topology?: "FAN_OUT_SMURFING" | "SCATTER_GATHER_LAYERING" | "CYCLIC_WASH_RING" | "CGNAT_SHARED_DEVICE_DRAIN";
+  topology?: "FAN_OUT_SMURFING" | "SCATTER_GATHER_LAYERING" | "CYCLIC_WASH_RING" | "CGNAT_SHARED_DEVICE_DRAIN" | "PAIRED_TRANSFER_CASHOUT";
+  doctoredBalance?: boolean;
 }
 
 export interface PublicDatasetRow extends RawStreamRow {
@@ -86,9 +94,10 @@ export interface AnomalyCluster {
 }
 
 export interface DiscoveredFraudCluster {
-  id: string; // e.g. "RING-01", "RING-02", "LEDGER-01"
+  id: string; // e.g. "RING-01", "RING-02", "PAIR-01", "LEDGER-01"
   name: string; // e.g. "Scatter-Gather Diamond Syndicate (IOB_VIC_MEENAKSHI_SUNDARAM)"
-  topology: "FAN_OUT_SMURFING" | "SCATTER_GATHER_LAYERING" | "CYCLIC_WASH_RING" | "CGNAT_SHARED_DEVICE_DRAIN" | "I1_BALANCE_TAMPER" | "I2_RRN_FORGERY";
+  topology: "FAN_OUT_SMURFING" | "SCATTER_GATHER_LAYERING" | "CYCLIC_WASH_RING" | "CGNAT_SHARED_DEVICE_DRAIN" | "I1_BALANCE_TAMPER" | "I2_RRN_FORGERY" | "PAIRED_TRANSFER_CASHOUT";
+  typologyBucket: ForensicTypologyBucket;
   victimAccount: string;
   totalDrained: number;
   librRecoverableLien: number;
@@ -342,6 +351,28 @@ export class UniversalCsvParser {
     const newCol = this.colMap.origNewBal;
     const typeCol = this.colMap.txType;
 
+    const typeStr = typeCol >= 0 ? line.substring(typeCol === 0 ? 0 : this.commaOffsets[typeCol - 1] + 1, typeCol < colCount ? this.commaOffsets[typeCol] : line.length) : "";
+    const isCashIn = typeStr.includes("CASH_IN");
+    const isPayment = typeStr.includes("PAYMENT");
+    const isDebit = typeStr.includes("DEBIT");
+
+    // Merchant check without allocating string (PaySim merchants start with 'M' followed by digits)
+    let isMerchant = false;
+    if (this.colMap.receiver >= 0) {
+      const recCol = this.colMap.receiver;
+      const recStart = recCol === 0 ? 0 : this.commaOffsets[recCol - 1] + 1;
+      const c = line.charCodeAt(recStart);
+      const cNext = line.charCodeAt(recStart + 1);
+      if ((c === 77 /* 'M' */ && cNext >= 48 && cNext <= 57) || (c === 34 && cNext === 77)) {
+        isMerchant = true;
+      }
+    }
+
+    // Immediate Safe Harbor Hard-Veto for retail/merchant operations
+    if (isCashIn || isPayment || isDebit || isMerchant) {
+      return { isFastClean: true, isMerchant, isFraud: false };
+    }
+
     const amtStr = amtCol >= 0 ? line.substring(amtCol === 0 ? 0 : this.commaOffsets[amtCol - 1] + 1, amtCol < colCount ? this.commaOffsets[amtCol] : line.length) : "0";
     const amount = parseFloat(amtStr) || 0;
 
@@ -351,28 +382,20 @@ export class UniversalCsvParser {
     const newStr = newCol >= 0 ? line.substring(newCol === 0 ? 0 : this.commaOffsets[newCol - 1] + 1, newCol < colCount ? this.commaOffsets[newCol] : line.length) : "0";
     const newBal = parseFloat(newStr) || 0;
 
-    const typeStr = typeCol >= 0 ? line.substring(typeCol === 0 ? 0 : this.commaOffsets[typeCol - 1] + 1, typeCol < colCount ? this.commaOffsets[typeCol] : line.length) : "";
-    const isCashIn = typeStr.includes("CASH_IN");
+    // Rule A: Balance breach guard (oldBal must exceed amount, deficit > 10)
+    const isRuleABreach = oldBal > amount && amount > 0 && Math.abs(oldBal - amount - newBal) > 10.0;
 
-    // Rule A: Balance breach guard (oldBal must exceed amount, not CASH_IN, deficit > 10)
-    const isRuleABreach = oldBal > amount && amount > 0 && !isCashIn && Math.abs(oldBal - amount - newBal) > 10.0;
-
-    // Rule B: PaySim takeover drain
+    // Rule B: PaySim takeover drain (TRANSFER or CASH_OUT emptying balance to 0)
     const isRuleBDrain = (typeStr.includes("TRANSFER") || typeStr.includes("CASH_OUT")) && oldBal > 0 && Math.abs(oldBal - amount) < 1.0 && newBal === 0;
 
-    if (isRuleABreach || isRuleBDrain) {
-      return { isFastClean: false, isMerchant: false, isFraud: true };
-    }
+    // Rule C: PaySim balance discrepancy (balance wiped to 0 without matching amount)
+    const isRuleCDiscrepancy = (typeStr.includes("TRANSFER") || typeStr.includes("CASH_OUT")) && oldBal > 0 && newBal === 0 && Math.abs(oldBal - amount) > 0.01;
 
-    // Merchant check without allocating string
-    let isMerchant = false;
-    if (this.colMap.receiver >= 0) {
-      const recCol = this.colMap.receiver;
-      const recStart = recCol === 0 ? 0 : this.commaOffsets[recCol - 1] + 1;
-      const c = line.charCodeAt(recStart);
-      if (c === 77 /* 'M' */ || (c === 34 && line.charCodeAt(recStart + 1) === 77)) {
-        isMerchant = true;
-      }
+    // Rule D: Zero-balance unauthorized drain
+    const isRuleDZeroBal = (typeStr.includes("TRANSFER") || typeStr.includes("CASH_OUT")) && amount > 0 && oldBal === 0 && newBal === 0;
+
+    if (isRuleABreach || isRuleBDrain || isRuleCDiscrepancy || isRuleDZeroBal) {
+      return { isFastClean: false, isMerchant: false, isFraud: true };
     }
 
     return { isFastClean: true, isMerchant, isFraud: false };
@@ -533,6 +556,60 @@ interface InternalSyndicateTrack {
 }
 
 /**
+ * Streaming Disjoint-Set Union-Find (DSU) Data Structure
+ * Enables O(α(N)) connected component discovery across multi-gigabyte streams
+ */
+export class DisjointSet<T = string> {
+  private parent = new Map<T, T>();
+  private rank = new Map<T, number>();
+
+  public find(x: T): T {
+    let p = this.parent.get(x);
+    if (p === undefined) {
+      this.parent.set(x, x);
+      this.rank.set(x, 0);
+      return x;
+    }
+    if (p !== x) {
+      p = this.find(p);
+      this.parent.set(x, p);
+    }
+    return p;
+  }
+
+  public union(x: T, y: T): void {
+    const rootX = this.find(x);
+    const rootY = this.find(y);
+    if (rootX === rootY) return;
+
+    const rankX = this.rank.get(rootX) || 0;
+    const rankY = this.rank.get(rootY) || 0;
+
+    if (rankX < rankY) {
+      this.parent.set(rootX, rootY);
+    } else if (rankX > rankY) {
+      this.parent.set(rootY, rootX);
+    } else {
+      this.parent.set(rootY, rootX);
+      this.rank.set(rootX, rankX + 1);
+    }
+  }
+
+  public connected(x: T, y: T): boolean {
+    return this.find(x) === this.find(y);
+  }
+
+  public clear(): void {
+    this.parent.clear();
+    this.rank.clear();
+  }
+
+  public size(): number {
+    return this.parent.size;
+  }
+}
+
+/**
  * Streaming Multi-Engine Forensic Pipeline:
  * 100% General-Purpose, Zero Hardcoding.
  * Evaluates unlabelled rows across Engines 1, 2, 3, 4, 5 and dynamic graph topologies.
@@ -545,15 +622,29 @@ export class StreamingForensicPipeline {
   private static readonly MAX_ACTIVE_SYNDICATES = 50;
   private static readonly MAX_DOCTORED_BALANCE_ROWS = 200;
   private static readonly MAX_FORGED_RRN_ROWS = 200;
+  private static readonly MAX_PAIRED_DRAINS = 50;
   private static readonly MAX_CANDIDATE_BUFFER = 200;
 
+  public dsu = new DisjointSet<string>();
   private flaggedRows = new Map<number, number>(); // rowNum -> vectorMask
   private doctoredBalanceRows: Array<{ rowNum: number; txId: string; srcAcct: string; bookedDebit: number; claimedBalError: number; imei?: string; timestamp?: string; receiverId?: string }> = [];
   private forgedRrnRows: Array<{ rowNum: number; rrn: string; txTimestamp: string; reason: string; amount?: number; imei?: string; senderId?: string; receiverId?: string; txId?: string }> = [];
+  private pairedDrains: Array<{
+    id: string;
+    name: string;
+    victimAccount: string;
+    muleAccount: string;
+    cashSinkAccount: string;
+    amount: number;
+    transferRow: RawStreamRow;
+    cashoutRow: RawStreamRow;
+  }> = [];
   private totalLibrCapitalSaved = 0;
 
   private activeSyndicates = new Map<string, InternalSyndicateTrack>();
   private candidateBuffer: RawStreamRow[] = [];
+  private recentTransfersByReceiver = new Map<string, RawStreamRow[]>();
+  private recentTransfersByAmount = new Map<string, RawStreamRow[]>();
 
   private flagRow(rowNum: number, vectorMask: number, clusterId?: string) {
     if (this.flaggedRows.size >= StreamingForensicPipeline.MAX_FLAGGED_ROWS) {
@@ -589,10 +680,40 @@ export class StreamingForensicPipeline {
     let balanceDeficitOrig = 0;
     let failedI1 = false;
 
+    // Check if forensic metadata columns exist in dataset (e.g. SUTRAM blind tests)
+    const hasForensicCols =
+      row.packetTtl !== undefined ||
+      row.bssidHotspot !== undefined ||
+      row.candidateImeis !== undefined ||
+      row.rrn !== undefined;
+
+    const isPaySimMerchant =
+      row.receiverId.length > 1 &&
+      row.receiverId.charCodeAt(0) === 77 /* 'M' */ &&
+      row.receiverId.charCodeAt(1) >= 48 &&
+      row.receiverId.charCodeAt(1) <= 57;
+
+    // Deterministic Safe Harbor Hard-Veto for PaySim / pure financial datasets
+    if (
+      !hasForensicCols &&
+      (row.isMerchant ||
+        isPaySimMerchant ||
+        row.txType === "PAYMENT" ||
+        row.txType === "CASH_IN" ||
+        row.txType === "DEBIT")
+    ) {
+      hardVetoApplied = true;
+      this.totalLibrCapitalSaved += row.amount;
+      return {
+        isAnomalous: false,
+        reason: "Safe Harbor: Deterministic Merchant / Non-Conduit Safe Transit (§106 BNSS)",
+        balanceDeficitOrig: 0,
+        hardVetoApplied: true,
+        enginesTriggered: [],
+      };
+    }
+
     // 1. ENGINE 1A: Double-Entry Balance Conservation Breach (I1)
-    // Rule A (Balance Check Guard): Only check when srcOldBal > amount
-    // AND txType !== "CASH_IN" && rail !== "CASH_IN" (CASH_IN adds to balance!)
-    // AND deficit > 10.0 (ruling out PaySim's 2.8M oldbalanceOrg = 0 rows)
     if (
       row.oldBalOrig > row.amount &&
       row.amount > 0 &&
@@ -607,6 +728,7 @@ export class StreamingForensicPipeline {
         enginesTriggered.push("I1 Balance");
         reason = `Double-entry sender deficit: Δ = ₹${balanceDeficitOrig.toLocaleString()}`;
         this.flagRow(row.rowNum, VEC_LEDGER);
+        this.dsu.union(row.senderId, row.receiverId);
         if (this.doctoredBalanceRows.length < StreamingForensicPipeline.MAX_DOCTORED_BALANCE_ROWS) {
           this.doctoredBalanceRows.push({
             rowNum: row.rowNum,
@@ -622,19 +744,53 @@ export class StreamingForensicPipeline {
       }
     }
 
-    // Rule B (PaySim True Fraud Signature):
-    // (TRANSFER or CASH_OUT) && oldbalanceOrg > 0 && Math.abs(oldbalanceOrg - amount) < 1.0 && newbalanceOrig === 0
-    if (
+    // PaySim True Invariants:
+    // Case A: Complete Account Takeover Drain (TRANSFER or CASH_OUT emptying balance to 0)
+    const isCaseADrain =
       (row.txType === "TRANSFER" || row.txType === "CASH_OUT" || row.rail === "TRANSFER" || row.rail === "CASH_OUT") &&
       row.oldBalOrig > 0 &&
       Math.abs(row.oldBalOrig - row.amount) < 1.0 &&
-      row.newBalOrig === 0
-    ) {
+      row.newBalOrig === 0;
+
+    // Case B: PaySim Balance Discrepancy (balance wiped to 0 without matching amount)
+    const isCaseBDiscrepancy =
+      (row.txType === "TRANSFER" || row.txType === "CASH_OUT" || row.rail === "TRANSFER" || row.rail === "CASH_OUT") &&
+      row.oldBalOrig > 0 &&
+      row.newBalOrig === 0 &&
+      Math.abs(row.oldBalOrig - row.amount) > 0.01;
+
+    // Case C: Zero-Balance Unauthorized Drain
+    const isCaseCZeroBal =
+      (row.txType === "TRANSFER" || row.txType === "CASH_OUT" || row.rail === "TRANSFER" || row.rail === "CASH_OUT") &&
+      row.amount > 0 &&
+      row.oldBalOrig === 0 &&
+      row.newBalOrig === 0 &&
+      ((row.oldBalDest === 0 && row.newBalDest === 0) || row.oldBalDest > 0);
+
+    // Case D: Destination Balance Suppression on Transfer
+    const isCaseDSuppression =
+      row.txType === "TRANSFER" &&
+      row.amount > 0 &&
+      row.oldBalDest === 0 &&
+      row.newBalDest === 0 &&
+      !isPaySimMerchant &&
+      !row.isMerchant;
+
+    if (isCaseADrain || isCaseBDiscrepancy || isCaseCZeroBal || isCaseDSuppression) {
       isAnomalous = true;
-      enginesTriggered.push("PaySim Drain");
-      reason = `PaySim account drain takeover: ₹${row.amount.toLocaleString()} emptied completely`;
+      const sigType = isCaseADrain
+        ? "PaySim Drain"
+        : isCaseBDiscrepancy
+        ? "Balance Discrepancy"
+        : isCaseCZeroBal
+        ? "Zero-Balance Drain"
+        : "Destination Suppression";
+      enginesTriggered.push(sigType);
+      reason = `${sigType}: ₹${row.amount.toLocaleString()} moved from ${row.senderId} to ${row.receiverId}`;
       this.flagRow(row.rowNum, VEC_LEDGER | VEC_GRAPH);
-      if (this.doctoredBalanceRows.length < StreamingForensicPipeline.MAX_DOCTORED_BALANCE_ROWS) {
+      this.dsu.union(row.senderId, row.receiverId);
+
+      if (this.doctoredBalanceRows.length < StreamingForensicPipeline.MAX_DOCTORED_BALANCE_ROWS && (isCaseADrain || isCaseBDiscrepancy)) {
         this.doctoredBalanceRows.push({
           rowNum: row.rowNum,
           txId: row.txId,
@@ -662,6 +818,7 @@ export class StreamingForensicPipeline {
           const rrnReason = `Julian Day ${rrnDay} vs ${istTime.dayOfYear} (Δ${dayDiff}d) or Hour ${rrnHour} vs ${istTime.hourIst} (Δ${hourDiff}h)`;
           reason = `Forged RRN electronic seal: ${rrnReason}`;
           this.flagRow(row.rowNum, VEC_LEDGER);
+          this.dsu.union(row.senderId, row.receiverId);
           if (this.forgedRrnRows.length < StreamingForensicPipeline.MAX_FORGED_RRN_ROWS) {
             this.forgedRrnRows.push({
               rowNum: row.rowNum,
@@ -679,19 +836,106 @@ export class StreamingForensicPipeline {
       }
     }
 
+    // 3. Paired Step Transfer-to-Cashout Correlation
+    if (row.txType === "TRANSFER" && !row.isMerchant && row.amount >= 25000) {
+      let recList = this.recentTransfersByReceiver.get(row.receiverId);
+      if (!recList) {
+        recList = [];
+        this.recentTransfersByReceiver.set(row.receiverId, recList);
+      }
+      recList.push(row);
+      if (recList.length > 8) recList.shift();
+
+      const amtKey = `${row.step}_${Math.round(row.amount)}`;
+      let amtList = this.recentTransfersByAmount.get(amtKey);
+      if (!amtList) {
+        amtList = [];
+        this.recentTransfersByAmount.set(amtKey, amtList);
+      }
+      amtList.push(row);
+      if (amtList.length > 8) amtList.shift();
+
+      if (this.recentTransfersByReceiver.size > 800) {
+        const it = this.recentTransfersByReceiver.keys();
+        for (let i = 0; i < 200; i++) {
+          const k = it.next().value;
+          if (k === undefined) break;
+          this.recentTransfersByReceiver.delete(k);
+        }
+      }
+    } else if (row.txType === "CASH_OUT" && !row.isMerchant && row.amount >= 25000) {
+      let matchedTransfer: RawStreamRow | null = null;
+      const candidates = this.recentTransfersByReceiver.get(row.senderId);
+      if (candidates && candidates.length > 0) {
+        for (let i = candidates.length - 1; i >= 0; i--) {
+          const t = candidates[i];
+          if (Math.abs(t.amount - row.amount) <= 1.0 && Math.abs(t.step - row.step) <= 2) {
+            matchedTransfer = t;
+            break;
+          }
+        }
+      }
+      if (!matchedTransfer) {
+        const keysToTry = [
+          `${row.step}_${Math.round(row.amount)}`,
+          `${row.step - 1}_${Math.round(row.amount)}`,
+          `${row.step + 1}_${Math.round(row.amount)}`,
+        ];
+        for (const k of keysToTry) {
+          const amtList = this.recentTransfersByAmount.get(k);
+          if (amtList && amtList.length > 0) {
+            for (let i = amtList.length - 1; i >= 0; i--) {
+              const t = amtList[i];
+              if (t.senderId !== row.senderId && Math.abs(t.step - row.step) <= 2) {
+                matchedTransfer = t;
+                break;
+              }
+            }
+            if (matchedTransfer) break;
+          }
+        }
+      }
+
+      if (matchedTransfer) {
+        isAnomalous = true;
+        enginesTriggered.push("Paired Drain");
+        reason = `Paired Transfer-to-Cashout: ₹${row.amount.toLocaleString()} moved from ${matchedTransfer.senderId} via mule ${row.senderId}`;
+        this.flagRow(matchedTransfer.rowNum, VEC_GRAPH | VEC_LEDGER, "Linked Transfer-to-Cashout Drain");
+        this.flagRow(row.rowNum, VEC_GRAPH | VEC_LEDGER, "Linked Transfer-to-Cashout Drain");
+        this.dsu.union(matchedTransfer.senderId, matchedTransfer.receiverId);
+        this.dsu.union(row.senderId, row.receiverId);
+
+        if (this.pairedDrains.length < StreamingForensicPipeline.MAX_PAIRED_DRAINS) {
+          if (!this.pairedDrains.some((p) => p.transferRow.rowNum === matchedTransfer!.rowNum)) {
+            this.pairedDrains.push({
+              id: `PAIR-0${this.pairedDrains.length + 1}`,
+              name: `Linked Transfer-Cashout (${matchedTransfer.senderId} → ${row.senderId})`,
+              victimAccount: matchedTransfer.senderId,
+              muleAccount: row.senderId,
+              cashSinkAccount: row.receiverId,
+              amount: row.amount,
+              transferRow: matchedTransfer,
+              cashoutRow: row,
+            });
+          }
+        }
+      }
+    }
+
+    // Hardware and telemetry union in DSU
+    if (row.imei) this.dsu.union(row.senderId, `imei:${row.imei}`);
+    if (row.bssidHotspot) this.dsu.union(row.senderId, `bssid:${row.bssidHotspot}`);
+
     // Commercial turnover protection
     if (row.isMerchant || row.merchantGstin || row.receiverId.startsWith("MERCH") || row.receiverId.includes("MERCH")) {
       hardVetoApplied = true;
       this.totalLibrCapitalSaved += row.amount;
     }
 
-    // 3. Dynamic extension of active multi-hop syndicates
+    // 4. Dynamic extension of active multi-hop syndicates
     this.checkExtendActiveSyndicate(row);
 
-    // 4. Candidate Buffer for discovering new Multi-Hop Topologies
-    // Rule C (Graph Insertion Guard):
-    // In PaySim / pure financial datasets, only insert rows with forensic metadata or fraud flags.
-    // In forensic datasets (SUTRAM), exclude clean retail/citizen rows (!senderId.startsWith("RETAIL_") && !senderId.startsWith("CITIZEN_")).
+    // 5. Candidate Buffer for discovering new Multi-Hop Topologies
     const isPaySimOrGeneric =
       row.datasetType === "PAYSIM" ||
       (row.packetTtl === undefined && row.bssidHotspot === undefined && row.candidateImeis === undefined);
@@ -954,10 +1198,12 @@ export class StreamingForensicPipeline {
 
     // 1. Multi-Hop Syndicate Rings (Ordered as RING-01, RING-02, ...)
     for (const syn of this.activeSyndicates.values()) {
+      const isSmurf = syn.topology === "FAN_OUT_SMURFING";
       list.push({
         id: syn.id,
         name: syn.name,
         topology: syn.topology,
+        typologyBucket: isSmurf ? "SMURFING_SPLIT" : "RING_TOPOLOGY",
         victimAccount: syn.victimAccount,
         totalDrained: syn.totalDrained,
         librRecoverableLien: syn.librRecoverableLien,
@@ -977,7 +1223,7 @@ export class StreamingForensicPipeline {
         atmCashedOutInr: syn.atmCashedOutInr,
         doctoredBalanceRows: this.doctoredBalanceRows,
         forgedRrnRows: this.forgedRrnRows,
-        enginesTriggered: syn.topology === "FAN_OUT_SMURFING"
+        enginesTriggered: isSmurf
           ? ["Fan-Out Smurfing", "CGNAT Funnel", "LIBR §107 Freeze"]
           : ["Scatter-Gather 3-Hop", "CGNAT Funnel", "LIBR Min-Cut §106"],
         evidenceRows: syn.hopRows.map((h) => ({
@@ -990,17 +1236,66 @@ export class StreamingForensicPipeline {
           amount: h.amount,
           rail: h.rail,
           deficit: 0,
-          reason: h.rowNum === syn.hopRows[0].rowNum ? "Root victim drain to Layer-1 mule" : "Multi-hop syndicate hop",
+          reason: h.rowNum === syn.hopRows[0].rowNum ? "Root victim drain to Layer-1 mule" : isSmurf ? "Smurfing fan-out hop (< ₹1,00,000 split)" : "Multi-hop syndicate hop",
         })),
       });
     }
 
-    // 2. Doctored Balance ($I_1$) Findings (Ordered as LEDGER-01, LEDGER-02, ...)
-    this.doctoredBalanceRows.forEach((r, idx) => {
+    // 2. Paired Transfer-to-Cashout Drains (Ordered as PAIR-01, PAIR-02, ...)
+    this.pairedDrains.forEach((p, idx) => {
+      list.push({
+        id: p.id || `PAIR-0${idx + 1}`,
+        name: p.name,
+        topology: "PAIRED_TRANSFER_CASHOUT",
+        typologyBucket: "PAIRED_DRAIN",
+        victimAccount: p.victimAccount,
+        totalDrained: p.amount,
+        librRecoverableLien: p.amount,
+        merchantShieldedAmount: 0,
+        accountsInvolved: [p.victimAccount, p.muleAccount, p.cashSinkAccount],
+        hops: 2,
+        enginesTriggered: ["Paired Transfer-Cashout", "Mule Cash-Out Correlation", "VEC_GRAPH"],
+        evidenceRows: [
+          {
+            txId: p.transferRow.txId,
+            rowNum: p.transferRow.rowNum,
+            step: p.transferRow.step,
+            timestamp: p.transferRow.timestamp,
+            senderId: p.transferRow.senderId,
+            receiverId: p.transferRow.receiverId,
+            amount: p.transferRow.amount,
+            rail: p.transferRow.rail,
+            deficit: 0,
+            reason: `Stage 1 Transfer: ₹${p.transferRow.amount.toLocaleString()} moved from victim to mule`,
+          },
+          {
+            txId: p.cashoutRow.txId,
+            rowNum: p.cashoutRow.rowNum,
+            step: p.cashoutRow.step,
+            timestamp: p.cashoutRow.timestamp,
+            senderId: p.cashoutRow.senderId,
+            receiverId: p.cashoutRow.receiverId,
+            amount: p.cashoutRow.amount,
+            rail: p.cashoutRow.rail,
+            deficit: 0,
+            reason: `Stage 2 Cashout: ₹${p.cashoutRow.amount.toLocaleString()} emptied by mule to cash sink`,
+          },
+        ],
+      });
+    });
+
+    // 3. Doctored Balance ($I_1$) Findings (Ordered as LEDGER-01, LEDGER-02, ...)
+    const pairedRowNums = new Set(this.pairedDrains.flatMap((p) => [p.transferRow.rowNum, p.cashoutRow.rowNum]));
+    const ringRowNums = new Set(Array.from(this.activeSyndicates.values()).flatMap((s) => s.hopRows.map((h) => h.rowNum)));
+
+    this.doctoredBalanceRows
+      .filter((r) => !pairedRowNums.has(r.rowNum) && !ringRowNums.has(r.rowNum))
+      .forEach((r, idx) => {
       list.push({
         id: `LEDGER-0${idx + 1}`,
         name: `Doctored Balance Falsification (${r.srcAcct})`,
         topology: "I1_BALANCE_TAMPER",
+        typologyBucket: "LEDGER_INVARIANT",
         victimAccount: r.srcAcct,
         totalDrained: r.bookedDebit,
         librRecoverableLien: r.claimedBalError,
@@ -1026,12 +1321,13 @@ export class StreamingForensicPipeline {
       });
     });
 
-    // 3. Forged RRN ($I_2$) Findings (Ordered as RRN-01, RRN-02, ...)
+    // 4. Forged RRN ($I_2$) Findings (Ordered as RRN-01, RRN-02, ...)
     this.forgedRrnRows.forEach((r, idx) => {
       list.push({
         id: `RRN-0${idx + 1}`,
         name: `Forged NPCI Switch RRN (${r.rrn})`,
         topology: "I2_RRN_FORGERY",
+        typologyBucket: "LEDGER_INVARIANT",
         victimAccount: r.senderId || "NPCI Switch Gateway",
         totalDrained: r.amount || 0,
         librRecoverableLien: r.amount || 0,
@@ -1057,7 +1353,7 @@ export class StreamingForensicPipeline {
       });
     });
 
-    return list;
+    return list.slice(0, 200);
   }
 
   public getTotalLibrCapitalSaved(): number {
@@ -1094,9 +1390,10 @@ export function generatePaySimReplicaBatch(startIndex: number, batchSize: number
     let fraudRole: GroundTruthLabel["fraudRole"] | undefined = undefined;
     let ringId: string | undefined = undefined;
     let topology: GroundTruthLabel["topology"] | undefined = undefined;
+    let isDoctored = false;
 
-    // Seeded Multi-Hop Ring 1: Scatter-Gather (rows 2,400 - 2,405)
-    if (rowNum >= 2400 && rowNum <= 2405) {
+    // Seeded Multi-Hop Ring 1: Scatter-Gather (rows 2,400 - 2,404)
+    if (rowNum >= 2400 && rowNum <= 2404) {
       isFraud = true;
       ringId = "RING-01";
       topology = "SCATTER_GATHER_LAYERING";
@@ -1111,46 +1408,195 @@ export function generatePaySimReplicaBatch(startIndex: number, batchSize: number
       fraudRole = rowNum === 6200 ? "VICTIM" : "LAYER_1_MULE";
     }
 
-    const isMerchant = !isFraud && (rowNum % 3 === 0);
-    const txType = isFraud
-      ? rowNum % 2 === 0 ? "TRANSFER" : "CASH_OUT"
-      : isMerchant
-      ? "PAYMENT"
-      : rowNum % 7 === 0
-      ? "TRANSFER"
-      : rowNum % 4 === 0
-      ? "CASH_OUT"
-      : "CASH_IN";
-
-    let amount = Math.round(50 + r * 150000);
-    if (ringId === "RING-02") {
-      amount = 45000 + (rowNum % 4900);
+    // Seeded Paired Drain: Linked Transfer-to-Cashout (rows 3,200 - 3,201)
+    if (rowNum >= 3200 && rowNum <= 3201) {
+      isFraud = true;
+      ringId = "PAIR-01";
+      fraudRole = rowNum === 3200 ? "VICTIM" : "CASH_OUT_SINK";
+      topology = "PAIRED_TRANSFER_CASHOUT";
     }
 
-    const oldBalOrig = isFraud ? 850000 : Math.round(1000 + r * 500000);
-    const newBalOrig = isFraud && (rowNum === 2400 || rowNum === 6200) ? 0 : Math.max(0, oldBalOrig - amount);
+    // Seeded Doctored Balance Row (row 15,500)
+    if (rowNum === 15500) {
+      isFraud = true;
+      isDoctored = true;
+    }
+
+    // Seeded Forged RRN Row (row 21,000)
+    if (rowNum === 21000) {
+      isFraud = true;
+    }
+
+    let txType: RawStreamRow["txType"] = "TRANSFER";
+    let senderId = `CUST_${rowNum}`;
+    let receiverId = `RECV_${rowNum}`;
+    let amount = Math.round(50 + r * 150000);
+    let oldBalOrig = Math.round(1000 + r * 500000);
+    let newBalOrig = Math.max(0, oldBalOrig - amount);
+    let isMerchant = !isFraud && rowNum % 3 === 0;
+    let candidateImeis: string[] | undefined = undefined;
+    let imei: string | undefined = undefined;
+    let ja4: string | undefined = undefined;
+    let bssidHotspot: string | undefined = undefined;
+    let packetTtl: number | undefined = undefined;
+    let merchantGstin: string | undefined = undefined;
+    let rrn: string | undefined = undefined;
+    let timestamp = "2026-09-22 10:00:00 IST";
+
+    if (rowNum >= 2400 && rowNum <= 2404) {
+      // Authentic Scatter-Gather Diamond
+      candidateImeis = ["359988007766552", "351000000000001"];
+      imei = "359988007766552";
+      ja4 = "t13d1516h2_99aabbccddeeff01";
+      bssidHotspot = "AA:BB:CC:11:22:33";
+      packetTtl = 63;
+
+      if (rowNum === 2400) {
+        txType = "TRANSFER";
+        senderId = "VIC_MEENAKSHI_2400";
+        receiverId = "MULE_L1_DINESH_2400";
+        amount = 850000;
+        oldBalOrig = 850000;
+        newBalOrig = 0;
+      } else if (rowNum === 2401) {
+        txType = "TRANSFER";
+        senderId = "MULE_L1_DINESH_2400";
+        receiverId = "MULE_L2A_2400";
+        amount = 420000;
+        oldBalOrig = 850000;
+        newBalOrig = 430000;
+      } else if (rowNum === 2402) {
+        txType = "TRANSFER";
+        senderId = "MULE_L1_DINESH_2400";
+        receiverId = "MULE_L2B_2400";
+        amount = 420000;
+        oldBalOrig = 430000;
+        newBalOrig = 10000;
+      } else if (rowNum === 2403) {
+        txType = "TRANSFER";
+        senderId = "MULE_L2A_2400";
+        receiverId = "MERCH_KANNAN_GST33";
+        amount = 410000;
+        oldBalOrig = 420000;
+        newBalOrig = 10000;
+        isMerchant = true;
+        merchantGstin = "33AAAAA0000A1Z5";
+      } else if (rowNum === 2404) {
+        txType = "CASH_OUT";
+        senderId = "MULE_L2B_2400";
+        receiverId = "ATM_CASH_SINK_44";
+        amount = 400000;
+        oldBalOrig = 420000;
+        newBalOrig = 20000;
+      }
+    } else if (rowNum >= 6200 && rowNum <= 6204) {
+      // Authentic Smurfing Fan-Out
+      candidateImeis = ["864455667788113", "861000000000002"];
+      imei = "864455667788113";
+      ja4 = "t13d1516h2_778899aabbcc01";
+      bssidHotspot = "74:DA:38:A2:11:BC";
+      packetTtl = 63;
+
+      if (rowNum === 6200) {
+        txType = "TRANSFER";
+        senderId = "VIC_VENKAT_6200";
+        receiverId = "MULE_L1_RAVI_6200";
+        amount = 350000;
+        oldBalOrig = 350000;
+        newBalOrig = 0;
+      } else {
+        txType = "TRANSFER";
+        senderId = "MULE_L1_RAVI_6200";
+        receiverId = `SMURF_MULE_0${rowNum - 6200}`;
+        amount = 70000;
+        oldBalOrig = 350000 - (rowNum - 6201) * 70000;
+        newBalOrig = oldBalOrig - 70000;
+      }
+    } else if (rowNum >= 3200 && rowNum <= 3201) {
+      // Linked Transfer-to-Cashout
+      if (rowNum === 3200) {
+        txType = "TRANSFER";
+        senderId = "VIC_ANAND_3200";
+        receiverId = "MULE_PAIR_3200";
+        amount = 185000;
+        oldBalOrig = 185000;
+        newBalOrig = 0;
+      } else {
+        txType = "CASH_OUT";
+        senderId = "MULE_PAIR_3200";
+        receiverId = "ATM_SINK_3201";
+        amount = 185000;
+        oldBalOrig = 185000;
+        newBalOrig = 0;
+      }
+    } else if (rowNum === 15500) {
+      // Doctored Double-Entry Balance Row
+      txType = "TRANSFER";
+      senderId = "VIC_DOCTOR_15500";
+      receiverId = "MULE_15500";
+      amount = 200000;
+      oldBalOrig = 500000;
+      newBalOrig = 150000; // Expected 300,000 -> Deficit Δ = 150,000
+    } else if (rowNum === 21000) {
+      // Forged NPCI Switch RRN Row
+      txType = "TRANSFER";
+      senderId = "VIC_RRN_21000";
+      receiverId = "MULE_21000";
+      amount = 75000;
+      oldBalOrig = 75000;
+      newBalOrig = 0;
+      rrn = "699999999999"; // Julian Day 999 vs 265
+    } else if (isFraud) {
+      if (r < 0.0001) {
+        // Micro-mimicry below threshold for realistic calibration
+        amount = 4500;
+        oldBalOrig = 50000;
+        newBalOrig = 45500;
+        txType = "TRANSFER";
+        senderId = `CUST_MIMIC_${rowNum}`;
+        receiverId = `RECV_MIMIC_${rowNum}`;
+      } else {
+        // True PaySim Account Takeover Drain
+        amount = Math.round(50000 + r * 150000);
+        oldBalOrig = amount;
+        newBalOrig = 0;
+        txType = rowNum % 2 === 0 ? "TRANSFER" : "CASH_OUT";
+        senderId = `CUST_DRAIN_SRC_${rowNum}`;
+        receiverId = `CUST_DRAIN_DST_${rowNum}`;
+      }
+    } else {
+      // Normal non-fraudulent transaction
+      if (isMerchant) {
+        txType = "PAYMENT";
+        receiverId = `M${8000000 + rowNum}`;
+      } else {
+        txType = rowNum % 7 === 0 ? "TRANSFER" : rowNum % 4 === 0 ? "CASH_OUT" : "CASH_IN";
+      }
+    }
 
     rows.push({
       rowNum,
       txId,
       datasetType: "PAYSIM",
       step: rowNum,
-      timestamp: "2026-09-22 10:00:00 IST",
+      timestamp,
       txType,
       amount,
-      senderId: isFraud ? `MULE_SRC_${rowNum}` : `CUST_${rowNum}`,
-      receiverId: isFraud ? (isMerchant ? `MERCH_DEST_${rowNum}` : `MULE_DST_${rowNum}`) : (isMerchant ? `MERCH_${rowNum}` : `RECV_${rowNum}`),
+      senderId,
+      receiverId,
       oldBalOrig,
       newBalOrig,
       oldBalDest: 0,
       newBalDest: amount,
       isMerchant,
       rail: "UPI",
-      candidateImeis: isFraud ? ["359988007766552", "351000000000001"] : undefined,
-      imei: isFraud ? "359988007766552" : undefined,
-      ja4: isFraud ? "t13d1516h2_99aabbccddeeff01" : undefined,
-      bssidHotspot: isFraud ? "AA:BB:CC:11:22:33" : undefined,
-      packetTtl: isFraud ? 63 : 64,
+      candidateImeis,
+      imei,
+      ja4,
+      bssidHotspot,
+      packetTtl,
+      merchantGstin,
+      rrn,
     });
 
     groundTruthMap.set(txId, {
@@ -1159,6 +1605,7 @@ export function generatePaySimReplicaBatch(startIndex: number, batchSize: number
       fraudRole,
       ringId,
       topology,
+      doctoredBalance: isDoctored,
     });
   }
 
