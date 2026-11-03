@@ -905,28 +905,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               </button>
             </div>
 
-            {/* Contextual Breadcrumb based on activePage */}
-            {activePage === "workspaces" ? (
-              <>
-                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569" }}>
-                  Station Command &amp; Workspaces Hub
-                </span>
-                <span className="hidden md:inline-flex flex-shrink-0">
-                  <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" />
-                </span>
-              </>
-            ) : activePage === "benchmark" ? (
-              <>
-                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569" }}>
-                  Empirical Streaming &amp; Diagnostics Studio
-                </span>
-                <span className="hidden md:inline-flex flex-shrink-0">
-                  <ReuiStatusBadge text="27 Checks Ready" variant="emerald" />
-                </span>
-              </>
-            ) : (
+            {/* Contextual Breadcrumb based on activePage — rendered only on Workbench to prevent header collision */}
+            {activePage === "workbench" && (
               <>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
                 <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700, background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
@@ -939,28 +919,27 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <span className="hidden md:inline-flex flex-shrink-0">
                   <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
                 </span>
+                <span
+                  style={{
+                    fontSize: "9.5px",
+                    fontWeight: 800,
+                    color: "#047857",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    padding: "1px 6px",
+                    borderRadius: "4px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    flexShrink: 0,
+                  }}
+                  title="Air-Gap Compliance: Zero external runtime network requests, connect-src 'none' enforced (BSA 2023 §63)"
+                >
+                  <Lock size={10} color="#059669" />
+                  <span>AIR-GAP</span>
+                </span>
               </>
             )}
-
-            <span
-              style={{
-                fontSize: "9.5px",
-                fontWeight: 800,
-                color: "#047857",
-                background: "#ECFDF5",
-                border: "1px solid #A7F3D0",
-                padding: "1px 6px",
-                borderRadius: "4px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "3px",
-                flexShrink: 0,
-              }}
-              title="Air-Gap Compliance: Zero external runtime network requests, connect-src 'none' enforced (BSA 2023 §63)"
-            >
-              <Lock size={10} color="#059669" />
-              <span>AIR-GAP</span>
-            </span>
           </div>
 
           {/* Center: Operational Timeline Stage Popover (Screens 01-06) */}
@@ -1295,82 +1274,86 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <ChevronDown size={11} />
             </button>
 
-            {/* Benchmark Lab Drawer Trigger */}
-            <button
-              type="button"
-              onClick={toggleBenchmarkLab}
-              className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-              title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
-              style={{
-                height: "28px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "#ECFDF5",
-                border: "1px solid #A7F3D0",
-                color: "#065F46",
-                fontWeight: 700,
-                fontSize: "11px",
-                borderRadius: "6px",
-                padding: "0 7px",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
-              }}
-            >
-              <Zap size={11} color="#059669" />
-              <span>Lab</span>
-              <span
+            {/* Benchmark Lab Drawer Trigger (Only shown on workbench to avoid header overlap) */}
+            {activePage === "workbench" && (
+              <button
+                type="button"
+                onClick={toggleBenchmarkLab}
+                className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
                 style={{
-                  fontSize: "9px",
-                  padding: "1px 3px",
-                  borderRadius: "3px",
-                  background: "#D1FAE5",
-                  color: "#047857",
-                  fontFamily: "var(--font-mono)",
+                  height: "28px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  color: "#065F46",
+                  fontWeight: 700,
+                  fontSize: "11px",
+                  borderRadius: "6px",
+                  padding: "0 7px",
+                  cursor: "pointer",
+                  boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
                 }}
               >
-                Alt+B
-              </span>
-            </button>
+                <Zap size={11} color="#059669" />
+                <span>Lab</span>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    padding: "1px 3px",
+                    borderRadius: "3px",
+                    background: "#D1FAE5",
+                    color: "#047857",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  Alt+B
+                </span>
+              </button>
+            )}
 
-            {/* Public Dataset Benchmark Trigger */}
-            <button
-              type="button"
-              onClick={togglePublicDatasetModal}
-              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-              title="Open Public Dataset Benchmark (PaySim, IBM AML, IEEE-CIS) (Alt+D)"
-              style={{
-                height: "28px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                color: "#3730A3",
-                fontWeight: 700,
-                fontSize: "11px",
-                borderRadius: "6px",
-                padding: "0 7px",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
-              }}
-            >
-              <Database size={11} color="#4F46E5" />
-              <span className="hidden xl:inline">Public</span>
-              <span>Datasets</span>
-              <span
+            {/* Public Dataset Benchmark Trigger (Only shown on workbench to avoid header overlap) */}
+            {activePage === "workbench" && (
+              <button
+                type="button"
+                onClick={togglePublicDatasetModal}
+                className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                title="Open Public Dataset Benchmark (PaySim, IBM AML, IEEE-CIS) (Alt+D)"
                 style={{
-                  fontSize: "9px",
-                  padding: "1px 3px",
-                  borderRadius: "3px",
-                  background: "#E0E7FF",
-                  color: "#4338CA",
-                  fontFamily: "var(--font-mono)",
+                  height: "28px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  background: "#EEF2FF",
+                  border: "1px solid #C7D2FE",
+                  color: "#3730A3",
+                  fontWeight: 700,
+                  fontSize: "11px",
+                  borderRadius: "6px",
+                  padding: "0 7px",
+                  cursor: "pointer",
+                  boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
                 }}
               >
-                Alt+D
-              </span>
-            </button>
+                <Database size={11} color="#4F46E5" />
+                <span className="hidden xl:inline">Public</span>
+                <span>Datasets</span>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    padding: "1px 3px",
+                    borderRadius: "3px",
+                    background: "#E0E7FF",
+                    color: "#4338CA",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  Alt+D
+                </span>
+              </button>
+            )}
 
             {/* Voice AI */}
             <button
