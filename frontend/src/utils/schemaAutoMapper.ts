@@ -318,46 +318,49 @@ export function buildDatasetSchemaProfile(headers: string[]): DatasetSchemaProfi
 
   const mappedFields: DatasetSchemaProfile["mappedFields"] = {
     txId: findCol(["txid", "tx_id", "transactionid", "tran id", "recordid", "id"]),
-    timestamp: findCol(["timestamp", "date", "trans_date", "step", "time", "tran date"]),
-    txType: findCol(["type", "txtype", "trans_type", "action", "payment format"]),
-    amount: findCol(["amount", "amt", "tx_amount", "amount paid", "amount received", "withdrawal", "deposit", "value"]),
-    senderId: findCol(["nameorig", "sender", "source", "account", "from_acc", "dr_acc", "payer"]),
-    receiverId: findCol(["namedest", "receiver", "dest", "account.1", "to_acc", "cr_acc", "payee"]),
-    senderOldBal: findCol(["oldbalanceorg", "oldbalanceorig", "opening", "opening_bal", "balance_before"]),
-    senderNewBal: findCol(["newbalanceorig", "newbalanceorg", "closing", "closing_bal", "balance_after"]),
-    receiverOldBal: findCol(["oldbalancedest", "dest_opening_bal"]),
-    receiverNewBal: findCol(["newbalancedest", "dest_closing_bal"]),
-    rrn: findCol(["rrn", "utr", "referenceno", "ref_num", "chq/ref no"]),
-    gstin: findCol(["gstin", "merchant_gstin", "gst"]),
-    imei: findCol(["imei", "imei_observed", "device_imei", "tac", "candidateimeis"]),
-    publicIp: findCol(["publicip", "ip", "sourceip", "client_ip", "privateip"]),
+    timestamp: findCol(["timestamp", "date", "trans_date", "step", "time", "tran date", "timestampist"]),
+    txType: findCol(["type", "txtype", "trans_type", "action", "payment format", "rail"]),
+    amount: findCol(["amount", "amt", "tx_amount", "amount paid", "amount received", "amountinr", "withdrawal", "deposit", "value"]),
+    senderId: findCol(["nameorig", "sender", "source", "account", "from_acc", "dr_acc", "payer", "srcacct", "src_acct", "from"]),
+    receiverId: findCol(["namedest", "receiver", "dest", "account.1", "to_acc", "cr_acc", "payee", "dstacct", "dst_acct", "to"]),
+    senderOldBal: findCol(["oldbalanceorg", "oldbalanceorig", "opening", "opening_bal", "balance_before", "srcoldbal", "src_old_bal", "oldbalorig"]),
+    senderNewBal: findCol(["newbalanceorig", "newbalanceorg", "closing", "closing_bal", "balance_after", "srcnewbal", "src_new_bal", "newbalorig"]),
+    receiverOldBal: findCol(["oldbalancedest", "dest_opening_bal", "dstoldbal", "dst_old_bal", "oldbaldest"]),
+    receiverNewBal: findCol(["newbalancedest", "dest_closing_bal", "dstnewbal", "dst_new_bal", "newbaldest"]),
+    rrn: findCol(["rrn", "rrn12", "rrn_12", "utr", "referenceno", "ref_num", "chq/ref no"]),
+    gstin: findCol(["gstin", "merchantgstin", "merchant_gstin", "gst"]),
+    imei: findCol(["imei", "imeiobserved", "imei_observed", "candidateimeispipe", "device_imei", "tac", "candidateimeis"]),
+    publicIp: findCol(["publicip", "cgnatip", "cgnat_ip", "ip", "sourceip", "client_ip", "privateip"]),
     srcPort: findCol(["srcport", "port", "sourceport", "destinationport"]),
-    bssid: findCol(["bssid", "bssidhotspot", "wifi_mac", "ap_mac"]),
-    ja4: findCol(["ja4", "ja4_fingerprint", "tls_fingerprint"]),
+    bssid: findCol(["bssid", "bssidhotspot", "bssid_hotspot", "wifi_mac", "ap_mac"]),
+    ja4: findCol(["ja4", "ja4tls", "ja4_tls", "ja4_fingerprint", "tls_fingerprint"]),
     groundTruth: findCol(["isfraud", "is laundering", "fraud", "label", "is_fraud", "class"]),
     legacyBaselineFlag: findCol(["isflaggedfraud", "flagged_fraud"]),
   };
 
   // Determine Dataset Type
+  const hasLower = (token: string) => lowerHeaders.some((h) => h.includes(token));
+
   let datasetType: DatasetSchemaProfile["datasetType"] = "CUSTOM_CSV";
   if (
-    lowerHeaders.includes("candidateimeis") ||
-    lowerHeaders.includes("bssidhotspot") ||
-    lowerHeaders.includes("packettl") ||
-    (lowerHeaders.includes("rrn") && lowerHeaders.includes("isfraud"))
+    hasLower("candidateimeis") ||
+    hasLower("bssidhotspot") ||
+    hasLower("packetttl") ||
+    hasLower("packettl") ||
+    (hasLower("rrn") && hasLower("fraud"))
   ) {
     datasetType = "SUTRAM_MULTI_VECTOR";
   } else if (
-    lowerHeaders.includes("step") &&
-    lowerHeaders.includes("type") &&
-    (lowerHeaders.includes("oldbalanceorg") || lowerHeaders.includes("nameorig"))
+    hasLower("step") &&
+    hasLower("type") &&
+    (hasLower("oldbalanceorg") || hasLower("nameorig"))
   ) {
     datasetType = "PAYSIM";
-  } else if (lowerHeaders.includes("is laundering") || lowerHeaders.includes("payment format")) {
+  } else if (hasLower("laundering") || hasLower("paymentformat")) {
     datasetType = "IBM_AML";
-  } else if (lowerHeaders.includes("privateip") || lowerHeaders.includes("destinationport")) {
+  } else if (hasLower("privateip") || hasLower("destinationport")) {
     datasetType = "DOT_CGNAT";
-  } else if (lowerHeaders.includes("tran date") || lowerHeaders.includes("withdrawal (dr)")) {
+  } else if (hasLower("trandate") || hasLower("withdrawaldr")) {
     datasetType = "INDIAN_CBS_UPI";
   }
 
@@ -366,11 +369,11 @@ export function buildDatasetSchemaProfile(headers: string[]): DatasetSchemaProfi
   const hasSwitchRrn = !!mappedFields.rrn;
   const hasGstin = !!mappedFields.gstin;
   const hasTelemetry = !!(mappedFields.imei || mappedFields.publicIp || mappedFields.bssid || datasetType === "SUTRAM_MULTI_VECTOR");
-  const hasGraphFlow = !!(mappedFields.senderId && mappedFields.receiverId && mappedFields.amount);
+  const hasGraphFlow = !!((mappedFields.senderId || datasetType === "IBM_AML") && (mappedFields.receiverId || datasetType === "IBM_AML") && mappedFields.amount);
 
   const engineSupport: DatasetSchemaProfile["engineSupport"] = {
-    engine01_intakeLedger: hasLedgerBal && hasSwitchRrn ? "FULL" : hasLedgerBal ? "PARTIAL" : "UNSUPPORTED_MISSING_DATA",
-    engine02_entityResolution: hasGstin ? "FULL" : datasetType === "PAYSIM" ? "PARTIAL" : "UNSUPPORTED_MISSING_DATA",
+    engine01_intakeLedger: datasetType === "IBM_AML" ? "PARTIAL" : (hasLedgerBal && hasSwitchRrn ? "FULL" : hasLedgerBal ? "PARTIAL" : "UNSUPPORTED_MISSING_DATA"),
+    engine02_entityResolution: hasGstin ? "FULL" : (datasetType === "PAYSIM" || datasetType === "IBM_AML") ? "PARTIAL" : "UNSUPPORTED_MISSING_DATA",
     engine03_cgnatAttribution: hasTelemetry ? "FULL" : "UNSUPPORTED_MISSING_DATA",
     engine04_networkTopology: hasGraphFlow ? "FULL" : "UNSUPPORTED_MISSING_DATA",
     engine05_taintLibr: hasGraphFlow ? "FULL" : "UNSUPPORTED_MISSING_DATA",
@@ -404,7 +407,12 @@ export function evaluateDiagnosticForSchema(
     const res = { ...chk };
 
     // Engine 01 Checks
-    if (chk.id === "e1-2" || chk.id === "e1-3") {
+    if (chk.id === "e1-1") {
+      if (profile.datasetType === "IBM_AML") {
+        res.status = "NOT_TESTABLE_MISSING_COLUMNS";
+        res.metricLabel = "N/A · No balance columns in IBM AML";
+      }
+    } else if (chk.id === "e1-2" || chk.id === "e1-3") {
       if (!profile.mappedFields.rrn) {
         res.status = "NOT_TESTABLE_MISSING_COLUMNS";
         res.metricLabel = "N/A · Column 'rrn' absent";
@@ -428,6 +436,8 @@ export function evaluateDiagnosticForSchema(
     } else if (chk.id === "e2-4") {
       if (profile.datasetType === "PAYSIM") {
         res.metricLabel = "2,151,495 Excluded ('M...' prefix rule)";
+      } else if (profile.datasetType === "IBM_AML") {
+        res.metricLabel = "Credit Card / Reinvest Safe Harbor";
       }
     }
 
@@ -446,6 +456,11 @@ export function evaluateDiagnosticForSchema(
       if (!profile.mappedFields.imei && profile.datasetType !== "SUTRAM_MULTI_VECTOR") {
         res.status = "NOT_TESTABLE_MISSING_COLUMNS";
         res.metricLabel = "N/A · Dual-slot hardware absent";
+      }
+    } else if (chk.id === "e3-4") {
+      if (profile.datasetType === "IBM_AML") {
+        res.status = "NOT_TESTABLE_MISSING_COLUMNS";
+        res.metricLabel = "N/A · No NTP hardware drift in IBM AML";
       }
     } else if (chk.id === "e3-5") {
       if (profile.datasetType !== "SUTRAM_MULTI_VECTOR") {

@@ -39,6 +39,7 @@ import {
   evaluateDiagnosticForSchema,
   type DatasetSchemaProfile,
 } from "../../utils/schemaAutoMapper";
+import { generateAll6EnginesForensicCsv } from "../../utils/all6EnginesDatasetGenerator";
 
 export interface DiagnosticCheckItem {
   id: string;
@@ -75,6 +76,7 @@ export const BenchmarkLabScreen: React.FC = () => {
   const [diagnosticRunning, setDiagnosticRunning] = useState<boolean>(false);
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticCheckItem[] | null>(null);
   const [expandedEngine, setExpandedEngine] = useState<string | null>("01");
+  const [isGeneratingCsv, setIsGeneratingCsv] = useState<boolean>(false);
 
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -334,6 +336,32 @@ export const BenchmarkLabScreen: React.FC = () => {
     workerRef.current.postMessage({ type: "STOP" } as PublicStreamerCommand);
     setIsRunning(false);
     toast.info("Benchmark stream paused");
+  };
+
+  // Download 100k All-6-Engine Synthetic Forensic Dataset
+  const handleDownloadAll6EngineCsv = () => {
+    setIsGeneratingCsv(true);
+    toast.info("Synthesizing TARKA_All6Engines_Indian_Forensic_100k.csv (100,000 rows)...");
+
+    setTimeout(() => {
+      try {
+        const blob = generateAll6EnginesForensicCsv(100000);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "TARKA_All6Engines_Indian_Forensic_100k.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("✅ Downloaded TARKA_All6Engines_Indian_Forensic_100k.csv (100,000 rows)!");
+      } catch (err) {
+        console.error("Failed to generate 100k All-6-Engine CSV:", err);
+        toast.error("Failed to synthesize test CSV");
+      } finally {
+        setIsGeneratingCsv(false);
+      }
+    }, 40);
   };
 
   // Run 6-Engine Feature Self-Diagnostic (27 Automated Checks)
@@ -728,6 +756,32 @@ export const BenchmarkLabScreen: React.FC = () => {
             onChange={handleFileUpload}
             style={{ display: "none" }}
           />
+
+          <button
+            type="button"
+            disabled={isGeneratingCsv || isRunning}
+            onClick={handleDownloadAll6EngineCsv}
+            className="shrink-0"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 9px",
+              borderRadius: "6px",
+              border: "1px solid #C084FC",
+              background: "#FAF5FF",
+              color: "#7E22CE",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: isGeneratingCsv || isRunning ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+            title="Download 100k-row Indian Forensic benchmark with all 18 columns (RRN, CGNAT, IMEI, TTL, LIBR, GSTIN) to test all 6 engines"
+          >
+            <Download size={12} color="#9333EA" />
+            <span>{isGeneratingCsv ? "Generating CSV..." : "⬇ Download 100k All-6-Engine CSV"}</span>
+          </button>
 
           <button
             type="button"

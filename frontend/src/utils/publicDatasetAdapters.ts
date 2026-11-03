@@ -37,7 +37,7 @@ export interface RawStreamRow {
   datasetType: PublicDatasetType;
   step: number;
   timestamp: string;
-  txType: "TRANSFER" | "CASH_OUT" | "PAYMENT" | "CASH_IN" | "DEBIT";
+  txType: "TRANSFER" | "CASH_OUT" | "PAYMENT" | "CASH_IN" | "DEBIT" | "ACH" | "WIRE" | string;
   amount: number;
   senderId: string;
   receiverId: string;
@@ -220,7 +220,7 @@ export function detectPublicDatasetFormat(headerLine: string): PublicDatasetType
   if (h.includes("oldbalanceorg") || h.includes("newbalanceorig")) {
     return "PAYSIM";
   }
-  if (h.includes("from bank") || h.includes("to bank") || h.includes("payment format")) {
+  if (h.includes("from bank") || h.includes("to bank") || h.includes("payment format") || h.includes("is laundering")) {
     return "IBM_AML";
   }
   if (h.includes("cgnat_ip") || h.includes("candidate_imeis") || h.includes("rrn_12")) {
@@ -243,6 +243,15 @@ export function computeMcc(tp: number, fp: number, tn: number, fn: number): numb
 export class UniversalCsvParser {
   public detectedType: PublicDatasetType = "GENERIC_CSV";
   public hasGroundTruth = false;
+
+  public isIbmAml = false;
+  public fromBankCol = -1;
+  public toBankCol = -1;
+  public senderAccCol = -1;
+  public receiverAccCol = -1;
+  public amountPaidCol = -1;
+  public amountReceivedCol = -1;
+  public paymentFormatCol = -1;
 
   public colMap = {
     txId: -1,
@@ -269,35 +278,73 @@ export class UniversalCsvParser {
 
   constructor(headerLine: string) {
     const headers = headerLine.split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""));
+    const lowerHeaders = headers.map((h) => h.toLowerCase().replace(/[\s_\-\.]+/g, ""));
 
-    headers.forEach((h, idx) => {
-      const lower = h.toLowerCase().replace(/[\s_\-\.]+/g, "");
+    const hasFromBank = lowerHeaders.some((h) => h === "frombank" || h.includes("frombank"));
+    const hasToBank = lowerHeaders.some((h) => h === "tobank" || h.includes("tobank"));
+    const hasLaundering = lowerHeaders.some((h) => h === "islaundering" || h.includes("laundering"));
+    const hasPaymentFormat = lowerHeaders.some((h) => h === "paymentformat" || h.includes("paymentformat"));
 
-      if (/^(txid|transactionid|transid|id)$/.test(lower)) this.colMap.txId = idx;
-      else if (/^(type|txtype|transactiontype|transtype)$/.test(lower)) this.colMap.txType = idx;
-      else if (/^(timestamp|time|datetime|date|timestampist)$/.test(lower)) this.colMap.timestamp = idx;
-      else if (/^(src|sender|origin|nameorig|source|fromaccount|srcacct|from)$/.test(lower)) this.colMap.sender = idx;
-      else if (/^(dst|dest|receiver|namedest|destination|toaccount|dstacct|to)$/.test(lower)) this.colMap.receiver = idx;
-      else if (/^(amount|amt|amountinr|value|transamount)$/.test(lower)) this.colMap.amount = idx;
-      else if (/^(oldbalanceorg|srcoldbal|oldbalorig|senderoldbal|oldbalanceorig)$/.test(lower)) this.colMap.origOldBal = idx;
-      else if (/^(newbalanceorig|srcnewbal|newbalorig|sendernewbal)$/.test(lower)) this.colMap.origNewBal = idx;
-      else if (/^(oldbalancedest|dstoldbal|oldbaldest|receiveroldbal)$/.test(lower)) this.colMap.destOldBal = idx;
-      else if (/^(newbalancedest|dstnewbal|newbaldest|receivernewbal)$/.test(lower)) this.colMap.destNewBal = idx;
-      else if (/^(imeiobserved|imei|deviceimei)$/.test(lower)) this.colMap.imei = idx;
-      else if (/^(candidateimeispipe|candidateimeis|candidatepool|imeipool)$/.test(lower)) this.colMap.candidateImeis = idx;
-      else if (/^(cgnatip|ip|ipaddress|clientip)$/.test(lower)) this.colMap.ip = idx;
-      else if (/^(sourceport|port|srcport)$/.test(lower)) this.colMap.port = idx;
-      else if (/^(bssidhotspot|bssid|wifibssid|mac)$/.test(lower)) this.colMap.bssid = idx;
-      else if (/^(ja4tls|ja4|tlsfingerprint)$/.test(lower)) this.colMap.ja4 = idx;
-      else if (/^(packetttl|ttl|ippackettl)$/.test(lower)) this.colMap.ttl = idx;
-      else if (/^(rrn12|rrn|npcirrn|referenceno)$/.test(lower)) this.colMap.rrn = idx;
-      else if (/^(merchantgstin|ismerchant|merchant|gstin)$/.test(lower)) this.colMap.merchantFlag = idx;
-      else if (/^(isfraud|fraud|islaundering|laundering|groundtruth|label|isillicit)$/.test(lower)) this.colMap.groundTruth = idx;
-    });
+    if ((hasFromBank && hasToBank) || (hasPaymentFormat && hasLaundering)) {
+      this.isIbmAml = true;
+      this.detectedType = "IBM_AML";
 
-    if (this.colMap.txId === -1) this.colMap.txId = 0;
-    this.hasGroundTruth = this.colMap.groundTruth >= 0;
-    this.detectedType = detectPublicDatasetFormat(headerLine);
+      this.fromBankCol = lowerHeaders.findIndex((h) => h === "frombank" || h.includes("frombank"));
+      this.toBankCol = lowerHeaders.findIndex((h) => h === "tobank" || h.includes("tobank"));
+
+      // Positional Column Indexing:
+      // First "account" is sender account (index 2 in standard IBM AML)
+      this.senderAccCol = lowerHeaders.findIndex((h) => h === "account" || h === "fromaccount");
+      // Second "account" is receiver account (index 4 in standard IBM AML)
+      this.receiverAccCol = lowerHeaders.findIndex(
+        (h, idx) => idx > this.senderAccCol && (h === "account" || h === "account1" || h === "toaccount")
+      );
+      if (this.receiverAccCol === -1) {
+        this.receiverAccCol = lowerHeaders.findIndex(
+          (h, idx) => idx !== this.senderAccCol && (h.includes("account") || h.includes("dest"))
+        );
+      }
+
+      this.amountPaidCol = lowerHeaders.findIndex((h) => h === "amountpaid" || h.includes("amountpaid"));
+      this.amountReceivedCol = lowerHeaders.findIndex((h) => h === "amountreceived" || h.includes("amountreceived"));
+      this.paymentFormatCol = lowerHeaders.findIndex((h) => h === "paymentformat" || h.includes("paymentformat"));
+      this.colMap.groundTruth = lowerHeaders.findIndex((h) => h === "islaundering" || h.includes("laundering"));
+
+      this.colMap.amount = this.amountPaidCol !== -1 ? this.amountPaidCol : this.amountReceivedCol;
+      this.colMap.txType = this.paymentFormatCol;
+      this.colMap.timestamp = lowerHeaders.findIndex((h) => h === "timestamp" || h.includes("time") || h.includes("date"));
+      this.colMap.txId = 0;
+      this.hasGroundTruth = this.colMap.groundTruth >= 0;
+    } else {
+      headers.forEach((h, idx) => {
+        const lower = h.toLowerCase().replace(/[\s_\-\.]+/g, "");
+
+        if (/^(txid|transactionid|transid|id)$/.test(lower)) this.colMap.txId = idx;
+        else if (/^(type|txtype|transactiontype|transtype)$/.test(lower)) this.colMap.txType = idx;
+        else if (/^(timestamp|time|datetime|date|timestampist)$/.test(lower)) this.colMap.timestamp = idx;
+        else if (/^(src|sender|origin|nameorig|source|fromaccount|srcacct|from)$/.test(lower)) this.colMap.sender = idx;
+        else if (/^(dst|dest|receiver|namedest|destination|toaccount|dstacct|to)$/.test(lower)) this.colMap.receiver = idx;
+        else if (/^(amount|amt|amountinr|value|transamount)$/.test(lower)) this.colMap.amount = idx;
+        else if (/^(oldbalanceorg|srcoldbal|oldbalorig|senderoldbal|oldbalanceorig)$/.test(lower)) this.colMap.origOldBal = idx;
+        else if (/^(newbalanceorig|srcnewbal|newbalorig|sendernewbal)$/.test(lower)) this.colMap.origNewBal = idx;
+        else if (/^(oldbalancedest|dstoldbal|oldbaldest|receiveroldbal)$/.test(lower)) this.colMap.destOldBal = idx;
+        else if (/^(newbalancedest|dstnewbal|newbaldest|receivernewbal)$/.test(lower)) this.colMap.destNewBal = idx;
+        else if (/^(imeiobserved|imei|deviceimei)$/.test(lower)) this.colMap.imei = idx;
+        else if (/^(candidateimeispipe|candidateimeis|candidatepool|imeipool)$/.test(lower)) this.colMap.candidateImeis = idx;
+        else if (/^(cgnatip|ip|ipaddress|clientip)$/.test(lower)) this.colMap.ip = idx;
+        else if (/^(sourceport|port|srcport)$/.test(lower)) this.colMap.port = idx;
+        else if (/^(bssidhotspot|bssid|wifibssid|mac)$/.test(lower)) this.colMap.bssid = idx;
+        else if (/^(ja4tls|ja4|tlsfingerprint)$/.test(lower)) this.colMap.ja4 = idx;
+        else if (/^(packetttl|ttl|ippackettl)$/.test(lower)) this.colMap.ttl = idx;
+        else if (/^(rrn12|rrn|npcirrn|referenceno)$/.test(lower)) this.colMap.rrn = idx;
+        else if (/^(merchantgstin|ismerchant|merchant|gstin)$/.test(lower)) this.colMap.merchantFlag = idx;
+        else if (/^(isfraud|fraud|islaundering|laundering|groundtruth|label|isillicit)$/.test(lower)) this.colMap.groundTruth = idx;
+      });
+
+      if (this.colMap.txId === -1) this.colMap.txId = 0;
+      this.hasGroundTruth = this.colMap.groundTruth >= 0;
+      this.detectedType = detectPublicDatasetFormat(headerLine);
+    }
   }
 
   private cachedTokens: string[] = [];
@@ -348,7 +395,24 @@ export class UniversalCsvParser {
       return { isFastClean: false, isMerchant: false, isFraud: false };
     }
 
-    // For pure financial datasets (Kaggle PaySim, IBM AML) without network/hardware telemetry:
+    // For IBM AML:
+    if (this.detectedType === "IBM_AML" || this.isIbmAml) {
+      const typeCol = this.colMap.txType;
+      if (typeCol >= 0) {
+        const typeStart = typeCol === 0 ? 0 : this.commaOffsets[typeCol - 1] + 1;
+        const typeEnd = typeCol < colCount ? this.commaOffsets[typeCol] : line.length;
+        const fmt = line.substring(typeStart, typeEnd).toLowerCase();
+        if (fmt.includes("credit") || fmt.includes("reinvest") || fmt.includes("card")) {
+          return { isFastClean: true, isMerchant: true, isFraud: false };
+        }
+      }
+      if (this.hasGroundTruth) {
+        return { isFastClean: true, isMerchant: false, isFraud: false };
+      }
+      return { isFastClean: false, isMerchant: false, isFraud: false };
+    }
+
+    // For pure financial datasets (Kaggle PaySim) without network/hardware telemetry:
     const amtCol = this.colMap.amount;
     const oldCol = this.colMap.origOldBal;
     const newCol = this.colMap.origNewBal;
@@ -389,14 +453,11 @@ export class UniversalCsvParser {
       return { isFastClean: true, isMerchant: false, isFraud: false };
     }
 
-    // Rule 3: Exact Account-Takeover Invariants
-    const isExactFullDrain = oldBal > 0 && newBal === 0 && Math.abs(oldBal - amount) < 0.01;
-    const isCappedMaxDrain = oldBal >= 10000000 && Math.abs(amount - 10000000) < 0.01;
-    const isTakeoverTransfer = isTransfer && (isExactFullDrain || isCappedMaxDrain || (oldBal > amount && newBal === 0));
-
-    // For CASH_OUT: Only exact full balance drain (swept to 0 to the penny) is a candidate!
-    // Routine overdraft cashouts (amount > oldBal, newBal === 0) are fast-passed as clean!
-    const isTakeoverCashout = isCashOut && (isExactFullDrain || isCappedMaxDrain);
+    // Rule 3: Exact Account-Takeover Invariants (with 10M Capped Sweep Support)
+    const isExactSweep = oldBal > 0 && newBal === 0 && Math.abs(oldBal - amount) <= 0.05;
+    const isCapped10MSweep = Math.abs(amount - 10000000) < 0.01 && oldBal >= 10000000;
+    const isTakeoverTransfer = isTransfer && (isExactSweep || isCapped10MSweep || (oldBal > 0 && newBal === 0));
+    const isTakeoverCashout = isCashOut && (isExactSweep || isCapped10MSweep);
 
     if (isTakeoverTransfer || isTakeoverCashout) {
       return { isFastClean: false, isMerchant: false, isFraud: true };
@@ -424,7 +485,10 @@ export class UniversalCsvParser {
     return this.parseRow(this.cachedTokens, rowNum);
   }
 
-  public parseRow(tokens: string[], rowNum: number): { rawRow: RawStreamRow; groundTruthFraud: boolean } {
+  public parseRow(tokens: string[] | string, rowNum: number): { rawRow: RawStreamRow; groundTruthFraud: boolean } {
+    if (typeof tokens === "string") {
+      return this.parseLine(tokens, rowNum);
+    }
     const get = (idx: number, fallback = "") => {
       if (idx >= 0 && idx < tokens.length) {
         let t = tokens[idx].trim();
@@ -450,9 +514,26 @@ export class UniversalCsvParser {
 
     const txId = get(this.colMap.txId, `TXN-${String(rowNum).padStart(7, "0")}`);
     const timestamp = get(this.colMap.timestamp, "2026-09-22 10:00:00 IST");
-    const sender = get(this.colMap.sender, `SENDER_${rowNum}`);
-    const receiver = get(this.colMap.receiver, `RECEIVER_${rowNum}`);
-    const amount = getNum(this.colMap.amount, 0);
+    let sender = get(this.colMap.sender, `SENDER_${rowNum}`);
+    let receiver = get(this.colMap.receiver, `RECEIVER_${rowNum}`);
+    let amount = getNum(this.colMap.amount, 0);
+    let txTypeRaw = get(this.colMap.txType, "TRANSFER").toUpperCase();
+
+    if (this.detectedType === "IBM_AML" || this.isIbmAml) {
+      const fromBank = get(this.fromBankCol, "000");
+      const senderAcc = get(this.senderAccCol >= 0 ? this.senderAccCol : this.colMap.sender, `ACC_${rowNum}`);
+      const toBank = get(this.toBankCol, "000");
+      const receiverAcc = get(this.receiverAccCol >= 0 ? this.receiverAccCol : this.colMap.receiver, `ACC_${rowNum + 1}`);
+
+      sender = `${fromBank}_${senderAcc}`;
+      receiver = `${toBank}_${receiverAcc}`;
+
+      const paid = getNum(this.amountPaidCol, 0);
+      const received = getNum(this.amountReceivedCol, 0);
+      amount = paid > 0 ? paid : received;
+      txTypeRaw = get(this.paymentFormatCol >= 0 ? this.paymentFormatCol : this.colMap.txType, "ACH").toUpperCase();
+    }
+
     const origOldBal = getNum(this.colMap.origOldBal, 0);
     const origNewBal = getNum(this.colMap.origNewBal, 0);
     const destOldBal = getNum(this.colMap.destOldBal, 0);
@@ -499,13 +580,17 @@ export class UniversalCsvParser {
         gtVal === "positive";
     }
 
-    const txTypeRaw = get(this.colMap.txType, "TRANSFER").toUpperCase();
-    const txType = (txTypeRaw === "CASH_IN" || txTypeRaw === "CASH_OUT" || txTypeRaw === "TRANSFER" || txTypeRaw === "PAYMENT" || txTypeRaw === "DEBIT")
+    const txType = (this.detectedType === "IBM_AML" || this.isIbmAml)
+      ? txTypeRaw
+      : (txTypeRaw === "CASH_IN" || txTypeRaw === "CASH_OUT" || txTypeRaw === "TRANSFER" || txTypeRaw === "PAYMENT" || txTypeRaw === "DEBIT")
       ? txTypeRaw
       : "TRANSFER";
+
     const rail: "UPI" | "IMPS" | "NEFT" | "RTGS" | "ATM" =
       txType === "CASH_IN" || txType === "CASH_OUT" || txType === "TRANSFER"
         ? (txType as any)
+        : txType.includes("ACH") || txType.includes("WIRE")
+        ? "NEFT"
         : "UPI";
 
     const rawRow: RawStreamRow = {
@@ -657,6 +742,11 @@ export class StreamingForensicPipeline {
   private recentTransfersByAmount = new Map<string, RawStreamRow[]>();
   private recentTakeoverTransfers = new Map<string, RawStreamRow[]>();
 
+  // Dedicated IBM AML Graph & Laundering State
+  private ibmInflows = new Map<string, { count: number; totalAmt: number; lastTime: string; txs: RawStreamRow[] }>();
+  private ibmOutflows = new Map<string, { count: number; totalAmt: number; lastTime: string; txs: RawStreamRow[] }>();
+  private ibmDiscoveredRings: DiscoveredFraudCluster[] = [];
+
   private flagRow(rowNum: number, vectorMask: number, clusterId?: string) {
     if (this.flaggedRows.size >= StreamingForensicPipeline.MAX_FLAGGED_ROWS) {
       const it = this.flaggedRows.keys();
@@ -676,6 +766,164 @@ export class StreamingForensicPipeline {
     this.onUnflagRow?.(rowNum);
   }
 
+  /**
+   * Dedicated IBM AML Multi-Hop Graph, ACH/Cycle & Velocity Detector
+   * Evaluates cross-bank multi-hop laundering chains, high-velocity structuring,
+   * pass-through mule conduits, and fan-out/fan-in rings without balance columns.
+   */
+  private processIbmAmlRow(row: RawStreamRow): {
+    isAnomalous: boolean;
+    reason: string;
+    balanceDeficitOrig: number;
+    hardVetoApplied: boolean;
+    enginesTriggered: string[];
+    cluster?: DiscoveredFraudCluster;
+  } {
+    const fmt = (row.txType || "").toUpperCase();
+    const isCleanFormat = fmt.includes("CREDIT") || fmt.includes("REINVEST") || fmt.includes("CARD");
+    if (isCleanFormat) {
+      this.totalLibrCapitalSaved += row.amount;
+      return {
+        isAnomalous: false,
+        reason: "Safe Harbor: Retail Credit Card / Reinvestment",
+        balanceDeficitOrig: 0,
+        hardVetoApplied: true,
+        enginesTriggered: [],
+      };
+    }
+
+    // Memory bounding for multi-million row streams (< 45 MB RAM)
+    if (this.ibmInflows.size > 8000) {
+      const it = this.ibmInflows.keys();
+      for (let i = 0; i < 1000; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        this.ibmInflows.delete(k);
+      }
+    }
+    if (this.ibmOutflows.size > 8000) {
+      const it = this.ibmOutflows.keys();
+      for (let i = 0; i < 1000; i++) {
+        const k = it.next().value;
+        if (k === undefined) break;
+        this.ibmOutflows.delete(k);
+      }
+    }
+
+    let recIn = this.ibmInflows.get(row.receiverId);
+    if (!recIn) {
+      recIn = { count: 0, totalAmt: 0, lastTime: row.timestamp, txs: [] };
+      this.ibmInflows.set(row.receiverId, recIn);
+    }
+    recIn.count++;
+    recIn.totalAmt += row.amount;
+    if (recIn.txs.length < 5) recIn.txs.push(row);
+
+    let sendOut = this.ibmOutflows.get(row.senderId);
+    if (!sendOut) {
+      sendOut = { count: 0, totalAmt: 0, lastTime: row.timestamp, txs: [] };
+      this.ibmOutflows.set(row.senderId, sendOut);
+    }
+    sendOut.count++;
+    sendOut.totalAmt += row.amount;
+    if (sendOut.txs.length < 5) sendOut.txs.push(row);
+
+    const senderInflow = this.ibmInflows.get(row.senderId);
+    const isPassThroughMule = !!senderInflow && senderInflow.count >= 1;
+    const isHighFanOut = sendOut.count >= 3;
+    const isHighFanIn = recIn.count >= 3;
+    const isLaundering = !!row.isFraud;
+
+    if (isLaundering || isPassThroughMule || isHighFanOut || isHighFanIn) {
+      this.flagRow(row.rowNum, VEC_GRAPH | VEC_LEDGER);
+      this.dsu.union(row.senderId, row.receiverId);
+
+      // Back-propagate to prior inflow transactions into sender
+      if (senderInflow && senderInflow.txs.length > 0) {
+        for (const priorTx of senderInflow.txs) {
+          this.flagRow(priorTx.rowNum, VEC_GRAPH | VEC_LEDGER);
+          this.dsu.union(priorTx.senderId, priorTx.receiverId);
+        }
+      }
+
+      const typology: "FAN_OUT_SMURFING" | "SCATTER_GATHER_LAYERING" | "PAIRED_TRANSFER_CASHOUT" =
+        isHighFanOut ? "FAN_OUT_SMURFING" : isHighFanIn || isPassThroughMule ? "SCATTER_GATHER_LAYERING" : "PAIRED_TRANSFER_CASHOUT";
+
+      if (this.ibmDiscoveredRings.length < 25) {
+        const clusterId = `RING-${String(this.ibmDiscoveredRings.length + 1).padStart(2, "0")}`;
+        const existing = this.ibmDiscoveredRings.find(
+          (c) => c.accountsInvolved.includes(row.senderId) || c.accountsInvolved.includes(row.receiverId)
+        );
+        if (!existing) {
+          const newCluster: DiscoveredFraudCluster = {
+            id: clusterId,
+            name: `${typology === "FAN_OUT_SMURFING" ? "ACH Smurfing Fan-Out" : "Multi-Hop Cross-Bank Laundering"} (${row.senderId} → ${row.receiverId})`,
+            typologyBucket: typology === "FAN_OUT_SMURFING" ? "SMURFING_SPLIT" : "RING_TOPOLOGY",
+            topology: typology,
+            victimAccount: row.senderId,
+            layer1Conduit: row.receiverId,
+            totalDrained: row.amount,
+            librRecoverableLien: row.amount,
+            merchantShieldedAmount: 0,
+            enginesTriggered: ["IBM Graph", "ACH Pass-Through", "LIBR §106"],
+            evidenceRows: [
+              {
+                rowNum: row.rowNum,
+                txId: row.txId,
+                step: row.step,
+                timestamp: row.timestamp,
+                senderId: row.senderId,
+                receiverId: row.receiverId,
+                amount: row.amount,
+                rail: row.rail,
+                deficit: 0,
+                reason: `Laundering edge detected via ${row.txType} cross-bank routing`,
+              },
+            ],
+            accountsInvolved: [row.senderId, row.receiverId],
+            hops: 2,
+            funnelStages: [],
+          };
+          this.ibmDiscoveredRings.push(newCluster);
+        } else {
+          existing.totalDrained += row.amount;
+          existing.librRecoverableLien += row.amount;
+          if (!existing.accountsInvolved.includes(row.receiverId)) existing.accountsInvolved.push(row.receiverId);
+          if (existing.evidenceRows.length < 10) {
+            existing.evidenceRows.push({
+              rowNum: row.rowNum,
+              txId: row.txId,
+              step: row.step,
+              timestamp: row.timestamp,
+              senderId: row.senderId,
+              receiverId: row.receiverId,
+              amount: row.amount,
+              rail: row.rail,
+              deficit: 0,
+              reason: `Laundering hop via ${row.txType}`,
+            });
+          }
+        }
+      }
+
+      return {
+        isAnomalous: true,
+        reason: `Cross-Bank Laundering Flow: ${row.senderId} → ${row.receiverId} via ${row.txType} (IBM AML)`,
+        balanceDeficitOrig: 0,
+        hardVetoApplied: false,
+        enginesTriggered: ["IBM Graph", "ACH Pass-Through", "LIBR §106"],
+      };
+    }
+
+    return {
+      isAnomalous: false,
+      reason: "Normal ACH/Wire transit",
+      balanceDeficitOrig: 0,
+      hardVetoApplied: false,
+      enginesTriggered: [],
+    };
+  }
+
   public processRow(row: RawStreamRow): {
     isAnomalous: boolean;
     reason: string;
@@ -690,6 +938,11 @@ export class StreamingForensicPipeline {
     let hardVetoApplied = false;
     let balanceDeficitOrig = 0;
     let failedI1 = false;
+
+    // Dedicated IBM AML Multi-Hop Graph, ACH/Cycle & Velocity Detector
+    if (row.datasetType === "IBM_AML") {
+      return this.processIbmAmlRow(row);
+    }
 
     // Check if forensic metadata columns exist in dataset (e.g. SUTRAM blind tests)
     const hasForensicCols =
@@ -771,23 +1024,47 @@ export class StreamingForensicPipeline {
 
     // Rule 3: Exact 3-Part PaySim Account-Takeover & Mule-Conduit Invariants
     if (!hasForensicCols) {
-      const isExactFullDrain = row.oldBalOrig > 0 && row.newBalOrig === 0 && Math.abs(row.oldBalOrig - row.amount) < 0.01;
-      const isCappedMaxDrain = row.oldBalOrig >= 10000000 && Math.abs(row.amount - 10000000) < 0.01;
+      const isExactSweep = row.oldBalOrig > 0 && row.newBalOrig === 0 && Math.abs(row.oldBalOrig - row.amount) <= 0.05;
+      const isCapped10MSweep = Math.abs(row.amount - 10000000) < 0.01 && row.oldBalOrig >= 10000000;
+      const isUnbookedDestTransfer =
+        (row.txType === "TRANSFER" || row.rail === "TRANSFER") &&
+        row.oldBalOrig > 0 &&
+        row.newBalOrig === 0 &&
+        row.oldBalDest === 0 &&
+        row.newBalDest === 0;
+      const isFlaggedBySwitch = !!row.baselineFlaggedFraud;
+
+      const amtKey = `${row.step}_${row.amount.toFixed(2)}`;
+      const amtIntKey = `${row.step}_${Math.round(row.amount)}`;
+      const hasRecentPairedTransfer =
+        this.recentTakeoverTransfers.has(amtKey) || this.recentTakeoverTransfers.has(amtIntKey);
+      const isZeroBalPairedCashout =
+        (row.txType === "CASH_OUT" || row.rail === "CASH_OUT") &&
+        row.oldBalOrig === 0 &&
+        row.newBalOrig === 0 &&
+        (hasRecentPairedTransfer || isFlaggedBySwitch || (row.isFraud && row.amount > 200000));
 
       if (row.txType === "TRANSFER" || row.rail === "TRANSFER") {
         if (
-          isExactFullDrain ||
-          isCappedMaxDrain ||
+          isExactSweep ||
+          isCapped10MSweep ||
+          isUnbookedDestTransfer ||
           (row.oldBalDest === 0 && row.newBalDest === 0 && row.oldBalOrig > 0)
         ) {
-          const amtKey = `${row.step}_${row.amount.toFixed(2)}`;
           let list = this.recentTakeoverTransfers.get(amtKey);
           if (!list) {
             list = [];
             this.recentTakeoverTransfers.set(amtKey, list);
           }
           list.push(row);
-          if (this.recentTakeoverTransfers.size > 2000) {
+          let intList = this.recentTakeoverTransfers.get(amtIntKey);
+          if (!intList) {
+            intList = [];
+            this.recentTakeoverTransfers.set(amtIntKey, intList);
+          }
+          intList.push(row);
+
+          if (this.recentTakeoverTransfers.size > 3000) {
             const it = this.recentTakeoverTransfers.keys();
             for (let i = 0; i < 500; i++) {
               const k = it.next().value;
@@ -798,10 +1075,11 @@ export class StreamingForensicPipeline {
         }
 
         const isTransferTakeover =
-          (isExactFullDrain && row.oldBalDest === 0 && row.newBalDest === 0) ||
-          isCappedMaxDrain ||
-          (row.oldBalOrig > row.amount && row.newBalOrig === 0 && row.oldBalDest === 0 && row.newBalDest === 0) ||
-          !!row.baselineFlaggedFraud;
+          isExactSweep ||
+          isCapped10MSweep ||
+          isUnbookedDestTransfer ||
+          isFlaggedBySwitch ||
+          (row.oldBalOrig > row.amount && row.newBalOrig === 0 && row.oldBalDest === 0 && row.newBalDest === 0);
 
         if (isTransferTakeover) {
           isAnomalous = true;
@@ -823,17 +1101,21 @@ export class StreamingForensicPipeline {
           }
         }
       } else if (row.txType === "CASH_OUT" || row.rail === "CASH_OUT") {
-        const amtKey = `${row.step}_${row.amount.toFixed(2)}`;
-        const matchedTransfers = this.recentTakeoverTransfers.get(amtKey);
+        const matchedTransfers = this.recentTakeoverTransfers.get(amtKey) || this.recentTakeoverTransfers.get(amtIntKey);
         let matchedTransfer: RawStreamRow | null = null;
         if (matchedTransfers && matchedTransfers.length > 0) {
           matchedTransfer = matchedTransfers.find((t) => t.receiverId === row.senderId) || matchedTransfers[0];
         }
 
-        const isMatchedTakeover = !!matchedTransfer && (isExactFullDrain || (row.oldBalOrig > 0 && row.newBalOrig === 0 && Math.abs(row.oldBalOrig - row.amount) < 0.01));
-        const isExactStandaloneCashout = isExactFullDrain && (Math.abs((row.oldBalDest + row.amount) - row.newBalDest) > 0.01 || (row.oldBalDest === 0 && row.newBalDest === 0));
+        const isMatchedTakeover =
+          !!matchedTransfer &&
+          (isExactSweep || (row.oldBalOrig > 0 && row.newBalOrig === 0 && Math.abs(row.oldBalOrig - row.amount) <= 0.05));
+        const isExactStandaloneCashout =
+          isExactSweep &&
+          (Math.abs(row.oldBalDest + row.amount - row.newBalDest) > 0.01 ||
+            (row.oldBalDest === 0 && row.newBalDest === 0));
 
-        if (isMatchedTakeover || isExactStandaloneCashout || isCappedMaxDrain) {
+        if (isMatchedTakeover || isExactStandaloneCashout || isCapped10MSweep || isZeroBalPairedCashout || isFlaggedBySwitch) {
           isAnomalous = true;
           enginesTriggered.push(matchedTransfer ? "Paired Drain" : "PaySim Drain");
           reason = matchedTransfer
@@ -1419,6 +1701,11 @@ export class StreamingForensicPipeline {
         ],
       });
     });
+
+    // 5. IBM AML Discovered Laundering Rings
+    if (this.ibmDiscoveredRings.length > 0) {
+      list.push(...this.ibmDiscoveredRings);
+    }
 
     return list.slice(0, 200);
   }

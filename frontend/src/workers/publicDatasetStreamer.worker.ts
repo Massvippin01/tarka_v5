@@ -183,7 +183,7 @@ async function runReplicaStream(preset: "PAYSIM_100K" | "IBM_AML_100K", totalRow
   let lastPostTime = performance.now();
 
   const datasetName = preset === "PAYSIM_100K" ? "PaySim1 (Kaggle ealaxi/paysim1 Replica Stream)" : "IBM AML (HI-Small Replica)";
-  const detectedType: PublicDatasetType = "PAYSIM";
+  const detectedType: PublicDatasetType = preset === "PAYSIM_100K" ? "PAYSIM" : "IBM_AML";
   const replicaHeaders = preset === "PAYSIM_100K"
     ? ["step", "type", "amount", "nameOrig", "oldbalanceOrg", "newbalanceOrig", "nameDest", "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud"]
     : ["timestamp", "from bank", "account", "to bank", "account.1", "amount received", "receiving currency", "amount paid", "payment format", "is laundering"];
@@ -245,6 +245,13 @@ async function runReplicaStream(preset: "PAYSIM_100K" | "IBM_AML_100K", totalRow
     bytesProcessed += currentBatch * 110;
 
     for (const r of rows) {
+      if (preset === "IBM_AML_100K") {
+        r.datasetType = "IBM_AML";
+        if (r.txType === "TRANSFER" || r.txType === "CASH_OUT") {
+          r.txType = "ACH";
+        }
+      }
+
       if (r.isMerchant) {
         merchantShieldedCount++;
       }
