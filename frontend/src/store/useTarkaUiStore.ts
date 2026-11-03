@@ -1,10 +1,15 @@
 import { create } from "zustand";
 import type { DiscoveredFraudCluster } from "../utils/publicDatasetAdapters";
 
+export type TopLevelPage = "workspaces" | "workbench" | "benchmark";
 export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
 export type UiDensity = "comfortable" | "compact";
 
 export interface TarkaUiState {
+  // Top-Level Application Page Routing
+  activePage: TopLevelPage;
+  setActivePage: (page: TopLevelPage) => void;
+
   // Discovered Cluster active in 6-screen workbench
   activeDiscoveredCluster: DiscoveredFraudCluster | null;
   setActiveDiscoveredCluster: (cluster: DiscoveredFraudCluster | null) => void;
@@ -57,6 +62,16 @@ export interface TarkaUiState {
 }
 
 export const useTarkaUiStore = create<TarkaUiState>((set) => {
+  const getInitialActivePage = (): TopLevelPage => {
+    if (typeof window === "undefined") return "workspaces";
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get("page") || params.get("mode");
+    if (page === "benchmark" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
+    if (page === "workbench" || page === "case" || params.get("stage")) return "workbench";
+    if (page === "workspaces" || page === "workspace") return "workspaces";
+    return "workspaces";
+  };
+
   const initialCollapsed = typeof window !== "undefined"
     ? localStorage.getItem("tarka_sidebar_collapsed") === "true" || true
     : true;
@@ -66,6 +81,9 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     : "comfortable";
 
   return {
+    activePage: getInitialActivePage(),
+    setActivePage: (page) => set({ activePage: page }),
+
     activeDiscoveredCluster: null,
     setActiveDiscoveredCluster: (cluster) => set({ activeDiscoveredCluster: cluster }),
 

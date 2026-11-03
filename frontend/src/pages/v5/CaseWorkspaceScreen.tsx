@@ -34,7 +34,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
     removeQuarantinedArtifact,
   } = useTarkaGlobal();
 
-  const { togglePublicDatasetModal } = useTarkaUiStore();
+  const { setActivePage } = useTarkaUiStore();
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -433,8 +433,8 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
             <button
               type="button"
-              onClick={togglePublicDatasetModal}
-              title="Benchmark against Kaggle PaySim 6.3M, IBM AML 5M, IEEE-CIS (Alt+D)"
+              onClick={() => setActivePage("benchmark")}
+              title="Full-Screen Benchmark Lab against Kaggle PaySim, IBM AML, SUTRAM (Alt+D)"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -451,7 +451,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
               }}
             >
               <Database size={12} color="#4F46E5" />
-              <span>Datasets (Alt+D)</span>
+              <span>Benchmark Lab (Alt+D)</span>
             </button>
           </div>
         </div>
@@ -621,7 +621,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Tile 4: Cross-Case Syndicate Hits */}
+          {/* Tile 4: Promoted Benchmark Syndicates & Hardware Anchors */}
           <div
             style={{
               background: "#EEF2FF",
@@ -638,7 +638,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <Network size={13} color="#4F46E5" />
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#312E81", letterSpacing: "0.02em" }}>
-                  SYNDICATE OVERLAPS
+                  PROMOTED BENCHMARK SYNDICATES
                 </span>
               </div>
               <span
@@ -1039,6 +1039,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         selectCaseWorkspace(cw.caseId, cw.currentStage);
+                        setActivePage("workbench");
                       }}
                       style={{
                         display: "inline-flex",
@@ -1054,8 +1055,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
                         cursor: "pointer",
                       }}
                     >
-                      <span>Open Deep Workbench</span>
-                      <ArrowRight size={12} />
+                      <span>🔍 Open 6-Screen Forensic Workbench →</span>
                     </button>
                   </div>
                 </div>
@@ -1137,7 +1137,10 @@ export const CaseWorkspaceScreen: React.FC = () => {
                 {/* Big Primary Launch Workbench Button */}
                 <button
                   type="button"
-                  onClick={() => selectCaseWorkspace(currentPreviewCase.caseId, currentPreviewCase.currentStage)}
+                  onClick={() => {
+                    selectCaseWorkspace(currentPreviewCase.caseId, currentPreviewCase.currentStage);
+                    setActivePage("workbench");
+                  }}
                   style={{
                     width: "100%",
                     padding: "9px 14px",
@@ -1156,7 +1159,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
                   }}
                 >
                   <Activity size={14} />
-                  <span>Launch Deep Investigation Workbench</span>
+                  <span>🔍 Open 6-Screen Forensic Workbench →</span>
                   <ArrowRight size={13} />
                 </button>
 
@@ -1186,7 +1189,10 @@ export const CaseWorkspaceScreen: React.FC = () => {
                       <button
                         key={st.id}
                         type="button"
-                        onClick={() => selectCaseWorkspace(currentPreviewCase.caseId, st.id)}
+                        onClick={() => {
+                          selectCaseWorkspace(currentPreviewCase.caseId, st.id);
+                          setActivePage("workbench");
+                        }}
                         style={{
                           padding: "4px 6px",
                           borderRadius: "5px",
@@ -1208,6 +1214,35 @@ export const CaseWorkspaceScreen: React.FC = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Direct Shortcut Banner: Open Full-Screen Benchmark & Diagnostics Lab (Alt+D) */}
+                <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setActivePage("benchmark")}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid #C7D2FE",
+                      background: "#EEF2FF",
+                      color: "#3730A3",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Zap size={13} color="#4F46E5" />
+                      <span>⚡ Open Full-Screen Benchmark &amp; Diagnostics Lab (Alt+D)</span>
+                    </div>
+                    <ArrowRight size={12} color="#4F46E5" />
+                  </button>
                 </div>
               </div>
 

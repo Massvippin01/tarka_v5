@@ -33,6 +33,7 @@ import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
 import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
 import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
+import { BenchmarkLabScreen } from "../../pages/v5/BenchmarkLabScreen";
 import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
 import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
 import { BenchmarkLabDrawer } from "../tarka/benchmark/BenchmarkLabDrawer";
@@ -61,6 +62,8 @@ export const TarkaGlobalShell: React.FC = () => {
   const activeCase = caseWorkspaces.find((c) => c.caseId === activeCaseId) || caseWorkspaces[0];
 
   const {
+    activePage,
+    setActivePage,
     sidebarCollapsed,
     toggleSidebar,
     presentationMode,
@@ -132,20 +135,42 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         e.preventDefault();
         togglePresentationMode();
       } else if (e.altKey && !isInput) {
-        if (e.key === "0") { e.preventDefault(); setActiveRoute("workspace"); }
-        else if (e.key === "1") { e.preventDefault(); setActiveRoute("intake"); }
-        else if (e.key === "2") { e.preventDefault(); setActiveRoute("entities"); }
-        else if (e.key === "3") { e.preventDefault(); setActiveRoute("attribution"); }
-        else if (e.key === "4") { e.preventDefault(); setActiveRoute("network"); }
-        else if (e.key === "5") { e.preventDefault(); setActiveRoute("taint-engine"); }
-        else if (e.key === "6") { e.preventDefault(); setActiveRoute("court-proof"); }
-        else if (e.key === "b" || e.key === "B") { e.preventDefault(); toggleBenchmarkLab(); }
-        else if (e.key === "d" || e.key === "D") { e.preventDefault(); togglePublicDatasetModal(); }
+        if (e.key === "0" || e.key === "w" || e.key === "W") {
+          e.preventDefault();
+          setActivePage("workspaces");
+        } else if (e.key === "1") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("intake");
+        } else if (e.key === "2") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("entities");
+        } else if (e.key === "3") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("attribution");
+        } else if (e.key === "4") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("network");
+        } else if (e.key === "5") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("taint-engine");
+        } else if (e.key === "6") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("court-proof");
+        } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
+          e.preventDefault();
+          setActivePage("benchmark");
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, togglePresentationMode, setActiveRoute, toggleBenchmarkLab, togglePublicDatasetModal]);
+  }, [toggleSidebar, togglePresentationMode, setActiveRoute, setActivePage]);
 
   // 6 Core PS4 Deliverable Pipeline Navigation Items
   const navItems = [
@@ -272,8 +297,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
       {/* =========================================================================
           1. SHADCN-STYLE COLLAPSIBLE SIDEBAR RAIL (56PX DEFAULT / 232PX EXPANDED)
+          Rendered ONLY on activePage === "workbench" (Hidden on Workspaces & Benchmark)
           ========================================================================= */}
-      {!presentationMode && (
+      {!presentationMode && activePage === "workbench" && (
         <aside
           onMouseEnter={() => {
             if (sidebarCollapsed) setIsHoverPeeking(true);
@@ -481,7 +507,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setActiveRoute(item.id)}
+                    onClick={() => {
+                      if (item.id === "workspace") {
+                        setActivePage("workspaces");
+                      } else {
+                        setActivePage("workbench");
+                        setActiveRoute(item.id);
+                      }
+                    }}
                     title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
                     className="hover:bg-slate-100/70 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
                     style={{
@@ -784,38 +817,123 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             zIndex: 20,
           }}
         >
-          {/* Left: Breadcrumb / Active Case Switcher / Engine Title + Z3 Verified */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flexShrink: 1 }}>
-            {activeRoute === "workspace" ? (
+          {/* Left: Top-Level Mode Switcher + Breadcrumb / Active Case Switcher */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flexShrink: 1 }}>
+            {/* Top-Level Mode Switcher (Workspaces | Case Workbench | Benchmark Lab) */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                borderRadius: "7px",
+                padding: "2px",
+                gap: "2px",
+                flexShrink: 0,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActivePage("workspaces")}
+                title="Workspaces Hub: Multi-Case Command & Evidence Dropzone (Alt+W / Alt+0)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: activePage === "workspaces" ? 800 : 600,
+                  background: activePage === "workspaces" ? "#FFFFFF" : "transparent",
+                  color: activePage === "workspaces" ? "#4338CA" : "#64748B",
+                  boxShadow: activePage === "workspaces" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  border: activePage === "workspaces" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>🗂️ Workspaces</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePage("workbench");
+                  if (activeRoute === "workspace") setActiveRoute("intake");
+                }}
+                title="Case Workbench: 6-Stage Forensic Investigation Pipeline (Alt+1..6)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: activePage === "workbench" ? 800 : 600,
+                  background: activePage === "workbench" ? "#FFFFFF" : "transparent",
+                  color: activePage === "workbench" ? "#4338CA" : "#64748B",
+                  boxShadow: activePage === "workbench" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  border: activePage === "workbench" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>🔍 Case Workbench</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActivePage("benchmark")}
+                title="Benchmark & Diagnostics Lab: Streaming & 27-Check Matrix (Alt+D / Alt+B)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: activePage === "benchmark" ? 800 : 600,
+                  background: activePage === "benchmark" ? "#FFFFFF" : "transparent",
+                  color: activePage === "benchmark" ? "#4338CA" : "#64748B",
+                  boxShadow: activePage === "benchmark" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  border: activePage === "benchmark" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>⚡ Benchmark Lab</span>
+              </button>
+            </div>
+
+            {/* Contextual Breadcrumb based on activePage */}
+            {activePage === "workspaces" ? (
               <>
-                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 800, background: "#EEF2FF", padding: "1px 6px", borderRadius: "4px", border: "1px solid #C7D2FE", flexShrink: 0 }}>
-                  COMMAND HUB
-                </span>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", flexShrink: 0 }}>
-                  Workspaces
+                <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569" }}>
+                  Station Command &amp; Workspaces Hub
                 </span>
                 <span className="hidden md:inline-flex flex-shrink-0">
                   <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" />
                 </span>
               </>
+            ) : activePage === "benchmark" ? (
+              <>
+                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
+                <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569" }}>
+                  Empirical Streaming &amp; Diagnostics Studio
+                </span>
+                <span className="hidden md:inline-flex flex-shrink-0">
+                  <ReuiStatusBadge text="27 Checks Ready" variant="emerald" />
+                </span>
+              </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => setActiveRoute("workspace")}
-                  title="Return to Station Workspaces Hub (Alt+0)"
-                  className="hover:bg-slate-100 hover:text-indigo-600 px-2 py-0.5 rounded text-slate-500 font-mono text-[11px] font-semibold transition-colors flex items-center gap-1 border border-transparent hover:border-slate-200 flex-shrink-0"
-                >
-                  <ArrowLeft size={11} />
-                  <span className="hidden sm:inline">Workspaces (Alt+0)</span>
-                </button>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
                 <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700, background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
                   {activeCase?.firNumber || "CASE"}
                 </span>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {currentNav.title}
                 </span>
                 <span className="hidden md:inline-flex flex-shrink-0">
@@ -846,7 +964,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
 
           {/* Center: Operational Timeline Stage Popover (Screens 01-06) */}
-          {activeRoute !== "workspace" && (
+          {activePage === "workbench" && (
             <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
               <Popover.Trigger asChild>
                 <button
@@ -1476,27 +1594,50 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <span>Converged Device: <strong style={{ fontFamily: "var(--font-mono)", color: "#E0E7FF" }}>{activeDiscoveredCluster.convergedImei || "N/A"}</strong></span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveDiscoveredCluster(null);
-                selectCaseWorkspace("CASE-2026-001", "intake");
-                toast.info("Returned to base investigation CASE-2026-001");
-              }}
-              style={{
-                background: "#047857",
-                border: "1px solid #10B981",
-                color: "#FFFFFF",
-                padding: "2px 8px",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "10.5px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              ✕ Exit Discovered Cluster
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setActivePage("benchmark")}
+                style={{
+                  background: "#065F46",
+                  border: "1px solid #34D399",
+                  color: "#ECFDF5",
+                  padding: "2px 8px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <ArrowLeft size={10} />
+                <span>Return to Benchmark Lab</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveDiscoveredCluster(null);
+                  selectCaseWorkspace("CASE-2026-001", "intake");
+                  toast.info("Returned to base investigation CASE-2026-001");
+                }}
+                style={{
+                  background: "#047857",
+                  border: "1px solid #10B981",
+                  color: "#FFFFFF",
+                  padding: "2px 8px",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                ✕ Exit Discovered Cluster
+              </button>
+            </div>
           </div>
         )}
 
@@ -1637,13 +1778,18 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          {activeRoute === "workspace" && <CaseWorkspaceScreen />}
-          {activeRoute === "intake" && <IntakeScreen />}
-          {activeRoute === "entities" && <EntityResolutionScreen />}
-          {activeRoute === "attribution" && <AttributionScreen />}
-          {activeRoute === "network" && <FraudNetworkScreen />}
-          {activeRoute === "taint-engine" && <TaintEngineScreen />}
-          {activeRoute === "court-proof" && <CourtProofScreen />}
+          {activePage === "workspaces" && <CaseWorkspaceScreen />}
+          {activePage === "benchmark" && <BenchmarkLabScreen />}
+          {activePage === "workbench" && (
+            <>
+              {(activeRoute === "intake" || activeRoute === "workspace") && <IntakeScreen />}
+              {activeRoute === "entities" && <EntityResolutionScreen />}
+              {activeRoute === "attribution" && <AttributionScreen />}
+              {activeRoute === "network" && <FraudNetworkScreen />}
+              {activeRoute === "taint-engine" && <TaintEngineScreen />}
+              {activeRoute === "court-proof" && <CourtProofScreen />}
+            </>
+          )}
         </div>
       </div>
 
