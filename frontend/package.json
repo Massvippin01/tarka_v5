@@ -11,7 +11,8 @@
     "benchmark:csv": "npx tsx scripts/runPublicBenchmark.ts",
     "verify:discovery": "npx tsx scripts/verify_real_discovery.ts",
     "verify:both": "npx tsx scripts/verify_both_blind_csvs.ts",
-    "verify:500mb": "npx tsx scripts/verify_500mb_stream.ts"
+    "verify:500mb": "npx tsx scripts/verify_500mb_stream.ts",
+    "verify:paysim": "npx tsx scripts/verify_paysim_precision.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

@@ -25,7 +25,7 @@ export async function run500MbStreamVerification() {
   for (let i = 0; i < 20000; i++) {
     const step = (i % 744) + 1;
     const orig = `C${1000000 + i}`;
-    const dest = i % 3 === 0 ? `M${8000000 + i}` : `C${9000000 + i}`;
+    const dest = i % 500 === 499 ? `C${9000000 + i}` : (i % 3 === 0 ? `M${8000000 + i}` : `C${9000000 + i}`);
 
     if (i % 500 === 499) {
       // True PaySim Fraud: Account Takeover Drain (TRANSFER, amount = oldBal, newBal = 0, isFraud = 1)

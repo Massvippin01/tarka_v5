@@ -22,6 +22,7 @@ import {
   type AnomalyCluster,
   type DiscoveredFraudCluster,
 } from "../utils/publicDatasetAdapters";
+import { buildDatasetSchemaProfile, type DatasetSchemaProfile } from "../utils/schemaAutoMapper";
 
 export type PublicStreamerCommand =
   | {
@@ -183,6 +184,10 @@ async function runReplicaStream(preset: "PAYSIM_100K" | "IBM_AML_100K", totalRow
 
   const datasetName = preset === "PAYSIM_100K" ? "PaySim1 (Kaggle ealaxi/paysim1 Replica Stream)" : "IBM AML (HI-Small Replica)";
   const detectedType: PublicDatasetType = "PAYSIM";
+  const replicaHeaders = preset === "PAYSIM_100K"
+    ? ["step", "type", "amount", "nameOrig", "oldbalanceOrg", "newbalanceOrig", "nameDest", "oldbalanceDest", "newbalanceDest", "isFraud", "isFlaggedFraud"]
+    : ["timestamp", "from bank", "account", "to bank", "account.1", "amount received", "receiving currency", "amount paid", "payment format", "is laundering"];
+  const schemaProfile = buildDatasetSchemaProfile(replicaHeaders);
 
   const postSummary = (isDone: boolean) => {
     const elapsedMs = Math.max(1, performance.now() - startTime);
@@ -219,6 +224,7 @@ async function runReplicaStream(preset: "PAYSIM_100K" | "IBM_AML_100K", totalRow
       librCapitalSaved: pipeline.getTotalLibrCapitalSaved(),
       topAnomalies: topAnomalies.slice(0, 50),
       discoveredClusters,
+      schemaProfile,
       tpBreakdown: {
         ledger: runningTpLedger,
         graph: runningTpGraph,
@@ -310,6 +316,7 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
 
   let universalParser: UniversalCsvParser | null = null;
   let detectedType: PublicDatasetType = "GENERIC_CSV";
+  let schemaProfile: DatasetSchemaProfile | undefined = undefined;
 
   let runningTp = 0;
   let runningFp = 0;
@@ -440,6 +447,7 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
       librCapitalSaved: pipeline.getTotalLibrCapitalSaved(),
       topAnomalies: topAnomalies.slice(0, 50),
       discoveredClusters,
+      schemaProfile,
       tpBreakdown: {
         ledger: runningTpLedger,
         graph: runningTpGraph,
@@ -490,6 +498,8 @@ async function runChunkedFileStream(file: File, paced: boolean = false) {
       if (!isHeaderParsed) {
         universalParser = new UniversalCsvParser(line);
         detectedType = universalParser.detectedType;
+        const headers = line.split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""));
+        schemaProfile = buildDatasetSchemaProfile(headers);
         isHeaderParsed = true;
         continue;
       }
