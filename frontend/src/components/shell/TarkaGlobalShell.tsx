@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   Database,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
@@ -40,6 +41,9 @@ import { BenchmarkLabDrawer } from "../tarka/benchmark/BenchmarkLabDrawer";
 import { PublicDatasetBenchmarkModal } from "../tarka/benchmark/PublicDatasetBenchmarkModal";
 import { SarvamVoiceModal } from "../tarka/SarvamVoiceModal";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
+import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
+import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
+import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -74,6 +78,14 @@ export const TarkaGlobalShell: React.FC = () => {
     togglePublicDatasetModal,
     activeDiscoveredCluster,
     setActiveDiscoveredCluster,
+    selectedEvidenceEdge,
+    setSelectedEvidenceEdge,
+    relationshipSheetOpen,
+    setRelationshipSheetOpen,
+    intelligenceBriefOpen,
+    setIntelligenceBriefOpen,
+    transformationAuditModalOpen,
+    setTransformationAuditModalOpen,
   } = useTarkaUiStore();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
@@ -1355,6 +1367,33 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               </button>
             )}
 
+            {/* 7-Question Explainable Intelligence Brief */}
+            <button
+              type="button"
+              onClick={() => setIntelligenceBriefOpen(true)}
+              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              title="Open 7-Question Explainable Investigation Intelligence Brief"
+              style={{
+                height: "28px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: "#EEF2FF",
+                border: "1px solid #C7D2FE",
+                color: "#4338CA",
+                fontWeight: 700,
+                fontSize: "11px",
+                borderRadius: "6px",
+                padding: "0 8px",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+              }}
+            >
+              <Sparkles size={11} color="#4F46E5" />
+              <span className="hidden xl:inline">Intelligence</span>
+              <span>Brief</span>
+            </button>
+
             {/* Voice AI */}
             <button
               type="button"
@@ -1790,6 +1829,26 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           onClose={() => setVoiceOpen(false)}
         />
       )}
+
+      {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
+      <RelationshipEvidenceSheet
+        edge={selectedEvidenceEdge}
+        isOpen={relationshipSheetOpen}
+        onClose={() => {
+          setRelationshipSheetOpen(false);
+          setSelectedEvidenceEdge(null);
+        }}
+      />
+
+      <InvestigationIntelligenceBrief
+        isOpen={intelligenceBriefOpen}
+        onClose={() => setIntelligenceBriefOpen(false)}
+      />
+
+      <TransformationAuditLog
+        isOpen={transformationAuditModalOpen}
+        onClose={() => setTransformationAuditModalOpen(false)}
+      />
     </div>
   );
 };

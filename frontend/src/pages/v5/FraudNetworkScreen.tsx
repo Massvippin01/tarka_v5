@@ -20,11 +20,14 @@ import {
 import { EvidenceNetworkGraph, type EdgeFilterType } from "../../components/tarka/network/EvidenceNetworkGraph";
 import { CrossStateWaterfall } from "../../components/tarka/network/CrossStateWaterfall";
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
+import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { density, activeDiscoveredCluster, setSelectedEvidenceEdge } = useTarkaUiStore();
   const isCompact = density === "compact";
+  const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
 
   const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
   const bssid = activeDiscoveredCluster?.bssidHotspot || "74:DA:38:A2:11:BC";
@@ -104,6 +107,9 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           { tier: "T1", label: "Tower DL-TWR-891", hash: "339109bbcf12498214aa8823190", detail: "Sector 4 Rohini cell tower coverage radius" },
         ]}
       />
+
+      {/* 5-File Cross-Artifact Evidentiary Reconstruction Strip */}
+      <EndToEndReconstructionStrip />
 
       {/* =========================================================================
           ROW 1: TOP 4 EXECUTIVE KPI TILES (<= 12 CHAR HERO VALUE)
@@ -358,6 +364,44 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
                   </tr>
                 </tbody>
               </table>
+
+              {/* Interactive Attributed Relationships Strip */}
+              <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #E2E8F0" }}>
+                <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#475569", textTransform: "uppercase", marginBottom: "4px" }}>
+                  Attributed Relationships (Click to Inspect Evidence Sheet):
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                  {investigation.edges.slice(2).map((e) => {
+                    const isInsuff = e.matchClassification === "INSUFFICIENT_EVIDENCE";
+                    const isApex = e.targetNodeId === "M3A-APEX";
+                    return (
+                      <button
+                        key={e.id}
+                        type="button"
+                        onClick={() => setSelectedEvidenceEdge(e)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "3px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          border: `1px solid ${isInsuff ? "#F59E0B" : isApex ? "#10B981" : "#C7D2FE"}`,
+                          background: isInsuff ? "#FFFBEB" : isApex ? "#ECFDF5" : "#EEF2FF",
+                          color: isInsuff ? "#92400E" : isApex ? "#065F46" : "#3730A3",
+                          fontSize: "9.5px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <span>{isInsuff ? "⚠️" : isApex ? "🛡️" : "🔗"}</span>
+                        <span>{e.sourceLabel.split(" ")[0]} → {e.targetLabel.split(" ")[0]}</span>
+                        <span style={{ opacity: 0.8 }}>₹{(e.amount / 1000).toFixed(0)}k</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </SectionCard>
 

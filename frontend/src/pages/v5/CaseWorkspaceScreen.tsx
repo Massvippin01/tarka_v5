@@ -20,9 +20,13 @@ import {
   Trash2,
   X,
   Database,
+  Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { useTarkaGlobal, type IngestedArtifact, type ActiveRoute } from "../../context/TarkaGlobalContext";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 
 export const CaseWorkspaceScreen: React.FC = () => {
   const {
@@ -34,7 +38,14 @@ export const CaseWorkspaceScreen: React.FC = () => {
     removeQuarantinedArtifact,
   } = useTarkaGlobal();
 
-  const { setActivePage } = useTarkaUiStore();
+  const { setActivePage, setReconstructedInvestigation } = useTarkaUiStore();
+
+  const handleLoadIndianCasePack = () => {
+    const inv = reconstruct5FileInvestigation();
+    setReconstructedInvestigation(inv);
+    selectCaseWorkspace("CASE-2026-001");
+    toast.success("🇮🇳 5-File Indian Case Pack Loaded: SBI Finacle + NPCI Switch + Nodal KYC + Airtel CGNAT + 1930 Intake successfully joined!");
+  };
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -411,6 +422,30 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
             <button
               type="button"
+              onClick={handleLoadIndianCasePack}
+              title="Reconstruct 5 Authentic Indian Evidentiary Files (SBI CBS + NPCI Switch + Nodal KYC + Airtel CGNAT + 1930 Intake)"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                border: "1px solid #10B981",
+                background: "#ECFDF5",
+                color: "#065F46",
+                fontSize: "11px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(16, 185, 129, 0.12)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Sparkles size={12} color="#059669" />
+              <span>🇮🇳 Load 5-File Indian Case Pack</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => openEvidenceModal(currentPreviewCase?.caseId)}
               style={{
                 display: "inline-flex",
@@ -673,6 +708,11 @@ export const CaseWorkspaceScreen: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 5-FILE EVIDENTIARY RECONSTRUCTION STRIP */}
+      <div style={{ padding: "0 14px", marginTop: "6px", flexShrink: 0 }}>
+        <EndToEndReconstructionStrip onOpenFileManifest={() => openEvidenceModal(currentPreviewCase?.caseId)} />
       </div>
 
       {/* TIER 2: 12-COLUMN RESIZABLE SPLIT WORKBENCH */}

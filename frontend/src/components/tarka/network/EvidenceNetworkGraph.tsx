@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { layoutNetwork, type NetworkEdgeLayout } from "./layoutNetwork";
 import { lintViz } from "../../../utils/lintViz";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
+import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 
 export type EdgeFilterType = "all" | "tether" | "ja4" | "caf" | "c2";
 
@@ -51,6 +53,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [viewMode, setViewMode] = useState<"graph" | "matrix" | "table">("graph");
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [selectedSheet, setSelectedSheet] = useState<EvidenceSheetData | null>(null);
+
+  const { setSelectedEvidenceEdge } = useTarkaUiStore();
+  const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
 
   // Replay discovery animation
   const [isReplaying, setIsReplaying] = useState(false);
@@ -467,7 +472,13 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   transition: "opacity 0.2s ease, stroke-width 0.15s ease",
                   cursor: "pointer",
                 }}
-                onClick={() =>
+                onClick={() => {
+                  const matched =
+                    edge.targetId.includes("rohit") ? investigation.edges[2] :
+                    edge.targetId.includes("sameer") ? investigation.edges[3] :
+                    edge.targetId.includes("sink") ? investigation.edges[5] :
+                    investigation.edges[2];
+                  setSelectedEvidenceEdge(matched);
                   openEvidenceSheet({
                     title: `Link: ${edge.sourceId} → ${edge.targetId}`,
                     category: edge.type.toUpperCase(),
@@ -476,8 +487,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     statutoryBasis: "BSA §63(4) Electronic Record Admissibility",
                     details: `Deterministic evidence link correlating network session telemetry under type [${edge.type}].`,
                     linkedEntities: [edge.sourceId, edge.targetId],
-                  })
-                }
+                  });
+                }}
               />
             ))}
           </svg>
@@ -721,7 +732,14 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   tabIndex={0}
                   onMouseEnter={() => setHoveredNodeId(node.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() =>
+                  onClick={() => {
+                    const matched =
+                      node.id.includes("vikram") ? investigation.edges[0] :
+                      node.id.includes("rohit") ? investigation.edges[2] :
+                      node.id.includes("sameer") ? investigation.edges[3] :
+                      node.id.includes("sink") ? investigation.edges[5] :
+                      investigation.edges[0];
+                    setSelectedEvidenceEdge(matched);
                     openEvidenceSheet({
                       title: node.label,
                       category: "Controlled Mule Account",
@@ -730,8 +748,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       statutoryBasis: "BNSS §107 Provisional Seizure Order",
                       details: `${node.role || "Mule Account"} · ${node.sublabel}`,
                       linkedEntities: ["Controller Device Cluster"],
-                    })
-                  }
+                    });
+                  }}
                   style={{
                     position: "absolute",
                     left: node.x,

@@ -31,8 +31,10 @@ import {
   getBnss106PoliceSpecificLienNotice,
   getBnss107JudicialAttachmentApplication,
 } from "../../utils/statutoryDirectives";
+import { TransformationAuditLog } from "../../components/tarka/investigation/TransformationAuditLog";
+import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 
-type DossierTab = "loo" | "certificates" | "syndicate";
+type DossierTab = "loo" | "certificates" | "syndicate" | "transformation";
 
 export const CourtProofScreen: React.FC = () => {
   const { density, activeDiscoveredCluster } = useTarkaUiStore();
@@ -288,6 +290,9 @@ export const CourtProofScreen: React.FC = () => {
         ]}
       />
 
+      {/* 5-File Evidentiary Join Strip */}
+      <EndToEndReconstructionStrip />
+
       {/* KPI ROW: 4 TILES WITH UNTRUNCATED LABELS */}
       <div
         style={{
@@ -416,6 +421,24 @@ export const CourtProofScreen: React.FC = () => {
             }}
           >
             🏛️ CBI ₹10.42 Cr Multi-State Syndicate & STR Audit
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveDossierTab("transformation")}
+            className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[background-color,color,transform] duration-150 ease-out"
+            style={{
+              padding: "3px 10px",
+              borderRadius: "5px",
+              fontSize: "10.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+              border: "none",
+              background: activeDossierTab === "transformation" ? "#EEF2FF" : "transparent",
+              color: activeDossierTab === "transformation" ? "#4F46E5" : "#64748B",
+            }}
+          >
+            📋 10-Step Transformation Audit & Merkle Log
           </button>
         </div>
 
@@ -1004,6 +1027,19 @@ export const CourtProofScreen: React.FC = () => {
               </div>
             </SectionCard>
           </div>
+        </main>
+      )}
+
+      {activeDossierTab === "transformation" && (
+        <main
+          style={{
+            flex: "1 1 0%",
+            minHeight: 0,
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          <TransformationAuditLog isEmbedded={true} />
         </main>
       )}
     </div>

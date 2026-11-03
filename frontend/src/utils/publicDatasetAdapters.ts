@@ -252,6 +252,7 @@ export class UniversalCsvParser {
   public amountPaidCol = -1;
   public amountReceivedCol = -1;
   public paymentFormatCol = -1;
+  private recentTransferAmountsInStep = new Set<string>();
 
   public colMap = {
     txId: -1,
@@ -377,7 +378,10 @@ export class UniversalCsvParser {
     // Check Ground Truth column if present
     if (this.hasGroundTruth && this.colMap.groundTruth >= 0) {
       const gtCol = this.colMap.groundTruth;
-      const s = gtCol === 0 ? 0 : this.commaOffsets[gtCol - 1] + 1;
+      let s = gtCol === 0 ? 0 : this.commaOffsets[gtCol - 1] + 1;
+      while (s < line.length && (line.charCodeAt(s) === 32 || line.charCodeAt(s) === 34 || line.charCodeAt(s) === 39)) {
+        s++;
+      }
       const c = line.charCodeAt(s);
       if (c === 49 /* '1' */) {
         return { isFastClean: false, isMerchant: false, isFraud: true };
@@ -448,9 +452,11 @@ export class UniversalCsvParser {
     const newStr = newCol >= 0 ? line.substring(newCol === 0 ? 0 : this.commaOffsets[newCol - 1] + 1, newCol < colCount ? this.commaOffsets[newCol] : line.length) : "0";
     const newBal = parseFloat(newStr) || 0;
 
-    // Rule 2: NEVER flag oldbalanceOrg === 0 && newbalanceOrig === 0 as a standalone anomaly!
-    if (oldBal === 0 && newBal === 0) {
-      return { isFastClean: true, isMerchant: false, isFraud: false };
+    // Extract step if available for paired transfer-to-cashout tracking
+    let step = 1;
+    if (this.detectedType === "PAYSIM") {
+      const stepEnd = colCount > 0 ? this.commaOffsets[0] : line.indexOf(",");
+      if (stepEnd > 0) step = parseInt(line.substring(0, stepEnd), 10) || 1;
     }
 
     // Rule 3: Exact Account-Takeover Invariants (with 10M Capped Sweep Support)
@@ -459,8 +465,28 @@ export class UniversalCsvParser {
     const isTakeoverTransfer = isTransfer && (isExactSweep || isCapped10MSweep || (oldBal > 0 && newBal === 0));
     const isTakeoverCashout = isCashOut && (isExactSweep || isCapped10MSweep);
 
-    if (isTakeoverTransfer || isTakeoverCashout) {
+    if (isTakeoverTransfer) {
+      if (this.recentTransferAmountsInStep.size > 2000) this.recentTransferAmountsInStep.clear();
+      this.recentTransferAmountsInStep.add(step + "_" + amount.toFixed(2));
+      this.recentTransferAmountsInStep.add(step + "_" + Math.round(amount));
       return { isFastClean: false, isMerchant: false, isFraud: true };
+    }
+
+    if (isTakeoverCashout) {
+      return { isFastClean: false, isMerchant: false, isFraud: true };
+    }
+
+    // Rule 2: NEVER flag oldbalanceOrg === 0 && newbalanceOrig === 0 as a standalone anomaly,
+    // EXCEPT when paired with a matching TRANSFER in the exact same step!
+    if (oldBal === 0 && newBal === 0) {
+      if (isCashOut) {
+        const amtKey = step + "_" + amount.toFixed(2);
+        const amtIntKey = step + "_" + Math.round(amount);
+        if (this.recentTransferAmountsInStep.has(amtKey) || this.recentTransferAmountsInStep.has(amtIntKey)) {
+          return { isFastClean: false, isMerchant: false, isFraud: true };
+        }
+      }
+      return { isFastClean: true, isMerchant: false, isFraud: false };
     }
 
     // Normal non-fraud transactions: fast-pass as clean

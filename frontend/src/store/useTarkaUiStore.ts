@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { DiscoveredFraudCluster } from "../utils/publicDatasetAdapters";
+import type { ReconstructedEdge, ReconstructedInvestigation } from "../utils/investigationReconstructor";
 
 export type TopLevelPage = "workspaces" | "workbench" | "benchmark";
 export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
@@ -59,6 +60,18 @@ export interface TarkaUiState {
   publicDatasetModalOpen: boolean;
   setPublicDatasetModalOpen: (open: boolean) => void;
   togglePublicDatasetModal: () => void;
+
+  // 5-File Reconstructed Investigation & Evidence Sheet
+  reconstructedInvestigation: ReconstructedInvestigation | null;
+  setReconstructedInvestigation: (inv: ReconstructedInvestigation | null) => void;
+  selectedEvidenceEdge: ReconstructedEdge | null;
+  setSelectedEvidenceEdge: (edge: ReconstructedEdge | null) => void;
+  relationshipSheetOpen: boolean;
+  setRelationshipSheetOpen: (open: boolean) => void;
+  intelligenceBriefOpen: boolean;
+  setIntelligenceBriefOpen: (open: boolean) => void;
+  transformationAuditModalOpen: boolean;
+  setTransformationAuditModalOpen: (open: boolean) => void;
 }
 
 export const useTarkaUiStore = create<TarkaUiState>((set) => {
@@ -134,5 +147,16 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     publicDatasetModalOpen: false,
     setPublicDatasetModalOpen: (open) => set({ publicDatasetModalOpen: open }),
     togglePublicDatasetModal: () => set((state) => ({ publicDatasetModalOpen: !state.publicDatasetModalOpen })),
+
+    reconstructedInvestigation: null,
+    setReconstructedInvestigation: (inv) => set({ reconstructedInvestigation: inv }),
+    selectedEvidenceEdge: null,
+    setSelectedEvidenceEdge: (edge) => set({ selectedEvidenceEdge: edge, relationshipSheetOpen: !!edge }),
+    relationshipSheetOpen: false,
+    setRelationshipSheetOpen: (open) => set({ relationshipSheetOpen: open }),
+    intelligenceBriefOpen: false,
+    setIntelligenceBriefOpen: (open) => set({ intelligenceBriefOpen: open }),
+    transformationAuditModalOpen: false,
+    setTransformationAuditModalOpen: (open) => set({ transformationAuditModalOpen: open }),
   };
 });

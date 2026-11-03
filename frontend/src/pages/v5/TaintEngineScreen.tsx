@@ -32,6 +32,7 @@ import { recoveryModel } from "../../utils/recoveryModel";
 import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSankeyGraph";
 import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDecayChart";
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
+import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 
 type TaintRule = "LIBR" | "FIFO" | "PRO_RATA";
 type TaintWorkspaceMode = "dag" | "orders";
@@ -123,6 +124,9 @@ export const TaintEngineScreen: React.FC = () => {
           { tier: "T2", label: "GSTIN 07AAACA1234F1Z8", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
         ]}
       />
+
+      {/* 5-File Cross-Artifact Evidentiary Reconstruction Strip */}
+      <EndToEndReconstructionStrip />
 
       {/* =========================================================================
           ROW 1: TOP 4 EXECUTIVE KPI TILES (<= 12 CHAR HERO VALUE)

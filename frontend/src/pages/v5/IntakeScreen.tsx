@@ -19,6 +19,7 @@ import { KpiTile, StoryBanner } from "../../components/tarka/kit";
 import { GateRail } from "../../components/tarka/intake/GateRail";
 import { LedgerCard } from "../../components/tarka/intake/LedgerCard";
 import { InspectorDock } from "../../components/tarka/intake/InspectorDock";
+import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
@@ -303,6 +304,9 @@ export const IntakeScreen: React.FC = () => {
           { tier: "T3", label: "Victim Screenshot", hash: "c89148bc92019482019a84719284102948192841029481928410294819284102" },
         ]}
       />
+
+      {/* 5-File Evidentiary Reconstructor Strip */}
+      <EndToEndReconstructionStrip />
 
 {/* =========================================================================
           ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)

@@ -20,10 +20,12 @@ import {
   ArrowUpDown,
   X,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { useTarkaGlobal, type IngestedArtifact, type CaseWorkspace } from "../../context/TarkaGlobalContext";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import type {
   PublicBenchmarkSummary,
   DiscoveredFraudCluster,
@@ -144,8 +146,15 @@ class BenchmarkLabErrorBoundary extends React.Component<
 }
 
 const BenchmarkLabScreenInner: React.FC = () => {
-  const { setActivePage, setActiveDiscoveredCluster } = useTarkaUiStore();
+  const { setActivePage, setActiveDiscoveredCluster, setReconstructedInvestigation } = useTarkaUiStore();
   const { registerDiscoveredCase, selectCaseWorkspace, setActiveRoute } = useTarkaGlobal();
+
+  const handleLoadIndianCasePack = () => {
+    const inv = reconstruct5FileInvestigation();
+    setReconstructedInvestigation(inv);
+    selectCaseWorkspace("CASE-2026-001");
+    toast.success("🇮🇳 5-File Indian Case Pack Loaded: SBI Finacle + NPCI Switch + Nodal KYC + Airtel CGNAT + 1930 Intake joined!");
+  };
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [summary, setSummary] = useState<PublicBenchmarkSummary | null>(null);
@@ -771,6 +780,32 @@ const BenchmarkLabScreenInner: React.FC = () => {
 
         {/* Center: Ingestion & Self-Diagnostic Buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }} className="shrink-0">
+          <button
+            type="button"
+            onClick={handleLoadIndianCasePack}
+            className="shrink-0"
+            title="Reconstruct 5 Authentic Indian Evidentiary Files (SBI + NPCI + Nodal KYC + Airtel CGNAT + 1930)"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 10px",
+              borderRadius: "6px",
+              border: "1px solid #10B981",
+              background: "#ECFDF5",
+              color: "#065F46",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              boxShadow: "0 1px 2px rgba(16, 185, 129, 0.12)",
+            }}
+          >
+            <Sparkles size={12} color="#059669" />
+            <span>🇮🇳 Load 5-File Indian Case Pack</span>
+          </button>
+
           <button
             type="button"
             disabled={isRunning}
