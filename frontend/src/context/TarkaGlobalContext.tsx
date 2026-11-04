@@ -8,7 +8,8 @@ export type ActiveRoute =
   | "attribution"
   | "network"
   | "taint-engine"
-  | "court-proof";
+  | "court-proof"
+  | "privacy-crypto";
 
 export type TarkaRoute = ActiveRoute | "workstation" | "workflow";
 

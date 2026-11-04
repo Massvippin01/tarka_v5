@@ -34,6 +34,7 @@ import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
 import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
 import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
+import { PrivacyCryptoWorkbench } from "../tarka/privacy/PrivacyCryptoWorkbench";
 import { BenchmarkLabScreen } from "../../pages/v5/BenchmarkLabScreen";
 import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
 import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
@@ -174,6 +175,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           e.preventDefault();
           setActivePage("workbench");
           setActiveRoute("court-proof");
+        } else if (e.key === "7") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("privacy-crypto");
         } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           setActivePage("benchmark");
@@ -262,6 +267,17 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       badgeVariant: "emerald" as const,
       tooltip: "PS4 Deliverable #5: MHA Jan 2026 SOP Orders, CBI STR Memo & LOO Proof (Alt+6)",
       isLocked: intakeGate?.isHalted,
+    },
+    {
+      id: "privacy-crypto" as TarkaRoute,
+      step: "07",
+      title: "Privacy, Cryptography & Formal Verification Hub",
+      shortTitle: "Privacy & ZKP",
+      subtitle: "BFT Consensus & SMT",
+      badgeText: "BFT + ZK",
+      badgeVariant: "indigo" as const,
+      tooltip: "PS04 Member B: ECDH-PSI, Circom ZKP, 4-Node PBFT & Z3 Verification (Alt+7)",
+      isLocked: false,
     },
   ];
 
@@ -1810,6 +1826,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               {activeRoute === "network" && <FraudNetworkScreen />}
               {activeRoute === "taint-engine" && <TaintEngineScreen />}
               {activeRoute === "court-proof" && <CourtProofScreen />}
+              {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
             </>
           )}
         </div>
