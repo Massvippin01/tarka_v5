@@ -20,13 +20,17 @@
 | **M0: Canonical Schemas**| ALL MEMBERS           | Phase 4 M0          | 12 Schemas (Py/TS)| 100% DONE  |
 | **M0: Synthetic Fixture**| ALL MEMBERS           | Phase 4 M0          | 3 Banks + GT JSON | 100% DONE  |
 | **M0: Mock Services**    | ALL MEMBERS           | Phase 4 M0          | Member A/B/C Mocks| 100% DONE  |
+| **M1: TAIE Foundation**  | ALL MEMBERS           | Phase 4 M1          | 3 Adapters + Regis| 100% DONE  |
+| **M2: Distributed Fabric**| ALL MEMBERS          | Phase 4 M2          | PBFT/Vector/Bridge| 100% DONE  |
+| **M3: Adversarial Suite**| ALL MEMBERS           | Phase 4 M3          | 7 Threat Vectors  | 100% DONE  |
+| **M4: End-to-End Suite** | ALL MEMBERS           | Phase 4 M4          | 25-Stage Lifecycle| 100% DONE  |
 |                          |                       |                     |                   |            |
 | **MEMBER A: FORENSICS**  |                       |                     |                   |            |
 | • Entity Resolution      | Member A              | Phase 1–3 Baseline  | Implemented (Neo4j| VERIFIED   |
 | • Fraud Network Graph    | Member A              | Phase 2–3 Baseline  | Implemented (D3)  | VERIFIED   |
 | • LIBR Taint DAG         | Member A              | Phase 2–3 Baseline  | Implemented (Sank)| VERIFIED   |
 | • Telecom CGNAT/IPDR     | Member A              | Phase 2–3 Baseline  | Implemented (Fast)| VERIFIED   |
-| • TAIE Ingestion Adapters| Member A              | Phase 4 M1 Target   | Contract-Mapped   | READY      |
+| • TAIE Ingestion Adapters| Member A              | Phase 4 M1 Target   | Connector-Mapped  | VERIFIED   |
 |                          |                       |                     |                   |            |
 | **MEMBER B: PRIVACY/CRY**|                       |                     |                   |            |
 | • 3-Bank ECDH-PSI        | Member B              | PS04 Workstream B1  | Implemented (EC)  | VERIFIED   |
@@ -34,14 +38,14 @@
 | • Distributed Events/BFT | Member B              | PS04 Workstream B3  | 4-Node PBFT Clust | VERIFIED   |
 | • Z3 Claim Compiler      | Member B              | PS04 Workstream A1  | SMT Satisfiability| VERIFIED   |
 | • Counterfactual Engine  | Member B              | PS04 Workstream A2  | Edge Ablation DAG | VERIFIED   |
-| • Live Multi-Bank Daemon | Member B              | Phase 4 M1 Target   | Architectural Spec| READY      |
+| • Live Multi-Bank Daemon | Member B              | Phase 4 M2 Target   | Distributed Fabric| VERIFIED   |
 |                          |                       |                     |                   |            |
 | **MEMBER C: PLATFORM**   |                       |                     |                   |            |
 | • Case & Exhibit Vault   | Member C              | Phase 1–3 Baseline  | Implemented (SHA) | VERIFIED   |
 | • Intake Falsifier       | Member C              | Phase 2–3 Baseline  | Implemented (OCR) | VERIFIED   |
 | • Bounded AI Rationale   | Member C              | Phase 2–3 Baseline  | Template Governed | VERIFIED   |
 | • BSA §63 PDF Dossier    | Member C              | Phase 2–3 Baseline  | ReportLab Engine  | VERIFIED   |
-| • CI/CD & Deploy Harness | Member C              | Phase 4–5 Target    | Local Script-Ready| READY      |
+| • CI/CD & Deploy Harness | Member C              | Phase 4 M4 Release  | Fully Reproducible| VERIFIED   |
 +--------------------------+-----------------------+---------------------+-------------------+------------+
 ```
 

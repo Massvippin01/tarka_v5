@@ -98,10 +98,25 @@ TARKA addresses this trilemma through an integrated cryptographic, distributed, 
 
 ---
 
-# 4. CURRENT BASELINE MATURITY (PHASE 4 M0)
+# 4. CURRENT BASELINE MATURITY (PHASE 4 M4 RELEASE CANDIDATE)
 
-As of commit `976a6e4` and Phase 4 Milestone M0:
+As of commit `afdb894` and Milestone M4 completion:
 - **Canonical Schemas:** 12 Canonical v1 contracts formalized in Pydantic v2 and TypeScript.
-- **Test Integrity:** 15/15 contract tests passing, 41/41 specialized PS04 tests passing, 317/317 core forensic tests passing, 37/37 frontend unit tests passing, and 0 frontend production build errors.
-- **Interoperability:** Mock service interfaces deployed for Member A, Member B, and Member C, enabling concurrent development without merge contention.
+- **TAIE Integration Foundation (M1):** Dynamic connector registry, 3 mock adapters (REST, Legacy CBS, Batch CSV), health reporter, and provenance tracker verified (12/12 passed).
+- **Distributed Event Fabric (M2):** Distributed event envelope, vector clocks, 4-validator PBFT consensus, and reactive claim bridge verified (18/18 passed).
+- **Adversarial & Security Validation (M3):** 7-dimension adversarial validation suite covering CGNAT IP collision veto, ZKP tampering rejection, PBFT Byzantine tolerance, and DAG claim retraction verified (12/12 passed).
+- **End-to-End Synthetic Case Integration (M4):** Full 25-stage forensic lifecycle executed from case initiation to court-admissible BSA §63 dossier and deterministic replay using `CASE_SUTRAM_2026_001` (25/25 passed in 9.89s).
+- **Test Integrity:** 100% executable test pass across all modules:
+  - `test_canonical_contracts_v1.py`: 15/15 passed
+  - `test_taie_integration_foundation.py`: 12/12 passed
+  - `test_m2_distributed_event_fabric.py`: 18/18 passed
+  - `test_m3_adversarial_validation.py`: 12/12 passed
+  - `test_m4_end_to_end_integration.py`: 25/25 passed
+  - `test_ps04_*.py`: 41/41 passed
+  - Core forensic suites: 317/317 passed
+  - Frontend Vitest: 40/40 passed
+  - Frontend production build: 0 errors
+- **Live User Experience:** 10/10 forensic workbench screens audited and verified in live browser session.
+- **Interoperability:** 100% synchronized across Member A, Member B, and Member C service boundaries.
+
 

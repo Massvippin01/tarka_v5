@@ -17,25 +17,28 @@ The following 5 technical decisions have been identified during Phase 4 Mileston
 +---------------------------------------------------------------------------------------------------------+
 | OPEN TECHNICAL DECISION REGISTER                                                                        |
 +----+-----------------------------+-------------------+----------------------------+--------------------+
-| ID | Decision Title              | Affected Domain   | Options Evaluated          | Recommended Path   |
-+----+-----------------------------+-------------------+----------------------------+--------------------+
-| 01 | Inter-Institution Transport | Member B / TAIE   | A: gRPC + mTLS             | **Option A (gRPC)**|
-|    | for Live 3-Bank Simulation  | Distributed Events| B: Kafka Event Broker      | For low latency &  |
-|    |                             |                   | C: REST/JSON over HTTP/2   | zero broker bloat  |
-+----+-----------------------------+-------------------+----------------------------+--------------------+
-| 02 | Z3 SMT Solver Runtime       | Member B / A1     | A: In-process Python Z3    | **Option A (In-proc|
-|    | Architecture                | Claim Compiler    | B: External RPC Solver     | with thread-pool)  |
-+----+-----------------------------+-------------------+----------------------------+--------------------+
-| 03 | Competition Demo Graph      | Member A / Data   | A: Standalone Neo4j Docker | **Dual Mode:**     |
-|    | Persistence Mode            | Canonical Authority| B: Embedded NetworkX/SQLite| Neo4j (Docker) +   |
-|    |                             |                   | C: Dual-Mode Driver        | SQLite (Air-Gap)   |
-+----+-----------------------------+-------------------+----------------------------+--------------------+
-| 04 | Vector Clock Pruning & State| Member B / B3     | A: Unbounded Vector Clocks | **Option B (Matrix |
-|    | Compaction                  | Distributed Clocks| B: Matrix Clocks / Epochs  | Epoch Compaction)**|
-+----+-----------------------------+-------------------+----------------------------+--------------------+
-| 05 | TAIE Connector Isolation    | All Members /     | A: In-process Python SDK   | **Option A (Python |
-|    | Boundary                    | Ingestion Security| B: Isolated Docker Sandboxes| Plugin SDK)** for M1|
-+----+-----------------------------+-------------------+----------------------------+--------------------+
+| ID | Decision Title              | Affected Domain   | Options Evaluated          | Ratified Resolution |
++----+-----------------------------+-------------------+----------------------------+---------------------+
+| 01 | Inter-Institution Transport | Member B / TAIE   | A: gRPC + mTLS             | **Option A Ratified**|
+|    | for Live 3-Bank Simulation  | Distributed Events| B: Kafka Event Broker      | Distributed Event   |
+|    |                             |                   | C: REST/JSON over HTTP/2   | Fabric in M2/M4     |
++----+-----------------------------+-------------------+----------------------------+---------------------+
+| 02 | Z3 SMT Solver Runtime       | Member B / A1     | A: In-process Python Z3    | **Option A Ratified**|
+|    | Architecture                | Claim Compiler    | B: External RPC Solver     | In-process SMT-LIB2 |
+|    |                             |                   |                            | sub-10ms latency    |
++----+-----------------------------+-------------------+----------------------------+---------------------+
+| 03 | Competition Demo Graph      | Member A / Data   | A: Standalone Neo4j Docker | **Dual Mode Ratified|
+|    | Persistence Mode            | Canonical Authority| B: Embedded NetworkX/SQLite| Neo4j + In-Memory   |
+|    |                             |                   | C: Dual-Mode Driver        | Air-Gap Failover    |
++----+-----------------------------+-------------------+----------------------------+---------------------+
+| 04 | Vector Clock Pruning & State| Member B / B3     | A: Unbounded Vector Clocks | **Option B Ratified**|
+|    | Compaction                  | Distributed Clocks| B: Matrix Clocks / Epochs  | Matrix Compaction   |
+|    |                             |                   |                            | in VectorEngine     |
++----+-----------------------------+-------------------+----------------------------+---------------------+
+| 05 | TAIE Connector Isolation    | All Members /     | A: In-process Python SDK   | **Option A Ratified**|
+|    | Boundary                    | Ingestion Security| B: Isolated Docker Sandboxes| BaseInstitutional   |
+|    |                             |                   |                            | Adapter in M1/M4    |
++----+-----------------------------+-------------------+----------------------------+---------------------+
 ```
 
 ---

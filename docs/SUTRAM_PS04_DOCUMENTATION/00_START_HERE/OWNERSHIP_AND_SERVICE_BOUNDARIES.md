@@ -92,5 +92,6 @@ To achieve institutional-grade forensic depth while preventing architectural col
    - In the event of a semantic dispute (e.g., whether an IP address constitutes an Entity or an Observation), the **SentinelX Wave 6 Engineering Constitution** governs: *AI PROPOSES. EVIDENCE VERIFIES. HUMAN DECIDES.* Common ownership can never be inferred solely from shared IP or device observations.
 3. **Branch & Repository Etiquette:**
    - Feature branches remain strictly segregated (`feat/sutram-2026-ps04-member-a`, `feat/sutram-2026-ps04-member-b`, `feat/sutram-2026-ps04-member-c`).
-   - Integration merges are gated by the complete 391-test regression harness.
+   - Integration merges are gated by the complete regression harness.
+   - **M4 Integration Ratification:** Completed on 2026-11-05 with 25/25 lifecycle stages verified across all three member subsystems.
 

@@ -55,6 +55,8 @@
 | 35 | PBFT 4-Node Consensus & Views  | M2-DIST| `backend/tarka/distributed/pbft_*.py`  | `test_m2_*.py`       | VERIFIED |
 | 36 | Vector Clock & Skew Engine     | M2-DIST| `backend/tarka/distributed/vector_*.py`| `test_m2_*.py`       | VERIFIED |
 | 37 | SMT Claim Recomputation Bridge | M2-DIST| `backend/tarka/distributed/claim_*.py` | `test_m2_*.py`       | VERIFIED |
+| 38 | Adversarial & Security Matrix   | M3-ADV | `backend/tests/test_m3_adversarial_validation.py` | `test_m3_*.py` | VERIFIED |
+| 39 | End-to-End Synthetic Case M4   | M4-E2E | `backend/tests/test_m4_end_to_end_integration.py` | `test_m4_*.py` | VERIFIED |
 +----+--------------------------------+--------+---------------------------------------+---------------------+----------+
 ```
 
@@ -92,6 +94,8 @@
 - [`backend/tests/test_canonical_contracts_v1.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/test_canonical_contracts_v1.py) (15 tests passed)
 - [`backend/tests/test_taie_integration_foundation.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/test_taie_integration_foundation.py) (12 tests passed)
 - [`backend/tests/test_m2_distributed_event_fabric.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/test_m2_distributed_event_fabric.py) (18 tests passed)
+- [`backend/tests/test_m3_adversarial_validation.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/test_m3_adversarial_validation.py) (12 tests passed)
+- [`backend/tests/test_m4_end_to_end_integration.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/test_m4_end_to_end_integration.py) (25 tests passed)
 - [`backend/tests/test_ps04_*.py`](file:///c:/PROJECTS/tarka_v5/backend/tests/) (41 tests passed)
 - [`backend/tests_tarka/tests/`](file:///c:/PROJECTS/tarka_v5/backend/tests_tarka/tests/) (317 tests passed)
 - [`frontend/src/types/contracts/__tests__/canonicalV1.test.ts`](file:///c:/PROJECTS/tarka_v5/frontend/src/types/contracts/__tests__/canonicalV1.test.ts) (4 tests passed, 40 total Vitest passed)
