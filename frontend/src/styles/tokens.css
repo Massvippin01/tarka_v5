@@ -261,3 +261,104 @@
   --forensic-review: #FFE600;
   --forensic-tamper: #FF2E36;
 }
+
+/* ==========================================================================
+   TARKA / FIELDNOTE SIGNATURE FORENSIC VISUAL IDENTITY
+   Competition Specification: SUTRAM 2026 PS04
+   Palette:
+     #101918 (Obsidian Deep Foundation)
+     #E9E9DF (Archive Paper Canvas)
+     #C8F751 (Signal Lime Forensic Verification)
+     #6B7770 (Slate Structural Neutral)
+     #B65B48 (Conflict Terracotta Contradiction)
+     #527C9A (Reference Blue Statutory Provenance)
+   ========================================================================== */
+
+:root {
+  --fieldnote-obsidian: #101918;
+  --fieldnote-archive: #E9E9DF;
+  --fieldnote-signal-lime: #C8F751;
+  --fieldnote-slate: #6B7770;
+  --fieldnote-conflict-terracotta: #B65B48;
+  --fieldnote-reference-blue: #527C9A;
+}
+
+[data-theme="fieldnote"], [data-theme="tarka-fieldnote"], [data-theme="analyst-dark"] {
+  --surface-canvas: #101918;
+  --surface-primary: #152220;
+  --surface-secondary: #1A2A28;
+  --surface-elevated: #213532;
+  --surface-selected: #2B4441;
+  --surface-smoke: rgba(16, 25, 24, 0.85);
+
+  --border-structural: rgba(107, 119, 112, 0.35);
+  --border-subtle: rgba(107, 119, 112, 0.18);
+  --border-strong: rgba(200, 247, 81, 0.40);
+
+  --text-primary: #F4F6F4;
+  --text-secondary: #A3B1AA;
+  --text-muted: #6B7770;
+  --text-inverse: #101918;
+
+  --accent-brand: #C8F751;
+  --accent-brand-hover: #B4E63C;
+  --accent-brand-subtle: rgba(200, 247, 81, 0.12);
+  --primary-accent: var(--accent-brand);
+
+  --forensic-verified: #C8F751;
+  --forensic-verified-bg: rgba(200, 247, 81, 0.12);
+  --forensic-verified-border: rgba(200, 247, 81, 0.32);
+
+  --forensic-review: #527C9A;
+  --forensic-review-bg: rgba(82, 124, 154, 0.14);
+  --forensic-review-border: rgba(82, 124, 154, 0.32);
+
+  --forensic-tamper: #B65B48;
+  --forensic-tamper-bg: rgba(182, 91, 72, 0.14);
+  --forensic-tamper-border: rgba(182, 91, 72, 0.35);
+
+  --status-verified: var(--forensic-verified);
+  --status-gap: var(--forensic-review);
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
+}
+
+[data-theme="fieldnote-light"], [data-theme="institutional-light"] {
+  --surface-canvas: #E9E9DF;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #DFDFD4;
+  --surface-elevated: #FFFFFF;
+  --surface-selected: #D4D4C7;
+  --surface-smoke: rgba(233, 233, 223, 0.92);
+
+  --border-structural: #CBCBC0;
+  --border-subtle: #DCDCD2;
+  --border-strong: #6B7770;
+
+  --text-primary: #101918;
+  --text-secondary: #3B4540;
+  --text-muted: #6B7770;
+  --text-inverse: #FFFFFF;
+
+  --accent-brand: #27523B;
+  --accent-brand-hover: #193827;
+  --accent-brand-subtle: rgba(200, 247, 81, 0.25);
+  --primary-accent: var(--accent-brand);
+
+  --forensic-verified: #1D6B3F;
+  --forensic-verified-bg: #EDF7F0;
+  --forensic-verified-border: #A3D8B4;
+
+  --forensic-review: #527C9A;
+  --forensic-review-bg: #EEF4F8;
+  --forensic-review-border: #B7D1E2;
+
+  --forensic-tamper: #B65B48;
+  --forensic-tamper-bg: #F9EFED;
+  --forensic-tamper-border: #E8B4AA;
+
+  --status-verified: var(--forensic-verified);
+  --status-gap: var(--forensic-review);
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
+}

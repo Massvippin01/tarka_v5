@@ -59,3 +59,4 @@ To satisfy the demanding evaluation criteria of SUTRAM 2026, TARKA was subjected
 ### Test 4: Byzantine PBFT Fault Tolerance
 - **Input:** Node 3 injected conflicting state digests into prepare and commit rounds.
 - **Result:** Nodes 0, 1, and 2 established strict majority agreement ($2f+1=3$). State committed without stalling.
+

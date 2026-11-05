@@ -60,3 +60,4 @@ TARKA is India’s first **mathematically proven, privacy-preserving, court-admi
 ## 4. EXECUTIVE RECOMMENDATION
 
 TARKA provides an immediately deployable, mathematically sound platform tailored to the exact requirements of Indian Law Enforcement Agencies (I4C, State Cyber Crime Stations, and the CBI). Every finding is grounded in immutable exhibits, every entity merge respects hard vetoes, and every statutory conclusion is ready for high-court scrutiny.
+

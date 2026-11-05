@@ -28,3 +28,4 @@
 1. **No Simulated Completion:** Every capability is backed by executable Python and TypeScript code.
 2. **Constitutional Fail-Closed Model:** If authorization, cryptographic verification, or evidence integrity cannot be established, the system strictly fails closed.
 3. **Sovereign Indian Legal Integration:** Built natively around the Bharatiya Nyaya Sanhita (BNS) 2023, Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023, and Bharatiya Sakshya Adhiniyam (BSA) 2023.
+

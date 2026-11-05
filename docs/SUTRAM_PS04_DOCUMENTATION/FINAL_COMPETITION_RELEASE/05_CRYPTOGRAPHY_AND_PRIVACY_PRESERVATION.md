@@ -54,3 +54,4 @@ TARKA incorporates a Circom-compatible Groth16 Zero-Knowledge Succinct Non-Inter
   $$\sum_{i=1}^k \text{amount}_i \ge \tau \quad \land \quad \text{MerkleVerify}(\text{amount}_i, \text{salt}_i, \text{MerkleRoot}) = 1$$
 - **Verification Guarantee:** Evaluates pairing equality $e(\pi_A, \pi_B) = e(\alpha, \beta) \cdot e(\pi_C, \delta) \cdot e(x, \gamma)$ in under $4.0\text{ms}$.
 - **Tamper Rejection:** Any mutation to the public threshold, proof points $\pi_A, \pi_B, \pi_C$, or Merkle root results in immediate cryptographic rejection (`verified: False`).
+

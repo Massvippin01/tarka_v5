@@ -42,6 +42,10 @@ import { EvidenceIntakeModal } from "./EvidenceIntakeModal";
 import { SarvamVoiceModal } from "./SarvamVoiceModal";
 import { ForensicAssistantPanel } from "./ForensicAssistantPanel";
 import { TarkaMinimalLanding } from "./TarkaMinimalLanding";
+import { Layers, GitBranch, Disc } from "lucide-react";
+import { TemporalEvidenceLoom } from "./TemporalEvidenceLoom";
+import { ClaimDependencyLens } from "./ClaimDependencyLens";
+import { InvestigationFlightRecorder } from "./InvestigationFlightRecorder";
 
 interface CaseProfile {
   id: string;
@@ -302,10 +306,13 @@ type WorkstationTab =
   | "overview"
   | "evidence"
   | "timeline"
+  | "loom"
   | "contradictions"
   | "provenance"
   | "gaps"
   | "robustness"
+  | "lens"
+  | "recorder"
   | "reports"
   | "system";
 
@@ -691,10 +698,13 @@ export const TarkaForensicWorkstation: React.FC = () => {
     { id: "overview", label: "Overview", icon: <LayoutDashboard size={15} strokeWidth={1.75} /> },
     { id: "evidence", label: "Evidence Ledger", icon: <Boxes size={15} strokeWidth={1.75} />, count: artifacts.length },
     { id: "timeline", label: "Timeline", icon: <Clock size={15} strokeWidth={1.75} />, count: timelineEvents.length },
+    { id: "loom", label: "Evidence Loom", icon: <Layers size={15} strokeWidth={1.75} /> },
     { id: "contradictions", label: "Contradictions & MUS", icon: <Zap size={15} strokeWidth={1.75} />, count: contradictions.length, badgeType: contradictions.length > 0 ? "danger" : undefined },
     { id: "provenance", label: "Provenance DAG", icon: <GitFork size={15} strokeWidth={1.75} /> },
     { id: "gaps", label: "Evidence Gaps", icon: <Search size={15} strokeWidth={1.75} />, count: gaps.length, badgeType: gaps.length > 0 ? "warning" : undefined },
     { id: "robustness", label: "Robustness Lab", icon: <FlaskConical size={15} strokeWidth={1.75} /> },
+    { id: "lens", label: "Claim Lens", icon: <GitBranch size={15} strokeWidth={1.75} /> },
+    { id: "recorder", label: "Flight Recorder", icon: <Disc size={15} strokeWidth={1.75} /> },
     { id: "reports", label: "Statutory Reports", icon: <FileText size={15} strokeWidth={1.75} />, count: reportsList.length },
     { id: "system", label: "System Health", icon: <ShieldCheck size={15} strokeWidth={1.75} /> },
   ];
@@ -1879,6 +1889,11 @@ export const TarkaForensicWorkstation: React.FC = () => {
                 />
               )}
 
+              {/* TEMPORAL EVIDENCE LOOM TAB */}
+              {activeTab === "loom" && (
+                <TemporalEvidenceLoom caseId={activeCaseId} />
+              )}
+
               {/* CONTRADICTIONS TAB */}
               {activeTab === "contradictions" && (
                 <ContradictionPanel
@@ -2319,6 +2334,22 @@ export const TarkaForensicWorkstation: React.FC = () => {
                     )}
                   </div>
                 )
+              )}
+
+              {/* CLAIM DEPENDENCY LENS TAB */}
+              {activeTab === "lens" && (
+                <ClaimDependencyLens
+                  caseId={activeCaseId}
+                  onExecuteAblation={async (excludedIds) => {
+                    setSelectedExclusions(excludedIds);
+                    await runRobustnessChallenge();
+                  }}
+                />
+              )}
+
+              {/* INVESTIGATION FLIGHT RECORDER TAB */}
+              {activeTab === "recorder" && (
+                <InvestigationFlightRecorder caseId={activeCaseId} />
               )}
 
               {/* REPORTS TAB */}

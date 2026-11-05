@@ -46,3 +46,4 @@ This security assessment audits eleven defensive layers against OWASP Top 10 API
 ### 2.6 Audit Trails & Non-Repudiation
 - **Immutable Log Append:** Every query, evidence modification, and investigator annotation generates a hash-chained audit record in the distributed event fabric.
 - **Finding:** Verified under Indian Evidence Act / BSA 2023 requirements; audit logs cannot be retroactively edited without breaking the parent hash chain.
+

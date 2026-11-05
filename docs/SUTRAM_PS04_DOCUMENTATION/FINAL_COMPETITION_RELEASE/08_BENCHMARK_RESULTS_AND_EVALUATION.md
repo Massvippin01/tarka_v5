@@ -46,3 +46,4 @@ Evaluated against the independent ground-truth specification `GT_SUTRAM_PS04_001
 
 - **Kaggle PaySim (6 Million Mobile Money Transactions):** Streamed in 500 MB blocks with zero memory leaks; identified all 8,213 siphoning rings with 99.8% precision.
 - **IBM AML Transaction Graph:** Validated against 27 synthetic money-laundering typologies; detected bipartite pass-through mules within 14ms.
+

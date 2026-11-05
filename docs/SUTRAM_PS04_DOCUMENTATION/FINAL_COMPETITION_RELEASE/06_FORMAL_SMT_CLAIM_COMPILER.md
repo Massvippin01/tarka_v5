@@ -77,3 +77,4 @@ $$\text{Hypothesis: Accomplice card-sharing / SIM-swap decoupled operator.}$$
 ## 4. CONSTITUTIONAL COMPLIANCE
 
 **A solver verdict is never presented as proof that a real-world allegation is true.** The system proves whether a set of claims and observations are mutually consistent under physical laws. The ultimate indictment decision remains exclusively with the human investigating officer.
+

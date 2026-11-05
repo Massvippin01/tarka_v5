@@ -172,3 +172,4 @@ The lifecycle rigorously enforces the core constitutional invariant:
 ## 3. AUDIT SUMMARY & CONCLUSION
 
 The 25-stage end-to-end integration verifies that TARKA operates not as a black-box machine learning system, but as an **auditable, evidence-backed forensic workbench**. Every investigative hypothesis is grounded in immutable exhibits, every entity merge respects hard vetoes, and every statutory finding is backed by court-admissible mathematical proof.
+

@@ -101,3 +101,4 @@ Set-Location "frontend"
 npm run build
 ```
 Output directory `frontend/dist/` contains pure static assets with zero external CDN dependencies and 100% locally bundled Inter, JetBrains Mono, and Google Fonts.
+

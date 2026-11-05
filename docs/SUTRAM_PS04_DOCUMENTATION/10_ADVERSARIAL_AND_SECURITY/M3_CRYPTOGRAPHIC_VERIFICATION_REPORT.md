@@ -37,3 +37,4 @@ In banking audits, financial institutions must prove to law enforcement or centr
    - **Honest Proof:** Evaluates `verified == True` in $1.11\,\text{ms}$.
    - **Adversarial Threshold Tampering ($T=30,000$):** Fails verification immediately (`verified == False`).
    - **Group Element Byte Mutation:** Fails verification immediately.
+

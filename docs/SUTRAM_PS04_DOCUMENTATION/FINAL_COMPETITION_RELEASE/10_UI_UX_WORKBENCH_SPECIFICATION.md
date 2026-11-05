@@ -46,3 +46,4 @@ In strict accordance with police air-gapped forensic laboratory requirements:
 1. **Zero External Font Calls:** All typography (Inter Variable, JetBrains Mono Variable, IBM Plex Sans, IBM Plex Mono) is 100% locally packaged within `frontend/dist/assets/`. Zero calls to `fonts.googleapis.com` or third-party CDNs.
 2. **Local WebCrypto Acceleration:** In-browser SHA-256 and HMAC calculations run via the native browser `window.crypto.subtle` API.
 3. **Reactive Keyboard Navigation:** Complete accessibility support via shortcut keys: `Alt+W` (Workspaces), `Alt+1..6` (Workbench pipeline), `Alt+D` (Public Benchmarks), `Alt+B` (Lab Diagnostics), and `Ctrl+B` (Sidebar Rail Collapse).
+

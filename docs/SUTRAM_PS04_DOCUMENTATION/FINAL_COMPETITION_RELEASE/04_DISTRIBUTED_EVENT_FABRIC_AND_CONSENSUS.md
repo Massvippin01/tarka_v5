@@ -83,3 +83,4 @@ To coordinate multi-bank account freezes and statutory directives without a cent
 3. **Commit Phase:** Replicas broadcast `COMMIT`. Once $2f+1=3$ commit votes are gathered, the freeze directive is irrevocably executed.
 
 **Byzantine Resilience:** Even if 1 node crashes or sends conflicting forged digests, consensus is guaranteed within $0.90\text{ms}$ (32 messages).
+

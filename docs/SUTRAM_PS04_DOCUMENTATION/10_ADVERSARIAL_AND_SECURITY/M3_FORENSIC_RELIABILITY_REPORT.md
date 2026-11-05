@@ -62,3 +62,4 @@ When an evidence artifact is modified, excluded, or found corrupt:
 4. An alert is pushed to the investigator workbench: *"Claim CLM-001 has dissolved due to retraction of exhibit EVID-002."*
 
 This reactive propagation ensures that detectives never present an ungrounded or hollow claim in court.
+

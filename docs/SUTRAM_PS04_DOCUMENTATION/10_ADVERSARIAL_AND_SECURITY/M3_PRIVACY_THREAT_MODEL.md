@@ -60,3 +60,4 @@ sequenceDiagram
 | **Dictionary / Offline Brute-Force** | Malicious participant hashes common phone numbers to test membership | **Salted Pre-Image & Rate Limiting:** Hash-to-curve uses domain separation prefixes. Query coordinators enforce strict query rate quotas. |
 | **Eavesdropping on Coordinator** | Untrusted coordinator intercepts messages | **Zero Content Exposure:** Coordinator sees only blinded elliptic curve points; possesses neither $k_A$ nor $k_B$. |
 | **Collusion between 2 Banks** | Two banks share keys to de-anonymize a third | **Ephemeral Session Keys:** Nodes rotate ephemeral EC scalars ($k$) for each discrete query session, preventing cross-query correlation. |
+

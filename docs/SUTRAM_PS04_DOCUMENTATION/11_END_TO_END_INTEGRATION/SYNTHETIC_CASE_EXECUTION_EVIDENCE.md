@@ -322,3 +322,4 @@ tests\test_m4_end_to_end_integration.py::test_stage_25_replay_investigation_dete
 ```
 
 The investigation state at every millisecond is completely reconstructed by evaluating the signed ledger stream from genesis. No database mutation or foreign state injection is required.
+

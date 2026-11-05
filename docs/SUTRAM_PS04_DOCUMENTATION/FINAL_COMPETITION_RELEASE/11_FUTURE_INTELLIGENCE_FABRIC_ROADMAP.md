@@ -47,3 +47,4 @@ The successful verification of TARKA at SUTRAM 2026 marks the graduation of our 
 ### 3.3 Judiciary & Prosecution
 - Digitally sealed e-dossiers directly ingested into the Interoperable Criminal Justice System (ICJS) and e-Courts platform.
 - Unbroken cryptographic chain-of-custody eliminating technical acquittals based on defective 65B/63 certificates.
+

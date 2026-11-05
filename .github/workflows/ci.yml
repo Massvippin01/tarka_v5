@@ -137,11 +137,13 @@ jobs:
     needs: [manifest-and-static-analysis]
     services:
       minio:
-        image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+        image: rustfs/rustfs:1.0.0
         ports:
           - 9000:9000
           - 9001:9001
         env:
+          RUSTFS_ACCESS_KEY: sentinelx_ci_minio
+          RUSTFS_SECRET_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
           MINIO_ROOT_USER: sentinelx_ci_minio
           MINIO_ROOT_PASSWORD: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
         options: >-

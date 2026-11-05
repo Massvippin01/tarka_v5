@@ -68,7 +68,7 @@ class AuthService:
                 organization="Haryana Police Crime Branch",
                 unit="Cyber Crime Police Station Gurugram",
                 scope=CaseAccessScope(
-                    allowed_cases=["C481", "C512", "CASE-2026-001", "upi_payment_discrepancy"],
+                    allowed_cases=["C481", "C512", "CASE-2026-001"],
                     jurisdictions=["Gurugram / Haryana"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),

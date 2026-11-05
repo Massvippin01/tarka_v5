@@ -61,3 +61,4 @@ tests/test_m3_adversarial_validation.py::test_12_schema_evolution_rejects_breaki
 
 ============================= 12 passed in 4.41s ==============================
 ```
+
