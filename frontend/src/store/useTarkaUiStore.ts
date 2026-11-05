@@ -80,6 +80,8 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get("page") || params.get("mode");
     if (page === "benchmark" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
+    const view = params.get("view");
+    if (view && view !== "workspace") return "workbench";
     if (page === "workbench" || page === "case" || params.get("stage")) return "workbench";
     if (page === "workspaces" || page === "workspace") return "workspaces";
     return "workspaces";

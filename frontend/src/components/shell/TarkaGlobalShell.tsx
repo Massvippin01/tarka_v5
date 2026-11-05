@@ -45,6 +45,7 @@ import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
 import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
 import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
+import { TarkaForensicWorkstation } from "../tarka/TarkaForensicWorkstation";
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -179,6 +180,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           e.preventDefault();
           setActivePage("workbench");
           setActiveRoute("privacy-crypto");
+        } else if (e.key === "8") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("workstation");
         } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           setActivePage("benchmark");
@@ -277,6 +282,17 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       badgeText: "BFT + ZK",
       badgeVariant: "indigo" as const,
       tooltip: "PS04 Member B: ECDH-PSI, Circom ZKP, 4-Node PBFT & Z3 Verification (Alt+7)",
+      isLocked: false,
+    },
+    {
+      id: "workstation" as TarkaRoute,
+      step: "08",
+      title: "Forensic Deep Workstation: Loom, Lens & Flight Recorder",
+      shortTitle: "Forensic Loom",
+      subtitle: "SMT Lens & Audit Log",
+      badgeText: "LOOM",
+      badgeVariant: "emerald" as const,
+      tooltip: "Signature Forensic Systems: Temporal Loom, Claim Dependency Lens & Flight Recorder (Alt+8)",
       isLocked: false,
     },
   ];
@@ -1827,6 +1843,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               {activeRoute === "taint-engine" && <TaintEngineScreen />}
               {activeRoute === "court-proof" && <CourtProofScreen />}
               {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
+              {activeRoute === "workstation" && <TarkaForensicWorkstation />}
             </>
           )}
         </div>
