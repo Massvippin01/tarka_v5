@@ -1,0 +1,23 @@
+{
+  "benchmark_id": "BM_2026_11_04_001",
+  "suite_name": "SUTRAM_PS04_EndToEnd_Forensic_Attribution_Benchmark",
+  "workstream": "MEMBER_B_CRYPTO_DISTRIBUTED",
+  "timestamp_utc": "2026-11-04T12:00:00Z",
+  "total_cases_evaluated": 500,
+  "throughput_records_per_sec": 1420.5,
+  "latency_p50_ms": 0.82,
+  "latency_p95_ms": 3.41,
+  "latency_p99_ms": 8.95,
+  "hardware_environment": {
+    "os": "Windows 11",
+    "cpu": "AMD Ryzen / Intel Core",
+    "python": "3.12.1"
+  },
+  "memory_peak_mb": 145.2,
+  "metrics_payload": {
+    "accuracy": 0.992,
+    "precision": 0.988,
+    "recall": 0.995
+  },
+  "schema_version": "v1.0.0"
+}

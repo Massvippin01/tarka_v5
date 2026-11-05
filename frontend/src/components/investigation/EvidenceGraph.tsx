@@ -93,7 +93,7 @@ export const EvidenceGraph: React.FC = () => {
     let isMounted = true;
     const fetchSnapshot = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/graph-projection/${activeCaseId}/snapshot`);
+        const res = await fetch(`/api/v1/graph-projection/${activeCaseId}/snapshot`);
         if (res.ok) {
           const snap = await res.json();
           if (isMounted) {
@@ -138,7 +138,7 @@ export const EvidenceGraph: React.FC = () => {
     // SSE Realtime Event Stream (Incremental Deltas)
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`http://localhost:8000/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
+      eventSource = new EventSource(`/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
 
       eventSource.addEventListener("GRAPH_NODE_CREATED", (e: MessageEvent) => {
         try {
@@ -421,7 +421,7 @@ export const EvidenceGraph: React.FC = () => {
   const handleTracePath = async () => {
     if (!pathSource || !pathTarget) return;
     try {
-      const url = `http://localhost:8000/api/v1/graph-projection/${activeCaseId}/path?source=${encodeURIComponent(
+      const url = `/api/v1/graph-projection/${activeCaseId}/path?source=${encodeURIComponent(
         pathSource
       )}&target=${encodeURIComponent(pathTarget)}&mode=${pathMode}`;
       const res = await fetch(url);
@@ -441,7 +441,7 @@ export const EvidenceGraph: React.FC = () => {
   const handleCompareEntities = async () => {
     if (!compareEntityA || !compareEntityB) return;
     try {
-      const url = `http://localhost:8000/api/v1/graph-projection/${activeCaseId}/compare?entity_a=${encodeURIComponent(
+      const url = `/api/v1/graph-projection/${activeCaseId}/compare?entity_a=${encodeURIComponent(
         compareEntityA
       )}&entity_b=${encodeURIComponent(compareEntityB)}`;
       const res = await fetch(url);
@@ -460,7 +460,7 @@ export const EvidenceGraph: React.FC = () => {
 
   const handleTraceEvidenceThread = async (relId: string) => {
     try {
-      const url = `http://localhost:8000/api/v1/graph-projection/${activeCaseId}/evidence-thread/RELATIONSHIP/${encodeURIComponent(
+      const url = `/api/v1/graph-projection/${activeCaseId}/evidence-thread/RELATIONSHIP/${encodeURIComponent(
         relId
       )}`;
       const res = await fetch(url);

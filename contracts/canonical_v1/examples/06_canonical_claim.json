@@ -1,0 +1,67 @@
+{
+  "claim_id": "CLAIM_ALIBI_CONTRADICTION_001",
+  "claim_statement": "Suspect Ramesh Kumar claims physical presence in Delhi during the entire afternoon of 15-Oct-2026, denying involvement in the Mumbai ATM cashout.",
+  "claim_type": "PRESENCE_AT_CRIME_SCENE",
+  "supporting_observations": [
+    {
+      "observation_id": "OBS_DELHI_BTS_001",
+      "source_evidence_id": "EVID_AIRTEL_001",
+      "field": "bts_tower_location",
+      "raw_value": "Delhi Nehru Place Cell ID 404-45-1029",
+      "timestamp_utc": "2026-10-15T08:46:30Z",
+      "coordinates": {
+        "lat": 28.5494,
+        "lon": 77.2536
+      }
+    }
+  ],
+  "contradictory_observations": [
+    {
+      "observation_id": "OBS_MUMBAI_ATM_001",
+      "source_evidence_id": "EVID_SBI_001",
+      "field": "atm_terminal_location",
+      "raw_value": "SBI ATM Bandra West Mumbai ID MUM-402",
+      "timestamp_utc": "2026-10-15T08:45:00Z",
+      "coordinates": {
+        "lat": 19.0596,
+        "lon": 72.8295
+      }
+    }
+  ],
+  "assumptions": [
+    "Single individual operating both physical ATM card and active handset",
+    "NTP clock drift between SBI ATM and Airtel BTS <= 2.0 seconds"
+  ],
+  "evidence_dependencies": [
+    "EVID_SBI_001",
+    "EVID_AIRTEL_001"
+  ],
+  "transformation_references": [
+    "CGNAT_PORT_TRANSLATION_ALIGNMENT",
+    "ROW_NORMALIZATION_ISO8601"
+  ],
+  "verification_constraints": [
+    "distance_km(OBS_MUMBAI_ATM_001, OBS_DELHI_BTS_001) > 1100",
+    "delta_time_sec(OBS_MUMBAI_ATM_001, OBS_DELHI_BTS_001) == 90",
+    "velocity_km_h = (1148 / 90) * 3600 = 45,920 km/h > max_human_velocity(1000 km/h)"
+  ],
+  "counterexamples": [
+    {
+      "model": "HANDSET_MULE_DECOUPLING",
+      "hypothesis": "ATM card was operated by an accomplice in Mumbai while suspect's phone was held by a runner in Delhi.",
+      "plausibility": "HIGH"
+    }
+  ],
+  "limitations": [
+    "Cannot rule out SIM cloning without cryptographic IMSI authentication challenge log.",
+    "Requires CCTV footage from SBI Bandra West ATM to prove physical operator identity."
+  ],
+  "claim_state": "CONTRADICTED",
+  "reviewer_decision": null,
+  "version_and_replay_reference": "git:976a6e4571daefbe2acd7bf76c68cba5b01ab470",
+  "schema_version": "v1.0.0",
+  "metadata": {
+    "contradiction_type": "SPATIO_TEMPORAL_IMPOSSIBILITY",
+    "adjudication_required": true
+  }
+}

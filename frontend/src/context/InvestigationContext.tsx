@@ -261,7 +261,8 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`http://localhost:8000/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      eventSource = new EventSource(`${apiBase}/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
 
       eventSource.onopen = () => {
         setRealtimeState("LIVE");

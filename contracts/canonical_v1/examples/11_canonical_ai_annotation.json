@@ -1,0 +1,19 @@
+{
+  "annotation_id": "AI_ANN_TXN_001",
+  "case_id": "CASE_SUTRAM_2026_001",
+  "target_object_type": "TRANSACTION",
+  "target_object_id": "TXN_UPI_001",
+  "model_identifier": "tarka-forensic-deepseek-v1",
+  "prompt_template_version": "2026.10-investigative-rationale",
+  "confidence_score": 0.94,
+  "investigative_rationale": "Transaction displays classic Layer-1 rapid dispersion characteristics: immediate split into multiple smaller tranches within 180 seconds of victim debit.",
+  "supporting_evidence_ids": [
+    "EVID_HDFC_001",
+    "EVID_SBI_001"
+  ],
+  "contradictions_identified": [],
+  "human_approval_state": "PROPOSED",
+  "approved_by_officer": null,
+  "approval_timestamp_utc": null,
+  "schema_version": "v1.0.0"
+}

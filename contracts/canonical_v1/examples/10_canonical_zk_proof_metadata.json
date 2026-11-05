@@ -1,0 +1,19 @@
+{
+  "proof_id": "ZKP_BN254_SOLV_001",
+  "circuit_identifier": "regulatory_batch_solvency_v1",
+  "circuit_version": "1.0.0",
+  "public_inputs": {
+    "institution_id": "INST_SBI_01",
+    "threshold_inr": 1000000.0,
+    "timestamp_epoch": 1760527200
+  },
+  "commitment_reference": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+  "proving_system": "GROTH16_BN254",
+  "verification_key_reference": "vk_bn254_reg_solvency_v1.json",
+  "proof_size_bytes": 256,
+  "proving_duration_ms": 138.2,
+  "verification_duration_ms": 4.1,
+  "verification_result": true,
+  "setup_assumptions": "POWERS_OF_TAU_TRUSTED_SETUP",
+  "schema_version": "v1.0.0"
+}
