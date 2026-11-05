@@ -154,3 +154,4 @@ All 15 scenarios are represented as deterministic fixtures in `backend/tests/fix
 pytest backend/tests/test_tarka_curriculum.py -v
 ```
 Each scenario validates the full chain: Ingestion → CAS Integrity → Graph Reconstruction → Z3 Formal Proof → BSA 63 Certificate.
+

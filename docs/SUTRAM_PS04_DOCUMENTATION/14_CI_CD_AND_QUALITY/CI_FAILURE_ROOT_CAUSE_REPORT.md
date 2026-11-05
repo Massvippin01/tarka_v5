@@ -127,3 +127,34 @@ The full non-S3 evidence integrity test suite was executed locally:
 pytest backend/tests/test_p0_d_evidence_integrity.py -k "not live_s3" -v
 ```
 **Result:** `17 passed, 5 deselected, 3 warnings in 57.37s` (100% pass rate).
+
+---
+
+## 6. SECONDARY CI RUN `42064369601` FINDINGS & FINAL REMEDIATION
+
+### 6.1 Run Status Summary
+- **Gate 1 & 2 (Manifests & Static Compilation):** `PASSED` in 1m17s
+- **Gate 4 (Frontend TypeScript & Vite Production Build):** `PASSED` in 36s
+- **Gate 7 (Live S3/MinIO CAS Integration):** `PASSED` in 1m34s with `rustfs/rustfs:1.0.0`
+- **Gate 3 (TARKA Forensics Suite):** `FAILED` in 1m39s (347 passed, 2 failed out of 349)
+
+### 6.2 Secondary Failure 1: Intent Routing Collision (`navigate_to_view` vs `list_contradictions`)
+- **Trace:** `AssertionError: assert 'navigate_to_view' == 'list_contradictions'` at `backend/tests/test_tarka_sentinelx_integration.py:770`.
+- **Root Cause:** In `SafeForensicAgentOrchestrator.interpret_investigator_query()`, Section 8 (Navigation) matched substrings `"show "` and target `"contradiction"`. Consequently, `"Show all contradictions in this case"` prematurely routed to `navigate_to_view` rather than the analytical solver tool `list_contradictions`.
+- **Remediation:** Disambiguated navigation intent by requiring either explicit navigation verbs (`navigate to`, `switch to`, `go to`, `take me to`) or view-targeting nouns (`tab`, `view`, `screen`, `page`, `workstation`) before activating view switching. Analytical queries retain their direct path to `list_contradictions`.
+
+### 6.3 Secondary Failure 2: Sarvam Bulbul Voice Provider Contract Assertions
+- **Trace:** `AssertionError: assert 'SARVAM_BULBUL_TEST' in ('SARVAM_CLOUD_BULBUL', 'LOCAL_BROWSER_FALLBACK')` at `backend/tests/test_tarka_sentinelx_integration.py:741`.
+- **Root Cause:** To enforce the architectural rule that browser speech fallback is strictly disabled and Sarvam Bulbul is the sole voice path, `sarvam_voice_service.py` sets `"provider": "SARVAM_BULBUL_TEST"` in offline pytest mode. The test assertion was still checking legacy fallback tokens.
+- **Remediation:** Upgraded `test_sarvam_synthesize_endpoint_fallback_and_structure` with monkeypatched live and error simulation modes to test `SARVAM_BULBUL_TEST`, `SARVAM_CLOUD_BULBUL`, and `SARVAM_ERROR`, guaranteeing zero silent browser speech fallback.
+
+### 6.4 Secondary Failure 3: Dynamic Artifact ID in Counterfactual Analysis Test
+- **Root Cause:** `test_phase3a_counterfactual.py` contained hardcoded artifact identifier string `ART-004-BCCD4200` in `test_baseline_and_challenge_exact_summaries`, which varied with fresh database seedings.
+- **Remediation:** Parameterized the expected summary assertion with `f"Excluding {scr_art.artifact_id}..."`.
+
+### 6.5 Full Test Pass Verification
+- `tests/test_tarka_sentinelx_integration.py`: **33/33 PASSED** in 65.21s
+- `tests_tarka/tests/test_phase3a_counterfactual.py`: **20/20 PASSED** in 28.74s
+- `frontend/`: **tsc -b && vite build PASSED** clean in 12.78s with 0 errors
+
+

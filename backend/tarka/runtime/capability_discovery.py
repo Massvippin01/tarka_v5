@@ -188,3 +188,4 @@ if __name__ == "__main__":
     print(f"Air-gapped: {desc.hardware.is_air_gapped}")
     print(f"Storage Tier: {desc.storage_tier}")
     print(f"Batch Size: {desc.recommended_batch_size} records")
+

@@ -104,3 +104,4 @@ graph LR
 - TARKA provides **7-factor Role-Based Access Control (RBAC)**:
   - An investigator in Delhi Police Special Cell cannot read Gurugram case files without an auditable cross-case grant (`AuthService.grant_case_access`).
   - Cross-state correlation is achieved via privacy-preserving tokenized graph matching, enabling joint task forces to track inter-state syndicates while maintaining strict jurisdictional data isolation.
+

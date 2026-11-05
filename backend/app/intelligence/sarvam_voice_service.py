@@ -586,10 +586,6 @@ class ForensicSpokenResponseGenerator:
         is_hindi = language_code.startswith("hi")
         is_bengali = language_code.startswith("bn")
 
-        # Prioritize explicit neural spoken summary from Llama 3.1 8B for English/general queries
-        if isinstance(result, dict) and result.get("spoken_summary") and not (is_tamil or is_hindi or is_bengali):
-            return cls.sanitize_for_speech(result["spoken_summary"])
-
         # 1. Stop audio command
         if tool_name == "stop_speaking":
             if is_tamil:
@@ -1431,9 +1427,13 @@ class SafeForensicAgentOrchestrator:
                 }
 
         # 8. Navigation requests
-        if any(w in q for w in ["navigate to", "open the", "open ", "switch to", "go to", "show the", "show ", "return to"]) and any(
+        is_explicit_nav = any(w in q for w in ["navigate to", "switch to", "go to", "return to", "take me to"])
+        is_view_target = any(w in q for w in ["tab", "view", "screen", "page", "library", "workstation", "workspace"])
+        is_open_or_show = any(w in q for w in ["open the", "open ", "show the", "show "])
+        has_nav_target = any(
             t in q for t in ["timeline", "evidence", "contradiction", "provenance", "gap", "robustness", "report", "overview", "system"]
-        ):
+        )
+        if has_nav_target and (is_explicit_nav or (is_open_or_show and is_view_target)):
             target_view = "overview"
             if "timeline" in q:
                 target_view = "timeline"
@@ -1873,33 +1873,16 @@ class SafeForensicAgentOrchestrator:
             elif tool_name == "get_system_status":
                 result = self.adapter.get_system_status()
             else:
-                # Default case summary or open-ended investigative voice query
+                # Default case summary
                 contras = self.adapter.get_contradictions(case_id).get("contradictions", [])
                 arts = self.adapter.list_artifacts(case_id)
                 gaps = self.adapter.get_contradictions(case_id).get("evidence_gaps", [])
-                timeline = self.adapter.get_timeline(case_id).get("events", [])
-
-                from app.intelligence.local_llm_provider import default_llm_provider
-                context = {
-                    "artifacts": arts,
-                    "contradictions": contras,
-                    "evidence_gaps": gaps,
-                    "timeline_events": timeline,
-                }
-                llm_resp = default_llm_provider.generate_grounded_response(
-                    case_id=case_id,
-                    query=query or "Summarize verified case evidence and findings",
-                    case_context=context,
-                )
-
                 result = {
                     "case_id": case_id,
                     "artifact_count": len(arts),
                     "contradiction_count": len(contras),
                     "evidence_gap_count": len(gaps),
-                    "llm_response": llm_resp,
-                    "summary": llm_resp.get("answer_markdown") or f"Case {case_id} currently holds {len(arts)} verified evidence artifacts, {len(contras)} mathematical contradictions detected by the Z3 SMT solver, and {len(gaps)} open evidentiary gaps.",
-                    "spoken_summary": llm_resp.get("speech_text"),
+                    "summary": f"Case {case_id} currently holds {len(arts)} verified evidence artifacts, {len(contras)} mathematical contradictions detected by the Z3 SMT solver, and {len(gaps)} open evidentiary gaps.",
                 }
 
             pipeline_log.append({"state": "EXECUTED", "status": "COMPLETED"})

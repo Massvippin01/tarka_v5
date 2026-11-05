@@ -135,23 +135,11 @@ jobs:
     name: "Gate 7: Live S3/MinIO CAS Integration (Disposable Service)"
     runs-on: ubuntu-24.04
     needs: [manifest-and-static-analysis]
-    services:
-      minio:
-        image: rustfs/rustfs:1.0.0
-        ports:
-          - 9000:9000
-          - 9001:9001
-        env:
-          RUSTFS_ACCESS_KEY: sentinelx_ci_minio
-          RUSTFS_SECRET_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
-          MINIO_ROOT_USER: sentinelx_ci_minio
-          MINIO_ROOT_PASSWORD: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        command: server /data --console-address ":9001"
+    env:
+      CI_MINIO_ACCESS_KEY: sentinelx_ci_minio
+      CI_MINIO_SECRET_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
+      S3_ENDPOINT_URL: http://127.0.0.1:9000
+      S3_BUCKET_NAME: sentinelx-evidence-vault
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -168,47 +156,105 @@ jobs:
           pip install -r requirements.txt
           pip install pytest boto3 botocore
 
+      - name: Start Disposable Isolated S3 Storage Service
+        run: |
+          mkdir -p ci-logs
+          echo "Starting disposable isolated S3 service container (RustFS)..."
+          docker run -d \
+            --name sentinelx-ci-s3-disposable \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -e RUSTFS_ACCESS_KEY="$CI_MINIO_ACCESS_KEY" \
+            -e RUSTFS_SECRET_KEY="$CI_MINIO_SECRET_KEY" \
+            -e MINIO_ROOT_USER="$CI_MINIO_ACCESS_KEY" \
+            -e MINIO_ROOT_PASSWORD="$CI_MINIO_SECRET_KEY" \
+            -e RUSTFS_CONSOLE_ENABLE="true" \
+            -e RUSTFS_CONSOLE_ADDRESS=":9001" \
+            rustfs/rustfs:1.0.0 \
+            server /data --console-enable --console-address ":9001"
+
+      - name: Await Service Health
+        run: |
+          echo "Awaiting S3 service health readiness at http://127.0.0.1:9000/minio/health/live..."
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9000/minio/health/live; then
+              echo "S3 service health endpoint is UP and reporting healthy!"
+              break
+            fi
+            echo "Waiting for S3 service readiness ($i/30)..."
+            sleep 1
+          done
+          if ! curl -sf http://127.0.0.1:9000/minio/health/live; then
+            echo "Error: S3 service failed health check."
+            docker logs sentinelx-ci-s3-disposable > ci-logs/s3-service-failure.log 2>&1 || true
+            exit 1
+          fi
+
       - name: Initialize Disposable S3 Bucket
         env:
-          AWS_ACCESS_KEY_ID: sentinelx_ci_minio
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
-          S3_ENDPOINT_URL: http://127.0.0.1:9000
-          S3_BUCKET_NAME: sentinelx-evidence-vault
+          AWS_ACCESS_KEY_ID: ${{ env.CI_MINIO_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.CI_MINIO_SECRET_KEY }}
         run: |
           python -c "
-          import boto3
+          import boto3, os, sys
           s3 = boto3.client(
               's3',
-              endpoint_url='http://127.0.0.1:9000',
-              aws_access_key_id='sentinelx_ci_minio',
-              aws_secret_access_key='sentinelx_ci_disposable_secret_32char',
+              endpoint_url=os.environ['S3_ENDPOINT_URL'],
+              aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+              aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
               region_name='us-east-1'
           )
+          bucket = os.environ['S3_BUCKET_NAME']
           try:
-              s3.create_bucket(Bucket='sentinelx-evidence-vault')
-              print('Bucket sentinelx-evidence-vault created successfully')
+              s3.create_bucket(Bucket=bucket)
+              print(f'Bucket {bucket} created successfully')
           except Exception as e:
-              print(f'Bucket creation notice: {e}')
+              err_str = str(e)
+              if 'BucketAlreadyOwnedByYou' in err_str or 'BucketAlreadyExists' in err_str:
+                  print(f'Bucket {bucket} already exists: {e}')
+              else:
+                  print(f'Fatal error initializing bucket {bucket}: {e}', file=sys.stderr)
+                  sys.exit(1)
+
+          try:
+              s3.head_bucket(Bucket=bucket)
+              print(f'Verified bucket {bucket} is accessible and ready.')
+          except Exception as e:
+              print(f'Bucket verification failed: {e}', file=sys.stderr)
+              sys.exit(1)
           "
 
       - name: Execute 5 Live S3/MinIO CAS Verification Tests
         env:
-          S3_ENDPOINT_URL: http://127.0.0.1:9000
-          S3_ACCESS_KEY: sentinelx_ci_minio
-          S3_SECRET_KEY: ${{ secrets.CI_MINIO_SECRET || 'sentinelx_ci_disposable_secret_32char' }}
-          S3_BUCKET_NAME: sentinelx-evidence-vault
+          S3_ACCESS_KEY: ${{ env.CI_MINIO_ACCESS_KEY }}
+          S3_SECRET_KEY: ${{ env.CI_MINIO_SECRET_KEY }}
         run: |
           mkdir -p reports
           python -m pytest backend/tests/test_p0_d_evidence_integrity.py \
             -k "live_s3" \
             --junitxml=reports/junit-live-s3.xml -v
 
-      - name: Archive S3 Integration Test Results
+      - name: Save Diagnostics Even When Setup Fails
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          docker logs sentinelx-ci-s3-disposable > ci-logs/s3-service.log 2>&1 || true
+
+      - name: Safe Stop and Teardown of Disposable S3 Service
+        if: always()
+        run: |
+          echo "Safely stopping and removing disposable S3 service..."
+          docker stop sentinelx-ci-s3-disposable 2>/dev/null || true
+          docker rm sentinelx-ci-s3-disposable 2>/dev/null || true
+
+      - name: Archive S3 Integration Test Results and Diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: live-s3-test-reports
-          path: reports/
+          path: |
+            reports/
+            ci-logs/
           retention-days: 14
 
   # ============================================================================
@@ -245,27 +291,41 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Backend Container Smoke Test & Validate Health Endpoints
+      - name: Run Container Smoke Tests & Validate Health Endpoints
         run: |
           mkdir -p ci-logs
+          echo "Creating isolated bridge network for container smoke tests..."
+          docker network create sentinelx-smoke-net
+
           echo "Starting backend container in isolated test mode..."
           docker run -d \
             --name sentinelx-backend-smoke \
+            --network sentinelx-smoke-net \
+            --network-alias backend \
             -p 8000:8000 \
             -e HOST=0.0.0.0 \
             -e PORT=8000 \
             -e APP_ENV=staging \
             -e SECRET_KEY="sentinelx_ci_smoke_test_jwt_secret_32chars_min" \
+            -e NEO4J_PASSWORD="sentinelx_ci_smoke_test_neo4j_password_32char" \
             sentinelx/backend:ci-smoke-test
 
-          echo "Awaiting container readiness..."
+          echo "Awaiting backend container readiness..."
+          BACKEND_HEALTHY=0
           for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:8000/api/v1/health; then
-              echo "Health endpoint is UP!"
+            if curl -sf http://127.0.0.1:8000/api/v1/health > /dev/null 2>&1; then
+              echo "Backend health endpoint is UP!"
+              BACKEND_HEALTHY=1
               break
             fi
             sleep 1
           done
+
+          if [ "$BACKEND_HEALTHY" -ne 1 ]; then
+            echo "Error: Backend container failed to reach healthy state within 30s"
+            docker logs sentinelx-backend-smoke || true
+            exit 1
+          fi
 
           echo "Validating System Health Endpoint (/api/v1/health)..."
           HEALTH_RESP=$(curl -s http://127.0.0.1:8000/api/v1/health)
@@ -277,7 +337,7 @@ jobs:
           echo "$FORENSICS_RESP"
           echo "$FORENSICS_RESP" | grep -q '"status":"healthy"' || { echo "Invalid forensics response"; exit 1; }
 
-          echo "Verifying unprivileged container user execution (UID 10001)..."
+          echo "Verifying unprivileged backend container user execution (UID 10001)..."
           CONTAINER_UID=$(docker exec sentinelx-backend-smoke id -u)
           if [ "$CONTAINER_UID" != "10001" ]; then
             echo "Security Violation: Container running as UID $CONTAINER_UID, expected 10001!"
@@ -285,9 +345,62 @@ jobs:
           fi
           echo "Verified unprivileged user UID: $CONTAINER_UID"
 
-          docker logs sentinelx-backend-smoke > ci-logs/backend-container-smoke.log 2>&1
-          docker stop sentinelx-backend-smoke
-          docker rm sentinelx-backend-smoke
+          echo "Starting frontend container on smoke network..."
+          docker run -d \
+            --name sentinelx-frontend-smoke \
+            --network sentinelx-smoke-net \
+            -p 8080:8080 \
+            sentinelx/frontend:ci-smoke-test
+
+          echo "Awaiting frontend container readiness..."
+          FRONTEND_HEALTHY=0
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8080/healthz > /dev/null 2>&1; then
+              echo "Frontend healthz endpoint is UP!"
+              FRONTEND_HEALTHY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$FRONTEND_HEALTHY" -ne 1 ]; then
+            echo "Error: Frontend container failed to reach healthy state within 20s"
+            docker logs sentinelx-frontend-smoke || true
+            exit 1
+          fi
+
+          echo "Validating Frontend Healthz Endpoint (/healthz)..."
+          FRONTEND_RESP=$(curl -s http://127.0.0.1:8080/healthz)
+          echo "$FRONTEND_RESP"
+          echo "$FRONTEND_RESP" | grep -q 'healthy' || { echo "Invalid frontend health response"; exit 1; }
+
+          echo "Validating Frontend API Reverse-Proxy (/api/v1/health)..."
+          PROXY_RESP=$(curl -s http://127.0.0.1:8080/api/v1/health)
+          echo "$PROXY_RESP"
+          echo "$PROXY_RESP" | grep -q '"status":"healthy"' || { echo "Invalid proxy health response"; exit 1; }
+
+          echo "Verifying unprivileged frontend container user execution..."
+          FRONTEND_UID=$(docker exec sentinelx-frontend-smoke id -u)
+          echo "Verified frontend unprivileged user UID: $FRONTEND_UID"
+          if [ "$FRONTEND_UID" = "0" ]; then
+            echo "Security Violation: Frontend container running as root (UID 0)!"
+            exit 1
+          fi
+
+      - name: Save Container Diagnostics Even When Smoke Fails
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          docker logs sentinelx-backend-smoke > ci-logs/backend-container-smoke.log 2>&1 || true
+          docker logs sentinelx-frontend-smoke > ci-logs/frontend-container-smoke.log 2>&1 || true
+
+      - name: Safe Teardown of Smoke Test Containers
+        if: always()
+        run: |
+          echo "Safely stopping and removing smoke test containers..."
+          docker stop sentinelx-backend-smoke sentinelx-frontend-smoke 2>/dev/null || true
+          docker rm sentinelx-backend-smoke sentinelx-frontend-smoke 2>/dev/null || true
+          docker network rm sentinelx-smoke-net 2>/dev/null || true
 
       - name: Archive Container Smoke Logs (Gate 8)
         if: always()

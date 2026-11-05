@@ -73,3 +73,4 @@ To verify runtime capability discovery on any host:
 python -m tarka.runtime.capability_discovery
 ```
 Output confirms hardware topology, storage tier assignment, and batch thresholds.
+
