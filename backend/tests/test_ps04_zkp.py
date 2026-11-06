@@ -144,3 +144,61 @@ class TestWorkstreamB2ZKP:
         assert secret_salt not in proof_str
         assert secret_salt not in pub_str
 
+    def test_verification_key_versioning_and_claim_linkage(self):
+        """Verify verification-key versioning and proof-to-claim metadata linkages."""
+        prover = ZKThresholdProver(institution_id="INST_HDFC")
+
+        witness = ZKPrivateWitness(
+            private_amounts=[15000.0, 35000.0],
+            private_salts=["salt_alpha", "salt_beta"],
+            account_ids=["ACC_001", "ACC_002"],
+        )
+
+        claim_id = "CLM-REGULATORY-CEILING-001"
+        proof, pub_inputs = prover.generate_proof(
+            witness,
+            public_threshold=100000.0,
+            associated_claim_id=claim_id,
+            vk_version="v1.0.0-groth16-bn254",
+            verification_key_id="VK-GROTH16-SUTRAM2026-v1",
+        )
+
+        assert proof.associated_claim_id == claim_id
+        assert proof.vk_version == "v1.0.0-groth16-bn254"
+        assert proof.verification_key_id == "VK-GROTH16-SUTRAM2026-v1"
+
+        verdict = ZKThresholdVerifier.verify(
+            proof,
+            pub_inputs,
+            expected_vk_version="v1.0.0-groth16-bn254",
+        )
+
+        assert verdict["verified"] is True
+        assert verdict["associated_claim_id"] == claim_id
+        assert verdict["vk_version"] == "v1.0.0-groth16-bn254"
+
+    def test_mismatched_vk_version_rejected(self):
+        """Verify that a proof generated with an outdated or conflicting verification key version is rejected."""
+        prover = ZKThresholdProver(institution_id="INST_ICICI")
+
+        witness = ZKPrivateWitness(
+            private_amounts=[10000.0],
+            private_salts=["s1"],
+            account_ids=["ACC_01"],
+        )
+
+        proof, pub_inputs = prover.generate_proof(
+            witness,
+            public_threshold=50000.0,
+            vk_version="v0.9.0-deprecated",
+        )
+
+        # Verifier requires canonical v1.0.0-groth16-bn254
+        verdict = ZKThresholdVerifier.verify(
+            proof,
+            pub_inputs,
+            expected_vk_version="v1.0.0-groth16-bn254",
+        )
+
+        assert verdict["verified"] is False
+        assert "Verification key version mismatch" in verdict["reason"]

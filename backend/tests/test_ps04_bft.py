@@ -81,3 +81,48 @@ class TestWorkstreamB4BFT:
         assert res2["sequence_number"] == 2
         assert res2["consensus_achieved"] is True
 
+    def test_view_change_randomized_exponential_backoff_def_003(self):
+        """Verify DEF-003: Randomized exponential backoff with jitter on view change retries."""
+        network = PBFTConsensusNetwork()
+
+        # Check backoff calculation increases exponentially with jitter
+        b1 = network.calculate_view_change_backoff(1, base_backoff_ms=50.0)
+        b2 = network.calculate_view_change_backoff(2, base_backoff_ms=50.0)
+        b3 = network.calculate_view_change_backoff(3, base_backoff_ms=50.0)
+
+        assert b1 >= 100.0  # 50 * 2^1 = 100 + jitter
+        assert b2 >= 200.0  # 50 * 2^2 = 200 + jitter
+        assert b3 >= 400.0  # 50 * 2^3 = 400 + jitter
+        assert b3 > b2 > b1
+
+        # Successful view change
+        vc_res = network.trigger_view_change(target_view=1)
+        assert vc_res["view_change_success"] is True
+        assert vc_res["new_view"] == 1
+        assert vc_res["new_primary"] == "node_1"
+        assert vc_res["quorum_achieved"] is True
+        assert "DEF-003" in vc_res["backoff_policy"]
+
+    def test_multi_node_partition_recovery(self):
+        """Verify partition isolation prevents false consensus, and healing restores full liveness."""
+        network = PBFTConsensusNetwork()
+
+        # Split network into 2 equal halves: {node_0, node_1} and {node_2, node_3}
+        # Neither partition has quorum (requires 3 of 4)
+        network.partition_network([{"node_0", "node_1"}, {"node_2", "node_3"}])
+
+        proposal = {"directive": "URGENT_FREEZE_PARTITION_TEST", "target": "ACC_SPLIT_01"}
+        res_partitioned = network.run_consensus_round(proposal)
+
+        # Quorum cannot be achieved in a 2-2 partition
+        assert res_partitioned["consensus_achieved"] is False
+        assert res_partitioned["committed_nodes_count"] < 3
+
+        # Heal the network partition
+        network.heal_partition()
+
+        # Subsequent consensus round reaches full quorum of 4
+        res_healed = network.run_consensus_round(proposal)
+        assert res_healed["consensus_achieved"] is True
+        assert res_healed["committed_nodes_count"] == 4
+        assert res_healed["quorum_required"] == 3

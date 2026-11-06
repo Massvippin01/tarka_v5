@@ -50,6 +50,9 @@ class ZKProof:
     proving_time_ms: float
     proof_size_bytes: int
     statement_description: str
+    vk_version: str = "v1.0.0-groth16-bn254"
+    verification_key_id: str = "VK-GROTH16-SUTRAM2026-v1"
+    associated_claim_id: Optional[str] = None
 
 
 class ZKThresholdProver:
@@ -88,6 +91,9 @@ class ZKThresholdProver:
         self,
         witness: ZKPrivateWitness,
         public_threshold: float,
+        associated_claim_id: Optional[str] = None,
+        vk_version: str = "v1.0.0-groth16-bn254",
+        verification_key_id: str = "VK-GROTH16-SUTRAM2026-v1",
     ) -> Tuple[ZKProof, ZKPublicInputs]:
         """
         Generates a Zero-Knowledge Proof that sum(private_amounts) <= public_threshold.
@@ -153,6 +159,9 @@ class ZKThresholdProver:
             proving_time_ms=round(elapsed_ms, 3),
             proof_size_bytes=proof_bytes,
             statement_description=f"Proves aggregate batch transactions satisfy regulatory limit <= {public_threshold} without disclosing amounts",
+            vk_version=vk_version,
+            verification_key_id=verification_key_id,
+            associated_claim_id=associated_claim_id,
         )
 
         return proof, pub_inputs
@@ -169,12 +178,23 @@ class ZKThresholdVerifier:
     def verify(
         proof: ZKProof,
         public_inputs: ZKPublicInputs,
+        expected_vk_version: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Verifies the validity of the Zero-Knowledge Proof against the stated public inputs.
         Returns a verification verdict dictionary with performance metrics.
         """
         start_time = time.perf_counter()
+
+        # Check verification key version if explicitly asserted
+        if expected_vk_version is not None and proof.vk_version != expected_vk_version:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+            return {
+                "verified": False,
+                "reason": f"Verification key version mismatch: got {proof.vk_version}, expected {expected_vk_version}",
+                "verification_time_ms": round(elapsed_ms, 3),
+                "proof_id": proof.proof_id,
+            }
 
         # 1. Recompute expected public input digest
         expected_pub_str = f"{public_inputs.public_threshold}:{public_inputs.expected_commitment_root}:{public_inputs.batch_size}:{public_inputs.institution_id}"
@@ -206,6 +226,9 @@ class ZKThresholdVerifier:
             "verified": True,
             "proof_id": proof.proof_id,
             "protocol": proof.protocol,
+            "vk_version": proof.vk_version,
+            "verification_key_id": proof.verification_key_id,
+            "associated_claim_id": proof.associated_claim_id,
             "public_threshold": public_inputs.public_threshold,
             "commitment_root": public_inputs.expected_commitment_root,
             "batch_size": public_inputs.batch_size,

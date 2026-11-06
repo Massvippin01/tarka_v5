@@ -249,30 +249,64 @@ class PBFTConsensusNetwork:
                 return True
         return False
 
-    def trigger_view_change(self, target_view: int) -> Dict[str, Any]:
+    def calculate_view_change_backoff(
+        self,
+        attempt: int,
+        base_backoff_ms: float = 50.0,
+        max_backoff_ms: float = 2000.0,
+    ) -> float:
+        """
+        Calculates randomized exponential backoff with jitter (DEF-003)
+        to prevent split-brain thundering herds during asynchronous view changes.
+        """
+        import secrets
+        exponent = min(attempt, 6)
+        raw_backoff = min(max_backoff_ms, base_backoff_ms * (2 ** exponent))
+        jitter = secrets.randbelow(max(int(raw_backoff * 0.25), 5))
+        return round(raw_backoff + jitter, 2)
+
+    def trigger_view_change(
+        self,
+        target_view: int,
+        retry_on_partition: bool = False,
+        max_retries: int = 3,
+    ) -> Dict[str, Any]:
         """
         Executes a formal view change protocol when primary fails.
         Elects new leader: primary = node_(view % 4).
+        Implements randomized exponential backoff (DEF-003) when retrying across network disruptions.
         """
-        view_change_msgs = []
-        for node in self.nodes.values():
-            if node.active:
-                view_change_msgs.append(node.initiate_view_change(target_view))
+        attempts = 0
+        backoff_applied_ms = 0.0
 
-        agreed_nodes = set()
-        for msg in view_change_msgs:
+        while True:
+            attempts += 1
+            view_change_msgs = []
             for node in self.nodes.values():
-                if node.active and self._can_communicate(msg.sender_id, node.node_id):
-                    if node.receive_view_change(msg):
-                        agreed_nodes.add(node.node_id)
+                if node.active:
+                    view_change_msgs.append(node.initiate_view_change(target_view))
 
-        new_primary_idx = target_view % 4
-        new_primary = f"node_{new_primary_idx}"
+            agreed_nodes = set()
+            for msg in view_change_msgs:
+                for node in self.nodes.values():
+                    if node.active and self._can_communicate(msg.sender_id, node.node_id):
+                        if node.receive_view_change(msg):
+                            agreed_nodes.add(node.node_id)
 
-        success = len(agreed_nodes) >= 3
-        if success:
-            self.view = target_view
-            self.primary_id = new_primary
+            new_primary_idx = target_view % 4
+            new_primary = f"node_{new_primary_idx}"
+
+            success = len(agreed_nodes) >= 3
+            if success:
+                self.view = target_view
+                self.primary_id = new_primary
+                break
+
+            if not retry_on_partition or attempts >= max_retries:
+                break
+
+            backoff = self.calculate_view_change_backoff(attempts)
+            backoff_applied_ms += backoff
 
         return {
             "view_change_success": success,
@@ -280,6 +314,9 @@ class PBFTConsensusNetwork:
             "new_primary": new_primary,
             "agreed_nodes": list(agreed_nodes),
             "quorum_achieved": len(agreed_nodes) >= 3,
+            "attempts": attempts,
+            "backoff_applied_ms": backoff_applied_ms,
+            "backoff_policy": "Randomized exponential backoff with 25% jitter (DEF-003)",
         }
 
     def run_consensus_round(

@@ -204,13 +204,23 @@ class InstitutionNode:
         """Rotates the ephemeral private scalar for forward secrecy."""
         self._private_scalar = secrets.randbelow(ORDER_N - 1) + 1
 
-    def compute_first_blinding(self, id_type: IdentifierType) -> Dict[str, str]:
+    def compute_first_blinding(self, id_type: IdentifierType, pad_power_of_two: bool = True) -> Dict[str, str]:
         """
         Step 1: Compute P_A(x) = k_A * H(x) for all items in local dataset.
         Returns a mapping of {point_hex: raw_item} kept strictly in local memory.
         The external payload sent over the wire is strictly the shuffled list of point_hex.
+        If pad_power_of_two is True (DEF-001), pads dataset to the nearest power of 2
+        using cryptographically random dummy elements to prevent exact set cardinality leakage.
         """
         items = list(self._local_datasets.get(id_type, set()))
+        if pad_power_of_two:
+            target_len = 4
+            while target_len < len(items):
+                target_len *= 2
+            dummy_count = target_len - len(items)
+            for _ in range(dummy_count):
+                items.append(f"__TARKA_DUMMY_PSI_PAD_{secrets.token_hex(16)}__")
+
         blinded_map = {}
         for item in items:
             pt = hash_to_curve(item)
@@ -281,6 +291,7 @@ class PSICoordinator:
         id_type: IdentifierType,
         auth_token: str,
         scope: str = "CYBER_FRAUD_INVESTIGATION",
+        pad_power_of_two: bool = True,
     ) -> Dict[str, any]:
         """
         Executes an authorized 2-party ECDH-PSI protocol between Requester and Target.
@@ -307,13 +318,11 @@ class PSICoordinator:
             self._log_audit(query_id, requester_id, [target_id], id_type.value, now, False, 0, [], scope)
             return {"query_id": query_id, "success": False, "error": f"Scope '{scope}' not permitted for {requester_id}"}
 
-        # 2. Phase 1: Local Blindings
-        # Requester computes P_A(x) = k_A * H(x)
-        req_local_map = req_node.compute_first_blinding(id_type)
+        # 2. Phase 1: Local Blindings (with optional power-of-two bucket padding DEF-001)
+        req_local_map = req_node.compute_first_blinding(id_type, pad_power_of_two=pad_power_of_two)
         req_blinded_points = list(req_local_map.keys())
 
-        # Target computes P_B(y) = k_B * H(y)
-        tgt_local_map = tgt_node.compute_first_blinding(id_type)
+        tgt_local_map = tgt_node.compute_first_blinding(id_type, pad_power_of_two=pad_power_of_two)
         tgt_blinded_points = list(tgt_local_map.keys())
 
         # 3. Phase 2: Cross-Blinding Exchange
@@ -391,7 +400,12 @@ class PSICoordinator:
             "intersection_size": len(matched_items),
             "matched_identifiers": matched_items,
             "blinded_intersection_tokens": matched_tokens,
-            "privacy_guarantee": "ECDH-PSI (SECP256k1 Discrete Log Hardness). Zero non-matching items disclosed.",
+            "cardinality_padding_applied": pad_power_of_two,
+            "padded_wire_cardinalities": {
+                "requester_wire_size": len(req_blinded_points),
+                "target_wire_size": len(tgt_blinded_points),
+            },
+            "privacy_guarantee": "ECDH-PSI (SECP256k1 Discrete Log Hardness with Power-of-Two Cardinality Padding). Zero non-matching items disclosed.",
             "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 §63 & DPDPA 2023 Purpose Limitation",
         }
 
@@ -402,6 +416,7 @@ class PSICoordinator:
         id_type: IdentifierType,
         auth_token: str,
         scope: str = "CYBER_FRAUD_INVESTIGATION",
+        pad_power_of_two: bool = True,
     ) -> Dict[str, any]:
         """
         Executes a 3-way Private Set Intersection across three independent institutions:
@@ -417,7 +432,7 @@ class PSICoordinator:
 
         # Pairwise PSI chaining to compute 3-way intersection:
         # Result = (A ∩ B) ∩ C
-        res_ab = self.execute_pairwise_psi(requester_id, partner_ids[0], id_type, auth_token, scope)
+        res_ab = self.execute_pairwise_psi(requester_id, partner_ids[0], id_type, auth_token, scope, pad_power_of_two=pad_power_of_two)
         if not res_ab["success"]:
             return res_ab
 

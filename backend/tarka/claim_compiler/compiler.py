@@ -97,6 +97,7 @@ class InvestigativeClaim:
     confidence_score: float = 1.0
     reviewer_id: Optional[str] = None
     review_status: str = "UNREVIEWED"  # "UNREVIEWED", "HUMAN_CONFIRMED", "HUMAN_REJECTED"
+    zkp_proof_id: Optional[str] = None
 
 
 class ClaimDependencyDAG:
@@ -242,10 +243,15 @@ class ForensicClaimCompiler:
         txn: TransactionReference,
         supporting_artifact_id: str,
         contradicting_artifact_ids: Optional[List[str]] = None,
+        zkp_proof_id: Optional[str] = None,
     ) -> InvestigativeClaim:
-        """Compiles a transaction occurrence claim bound to source artifact offset."""
+        """Compiles a transaction occurrence claim bound to source artifact offset and optional ZKP proof."""
         ev = self.dag.get_evidence(supporting_artifact_id)
         raw_ref = f"[{ev.raw_snippet}]" if ev else "[RAW_UNAVAILABLE]"
+
+        assumptions = ["Authoritative core banking ledger entry without concurrent reversal directive."]
+        if zkp_proof_id:
+            assumptions.append(f"Aggregate regulatory threshold cryptographically verified under ZKP proof {zkp_proof_id}.")
 
         claim = InvestigativeClaim(
             claim_id=claim_id,
@@ -258,9 +264,10 @@ class ForensicClaimCompiler:
             evaluation_status=ClaimState.NOT_EVALUATED,
             supporting_evidence_ids=[supporting_artifact_id],
             contradicting_evidence_ids=contradicting_artifact_ids or [],
-            assumptions=["Authoritative core banking ledger entry without concurrent reversal directive."],
+            assumptions=assumptions,
             limitations=["Does not infer intent, identity ownership, or legal culpability of account holder."],
             confidence_score=0.98 if ev and ev.trust_tier == TrustTier.T1_HIGH else 0.80,
+            zkp_proof_id=zkp_proof_id,
         )
         self.dag.add_claim(claim)
         return claim

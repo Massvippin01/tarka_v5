@@ -159,6 +159,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
   const [sarvamStatus, setSarvamStatus] = useState<{
     api_configured?: boolean;
+    provider_reachable?: string;
     stt_model?: string;
     tts_model?: string;
     mode?: string;
@@ -979,23 +980,43 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             >
               CASE: {caseId}
             </span>
-            <span
-              style={{
-                fontSize: "11px",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                backgroundColor: "rgba(16, 185, 129, 0.14)",
-                border: "1px solid rgba(16, 185, 129, 0.35)",
-                color: "#34D399",
-                fontFamily: "var(--font-mono)",
-                fontVariantNumeric: "tabular-nums",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <Shield size={10} color="#34D399" /> 🔒 On-Premise Air-Gapped Indic Speech Engine (Local Quantized INT4 ONNX / WebGPU Worker · 0 External API Calls)
-            </span>
+            {sarvamStatus?.api_configured && sarvamStatus?.provider_reachable !== "no" ? (
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(16, 185, 129, 0.14)",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  color: "#34D399",
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Radio size={10} color="#34D399" /> 🟢 Live Cloud (Sarvam AI API · Saaras STT / Bulbul TTS)
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(59, 130, 246, 0.14)",
+                  border: "1px solid rgba(59, 130, 246, 0.35)",
+                  color: "#93C5FD",
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Shield size={10} color="#93C5FD" /> 🔵 Deterministic Offline Mode (Local Air-Gapped Engine · 0 External Calls)
+              </span>
+            )}
           </div>
           <button
             onClick={() => {

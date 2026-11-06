@@ -152,3 +152,19 @@ class TestWorkstreamA1ClaimCompiler:
         assert brief["supported_count"] == 1
         assert "Section 63 Bharatiya Sakshya Adhiniyam" in brief["statutory_declaration"]
 
+    def test_zkp_claim_linkage_and_metadata(self):
+        """Verify transaction claims can bind to cryptographic Zero-Knowledge Proofs."""
+        compiler = ForensicClaimCompiler()
+        ev = EvidenceItem("ART-BANK-01", "PDF", "hash1", 0, 50, "statement snippet", 1.0, TrustTier.T1_HIGH)
+        compiler.ingest_evidence_item(ev)
+
+        txn = TransactionReference("TX-REG-01", 75000.0, "INR", 1700000000.0, "ENT-SRC", "ENT-DST")
+        claim = compiler.compile_transaction_claim(
+            claim_id="CLM-TXN-ZKP-01",
+            txn=txn,
+            supporting_artifact_id="ART-BANK-01",
+            zkp_proof_id="ZKP-8812A4F9",
+        )
+
+        assert claim.zkp_proof_id == "ZKP-8812A4F9"
+        assert any("ZKP proof ZKP-8812A4F9" in assump for assump in claim.assumptions)

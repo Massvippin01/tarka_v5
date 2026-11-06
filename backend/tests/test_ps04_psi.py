@@ -180,3 +180,70 @@ class TestWorkstreamB1PSI:
         assert last["authorized"] is True
         assert last["intersection_size"] == 1
 
+    def test_cardinality_padding_power_of_two_bucket_def_001(self):
+        """Verify DEF-001 mitigation: power-of-two bucket padding hides raw dataset size."""
+        coord = PSICoordinator()
+        cfg_a = InstitutionConfig("INST_A", "Bank A", "IN", {"INVESTIGATION"}, "TOK_A")
+        cfg_b = InstitutionConfig("INST_B", "Bank B", "IN", {"INVESTIGATION"}, "TOK_B")
+
+        n_a = InstitutionNode(cfg_a)
+        n_b = InstitutionNode(cfg_b)
+
+        # Node A has 3 items (padded to 4 = 2^2)
+        n_a.add_records(IdentifierType.MSISDN, ["+919000000001", "+919000000002", "+919876543210"])
+        # Node B has 2 items (padded to 4 = 2^2)
+        n_b.add_records(IdentifierType.MSISDN, ["+918000000001", "+919876543210"])
+
+        coord.register_institution(n_a)
+        coord.register_institution(n_b)
+
+        result = coord.execute_pairwise_psi(
+            "INST_A",
+            "INST_B",
+            IdentifierType.MSISDN,
+            "TOK_A",
+            "INVESTIGATION",
+            pad_power_of_two=True,
+        )
+
+        assert result["success"] is True
+        assert result["cardinality_padding_applied"] is True
+        # Wire size should be padded to 4
+        assert result["padded_wire_cardinalities"]["requester_wire_size"] == 4
+        assert result["padded_wire_cardinalities"]["target_wire_size"] == 4
+        # Exactly the 1 true match is discovered; zero dummy elements leaked
+        assert result["intersection_size"] == 1
+        assert result["matched_identifiers"] == ["+919876543210"]
+        for m in result["matched_identifiers"]:
+            assert not m.startswith("__TARKA_DUMMY_PSI_PAD_")
+
+    def test_unpadded_mode_exact_wire_size(self):
+        """Verify unpadded mode delivers exact wire cardinalities when explicitly requested."""
+        coord = PSICoordinator()
+        cfg_a = InstitutionConfig("INST_A", "Bank A", "IN", {"INVESTIGATION"}, "TOK_A")
+        cfg_b = InstitutionConfig("INST_B", "Bank B", "IN", {"INVESTIGATION"}, "TOK_B")
+
+        n_a = InstitutionNode(cfg_a)
+        n_b = InstitutionNode(cfg_b)
+
+        n_a.add_records(IdentifierType.PAN, ["ABCDE1111A", "ABCDE2222B", "BZCPK8812M"])
+        n_b.add_records(IdentifierType.PAN, ["BZCPK8812M"])
+
+        coord.register_institution(n_a)
+        coord.register_institution(n_b)
+
+        result = coord.execute_pairwise_psi(
+            "INST_A",
+            "INST_B",
+            IdentifierType.PAN,
+            "TOK_A",
+            "INVESTIGATION",
+            pad_power_of_two=False,
+        )
+
+        assert result["success"] is True
+        assert result["cardinality_padding_applied"] is False
+        assert result["padded_wire_cardinalities"]["requester_wire_size"] == 3
+        assert result["padded_wire_cardinalities"]["target_wire_size"] == 1
+        assert result["intersection_size"] == 1
+        assert result["matched_identifiers"] == ["BZCPK8812M"]
