@@ -291,23 +291,41 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<0.5 | 1 | 2>(1);
 
-  // Measure canvas using ResizeObserver
+  const [containerWidth, setContainerWidth] = useState<number>(960);
+
+  // Measure outer container using ResizeObserver to guarantee 100% in-page auto-fit
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setDimensions({
-            width: Math.max(980, Math.floor(width)),
-            height: isFullscreen ? Math.max(620, Math.floor(height)) : Math.max(560, Math.floor(height)),
-          });
+        if (width > 0) {
+          setContainerWidth(Math.floor(width));
+          if (isFullscreen) {
+            setDimensions({
+              width: Math.max(1100, Math.floor(width)),
+              height: Math.max(620, Math.floor(height) - 130),
+            });
+          } else {
+            setDimensions({
+              width: 960,
+              height: 500,
+            });
+          }
         }
       }
     });
-    observer.observe(canvasRef.current);
+    observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [viewMode, isFullscreen]);
+
+  // Dynamic in-page auto-fit scale: guarantees all 3 rows of nodes fit 100% inside container with zero scrollbars
+  const inPageFitScale = useMemo(() => {
+    if (isFullscreen) return zoomLevel;
+    if (!containerWidth || containerWidth >= 960) return zoomLevel;
+    const autoScale = Math.min(1, Math.max(0.68, (containerWidth - 8) / 960));
+    return Math.round(autoScale * zoomLevel * 100) / 100;
+  }, [isFullscreen, containerWidth, zoomLevel]);
 
   // Determine whether cashflow nodes/edges should be included
   const includeCashFlowNodes = edgeFilter === "cashflow" || edgeFilter === "all";
@@ -537,12 +555,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         bottom: isFullscreen ? 0 : undefined,
         height: isFullscreen ? "100vh" : undefined,
         zIndex: isFullscreen ? 99999 : 1,
-        background: isFullscreen ? "#0F172A" : "#FAFCFF",
+        background: isFullscreen ? "#FAFCFF" : "#FAFCFF",
         overflow: isFullscreen ? "hidden" : "visible",
       }}
     >
       {/* =========================================================================
-          FULLSCREEN REPLAY COMMAND HEADER (WHEN IN CINEMATIC FULLSCREEN MODE)
+          FULLSCREEN REPLAY COMMAND HEADER (CRISP WHITE SAAS THEME)
           ========================================================================= */}
       {isFullscreen && (
         <div
@@ -550,14 +568,14 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           style={{
             display: "flex",
             flexDirection: "column",
-            background: "#0B1120",
-            borderBottom: "1px solid #1E293B",
+            background: "#FFFFFF",
+            borderBottom: "1px solid #E2E8F0",
             padding: "8px 16px",
             gap: "8px",
             zIndex: 100000,
             flexShrink: 0,
-            color: "#F8FAFC",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            color: "#0F172A",
+            boxShadow: "0 2px 10px rgba(15, 23, 42, 0.05)",
           }}
         >
           {/* Top Bar: Title + Big Play Button + Controls + Layer Filters + Zoom + Exit */}
@@ -588,25 +606,25 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               </div>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 900, color: "#FFFFFF", letterSpacing: "0.4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 900, color: "#0F172A", letterSpacing: "0.2px" }}>
                     FULLSCREEN INVESTIGATION REPLAY
                   </span>
                   <span
                     style={{
                       fontSize: "9px",
                       fontWeight: 800,
-                      background: "#1E293B",
-                      border: "1px solid #475569",
-                      color: "#93C5FD",
+                      background: "#EEF2FF",
+                      border: "1px solid #C7D2FE",
+                      color: "#4338CA",
                       padding: "1px 5px",
                       borderRadius: "3px",
                       fontFamily: "var(--font-mono)",
                     }}
                   >
-                    CASE-2026-001
+                    {activeCaseId || "CASE-2026-001"}
                   </span>
                 </div>
-                <div style={{ fontSize: "9.5px", color: "#94A3B8" }}>
+                <div style={{ fontSize: "9.5px", color: "#64748B" }}>
                   Evidence Network & Chronological Fund Flow Visualization (DoT Clause 39.20 · BSA §63)
                 </div>
               </div>
@@ -618,8 +636,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                background: "#1E293B",
-                border: "1px solid #334155",
+                background: "#F8FAFC",
+                border: "1px solid #CBD5E1",
                 borderRadius: "8px",
                 padding: "4px 10px",
               }}
@@ -633,7 +651,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: replayStep <= 0 ? "#475569" : "#CBD5E1",
+                  color: replayStep <= 0 ? "#CBD5E1" : "#475569",
                   cursor: replayStep <= 0 ? "not-allowed" : "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -663,8 +681,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   color: "#FFFFFF",
                   cursor: "pointer",
                   boxShadow: isPlaying
-                    ? "0 0 12px rgba(239,68,68,0.4)"
-                    : "0 0 12px rgba(16,185,129,0.4)",
+                    ? "0 2px 8px rgba(239,68,68,0.3)"
+                    : "0 2px 8px rgba(16,185,129,0.3)",
                   transition: "all 0.15s ease-out",
                 }}
               >
@@ -681,7 +699,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: replayStep >= 5 ? "#475569" : "#CBD5E1",
+                  color: replayStep >= 5 ? "#CBD5E1" : "#475569",
                   cursor: replayStep >= 5 ? "not-allowed" : "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -699,7 +717,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "#94A3B8",
+                  color: "#64748B",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -727,12 +745,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       onClick={() => handleJumpToStep(st.step)}
                       style={{
                         fontSize: "10px",
-                        fontWeight: isCurrent ? 800 : 500,
+                        fontWeight: isCurrent ? 800 : 600,
                         padding: "3px 7px",
                         borderRadius: "4px",
-                        border: isCurrent ? "1px solid #38BDF8" : "1px solid #334155",
-                        background: isCurrent ? "#0284C7" : "#0F172A",
-                        color: isCurrent ? "#FFFFFF" : "#94A3B8",
+                        border: isCurrent ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
+                        background: isCurrent ? "#4F46E5" : "#FFFFFF",
+                        color: isCurrent ? "#FFFFFF" : "#475569",
                         cursor: "pointer",
                       }}
                     >
@@ -746,7 +764,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               <div
                 style={{
                   display: "inline-flex",
-                  background: "#0F172A",
+                  background: "#F1F5F9",
+                  border: "1px solid #E2E8F0",
                   borderRadius: "4px",
                   padding: "2px",
                   marginLeft: "4px",
@@ -763,8 +782,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       padding: "2px 5px",
                       borderRadius: "3px",
                       border: "none",
-                      background: playbackSpeed === spd ? "#334155" : "transparent",
-                      color: playbackSpeed === spd ? "#38BDF8" : "#64748B",
+                      background: playbackSpeed === spd ? "#EEF2FF" : "transparent",
+                      color: playbackSpeed === spd ? "#4338CA" : "#64748B",
                       cursor: "pointer",
                     }}
                   >
@@ -795,12 +814,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       onClick={() => onEdgeFilterChange(tab.id)}
                       style={{
                         fontSize: "9.5px",
-                        fontWeight: isActive ? 800 : 500,
+                        fontWeight: isActive ? 800 : 600,
                         padding: "3px 6px",
                         borderRadius: "4px",
-                        border: isActive ? "1px solid #38BDF8" : "1px solid #334155",
-                        background: isActive ? "#1E293B" : "transparent",
-                        color: isActive ? "#38BDF8" : "#94A3B8",
+                        border: isActive ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
+                        background: isActive ? "#EEF2FF" : "#FFFFFF",
+                        color: isActive ? "#4338CA" : "#475569",
                         cursor: "pointer",
                       }}
                     >
@@ -815,8 +834,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  background: "#1E293B",
-                  border: "1px solid #334155",
+                  background: "#F8FAFC",
+                  border: "1px solid #CBD5E1",
                   borderRadius: "5px",
                   padding: "2px 4px",
                   gap: "3px",
@@ -829,7 +848,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#CBD5E1",
+                    color: "#475569",
                     cursor: "pointer",
                     padding: "2px",
                     display: "inline-flex",
@@ -842,7 +861,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     fontSize: "10px",
                     fontWeight: 700,
                     fontFamily: "var(--font-mono)",
-                    color: "#94A3B8",
+                    color: "#334155",
                     padding: "0 2px",
                   }}
                 >
@@ -855,7 +874,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#CBD5E1",
+                    color: "#475569",
                     cursor: "pointer",
                     padding: "2px",
                     display: "inline-flex",
@@ -869,11 +888,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     onClick={handleResetZoom}
                     style={{
                       fontSize: "9px",
-                      color: "#38BDF8",
+                      color: "#4F46E5",
                       background: "transparent",
                       border: "none",
                       cursor: "pointer",
                       padding: "0 2px",
+                      fontWeight: 700,
                     }}
                   >
                     Reset
@@ -884,7 +904,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               {/* EXIT FULLSCREEN / MINIMIZE BUTTON */}
               <button
                 type="button"
-                onClick={() => setIsFullscreen(false)}
+                onClick={() => {
+                  setIsFullscreen(false);
+                  setZoomLevel(1);
+                }}
                 data-testid="exit-fullscreen-btn"
                 style={{
                   display: "inline-flex",
@@ -894,9 +917,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   fontWeight: 800,
                   padding: "5px 10px",
                   borderRadius: "5px",
-                  border: "1px solid #475569",
-                  background: "#1E293B",
-                  color: "#F1F5F9",
+                  border: "1px solid #CBD5E1",
+                  background: "#F1F5F9",
+                  color: "#0F172A",
                   cursor: "pointer",
                 }}
               >
@@ -912,9 +935,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              background: "#1E293B",
+              background: "#F8FAFC",
+              border: "1px solid #E2E8F0",
               borderRadius: "6px",
-              padding: "5px 12px",
+              padding: "6px 14px",
               gap: "12px",
               fontSize: "11px",
             }}
@@ -927,7 +951,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   gap: "4px",
                   fontSize: "10px",
                   fontWeight: 800,
-                  background: "#0284C7",
+                  background: "#0F172A",
                   color: "#FFFFFF",
                   padding: "2px 6px",
                   borderRadius: "4px",
@@ -939,16 +963,16 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 <span style={{ opacity: 0.8 }}>({currentStepData.timeLabel})</span>
               </span>
 
-              <span style={{ fontWeight: 800, color: "#FFFFFF" }}>{currentStepData.title}</span>
+              <span style={{ fontWeight: 800, color: "#0F172A" }}>{currentStepData.title}</span>
 
               {currentStepData.amount !== "—" && (
                 <span
                   style={{
                     fontSize: "10.5px",
                     fontWeight: 900,
-                    background: "#065F46",
-                    color: "#6EE7B7",
-                    border: "1px solid #059669",
+                    background: "#ECFDF5",
+                    color: "#047857",
+                    border: "1px solid #A7F3D0",
                     padding: "1px 7px",
                     borderRadius: "4px",
                     fontFamily: "var(--font-mono)",
@@ -960,12 +984,13 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ color: "#CBD5E1", fontSize: "10.5px" }}>{currentStepData.headline}</span>
+              <span style={{ color: "#475569", fontSize: "10.5px" }}>{currentStepData.headline}</span>
               <span
                 style={{
                   fontSize: "9px",
-                  color: "#94A3B8",
-                  background: "#0F172A",
+                  color: "#475569",
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
                   padding: "2px 6px",
                   borderRadius: "3px",
                   fontFamily: "var(--font-mono)",
@@ -1708,33 +1733,36 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       )}
 
       {/* =========================================================================
-          VIEW MODE 1: PURE SVG + HTML TOPOLOGY CANVAS
+          VIEW MODE 1: PURE SVG + HTML TOPOLOGY CANVAS (AUTO-FIT & WHITE THEME)
           ========================================================================= */}
       {viewMode === "graph" && (!isMinimized || isFullscreen) && (
         <div
           ref={canvasRef}
           style={{
-            height: isFullscreen ? "calc(100vh - 125px)" : 580,
-            minHeight: isFullscreen ? "calc(100vh - 125px)" : 580,
+            height: isFullscreen ? "calc(100vh - 130px)" : Math.round(505 * inPageFitScale),
+            minHeight: isFullscreen ? "calc(100vh - 130px)" : Math.round(505 * inPageFitScale),
+            maxHeight: isFullscreen ? undefined : Math.round(505 * inPageFitScale),
             position: "relative",
             width: "100%",
-            overflowX: "auto",
-            overflowY: "hidden",
+            overflowX: isFullscreen ? "auto" : "hidden",
+            overflowY: isFullscreen ? "auto" : "hidden",
             scrollbarWidth: "thin",
             flex: isFullscreen ? "1 1 auto" : undefined,
-            background: isFullscreen ? "#0B1120" : "#FAFCFF",
+            background: "#FAFCFF",
           }}
         >
           {/* Zoom & Scaling Wrapper */}
           <div
             style={{
-              width: "100%",
+              width: layout.width,
               minWidth: layout.width,
-              height: "100%",
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: isFullscreen ? "center center" : "left top",
+              height: layout.height,
+              minHeight: layout.height,
+              transform: `scale(${inPageFitScale})`,
+              transformOrigin: isFullscreen ? "center top" : "left top",
               transition: "transform 0.15s ease-out",
               position: "relative",
+              margin: isFullscreen ? "0 auto" : undefined,
             }}
           >
             {/* Background Grid Pattern & SVG Edges */}

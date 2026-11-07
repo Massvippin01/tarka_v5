@@ -55,10 +55,10 @@ export function layoutNetwork(
   const width = Math.max(960, W);
   const height = Math.max(500, H);
 
-  // Row Y-coordinates (fractions: .14H, .50H, .84H)
+  // Row Y-coordinates (fractions: .14H, .50H, .81H) ensuring Row C has ample bottom clearance
   const yRowA = Math.round(0.14 * height);
   const yRowB = Math.round(0.50 * height);
-  const yRowC = Math.round(0.84 * height);
+  const yRowC = Math.round(0.81 * height);
 
   // 1. Row A Nodes: Tower (.12W), Hero (.50W), C2 (.88W)
   const cxTower = Math.round(0.12 * width);
