@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Clock, Layers, GitCommit, AlertOctagon, Sliders } from "lucide-react";
+import { Clock, Layers, GitCommit, AlertOctagon, Sliders, Copy, Check } from "lucide-react";
 
 export interface LoomTrackEvent {
   id: string;
@@ -60,7 +60,7 @@ const DEFAULT_LOOM_EVENTS: LoomTrackEvent[] = [
     confidence: 1.0,
     artifactId: "ART-UPI-TX-001",
     artifactHash: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-    details: { rrn: "428190019281", amount: 184000, remitter: "sunita@okhdfc", beneficiary: "mule1@ybl" },
+    details: { rrn: "428190019281", amount: "INR 1,84,000", remitter: "sunita@okhdfc", beneficiary: "mule1@ybl" },
   },
   {
     id: "LOOM-EVT-004",
@@ -84,7 +84,7 @@ const DEFAULT_LOOM_EVENTS: LoomTrackEvent[] = [
     confidence: 1.0,
     artifactId: "ART-UPI-TX-002",
     artifactHash: "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
-    details: { splits: ["INR 60,000", "INR 60,000", "INR 64,000"], latency_seconds: 209 },
+    details: { splits: "₹60,000 + ₹60,000 + ₹64,000", latency_seconds: "209s" },
   },
   {
     id: "LOOM-EVT-006",
@@ -109,6 +109,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
   const [selectedTrack, setSelectedTrack] = useState<string>("ALL");
   const [activeEvent, setActiveEvent] = useState<LoomTrackEvent | null>(events[0] || null);
   const [showDriftOverlay, setShowDriftOverlay] = useState<boolean>(true);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const tracks: LoomTrackEvent["track"][] = ["COMPLAINT", "TELECOM", "BANKING", "DEVICE", "CAS_INGEST"];
 
@@ -117,20 +118,26 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
     return events.filter((e) => e.track === selectedTrack);
   }, [events, selectedTrack]);
 
-  const getTrackColor = (track: LoomTrackEvent["track"]) => {
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
+
+  const getTrackBadge = (track: LoomTrackEvent["track"]) => {
     switch (track) {
-      case "BANKING":
-        return "#C8F751"; // Signal Lime
-      case "TELECOM":
-        return "#527C9A"; // Reference Blue
-      case "DEVICE":
-        return "#99F6E4"; // Teal
       case "COMPLAINT":
-        return "#F59E0B"; // Amber
+        return { bg: "#FFFBEB", border: "#FDE68A", text: "#B45309", dot: "#D97706" };
+      case "TELECOM":
+        return { bg: "#EFF6FF", border: "#BFDBFE", text: "#1D4ED8", dot: "#2563EB" };
+      case "BANKING":
+        return { bg: "#ECFDF5", border: "#A7F3D0", text: "#047857", dot: "#059669" };
+      case "DEVICE":
+        return { bg: "#F0FDFA", border: "#99F6E4", text: "#0F766E", dot: "#0D9488" };
       case "CAS_INGEST":
-        return "#10B981"; // Emerald
+        return { bg: "#FAF5FF", border: "#DDD6FE", text: "#6D28D9", dot: "#7C3AED" };
       default:
-        return "#6B7770";
+        return { bg: "#F1F5F9", border: "#CBD5E1", text: "#475569", dot: "#64748B" };
     }
   };
 
@@ -138,117 +145,179 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
     <div
       className={`temporal-evidence-loom ${className}`}
       style={{
-        background: "var(--surface-primary, #152220)",
-        border: "1px solid var(--border-structural, rgba(107, 119, 112, 0.35))",
-        borderRadius: "10px",
+        background: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        borderRadius: "8px",
         padding: "16px",
-        color: "var(--text-primary, #F4F6F4)",
-        fontFamily: "var(--font-sans, sans-serif)",
+        color: "#0F172A",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--border-subtle, rgba(107, 119, 112, 0.18))", paddingBottom: "12px" }}>
+      {/* 1. Header Bar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+          borderBottom: "1px solid #E2E8F0",
+          paddingBottom: "12px",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Layers size={18} style={{ color: "var(--fieldnote-signal-lime, #C8F751)" }} />
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, letterSpacing: "0.02em" }}>
+            <Layers size={18} color="#4F46E5" />
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.01em", color: "#0F172A" }}>
               TEMPORAL EVIDENCE LOOM
             </h3>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
+                fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
-                background: "rgba(200, 247, 81, 0.12)",
-                color: "#C8F751",
-                border: "1px solid rgba(200, 247, 81, 0.32)",
+                background: "#EEF2FF",
+                color: "#4F46E5",
+                border: "1px solid #C7D2FE",
                 fontFamily: "var(--font-mono, monospace)",
               }}
             >
               MULTI-SOURCE TRACK CORRELATION
             </span>
           </div>
-          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary, #A3B1AA)" }}>
-            Cross-institution synchronized multi-track temporal alignment, dual timestamps, and clock drift isolation for Case <span style={{ color: "#C8F751", fontFamily: "var(--font-mono, monospace)" }}>{caseId}</span>.
+          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.4 }}>
+            Cross-institution synchronized multi-track temporal alignment, dual timestamps, and clock drift isolation for Case{" "}
+            <span style={{ color: "#4F46E5", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
+              {caseId}
+            </span>.
           </p>
         </div>
 
         {/* Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button
+            type="button"
             onClick={() => setShowDriftOverlay(!showDriftOverlay)}
             style={{
-              padding: "4px 10px",
+              padding: "5px 10px",
               fontSize: "11px",
-              background: showDriftOverlay ? "rgba(82, 124, 154, 0.2)" : "transparent",
-              color: showDriftOverlay ? "#527C9A" : "var(--text-muted, #6B7770)",
-              border: "1px solid rgba(82, 124, 154, 0.4)",
-              borderRadius: "4px",
+              fontWeight: 600,
+              background: showDriftOverlay ? "#EFF6FF" : "#F8FAFC",
+              color: showDriftOverlay ? "#1D4ED8" : "#64748B",
+              border: `1px solid ${showDriftOverlay ? "#BFDBFE" : "#CBD5E1"}`,
+              borderRadius: "5px",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "4px",
+              gap: "5px",
+              transition: "all 0.12s ease",
             }}
           >
-            <Sliders size={12} /> {showDriftOverlay ? "Hide Clock Offsets" : "Show Clock Offsets"}
+            <Sliders size={12} />
+            {showDriftOverlay ? "Hide Clock Offsets" : "Show Clock Offsets"}
           </button>
-          <div style={{ display: "flex", gap: "4px", background: "rgba(0,0,0,0.2)", padding: "2px", borderRadius: "6px" }}>
-            {["ALL", ...tracks].map((t) => (
-              <button
-                key={t}
-                onClick={() => setSelectedTrack(t)}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  border: "none",
-                  borderRadius: "4px",
-                  background: selectedTrack === t ? "var(--fieldnote-signal-lime, #C8F751)" : "transparent",
-                  color: selectedTrack === t ? "#101918" : "var(--text-secondary, #A3B1AA)",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-mono, monospace)",
-                }}
-              >
-                {t}
-              </button>
-            ))}
+
+          <div
+            style={{
+              display: "flex",
+              gap: "3px",
+              background: "#F1F5F9",
+              padding: "3px",
+              borderRadius: "6px",
+            }}
+          >
+            {["ALL", ...tracks].map((t) => {
+              const isSelected = selectedTrack === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setSelectedTrack(t)}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "10px",
+                    fontWeight: isSelected ? 700 : 500,
+                    border: isSelected ? "1px solid #CBD5E1" : "1px solid transparent",
+                    borderRadius: "4px",
+                    background: isSelected ? "#FFFFFF" : "transparent",
+                    color: isSelected ? "#4F46E5" : "#64748B",
+                    cursor: "pointer",
+                    boxShadow: isSelected ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                    fontFamily: "var(--font-mono, monospace)",
+                    transition: "all 0.12s ease",
+                  }}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Multi-Track Canvas */}
+      {/* 2. Main Multi-Track Canvas & Inspector Layout */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "16px" }}>
-        {/* Tracks Column */}
+        {/* Left Column: Track Lanes */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {tracks.map((trackName) => {
             const trackEvts = filteredEvents.filter((e) => e.track === trackName);
             if (selectedTrack !== "ALL" && selectedTrack !== trackName) return null;
 
+            const badge = getTrackBadge(trackName);
+
             return (
               <div
                 key={trackName}
                 style={{
-                  background: "rgba(0, 0, 0, 0.2)",
-                  border: "1px solid rgba(107, 119, 112, 0.25)",
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
                   borderRadius: "6px",
-                  padding: "8px 12px",
+                  padding: "10px 12px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                {/* Track Lane Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "8px",
+                  }}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span
                       style={{
                         width: "8px",
                         height: "8px",
                         borderRadius: "50%",
-                        background: getTrackColor(trackName),
+                        background: badge.dot,
                       }}
                     />
-                    <span style={{ fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mono, monospace)", color: getTrackColor(trackName) }}>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        padding: "1px 6px",
+                        borderRadius: "4px",
+                        background: badge.bg,
+                        color: badge.text,
+                        border: `1px solid ${badge.border}`,
+                        fontFamily: "var(--font-mono, monospace)",
+                      }}
+                    >
                       {trackName} TRACK
                     </span>
                   </div>
-                  <span style={{ fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      color: "#64748B",
+                      fontFamily: "var(--font-mono, monospace)",
+                    }}
+                  >
                     {trackEvts.length} observation{trackEvts.length === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -256,7 +325,14 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                 {/* Track Items */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {trackEvts.length === 0 ? (
-                    <div style={{ fontSize: "11px", color: "var(--text-muted, #6B7770)", fontStyle: "italic", padding: "4px 0" }}>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#94A3B8",
+                        fontStyle: "italic",
+                        padding: "6px 4px",
+                      }}
+                    >
                       No events registered on this track for current filter window.
                     </div>
                   ) : (
@@ -273,29 +349,49 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            background: isSelected ? "rgba(200, 247, 81, 0.14)" : "rgba(255, 255, 255, 0.03)",
-                            border: isSelected
-                              ? "1px solid rgba(200, 247, 81, 0.5)"
+                            background: isSelected
+                              ? "#EEF2FF"
                               : evt.hasContradiction
-                              ? "1px solid rgba(182, 91, 72, 0.4)"
-                              : "1px solid rgba(255, 255, 255, 0.05)",
-                            borderRadius: "4px",
-                            padding: "6px 10px",
+                              ? "#FFF1F2"
+                              : "#FFFFFF",
+                            border: isSelected
+                              ? "1px solid #818CF8"
+                              : evt.hasContradiction
+                              ? "1px solid #FECDD3"
+                              : "1px solid #E2E8F0",
+                            borderRadius: "5px",
+                            padding: "8px 10px",
                             cursor: "pointer",
+                            boxShadow: isSelected
+                              ? "0 1px 3px rgba(79, 70, 229, 0.15)"
+                              : "0 1px 2px rgba(0,0,0,0.02)",
                             transition: "all 0.15s ease",
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {evt.hasContradiction ? (
-                              <AlertOctagon size={13} style={{ color: "#B65B48" }} />
+                              <AlertOctagon size={14} color="#E11D48" />
                             ) : (
-                              <GitCommit size={13} style={{ color: getTrackColor(evt.track) }} />
+                              <GitCommit size={14} color={isSelected ? "#4F46E5" : badge.dot} />
                             )}
                             <div>
-                              <div style={{ fontSize: "12px", fontWeight: 600, color: isSelected ? "#C8F751" : "inherit" }}>
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  color: isSelected ? "#4F46E5" : "#0F172A",
+                                }}
+                              >
                                 {evt.title}
                               </div>
-                              <div style={{ fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                              <div
+                                style={{
+                                  fontSize: "10px",
+                                  color: "#64748B",
+                                  fontFamily: "var(--font-mono, monospace)",
+                                  marginTop: "2px",
+                                }}
+                              >
                                 Source: {evt.sourceTimestamp}
                               </div>
                             </div>
@@ -306,14 +402,20 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                               <span
                                 style={{
                                   fontSize: "10px",
+                                  fontWeight: 700,
                                   padding: "2px 6px",
-                                  borderRadius: "3px",
-                                  background: evt.clockOffsetMs > 60000 ? "rgba(182, 91, 72, 0.2)" : "rgba(82, 124, 154, 0.2)",
-                                  color: evt.clockOffsetMs > 60000 ? "#B65B48" : "#527C9A",
-                                  border: evt.clockOffsetMs > 60000 ? "1px solid rgba(182, 91, 72, 0.4)" : "1px solid rgba(82, 124, 154, 0.3)",
+                                  borderRadius: "4px",
+                                  background: evt.clockOffsetMs > 60000 ? "#FFF1F2" : "#F1F5F9",
+                                  color: evt.clockOffsetMs > 60000 ? "#BE123C" : "#475569",
+                                  border: `1px solid ${
+                                    evt.clockOffsetMs > 60000 ? "#FECDD3" : "#CBD5E1"
+                                  }`,
                                 }}
                               >
-                                Δ {evt.clockOffsetMs >= 1000 ? `${(evt.clockOffsetMs / 1000).toFixed(1)}s` : `${evt.clockOffsetMs}ms`}
+                                Δ{" "}
+                                {evt.clockOffsetMs >= 1000
+                                  ? `${(evt.clockOffsetMs / 1000).toFixed(1)}s`
+                                  : `${evt.clockOffsetMs}ms`}
                               </span>
                             </div>
                           )}
@@ -327,11 +429,11 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
           })}
         </div>
 
-        {/* Selected Event Detail & Dual-Timestamp Inspector */}
+        {/* Right Column: Selected Event Detail & Dual-Timestamp Inspector */}
         <div
           style={{
-            background: "rgba(0, 0, 0, 0.3)",
-            border: "1px solid var(--border-structural, rgba(107, 119, 112, 0.35))",
+            background: "#F8FAFC",
+            border: "1px solid #E2E8F0",
             borderRadius: "6px",
             padding: "14px",
             display: "flex",
@@ -341,45 +443,91 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
         >
           {activeEvent ? (
             <>
-              <div style={{ borderBottom: "1px solid rgba(107, 119, 112, 0.25)", paddingBottom: "10px" }}>
+              {/* Event Header */}
+              <div style={{ borderBottom: "1px solid #E2E8F0", paddingBottom: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span
                     style={{
                       fontSize: "10px",
+                      fontWeight: 700,
                       padding: "2px 6px",
                       borderRadius: "3px",
-                      background: "rgba(200, 247, 81, 0.15)",
-                      color: "#C8F751",
+                      background: getTrackBadge(activeEvent.track).bg,
+                      color: getTrackBadge(activeEvent.track).text,
+                      border: `1px solid ${getTrackBadge(activeEvent.track).border}`,
                       fontFamily: "var(--font-mono, monospace)",
                     }}
                   >
                     {activeEvent.track} TRACK
                   </span>
-                  <span style={{ fontSize: "11px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#64748B",
+                      fontFamily: "var(--font-mono, monospace)",
+                    }}
+                  >
                     {activeEvent.id}
                   </span>
                 </div>
-                <h4 style={{ margin: "8px 0 4px", fontSize: "13px", fontWeight: 700 }}>
+                <h4 style={{ margin: "8px 0 2px", fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
                   {activeEvent.title}
                 </h4>
               </div>
 
               {/* Dual Timestamps */}
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "10px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", marginBottom: "6px" }}>
-                  DUAL-TIMESTAMP SYNCHRONIZATION
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "6px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Dual-Timestamp Synchronization
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontFamily: "var(--font-mono, monospace)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                    fontSize: "11px",
+                    fontFamily: "var(--font-mono, monospace)",
+                  }}
+                >
                   <div>
-                    <span style={{ color: "var(--text-muted, #6B7770)" }}>Source Event (Wall): </span>
-                    <span style={{ color: "#F4F6F4" }}>{activeEvent.sourceTimestamp}</span>
+                    <span style={{ color: "#64748B" }}>Source Event (Wall): </span>
+                    <strong style={{ color: "#0F172A" }}>{activeEvent.sourceTimestamp}</strong>
                   </div>
                   <div>
-                    <span style={{ color: "var(--text-muted, #6B7770)" }}>Ingest / Received: </span>
-                    <span style={{ color: "#99F6E4" }}>{activeEvent.receivedTimestamp}</span>
+                    <span style={{ color: "#64748B" }}>Ingest / Received: </span>
+                    <strong style={{ color: "#0D9488" }}>{activeEvent.receivedTimestamp}</strong>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#527C9A" }}>
-                    <Clock size={11} /> Clock Drift / Offset: <strong>+{activeEvent.clockOffsetMs} ms</strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      color: "#2563EB",
+                      marginTop: "2px",
+                      paddingTop: "4px",
+                      borderTop: "1px dashed #E2E8F0",
+                    }}
+                  >
+                    <Clock size={11} />
+                    <span>
+                      Clock Offset: <strong>+{activeEvent.clockOffsetMs} ms</strong>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -388,50 +536,148 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
               {activeEvent.hasContradiction && (
                 <div
                   style={{
-                    background: "rgba(182, 91, 72, 0.12)",
-                    border: "1px solid rgba(182, 91, 72, 0.35)",
-                    borderRadius: "4px",
+                    background: "#FFF1F2",
+                    border: "1px solid #FECDD3",
+                    borderRadius: "5px",
                     padding: "10px",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#B65B48", fontSize: "11px", fontWeight: 700 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      color: "#BE123C",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
                     <AlertOctagon size={13} /> TEMPORAL CONTRADICTION DETECTED
                   </div>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#F4F6F4" }}>
+                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9F1239", lineHeight: 1.4 }}>
                     {activeEvent.contradictionNote}
                   </p>
                 </div>
               )}
 
               {/* Cryptographic Lineage Anchor */}
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)" }}>
-                  CRYPTOGRAPHIC PROVENANCE ANCHOR
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Cryptographic Provenance Anchor
                 </div>
-                <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "10px", wordBreak: "break-all", background: "rgba(0,0,0,0.3)", padding: "6px", borderRadius: "3px" }}>
-                  <span style={{ color: "#C8F751" }}>Artifact:</span> {activeEvent.artifactId}
-                  <br />
-                  <span style={{ color: "#6B7770" }}>SHA-256:</span> {activeEvent.artifactHash}
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "10px",
+                    background: "#FFFFFF",
+                    padding: "8px",
+                    borderRadius: "5px",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>
+                      <strong style={{ color: "#059669" }}>Artifact:</strong> {activeEvent.artifactId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(activeEvent.artifactId, "artId")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: copiedKey === "artId" ? "#059669" : "#94A3B8",
+                      }}
+                      title="Copy Artifact ID"
+                    >
+                      {copiedKey === "artId" ? <Check size={11} /> : <Copy size={11} />}
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: "4px",
+                      wordBreak: "break-all",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: "4px",
+                    }}
+                  >
+                    <span style={{ color: "#64748B" }}>
+                      <strong>SHA-256:</strong> {activeEvent.artifactHash}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(activeEvent.artifactHash, "hash")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: copiedKey === "hash" ? "#059669" : "#94A3B8",
+                        flexShrink: 0,
+                      }}
+                      title="Copy SHA-256 Hash"
+                    >
+                      {copiedKey === "hash" ? <Check size={11} /> : <Copy size={11} />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Structured Metadata */}
-              <div style={{ fontSize: "11px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", marginBottom: "4px" }}>
-                  OBSERVED METADATA ATTRIBUTES
+              {/* Observed Metadata */}
+              <div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "4px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Observed Metadata Attributes
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontFamily: "var(--font-mono, monospace)", fontSize: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "10.5px",
+                    background: "#FFFFFF",
+                    padding: "8px",
+                    borderRadius: "5px",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
                   {Object.entries(activeEvent.details).map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "var(--text-muted, #6B7770)" }}>{k}:</span>
-                      <span style={{ color: "#F4F6F4" }}>{String(v)}</span>
+                    <div
+                      key={k}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "2px 0",
+                        borderBottom: "1px solid #F1F5F9",
+                      }}
+                    >
+                      <span style={{ color: "#64748B" }}>{k}:</span>
+                      <span style={{ color: "#0F172A", fontWeight: 600 }}>{String(v)}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </>
           ) : (
-            <div style={{ color: "var(--text-muted, #6B7770)", fontSize: "12px", textAlign: "center", padding: "20px 0" }}>
+            <div style={{ color: "#64748B", fontSize: "12px", textAlign: "center", padding: "24px 0" }}>
               Select an event to inspect dual-timestamps and lineage.
             </div>
           )}

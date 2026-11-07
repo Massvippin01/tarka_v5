@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Disc, SkipBack, SkipForward, User, Cpu, Bot, CheckCircle } from "lucide-react";
+import { Disc, SkipBack, SkipForward, User, Cpu, Bot, CheckCircle, Copy, Check } from "lucide-react";
 
 export type FlightRecorderActorType = "HUMAN_EXAMINER" | "AUTOMATED_SYSTEM" | "AI_ASSISTANT";
 
@@ -112,6 +112,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
   const [filterActor, setFilterActor] = useState<string>("ALL");
   const [replayStep, setReplayStep] = useState<number>(entries.length);
   const [selectedEntry, setSelectedEntry] = useState<FlightRecorderEntry | null>(entries[entries.length - 1] || null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const filteredEntries = useMemo(() => {
     let subset = entries.slice(0, replayStep);
@@ -121,14 +122,38 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
     return subset;
   }, [entries, replayStep, filterActor]);
 
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
+
   const getActorBadge = (type: FlightRecorderActorType) => {
     switch (type) {
       case "HUMAN_EXAMINER":
-        return { label: "HUMAN DECISION", bg: "rgba(200, 247, 81, 0.15)", text: "#C8F751", icon: <User size={11} /> };
+        return {
+          label: "HUMAN DECISION",
+          bg: "#EFF6FF",
+          text: "#1D4ED8",
+          border: "#BFDBFE",
+          icon: <User size={11} />,
+        };
       case "AUTOMATED_SYSTEM":
-        return { label: "AUTOMATED SYSTEM", bg: "rgba(82, 124, 154, 0.2)", text: "#527C9A", icon: <Cpu size={11} /> };
+        return {
+          label: "AUTOMATED SYSTEM",
+          bg: "#ECFDF5",
+          text: "#047857",
+          border: "#A7F3D0",
+          icon: <Cpu size={11} />,
+        };
       case "AI_ASSISTANT":
-        return { label: "AI PROPOSAL (DATA_ONLY)", bg: "rgba(182, 91, 72, 0.18)", text: "#B65B48", icon: <Bot size={11} /> };
+        return {
+          label: "AI PROPOSAL (DATA_ONLY)",
+          bg: "#FFF1F2",
+          text: "#BE123C",
+          border: "#FECDD3",
+          icon: <Bot size={11} />,
+        };
     }
   };
 
@@ -136,138 +161,178 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
     <div
       className={`investigation-flight-recorder ${className}`}
       style={{
-        background: "var(--surface-primary, #152220)",
-        border: "1px solid var(--border-structural, rgba(107, 119, 112, 0.35))",
-        borderRadius: "10px",
+        background: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        borderRadius: "8px",
         padding: "16px",
-        color: "var(--text-primary, #F4F6F4)",
-        fontFamily: "var(--font-sans, sans-serif)",
+        color: "#0F172A",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--border-subtle, rgba(107, 119, 112, 0.18))", paddingBottom: "12px" }}>
+      {/* 1. Header Bar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+          borderBottom: "1px solid #E2E8F0",
+          paddingBottom: "12px",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Disc size={18} style={{ color: "var(--fieldnote-signal-lime, #C8F751)" }} />
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, letterSpacing: "0.02em" }}>
+            <Disc size={18} color="#7C3AED" />
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.01em", color: "#0F172A" }}>
               INVESTIGATION FLIGHT RECORDER
             </h3>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
+                fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
-                background: "rgba(200, 247, 81, 0.12)",
-                color: "#C8F751",
-                border: "1px solid rgba(200, 247, 81, 0.32)",
+                background: "#FAF5FF",
+                color: "#7C3AED",
+                border: "1px solid #DDD6FE",
                 fontFamily: "var(--font-mono, monospace)",
               }}
             >
               IMMUTABLE HASH-CHAINED AUDIT
             </span>
           </div>
-          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary, #A3B1AA)" }}>
-            Deterministic chronological log of every human action, automated pipeline transition, and AI proposal for Case <span style={{ color: "#C8F751", fontFamily: "var(--font-mono, monospace)" }}>{caseId}</span>.
+          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.4 }}>
+            Deterministic chronological log of every human action, automated pipeline transition, and AI proposal for Case{" "}
+            <span style={{ color: "#4F46E5", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
+              {caseId}
+            </span>.
           </p>
         </div>
 
-        {/* Actor Filter */}
-        <div style={{ display: "flex", gap: "4px", background: "rgba(0,0,0,0.2)", padding: "2px", borderRadius: "6px" }}>
+        {/* Actor Filter Pills */}
+        <div
+          style={{
+            display: "flex",
+            gap: "3px",
+            background: "#F1F5F9",
+            padding: "3px",
+            borderRadius: "6px",
+          }}
+        >
           {[
             { id: "ALL", label: "ALL ACTORS" },
             { id: "HUMAN_EXAMINER", label: "HUMAN" },
             { id: "AUTOMATED_SYSTEM", label: "SYSTEM" },
             { id: "AI_ASSISTANT", label: "AI" },
-          ].map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilterActor(f.id)}
-              style={{
-                padding: "4px 8px",
-                fontSize: "10px",
-                fontWeight: 600,
-                border: "none",
-                borderRadius: "4px",
-                background: filterActor === f.id ? "var(--fieldnote-signal-lime, #C8F751)" : "transparent",
-                color: filterActor === f.id ? "#101918" : "var(--text-secondary, #A3B1AA)",
-                cursor: "pointer",
-                fontFamily: "var(--font-mono, monospace)",
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
+          ].map((f) => {
+            const isSelected = filterActor === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilterActor(f.id)}
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "10px",
+                  fontWeight: isSelected ? 700 : 500,
+                  border: isSelected ? "1px solid #CBD5E1" : "1px solid transparent",
+                  borderRadius: "4px",
+                  background: isSelected ? "#FFFFFF" : "transparent",
+                  color: isSelected ? "#4F46E5" : "#64748B",
+                  cursor: "pointer",
+                  boxShadow: isSelected ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  fontFamily: "var(--font-mono, monospace)",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Replay Scrubber Controls */}
+      {/* 2. Replay Scrubber Controls */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "rgba(0, 0, 0, 0.25)",
+          background: "#F8FAFC",
           padding: "8px 12px",
           borderRadius: "6px",
           marginBottom: "14px",
-          border: "1px solid rgba(107, 119, 112, 0.2)",
+          border: "1px solid #E2E8F0",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button
+            type="button"
             onClick={() => setReplayStep(Math.max(1, replayStep - 1))}
             disabled={replayStep <= 1}
             style={{
               padding: "4px 8px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
               borderRadius: "4px",
-              color: "#F4F6F4",
+              color: replayStep <= 1 ? "#94A3B8" : "#334155",
               cursor: replayStep <= 1 ? "not-allowed" : "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
             }}
+            title="Step Back"
           >
             <SkipBack size={12} />
           </button>
-          <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--text-secondary, #A3B1AA)" }}>
+          <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "#334155" }}>
             Replay Horizon: <strong>{replayStep} / {entries.length} steps</strong>
           </span>
           <button
+            type="button"
             onClick={() => setReplayStep(Math.min(entries.length, replayStep + 1))}
             disabled={replayStep >= entries.length}
             style={{
               padding: "4px 8px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
               borderRadius: "4px",
-              color: "#F4F6F4",
+              color: replayStep >= entries.length ? "#94A3B8" : "#334155",
               cursor: replayStep >= entries.length ? "not-allowed" : "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
             }}
+            title="Step Forward"
           >
             <SkipForward size={12} />
           </button>
         </div>
 
         <button
+          type="button"
           onClick={() => setReplayStep(entries.length)}
           style={{
             fontSize: "11px",
-            background: "transparent",
-            border: "1px solid rgba(200, 247, 81, 0.3)",
-            color: "#C8F751",
+            fontWeight: 600,
+            background: "#FFFFFF",
+            border: "1px solid #CBD5E1",
+            color: "#4F46E5",
             borderRadius: "4px",
             padding: "4px 10px",
             cursor: "pointer",
             fontFamily: "var(--font-mono, monospace)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+            transition: "all 0.12s ease",
           }}
         >
           Jump to Current Head
         </button>
       </div>
 
-      {/* Main Content Layout */}
+      {/* 3. Main Content Layout */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "16px" }}>
         {/* Ledger Entries List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "480px", overflowY: "auto" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "480px", overflowY: "auto", paddingRight: "4px" }}>
           {filteredEntries.map((entry) => {
             const badge = getActorBadge(entry.actorType);
             const isSelected = selectedEntry?.sequence === entry.sequence;
@@ -280,15 +345,25 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                   display: "flex",
                   alignItems: "flex-start",
                   gap: "10px",
-                  background: isSelected ? "rgba(200, 247, 81, 0.12)" : "rgba(0, 0, 0, 0.2)",
-                  border: isSelected ? "1px solid rgba(200, 247, 81, 0.45)" : "1px solid rgba(107, 119, 112, 0.2)",
+                  background: isSelected ? "#EEF2FF" : "#FFFFFF",
+                  border: isSelected ? "1px solid #818CF8" : "1px solid #E2E8F0",
                   borderRadius: "6px",
                   padding: "10px 12px",
                   cursor: "pointer",
+                  boxShadow: isSelected ? "0 1px 3px rgba(79, 70, 229, 0.12)" : "0 1px 2px rgba(0,0,0,0.02)",
                   transition: "all 0.15s ease",
                 }}
               >
-                <div style={{ fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mono, monospace)", color: "var(--text-muted, #6B7770)", minWidth: "24px" }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono, monospace)",
+                    color: isSelected ? "#4F46E5" : "#64748B",
+                    minWidth: "24px",
+                    paddingTop: "2px",
+                  }}
+                >
                   #{entry.sequence}
                 </div>
 
@@ -302,7 +377,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                         borderRadius: "3px",
                         background: badge.bg,
                         color: badge.text,
-                        border: `1px solid ${badge.text}33`,
+                        border: `1px solid ${badge.border}`,
                         display: "flex",
                         alignItems: "center",
                         gap: "4px",
@@ -311,15 +386,15 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                     >
                       {badge.icon} {badge.label}
                     </span>
-                    <span style={{ fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                    <span style={{ fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono, monospace)" }}>
                       {entry.timestamp}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: "12px", fontWeight: 600, color: isSelected ? "#C8F751" : "#F4F6F4" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: isSelected ? "#4F46E5" : "#0F172A" }}>
                     {entry.action}
                   </div>
-                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--text-secondary, #A3B1AA)", lineHeight: "1.3" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#475569", lineHeight: "1.35" }}>
                     {entry.details}
                   </p>
                 </div>
@@ -331,8 +406,8 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
         {/* Selected Entry Hash-Chain Cryptographic Inspector */}
         <div
           style={{
-            background: "rgba(0, 0, 0, 0.3)",
-            border: "1px solid var(--border-structural, rgba(107, 119, 112, 0.35))",
+            background: "#F8FAFC",
+            border: "1px solid #E2E8F0",
             borderRadius: "6px",
             padding: "14px",
             display: "flex",
@@ -342,52 +417,148 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
         >
           {selectedEntry ? (
             <>
-              <div style={{ borderBottom: "1px solid rgba(107, 119, 112, 0.25)", paddingBottom: "10px" }}>
+              <div style={{ borderBottom: "1px solid #E2E8F0", paddingBottom: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--fieldnote-signal-lime, #C8F751)", fontFamily: "var(--font-mono, monospace)" }}>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: "3px",
+                      background: "#FAF5FF",
+                      color: "#7C3AED",
+                      border: "1px solid #DDD6FE",
+                      fontFamily: "var(--font-mono, monospace)",
+                    }}
+                  >
                     SEQUENCE #{selectedEntry.sequence}
                   </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "#10B981" }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#059669",
+                    }}
+                  >
                     <CheckCircle size={11} /> CHAIN INTEGRITY VERIFIED
                   </span>
                 </div>
-                <h4 style={{ margin: "6px 0 2px", fontSize: "13px", fontWeight: 700 }}>
+                <h4 style={{ margin: "8px 0 2px", fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
                   {selectedEntry.action}
                 </h4>
-                <div style={{ fontSize: "11px", color: "var(--text-secondary, #A3B1AA)" }}>
-                  Actor: <strong>{selectedEntry.actorId}</strong> ({selectedEntry.actorRole})
+                <div style={{ fontSize: "11px", color: "#64748B" }}>
+                  Actor: <strong style={{ color: "#0F172A" }}>{selectedEntry.actorId}</strong> ({selectedEntry.actorRole})
                 </div>
               </div>
 
               {/* Hash Chain Values */}
-              <div style={{ background: "rgba(255, 255, 255, 0.02)", padding: "10px", borderRadius: "4px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", marginBottom: "6px" }}>
-                  IMMUTABLE SHA-256 HASH CHAIN
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "6px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Immutable SHA-256 Hash Chain
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono, monospace)", wordBreak: "break-all" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    fontSize: "10px",
+                    fontFamily: "var(--font-mono, monospace)",
+                    wordBreak: "break-all",
+                  }}
+                >
                   <div>
-                    <span style={{ color: "var(--text-muted, #6B7770)" }}>Current Event Hash:</span>
-                    <div style={{ color: "#C8F751" }}>{selectedEntry.eventHash}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748B" }}>Current Event Hash:</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedEntry.eventHash, "currHash")}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: copiedKey === "currHash" ? "#059669" : "#94A3B8",
+                        }}
+                        title="Copy Current Event Hash"
+                      >
+                        {copiedKey === "currHash" ? <Check size={11} /> : <Copy size={11} />}
+                      </button>
+                    </div>
+                    <div style={{ color: "#4F46E5", fontWeight: 600, marginTop: "2px" }}>
+                      {selectedEntry.eventHash}
+                    </div>
                   </div>
+
                   <div>
-                    <span style={{ color: "var(--text-muted, #6B7770)" }}>Previous Chained Hash:</span>
-                    <div style={{ color: "#A3B1AA" }}>{selectedEntry.previousHash}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "#64748B" }}>Previous Chained Hash:</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedEntry.previousHash, "prevHash")}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: copiedKey === "prevHash" ? "#059669" : "#94A3B8",
+                        }}
+                        title="Copy Previous Hash"
+                      >
+                        {copiedKey === "prevHash" ? <Check size={11} /> : <Copy size={11} />}
+                      </button>
+                    </div>
+                    <div style={{ color: "#64748B", fontWeight: 500, marginTop: "2px" }}>
+                      {selectedEntry.previousHash}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Statutory Note */}
-              <div style={{ fontSize: "11px" }}>
-                <div style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", marginBottom: "4px" }}>
-                  STATUTORY REPRODUCIBILITY
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    color: "#475569",
+                    marginBottom: "4px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  Statutory Reproducibility
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: "var(--text-secondary, #A3B1AA)", lineHeight: "1.4" }}>
+                <p style={{ margin: 0, fontSize: "11px", color: "#64748B", lineHeight: "1.4" }}>
                   This action is recorded in the append-only ledger and signed in accordance with Bharatiya Sakshya Adhiniyam, 2023 evidentiary standards.
                 </p>
               </div>
             </>
           ) : (
-            <div style={{ color: "var(--text-muted, #6B7770)", fontSize: "12px", textAlign: "center", padding: "20px 0" }}>
+            <div style={{ color: "#64748B", fontSize: "12px", textAlign: "center", padding: "24px 0" }}>
               Select an entry to inspect the cryptographic hash chain.
             </div>
           )}
