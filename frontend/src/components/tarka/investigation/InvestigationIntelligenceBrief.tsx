@@ -10,6 +10,7 @@ import {
   Scale,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 
 interface InvestigationIntelligenceBriefProps {
@@ -32,7 +33,8 @@ export const InvestigationIntelligenceBrief: React.FC<InvestigationIntelligenceB
     7: true,
   });
 
-  const investigation = reconstruct5FileInvestigation();
+  const { reconstructedInvestigation } = useTarkaUiStore();
+  const investigation = reconstructedInvestigation || reconstruct5FileInvestigation();
   const brief = investigation.sevenQuestionBrief;
 
   React.useEffect(() => {

@@ -10,6 +10,7 @@ import {
   Scale,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 
 interface TransformationAuditLogProps {
@@ -24,7 +25,8 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
   isEmbedded = false,
 }) => {
   const [copiedRoot, setCopiedRoot] = useState(false);
-  const investigation = reconstruct5FileInvestigation();
+  const { reconstructedInvestigation } = useTarkaUiStore();
+  const investigation = reconstructedInvestigation || reconstruct5FileInvestigation();
   const steps = investigation.transformationSteps;
 
   React.useEffect(() => {
@@ -201,7 +203,7 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
                   </td>
                   <td style={{ padding: "8px 10px", color: "#334155" }}>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "3px" }}>
-                      {st.inputArtifacts.map((art, aIdx) => (
+                      {(st.inputArtifacts || []).map((art, aIdx) => (
                         <span
                           key={aIdx}
                           style={{

@@ -22,12 +22,25 @@ import { CrossStateWaterfall } from "../../components/tarka/network/CrossStateWa
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { buildCase002Bundle, buildCase003Bundle } from "../../services/caseSyncBridge";
 
 export const FraudNetworkScreen: React.FC = () => {
-  const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density, activeDiscoveredCluster, setSelectedEvidenceEdge } = useTarkaUiStore();
+  const { mutations, toggleMutation, activeCaseId } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, setSelectedEvidenceEdge, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
-  const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
+
+  const investigation = useMemo(() => {
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
+    }
+    if (activeCaseId === "CASE-2026-002") {
+      return buildCase002Bundle();
+    }
+    if (activeCaseId === "CASE-2026-003") {
+      return buildCase003Bundle();
+    }
+    return reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
   const bssid = activeDiscoveredCluster?.bssidHotspot || "74:DA:38:A2:11:BC";
@@ -391,8 +404,8 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
                         }}
                       >
                         <span>{isInsuff ? "⚠️" : isApex ? "🛡️" : "🔗"}</span>
-                        <span>{e.sourceLabel.split(" ")[0]} → {e.targetLabel.split(" ")[0]}</span>
-                        <span style={{ opacity: 0.8 }}>₹{(e.amount / 1000).toFixed(0)}k</span>
+                        <span>{(e.sourceLabel || e.sourceNodeId || "Src").split(" ")[0]} → {(e.targetLabel || e.targetNodeId || "Tgt").split(" ")[0]}</span>
+                        <span style={{ opacity: 0.8 }}>₹{(((e.amount ?? 0)) / 1000).toFixed(0)}k</span>
                       </button>
                     );
                   })}

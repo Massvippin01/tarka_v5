@@ -26,7 +26,9 @@ import { toast } from "sonner";
 import { layoutNetwork, type NetworkEdgeLayout } from "./layoutNetwork";
 import { lintViz } from "../../../utils/lintViz";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
+import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
+import { buildCase002Bundle, buildCase003Bundle } from "../../../services/caseSyncBridge";
 
 export type EdgeFilterType = "all" | "cashflow" | "tether" | "ja4" | "caf" | "c2";
 
@@ -236,8 +238,21 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [selectedSheet, setSelectedSheet] = useState<EvidenceSheetData | null>(null);
 
-  const { setSelectedEvidenceEdge } = useTarkaUiStore();
-  const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
+  const { setSelectedEvidenceEdge, reconstructedInvestigation } = useTarkaUiStore();
+  const { activeCaseId } = useTarkaGlobal();
+
+  const investigation = useMemo(() => {
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
+    }
+    if (activeCaseId === "CASE-2026-002") {
+      return buildCase002Bundle();
+    }
+    if (activeCaseId === "CASE-2026-003") {
+      return buildCase003Bundle();
+    }
+    return reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   // Fullscreen, Minimized & Zoom States
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -298,7 +313,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const includeCashFlowNodes = edgeFilter === "cashflow" || edgeFilter === "all";
 
   // Compute pure layout
-  const layout = useMemo(() => {
+  const rawLayout = useMemo(() => {
     return layoutNetwork(
       dimensions.width,
       dimensions.height,
@@ -307,6 +322,73 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       includeCashFlowNodes
     );
   }, [dimensions.width, dimensions.height, isHotspotActive, edgeFilter, includeCashFlowNodes]);
+
+  // Dynamically overlay active investigation entities onto visual nodes
+  const layout = useMemo(() => {
+    if (!investigation || !investigation.nodes || investigation.nodes.length === 0) {
+      return rawLayout;
+    }
+
+    const victimNode = investigation.nodes.find(
+      (n) => n.entityType === "VICTIM" || n.id.includes("VICTIM") || n.id === "M0-VICTIM" || n.details?.toLowerCase().includes("victim")
+    );
+    const l1Node = investigation.nodes.find(
+      (n) => n.entityType === "LAYER_1_MULE" || n.id.includes("PRIMARY") || n.id === "M1-PRIMARY"
+    );
+    const l2aNode = investigation.nodes.find(
+      (n) => n.id.includes("2A") || n.id === "M2A-CONDUIT" || (n.entityType === "LAYER_2_CONDUIT" && n.id !== "M2B-CONDUIT")
+    );
+    const l2bNode = investigation.nodes.find(
+      (n) => n.id.includes("2B") || n.id === "M2B-CONDUIT" || (n.entityType === "LAYER_2_CONDUIT" && n.id !== l2aNode?.id)
+    );
+    const sinkNode = investigation.nodes.find(
+      (n) => n.entityType === "LAYER_3_SINK" || n.id.includes("SINK") || n.id === "M3-SINK"
+    );
+
+    const updatedNodes = rawLayout.nodes.map((node) => {
+      if (node.id === "node-victim" && victimNode) {
+        return {
+          ...node,
+          label: `${victimNode.label} (Victim)`,
+          sublabel: `${victimNode.bank || "Complainant"} · A/C ${victimNode.accountMasked || "Masked"}`,
+        };
+      }
+      if (node.id === "acc-vikram" && l1Node) {
+        return {
+          ...node,
+          label: l1Node.label,
+          sublabel: `${l1Node.bank || "L1"} · ${l1Node.accountMasked || ""}`,
+        };
+      }
+      if (node.id === "acc-rohit" && l2aNode) {
+        return {
+          ...node,
+          label: l2aNode.label,
+          sublabel: `${l2aNode.bank || "L2A"} · ${l2aNode.accountMasked || ""}`,
+        };
+      }
+      if (node.id === "acc-sameer" && l2bNode) {
+        return {
+          ...node,
+          label: l2bNode.label,
+          sublabel: `${l2bNode.bank || "L2B"} · ${l2bNode.accountMasked || ""}`,
+        };
+      }
+      if (node.id === "acc-sink" && sinkNode) {
+        return {
+          ...node,
+          label: sinkNode.label,
+          sublabel: `${sinkNode.bank || "Sink"} · ${sinkNode.accountMasked || ""}`,
+        };
+      }
+      return node;
+    });
+
+    return {
+      ...rawLayout,
+      nodes: updatedNodes,
+    };
+  }, [rawLayout, investigation]);
 
   const currentStepData = CHRONOLOGICAL_REPLAY_STEPS[replayStep] || CHRONOLOGICAL_REPLAY_STEPS[5];
 

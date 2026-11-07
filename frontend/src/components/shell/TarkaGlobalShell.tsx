@@ -506,7 +506,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                               {cw.title}
                             </div>
                             <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                              {cw.policeStation.split(",")[0]} · {cw.complainantName}
+                              {(cw.policeStation || "PS Noida").split(",")[0]} · {cw.complainantName || "Complainant"}
                             </div>
                           </div>
                         );
@@ -1832,11 +1832,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          {activePage === "workspaces" && <CaseWorkspaceScreen />}
+          {(activePage === "workspaces" || activeRoute === "workspace") && <CaseWorkspaceScreen />}
           {activePage === "benchmark" && <BenchmarkLabScreen />}
-          {activePage === "workbench" && (
+          {activePage === "workbench" && activeRoute !== "workspace" && (
             <>
-              {(activeRoute === "intake" || activeRoute === "workspace") && <IntakeScreen />}
+              {activeRoute === "intake" && <IntakeScreen />}
               {activeRoute === "entities" && <EntityResolutionScreen />}
               {activeRoute === "attribution" && <AttributionScreen />}
               {activeRoute === "network" && <FraudNetworkScreen />}

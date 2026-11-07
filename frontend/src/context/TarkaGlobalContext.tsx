@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { computePhoneticReadout, type ChainOfCustodyRecord } from "../utils/forensicCrypto";
+import { CaseSyncBridge } from "../services/caseSyncBridge";
+import { useTarkaUiStore } from "../store/useTarkaUiStore";
 
 export type ActiveRoute =
   | "workspace"
@@ -413,12 +415,82 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return "workspace"; // Default to Screen 00 Workspace Hub
   };
 
+  const getInitialCaseId = (): string => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const caseParam = params.get("case");
+      if (caseParam) return caseParam;
+    }
+    return "CASE-2026-001";
+  };
+
   const [activeRoute, setActiveRouteState] = useState<TarkaRoute>(getInitialRoute);
-  const [activeCaseId, setActiveCaseIdState] = useState<string>("CASE-2026-001");
+  const [activeCaseId, setActiveCaseIdState] = useState<string>(getInitialCaseId);
   const [caseWorkspaces, setCaseWorkspaces] = useState<CaseWorkspace[]>(INITIAL_CASE_WORKSPACES);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState<boolean>(false);
-  const [evidenceModalTargetCaseId, setEvidenceModalTargetCaseId] = useState<string>("CASE-2026-001");
+  const [evidenceModalTargetCaseId, setEvidenceModalTargetCaseId] = useState<string>(getInitialCaseId);
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState<boolean>(false);
+
+  // Sync state on browser URL navigation (popstate)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      const c = params.get("case");
+      if (c && c !== activeCaseId) {
+        setActiveCaseIdState(c);
+      }
+      const v = params.get("view") || params.get("screen");
+      if (v) {
+        if (v === "workspace") setActiveRouteState("workspace");
+        else if (v === "network" || v === "fraud-network") setActiveRouteState("network");
+        else if (v === "intake") setActiveRouteState("intake");
+        else if (v === "attribution") setActiveRouteState("attribution");
+        else if (v === "entities" || v === "entity") setActiveRouteState("entities");
+        else if (v === "taint-engine" || v === "taint") setActiveRouteState("taint-engine");
+        else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
+        else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
+      }
+    };
+    window.addEventListener("popstate", handleUrlChange);
+    return () => window.removeEventListener("popstate", handleUrlChange);
+  }, [activeCaseId]);
+
+  // Initial Sync from Backend Database
+  useEffect(() => {
+    let mounted = true;
+    CaseSyncBridge.getInstance().listCasesFromBackend().then((backendCases) => {
+      if (mounted && backendCases && backendCases.length > 0) {
+        setCaseWorkspaces(backendCases);
+      }
+    });
+
+    // Hydrate initial active case bundle
+    CaseSyncBridge.getInstance().getCaseBundle(activeCaseId).then((bundle) => {
+      if (mounted && bundle) {
+        useTarkaUiStore.getState().setReconstructedInvestigation(bundle);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Sync investigation bundle whenever activeCaseId changes
+  useEffect(() => {
+    let mounted = true;
+    const targetCase = caseWorkspaces.find((c) => c.caseId === activeCaseId);
+    CaseSyncBridge.getInstance().getCaseBundle(activeCaseId, targetCase).then((bundle) => {
+      if (mounted && bundle) {
+        useTarkaUiStore.getState().setReconstructedInvestigation(bundle);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeCaseId, caseWorkspaces]);
 
   const openNewCaseModal = () => setIsNewCaseModalOpen(true);
   const closeNewCaseModal = () => setIsNewCaseModalOpen(false);
@@ -488,6 +560,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
       setCaseWorkspaces((prev) => [newWorkspace, ...prev]);
       setActiveCaseId(newId);
+      // Persist to backend database
+      CaseSyncBridge.getInstance().registerCaseWithBackend(newWorkspace).catch(() => {});
       return newId;
     },
     [caseWorkspaces.length, setActiveCaseId]
@@ -501,6 +575,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
     setActiveCaseId(workspace.caseId);
     setActiveRoute(workspace.currentStage || "intake");
+    // Persist to backend database
+    CaseSyncBridge.getInstance().registerCaseWithBackend(workspace).catch(() => {});
   }, [setActiveCaseId, setActiveRoute]);
 
   // Multi-Case Action: Ingest Artifact to Specific Case
@@ -518,6 +594,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         };
       })
     );
+    // Persist exhibit to backend database
+    CaseSyncBridge.getInstance().ingestArtifactWithBackend(caseId, artifact).catch(() => {});
   }, []);
 
   // Multi-Case Action: Remove Quarantined Artifact
