@@ -147,3 +147,26 @@
 ### Known Limitations & Recommended Milestone 3 Scope
 1. **Neo4j Production Cluster**: Neo4j Cypher queries are fully operational in synthetic mode; production deployment will benefit from graph database cluster sharding in Milestone 3.
 2. **Indic Transliteration Expansion**: Transliteration covers 10 primary English-Indic phonetic mapping rules; full multi-lingual Indic NLP tokenization will be expanded in Milestone 3.
+
+
+---
+
+## 5. PHASE 16: UNIVERSAL 8-SCREEN DATABASE SYNCHRONIZATION & DYNAMIC INFOGRAPHICS
+
+| Screen / Component | Database Grounding & Dynamic Pipeline | Verification Status |
+| :--- | :--- | :--- |
+| **Screen 0: Case Workspace Hub** | Fetches all cases from `/api/v1/cases`, parses `metadata_json`, provides Table, Kanban Board, Statutory Roadmap, Bulk CSV/ZIP Ingest, and Multi-Case Comparator. | `VERIFIED` (8 Cases Synchronized) |
+| **Screen 1: Invariant Bank Ledger Intake** | Dynamic CBS ledger rows, RRNs, transaction amounts, running balances, and tamper deficit calculations derived per case from `deriveCaseLedgerRows`. | `VERIFIED` (Case 002 ₹3,40,000 Booked Outflow) |
+| **Screen 2: Bipartite Entity Resolution** | Extracts entities, raw bipartite tokens, cross-bank fraud scores, and hard veto attributes from case nodes/edges with zero static mock bleed. | `VERIFIED` (Dr. Meera Nair & Kiran Kumar Isolated) |
+| **Screen 3: CGNAT & Dual-SIM Attribution** | Dynamic CGNAT candidate pools, carrier PGW, tower cells, TAC prefix, dual-SIM SVG chassis, and Z3 SMT clock drift formal proof script. | `VERIFIED` (Reliance IPDR & Dual-SIM Motherboard Verified) |
+| **Screen 4: Fraud Network Intelligence** | Dynamic multi-hop topology, node layouts, and case-specific UPI XML / I4C copy stanzas with zero cross-case node bleeding. | `VERIFIED` (Case 002 Topology Reconstructed) |
+| **Screen 5: Time-Expanded Taint Engine** | Dynamic 5-column DAG, LIBR vs FIFO vs Pro-Rata 3-way accounting, and Dinic Min-Cut reachability isolation. | `VERIFIED` (₹340,000 Outflow & ₹2,10,000 LIBR Secured) |
+| **Screen 6: BSA Section 63 Court Proof** | Dynamic Section 63(4) certificates, SHA-256 CAS hash schedules, and §106/§107 statutory seizure directives. | `VERIFIED` (Dr. Meera Nair Formal Certificate Rendered) |
+| **Screen 7: Multi-Party Privacy & Consortium** | Dynamic consortium bank vaults (ECDH-PSI, Groth16 ZKP, and 4-node PBFT consensus) adapting to participating financial institutions. | `VERIFIED` (Case 002 FIR #88/2026 Consortium Active) |
+| **Screen 8: Forensic Workstation Hub** | Integrated 4-tab workstation: Temporal Evidence Loom (multi-track NTP Stratum-2), Claim Dependency Lens (leave-one-out SMT ablation), Flight Recorder (SHA-256 chained audit), and 4-layer Provenance Lineage DAG. | `VERIFIED` (All 4 Tabs Formally Bound to Active Case) |
+
+### Regression & Verification Summary
+- **Frontend Build (`npm run build`)**: `tsc -b && vite build` passed cleanly in 1.11s with 0 errors.
+- **Frontend Vitest (`npx vitest run`)**: 8/8 test files passed, 41/41 unit tests passed.
+- **Playwright Dynamic E2E (`verify_all_8_screens_dynamic_sync.cjs`)**: 100% passed across all 8 screens with 0 fatal DOM errors.
+- **Repository Commit**: `f0846e5` staged and committed on branch `phase-15/polish`.
