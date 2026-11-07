@@ -43,12 +43,25 @@ export type EvidenceClassification =
   | "HEARSAY";
 
 export type EntityType = 
+  | "PERSON"
   | "INDIVIDUAL" 
+  | "BANK_ACCOUNT"
+  | "UPI_ID"
+  | "PHONE_NUMBER"
+  | "DEVICE"
+  | "IP_ADDRESS"
   | "COMPANY" 
   | "MULE_ACCOUNT" 
   | "TELECOM_SUBSCRIBER" 
-  | "DEVICE" 
   | "MERCHANT";
+
+export type AmbiguityType =
+  | "NONE"
+  | "SHARED_HOTSPOT"
+  | "CGNAT_POOL"
+  | "PUBLIC_WIFI"
+  | "CELL_TOWER_SECTOR"
+  | "MULTI_USER_DEVICE";
 
 export type ReviewState = 
   | "PENDING_REVIEW" 
@@ -63,6 +76,8 @@ export type RelationshipType =
   | "TRANSFERRED_FUNDS" 
   | "COMMUNICATED_WITH" 
   | "SHARED_DEVICE" 
+  | "SHARED_NETWORK"
+  | "CO_LOCATED_IP"
   | "GEO_PROXIMATE_TO" 
   | "BENEFICIARY_OF" 
   | "NOMINEE_OF";
@@ -250,6 +265,16 @@ export interface CanonicalEvidence {
 // 3. CANONICAL ENTITY CONTRACT (Contract 3)
 // ==============================================================================
 
+export interface EntityProvenance {
+  source_evidence_id: string;
+  attribute_name: string;
+  observed_raw_value: string;
+  normalized_value: string;
+  acquisition_tool?: string;
+  confidence_score: number;
+  timestamp_utc: string;
+}
+
 export interface CanonicalEntity {
   entity_id: string;
   entity_type: EntityType;
@@ -259,6 +284,8 @@ export interface CanonicalEntity {
   matching_factors: MatchingFactor[];
   confidence_score: number;
   uncertainty_notes?: string | null;
+  entity_provenance?: EntityProvenance[];
+  historical_identifiers?: Record<string, Array<Record<string, unknown>>>;
   investigator_review_state: ReviewState;
   reviewed_by?: string | null;
   valid_time_interval: TimeInterval;
@@ -279,6 +306,8 @@ export interface CanonicalRelationship {
   confidence_score: number;
   source_evidence_refs: string[];
   matching_criteria: Record<string, unknown>;
+  ambiguity_type?: AmbiguityType;
+  ambiguity_caution_notice?: string | null;
   valid_time_interval: TimeInterval;
   contradictory_observations: Record<string, unknown>[];
   investigator_review_state: ReviewState;

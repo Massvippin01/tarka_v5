@@ -120,6 +120,23 @@ class ForensicTimelineEvent(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Technical metadata payload")
     conflicting_event_ids: List[str] = Field(default_factory=list, description="IDs of events in temporal or factual conflict")
     conflict_explanation: Optional[str] = Field(default=None, description="Explanation of temporal conflict if any")
+    clock_drift_uncertainty_sec: float = Field(default=0.0, description="Clock drift uncertainty bound in seconds (±delta)")
+
+    def is_causally_before(self, other: ForensicTimelineEvent) -> bool:
+        """Evaluates whether this event strictly precedes another under clock uncertainty bounds:
+        t_A + delta_A < t_B - delta_B.
+        """
+        upper_a = self.timestamp_epoch + self.clock_drift_uncertainty_sec
+        lower_b = other.timestamp_epoch - other.clock_drift_uncertainty_sec
+        return upper_a < lower_b
+
+    def has_temporal_overlap(self, other: ForensicTimelineEvent) -> bool:
+        """Evaluates whether two events could be concurrent or reordered due to clock drift:
+        |t_A - t_B| <= delta_A + delta_B.
+        """
+        diff = abs(self.timestamp_epoch - other.timestamp_epoch)
+        uncertainty = self.clock_drift_uncertainty_sec + other.clock_drift_uncertainty_sec
+        return diff <= uncertainty
 
     @property
     def id(self) -> str:

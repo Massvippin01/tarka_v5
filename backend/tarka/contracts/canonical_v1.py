@@ -64,12 +64,30 @@ class EvidenceClassification(str, Enum):
 
 
 class EntityType(str, Enum):
-    INDIVIDUAL = "INDIVIDUAL"
+    # Canonical 2.1 Entity Types
+    PERSON = "PERSON"
+    INDIVIDUAL = "INDIVIDUAL"  # Backward compatibility alias
+    BANK_ACCOUNT = "BANK_ACCOUNT"
+    UPI_ID = "UPI_ID"
+    PHONE_NUMBER = "PHONE_NUMBER"
+    DEVICE = "DEVICE"
+    IP_ADDRESS = "IP_ADDRESS"
+    MERCHANT = "MERCHANT"
     COMPANY = "COMPANY"
     MULE_ACCOUNT = "MULE_ACCOUNT"
     TELECOM_SUBSCRIBER = "TELECOM_SUBSCRIBER"
-    DEVICE = "DEVICE"
-    MERCHANT = "MERCHANT"
+
+
+class AmbiguityType(str, Enum):
+    """Types of physical, network, or hardware co-location ambiguity.
+    Constitutional Invariant: Common ownership must never be inferred from shared ambiguity.
+    """
+    NONE = "NONE"
+    SHARED_HOTSPOT = "SHARED_HOTSPOT"
+    CGNAT_POOL = "CGNAT_POOL"
+    PUBLIC_WIFI = "PUBLIC_WIFI"
+    CELL_TOWER_SECTOR = "CELL_TOWER_SECTOR"
+    MULTI_USER_DEVICE = "MULTI_USER_DEVICE"
 
 
 class ReviewState(str, Enum):
@@ -86,6 +104,8 @@ class RelationshipType(str, Enum):
     TRANSFERRED_FUNDS = "TRANSFERRED_FUNDS"
     COMMUNICATED_WITH = "COMMUNICATED_WITH"
     SHARED_DEVICE = "SHARED_DEVICE"
+    SHARED_NETWORK = "SHARED_NETWORK"
+    CO_LOCATED_IP = "CO_LOCATED_IP"
     GEO_PROXIMATE_TO = "GEO_PROXIMATE_TO"
     BENEFICIARY_OF = "BENEFICIARY_OF"
     NOMINEE_OF = "NOMINEE_OF"
@@ -301,6 +321,17 @@ class CanonicalEvidence(BaseModel):
 # 3. CANONICAL ENTITY CONTRACT (Contract 3)
 # ==============================================================================
 
+class EntityProvenance(BaseModel):
+    """Field-level provenance and audit tracking for identity attributes."""
+    source_evidence_id: str = Field(..., description="Evidence exhibit ID establishing this attribute")
+    attribute_name: str = Field(..., description="Name of attribute (e.g. msisdn, vpa, account, imei)")
+    observed_raw_value: str = Field(..., description="Verbatim raw string from exhibit")
+    normalized_value: str = Field(..., description="Canonical normalized representation")
+    acquisition_tool: str = Field(default="TARKA_NORMALIZER_V1", description="Tool or parser producing normalization")
+    confidence_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    timestamp_utc: str = Field(..., description="Timestamp of attribute acquisition or observation (ISO 8601 UTC)")
+
+
 class CanonicalEntity(BaseModel):
     """Canonical v1 Entity Contract. Represents resolved investigative subjects."""
     entity_id: str = Field(..., description="Stable entity identifier (e.g. ENT_MULE_001)")
@@ -308,7 +339,7 @@ class CanonicalEntity(BaseModel):
     canonical_name: str = Field(..., description="Primary investigative label or name")
     normalised_identifiers: Dict[str, str] = Field(
         default_factory=dict,
-        description="Normalized key-value identifiers (msisdn, pan, upi_vpa, account, device_id)"
+        description="Normalized key-value identifiers (msisdn, pan, upi_vpa, account, device_id, ip)"
     )
     source_evidence_refs: List[str] = Field(
         default_factory=list,
@@ -317,6 +348,14 @@ class CanonicalEntity(BaseModel):
     matching_factors: List[MatchingFactor] = Field(default_factory=list)
     confidence_score: float = Field(default=1.0, ge=0.0, le=1.0)
     uncertainty_notes: Optional[str] = Field(None)
+    entity_provenance: List[EntityProvenance] = Field(
+        default_factory=list,
+        description="Field-level provenance linking each identifier to raw evidence exhibits",
+    )
+    historical_identifiers: Dict[str, List[Dict[str, Any]]] = Field(
+        default_factory=dict,
+        description="History of identifier changes over time (e.g. previous phone numbers or devices)",
+    )
     investigator_review_state: ReviewState = Field(default=ReviewState.PENDING_REVIEW)
     reviewed_by: Optional[str] = Field(None)
     valid_time_interval: TimeInterval = Field(default_factory=TimeInterval)
@@ -341,6 +380,14 @@ class CanonicalRelationship(BaseModel):
     confidence_score: float = Field(default=1.0, ge=0.0, le=1.0)
     source_evidence_refs: List[str] = Field(default_factory=list)
     matching_criteria: Dict[str, Any] = Field(default_factory=dict)
+    ambiguity_type: AmbiguityType = Field(
+        default=AmbiguityType.NONE,
+        description="Type of co-location ambiguity (e.g. SHARED_HOTSPOT, CGNAT_POOL). Prohibits inferring common ownership.",
+    )
+    ambiguity_caution_notice: Optional[str] = Field(
+        default=None,
+        description="Statutory caution stating why common ownership cannot be inferred from this link.",
+    )
     valid_time_interval: TimeInterval = Field(default_factory=TimeInterval)
     contradictory_observations: List[Dict[str, Any]] = Field(default_factory=list)
     investigator_review_state: ReviewState = Field(default=ReviewState.PENDING_REVIEW)
