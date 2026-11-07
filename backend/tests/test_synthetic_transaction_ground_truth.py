@@ -263,3 +263,4 @@ def test_complex_synthetic_fraud_network_ground_truth():
     assert recon_l2a.closing_calculated_balance == 70000.0
     assert recon_l2a.closing_reported_balance == 70000.0
     assert recon_l2a.missing_transaction_gap_detected is False
+

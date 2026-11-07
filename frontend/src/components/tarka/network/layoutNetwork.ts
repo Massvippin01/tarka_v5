@@ -52,36 +52,40 @@ export function layoutNetwork(
   activeFilter: "all" | "tether" | "ja4" | "caf" | "c2" | "cashflow" = "all",
   includeCashFlowNodes: boolean = false
 ): NetworkLayoutResult {
-  const width = Math.max(760, W);
-  const height = Math.max(460, H);
+  const width = Math.max(960, W);
+  const height = Math.max(500, H);
 
   // Row Y-coordinates (fractions: .14H, .50H, .84H)
   const yRowA = Math.round(0.14 * height);
   const yRowB = Math.round(0.50 * height);
   const yRowC = Math.round(0.84 * height);
 
-  // 1. Row A Nodes: Tower (.13W), Hero (.50W), C2 (.87W)
-  const cxTower = Math.round(0.13 * width);
+  // 1. Row A Nodes: Tower (.12W), Hero (.50W), C2 (.88W)
+  const cxTower = Math.round(0.12 * width);
   const cxHero = Math.round(0.50 * width);
-  const cxC2 = Math.round(0.87 * width);
+  const cxC2 = Math.round(0.88 * width);
 
   const heroW = 280;
   const heroH = 84;
   const sideW = 144;
   const sideH = 52;
 
-  // 2. Row B Nodes: Hubs 56px circles (.22W, .50W, .78W)
-  const cxHubTether = Math.round(0.22 * width);
+  const shouldIncludeCash = includeCashFlowNodes || activeFilter === "cashflow";
+
+  // 2. Row B Nodes: Hubs 56px circles
+  // When cash flow nodes (Victim & ATM) are included in Row B, space the 3 hubs in the center
+  // (.29W, .50W, .71W) so Victim (.09W) and ATM (.91W) have 60px+ of collision-free clearance!
+  const cxHubTether = shouldIncludeCash ? Math.round(0.29 * width) : Math.round(0.24 * width);
   const cxHubJa4 = Math.round(0.50 * width);
-  const cxHubCaf = Math.round(0.78 * width);
+  const cxHubCaf = shouldIncludeCash ? Math.round(0.71 * width) : Math.round(0.76 * width);
   const hubSize = 56;
 
-  // 3. Row C Nodes: 4 Accounts 176x64 (.14W, .38W, .62W, .86W)
+  // 3. Row C Nodes: 4 Accounts 164x64 (.14W, .38W, .62W, .86W)
   const cxM1 = Math.round(0.14 * width);
   const cxM2a = Math.round(0.38 * width);
   const cxM2b = Math.round(0.62 * width);
   const cxSink = Math.round(0.86 * width);
-  const accW = 176;
+  const accW = 164;
   const accH = 64;
 
   const nodes: NetworkNodeLayout[] = [
@@ -122,9 +126,9 @@ export function layoutNetwork(
       ports: {
         top: [{ x: cxHero, y: Math.round(yRowA - heroH / 2) }],
         bottom: [
-          { x: cxHero - 80, y: Math.round(yRowA + heroH / 2) }, // Left bottom port for Tether
-          { x: cxHero, y: Math.round(yRowA + heroH / 2) },      // Center bottom port for JA4
-          { x: cxHero + 80, y: Math.round(yRowA + heroH / 2) }, // Right bottom port for CAF
+          { x: cxHero - (shouldIncludeCash ? 110 : 80), y: Math.round(yRowA + heroH / 2) }, // Left bottom port for Tether
+          { x: cxHero, y: Math.round(yRowA + heroH / 2) },                                  // Center bottom port for JA4
+          { x: cxHero + (shouldIncludeCash ? 110 : 80), y: Math.round(yRowA + heroH / 2) }, // Right bottom port for CAF
         ],
         left: { x: Math.round(cxHero - heroW / 2), y: yRowA },
         right: { x: Math.round(cxHero + heroW / 2), y: yRowA },
@@ -485,10 +489,9 @@ export function layoutNetwork(
   // ---------------------------------------------------------------------------
   // OPTIONAL: CASH FLOW TOPOLOGY NODES & EDGES (Only when requested)
   // ---------------------------------------------------------------------------
-  const shouldIncludeCash = includeCashFlowNodes || activeFilter === "cashflow";
-
   if (shouldIncludeCash) {
-    // 1. Victim Node (Sunil Kumar) at Row B far left
+    // 1. Victim Node (Sunil Kumar) at Row B far left (.09W) with generous clearance from Wi-Fi hub (.29W)
+    const cxVictim = Math.round(0.09 * width);
     const victimW = 144;
     const victimH = 54;
     nodes.push({
@@ -497,22 +500,23 @@ export function layoutNetwork(
       sublabel: "SBI A/C 30910029101 · Outflow: ₹5.00L",
       role: "Victim Remitter Account",
       category: "victim",
-      cx: cxTower,
+      cx: cxVictim,
       cy: yRowB,
-      x: Math.round(cxTower - victimW / 2),
+      x: Math.round(cxVictim - victimW / 2),
       y: Math.round(yRowB - victimH / 2),
       w: victimW,
       h: victimH,
       color: "#EF4444",
       ports: {
-        top: [{ x: cxTower, y: Math.round(yRowB - victimH / 2) }],
-        bottom: [{ x: cxTower, y: Math.round(yRowB + victimH / 2) }],
-        left: { x: Math.round(cxTower - victimW / 2), y: yRowB },
-        right: { x: Math.round(cxTower + victimW / 2), y: yRowB },
+        top: [{ x: cxVictim, y: Math.round(yRowB - victimH / 2) }],
+        bottom: [{ x: cxVictim, y: Math.round(yRowB + victimH / 2) }],
+        left: { x: Math.round(cxVictim - victimW / 2), y: yRowB },
+        right: { x: Math.round(cxVictim + victimW / 2), y: yRowB },
       },
     });
 
-    // 2. ATM Cashout Sink Node (Rohini Sector 4 ATM DL-049) at Row B far right
+    // 2. ATM Cashout Sink Node (Rohini Sector 4 ATM DL-049) at Row B far right (.91W) with generous clearance from CAF hub (.71W)
+    const cxAtm = Math.round(0.91 * width);
     const atmW = 144;
     const atmH = 54;
     nodes.push({
@@ -521,24 +525,24 @@ export function layoutNetwork(
       sublabel: "ATM DL-049 · Cash: ₹1.20L",
       role: "Physical Cashout Sink",
       category: "sink",
-      cx: cxC2,
+      cx: cxAtm,
       cy: yRowB,
-      x: Math.round(cxC2 - atmW / 2),
+      x: Math.round(cxAtm - atmW / 2),
       y: Math.round(yRowB - atmH / 2),
       w: atmW,
       h: atmH,
       color: "#DC2626",
       ports: {
-        top: [{ x: cxC2, y: Math.round(yRowB - atmH / 2) }],
-        bottom: [{ x: cxC2, y: Math.round(yRowB + atmH / 2) }],
-        left: { x: Math.round(cxC2 - atmW / 2), y: yRowB },
-        right: { x: Math.round(cxC2 + atmW / 2), y: yRowB },
+        top: [{ x: cxAtm, y: Math.round(yRowB - atmH / 2) }],
+        bottom: [{ x: cxAtm, y: Math.round(yRowB + atmH / 2) }],
+        left: { x: Math.round(cxAtm - atmW / 2), y: yRowB },
+        right: { x: Math.round(cxAtm + atmW / 2), y: yRowB },
       },
     });
 
     // Cash Edge A: Victim -> Vikram Shah (₹5,00,000)
-    const pVictimBot = { x: cxTower, y: Math.round(yRowB + victimH / 2) };
-    const pVikramLeft = { x: Math.round(cxM1 - accW / 2), y: yRowC };
+    const pVictimBot = { x: cxVictim, y: Math.round(yRowB + victimH / 2) };
+    const pVikramLeft = { x: Math.round(cxM1 - accW / 2), y: yRowC - 10 };
     const pathVictim = makeVerticalBezier(pVictimBot.x, pVictimBot.y, pVikramLeft.x, pVikramLeft.y);
     edges.push({
       id: "edge-cash-victim-vikram",
@@ -591,9 +595,9 @@ export function layoutNetwork(
     });
 
     // Cash Edge D: Sameer -> ATM (₹1,20,000 Cashout)
-    const pSameerTop = { x: cxM2b + 30, y: Math.round(yRowC - accH / 2) };
-    const pAtmBot = { x: cxC2, y: Math.round(yRowB + atmH / 2) };
-    const pathSameerAtm = makeVerticalBezier(pSameerTop.x, pSameerTop.y, pAtmBot.x, pAtmBot.y);
+    const pSameerRight = { x: Math.round(cxM2b + accW / 2), y: yRowC - 10 };
+    const pAtmBot = { x: cxAtm, y: Math.round(yRowB + atmH / 2) };
+    const pathSameerAtm = makeVerticalBezier(pSameerRight.x, pSameerRight.y, pAtmBot.x, pAtmBot.y);
     edges.push({
       id: "edge-cash-sameer-atm",
       type: "cash",

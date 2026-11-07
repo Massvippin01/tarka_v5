@@ -264,3 +264,4 @@ def test_investigation_graph_temporal_filtering_and_pathfinding():
     assert "N4" not in node_ids
     assert "E1" in edge_ids and "E2" in edge_ids
     assert "E3" not in edge_ids
+

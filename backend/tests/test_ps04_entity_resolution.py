@@ -309,3 +309,4 @@ def test_timeline_clock_drift_uncertainty():
     # Evt A strictly precedes Evt C (causally determined beyond uncertainty)
     assert evt_a.has_temporal_overlap(evt_c_causal) is False
     assert evt_a.is_causally_before(evt_c_causal) is True
+

@@ -17,6 +17,10 @@ import {
   Clock,
   User,
   ShieldCheck,
+  Maximize2,
+  Minimize2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { toast } from "sonner";
 import { layoutNetwork, type NetworkEdgeLayout } from "./layoutNetwork";
@@ -224,8 +228,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
-    width: 820,
-    height: 520,
+    width: 980,
+    height: 560,
   });
 
   const [viewMode, setViewMode] = useState<"graph" | "matrix" | "table">("graph");
@@ -234,6 +238,38 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
   const { setSelectedEvidenceEdge } = useTarkaUiStore();
   const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
+
+  // Fullscreen, Minimized & Zoom States
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+
+  const handleZoomIn = () => setZoomLevel((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10));
+  const handleZoomOut = () => setZoomLevel((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
+  const handleResetZoom = () => setZoomLevel(1);
+
+  // Esc key exits fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen]);
+
+  // Lock body scroll in fullscreen mode
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen]);
 
   // 6-step Chronological Forensic Replay Engine
   const [replayStep, setReplayStep] = useState<number>(5); // Default to Step 5 (full picture at rest)
@@ -248,15 +284,15 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0) {
           setDimensions({
-            width: Math.max(760, Math.floor(width)),
-            height: Math.max(520, Math.floor(height)),
+            width: Math.max(980, Math.floor(width)),
+            height: isFullscreen ? Math.max(620, Math.floor(height)) : Math.max(560, Math.floor(height)),
           });
         }
       }
     });
     observer.observe(canvasRef.current);
     return () => observer.disconnect();
-  }, [viewMode]);
+  }, [viewMode, isFullscreen]);
 
   // Determine whether cashflow nodes/edges should be included
   const includeCashFlowNodes = edgeFilter === "cashflow" || edgeFilter === "all";
@@ -411,192 +447,925 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       style={{
         display: "flex",
         flexDirection: "column",
-        width: "100%",
-        position: "relative",
-        background: "#FAFCFF",
-        overflow: "hidden",
+        width: isFullscreen ? "100vw" : "100%",
+        position: isFullscreen ? "fixed" : "relative",
+        top: isFullscreen ? 0 : undefined,
+        left: isFullscreen ? 0 : undefined,
+        right: isFullscreen ? 0 : undefined,
+        bottom: isFullscreen ? 0 : undefined,
+        height: isFullscreen ? "100vh" : undefined,
+        zIndex: isFullscreen ? 99999 : 1,
+        background: isFullscreen ? "#0F172A" : "#FAFCFF",
+        overflow: isFullscreen ? "hidden" : "visible",
       }}
     >
       {/* =========================================================================
-          TOOLBAR STRIP (PRIMARY FILTERS & VIEW MODES)
+          FULLSCREEN REPLAY COMMAND HEADER (WHEN IN CINEMATIC FULLSCREEN MODE)
           ========================================================================= */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          minHeight: 40,
-          padding: "6px 12px",
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
-          zIndex: 10,
-          flexShrink: 0,
-          gap: "8px",
-        }}
-      >
-        {/* Left: Filter Buttons */}
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#64748B", marginRight: "4px" }}>
-            VIEW LAYER:
-          </span>
-          {(
-            [
-              { id: "all", label: "ALL EVIDENCE", icon: null },
-              { id: "cashflow", label: "💰 CASH FLOW (MONEY TRAIL)", icon: IndianRupee },
-              { id: "tether", label: "📶 TETHER (Wi-Fi AP)", icon: Wifi },
-              { id: "ja4", label: "🔒 JA4 TLS", icon: Cpu },
-              { id: "caf", label: "📋 CAF", icon: Building },
-              { id: "c2", label: "⚡ C2 BOT", icon: Server },
-            ] as const
-          ).map((tab) => {
-            const isActive = edgeFilter === tab.id;
-            const isCash = tab.id === "cashflow";
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onEdgeFilterChange(tab.id)}
-                className="hover:border-indigo-300 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+      {isFullscreen && (
+        <div
+          data-testid="fullscreen-replay-header"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            background: "#0B1120",
+            borderBottom: "1px solid #1E293B",
+            padding: "8px 16px",
+            gap: "8px",
+            zIndex: 100000,
+            flexShrink: 0,
+            color: "#F8FAFC",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          }}
+        >
+          {/* Top Bar: Title + Big Play Button + Controls + Layer Filters + Zoom + Exit */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            {/* Left: Branding & Case Title */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
                 style={{
-                  fontSize: "10px",
-                  fontWeight: isActive ? 800 : 600,
-                  padding: isCash ? "3px 9px" : "3px 7px",
-                  borderRadius: "5px",
-                  border: isActive
-                    ? isCash
-                      ? "1px solid #059669"
-                      : "1px solid #6366F1"
-                    : "1px solid #E2E8F0",
-                  background: isActive
-                    ? isCash
-                      ? "#ECFDF5"
-                      : "#EEF2FF"
-                    : "#FFFFFF",
-                  color: isActive
-                    ? isCash
-                      ? "#047857"
-                      : "#4338CA"
-                    : "#64748B",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  background: "#4F46E5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#FFFFFF",
+                }}
+              >
+                <Shield size={16} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 900, color: "#FFFFFF", letterSpacing: "0.4px" }}>
+                    FULLSCREEN INVESTIGATION REPLAY
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 800,
+                      background: "#1E293B",
+                      border: "1px solid #475569",
+                      color: "#93C5FD",
+                      padding: "1px 5px",
+                      borderRadius: "3px",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    CASE-2026-001
+                  </span>
+                </div>
+                <div style={{ fontSize: "9.5px", color: "#94A3B8" }}>
+                  Evidence Network & Chronological Fund Flow Visualization (DoT Clause 39.20 · BSA §63)
+                </div>
+              </div>
+            </div>
+
+            {/* Center: REPLAY CONTROLS WITH PROMINENT PLAY BUTTON INSIDE FULLSCREEN */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#1E293B",
+                border: "1px solid #334155",
+                borderRadius: "8px",
+                padding: "4px 10px",
+              }}
+            >
+              {/* Prev Step */}
+              <button
+                type="button"
+                onClick={handleStepBack}
+                disabled={replayStep <= 0}
+                title="Previous Replay Step"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: replayStep <= 0 ? "#475569" : "#CBD5E1",
+                  cursor: replayStep <= 0 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px",
+                }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {/* PRIMARY PLAY / PAUSE BUTTON */}
+              <button
+                type="button"
+                onClick={handleTogglePlay}
+                data-testid="fullscreen-play-btn"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  padding: "6px 14px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: isPlaying
+                    ? "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)"
+                    : "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                  color: "#FFFFFF",
+                  cursor: "pointer",
+                  boxShadow: isPlaying
+                    ? "0 0 12px rgba(239,68,68,0.4)"
+                    : "0 0 12px rgba(16,185,129,0.4)",
+                  transition: "all 0.15s ease-out",
+                }}
+              >
+                {isPlaying ? <Pause size={15} /> : <Play size={15} fill="white" />}
+                <span>{isPlaying ? "PAUSE REPLAY" : "PLAY REPLAY"}</span>
+              </button>
+
+              {/* Next Step */}
+              <button
+                type="button"
+                onClick={handleStepForward}
+                disabled={replayStep >= 5}
+                title="Next Replay Step"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: replayStep >= 5 ? "#475569" : "#CBD5E1",
+                  cursor: replayStep >= 5 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px",
+                }}
+              >
+                <ChevronRight size={16} />
+              </button>
+
+              {/* Reset to Start */}
+              <button
+                type="button"
+                onClick={handleResetReplay}
+                title="Reset Replay to T+00"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#94A3B8",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  boxShadow: isActive ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                  padding: "4px",
                 }}
               >
-                {tab.label}
+                <RotateCcw size={14} />
               </button>
-            );
-          })}
-        </div>
 
-        {/* Right: Controls & View Switcher */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          {/* Simulate Hotspot Toggle */}
-          <button
-            type="button"
-            onClick={onToggleHotspot}
-            className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "10px",
-              fontWeight: 700,
-              padding: "3px 8px",
-              borderRadius: "5px",
-              border: isHotspotActive ? "1px solid #FCA5A5" : "1px solid #CBD5E1",
-              background: isHotspotActive ? "#FFF1F2" : "#F8FAFC",
-              color: isHotspotActive ? "#E11D48" : "#475569",
-              cursor: "pointer",
-            }}
-          >
-            <Wifi size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
-            <span>{isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}</span>
-          </button>
+              {/* 6 Step Navigation Pills */}
+              <div style={{ display: "flex", alignItems: "center", gap: "3px", marginLeft: "6px" }}>
+                {[
+                  { step: 0, label: "0: Inflow" },
+                  { step: 1, label: "1: UPI Split" },
+                  { step: 2, label: "2: AP Tether" },
+                  { step: 3, label: "3: Layering" },
+                  { step: 4, label: "4: Cashout" },
+                  { step: 5, label: "5: Freezes" },
+                ].map((st) => {
+                  const isCurrent = replayStep === st.step;
+                  return (
+                    <button
+                      key={st.step}
+                      type="button"
+                      onClick={() => handleJumpToStep(st.step)}
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: isCurrent ? 800 : 500,
+                        padding: "3px 7px",
+                        borderRadius: "4px",
+                        border: isCurrent ? "1px solid #38BDF8" : "1px solid #334155",
+                        background: isCurrent ? "#0284C7" : "#0F172A",
+                        color: isCurrent ? "#FFFFFF" : "#94A3B8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {st.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* Graph | Matrix | Table Switcher */}
+              {/* Speed Selector */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  background: "#0F172A",
+                  borderRadius: "4px",
+                  padding: "2px",
+                  marginLeft: "4px",
+                }}
+              >
+                {([0.5, 1, 2] as const).map((spd) => (
+                  <button
+                    key={spd}
+                    type="button"
+                    onClick={() => setPlaybackSpeed(spd)}
+                    style={{
+                      fontSize: "9.5px",
+                      fontWeight: playbackSpeed === spd ? 800 : 500,
+                      padding: "2px 5px",
+                      borderRadius: "3px",
+                      border: "none",
+                      background: playbackSpeed === spd ? "#334155" : "transparent",
+                      color: playbackSpeed === spd ? "#38BDF8" : "#64748B",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {spd}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Layer Filters, Zoom Controls & Exit Fullscreen Button */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* Edge Filter Pills */}
+              <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                {(
+                  [
+                    { id: "all", label: "ALL" },
+                    { id: "cashflow", label: "💰 CASH" },
+                    { id: "tether", label: "📶 TETHER" },
+                    { id: "ja4", label: "🔒 JA4" },
+                    { id: "caf", label: "📋 CAF" },
+                  ] as const
+                ).map((tab) => {
+                  const isActive = edgeFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => onEdgeFilterChange(tab.id)}
+                      style={{
+                        fontSize: "9.5px",
+                        fontWeight: isActive ? 800 : 500,
+                        padding: "3px 6px",
+                        borderRadius: "4px",
+                        border: isActive ? "1px solid #38BDF8" : "1px solid #334155",
+                        background: isActive ? "#1E293B" : "transparent",
+                        color: isActive ? "#38BDF8" : "#94A3B8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Zoom Buttons */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: "#1E293B",
+                  border: "1px solid #334155",
+                  borderRadius: "5px",
+                  padding: "2px 4px",
+                  gap: "3px",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  title="Zoom Out"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#CBD5E1",
+                    cursor: "pointer",
+                    padding: "2px",
+                    display: "inline-flex",
+                  }}
+                >
+                  <ZoomOut size={12} />
+                </button>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono)",
+                    color: "#94A3B8",
+                    padding: "0 2px",
+                  }}
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  title="Zoom In"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#CBD5E1",
+                    cursor: "pointer",
+                    padding: "2px",
+                    display: "inline-flex",
+                  }}
+                >
+                  <ZoomIn size={12} />
+                </button>
+                {zoomLevel !== 1 && (
+                  <button
+                    type="button"
+                    onClick={handleResetZoom}
+                    style={{
+                      fontSize: "9px",
+                      color: "#38BDF8",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0 2px",
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+
+              {/* EXIT FULLSCREEN / MINIMIZE BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(false)}
+                data-testid="exit-fullscreen-btn"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  border: "1px solid #475569",
+                  background: "#1E293B",
+                  color: "#F1F5F9",
+                  cursor: "pointer",
+                }}
+              >
+                <Minimize2 size={13} />
+                <span>Exit Fullscreen (Esc)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Fullscreen Narrative HUD Strip */}
           <div
             style={{
-              display: "inline-flex",
-              padding: "2px",
-              background: "#F1F5F9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "#1E293B",
               borderRadius: "6px",
-              border: "1px solid #E2E8F0",
+              padding: "5px 12px",
+              gap: "12px",
+              fontSize: "11px",
             }}
           >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  background: "#0284C7",
+                  color: "#FFFFFF",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                <Clock size={11} />
+                <span>{currentStepData.clockTime}</span>
+                <span style={{ opacity: 0.8 }}>({currentStepData.timeLabel})</span>
+              </span>
+
+              <span style={{ fontWeight: 800, color: "#FFFFFF" }}>{currentStepData.title}</span>
+
+              {currentStepData.amount !== "—" && (
+                <span
+                  style={{
+                    fontSize: "10.5px",
+                    fontWeight: 900,
+                    background: "#065F46",
+                    color: "#6EE7B7",
+                    border: "1px solid #059669",
+                    padding: "1px 7px",
+                    borderRadius: "4px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  Flow: {currentStepData.amount}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ color: "#CBD5E1", fontSize: "10.5px" }}>{currentStepData.headline}</span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  color: "#94A3B8",
+                  background: "#0F172A",
+                  padding: "2px 6px",
+                  borderRadius: "3px",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                {currentStepData.statutory}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TOOLBAR STRIP (PRIMARY FILTERS & VIEW MODES) - SHOWN IN NORMAL MODE
+          ========================================================================= */}
+      {!isFullscreen && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            minHeight: 40,
+            padding: "6px 12px",
+            background: "#FFFFFF",
+            borderBottom: "1px solid #E2E8F0",
+            zIndex: 10,
+            flexShrink: 0,
+            gap: "8px",
+          }}
+        >
+          {/* Left: Filter Buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#64748B", marginRight: "4px" }}>
+              VIEW LAYER:
+            </span>
+            {(
+              [
+                { id: "all", label: "ALL EVIDENCE", icon: null },
+                { id: "cashflow", label: "💰 CASH FLOW (MONEY TRAIL)", icon: IndianRupee },
+                { id: "tether", label: "📶 TETHER (Wi-Fi AP)", icon: Wifi },
+                { id: "ja4", label: "🔒 JA4 TLS", icon: Cpu },
+                { id: "caf", label: "📋 CAF", icon: Building },
+                { id: "c2", label: "⚡ C2 BOT", icon: Server },
+              ] as const
+            ).map((tab) => {
+              const isActive = edgeFilter === tab.id;
+              const isCash = tab.id === "cashflow";
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => onEdgeFilterChange(tab.id)}
+                  className="hover:border-indigo-300 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: isActive ? 800 : 600,
+                    padding: isCash ? "3px 9px" : "3px 7px",
+                    borderRadius: "5px",
+                    border: isActive
+                      ? isCash
+                        ? "1px solid #059669"
+                        : "1px solid #6366F1"
+                      : "1px solid #E2E8F0",
+                    background: isActive
+                      ? isCash
+                        ? "#ECFDF5"
+                        : "#EEF2FF"
+                      : "#FFFFFF",
+                    color: isActive
+                      ? isCash
+                        ? "#047857"
+                        : "#4338CA"
+                      : "#64748B",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    boxShadow: isActive ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: Controls, Zoom, Minimize & Fullscreen */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {/* Simulate Hotspot Toggle */}
             <button
               type="button"
-              onClick={() => setViewMode("graph")}
+              onClick={onToggleHotspot}
+              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
                 fontSize: "10px",
-                fontWeight: viewMode === "graph" ? 800 : 500,
-                padding: "2px 7px",
-                borderRadius: "4px",
-                border: "none",
-                background: viewMode === "graph" ? "#FFFFFF" : "transparent",
-                color: viewMode === "graph" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "graph" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                fontWeight: 700,
+                padding: "3px 8px",
+                borderRadius: "5px",
+                border: isHotspotActive ? "1px solid #FCA5A5" : "1px solid #CBD5E1",
+                background: isHotspotActive ? "#FFF1F2" : "#F8FAFC",
+                color: isHotspotActive ? "#E11D48" : "#475569",
                 cursor: "pointer",
               }}
             >
-              Graph
+              <Wifi size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
+              <span>{isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}</span>
             </button>
+
+            {/* Graph | Matrix | Table Switcher */}
+            <div
+              style={{
+                display: "inline-flex",
+                padding: "2px",
+                background: "#F1F5F9",
+                borderRadius: "6px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setViewMode("graph")}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: viewMode === "graph" ? 800 : 500,
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  border: "none",
+                  background: viewMode === "graph" ? "#FFFFFF" : "transparent",
+                  color: viewMode === "graph" ? "#0F172A" : "#64748B",
+                  boxShadow: viewMode === "graph" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                Graph
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("matrix")}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: viewMode === "matrix" ? 800 : 500,
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  border: "none",
+                  background: viewMode === "matrix" ? "#FFFFFF" : "transparent",
+                  color: viewMode === "matrix" ? "#0F172A" : "#64748B",
+                  boxShadow: viewMode === "matrix" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                Matrix
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                style={{
+                  fontSize: "10px",
+                  fontWeight: viewMode === "table" ? 800 : 500,
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  border: "none",
+                  background: viewMode === "table" ? "#FFFFFF" : "transparent",
+                  color: viewMode === "table" ? "#0F172A" : "#64748B",
+                  boxShadow: viewMode === "table" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                Table
+              </button>
+            </div>
+
+            {/* Zoom Controls */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#F1F5F9",
+                border: "1px solid #CBD5E1",
+                borderRadius: "5px",
+                padding: "1px 3px",
+                gap: "2px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                title="Zoom Out"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#475569",
+                  cursor: "pointer",
+                  padding: "2px",
+                  display: "inline-flex",
+                }}
+              >
+                <ZoomOut size={11} />
+              </button>
+              <span
+                style={{
+                  fontSize: "9.5px",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
+                  color: "#334155",
+                  minWidth: "28px",
+                  textAlign: "center",
+                }}
+              >
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                title="Zoom In"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#475569",
+                  cursor: "pointer",
+                  padding: "2px",
+                  display: "inline-flex",
+                }}
+              >
+                <ZoomIn size={11} />
+              </button>
+              {zoomLevel !== 1 && (
+                <button
+                  type="button"
+                  onClick={handleResetZoom}
+                  title="Reset Zoom to 100%"
+                  style={{
+                    fontSize: "9px",
+                    color: "#2563EB",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0 2px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Minimize / Expand Toggle Button */}
             <button
               type="button"
-              onClick={() => setViewMode("matrix")}
+              onClick={() => setIsMinimized((m) => !m)}
+              data-testid="toggle-minimize-btn"
+              title={isMinimized ? "Expand Graph" : "Minimize Graph"}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
                 fontSize: "10px",
-                fontWeight: viewMode === "matrix" ? 800 : 500,
-                padding: "2px 7px",
-                borderRadius: "4px",
-                border: "none",
-                background: viewMode === "matrix" ? "#FFFFFF" : "transparent",
-                color: viewMode === "matrix" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "matrix" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                fontWeight: 700,
+                padding: "3px 8px",
+                borderRadius: "5px",
+                border: "1px solid #CBD5E1",
+                background: isMinimized ? "#EEF2FF" : "#F8FAFC",
+                color: isMinimized ? "#4338CA" : "#475569",
                 cursor: "pointer",
               }}
             >
-              Matrix
+              {isMinimized ? <Maximize2 size={11} /> : <Minimize2 size={11} />}
+              <span>{isMinimized ? "Expand" : "Minimize"}</span>
             </button>
+
+            {/* Full Screen Button */}
             <button
               type="button"
-              onClick={() => setViewMode("table")}
+              onClick={() => {
+                setIsMinimized(false);
+                setIsFullscreen(true);
+              }}
+              data-testid="enter-fullscreen-btn"
+              title="Open Fullscreen Replay Mode (100vw x 100vh)"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
                 fontSize: "10px",
-                fontWeight: viewMode === "table" ? 800 : 500,
-                padding: "2px 7px",
-                borderRadius: "4px",
-                border: "none",
-                background: viewMode === "table" ? "#FFFFFF" : "transparent",
-                color: viewMode === "table" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "table" ? "0 1px 2px rgba(15,23,42,0.06)" : "none",
+                fontWeight: 800,
+                padding: "3px 9px",
+                borderRadius: "5px",
+                border: "1px solid #4338CA",
+                background: "#4F46E5",
+                color: "#FFFFFF",
                 cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
               }}
             >
-              Table
+              <Maximize2 size={11} />
+              <span>Full Screen</span>
             </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* =========================================================================
+          MINIMIZED COMPACT REPLAY STRIP (WHEN USER MINIMIZES THE GRAPH)
+          ========================================================================= */}
+      {isMinimized && !isFullscreen && (
+        <div
+          data-testid="minimized-graph-strip"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 12px",
+            background: "#F8FAFC",
+            borderBottom: "1px solid #E2E8F0",
+            gap: "10px",
+            flexWrap: "wrap",
+            zIndex: 9,
+          }}
+        >
+          {/* Left: Replay Controls & Current Step */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                fontSize: "9px",
+                fontWeight: 800,
+                padding: "2px 6px",
+                borderRadius: "4px",
+                background: "#E2E8F0",
+                color: "#475569",
+                letterSpacing: "0.5px",
+              }}
+            >
+              GRAPH MINIMIZED
+            </span>
+
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              data-testid="minimized-play-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "10.5px",
+                fontWeight: 800,
+                padding: "4px 9px",
+                borderRadius: "5px",
+                border: "none",
+                background: isPlaying ? "#EF4444" : "#10B981",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(15,23,42,0.1)",
+              }}
+            >
+              {isPlaying ? <Pause size={12} /> : <Play size={12} fill="white" />}
+              <span>{isPlaying ? "Pause" : "Play Replay"}</span>
+            </button>
+
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#0F172A",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <Clock size={11} color="#64748B" />
+              <span>Step {replayStep + 1}/6:</span>
+              <span style={{ color: "#2563EB" }}>{currentStepData.title}</span>
+            </span>
+
+            {currentStepData.amount !== "—" && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  background: "#ECFDF5",
+                  color: "#047857",
+                  border: "1px solid #A7F3D0",
+                  padding: "1px 6px",
+                  borderRadius: "4px",
+                }}
+              >
+                Flow: {currentStepData.amount}
+              </span>
+            )}
+          </div>
+
+          {/* Center: Live Mule Balance Badges */}
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#64748B" }}>Mules:</span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+              Vikram: <b>{currentStepData.muleBalances["acc-vikram"]?.balance}</b>
+            </span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+              Rohit: <b>{currentStepData.muleBalances["acc-rohit"]?.balance}</b>
+            </span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+              Sameer: <b>{currentStepData.muleBalances["acc-sameer"]?.balance}</b>
+            </span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+              Paytm: <b>{currentStepData.muleBalances["acc-sink"]?.balance}</b>
+            </span>
+            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FEE2E2", color: "#B91C1C", border: "1px solid #FECDD3", borderRadius: "3px" }}>
+              ATM: <b>{currentStepData.muleBalances["node-atm"]?.balance}</b>
+            </span>
+          </div>
+
+          {/* Right: Expand & Fullscreen Actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <button
+              type="button"
+              onClick={() => setIsMinimized(false)}
+              data-testid="expand-graph-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                padding: "4px 9px",
+                borderRadius: "5px",
+                border: "1px solid #CBD5E1",
+                background: "#FFFFFF",
+                color: "#1E293B",
+                cursor: "pointer",
+              }}
+            >
+              <Maximize2 size={12} />
+              <span>Expand Graph</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMinimized(false);
+                setIsFullscreen(true);
+              }}
+              data-testid="minimized-fullscreen-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                padding: "4px 10px",
+                borderRadius: "5px",
+                border: "none",
+                background: "#4F46E5",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+              }}
+            >
+              <Maximize2 size={12} />
+              <span>Full Screen</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           FORENSIC CHRONOLOGICAL REPLAY HUD (WHERE CASH WENT & TIMELINE)
           ========================================================================= */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          padding: "6px 12px",
-          background: "#F8FAFC",
-          borderBottom: "1px solid #E2E8F0",
-          gap: "6px",
-          zIndex: 8,
-          flexShrink: 0,
-        }}
-      >
-        {/* Row 1: Player Controls & Discrete Step Pills */}
+      {!isMinimized && !isFullscreen && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            padding: "6px 12px",
+            background: "#F8FAFC",
+            borderBottom: "1px solid #E2E8F0",
+            gap: "6px",
+            zIndex: 8,
+            flexShrink: 0,
+          }}
+        >
+          {/* Row 1: Player Controls & Discrete Step Pills */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
           {/* Play/Pause & Step Buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -854,22 +1623,39 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* =========================================================================
           VIEW MODE 1: PURE SVG + HTML TOPOLOGY CANVAS
           ========================================================================= */}
-      {viewMode === "graph" && (
+      {viewMode === "graph" && (!isMinimized || isFullscreen) && (
         <div
           ref={canvasRef}
           style={{
-            height: 520,
-            minHeight: 520,
+            height: isFullscreen ? "calc(100vh - 125px)" : 580,
+            minHeight: isFullscreen ? "calc(100vh - 125px)" : 580,
             position: "relative",
             width: "100%",
-            overflow: "hidden",
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollbarWidth: "thin",
+            flex: isFullscreen ? "1 1 auto" : undefined,
+            background: isFullscreen ? "#0B1120" : "#FAFCFF",
           }}
         >
-          {/* Background Grid Pattern & SVG Edges */}
+          {/* Zoom & Scaling Wrapper */}
+          <div
+            style={{
+              width: "100%",
+              minWidth: layout.width,
+              height: "100%",
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: isFullscreen ? "center center" : "left top",
+              transition: "transform 0.15s ease-out",
+              position: "relative",
+            }}
+          >
+            {/* Background Grid Pattern & SVG Edges */}
           <svg
             style={{
               position: "absolute",
@@ -1661,13 +2447,14 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 </div>
               );
             })}
+          </div>
         </div>
       )}
 
       {/* =========================================================================
           VIEW MODE 2: MULTI-SOURCE EVIDENCE CORRELATION MATRIX
           ========================================================================= */}
-      {viewMode === "matrix" && (
+      {viewMode === "matrix" && (!isMinimized || isFullscreen) && (
         <div
           style={{
             flex: "1 1 auto",
@@ -1825,7 +2612,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       {/* =========================================================================
           VIEW MODE 3: VIEW AS TABLE
           ========================================================================= */}
-      {viewMode === "table" && (
+      {viewMode === "table" && (!isMinimized || isFullscreen) && (
         <div
           style={{
             flex: "1 1 auto",
@@ -1885,11 +2672,11 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       {/* =========================================================================
           EVIDENCE SHEET SLIDE-OVER / DIALOG
           ========================================================================= */}
-      {selectedSheet && (
+      {selectedSheet && (!isMinimized || isFullscreen) && (
         <div
           style={{
             position: "absolute",
-            top: 40,
+            top: isFullscreen ? 80 : 40,
             right: 0,
             bottom: 0,
             width: 320,
