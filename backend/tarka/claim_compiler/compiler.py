@@ -47,6 +47,18 @@ class EvidenceItem:
 
 
 @dataclass
+class EvidenceIR:
+    """Canonical Evidence Intermediate Representation (IR) preserving raw AST and transformation lineage."""
+    ir_id: str
+    artifact_id: str
+    sha256_hash: str
+    observations: List[Observation] = field(default_factory=list)
+    normalization_history: List[Dict[str, Any]] = field(default_factory=list)
+    extraction_rule: str = "CANONICAL_IR_V1"
+    timestamp_utc: str = ""
+
+
+@dataclass
 class Observation:
     """Atomic observation extracted deterministically from raw evidence bytes."""
     observation_id: str
@@ -98,6 +110,10 @@ class InvestigativeClaim:
     reviewer_id: Optional[str] = None
     review_status: str = "UNREVIEWED"  # "UNREVIEWED", "HUMAN_CONFIRMED", "HUMAN_REJECTED"
     zkp_proof_id: Optional[str] = None
+    observations: List[Observation] = field(default_factory=list)
+    version: int = 1
+    transformation_history: List[Dict[str, Any]] = field(default_factory=list)
+    integrity_precondition_satisfied: bool = True
 
 
 class ClaimDependencyDAG:
@@ -207,20 +223,32 @@ class ClaimDependencyDAG:
                             evidence_valid = False
                             break
                     if not evidence_valid:
+                        claim.integrity_precondition_satisfied = False
                         claim.evaluation_status = ClaimState.UNSUPPORTED
+                        if not any("CIRCUIT-BREAKER" in lim for lim in claim.limitations):
+                            claim.limitations.append("CIRCUIT-BREAKER TRIPPED: Direct supporting evidence failed integrity verification.")
                         continue
 
                 # Check premise claims validity
                 premises_valid = True
+                premise_integrity_failed = False
                 if claim.premise_claim_ids:
                     for pid in claim.premise_claim_ids:
                         premise = self._claims.get(pid)
-                        if not premise or premise.evaluation_status in (ClaimState.CONTRADICTED, ClaimState.UNSUPPORTED, ClaimState.UNCERTAIN):
+                        if not premise or not premise.integrity_precondition_satisfied:
+                            premise_integrity_failed = True
+                            premises_valid = False
+                            break
+                        if premise.evaluation_status in (ClaimState.CONTRADICTED, ClaimState.UNSUPPORTED, ClaimState.UNCERTAIN):
                             premises_valid = False
                             break
 
                 if not premises_valid:
                     claim.evaluation_status = ClaimState.UNCERTAIN
+                    if premise_integrity_failed:
+                        claim.integrity_precondition_satisfied = False
+                        if not any("CIRCUIT-BREAKER" in lim for lim in claim.limitations):
+                            claim.limitations.append("CIRCUIT-BREAKER TRIPPED: Prerequisite premise claim failed evidentiary integrity.")
                 else:
                     claim.evaluation_status = ClaimState.SUPPORTED
 
@@ -335,4 +363,34 @@ class ForensicClaimCompiler:
                 "Maintains strict non-accusatory neutral terminology. AI Proposes, Evidence Verifies, Human Decides."
             ),
         }
+
+    def generate_claim_manifest(self, case_id: str) -> Dict[str, Any]:
+        """Generates a verifiable machine-readable manifest and investigator summary."""
+        self.dag.evaluate_all()
+        claims = self.dag.get_all_claims()
+        claims_data = [asdict(c) for c in claims]
+        serialized = json.dumps(claims_data, sort_keys=True)
+        manifest_sha256 = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+        return {
+            "manifest_version": "1.0.0",
+            "case_id": case_id,
+            "manifest_sha256": manifest_sha256,
+            "generated_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "total_claims": len(claims),
+            "claims": claims_data,
+            "investigator_summary": (
+                f"Case {case_id}: {len(claims)} total claims compiled. "
+                f"Supported: {sum(1 for c in claims if c.evaluation_status == ClaimState.SUPPORTED)}, "
+                f"Contradicted: {sum(1 for c in claims if c.evaluation_status == ClaimState.CONTRADICTED)}, "
+                f"Uncertain: {sum(1 for c in claims if c.evaluation_status == ClaimState.UNCERTAIN)}, "
+                f"Unsupported: {sum(1 for c in claims if c.evaluation_status == ClaimState.UNSUPPORTED)}."
+            ),
+            "statutory_non_guilt_notice": (
+                "AI PROPOSES. EVIDENCE VERIFIES. HUMAN DECIDES. "
+                "This claim manifest represents investigative inferences and mathematical checks; "
+                "it does NOT determine criminal guilt or judicial liability."
+            ),
+        }
+
 

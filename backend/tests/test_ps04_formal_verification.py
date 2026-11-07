@@ -102,3 +102,27 @@ class TestWorkstreamA2FormalVerification:
         assert "UNSAT" in result["solver_verdict"]
         assert "Chronological Inversion" in result["solver_verdict"]
 
+    def test_identity_preconditions_and_non_guilt_disclaimer(self):
+        """Verify identity contradiction verification, counterexample extraction, and non-guilt disclaimers."""
+        # 1. Matching identities
+        res_valid = FormalSMTVerifier.verify_identity_preconditions(
+            subject_id="SUBJ-001",
+            observed_identifiers={"pan": "ABCDE1234F", "msisdn": "+919876543210"},
+            known_anchor_identifiers={"pan": "ABCDE1234F", "msisdn": "+919876543210"},
+        )
+        assert res_valid["preconditions_satisfied"] is True
+        assert "SAT" in res_valid["solver_verdict"]
+        assert "NON-GUILT LEGAL DISCLAIMER" in res_valid["non_guilt_disclaimer"]
+
+        # 2. Conflicting PAN -> UNSAT
+        res_conflict = FormalSMTVerifier.verify_identity_preconditions(
+            subject_id="SUBJ-002",
+            observed_identifiers={"pan": "ABCDE1234F", "msisdn": "+919876543210"},
+            known_anchor_identifiers={"pan": "XYZPK9876Q", "msisdn": "+919876543210"},
+        )
+        assert res_conflict["preconditions_satisfied"] is False
+        assert "UNSAT" in res_conflict["solver_verdict"]
+        assert "Hard identifier conflict on 'pan'" in res_conflict["counterexample"]
+        assert "NON-GUILT LEGAL DISCLAIMER" in res_conflict["non_guilt_disclaimer"]
+
+

@@ -168,3 +168,26 @@ class TestWorkstreamA1ClaimCompiler:
 
         assert claim.zkp_proof_id == "ZKP-8812A4F9"
         assert any("ZKP proof ZKP-8812A4F9" in assump for assump in claim.assumptions)
+
+    def test_claim_manifest_generation_and_circuit_breaker(self):
+        """Verify machine-readable manifest generation and integrity circuit-breaker tripping."""
+        compiler = ForensicClaimCompiler()
+        # Ingest bad evidence
+        ev_tampered = EvidenceItem("ART-TAMPERED", "PDF", "badhash", 0, 10, "fake", 1.0, TrustTier.T3_LOW, integrity_verified=False)
+        compiler.ingest_evidence_item(ev_tampered)
+
+        txn = TransactionReference("TX-99", 5000.0, "INR", 1700000000.0, "ENT-A", "ENT-B")
+        claim = compiler.compile_transaction_claim(
+            claim_id="CLM-CIRCUIT-01",
+            txn=txn,
+            supporting_artifact_id="ART-TAMPERED",
+        )
+
+        manifest = compiler.generate_claim_manifest("CASE-2026-001")
+        assert manifest["manifest_version"] == "1.0.0"
+        assert manifest["case_id"] == "CASE-2026-001"
+        assert len(manifest["manifest_sha256"]) == 64
+        assert manifest["total_claims"] == 1
+        assert "CIRCUIT-BREAKER TRIPPED" in str(manifest["claims"][0]["limitations"])
+        assert "AI PROPOSES. EVIDENCE VERIFIES. HUMAN DECIDES." in manifest["statutory_non_guilt_notice"]
+

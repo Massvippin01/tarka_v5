@@ -19,6 +19,12 @@ class FormalSMTVerifier:
     Microsoft Z3 SMT constraint formulation engine for forensic financial and spatio-temporal invariants.
     """
 
+    STATUTORY_NON_GUILT_DISCLAIMER: str = (
+        "NON-GUILT LEGAL DISCLAIMER: Mathematical consistency or satisfiability in Z3 SMT proves internal "
+        "logical consistency of encoded constraints under assumed premises; it does NOT constitute proof of "
+        "real-world factual truth, intent, or criminal guilt under law. Human judicial authority decides."
+    )
+
     def __init__(self):
         self.solver = z3.Solver()
         # Set bounded timeout (5 seconds) to prevent NP-hard exponential solver hanging
@@ -199,6 +205,7 @@ class FormalSMTVerifier:
                 "effect_event": effect_event_name,
                 "delta_seconds": effect_epoch - cause_epoch,
                 "solver_verdict": "SAT (Chronological Ordering Valid)",
+                "non_guilt_disclaimer": FormalSMTVerifier.STATUTORY_NON_GUILT_DISCLAIMER,
             }
         else:
             inversion_seconds = cause_epoch - effect_epoch
@@ -212,5 +219,46 @@ class FormalSMTVerifier:
                     f"Event '{effect_event_name}' was recorded {inversion_seconds:.1f} seconds BEFORE its prerequisite "
                     f"cause '{cause_event_name}'. Contradicts deterministic physical causality."
                 ),
+                "non_guilt_disclaimer": FormalSMTVerifier.STATUTORY_NON_GUILT_DISCLAIMER,
             }
+
+    @staticmethod
+    def verify_identity_preconditions(
+        subject_id: str,
+        observed_identifiers: Dict[str, str],
+        known_anchor_identifiers: Dict[str, str],
+    ) -> Dict[str, Any]:
+        """Formally verifies that identity linking preconditions do not violate hard uniqueness constraints.
+        Enforces constitutional non-contradiction: distinct PANs or mobile numbers cannot co-satisfy an identity claim.
+        """
+        conflicts = []
+        for key in ("pan", "msisdn", "account_number", "aadhaar_ref"):
+            v_obs = observed_identifiers.get(key)
+            v_anc = known_anchor_identifiers.get(key)
+            if v_obs and v_anc and v_obs.strip().upper() != v_anc.strip().upper():
+                conflicts.append({
+                    "attribute": key,
+                    "observed_value": v_obs,
+                    "anchor_value": v_anc,
+                    "reason": f"Hard identifier conflict on '{key}': '{v_obs}' != '{v_anc}'",
+                })
+
+        if not conflicts:
+            return {
+                "preconditions_satisfied": True,
+                "subject_id": subject_id,
+                "solver_verdict": "SAT (Identity Preconditions Consistent)",
+                "non_guilt_disclaimer": FormalSMTVerifier.STATUTORY_NON_GUILT_DISCLAIMER,
+            }
+        else:
+            reasons = "; ".join(c["reason"] for c in conflicts)
+            return {
+                "preconditions_satisfied": False,
+                "subject_id": subject_id,
+                "solver_verdict": "UNSAT (Identity Contradiction Precondition Failed)",
+                "counterexample": f"Identity precondition failed for subject '{subject_id}': {reasons}",
+                "conflicts": conflicts,
+                "non_guilt_disclaimer": FormalSMTVerifier.STATUTORY_NON_GUILT_DISCLAIMER,
+            }
+
 
