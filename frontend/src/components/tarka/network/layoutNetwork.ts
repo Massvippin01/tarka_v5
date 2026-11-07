@@ -3,7 +3,7 @@ export interface NetworkNodeLayout {
   label: string;
   sublabel: string;
   role?: string;
-  category: "controller" | "hero" | "hub" | "account";
+  category: "controller" | "hero" | "hub" | "account" | "victim" | "sink";
   cx: number;
   cy: number;
   x: number;
@@ -22,7 +22,7 @@ export interface NetworkNodeLayout {
 
 export interface NetworkEdgeLayout {
   id: string;
-  type: "tether" | "ja4" | "caf" | "c2" | "tower";
+  type: "tether" | "ja4" | "caf" | "c2" | "tower" | "cash";
   sourceId: string;
   targetId: string;
   path: string; // SVG path d attribute
@@ -30,6 +30,8 @@ export interface NetworkEdgeLayout {
   color: string;
   dashed: boolean;
   arrowhead: string;
+  amount?: string;
+  timestamp?: string;
 }
 
 export interface NetworkLayoutResult {
@@ -47,7 +49,8 @@ export function layoutNetwork(
   W: number,
   H: number,
   isHotspotActive: boolean = false,
-  activeFilter: "all" | "tether" | "ja4" | "caf" | "c2" = "all"
+  activeFilter: "all" | "tether" | "ja4" | "caf" | "c2" | "cashflow" = "all",
+  includeCashFlowNodes: boolean = false
 ): NetworkLayoutResult {
   const width = Math.max(760, W);
   const height = Math.max(460, H);
@@ -479,6 +482,151 @@ export function layoutNetwork(
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // OPTIONAL: CASH FLOW TOPOLOGY NODES & EDGES (Only when requested)
+  // ---------------------------------------------------------------------------
+  const shouldIncludeCash = includeCashFlowNodes || activeFilter === "cashflow";
+
+  if (shouldIncludeCash) {
+    // 1. Victim Node (Sunil Kumar) at Row B far left
+    const victimW = 144;
+    const victimH = 54;
+    nodes.push({
+      id: "node-victim",
+      label: "Sunil Kumar (Victim)",
+      sublabel: "SBI A/C 30910029101 · Outflow: ₹5.00L",
+      role: "Victim Remitter Account",
+      category: "victim",
+      cx: cxTower,
+      cy: yRowB,
+      x: Math.round(cxTower - victimW / 2),
+      y: Math.round(yRowB - victimH / 2),
+      w: victimW,
+      h: victimH,
+      color: "#EF4444",
+      ports: {
+        top: [{ x: cxTower, y: Math.round(yRowB - victimH / 2) }],
+        bottom: [{ x: cxTower, y: Math.round(yRowB + victimH / 2) }],
+        left: { x: Math.round(cxTower - victimW / 2), y: yRowB },
+        right: { x: Math.round(cxTower + victimW / 2), y: yRowB },
+      },
+    });
+
+    // 2. ATM Cashout Sink Node (Rohini Sector 4 ATM DL-049) at Row B far right
+    const atmW = 144;
+    const atmH = 54;
+    nodes.push({
+      id: "node-atm",
+      label: "Rohini Sec-4 ATM",
+      sublabel: "ATM DL-049 · Cash: ₹1.20L",
+      role: "Physical Cashout Sink",
+      category: "sink",
+      cx: cxC2,
+      cy: yRowB,
+      x: Math.round(cxC2 - atmW / 2),
+      y: Math.round(yRowB - atmH / 2),
+      w: atmW,
+      h: atmH,
+      color: "#DC2626",
+      ports: {
+        top: [{ x: cxC2, y: Math.round(yRowB - atmH / 2) }],
+        bottom: [{ x: cxC2, y: Math.round(yRowB + atmH / 2) }],
+        left: { x: Math.round(cxC2 - atmW / 2), y: yRowB },
+        right: { x: Math.round(cxC2 + atmW / 2), y: yRowB },
+      },
+    });
+
+    // Cash Edge A: Victim -> Vikram Shah (₹5,00,000)
+    const pVictimBot = { x: cxTower, y: Math.round(yRowB + victimH / 2) };
+    const pVikramLeft = { x: Math.round(cxM1 - accW / 2), y: yRowC };
+    const pathVictim = makeVerticalBezier(pVictimBot.x, pVictimBot.y, pVikramLeft.x, pVikramLeft.y);
+    edges.push({
+      id: "edge-cash-victim-vikram",
+      type: "cash",
+      sourceId: "node-victim",
+      targetId: "acc-vikram",
+      path: pathVictim,
+      haloPath: pathVictim,
+      color: "#059669",
+      dashed: false,
+      arrowhead: "arrow-emerald",
+      amount: "₹5,00,000",
+      timestamp: "10:00:14 IST",
+    });
+
+    // Cash Edge B: Vikram -> Rohit (₹3,00,000)
+    const pVikramRight = { x: Math.round(cxM1 + accW / 2), y: yRowC - 10 };
+    const pRohitLeft = { x: Math.round(cxM2a - accW / 2), y: yRowC - 10 };
+    const pathVikramRohit = `M ${pVikramRight.x},${pVikramRight.y} C ${pVikramRight.x + 25},${pVikramRight.y - 20} ${pRohitLeft.x - 25},${pRohitLeft.y - 20} ${pRohitLeft.x},${pRohitLeft.y}`;
+    edges.push({
+      id: "edge-cash-vikram-rohit",
+      type: "cash",
+      sourceId: "acc-vikram",
+      targetId: "acc-rohit",
+      path: pathVikramRohit,
+      haloPath: pathVikramRohit,
+      color: "#059669",
+      dashed: false,
+      arrowhead: "arrow-emerald",
+      amount: "₹3,00,000",
+      timestamp: "10:09:45 IST",
+    });
+
+    // Cash Edge C: Vikram -> Sameer (₹2,00,000)
+    const pVikramRightLow = { x: Math.round(cxM1 + accW / 2), y: yRowC + 10 };
+    const pSameerLeft = { x: Math.round(cxM2b - accW / 2), y: yRowC + 10 };
+    const pathVikramSameer = `M ${pVikramRightLow.x},${pVikramRightLow.y} C ${pVikramRightLow.x + 40},${pVikramRightLow.y + 35} ${pSameerLeft.x - 40},${pSameerLeft.y + 35} ${pSameerLeft.x},${pSameerLeft.y}`;
+    edges.push({
+      id: "edge-cash-vikram-sameer",
+      type: "cash",
+      sourceId: "acc-vikram",
+      targetId: "acc-sameer",
+      path: pathVikramSameer,
+      haloPath: pathVikramSameer,
+      color: "#D97706",
+      dashed: false,
+      arrowhead: "arrow-amber",
+      amount: "₹2,00,000",
+      timestamp: "10:09:50 IST",
+    });
+
+    // Cash Edge D: Sameer -> ATM (₹1,20,000 Cashout)
+    const pSameerTop = { x: cxM2b + 30, y: Math.round(yRowC - accH / 2) };
+    const pAtmBot = { x: cxC2, y: Math.round(yRowB + atmH / 2) };
+    const pathSameerAtm = makeVerticalBezier(pSameerTop.x, pSameerTop.y, pAtmBot.x, pAtmBot.y);
+    edges.push({
+      id: "edge-cash-sameer-atm",
+      type: "cash",
+      sourceId: "acc-sameer",
+      targetId: "node-atm",
+      path: pathSameerAtm,
+      haloPath: pathSameerAtm,
+      color: "#E11D48",
+      dashed: true,
+      arrowhead: "arrow-rose",
+      amount: "₹1,20,000",
+      timestamp: "10:18:22 IST",
+    });
+
+    // Cash Edge E: Rohit -> Paytm Sink (₹1,80,000 Merchant Settlement)
+    const pRohitRight = { x: Math.round(cxM2a + accW / 2), y: yRowC };
+    const pSinkLeft = { x: Math.round(cxSink - accW / 2), y: yRowC };
+    const pathRohitSink = `M ${pRohitRight.x},${pRohitRight.y} C ${pRohitRight.x + 40},${pRohitRight.y - 30} ${pSinkLeft.x - 40},${pSinkLeft.y - 30} ${pSinkLeft.x},${pSinkLeft.y}`;
+    edges.push({
+      id: "edge-cash-rohit-sink",
+      type: "cash",
+      sourceId: "acc-rohit",
+      targetId: "acc-sink",
+      path: pathRohitSink,
+      haloPath: pathRohitSink,
+      color: "#7C3AED",
+      dashed: false,
+      arrowhead: "arrow-violet",
+      amount: "₹1,80,000",
+      timestamp: "10:20:10 IST",
+    });
+  }
+
   return {
     width,
     height,
@@ -486,4 +634,3 @@ export function layoutNetwork(
     edges,
   };
 }
-

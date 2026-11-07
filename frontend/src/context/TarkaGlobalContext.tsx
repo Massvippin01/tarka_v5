@@ -405,6 +405,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
       if (view === "taint-engine" || view === "taint" || path.includes("taint")) return "taint-engine";
       if (view === "court-proof" || view === "court" || path.includes("court")) return "court-proof";
+      if (view === "privacy-crypto" || view === "privacy" || path.includes("privacy")) return "privacy-crypto";
       if (view === "workstation" || view === "tarka" || path.includes("workstation")) return "workstation";
       if (view === "workflow" || path.includes("workflow")) return "workflow";
       if (view === "intake" || path.includes("intake")) return "intake";
