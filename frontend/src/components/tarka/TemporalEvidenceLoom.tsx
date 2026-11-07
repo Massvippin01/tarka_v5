@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Clock, Layers, GitCommit, AlertOctagon, Sliders, Copy, Check } from "lucide-react";
 
 export interface LoomTrackEvent {
@@ -110,6 +110,10 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
   const [activeEvent, setActiveEvent] = useState<LoomTrackEvent | null>(events[0] || null);
   const [showDriftOverlay, setShowDriftOverlay] = useState<boolean>(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveEvent(events[0] || null);
+  }, [events]);
 
   const tracks: LoomTrackEvent["track"][] = ["COMPLAINT", "TELECOM", "BANKING", "DEVICE", "CAS_INGEST"];
 

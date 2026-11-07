@@ -10,7 +10,10 @@ import {
   Shield,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import {
   KpiTile,
   StoryBanner,
@@ -18,16 +21,6 @@ import {
   ScaleBar,
 } from "../../components/tarka/kit";
 import { getBnss94EntityResolutionDirective } from "../../utils/statutoryDirectives";
-
-interface RawToken {
-  id: string;
-  source: string;
-  sourceType: "whatsapp" | "apk" | "cbs" | "cdr" | "pos";
-  value: string;
-  label: string;
-  targetEntityId: string;
-  badgeColor: string;
-}
 
 interface CanonicalEntity {
   id: string;
@@ -48,164 +41,114 @@ interface CanonicalEntity {
   };
 }
 
-const RAW_TOKENS: RawToken[] = [
-  { id: "T-01", source: "WhatsApp (T3)", sourceType: "whatsapp", label: "Demanded VPA", value: "vikram.pay@okaxis", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-02", source: "WhatsApp (T3)", sourceType: "whatsapp", label: "Complainant MSISDN", value: "+91-9810044210", targetEntityId: "ENT-01", badgeColor: "#4338CA" },
-  { id: "T-03", source: "Phishing APK (T2)", sourceType: "apk", label: "C2 Telemetry IP", value: "103.21.144.92", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-04", source: "Phishing APK (T2)", sourceType: "apk", label: "APK Perms", value: "READ_SMS (OTP Sniff)", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-05", source: "SBI CBS (T1)", sourceType: "cbs", label: "Debit Narration", value: "UPI/DR/.../VIKRAM_MULE", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-06", source: "SBI CBS (T1)", sourceType: "cbs", label: "Victim A/c", value: "SBI A/c 30910029101", targetEntityId: "ENT-01", badgeColor: "#4338CA" },
-  { id: "T-07", source: "HDFC CBS (T1)", sourceType: "cbs", label: "L2A Mule A/c", value: "HDFC 5010029419920", targetEntityId: "ENT-03", badgeColor: "#B45309" },
-  { id: "T-08", source: "Axis CBS (T1)", sourceType: "cbs", label: "L2B Mule A/c", value: "AXIS 9140200410291", targetEntityId: "ENT-04", badgeColor: "#B45309" },
-  { id: "T-09", source: "Airtel CDR (T1)", sourceType: "cdr", label: "Swapped SIM IMSI", value: "40410...904 (09:44 IST)", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-10", source: "Airtel CDR (T1)", sourceType: "cdr", label: "Chassis TAC", value: "TAC 86749206 (M34 5G)", targetEntityId: "ENT-02", badgeColor: "#BE123C" },
-  { id: "T-11", source: "ICICI POS (T1)", sourceType: "pos", label: "Verified GSTIN", value: "07AAACA1234F1Z8", targetEntityId: "ENT-05", badgeColor: "#047857" },
-  { id: "T-12", source: "ICICI POS (T1)", sourceType: "pos", label: "Retail POS Inflows", value: "420 Txns/mo (POS-774)", targetEntityId: "ENT-05", badgeColor: "#047857" },
-];
-
-const CANONICAL_ENTITIES: CanonicalEntity[] = [
-  {
-    id: "ENT-01",
-    name: "Sunil Kumar",
-    role: "Complainant Victim",
-    roleBadge: "VICTIM ORIGIN",
-    roleColor: "indigo",
-    fraudScore: 0,
-    tokens: ["SBI A/c 30910029101", "MSISDN +91-9810044210", "Digital-Arrest Phishing Target"],
-    summary: "Target of coordinated fake CBI digital-arrest coercion. Suffered ₹5,00,000 defrauded outflow across two tranches.",
-    subScores: { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 },
-  },
-  {
-    id: "ENT-02",
-    name: "Vikram Shah",
-    role: "Layer-1 Primary Mule",
-    roleBadge: "L1 CONDUIT MULE",
-    roleColor: "rose",
-    fraudScore: 98,
-    tokens: ["VPA: vikram.pay@okaxis", "MSISDN: +91-9871123941", "Chassis IMEI: 867492061234564", "Finacle Dwell: 112s"],
-    summary: "Primary conduit receiving full ₹5.00L inflow. Immediate pass-through conduit to Layer-2 mules within 112 seconds.",
-    subScores: { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 },
-  },
-  {
-    id: "ENT-03",
-    name: "Rohit Verma",
-    role: "Layer-2A Split Mule",
-    roleBadge: "L2 SPLIT CONDUIT",
-    roleColor: "amber",
-    fraudScore: 94,
-    tokens: ["HDFC 5010029419920", "VPA: rohit.traders@ybl", "JA4 TLS: t13d1516h2_8daaf6"],
-    summary: "Received ₹3,00,000 (60% split tranche). Retained ₹1,20,000 and routed ₹1,80,000 to Apex Electronics.",
-    subScores: { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 },
-  },
-  {
-    id: "ENT-04",
-    name: "Sameer Khan",
-    role: "Layer-2B Cashout Mule",
-    roleBadge: "L2 CASHOUT SINK",
-    roleColor: "amber",
-    fraudScore: 94,
-    tokens: ["AXIS 9140200410291", "ATM Card #4491", "Hotspot BSSID: 74:DA:38:A2:11:BC"],
-    summary: "Received ₹2,00,000 (40% split tranche). Executed ₹1,20,000 emergency ATM cash withdrawal at Noida Sec-18 ATM DL-049.",
-    subScores: { velocity: 96, deviceOverlap: 94, structuring: 92, kycDiscrepancy: 90 },
-  },
-  {
-    id: "ENT-05",
-    name: "Apex Electronics Pvt Ltd",
-    role: "Bona-Fide Merchant",
-    roleBadge: "✓ HARD VETO SHIELD",
-    roleColor: "emerald",
-    isHardVeto: true,
-    hardVetoReason: "Active GSTIN 07AAACA1234F1Z8 · 420 monthly retail POS swipes · 0 shared device/IP identifiers with syndicate.",
-    fraudScore: 6,
-    tokens: ["GSTIN: 07AAACA1234F1Z8", "ICICI A/c 001405008129", "Retail POS Merchant (POS-774)"],
-    summary: "Innocent commercial entity. Received ₹1.80L payment for genuine goods. Protected under Section 106(1) Specific Lien.",
-    subScores: { velocity: 5, deviceOverlap: 0, structuring: 8, kycDiscrepancy: 0 },
-  },
-];
-
 export const EntityResolutionScreen: React.FC = () => {
-  const { density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
+
+  const dynamicData = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseCanonicalEntities(activeCaseId || "CASE-2026-001", investigation);
+  }, [activeCaseId, investigation]);
 
   const [selectedEntityId, setSelectedEntityId] = useState<string>("ENT-02");
 
   const canonicalEntities: CanonicalEntity[] = useMemo(() => {
-    if (!activeDiscoveredCluster) return CANONICAL_ENTITIES;
+    if (activeDiscoveredCluster) {
+      const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
+      const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
+      const l2a = activeDiscoveredCluster.layer2SplitConduits?.[0] || "ICICI_MULE_PRIYA_SHARMA";
+      const l2b = activeDiscoveredCluster.layer2SplitConduits?.[1] || "HDFC_MULE_DEV_PATEL";
+      const merchant = activeDiscoveredCluster.innocentMerchant || "ICICI_MERCH_METRO_GOLD_GST";
+      const gstin = activeDiscoveredCluster.merchantGstin || "07AAACA1234F1Z8";
+      const imei = activeDiscoveredCluster.convergedImei || "359988007766552";
+      const ja4 = activeDiscoveredCluster.convergedJa4 || "t13d1516h2_99aabbccddeeff01";
+      const bssid = activeDiscoveredCluster.bssidHotspot || "AA:BB:CC:11:22:33";
 
-    const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
-    const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
-    const l2a = activeDiscoveredCluster.layer2SplitConduits?.[0] || "ICICI_MULE_PRIYA_SHARMA";
-    const l2b = activeDiscoveredCluster.layer2SplitConduits?.[1] || "HDFC_MULE_DEV_PATEL";
-    const merchant = activeDiscoveredCluster.innocentMerchant || "ICICI_MERCH_METRO_GOLD_GST";
-    const gstin = activeDiscoveredCluster.merchantGstin || "07AAACA1234F1Z8";
-    const imei = activeDiscoveredCluster.convergedImei || "359988007766552";
-    const ja4 = activeDiscoveredCluster.convergedJa4 || "t13d1516h2_99aabbccddeeff01";
-    const bssid = activeDiscoveredCluster.bssidHotspot || "AA:BB:CC:11:22:33";
+      return [
+        {
+          id: "ENT-01",
+          name: victim.replace(/_/g, " "),
+          role: "Complainant Victim",
+          roleBadge: "VICTIM ORIGIN",
+          roleColor: "indigo",
+          fraudScore: 0,
+          tokens: [`A/c: ${victim}`, "Complainant Target", "Defrauded Inflow Origin"],
+          summary: `Victim account defrauded for ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} outflow across multi-hop syndicate.`,
+          subScores: { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 },
+        },
+        {
+          id: "ENT-02",
+          name: conduit.replace(/_/g, " "),
+          role: "Layer-1 Primary Mule",
+          roleBadge: "L1 CONDUIT MULE",
+          roleColor: "rose",
+          fraudScore: 98,
+          tokens: [`A/c: ${conduit}`, `Chassis IMEI: ${imei}`, `JA4 TLS: ${ja4}`],
+          summary: `Primary pass-through conduit receiving full ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} victim inflow and layering across L2 mules.`,
+          subScores: { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 },
+        },
+        {
+          id: "ENT-03",
+          name: l2a.replace(/_/g, " "),
+          role: "Layer-2A Split Mule",
+          roleBadge: "L2 SPLIT CONDUIT",
+          roleColor: "amber",
+          fraudScore: 94,
+          tokens: [`A/c: ${l2a}`, `JA4 TLS: ${ja4}`, "Split Layering Node"],
+          summary: `Layer-2 conduit receiving split tranche; transferred tainted funds to merchant for bullion purchase.`,
+          subScores: { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 },
+        },
+        {
+          id: "ENT-04",
+          name: l2b.replace(/_/g, " "),
+          role: "Layer-2B Cashout Mule",
+          roleBadge: "L2 CASHOUT SINK",
+          roleColor: "amber",
+          fraudScore: 94,
+          tokens: [`A/c: ${l2b}`, `Hotspot BSSID: ${bssid}`, "ATM Cashout Transit"],
+          summary: `Layer-2 cashout mule; executed ATM withdrawal at ${activeDiscoveredCluster.atmCashoutSink || "ATM_GURUGRAM_CYBERHUB_09"}.`,
+          subScores: { velocity: 96, deviceOverlap: 94, structuring: 92, kycDiscrepancy: 90 },
+        },
+        {
+          id: "ENT-05",
+          name: merchant.replace(/_/g, " "),
+          role: "Bona-Fide Merchant",
+          roleBadge: "✓ HARD VETO SHIELD",
+          roleColor: "emerald",
+          isHardVeto: true,
+          hardVetoReason: `Active GSTIN ${gstin} · Verified retail bullion ledger · Clean deposit ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} shielded under LIBR.`,
+          fraudScore: 4,
+          tokens: [`GSTIN: ${gstin}`, `A/c: ${merchant}`, "Clean Turnover Shielded"],
+          summary: `Innocent retail merchant. LIBR doctrine applies specific lien of ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} while protecting ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} clean capital.`,
+          subScores: { velocity: 4, deviceOverlap: 0, structuring: 6, kycDiscrepancy: 0 },
+        },
+      ];
+    }
+    return dynamicData.entities;
+  }, [activeDiscoveredCluster, dynamicData]);
 
-    return [
-      {
-        id: "ENT-01",
-        name: victim.replace(/_/g, " "),
-        role: "Complainant Victim",
-        roleBadge: "VICTIM ORIGIN",
-        roleColor: "indigo",
-        fraudScore: 0,
-        tokens: [`A/c: ${victim}`, "Complainant Target", "Defrauded Inflow Origin"],
-        summary: `Victim account defrauded for ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} outflow across multi-hop syndicate.`,
-        subScores: { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 },
-      },
-      {
-        id: "ENT-02",
-        name: conduit.replace(/_/g, " "),
-        role: "Layer-1 Primary Mule",
-        roleBadge: "L1 CONDUIT MULE",
-        roleColor: "rose",
-        fraudScore: 98,
-        tokens: [`A/c: ${conduit}`, `Chassis IMEI: ${imei}`, `JA4 TLS: ${ja4}`],
-        summary: `Primary pass-through conduit receiving full ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} victim inflow and layering across L2 mules.`,
-        subScores: { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 },
-      },
-      {
-        id: "ENT-03",
-        name: l2a.replace(/_/g, " "),
-        role: "Layer-2A Split Mule",
-        roleBadge: "L2 SPLIT CONDUIT",
-        roleColor: "amber",
-        fraudScore: 94,
-        tokens: [`A/c: ${l2a}`, `JA4 TLS: ${ja4}`, "Split Layering Node"],
-        summary: `Layer-2 conduit receiving split tranche; transferred tainted funds to merchant for bullion purchase.`,
-        subScores: { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 },
-      },
-      {
-        id: "ENT-04",
-        name: l2b.replace(/_/g, " "),
-        role: "Layer-2B Cashout Mule",
-        roleBadge: "L2 CASHOUT SINK",
-        roleColor: "amber",
-        fraudScore: 94,
-        tokens: [`A/c: ${l2b}`, `Hotspot BSSID: ${bssid}`, "ATM Cashout Transit"],
-        summary: `Layer-2 cashout mule; executed ATM withdrawal at ${activeDiscoveredCluster.atmCashoutSink || "ATM_GURUGRAM_CYBERHUB_09"}.`,
-        subScores: { velocity: 96, deviceOverlap: 94, structuring: 92, kycDiscrepancy: 90 },
-      },
-      {
-        id: "ENT-05",
-        name: merchant.replace(/_/g, " "),
-        role: "Bona-Fide Merchant",
-        roleBadge: "✓ HARD VETO SHIELD",
-        roleColor: "emerald",
-        isHardVeto: true,
-        hardVetoReason: `Active GSTIN ${gstin} · Verified retail bullion ledger · Clean deposit ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} shielded under LIBR.`,
-        fraudScore: 4,
-        tokens: [`GSTIN: ${gstin}`, `A/c: ${merchant}`, "Clean Turnover Shielded"],
-        summary: `Innocent retail merchant. LIBR doctrine applies specific lien of ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} while protecting ₹${(activeDiscoveredCluster.merchantCleanDeposit || 450000).toLocaleString()} clean capital.`,
-        subScores: { velocity: 4, deviceOverlap: 0, structuring: 6, kycDiscrepancy: 0 },
-      },
-    ];
-  }, [activeDiscoveredCluster]);
   const [selectedTokenType, setSelectedTokenType] = useState<string>("ALL");
   const [isCopied, setIsCopied] = useState(false);
 
-  const filteredTokens = RAW_TOKENS.filter((t) => {
+  const rawTokenList = useMemo(() => {
+    return dynamicData.tokens;
+  }, [dynamicData]);
+
+  const filteredTokens = rawTokenList.filter((t) => {
     if (selectedTokenType === "ALL") return true;
     return t.sourceType === selectedTokenType;
   });
@@ -237,9 +180,9 @@ export const EntityResolutionScreen: React.FC = () => {
       {/* STORY BANNER */}
       <StoryBanner
         screenId="entities"
-        takeaway="Deterministic multi-source join collapses 24 noisy tokens into 5 canonical entities; active GSTIN and POS telemetry hard-veto false syndicate merge for Apex Electronics."
+        takeaway={`Deterministic multi-source resolution for ${investigation.complainantName} (${investigation.firNumber}): resolved ${canonicalEntities.length} canonical entities across ${rawTokenList.length} evidentiary tokens; hard-veto protection active.`}
         evidenceChips={[
-          { tier: "T1", label: "SBI Finacle Narration", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Core Banking"} Narration`, hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
           { tier: "T2", label: "WhatsApp Coercion Header", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
           { tier: "T1", label: "ICICI GSTIN Return", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
         ]}

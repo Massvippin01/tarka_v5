@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GitBranch, AlertTriangle, CheckCircle, XCircle, HelpCircle, ArrowRight, RefreshCw } from "lucide-react";
 
 export interface EvidenceArtifactItem {
@@ -24,6 +24,8 @@ interface ClaimDependencyLensProps {
   caseId: string;
   onExecuteAblation?: (excludedIds: string[]) => Promise<void>;
   className?: string;
+  artifacts?: EvidenceArtifactItem[];
+  claims?: ClaimImpactItem[];
 }
 
 const DEFAULT_ARTIFACTS: EvidenceArtifactItem[] = [
@@ -104,10 +106,17 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
   caseId,
   onExecuteAblation,
   className = "",
+  artifacts: propArtifacts,
+  claims: propClaims,
 }) => {
-  const [artifacts, setArtifacts] = useState<EvidenceArtifactItem[]>(DEFAULT_ARTIFACTS);
-  const [claims, setClaims] = useState<ClaimImpactItem[]>(DEFAULT_CLAIMS);
+  const [artifacts, setArtifacts] = useState<EvidenceArtifactItem[]>(propArtifacts || DEFAULT_ARTIFACTS);
+  const [claims, setClaims] = useState<ClaimImpactItem[]>(propClaims || DEFAULT_CLAIMS);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (propArtifacts) setArtifacts(propArtifacts);
+    if (propClaims) setClaims(propClaims);
+  }, [propArtifacts, propClaims]);
 
   const toggleArtifact = (artId: string) => {
     const updated = artifacts.map((a) => (a.id === artId ? { ...a, isExcluded: !a.isExcluded } : a));
@@ -115,38 +124,30 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
 
     // Recompute simulated impact
     const excludedIds = updated.filter((a) => a.isExcluded).map((a) => a.id);
-    recomputeImpact(excludedIds);
+    recomputeImpact(excludedIds, updated);
   };
 
-  const recomputeImpact = (excludedIds: string[]) => {
-    const updatedClaims = DEFAULT_CLAIMS.map((claim) => {
+  const recomputeImpact = (excludedIds: string[], currentArtifacts = artifacts) => {
+    const baseClaims = propClaims || DEFAULT_CLAIMS;
+    const updatedClaims = baseClaims.map((claim) => {
       let simulatedState = claim.baselineState;
       let formalSolverStatus = claim.formalSolverStatus;
       let affected = false;
 
-      if (excludedIds.includes("ART-BANK-001")) {
-        if (claim.claimId === "CLM-001" || claim.claimId === "CLM-004") {
-          simulatedState = "UNSUPPORTED";
-          formalSolverStatus = "UNKNOWN";
-          affected = true;
-        } else if (claim.claimId === "CLM-002") {
-          simulatedState = "UNCERTAIN";
-          affected = true;
-        }
-      }
+      // Find if any artifact that this claim depends on is excluded
+      const excludedDependencies = currentArtifacts.filter(
+        (a) => excludedIds.includes(a.id) && a.dependentClaimIds.includes(claim.claimId)
+      );
 
-      if (excludedIds.includes("ART-PASSPORT-004")) {
-        if (claim.claimId === "CLM-003") {
-          // If passport record is removed, the contradiction disappears!
+      if (excludedDependencies.length > 0) {
+        if (claim.baselineState === "CONTRADICTED") {
+          // If the contradicting artifact is removed, contradiction clears!
           simulatedState = "SUPPORTED";
           formalSolverStatus = "SAT";
           affected = true;
-        }
-      }
-
-      if (excludedIds.includes("ART-CDR-002")) {
-        if (claim.claimId === "CLM-002") {
+        } else {
           simulatedState = "UNSUPPORTED";
+          formalSolverStatus = "UNKNOWN";
           affected = true;
         }
       }
@@ -158,7 +159,6 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
         affectedByAblation: affected,
       };
     });
-
     setClaims(updatedClaims);
   };
 

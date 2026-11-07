@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -12,9 +12,29 @@ import {
   EyeOff,
   Layers,
 } from "lucide-react";
+import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
+import { CaseSyncBridge } from "../../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { StoryBanner, KpiTile } from "../kit";
 
 export const PrivacyCryptoWorkbench: React.FC = () => {
+  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { reconstructedInvestigation } = useTarkaUiStore();
+
+  const currentCase = activeCase;
+
+  const investigation = useMemo(() => {
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation]);
+
+  const consortium = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCasePrivacyConsortium(
+      activeCaseId || "CASE-2026-001",
+      investigation
+    );
+  }, [activeCaseId, investigation]);
+
   const [activeTab, setActiveTab] = useState<"psi" | "zkp" | "pbft" | "claims">("psi");
 
   // ============================================================================
@@ -24,24 +44,12 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   const [psiRunning, setPsiRunning] = useState(false);
   const [psiCompleted, setPsiCompleted] = useState(true);
 
-  // Synthetic Bank Datasets
-  const bankData = {
-    HDFC: {
-      MSISDN: ["+919876543210", "+919123456789", "+919999000001", "+919999000002"],
-      PAN: ["BZCPK8812M", "ABCDE1111A", "ABCDE2222B"],
-      UPI_VPA: ["mule_syndicate@okhdfcbank", "legit_user_a@okhdfc"],
-    },
-    ICICI: {
-      MSISDN: ["+919876543210", "+918888000001", "+918888000002"],
-      PAN: ["BZCPK8812M", "FGHIJ3333C"],
-      UPI_VPA: ["mule_syndicate@okhdfcbank", "legit_user_b@okicici"],
-    },
-    AXIS: {
-      MSISDN: ["+919876543210", "+917777000001"],
-      PAN: ["BZCPK8812M", "KLMNO4444D"],
-      UPI_VPA: ["mule_syndicate@okhdfcbank", "legit_user_c@axisbank"],
-    },
-  };
+  // Dynamic Bank Datasets from Active Case Consortium
+  const bankData = consortium.bankData;
+  const [bankA = "SBI", bankB = "HDFC", bankC = "AXIS"] = consortium.banksInvolved;
+  const bankAData = bankData[bankA] || { MSISDN: [], PAN: [], UPI_VPA: [] };
+  const bankBData = bankData[bankB] || { MSISDN: [], PAN: [], UPI_VPA: [] };
+  const bankCData = bankData[bankC] || { MSISDN: [], PAN: [], UPI_VPA: [] };
 
   const handleRunPsi = () => {
     setPsiRunning(true);
@@ -79,12 +87,12 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   const [pbftRound, setPbftRound] = useState<number>(1);
 
   const pbftNodes = [
-    { id: "node_0", name: "HDFC Primary", role: "Leader", status: "COMMITTED" },
-    { id: "node_1", name: "ICICI Validator", role: "Replica", status: "COMMITTED" },
-    { id: "node_2", name: "AXIS Validator", role: "Replica", status: "COMMITTED" },
+    { id: "node_0", name: `${consortium.banksInvolved[0] || "HDFC"} Primary`, role: "Leader", status: "COMMITTED" },
+    { id: "node_1", name: `${consortium.banksInvolved[1] || "ICICI"} Validator`, role: "Replica", status: "COMMITTED" },
+    { id: "node_2", name: `${consortium.banksInvolved[2] || "AXIS"} Validator`, role: "Replica", status: "COMMITTED" },
     {
       id: "node_3",
-      name: "SBI Validator",
+      name: `${consortium.banksInvolved[0] || "SBI"} Replica`,
       role: pbftFaultMode === "HONEST" ? "Replica" : "Byzantine",
       status:
         pbftFaultMode === "HONEST"
@@ -126,11 +134,11 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
       {/* 1. STORY BANNER */}
       <StoryBanner
         screenId="privacy-crypto"
-        takeaway="Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus guarantee inter-bank mule detection without exposing innocent civilian banking data."
+        takeaway={`Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus for ${currentCase?.firNumber || investigation.firNumber} across ${consortium.banksInvolved.join(", ")} consortium without exposing innocent civilian banking data.`}
         evidenceChips={[
           { tier: "T1", label: "SECP256k1 Curve", hash: "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798" },
           { tier: "T1", label: "Circom ZKP Key", hash: "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90" },
-          { tier: "T1", label: "PBFT State Root", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+          { tier: "T1", label: "Consortium PBFT", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
         ]}
       />
 
@@ -315,15 +323,15 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   </span>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                     <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
-                      HDFC Bank (Bank A)
+                      {bankA} Bank (Bank A)
                     </span>
                     <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
                     <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A" }}>
-                      ICICI Bank (Bank B)
+                      {bankB} Bank (Bank B)
                     </span>
                     <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
                     <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FAF5FF", color: "#7E22CE", border: "1px solid #E9D5FF" }}>
-                      Axis Bank (Node C)
+                      {bankC} Bank (Node C)
                     </span>
                   </div>
                 </div>
@@ -364,7 +372,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
 
             {/* 3 Bank Vault Cards Grid */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-              {/* Vault 1: HDFC */}
+              {/* Vault 1: Bank A */}
               <div
                 style={{
                   background: "#FFFFFF",
@@ -377,14 +385,14 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#1D4ED8" }}>INST_HDFC (Complainant Bank)</span>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#1D4ED8" }}>INST_{bankA} ({currentCase?.complainantName || "Complainant"} Bank)</span>
                   <span style={{ fontSize: "10px", fontWeight: 700, background: "#EFF6FF", color: "#1D4ED8", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankData.HDFC[psiIdType].length} Records
+                    {bankAData[psiIdType]?.length || 0} Records
                   </span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankData.HDFC[psiIdType].map((item, idx) => {
-                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                  {bankAData[psiIdType]?.map((item, idx) => {
+                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
                     return (
                       <div
                         key={idx}
@@ -409,11 +417,11 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   })}
                 </div>
                 <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_HDFC = 0x8f2a...c4e1</code> (Kept air-gapped)
+                  Private Key: <code style={{ color: "#475569" }}>k_{bankA} = 0x8f2a...c4e1</code> (Kept air-gapped)
                 </div>
               </div>
 
-              {/* Vault 2: ICICI */}
+              {/* Vault 2: Bank B */}
               <div
                 style={{
                   background: "#FFFFFF",
@@ -426,14 +434,14 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#B45309" }}>INST_ICICI (Layer-2 Mule Bank)</span>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#B45309" }}>INST_{bankB} (Layer-1 Mule Bank)</span>
                   <span style={{ fontSize: "10px", fontWeight: 700, background: "#FFFBEB", color: "#B45309", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankData.ICICI[psiIdType].length} Records
+                    {bankBData[psiIdType]?.length || 0} Records
                   </span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankData.ICICI[psiIdType].map((item, idx) => {
-                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                  {bankBData[psiIdType]?.map((item, idx) => {
+                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
                     return (
                       <div
                         key={idx}
@@ -458,11 +466,11 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   })}
                 </div>
                 <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_ICICI = 0x3d7b...9a12</code> (Kept air-gapped)
+                  Private Key: <code style={{ color: "#475569" }}>k_{bankB} = 0x3d7b...9a12</code> (Kept air-gapped)
                 </div>
               </div>
 
-              {/* Vault 3: AXIS */}
+              {/* Vault 3: Bank C */}
               <div
                 style={{
                   background: "#FFFFFF",
@@ -475,14 +483,14 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#7E22CE" }}>INST_AXIS (Beneficiary Node)</span>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#7E22CE" }}>INST_{bankC} (Beneficiary Node)</span>
                   <span style={{ fontSize: "10px", fontWeight: 700, background: "#FAF5FF", color: "#7E22CE", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankData.AXIS[psiIdType].length} Records
+                    {bankCData[psiIdType]?.length || 0} Records
                   </span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankData.AXIS[psiIdType].map((item, idx) => {
-                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                  {bankCData[psiIdType]?.map((item, idx) => {
+                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
                     return (
                       <div
                         key={idx}
@@ -507,7 +515,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   })}
                 </div>
                 <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_AXIS = 0x11c0...4f88</code> (Kept air-gapped)
+                  Private Key: <code style={{ color: "#475569" }}>k_{bankC} = 0x11c0...4f88</code> (Kept air-gapped)
                 </div>
               </div>
             </div>
@@ -553,7 +561,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   <div>
                     <span style={{ color: "#64748B", marginRight: "8px" }}>Discovered Permitted Match:</span>
                     <span style={{ fontWeight: 800, color: "#BE123C", fontSize: "13px" }}>
-                      {psiIdType === "MSISDN" ? "+919876543210" : psiIdType === "PAN" ? "BZCPK8812M" : "mule_syndicate@okhdfcbank"}
+                      {psiIdType === "MSISDN" ? consortium.suspectMsisdn : psiIdType === "PAN" ? consortium.suspectPan : consortium.suspectVpa}
                     </span>
                   </div>
                   <div style={{ fontSize: "11px", color: "#64748B" }}>
@@ -1128,7 +1136,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-01: Disputed ₹15,000 Transfer Claim</span>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-01: Disputed ₹{(currentCase?.claimedLossInr || 15000).toLocaleString()} Transfer Claim</span>
                     <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-SCREENSHOT (Tier-3)</span>
                   </div>
                   <span
@@ -1148,7 +1156,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
                   {excludeScreenshot
                     ? "Finding deactivated: Primary supporting artifact was excluded from evidence scope."
-                    : "Complainant asserts transfer of ₹15,000 based on unverified smartphone gallery screenshot."}
+                    : `Complainant asserts transfer of ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} based on unverified smartphone gallery screenshot.`}
                 </p>
               </div>
 
@@ -1166,7 +1174,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-02: Core Finacle Bank Debit ₹2,500</span>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-02: Core Finacle Bank Debit ₹{(currentCase?.bookedLossInr || 2500).toLocaleString()}</span>
                     <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-FINACLE-LOG (Tier-1 Authority)</span>
                   </div>
                   <span
@@ -1184,7 +1192,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
-                  Core banking switch confirms actual debit of ₹2,500.00. Unaffected by screenshot exclusion.
+                  Core banking switch confirms actual debit of ₹{(currentCase?.bookedLossInr || 2500).toLocaleString()}. Unaffected by screenshot exclusion.
                 </p>
               </div>
 
@@ -1221,8 +1229,8 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 </div>
                 <p style={{ margin: 0, fontSize: "11px", color: excludeScreenshot ? "#047857" : "#BE123C" }}>
                   {excludeScreenshot
-                    ? "Contradiction resolved: Upon excluding the disputed screenshot, the conflict between ₹15,000 and ₹2,500 evaporates, leaving the authentic ₹2,500 debit."
-                    : "Mathematical SMT conflict: Screenshot asserts ₹15,000 while Finacle switch asserts ₹2,500."}
+                    ? `Contradiction resolved: Upon excluding the disputed screenshot, the conflict between ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} and ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()} evaporates, leaving the authentic ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()} debit.`
+                    : `Mathematical SMT conflict: Screenshot asserts ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} while Finacle switch asserts ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()}.`}
                 </p>
               </div>
             </div>

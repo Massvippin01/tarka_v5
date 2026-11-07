@@ -28,34 +28,55 @@ import {
 } from "../../utils/statutoryDirectives";
 import {
   solveCgnatFunnel,
-  getCanonicalAttributionData,
 } from "../../utils/cgnatAttribution";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 
 export const AttributionScreen: React.FC = () => {
-  const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
-  const targetImei = activeDiscoveredCluster?.convergedImei || "867492061234564";
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
+
+  // Interactive Z3 SMT Clock-Offset State (-5.0s to +5.0s, NTP sync default = 0.0s)
+  const [clockOffset, setClockOffset] = useState<number>(0.0);
+  const isPortDropped = !!mutations.dropCgnatSourcePort || !!mutations.cgnatPortCollision;
+
+  const attributionProfile = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseAttributionProfile(
+      activeCaseId || "CASE-2026-001",
+      investigation,
+      isPortDropped,
+      clockOffset
+    );
+  }, [activeCaseId, investigation, isPortDropped, clockOffset]);
+
+  const targetImei = activeDiscoveredCluster?.convergedImei || attributionProfile.imei;
   const targetTac = targetImei.slice(0, 8);
   const funnelTitle = activeDiscoveredCluster?.cgnatCandidatesCollapsed
     ? `CGNAT Candidate Intersection Funnel (${activeDiscoveredCluster.cgnatCandidatesCollapsed})`
-    : "CGNAT Candidate Intersection Funnel (340 → 41 → 6 → 1)";
-
-  // Canonical Data
-  const canonicalData = useMemo(() => getCanonicalAttributionData(), []);
+    : `CGNAT Candidate Intersection Funnel (${attributionProfile.initialPoolCount} → 41 → 6 → 1)`;
 
   // Funnel Computation
-  const isPortDropped = !!mutations.dropCgnatSourcePort || !!mutations.cgnatPortCollision;
   const funnelResult = useMemo(() => {
-    const selected = canonicalData.sessions;
+    const selected = attributionProfile.sessions;
     return solveCgnatFunnel(selected, isPortDropped);
-  }, [canonicalData.sessions, isPortDropped]);
+  }, [attributionProfile.sessions, isPortDropped]);
 
-  const survivingCandidateCount = isPortDropped ? 340 : funnelResult.finalCandidateCount;
-
-  // 2. Interactive Z3 SMT Clock-Offset State (-5.0s to +5.0s, NTP sync default = 0.0s)
-  const [clockOffset, setClockOffset] = useState<number>(0.0);
+  const survivingCandidateCount = isPortDropped ? attributionProfile.initialPoolCount : funnelResult.finalCandidateCount;
   const isZ3Sat = clockOffset >= -1.2 && clockOffset <= 0.8;
   const [showSmtCode, setShowSmtCode] = useState(false);
 
@@ -65,24 +86,7 @@ export const AttributionScreen: React.FC = () => {
   const [isImeiCopied, setIsImeiCopied] = useState(false);
 
   const handleExportSmt2 = () => {
-    const smt2Script = `; TARKA v8.0 — Z3 SMT Clock-Offset Formal Verification Script
-; Case: FIR #149/2026 (Airtel CGNAT vs SBI Finacle Clock Bounds)
-; Target MSISDN: +91-98711-23941 | Chassis TAC: 86749206
-(set-logic QF_LRA)
-(declare-const t_finacle_sbi Real)
-(declare-const t_airtel_cgnat Real)
-(declare-const clock_drift Real)
-
-; Measured bounds under NTP Stratum-2 sync: [-1.2s, +0.8s]
-(assert (= clock_drift (- t_airtel_cgnat t_finacle_sbi)))
-(assert (>= clock_drift -1.2))
-(assert (<= clock_drift 0.8))
-
-; Invariant Check for evaluated delta (${clockOffset.toFixed(2)}s)
-(assert (= clock_drift ${clockOffset.toFixed(2)}))
-
-(check-sat)
-(get-model)`;
+    const smt2Script = attributionProfile.smt2Script;
     navigator.clipboard.writeText(smt2Script);
     setIsSmtCopied(true);
     toast.success("Z3 SMT2 formal verification script copied to clipboard!");
@@ -185,11 +189,11 @@ export const AttributionScreen: React.FC = () => {
       {/* STORY BANNER */}
       <StoryBanner
         screenId="attribution"
-        takeaway="Sequential CGNAT intersection collapses 10,000 tower subscribers to 1 unique handset (IMEI 867492061234564); dual-SIM TAC and Z3 clock offset prove physical hardware twin."
+        takeaway={`Sequential CGNAT intersection for ${investigation.complainantName} (${investigation.firNumber}): collapses tower subscribers at ${attributionProfile.cellTower} to 1 unique handset (IMEI ${targetImei}); dual-SIM TAC ${targetTac} and Z3 clock offset prove physical hardware twin.`}
         evidenceChips={[
-          { tier: "T1", label: "Airtel CGNAT IPDR", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
+          { tier: "T1", label: `${attributionProfile.isp.split(" ")[0]} IPDR`, hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
           { tier: "T1", label: "NPCI Device XML", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T1", label: "TAC 86749206 Hardware", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: `TAC ${targetTac} Hardware`, hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
         ]}
       />
 
@@ -204,7 +208,7 @@ export const AttributionScreen: React.FC = () => {
       >
         <KpiTile
           title="Candidate pool"
-          value={isPortDropped ? "340 Handsets" : `${survivingCandidateCount} Handset`}
+          value={isPortDropped ? `${attributionProfile.initialPoolCount} Handsets` : `${survivingCandidateCount} Handset`}
           icon={Radio}
           iconColor={isPortDropped ? "#D97706" : "#059669"}
           iconBg={isPortDropped ? "#FEF3C7" : "#ECFDF5"}
@@ -212,10 +216,10 @@ export const AttributionScreen: React.FC = () => {
             text: isPortDropped ? "AMBIGUOUS" : "INDIVIDUATED",
             variant: isPortDropped ? "amber" : "emerald",
           }}
-          subtitle={isPortDropped ? "Port dropped · 340 ambiguous" : "Target: SUB-8849-VIKRAM"}
+          subtitle={isPortDropped ? `Port dropped · ${attributionProfile.initialPoolCount} ambiguous` : `Target: ${attributionProfile.sessions[0]?.activeSubscriberIds?.[0] || "SUB-PRIMARY"}`}
           microVisual="spark"
           sparklineData={[340, 41, 6, 1]}
-          provenanceTooltip="Intersection of 4 sequential bank login sessions across Airtel CGNAT pool."
+          provenanceTooltip={`Intersection of sequential bank login sessions across ${attributionProfile.isp.split(" ")[0]} CGNAT pool.`}
         />
 
         <KpiTile
@@ -238,10 +242,10 @@ export const AttributionScreen: React.FC = () => {
           iconColor="#E11D48"
           iconBg="#FFE4E6"
           statusBadge={{ text: "IMSI RE-ALLOCATED", variant: "rose" }}
-          subtitle="16m Pre-Attack Window (Sunil Silenced)"
+          subtitle={`Pre-Attack Window (${investigation.complainantName?.split(" ")[0] || "Victim"} Silenced)`}
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Airtel HLR swap record: Legacy IMSI 40410...882 swapped to Attacker IMSI 40410...904."
+          provenanceTooltip={`${attributionProfile.isp.split(" ")[0]} HLR swap record: Legacy subscriber SIM swapped to Attacker IMSI.`}
         />
 
         <KpiTile
@@ -251,10 +255,10 @@ export const AttributionScreen: React.FC = () => {
           iconColor="#059669"
           iconBg="#ECFDF5"
           statusBadge={{ text: "LUHN & TAC ✓", variant: "emerald" }}
-          subtitle="Shared TAC 86749206 (Exynos 1280)"
+          subtitle={`Shared TAC ${targetTac} (Hardware Twin)`}
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Both Airtel and Jio IMEIs share identical TAC prefix and reside in same physical Samsung Galaxy M34 chassis."
+          provenanceTooltip={`Both carrier slots share identical TAC prefix ${targetTac} and reside in same physical handset chassis.`}
         />
       </div>
 
@@ -398,9 +402,9 @@ export const AttributionScreen: React.FC = () => {
               {/* TimelineStrip: SIM-Swap Precursor */}
               <TimelineStrip
                 milestones={[
-                  { label: "09:44:12 IST Airtel SIM-Swap", time: "T-16m", status: "flagged" },
-                  { label: "Victim Handset Silenced", time: "T-10m", isCurrent: true },
-                  { label: "10:00:14 IST ₹5.00L Fraud Debit", time: "T+0m", status: "verified" },
+                  { label: `09:44:12 IST ${attributionProfile.isp.split(" ")[0]} SIM-Swap`, time: "T-16m", status: "flagged" },
+                  { label: `${investigation.complainantName?.split(" ")[0] || "Victim"} Handset Silenced`, time: "T-10m", isCurrent: true },
+                  { label: `10:00:14 IST ₹${(investigation.bookedLossInr / 100000).toFixed(2)}L Fraud Debit`, time: "T+0m", status: "verified" },
                 ]}
               />
 
@@ -418,7 +422,7 @@ export const AttributionScreen: React.FC = () => {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: "9px", fontWeight: 700, color: "#0F172A" }}>
-                    Physical Handset Motherboard: Samsung Galaxy M34 5G
+                    Physical Handset Motherboard: TAC {targetTac} (Dual-SIM Chassis)
                   </span>
                   <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 5px", borderRadius: "3px" }}>
                     SHARED TAC: {targetTac} ✓
@@ -430,30 +434,30 @@ export const AttributionScreen: React.FC = () => {
                   {/* Outer Handset Frame */}
                   <rect x="5" y="5" width="390" height="80" rx="8" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="1.5" />
 
-                  {/* Slot 1: Airtel */}
+                  {/* Slot 1: Carrier A */}
                   <rect x="18" y="15" width="165" height="36" rx="5" fill="#FEF2F2" stroke="#FECDD3" strokeWidth="1" />
-                  <text x="25" y="27" fill="#E11D48" fontSize="8" fontWeight="bold">SLOT 1 (AIRTEL · FRAUD SIM)</text>
+                  <text x="25" y="27" fill="#E11D48" fontSize="8" fontWeight="bold">SLOT 1 ({attributionProfile.isp.split(" ")[0].toUpperCase()} · FRAUD SIM)</text>
                   <text x="25" y="42" fill="#0F172A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
                     {targetTac} {targetImei.slice(8, 14)} <tspan fill="#059669">{targetImei.slice(14, 15) || "4"}</tspan>
                   </text>
                   <text x="145" y="42" fill="#059669" fontSize="8" fontWeight="bold">LUHN ✓</text>
 
-                  {/* Slot 2: Jio */}
+                  {/* Slot 2: Carrier B */}
                   <rect x="217" y="15" width="165" height="36" rx="5" fill="#EEF2FF" stroke="#C7D2FE" strokeWidth="1" />
-                  <text x="224" y="27" fill="#4338CA" fontSize="8" fontWeight="bold">SLOT 2 (JIO · PERSONAL SIM)</text>
+                  <text x="224" y="27" fill="#4338CA" fontSize="8" fontWeight="bold">SLOT 2 (SECONDARY SIM)</text>
                   <text x="224" y="42" fill="#0F172A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
                     {targetTac} {targetImei.slice(8, 14)} <tspan fill="#059669">2</tspan>
                   </text>
                   <text x="344" y="42" fill="#059669" fontSize="8" fontWeight="bold">LUHN ✓</text>
 
-                  {/* Connecting Bus Lines into Exynos Motherboard */}
+                  {/* Connecting Bus Lines into Motherboard */}
                   <path d="M 100 51 L 100 64 L 180 64" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="3 2" />
                   <path d="M 300 51 L 300 64 L 220 64" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="3 2" />
 
                   {/* Motherboard SoC */}
                   <rect x="165" y="58" width="70" height="18" rx="3" fill="#0F172A" />
                   <text x="200" y="70" fill="#38BDF8" fontSize="8" fontWeight="bold" textAnchor="middle">
-                    Exynos 1280 SoC
+                    SoC Architecture
                   </text>
                 </svg>
 
@@ -462,9 +466,9 @@ export const AttributionScreen: React.FC = () => {
                     3-Way Multi-Modal Hardware & Radio Binding:
                   </div>
                   <div style={{ fontSize: "8px", color: "#475569", lineHeight: "1.3" }}>
-                    1. <strong>GSMA TAC:</strong> <code>{targetTac}</code> confirms {targetTac.startsWith("3599") ? "Samsung Galaxy S23" : "Samsung Galaxy M34 5G"} chassis.<br />
+                    1. <strong>GSMA TAC:</strong> <code>{targetTac}</code> confirms {targetTac.startsWith("3599") ? "Samsung Galaxy S23" : "Cellular Handset"} chassis.<br />
                     2. <strong>3GPP Sequential Allocation:</strong> IMEI₁ (...{targetImei.slice(-3)}) and IMEI₂ (...2) differ by ΔSN = +1.<br />
-                    3. <strong>Co-Located Radio Telemetry:</strong> Both SIMs co-registered on Cell ID <code>DL-TWR-891-S2</code> with identical Timing Advance (TA = 2, ~156m radius) and overlapping VLR attach logs.
+                    3. <strong>Co-Located Radio Telemetry:</strong> Both SIMs co-registered on Cell ID <code>{attributionProfile.cellTower}</code> with identical Timing Advance (TA = 2) and overlapping attach logs.
                   </div>
                 </div>
               </div>
@@ -474,7 +478,7 @@ export const AttributionScreen: React.FC = () => {
           {/* CARD 2: Z3 SMT CLOCK-OFFSET CALIPER & FORMAL PROOF */}
           <SectionCard
             title="Z3 SMT Clock-Offset Caliper & Formal Proof"
-            subtitle="Evaluates Stratum-2 NTP clock bounds across Airtel PGW and SBI Finacle CBS."
+            subtitle={`Evaluates Stratum-2 NTP clock bounds across ${attributionProfile.isp.split(" ")[0]} PGW and Core Banking CBS.`}
             icon={Cpu}
             iconColor="#059669"
             badgeText={isZ3Sat ? "Z3 SOLVER: SAT ✓" : "Z3 SOLVER: UNSAT ✗"}
@@ -598,8 +602,8 @@ export const AttributionScreen: React.FC = () => {
                       borderTop: "1px solid #E2E8F0",
                     }}
                   >
-                    <div style={{ color: "#64748B" }}>; Z3 QF_LRA Formal Clock Verification Script</div>
-                    <div>(assert (= clock_drift (- t_airtel_cgnat t_finacle_sbi)))</div>
+                    <div style={{ color: "#64748B" }}>; Z3 QF_LRA Formal Clock Verification Script ({attributionProfile.isp.split(" ")[0]})</div>
+                    <div>(assert (= clock_drift (- t_{attributionProfile.isp.split(" ")[0].toLowerCase()}_cgnat t_core_banking)))</div>
                     <div>(assert (&gt;= clock_drift -1.2))</div>
                     <div>(assert (&lt;= clock_drift 0.8))</div>
                     <div style={{ color: isZ3Sat ? "#059669" : "#DC2626", fontWeight: "bold" }}>

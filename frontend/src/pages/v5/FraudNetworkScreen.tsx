@@ -56,25 +56,25 @@ export const FraudNetworkScreen: React.FC = () => {
   const [isXmlCopied, setIsXmlCopied] = useState(false);
 
   const handleCopyI4cReport = () => {
+    const mules = investigation.nodes.filter(n => n.entityType !== "VICTIM");
+    const muleList = mules.map((m, idx) => `${idx + 1}. ${m.label} (${m.bank} ${m.accountMasked}) — ${m.details || m.entityType}`).join("\n");
     const report = `=== I4C SAMANVAYA / PRATIBIMB INTER-STATE SYNDICATE LINK REPORT ===
-Case Ref: FIR #149/2026 Cyber Crime PS Noida
+Case Ref: ${investigation.firNumber} ${investigation.policeStation}
+Complainant: ${investigation.complainantName} | Booked Loss: ₹${investigation.bookedLossInr.toLocaleString("en-IN")}
 Generated: 2026-09-22 10:30:00 IST | Classification: LAW ENFORCEMENT SENSITIVE
 
 [SYNDICATE INFRASTRUCTURE CLUSTER LINKAGE]
 Primary Infrastructure Controller:
-• Accomplice Wi-Fi Hotspot BSSID: 74:DA:38:A2:11:BC (Poco X5 Pro AP)
-• Ingress Gateway: Airtel PGW (103.21.144.92) | Decremented TTL: ${isHotspotActive ? "63 (Hop Count = 2)" : "64 (Direct)"}
-• Client TLS Anchor: JA4 = t13d1516h2_8daaf6 (Identical across 4 Bank Sessions)
+• Accomplice Wi-Fi Hotspot BSSID: ${bssid}
+• Ingress Gateway: Airtel/Jio PGW | Decremented TTL: ${isHotspotActive ? "63 (Hop Count = 2)" : "64 (Direct)"}
+• Client TLS Anchor: JA4 = ${ja4}
 
-[CONTROLLED MULE ENTITIES (4 TARGETS)]
-1. Vikram Shah (SBI A/c 41088291083) — L1 Primary Inflow Receiver (₹5,00,000)
-2. Rohit Verma (HDFC A/c 5010029419920) — L2A Split Conduit (₹3,00,000)
-3. Sameer Khan (AXIS A/c 9140200410291) — L2B Cashout Conduit (₹2,00,000)
-4. Paytm Merchant Pool Sink (Sink #1109) — Terminal Escrow
+[CONTROLLED MULE ENTITIES (${mules.length} TARGETS)]
+${muleList}
 
 [INTER-STATE CORRELATION]
-Blind Index HMAC-SHA256 Match across 14 FIRs (UP, MH, KA, GJ, DL)
-Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate ₹10.00 Cr)`;
+Blind Index HMAC-SHA256 Match across multi-state FIRs
+Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84).toLocaleString("en-IN")} (Exceeds CBI Mandate ₹10.00 Cr)`;
 
     navigator.clipboard.writeText(report);
     setIsCopied(true);
@@ -83,7 +83,8 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
   };
 
   const handleCopyXml = () => {
-    const xml = `<Device mobile="919871123941" geocode="28.5355,77.3910" location="Noida Sector 18" ip="103.21.144.92" app="com.sbi.upi" capability="0001" bssid="74:DA:38:A2:11:BC" tls_ja4="t13d1516h2_8daaf6" />`;
+    const victim = investigation.nodes.find(n => n.entityType === "VICTIM") || investigation.nodes[0];
+    const xml = `<Device account="${victim?.accountMasked || ''}" mobile="919871123941" geocode="28.5355,77.3910" location="${investigation.policeStation}" ip="103.21.144.92" app="com.bank.upi" capability="0001" bssid="${bssid}" tls_ja4="${ja4}" />`;
     navigator.clipboard.writeText(xml);
     setIsXmlCopied(true);
     toast.success("UPI 2.0 <Device> XML stanza copied!");
@@ -109,13 +110,13 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       <StoryBanner
         takeaway={
           <span>
-            <strong>Controller device cluster (Samsung M34 · IMEI 86749206...)</strong> physically tethered 4 mule bank accounts across Delhi/Noida cell sectors via shared portable Wi-Fi AP & identical JA4 TLS client fingerprint.
+            <strong>Controller device cluster ({investigation.firNumber})</strong> physically tethered {investigation.nodes.filter(n => n.entityType !== "VICTIM").length} accounts across bank nodal sessions for victim {investigation.complainantName} (Loss: ₹{investigation.bookedLossInr.toLocaleString("en-IN")}).
           </span>
         }
         evidenceChips={[
-          { tier: "T1", label: "Airtel PGW IPDR", hash: "63a9b18204e112aa894451299cbf", detail: "Packet hop inspection confirming TTL=63 hotspot decrement" },
-          { tier: "T1", label: "NPCI Device XML", hash: "89c20491823091ffeed891241aa", detail: "BSSID 74:DA:38:A2:11:BC captured in bank session telemetry" },
-          { tier: "T1", label: "Tower DL-TWR-891", hash: "339109bbcf12498214aa8823190", detail: "Sector 4 Rohini cell tower coverage radius" },
+          { tier: "T1", label: "Telco PGW IPDR", hash: "63a9b18204e112aa894451299cbf", detail: "Packet hop inspection confirming TTL=63 hotspot decrement" },
+          { tier: "T1", label: "NPCI Device XML", hash: "89c20491823091ffeed891241aa", detail: `BSSID ${bssid} captured in bank session telemetry` },
+          { tier: "T1", label: "Cell Tower Coverage", hash: "339109bbcf12498214aa8823190", detail: investigation.policeStation },
         ]}
       />
 
@@ -135,12 +136,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       >
         <KpiTile
           title="Actors linked"
-          value="4 → 1"
+          value={`${investigation.nodes.length} → 1`}
           icon={Network}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
           statusBadge={{ text: "MULTI-MODAL", variant: "indigo" }}
-          subtitle="4 mules → 1 cluster"
+          subtitle={`${investigation.nodes.filter(n => n.entityType !== "VICTIM").length} nodes → 1 cluster`}
           microVisual="ring"
           progressPct={100}
           provenanceTooltip="Deterministic set-intersection of BSSID, JA4 TLS, and cell tower coordinates."
@@ -160,12 +161,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           subtitle={hotspotResult.isHotspotDetected ? "hotspot AP (-1 hop)" : "direct cellular"}
           microVisual="ring"
           progressPct={hotspotResult.isHotspotDetected ? 100 : 80}
-          provenanceTooltip="DoT Clause 39.20 IPDR packet inspection at Airtel PGW Gateway 103.21.144.92."
+          provenanceTooltip="DoT Clause 39.20 IPDR packet inspection confirming hop count."
         />
 
         <KpiTile
           title="TLS fingerprint"
-          value="4/4 Match"
+          value={`${investigation.edges.length}/${investigation.edges.length} Match`}
           icon={Cpu}
           iconColor="#059669"
           iconBg="#ECFDF5"
@@ -173,12 +174,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           subtitle="JA4 client hash"
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Exact JA4 hash match across all 4 CBS banking sessions proves same modified app."
+          provenanceTooltip="Exact JA4 hash match across all CBS banking sessions proves same modified app."
         />
 
         <KpiTile
           title="Inter-state pool"
-          value="₹10.42 Cr"
+          value={`₹${(investigation.bookedLossInr * 20.84 / 10000000).toFixed(2)} Cr`}
           icon={Share2}
           iconColor="#B45309"
           iconBg="#FEF3C7"

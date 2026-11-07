@@ -20,14 +20,30 @@ import { GateRail } from "../../components/tarka/intake/GateRail";
 import { LedgerCard } from "../../components/tarka/intake/LedgerCard";
 import { InspectorDock } from "../../components/tarka/intake/InspectorDock";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
   useOverflowGuard();
 
-  const { mutations, toggleMutation } = useTarkaGlobal();
-  const { setActiveDockTab, density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { setActiveDockTab, density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
 
   const isRow14Tampered = !!mutations.alterBankRow14;
   const isForgedRrn = !!mutations.forgeRrnTimestamp;
@@ -48,7 +64,7 @@ export const IntakeScreen: React.FC = () => {
   // Search input ref for keyboard shortcut '/'
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync custom input with global mutation toggle or discovered cluster
+  // Sync custom input with global mutation toggle, active investigation, or discovered cluster
   useEffect(() => {
     if (activeDiscoveredCluster) {
       if (activeDiscoveredCluster.forgedRrnRows?.[0]?.rrn) {
@@ -59,10 +75,15 @@ export const IntakeScreen: React.FC = () => {
         const errorVal = d.claimedBalError ?? (d as any).claimed_bal_error ?? 200000;
         setCustomRow14Balance(isRow14Tampered ? (836550 - errorVal).toFixed(2) : "836550.00");
       }
+    } else if (investigation.edges[0]?.rrn) {
+      setRrnInput(investigation.edges[0].rrn);
+      const loss = investigation.bookedLossInr || 500000;
+      const normalBal = Math.round(loss * 1.45 + 115890) - 3450 + 125000 - loss;
+      setCustomRow14Balance(isRow14Tampered ? (normalBal - 200000).toFixed(2) : normalBal.toFixed(2));
     } else {
       setCustomRow14Balance(isRow14Tampered ? "322440.00" : "522440.00");
     }
-  }, [isRow14Tampered, activeDiscoveredCluster]);
+  }, [isRow14Tampered, activeDiscoveredCluster, investigation]);
 
   // Global Keyboard Shortcuts (/ search, T toggle tamper, P permute, Esc clear)
   useEffect(() => {
@@ -177,75 +198,15 @@ export const IntakeScreen: React.FC = () => {
       return sortPolarity === "ASC" ? clusterRows : [...clusterRows].reverse();
     }
 
-    const row14Val = parseFloat(customRow14Balance) || (isRow14Tampered ? 322440.0 : 522440.0);
-    const row15Bal = isRow14Tampered ? 318240.0 : 518240.0;
-    const row16Bal = isRow14Tampered ? 308240.0 : 508240.0;
-
-    const baseList: LedgerRowData[] = [
-      {
-        id: "CBS-011",
-        sequenceNo: 11,
-        timestamp: "2026-09-22T09:15:02",
-        description: "OPENING BALANCE B/F",
-        rrn: "—",
-        debit: 0.0,
-        credit: 0.0,
-        balance: 615890.0,
-      },
-      {
-        id: "CBS-012",
-        sequenceNo: 12,
-        timestamp: "2026-09-22T09:42:18",
-        description: "UPI/DR/6265091148/GROCERY_STORE",
-        rrn: "626509114820",
-        debit: 3450.0,
-        credit: 0.0,
-        balance: 612440.0,
-      },
-      {
-        id: "CBS-013",
-        sequenceNo: 13,
-        timestamp: permuteActive ? "2026-09-22T10:00:14" : "2026-09-22T09:55:00",
-        description: "NEFT/CR/SBIN26265/SALARY_CREDIT",
-        rrn: "SBIN260922123456",
-        debit: 0.0,
-        credit: 125000.0,
-        balance: 737440.0,
-      },
-      {
-        id: "CBS-014",
-        sequenceNo: 14,
-        timestamp: "2026-09-22T10:00:14",
-        description: "UPI/DR/626510149921/VIKRAM_MULE",
-        rrn: "626510149921",
-        debit: 215000.0,
-        credit: 0.0,
-        balance: row14Val,
-      },
-      {
-        id: "CBS-015",
-        sequenceNo: 15,
-        timestamp: "2026-09-22T10:14:32",
-        description: "UPI/DR/6265118821/ELECTRICITY_BILL",
-        rrn: "626511882194",
-        debit: 4200.0,
-        credit: 0.0,
-        balance: row15Bal,
-      },
-      {
-        id: "CBS-016",
-        sequenceNo: 16,
-        timestamp: "2026-09-22T10:28:45",
-        description: "IMPS/DR/6265129940/CASH_ATM_SWEEP",
-        rrn: "626512994031",
-        debit: 10000.0,
-        credit: 0.0,
-        balance: row16Bal,
-      },
-    ];
-
-    return sortPolarity === "ASC" ? baseList : [...baseList].reverse();
-  }, [sortPolarity, isRow14Tampered, customRow14Balance, permuteActive]);
+    return CaseSyncBridge.getInstance().deriveCaseLedgerRows(
+      activeCaseId || "CASE-2026-001",
+      investigation,
+      sortPolarity,
+      isRow14Tampered,
+      customRow14Balance,
+      permuteActive
+    );
+  }, [activeDiscoveredCluster, activeCaseId, investigation, sortPolarity, isRow14Tampered, customRow14Balance, permuteActive]);
 
   // Mathematical Conservation Solver
   const validationResult = useMemo(() => {
@@ -297,11 +258,11 @@ export const IntakeScreen: React.FC = () => {
             {/* STORY BANNER */}
       <StoryBanner
         screenId="intake"
-        takeaway="CBS double-entry invariant falsifies purported ₹15,000 victim receipt, proving unbooked ₹2,00,000 deficit and Tier-1 HSM tamper."
+        takeaway={`CBS double-entry invariant verification for ${investigation.complainantName} (${investigation.firNumber}): verifies ₹${investigation.bookedLossInr.toLocaleString("en-IN")} booked outflow across banking exhibits.`}
         evidenceChips={[
-          { tier: "T1", label: "SBI Finacle CBS", hash: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567" },
           { tier: "T1", label: "NPCI Switch STAN", hash: "9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd" },
-          { tier: "T3", label: "Victim Screenshot", hash: "c89148bc92019482019a84719284102948192841029481928410294819284102" },
+          { tier: "T3", label: "Victim Telemetry", hash: "c89148bc92019482019a84719284102948192841029481928410294819284102" },
         ]}
       />
 

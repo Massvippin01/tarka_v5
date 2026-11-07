@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Clock,
   Layers,
@@ -8,6 +8,9 @@ import {
   Activity,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
+import { useTarkaUiStore } from "../../store/useTarkaUiStore";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { StoryBanner, KpiTile } from "../../components/tarka/kit";
 import { TemporalEvidenceLoom } from "../../components/tarka/TemporalEvidenceLoom";
 import { ClaimDependencyLens } from "../../components/tarka/ClaimDependencyLens";
@@ -15,8 +18,51 @@ import { InvestigationFlightRecorder } from "../../components/tarka/Investigatio
 import { ProvenanceDAGView } from "../../components/graphs/ProvenanceDAGView";
 
 export const ForensicWorkstationScreen: React.FC = () => {
-  const { activeCaseId } = useTarkaGlobal();
+  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { reconstructedInvestigation } = useTarkaUiStore();
   const [activeTab, setActiveTab] = useState<"loom" | "lens" | "recorder" | "provenance">("loom");
+
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
+
+  const chronologyEvents = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseWorkstationChronology(
+      activeCaseId || "CASE-2026-001",
+      investigation
+    );
+  }, [activeCaseId, investigation]);
+
+  const claimAblationData = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseClaimAblationData(
+      activeCaseId || "CASE-2026-001",
+      investigation
+    );
+  }, [activeCaseId, investigation]);
+
+  const flightRecorderEntries = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseFlightRecorder(
+      activeCaseId || "CASE-2026-001",
+      investigation
+    );
+  }, [activeCaseId, investigation]);
+
+  const provenanceDag = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseProvenanceDAG(
+      activeCaseId || "CASE-2026-001",
+      investigation
+    );
+  }, [activeCaseId, investigation]);
 
   return (
     <div
@@ -36,11 +82,23 @@ export const ForensicWorkstationScreen: React.FC = () => {
       {/* 1. STORY BANNER */}
       <StoryBanner
         screenId="workstation"
-        takeaway="Deep forensic instrumentation: multi-track temporal alignment, Microsoft Z3 SMT claim ablation lens, and cryptographically chained investigation flight recorder."
+        takeaway={`${investigation.firNumber || "FIR"} (${investigation.complainantName || "Victim"}): Deep forensic instrumentation across multi-track NTP alignment, Z3 SMT claim ablation, and cryptographically chained flight recorder.`}
         evidenceChips={[
-          { tier: "T1", label: "NTP Stratum-2", hash: "b198302ca8765432109876543210987654321098765432109876543210987654" },
-          { tier: "T1", label: "Z3 MUS Root", hash: "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90" },
-          { tier: "T1", label: "Flight Recorder CAS", hash: "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f" },
+          {
+            tier: "T1",
+            label: `${investigation.complainantName?.split(" ")[0] || "Case"} NTP Stratum-2`,
+            hash: investigation.fileManifest[0]?.sha256 || "b198302ca8765432109876543210987654321098765432109876543210987654",
+          },
+          {
+            tier: "T1",
+            label: "Z3 MUS Root",
+            hash: investigation.fileManifest[1]?.sha256 || "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90",
+          },
+          {
+            tier: "T1",
+            label: "Flight Recorder CAS",
+            hash: investigation.fileManifest[2]?.sha256 || "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f",
+          },
         ]}
       />
 
@@ -54,8 +112,8 @@ export const ForensicWorkstationScreen: React.FC = () => {
       >
         <KpiTile
           title="MULTI-TRACK CHRONOLOGY"
-          value="5"
-          suffix=" Tracks"
+          value={String(chronologyEvents.length)}
+          suffix=" Events"
           icon={Clock}
           iconColor="#10B981"
           iconBg="#ECFDF5"
@@ -84,7 +142,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
         />
         <KpiTile
           title="FLIGHT RECORDER LEDGER"
-          value="10"
+          value={String(flightRecorderEntries.length)}
           suffix=" Events"
           icon={Disc}
           iconColor="#9333EA"
@@ -178,12 +236,17 @@ export const ForensicWorkstationScreen: React.FC = () => {
         }}
       >
         {activeTab === "loom" && (
-          <TemporalEvidenceLoom caseId={activeCaseId || "CASE-2026-001"} />
+          <TemporalEvidenceLoom
+            caseId={activeCaseId || "CASE-2026-001"}
+            events={chronologyEvents}
+          />
         )}
 
         {activeTab === "lens" && (
           <ClaimDependencyLens
             caseId={activeCaseId || "CASE-2026-001"}
+            artifacts={claimAblationData.artifacts}
+            claims={claimAblationData.claims}
             onExecuteAblation={async (excludedIds) => {
               console.log("Ablation executed on:", excludedIds);
             }}
@@ -191,11 +254,18 @@ export const ForensicWorkstationScreen: React.FC = () => {
         )}
 
         {activeTab === "recorder" && (
-          <InvestigationFlightRecorder caseId={activeCaseId || "CASE-2026-001"} />
+          <InvestigationFlightRecorder
+            caseId={activeCaseId || "CASE-2026-001"}
+            entries={flightRecorderEntries}
+          />
         )}
 
         {activeTab === "provenance" && (
-          <ProvenanceDAGView dag={null} caseId={activeCaseId || "CASE-2026-001"} embedded={true} />
+          <ProvenanceDAGView
+            dag={provenanceDag as any}
+            caseId={activeCaseId || "CASE-2026-001"}
+            embedded={true}
+          />
         )}
       </div>
     </div>

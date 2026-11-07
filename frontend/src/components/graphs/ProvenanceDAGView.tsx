@@ -10,6 +10,8 @@ import {
   Copy,
 } from "lucide-react";
 import type { ProvenanceDAG, DAGNode } from "../../types/forensics";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 
 interface ProvenanceDAGViewProps {
   dag: ProvenanceDAG | null;
@@ -220,9 +222,9 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
   const hasArtifactNodes = Boolean(
     dag &&
     dag.nodes &&
-    dag.nodes.some((n: any) => n.node_type === "artifact" || n.node_id?.startsWith("art:") || n.node_id?.startsWith("fact:") || n.node_id?.startsWith("ART-"))
+    dag.nodes.some((n: any) => n.node_type?.toLowerCase() === "artifact" || n.node_id?.startsWith("art:") || n.node_id?.startsWith("fact:") || n.node_id?.startsWith("ART-"))
   );
-  const hasValidNodes = Boolean((dag && dag.nodes && dag.nodes.length > 0 && hasArtifactNodes) || _caseId === "CASE-2026-001");
+  const hasValidNodes = Boolean((dag && dag.nodes && dag.nodes.length > 0 && hasArtifactNodes) || Boolean(_caseId));
 
   const activeDag: CustomProvenanceDAG = useMemo(() => {
     if (dag && dag.nodes && dag.nodes.length > 0 && hasArtifactNodes) {
@@ -233,6 +235,16 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
     }
     if (_caseId === "CASE-2026-001") {
       return CANONICAL_DAG_2026_001;
+    }
+    if (_caseId) {
+      try {
+        const derived = CaseSyncBridge.getInstance().deriveCaseProvenanceDAG(_caseId, reconstruct5FileInvestigation());
+        if (derived && derived.nodes && derived.nodes.length > 0) {
+          return derived as unknown as CustomProvenanceDAG;
+        }
+      } catch (err) {
+        console.warn("Could not derive provenance DAG for case:", _caseId, err);
+      }
     }
     return {
       run_id: "clean_standby",

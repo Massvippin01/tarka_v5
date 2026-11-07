@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Disc, SkipBack, SkipForward, User, Cpu, Bot, CheckCircle, Copy, Check } from "lucide-react";
 
 export type FlightRecorderActorType = "HUMAN_EXAMINER" | "AUTOMATED_SYSTEM" | "AI_ASSISTANT";
@@ -113,6 +113,11 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
   const [replayStep, setReplayStep] = useState<number>(entries.length);
   const [selectedEntry, setSelectedEntry] = useState<FlightRecorderEntry | null>(entries[entries.length - 1] || null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReplayStep(entries.length);
+    setSelectedEntry(entries[entries.length - 1] || null);
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
     let subset = entries.slice(0, replayStep);
