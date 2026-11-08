@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import {
-  Shield,
   Search,
   Plus,
   FileUp,
@@ -133,91 +132,38 @@ export const CaseWorkspaceScreen: React.FC = () => {
       }}
     >
       {/* =========================================================================
-          STATION COMMAND TOPBAR (LINEAR / JIRA STYLE)
+          WORKSPACE CONTROL BAR (MINIMALIST & PROFESSIONAL TOOLBAR)
           ========================================================================= */}
       <div
         style={{
           flexShrink: 0,
           background: "#FFFFFF",
           borderBottom: "1px solid #E2E8F0",
-          padding: "8px 14px",
+          padding: "8px 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          flexWrap: "wrap",
           zIndex: 20,
         }}
       >
-        {/* Left: Station Identity & Unit Selector */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
-            style={{
-              width: "28px",
-              height: "28px",
-              borderRadius: "7px",
-              background: "#EEF2FF",
-              border: "1px solid #C7D2FE",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#4F46E5",
-              boxShadow: "0 1px 2px rgba(79, 70, 229, 0.15)",
-              flexShrink: 0,
-            }}
-          >
-            <Shield size={16} strokeWidth={2.4} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 900,
-                  color: "#0F172A",
-                  letterSpacing: "0.02em",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                NOIDA NODE #UP-16
-              </span>
-              <span
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 800,
-                  padding: "1px 5px",
-                  borderRadius: "3px",
-                  background: "#ECFDF5",
-                  color: "#047857",
-                  border: "1px solid #A7F3D0",
-                }}
-              >
-                LIVE SAMANVAYA ENCLAVE
-              </span>
-            </div>
-            <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-              Cyber Crime PS Noida · State Jurisdiction UP-West
-            </div>
-          </div>
-        </div>
-
-        {/* Center: Search & Filter Pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 340px", maxWidth: "480px" }}>
+        {/* Left: Search & Filter Pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: "1 1 360px", maxWidth: "560px" }}>
           {/* Quick Search Input */}
           <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center" }}>
-            <Search size={13} color="#94A3B8" style={{ position: "absolute", left: "9px", pointerEvents: "none" }} />
+            <Search size={14} color="#94A3B8" style={{ position: "absolute", left: "10px", pointerEvents: "none" }} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by Case, FIR, Ack, Suspect, Bank..."
+              placeholder="Search case title, FIR, Ack, suspect, bank..."
               style={{
                 width: "100%",
-                padding: "5px 24px 5px 28px",
+                padding: "6px 28px 6px 32px",
                 borderRadius: "6px",
-                border: "1px solid #CBD5E1",
+                border: "1px solid #E2E8F0",
                 background: "#F8FAFC",
-                fontSize: "11px",
+                fontSize: "12px",
                 color: "#0F172A",
                 outline: "none",
                 boxSizing: "border-box",
@@ -229,7 +175,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
                 onClick={() => setSearchQuery("")}
                 style={{
                   position: "absolute",
-                  right: "6px",
+                  right: "8px",
                   background: "transparent",
                   border: "none",
                   color: "#94A3B8",
@@ -237,7 +183,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
                   display: "flex",
                 }}
               >
-                <X size={12} />
+                <X size={13} />
               </button>
             )}
           </div>
@@ -259,11 +205,12 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 border: "none",
                 borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "ALL" ? 800 : 500,
+                padding: "4px 8px",
+                fontSize: "11px",
+                fontWeight: filterMode === "ALL" ? 600 : 500,
                 background: filterMode === "ALL" ? "#FFFFFF" : "transparent",
                 color: filterMode === "ALL" ? "#0F172A" : "#64748B",
+                boxShadow: filterMode === "ALL" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
@@ -275,18 +222,19 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 border: "none",
                 borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "GOLDEN_HOUR" ? 800 : 500,
-                background: filterMode === "GOLDEN_HOUR" ? "#FEF3C7" : "transparent",
-                color: filterMode === "GOLDEN_HOUR" ? "#92400E" : "#64748B",
+                padding: "4px 8px",
+                fontSize: "11px",
+                fontWeight: filterMode === "GOLDEN_HOUR" ? 600 : 500,
+                background: filterMode === "GOLDEN_HOUR" ? "#FFFFFF" : "transparent",
+                color: filterMode === "GOLDEN_HOUR" ? "#B45309" : "#64748B",
+                boxShadow: filterMode === "GOLDEN_HOUR" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "2px",
+                gap: "3px",
               }}
             >
-              <Zap size={10} color="#D97706" />
+              <Zap size={11} color="#D97706" />
               <span>SLA</span>
             </button>
             <button
@@ -295,11 +243,12 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 border: "none",
                 borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "SYNDICATE" ? 800 : 500,
-                background: filterMode === "SYNDICATE" ? "#EEF2FF" : "transparent",
+                padding: "4px 8px",
+                fontSize: "11px",
+                fontWeight: filterMode === "SYNDICATE" ? 600 : 500,
+                background: filterMode === "SYNDICATE" ? "#FFFFFF" : "transparent",
                 color: filterMode === "SYNDICATE" ? "#4338CA" : "#64748B",
+                boxShadow: filterMode === "SYNDICATE" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
@@ -308,7 +257,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: SaaS View Mode Switcher & Primary Action Buttons */}
+        {/* Right: View Mode Switcher & Primary Action Buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
           {/* View Mode Switcher: Table | Board | Timeline | Bulk */}
           <div
@@ -326,19 +275,19 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "3px",
-                fontSize: "10.5px",
-                fontWeight: viewMode === "table" ? 800 : 500,
-                padding: "3px 8px",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: viewMode === "table" ? 600 : 500,
+                padding: "4px 9px",
                 borderRadius: "4px",
                 border: "none",
                 background: viewMode === "table" ? "#FFFFFF" : "transparent",
                 color: viewMode === "table" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "table" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                boxShadow: viewMode === "table" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
-              <List size={11} />
+              <List size={12} />
               <span>Table</span>
             </button>
             <button
@@ -347,19 +296,19 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "3px",
-                fontSize: "10.5px",
-                fontWeight: viewMode === "board" ? 800 : 500,
-                padding: "3px 8px",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: viewMode === "board" ? 600 : 500,
+                padding: "4px 9px",
                 borderRadius: "4px",
                 border: "none",
                 background: viewMode === "board" ? "#FFFFFF" : "transparent",
                 color: viewMode === "board" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "board" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                boxShadow: viewMode === "board" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
-              <LayoutGrid size={11} />
+              <LayoutGrid size={12} />
               <span>Board</span>
             </button>
             <button
@@ -368,19 +317,19 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "3px",
-                fontSize: "10.5px",
-                fontWeight: viewMode === "timeline" ? 800 : 500,
-                padding: "3px 8px",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: viewMode === "timeline" ? 600 : 500,
+                padding: "4px 9px",
                 borderRadius: "4px",
                 border: "none",
                 background: viewMode === "timeline" ? "#FFFFFF" : "transparent",
                 color: viewMode === "timeline" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "timeline" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                boxShadow: viewMode === "timeline" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
-              <Calendar size={11} />
+              <Calendar size={12} />
               <span>Roadmap</span>
             </button>
             <button
@@ -389,91 +338,96 @@ export const CaseWorkspaceScreen: React.FC = () => {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "3px",
-                fontSize: "10.5px",
-                fontWeight: viewMode === "bulk" ? 800 : 500,
-                padding: "3px 8px",
+                gap: "4px",
+                fontSize: "11px",
+                fontWeight: viewMode === "bulk" ? 600 : 500,
+                padding: "4px 9px",
                 borderRadius: "4px",
                 border: "none",
                 background: viewMode === "bulk" ? "#FFFFFF" : "transparent",
                 color: viewMode === "bulk" ? "#0F172A" : "#64748B",
-                boxShadow: viewMode === "bulk" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                boxShadow: viewMode === "bulk" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                 cursor: "pointer",
               }}
             >
-              <FileUp size={11} />
+              <FileUp size={12} />
               <span>Bulk Ingest</span>
             </button>
           </div>
 
           <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
 
-          {/* Action: New Case */}
+          {/* Action: Load Benchmark Pack */}
           <button
             type="button"
-            onClick={openNewCaseModal}
+            onClick={handleLoadIndianCasePack}
+            title="Load 5-File Indian Case Pack (Finacle, Switch, KYC, CGNAT, 1930)"
+            className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
-              border: "1px solid #CBD5E1",
+              gap: "5px",
+              padding: "5px 10px",
+              borderRadius: "6px",
+              border: "1px solid #E2E8F0",
               background: "#FFFFFF",
-              color: "#1E293B",
-              fontSize: "11px",
-              fontWeight: 700,
+              color: "#334155",
+              fontSize: "12px",
+              fontWeight: 500,
               cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
             }}
           >
-            <Plus size={12} color="#4F46E5" />
-            <span>New Case</span>
+            <Sparkles size={13} color="#4F46E5" />
+            <span>5-File Case Pack</span>
           </button>
 
           {/* Action: Bulk Upload Modal Trigger */}
           <button
             type="button"
             onClick={() => setIsBulkModalOpen(true)}
+            className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
-              border: "1px solid #4338CA",
-              background: "#4F46E5",
-              color: "#FFFFFF",
-              fontSize: "11px",
-              fontWeight: 800,
+              gap: "5px",
+              padding: "5px 10px",
+              borderRadius: "6px",
+              border: "1px solid #CBD5E1",
+              background: "#FFFFFF",
+              color: "#0F172A",
+              fontSize: "12px",
+              fontWeight: 600,
               cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
             }}
           >
-            <FileUp size={12} />
+            <FileUp size={13} color="#475569" />
             <span>Bulk Upload</span>
           </button>
 
-          {/* Action: Load Benchmark Pack */}
+          {/* Action: New Case (Primary) */}
           <button
             type="button"
-            onClick={handleLoadIndianCasePack}
-            title="Load 5-File Indian Case Pack (Finacle, Switch, KYC, CGNAT, 1930)"
+            onClick={openNewCaseModal}
+            className="hover:bg-indigo-700 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
-              border: "1px solid #10B981",
-              background: "#ECFDF5",
-              color: "#065F46",
-              fontSize: "11px",
-              fontWeight: 700,
+              gap: "5px",
+              padding: "5px 12px",
+              borderRadius: "6px",
+              border: "1px solid #4338CA",
+              background: "#4F46E5",
+              color: "#FFFFFF",
+              fontSize: "12px",
+              fontWeight: 600,
               cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(79, 70, 229, 0.2)",
             }}
           >
-            <Sparkles size={11} color="#059669" />
-            <span>5-File Case Pack</span>
+            <Plus size={13} strokeWidth={2.5} />
+            <span>New Case</span>
           </button>
 
           {/* Action: Benchmark Lab */}

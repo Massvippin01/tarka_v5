@@ -422,20 +422,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 >
                   {isExpanded ? (
                     <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                        <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 4px", borderRadius: "3px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 5px", borderRadius: "4px", border: "1px solid #C7D2FE" }}>
                           {activeCase?.firNumber || "CASE"}
                         </span>
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#64748B" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#64748B" }}>
                           {activeCase?.policeStation ? activeCase.policeStation.split(" ")[0] : "Station"}
                         </span>
                       </div>
-                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {activeCase?.title ? activeCase.title.slice(0, 22) : "Digital Arrest"}...
+                      <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#0F172A", marginTop: "3px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {activeCase?.title ? activeCase.title.slice(0, 24) : "Digital Arrest"}
                       </div>
                     </div>
                   ) : (
-                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
                       {activeCase?.firNumber ? activeCase.firNumber.replace(/[^0-9]/g, "").slice(0, 3) || "001" : "001"}
                     </span>
                   )}
@@ -608,9 +608,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                         <div style={{ minWidth: 0, overflow: "hidden" }}>
                           <div
                             style={{
-                              fontSize: "12px",
-                              fontWeight: isActive ? 700 : 500,
-                              color: isActive ? "#09090B" : "#475569",
+                              fontSize: "13px",
+                              fontWeight: isActive ? 600 : 500,
+                              color: isActive ? "#0F172A" : "#475569",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -618,7 +618,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           >
                             {item.shortTitle}
                           </div>
-                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                          <div style={{ fontSize: "11px", color: "#64748B" }}>
                             {item.subtitle}
                           </div>
                         </div>
@@ -942,7 +942,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
 
           {/* Right Header Controls: [Timeline Stage] · [Density Toggle] · [⚡ 1930 SLA] · [Mutator] · [Lab] · [Brief] · [Voice AI] · [Export §63] · [+ Evidence] */}
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
             {/* Operational Timeline Stage Popover (Screens 01-06) */}
             {activePage === "workbench" && (
               <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
@@ -950,30 +950,30 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   <button
                     type="button"
                     title="Operational Timeline Calibration (Click to jump between T+0m to T+48h)"
-                    className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                    className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                     style={{
-                      height: "28px",
+                      height: "30px",
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: "5px",
-                      background: "#F8FAFC",
-                      border: "1px solid #CBD5E1",
-                      color: "#0F172A",
-                      fontWeight: 700,
-                      fontSize: "11px",
+                      gap: "6px",
+                      background: "#FFFFFF",
+                      border: "1px solid #E2E8F0",
+                      color: "#334155",
+                      fontWeight: 500,
+                      fontSize: "12px",
                       borderRadius: "6px",
-                      padding: "0 8px",
+                      padding: "0 10px",
                       cursor: "pointer",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                       flexShrink: 0,
                       whiteSpace: "nowrap",
                     }}
                   >
-                    <Clock size={12} color="#4F46E5" />
-                    <span style={{ fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                    <Clock size={13} color="#64748B" />
+                    <span style={{ fontFamily: "var(--font-mono)", color: "#0F172A", fontWeight: 600 }}>
                       {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
                     </span>
-                    <ChevronDown size={11} color="#64748B" />
+                    <ChevronDown size={12} color="#94A3B8" />
                   </button>
                 </Popover.Trigger>
                 <Popover.Portal>
@@ -981,19 +981,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     align="center"
                     sideOffset={6}
                     style={{
-                      width: "290px",
+                      width: "300px",
                       background: "#FFFFFF",
                       border: "1px solid #E2E8F0",
                       borderRadius: "8px",
-                      boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
-                      padding: "8px",
+                      boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.12)",
+                      padding: "10px",
                       zIndex: 100,
                       display: "flex",
                       flexDirection: "column",
-                      gap: "4px",
+                      gap: "6px",
                     }}
                   >
-                    <div style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                       OPERATIONAL TIMELINE CALIBRATION
                     </div>
                     {clockStages.map((stg, idx) => {
@@ -1010,8 +1010,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            padding: "6px 8px",
-                            borderRadius: "5px",
+                            padding: "7px 10px",
+                            borderRadius: "6px",
                             border: isCurrent ? "1px solid #C7D2FE" : "1px solid transparent",
                             background: isCurrent ? "#EEF2FF" : "transparent",
                             cursor: "pointer",
@@ -1019,10 +1019,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           }}
                         >
                           <div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: isCurrent ? "#4338CA" : "#0F172A" }}>
+                            <div style={{ fontSize: "12px", fontWeight: 600, color: isCurrent ? "#4338CA" : "#0F172A" }}>
                               {stg.label}
                             </div>
-                            <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                            <div style={{ fontSize: "11px", color: "#64748B" }}>
                               {stg.title}
                             </div>
                           </div>
@@ -1036,36 +1036,38 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 </Popover.Portal>
               </Popover.Root>
             )}
-            {/* View Density Compact Toggle Button */}
+
+            {/* View Density Toggle Button */}
             <button
               type="button"
               onClick={() => setDensity(density === "comfortable" ? "compact" : "comfortable")}
               title={`Switch dashboard view to ${density === "comfortable" ? "Compact" : "Standard"} layout`}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: "#F8FAFC",
-                border: "1px solid #CBD5E1",
+                gap: "5px",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
                 color: "#334155",
-                fontWeight: 600,
-                fontSize: "11px",
+                fontWeight: 500,
+                fontSize: "12px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 10px",
                 cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                 flexShrink: 0,
               }}
             >
               {density === "comfortable" ? (
                 <>
-                  <Minimize2 size={11} color="#4F46E5" />
+                  <Minimize2 size={13} color="#64748B" />
                   <span>Compact</span>
                 </>
               ) : (
                 <>
-                  <Maximize2 size={11} color="#4F46E5" />
+                  <Maximize2 size={13} color="#64748B" />
                   <span>Standard</span>
                 </>
               )}
@@ -1076,27 +1078,27 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="hover:bg-amber-100/80 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+                  className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                   style={{
-                    height: "28px",
+                    height: "30px",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "4px",
-                    background: "#FFFBEB",
-                    border: "1px solid #FDE68A",
-                    color: "#92400E",
-                    fontWeight: 700,
-                    fontSize: "10.5px",
+                    gap: "6px",
+                    background: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    color: "#334155",
+                    fontWeight: 500,
+                    fontSize: "12px",
                     borderRadius: "6px",
-                    padding: "0 8px",
+                    padding: "0 10px",
                     cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(217, 119, 6, 0.15)",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                     flexShrink: 0,
                   }}
                 >
-                  <Zap size={11} color="#D97706" />
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#F59E0B" }} />
                   <span>1930 SLA</span>
-                  <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "0.5px 3.5px", borderRadius: "3px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-mono)", color: "#B45309", background: "#FEF3C7", padding: "1px 5px", borderRadius: "4px" }}>
                     118m
                   </span>
                 </button>
@@ -1106,36 +1108,36 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="end"
                   sideOffset={6}
                   style={{
-                    width: "360px",
+                    width: "380px",
                     background: "#FFFFFF",
                     border: "1px solid #E2E8F0",
                     borderRadius: "10px",
-                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
-                    padding: "12px",
+                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
+                    padding: "14px",
                     zIndex: 100,
                     display: "flex",
                     flexDirection: "column",
-                    gap: "8px",
+                    gap: "10px",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0", paddingBottom: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <Zap size={13} color="#D97706" />
-                      <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F172A" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0", paddingBottom: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Zap size={14} color="#D97706" />
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
                         1930 Golden Hour Dispatch Checklist
                       </span>
                     </div>
-                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", padding: "1px 5px", borderRadius: "3px" }}>
-                      ⏱ SLA: 118m Remaining
+                    <span style={{ fontSize: "11px", fontWeight: 700, background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", padding: "2px 6px", borderRadius: "4px" }}>
+                      ⏱ 118m Remaining
                     </span>
                   </div>
 
-                  <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35 }}>
+                  <div style={{ fontSize: "12px", color: "#475569", lineHeight: 1.4 }}>
                     5 pre-filled statutory requisitions generated under BNSS 2023 &amp; DoT mandates for immediate nodal transmission:
                   </div>
 
                   {/* 5 Requisitions List */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {[
                       { num: "1", title: "SBI §94 CBS Verification", sub: "Finacle logs & HSM signature for UTR #626510149921", status: "READY" },
                       { num: "2", title: "HDFC/Axis §107 Conduit Freeze", sub: "Immediate debit freeze on Layer-2 split accounts", status: "READY" },
@@ -1143,14 +1145,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       { num: "4", title: "Airtel DoT 39.20 CGNAT Order", sub: "Dynamic IPDR translation for IP 103.21.144.92", status: "READY" },
                       { num: "5", title: "NPCI Switch Certificate Demand", sub: "Section 63(4) BSA certification for UPI 2.0 session", status: "READY" },
                     ].map((item) => (
-                      <div key={item.num} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "5px", padding: "4px 7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div key={item.num} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 9px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#0F172A" }}>
                             {item.num}. {item.title}
                           </div>
-                          <div style={{ fontSize: "8px", color: "#64748B" }}>{item.sub}</div>
+                          <div style={{ fontSize: "11px", color: "#64748B" }}>{item.sub}</div>
                         </div>
-                        <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px" }}>
+                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#ECFDF5", color: "#047857", padding: "2px 6px", borderRadius: "4px" }}>
                           {item.status}
                         </span>
                       </div>
@@ -1172,20 +1174,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "5px",
-                      background: "#D97706",
+                      gap: "6px",
+                      background: "#0F172A",
                       color: "#FFFFFF",
                       border: "none",
                       borderRadius: "6px",
-                      padding: "6px 10px",
-                      fontSize: "10.5px",
-                      fontWeight: 700,
+                      padding: "8px 12px",
+                      fontSize: "12px",
+                      fontWeight: 600,
                       cursor: "pointer",
-                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                     }}
                   >
-                    <Copy size={11} />
-                    <span>📋 Copy All 5 Golden-Hour Directives</span>
+                    <Copy size={13} />
+                    <span>Copy All 5 Directives</span>
                   </button>
                 </Popover.Content>
               </Popover.Portal>
@@ -1195,64 +1197,61 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setMutatorRibbonOpen((prev) => !prev)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: activeMutationsCount > 0 ? "#FFF1F2" : "#F8FAFC",
+                gap: "6px",
+                background: activeMutationsCount > 0 ? "#FFF1F2" : "#FFFFFF",
                 border: activeMutationsCount > 0 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
                 color: activeMutationsCount > 0 ? "#BE123C" : "#334155",
-                fontWeight: 600,
-                fontSize: "11px",
+                fontWeight: 500,
+                fontSize: "12px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 10px",
                 cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                 flexShrink: 0,
               }}
             >
-              <Zap size={11} color={activeMutationsCount > 0 ? "#E11D48" : "#64748B"} />
-              <span>Mutator ({activeMutationsCount})</span>
-              <ChevronDown size={11} />
+              <Zap size={13} color={activeMutationsCount > 0 ? "#E11D48" : "#64748B"} />
+              <span>Mutator</span>
+              {activeMutationsCount > 0 && (
+                <span style={{ fontSize: "10px", fontWeight: 700, background: "#FFE4E6", color: "#BE123C", padding: "1px 5px", borderRadius: "4px" }}>
+                  {activeMutationsCount}
+                </span>
+              )}
+              <ChevronDown size={12} color="#94A3B8" />
             </button>
 
-            {/* Benchmark Lab Drawer Trigger (Only shown on workbench to avoid header overlap) */}
+            {/* Benchmark Lab Drawer Trigger */}
             {activePage === "workbench" && (
               <button
                 type="button"
                 onClick={toggleBenchmarkLab}
-                className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                 title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
                 style={{
-                  height: "28px",
+                  height: "30px",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  color: "#065F46",
-                  fontWeight: 700,
-                  fontSize: "11px",
+                  gap: "6px",
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  color: "#334155",
+                  fontWeight: 500,
+                  fontSize: "12px",
                   borderRadius: "6px",
-                  padding: "0 7px",
+                  padding: "0 10px",
                   cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                   flexShrink: 0,
                 }}
               >
-                <Zap size={11} color="#059669" />
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10B981" }} />
                 <span>Lab</span>
-                <span
-                  style={{
-                    fontSize: "9px",
-                    padding: "1px 3px",
-                    borderRadius: "3px",
-                    background: "#D1FAE5",
-                    color: "#047857",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
+                <span style={{ fontSize: "10px", color: "#94A3B8", fontFamily: "var(--font-mono)" }}>
                   Alt+B
                 </span>
               </button>
@@ -1262,26 +1261,26 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setIntelligenceBriefOpen(true)}
-              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
               title="Open 7-Question Explainable Investigation Intelligence Brief"
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                color: "#4338CA",
-                fontWeight: 700,
-                fontSize: "11px",
+                gap: "5px",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                color: "#334155",
+                fontWeight: 500,
+                fontSize: "12px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 10px",
                 cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={11} color="#4F46E5" />
+              <Sparkles size={13} color="#64748B" />
               <span>Brief</span>
             </button>
 
@@ -1289,26 +1288,27 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
               title="Voice AI Assistant"
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: "#F8FAFC",
-                border: "1px solid #CBD5E1",
+                gap: "5px",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
                 color: "#334155",
-                fontWeight: 600,
-                fontSize: "11px",
+                fontWeight: 500,
+                fontSize: "12px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 10px",
                 cursor: "pointer",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                 flexShrink: 0,
               }}
             >
-              <Mic size={11} color="#4F46E5" />
-              <span>Voice AI</span>
+              <Mic size={13} color="#64748B" />
+              <span>Voice</span>
             </button>
 
             {/* Export §63 PDF */}
@@ -1316,56 +1316,57 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               disabled={intakeGate?.isHalted}
               onClick={handlePrintPdf}
-              className="hover:bg-slate-800 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-100 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
               title={
                 intakeGate?.isHalted
                   ? "Export disabled: Falsification Gate halted downstream admissibility"
                   : "Generate & Export §63(4) BSA Evidence Certificate"
               }
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                background: intakeGate?.isHalted ? "#F1F5F9" : "#0F172A",
-                color: intakeGate?.isHalted ? "#94A3B8" : "#FFFFFF",
-                border: "1px solid transparent",
+                gap: "6px",
+                background: intakeGate?.isHalted ? "#F1F5F9" : "#FFFFFF",
+                color: intakeGate?.isHalted ? "#94A3B8" : "#0F172A",
+                border: "1px solid #CBD5E1",
                 fontWeight: 600,
-                fontSize: "11px",
+                fontSize: "12px",
                 borderRadius: "6px",
-                padding: "0 8px",
+                padding: "0 10px",
                 cursor: intakeGate?.isHalted ? "not-allowed" : "pointer",
-                boxShadow: intakeGate?.isHalted ? "none" : "0 1px 2px rgba(0,0,0,0.1)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
                 flexShrink: 0,
               }}
             >
-              <FileDown size={11} />
+              <FileDown size={13} color={intakeGate?.isHalted ? "#94A3B8" : "#475569"} />
               <span>Export §63</span>
             </button>
 
+            {/* Single Primary Action: + Evidence */}
             <button
               type="button"
               onClick={() => openEvidenceModal(activeCaseId)}
               title="Insert & Quarantine Forensic Evidence Exhibit (WebCrypto Hashing)"
-              className="hover:bg-indigo-700 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-indigo-700 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
               style={{
-                height: "28px",
+                height: "30px",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "4px",
-                padding: "0 8px",
+                gap: "6px",
+                padding: "0 12px",
                 borderRadius: "6px",
                 border: "1px solid #4338CA",
                 background: "#4F46E5",
                 color: "#FFFFFF",
-                fontWeight: 700,
-                fontSize: "11px",
+                fontWeight: 600,
+                fontSize: "12px",
                 cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+                boxShadow: "0 1px 2px rgba(79, 70, 229, 0.2)",
                 flexShrink: 0,
               }}
             >
-              <Plus size={12} />
+              <Plus size={13} strokeWidth={2.5} />
               <span>+ Evidence</span>
             </button>
           </div>

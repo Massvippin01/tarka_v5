@@ -88,8 +88,8 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
   };
 
   const initialCollapsed = typeof window !== "undefined"
-    ? localStorage.getItem("tarka_sidebar_collapsed") === "true" || true
-    : true;
+    ? localStorage.getItem("tarka_sidebar_collapsed") === "true"
+    : false;
 
   const initialDensity = typeof window !== "undefined" && window.innerHeight < 780
     ? "compact"

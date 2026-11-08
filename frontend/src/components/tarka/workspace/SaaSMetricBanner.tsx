@@ -50,41 +50,41 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
       {/* Metric 1: Golden Hour SLA */}
       <div
         style={{
-          background: totalGoldenHour > 0 ? "#FFFBEB" : "#F8FAFC",
+          background: totalGoldenHour > 0 ? "#FFFBEB" : "#FFFFFF",
           border: `1px solid ${totalGoldenHour > 0 ? "#FDE68A" : "#E2E8F0"}`,
           borderRadius: "8px",
-          padding: "8px 12px",
+          padding: "10px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Clock size={13} color={totalGoldenHour > 0 ? "#D97706" : "#64748B"} />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: totalGoldenHour > 0 ? "#92400E" : "#475569" }}>
-              GOLDEN HOUR (180M SLA)
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Clock size={14} color={totalGoldenHour > 0 ? "#D97706" : "#64748B"} />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: totalGoldenHour > 0 ? "#92400E" : "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              Golden Hour (180m SLA)
             </span>
           </div>
           <span
             style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: "3px",
-              background: totalGoldenHour > 0 ? "#FEF3C7" : "#E2E8F0",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
+              background: totalGoldenHour > 0 ? "#FEF3C7" : "#F1F5F9",
               color: totalGoldenHour > 0 ? "#B45309" : "#64748B",
             }}
           >
             NCRP 1930
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "4px" }}>
-          <span style={{ fontSize: "17px", fontWeight: 900, fontFamily: "var(--font-mono)", color: totalGoldenHour > 0 ? "#78350F" : "#0F172A" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "18px", fontWeight: 800, fontFamily: "var(--font-mono)", color: totalGoldenHour > 0 ? "#92400E" : "#0F172A" }}>
             {totalGoldenHour} ACTIVE
           </span>
-          <span style={{ fontSize: "9.5px", color: totalGoldenHour > 0 ? "#B45309" : "#64748B", fontWeight: 700 }}>
+          <span style={{ fontSize: "11px", color: totalGoldenHour > 0 ? "#B45309" : "#64748B", fontWeight: 600 }}>
             {cases[0]?.goldenHourRemainingMins ? `${cases[0].goldenHourRemainingMins}m left` : "Compliant"}
           </span>
         </div>
@@ -96,26 +96,26 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
           borderRadius: "8px",
-          padding: "8px 12px",
+          padding: "10px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <TrendingUp size={13} color="#E11D48" />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#1E293B" }}>
-              CUMULATIVE EXPOSURE
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <TrendingUp size={14} color="#E11D48" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              Cumulative Exposure
             </span>
           </div>
           <span
             style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: "3px",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
               background: "#FFF1F2",
               color: "#BE123C",
             }}
@@ -123,11 +123,11 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
             {cases.length} Cases
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "4px" }}>
-          <span style={{ fontSize: "17px", fontWeight: 900, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "18px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
             {formatCurrency(totalLoss)}
           </span>
-          <span style={{ fontSize: "9.5px", color: "#64748B", fontWeight: 600 }}>
+          <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 500 }}>
             Booked Loss
           </span>
         </div>
@@ -139,26 +139,26 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
           borderRadius: "8px",
-          padding: "8px 12px",
+          padding: "10px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Scale size={13} color="#059669" />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#1E293B" }}>
-              SHIELDED CAPITAL §106/107
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Scale size={14} color="#059669" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              Shielded Capital §106/107
             </span>
           </div>
           <span
             style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: "3px",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
               background: "#ECFDF5",
               color: "#047857",
             }}
@@ -166,11 +166,11 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
             {recoveryPct}% Ratio
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "4px" }}>
-          <span style={{ fontSize: "17px", fontWeight: 900, fontFamily: "var(--font-mono)", color: "#047857" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "18px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#047857" }}>
             {formatCurrency(totalShielded)}
           </span>
-          <span style={{ fontSize: "9.5px", color: "#059669", fontWeight: 700 }}>
+          <span style={{ fontSize: "11px", color: "#059669", fontWeight: 600 }}>
             Provisional Lien
           </span>
         </div>
@@ -182,26 +182,26 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
           borderRadius: "8px",
-          padding: "8px 12px",
+          padding: "10px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Network size={13} color="#4F46E5" />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#1E293B" }}>
-              SYNDICATE ANCHORS
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Network size={14} color="#4F46E5" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              Syndicate Anchors
             </span>
           </div>
           <span
             style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: "3px",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
               background: "#EEF2FF",
               color: "#4338CA",
             }}
@@ -209,11 +209,11 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
             I4C Cross-FIR
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "4px" }}>
-          <span style={{ fontSize: "17px", fontWeight: 900, fontFamily: "var(--font-mono)", color: "#312E81" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "18px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#312E81" }}>
             {totalSyndicateLinks} ANCHORS
           </span>
-          <span style={{ fontSize: "9.5px", color: "#4F46E5", fontWeight: 700 }}>
+          <span style={{ fontSize: "11px", color: "#4F46E5", fontWeight: 600 }}>
             JA4 · TAC · BSSID
           </span>
         </div>
@@ -225,26 +225,26 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
           background: "#FFFFFF",
           border: "1px solid #E2E8F0",
           borderRadius: "8px",
-          padding: "8px 12px",
+          padding: "10px 14px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Fingerprint size={13} color="#0284C7" />
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#1E293B" }}>
-              EVIDENCE INTEGRITY
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Fingerprint size={14} color="#0284C7" />
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              Evidence Integrity
             </span>
           </div>
           <span
             style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              padding: "1px 5px",
-              borderRadius: "3px",
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
               background: "#F0F9FF",
               color: "#0369A1",
             }}
@@ -252,11 +252,11 @@ export const SaaSMetricBanner: React.FC<SaaSMetricBannerProps> = ({ cases }) => 
             100% AIR-GAP
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "4px" }}>
-          <span style={{ fontSize: "17px", fontWeight: 900, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "18px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
             {totalExhibits} EXHIBITS
           </span>
-          <span style={{ fontSize: "9.5px", color: "#0284C7", fontWeight: 700 }}>
+          <span style={{ fontSize: "11px", color: "#0284C7", fontWeight: 600 }}>
             SHA-256 Verified
           </span>
         </div>
