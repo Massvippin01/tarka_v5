@@ -18,8 +18,8 @@ export const EvidenceGapPanel: React.FC<EvidenceGapPanelProps> = ({
     async function loadGapIntelligence() {
       try {
         const [gRes, hRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/v1/investigation/evidence-gaps/${caseId}`),
-          axios.get(`http://localhost:8000/api/v1/investigation/hypotheses/${caseId}`),
+          axios.get(`/api/v1/investigation/evidence-gaps/${caseId}`),
+          axios.get(`/api/v1/investigation/hypotheses/${caseId}`),
         ]);
         setGapsData(gRes.data);
         setHypotheses(hRes.data.hypotheses || []);

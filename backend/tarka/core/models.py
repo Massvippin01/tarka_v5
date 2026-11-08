@@ -6,7 +6,40 @@ import hashlib
 import json
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
+try:
+    from pydantic import BaseModel, Field, field_validator, model_validator
+except ImportError:
+    class BaseModel:  # type: ignore
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+        def model_dump(self, mode: str = "python") -> Dict[str, Any]:
+            res = {}
+            for k, v in self.__dict__.items():
+                if isinstance(v, Enum):
+                    res[k] = v.value
+                elif isinstance(v, list):
+                    res[k] = [item.model_dump() if hasattr(item, "model_dump") else item for item in v]
+                elif hasattr(v, "model_dump"):
+                    res[k] = v.model_dump()
+                else:
+                    res[k] = v
+            return res
+
+    def field_validator(*args, **kwargs):  # type: ignore
+        def dec(fn):
+            return fn
+        return dec
+
+    def model_validator(*args, **kwargs):  # type: ignore
+        def dec(fn):
+            return fn
+        return dec
+
+    def Field(default=None, default_factory=None, **kwargs):  # type: ignore
+        if default_factory is not None:
+            return default_factory()
+        return default
 
 
 class TrustTier(str, Enum):

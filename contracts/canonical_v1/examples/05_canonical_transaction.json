@@ -1,0 +1,26 @@
+{
+  "transaction_id": "TXN_UPI_001",
+  "case_id": "CASE_SUTRAM_2026_001",
+  "source_evidence_id": "EVID_HDFC_001",
+  "origin_entity_id": "ENT_VICTIM_001",
+  "destination_entity_id": "ENT_MULE_001",
+  "origin_account_identifier": "HDFC_1092837465",
+  "destination_account_identifier": "SBI_3399448822",
+  "amount": 500000.0,
+  "currency": "INR",
+  "original_timestamp_raw": "15-10-2026 14:02:15.120 IST",
+  "normalised_timestamp_utc": "2026-10-15T08:32:15.120Z",
+  "timestamp_uncertainty_sec": 0.01,
+  "transaction_type": "UPI_P2P",
+  "is_reversal": false,
+  "reversal_of_transaction_id": null,
+  "validation_state": "VALID",
+  "reconciliation_status": "MATCHED_BOTH_BANKS",
+  "analytical_annotations": {
+    "taint_score": 1.0,
+    "layer": 1,
+    "rule": "LIBR_INITIAL_SIPHON"
+  },
+  "schema_version": "v1.0.0",
+  "metadata": {}
+}

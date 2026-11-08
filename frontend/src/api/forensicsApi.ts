@@ -309,6 +309,34 @@ export const forensicsApi = {
     const res = await api.get("/system/status");
     return res.data;
   },
+
+  classifyScam: async (caseId: string, messageText: string) => {
+    const res = await api.post(`/cases/${caseId}/classify-scam`, {
+      message_text: messageText,
+    });
+    return res.data;
+  },
+
+  extractComplaint: async (caseId: string, complaintText: string, complaintRef?: string) => {
+    const res = await api.post(`/cases/${caseId}/extract-complaint`, {
+      complaint_text: complaintText,
+      complaint_ref: complaintRef,
+    });
+    return res.data;
+  },
+
+  ingestExcel: async (file: File, caseId = "CASE-2026-001", targetSheet?: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("case_id", caseId);
+    if (targetSheet) {
+      formData.append("target_sheet", targetSheet);
+    }
+    const res = await api.post(`/cases/${caseId}/ingest/excel`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
 };
 
 

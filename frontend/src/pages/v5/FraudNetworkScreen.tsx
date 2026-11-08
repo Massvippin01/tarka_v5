@@ -22,12 +22,25 @@ import { CrossStateWaterfall } from "../../components/tarka/network/CrossStateWa
 import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { buildCase002Bundle, buildCase003Bundle } from "../../services/caseSyncBridge";
 
 export const FraudNetworkScreen: React.FC = () => {
-  const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density, activeDiscoveredCluster, setSelectedEvidenceEdge } = useTarkaUiStore();
+  const { mutations, toggleMutation, activeCaseId } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, setSelectedEvidenceEdge, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
-  const investigation = useMemo(() => reconstruct5FileInvestigation(), []);
+
+  const investigation = useMemo(() => {
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
+    }
+    if (activeCaseId === "CASE-2026-002") {
+      return buildCase002Bundle();
+    }
+    if (activeCaseId === "CASE-2026-003") {
+      return buildCase003Bundle();
+    }
+    return reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
   const bssid = activeDiscoveredCluster?.bssidHotspot || "74:DA:38:A2:11:BC";
@@ -43,25 +56,25 @@ export const FraudNetworkScreen: React.FC = () => {
   const [isXmlCopied, setIsXmlCopied] = useState(false);
 
   const handleCopyI4cReport = () => {
+    const mules = investigation.nodes.filter(n => n.entityType !== "VICTIM");
+    const muleList = mules.map((m, idx) => `${idx + 1}. ${m.label} (${m.bank} ${m.accountMasked}) — ${m.details || m.entityType}`).join("\n");
     const report = `=== I4C SAMANVAYA / PRATIBIMB INTER-STATE SYNDICATE LINK REPORT ===
-Case Ref: FIR #149/2026 Cyber Crime PS Noida
+Case Ref: ${investigation.firNumber} ${investigation.policeStation}
+Complainant: ${investigation.complainantName} | Booked Loss: ₹${investigation.bookedLossInr.toLocaleString("en-IN")}
 Generated: 2026-09-22 10:30:00 IST | Classification: LAW ENFORCEMENT SENSITIVE
 
 [SYNDICATE INFRASTRUCTURE CLUSTER LINKAGE]
 Primary Infrastructure Controller:
-• Accomplice Wi-Fi Hotspot BSSID: 74:DA:38:A2:11:BC (Poco X5 Pro AP)
-• Ingress Gateway: Airtel PGW (103.21.144.92) | Decremented TTL: ${isHotspotActive ? "63 (Hop Count = 2)" : "64 (Direct)"}
-• Client TLS Anchor: JA4 = t13d1516h2_8daaf6 (Identical across 4 Bank Sessions)
+• Accomplice Wi-Fi Hotspot BSSID: ${bssid}
+• Ingress Gateway: Airtel/Jio PGW | Decremented TTL: ${isHotspotActive ? "63 (Hop Count = 2)" : "64 (Direct)"}
+• Client TLS Anchor: JA4 = ${ja4}
 
-[CONTROLLED MULE ENTITIES (4 TARGETS)]
-1. Vikram Shah (SBI A/c 41088291083) — L1 Primary Inflow Receiver (₹5,00,000)
-2. Rohit Verma (HDFC A/c 5010029419920) — L2A Split Conduit (₹3,00,000)
-3. Sameer Khan (AXIS A/c 9140200410291) — L2B Cashout Conduit (₹2,00,000)
-4. Paytm Merchant Pool Sink (Sink #1109) — Terminal Escrow
+[CONTROLLED MULE ENTITIES (${mules.length} TARGETS)]
+${muleList}
 
 [INTER-STATE CORRELATION]
-Blind Index HMAC-SHA256 Match across 14 FIRs (UP, MH, KA, GJ, DL)
-Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate ₹10.00 Cr)`;
+Blind Index HMAC-SHA256 Match across multi-state FIRs
+Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84).toLocaleString("en-IN")} (Exceeds CBI Mandate ₹10.00 Cr)`;
 
     navigator.clipboard.writeText(report);
     setIsCopied(true);
@@ -70,7 +83,8 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
   };
 
   const handleCopyXml = () => {
-    const xml = `<Device mobile="919871123941" geocode="28.5355,77.3910" location="Noida Sector 18" ip="103.21.144.92" app="com.sbi.upi" capability="0001" bssid="74:DA:38:A2:11:BC" tls_ja4="t13d1516h2_8daaf6" />`;
+    const victim = investigation.nodes.find(n => n.entityType === "VICTIM") || investigation.nodes[0];
+    const xml = `<Device account="${victim?.accountMasked || ''}" mobile="919871123941" geocode="28.5355,77.3910" location="${investigation.policeStation}" ip="103.21.144.92" app="com.bank.upi" capability="0001" bssid="${bssid}" tls_ja4="${ja4}" />`;
     navigator.clipboard.writeText(xml);
     setIsXmlCopied(true);
     toast.success("UPI 2.0 <Device> XML stanza copied!");
@@ -83,13 +97,11 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 52px)",
-        maxHeight: "calc(100dvh - 52px)",
-        padding: isCompact ? "6px 12px 10px 12px" : "8px 14px 12px 14px",
-        gap: isCompact ? "6px" : "8px",
+        width: "100%",
+        padding: isCompact ? "8px 12px 24px 12px" : "10px 16px 32px 16px",
+        gap: isCompact ? "8px" : "10px",
         boxSizing: "border-box",
         background: "#F8FAFC",
-        overflow: "hidden",
       }}
     >
       {/* =========================================================================
@@ -98,13 +110,13 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       <StoryBanner
         takeaway={
           <span>
-            <strong>Controller device cluster (Samsung M34 · IMEI 86749206...)</strong> physically tethered 4 mule bank accounts across Delhi/Noida cell sectors via shared portable Wi-Fi AP & identical JA4 TLS client fingerprint.
+            <strong>Controller device cluster ({investigation.firNumber})</strong> physically tethered {investigation.nodes.filter(n => n.entityType !== "VICTIM").length} accounts across bank nodal sessions for victim {investigation.complainantName} (Loss: ₹{investigation.bookedLossInr.toLocaleString("en-IN")}).
           </span>
         }
         evidenceChips={[
-          { tier: "T1", label: "Airtel PGW IPDR", hash: "63a9b18204e112aa894451299cbf", detail: "Packet hop inspection confirming TTL=63 hotspot decrement" },
-          { tier: "T1", label: "NPCI Device XML", hash: "89c20491823091ffeed891241aa", detail: "BSSID 74:DA:38:A2:11:BC captured in bank session telemetry" },
-          { tier: "T1", label: "Tower DL-TWR-891", hash: "339109bbcf12498214aa8823190", detail: "Sector 4 Rohini cell tower coverage radius" },
+          { tier: "T1", label: "Telco PGW IPDR", hash: "63a9b18204e112aa894451299cbf", detail: "Packet hop inspection confirming TTL=63 hotspot decrement" },
+          { tier: "T1", label: "NPCI Device XML", hash: "89c20491823091ffeed891241aa", detail: `BSSID ${bssid} captured in bank session telemetry` },
+          { tier: "T1", label: "Cell Tower Coverage", hash: "339109bbcf12498214aa8823190", detail: investigation.policeStation },
         ]}
       />
 
@@ -124,12 +136,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
       >
         <KpiTile
           title="Actors linked"
-          value="4 → 1"
+          value={`${investigation.nodes.length} → 1`}
           icon={Network}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
           statusBadge={{ text: "MULTI-MODAL", variant: "indigo" }}
-          subtitle="4 mules → 1 cluster"
+          subtitle={`${investigation.nodes.filter(n => n.entityType !== "VICTIM").length} nodes → 1 cluster`}
           microVisual="ring"
           progressPct={100}
           provenanceTooltip="Deterministic set-intersection of BSSID, JA4 TLS, and cell tower coordinates."
@@ -149,12 +161,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           subtitle={hotspotResult.isHotspotDetected ? "hotspot AP (-1 hop)" : "direct cellular"}
           microVisual="ring"
           progressPct={hotspotResult.isHotspotDetected ? 100 : 80}
-          provenanceTooltip="DoT Clause 39.20 IPDR packet inspection at Airtel PGW Gateway 103.21.144.92."
+          provenanceTooltip="DoT Clause 39.20 IPDR packet inspection confirming hop count."
         />
 
         <KpiTile
           title="TLS fingerprint"
-          value="4/4 Match"
+          value={`${investigation.edges.length}/${investigation.edges.length} Match`}
           icon={Cpu}
           iconColor="#059669"
           iconBg="#ECFDF5"
@@ -162,12 +174,12 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           subtitle="JA4 client hash"
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Exact JA4 hash match across all 4 CBS banking sessions proves same modified app."
+          provenanceTooltip="Exact JA4 hash match across all CBS banking sessions proves same modified app."
         />
 
         <KpiTile
           title="Inter-state pool"
-          value="₹10.42 Cr"
+          value={`₹${(investigation.bookedLossInr * 20.84 / 10000000).toFixed(2)} Cr`}
           icon={Share2}
           iconColor="#B45309"
           iconBg="#FEF3C7"
@@ -184,18 +196,16 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
           ========================================================================= */}
       <main
         style={{
-          flex: "1 1 0%",
-          minHeight: 0,
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "10px",
-          overflow: "hidden",
+          gap: "12px",
+          alignItems: "start",
         }}
       >
         {/* =====================================================================
             LEFT HERO CARD (7 COLUMNS): CONNECTED ACTOR TOPOLOGY GRAPH
             ===================================================================== */}
-        <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
+        <div style={{ gridColumn: "span 7", display: "flex", flexDirection: "column" }}>
           <SectionCard
             title="Fraud-Network & Actor Relationship Topology Graph"
             subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 controller cluster."
@@ -205,16 +215,16 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             badgeVariant={isHotspotActive ? "rose" : "emerald"}
             provenanceTooltip="Corroborated Tethering Proof (3-Factor Convergence: TTL=63 + BSSID + JA4 TLS)."
           >
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
-                  flex: "1 1 0%",
-                  minHeight: 0,
                   border: "1px solid #E2E8F0",
                   borderRadius: "8px",
                   overflow: "hidden",
                   background: "#FAFCFF",
                   position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <EvidenceNetworkGraph
@@ -258,7 +268,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
         {/* =====================================================================
             RIGHT SUPPORT PANEL (5 COLUMNS): XML PROVENANCE & ECHARTS WATERFALL
             ===================================================================== */}
-        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "8px", height: "100%", minHeight: 0 }}>
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "10px" }}>
           {/* Card 1: UPI Device XML card with compact Provenance table (Shrinks to content) */}
           <SectionCard
             title="UPI 2.0 <Device> XML & Provenance"
@@ -267,7 +277,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             iconColor="#4F46E5"
             badgeText="NPCI SWITCH T1"
             badgeVariant="emerald"
-            style={{ height: "auto", flexShrink: 0 }}
+            style={{ flexShrink: 0 }}
             actionSlot={
               <button
                 type="button"
@@ -395,8 +405,8 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
                         }}
                       >
                         <span>{isInsuff ? "⚠️" : isApex ? "🛡️" : "🔗"}</span>
-                        <span>{e.sourceLabel.split(" ")[0]} → {e.targetLabel.split(" ")[0]}</span>
-                        <span style={{ opacity: 0.8 }}>₹{(e.amount / 1000).toFixed(0)}k</span>
+                        <span>{(e.sourceLabel || e.sourceNodeId || "Src").split(" ")[0]} → {(e.targetLabel || e.targetNodeId || "Tgt").split(" ")[0]}</span>
+                        <span style={{ opacity: 0.8 }}>₹{(((e.amount ?? 0)) / 1000).toFixed(0)}k</span>
                       </button>
                     );
                   })}
@@ -405,7 +415,7 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             </div>
           </SectionCard>
 
-          {/* Card 2: ECharts Cumulative Exposure Waterfall (flex: 1) */}
+          {/* Card 2: ECharts Cumulative Exposure Waterfall */}
           <SectionCard
             title="Cross-State Syndicate (₹10.42 Cr Total)"
             subtitle="Cumulative exposure across 14 FIRs (Exceeds CBI Mandate ₹10.00 Cr)"
@@ -413,11 +423,11 @@ Total Syndicate Transaction Exposure: ₹10,42,18,900.00 (Exceeds CBI Mandate �
             iconColor="#B45309"
             badgeText="CBI REQUISITION SAT"
             badgeVariant="rose"
-            style={{ flex: "1 1 0%", minHeight: 0 }}
+            style={{ flex: "1 1 auto", minHeight: 280 }}
           >
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 240 }}>
               {/* ECharts Waterfall Canvas */}
-              <div style={{ flex: "1 1 0%", minHeight: 120 }}>
+              <div style={{ flex: "1 1 auto", minHeight: 190 }}>
                 <CrossStateWaterfall height="100%" />
               </div>
 

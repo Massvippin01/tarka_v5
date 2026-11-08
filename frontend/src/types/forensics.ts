@@ -213,3 +213,80 @@ export interface AssistantMessage {
   uncertainty_disclosure?: string;
   audio_url?: string;
 }
+
+// --- Section 4 Polish: 6-Typology Indian Cyber Fraud & XLSX Ingestion Types ---
+
+export type IndianFraudTypology =
+  | "DIGITAL_ARREST"
+  | "PART_TIME_JOB"
+  | "KYC_EXPIRY"
+  | "ELECTRICITY_BILL"
+  | "STOCK_TRADING"
+  | "LOAN_APP_EXTORTION"
+  | "UNKNOWN_OR_BENIGN";
+
+export interface StatutoryPenalty {
+  act: "BNS" | "IT_ACT" | "SEBI_ACT" | "BNSS";
+  section: string;
+  title: string;
+  description: string;
+}
+
+export interface TypologyClassification {
+  typology: IndianFraudTypology;
+  confidence_score: number;
+  matched_triggers: string[];
+  statutory_provisions: StatutoryPenalty[];
+  investigative_rationale: string;
+  suggested_actions: string[];
+  human_verified: boolean;
+  disclaimer: string;
+}
+
+export interface ExtractedComplaintEntity {
+  entity_type: string;
+  raw_value: string;
+  normalized_value: string;
+  char_start: number;
+  char_end: number;
+  confidence: number;
+  validation_status: "VALID" | "SUSPECT" | "AMBIGUOUS";
+}
+
+export interface ExtractedComplaintRecord {
+  complaint_ref?: string;
+  complainant_name?: string;
+  victim_phone?: string;
+  total_loss_claimed?: number;
+  incident_datetime_iso?: string;
+  entities: ExtractedComplaintEntity[];
+  suspect_phones: string[];
+  suspect_vpas: string[];
+  suspect_bank_accounts: string[];
+  transaction_references: string[];
+  detected_typologies: IndianFraudTypology[];
+  narrative_sha256: string;
+  has_prompt_injection: boolean;
+  neutralized_instructions: string[];
+}
+
+export interface ExcelSheetInfo {
+  sheet_id: string;
+  name: string;
+  state: string;
+  row_count: number;
+  column_count: number;
+  detected_type: string;
+}
+
+export interface ExcelIngestResult {
+  source_file: string;
+  source_sha256: string;
+  sheets: ExcelSheetInfo[];
+  facts_count: number;
+  rejected_rows_count: number;
+  total_rows_processed: number;
+  rejected_rows: Array<{ line_number: number; raw_content: string; reason: string }>;
+  case_id: string;
+}
+

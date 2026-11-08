@@ -36,7 +36,7 @@ export const LiveProofDrawer: React.FC = () => {
     let isMounted = true;
     const fetchProof = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/proof/${proofDrawerClaimId}`);
+        const res = await fetch(`/api/v1/proof/${proofDrawerClaimId}`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setProof(data);

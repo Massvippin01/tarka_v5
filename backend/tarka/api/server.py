@@ -4391,3 +4391,71 @@ async def api_court_proof_paper_anchor(case_id: str):
 async def api_court_proof_cbi_syndicate():
     """Salted Blind-Index (HMAC-SHA256) ₹10-Crore multi-state CBI cyber syndicate aggregation memo."""
     return _get_cbi_syndicate_memo()
+
+
+# ==============================================================================
+# SECTION 4 POLISH ENDPOINTS: EXCEL MULTI-SHEET & BOUNDED ASSISTANT
+# ==============================================================================
+
+from tarka.parsers.excel_parser import ExcelParser, SheetInfo, ExcelParseResult
+from tarka.ai.bounded_assistant import (
+    ScamTypologyClassifier,
+    ComplaintNarrativeExtractor,
+    TypologyClassification,
+    ExtractedComplaintRecord,
+)
+
+class ExcelIngestRequest(BaseModel):
+    target_sheet: Optional[str] = None
+    case_id: str = "CASE-2026-001"
+
+class ClassifyScamRequest(BaseModel):
+    message_text: str = Field(..., description="Suspicious communication text, SMS, or transcript")
+
+class ExtractComplaintRequest(BaseModel):
+    complaint_text: str = Field(..., description="Raw narrative from 1930 Cybercrime Helpline or NCRP")
+    complaint_ref: Optional[str] = Field(None, description="Optional portal complaint reference")
+
+@app.post("/api/ingest/excel")
+@app.post("/api/v1/forensics/tarka/ingest/excel")
+async def api_ingest_excel(
+    file: UploadFile = File(...),
+    target_sheet: Optional[str] = Form(None),
+    case_id: str = Form("CASE-2026-001"),
+):
+    """Ingests multi-sheet Excel (.xlsx) workbooks into case workspace facts."""
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="File size exceeds limit.")
+    
+    parser = ExcelParser()
+    result = parser.parse(
+        file_source=data,
+        filename=sanitize_filename(file.filename or "evidence.xlsx"),
+        target_sheet=target_sheet,
+    )
+    return {
+        "source_file": result.source_file,
+        "source_sha256": result.source_sha256,
+        "sheets": [s.model_dump() for s in result.sheets],
+        "facts_count": len(result.facts),
+        "rejected_rows_count": len(result.rejected_rows),
+        "total_rows_processed": result.total_rows_processed,
+        "rejected_rows": [r.model_dump() for r in result.rejected_rows[:20]],
+        "case_id": case_id,
+    }
+
+@app.post("/api/assistant/classify-scam")
+@app.post("/api/v1/forensics/tarka/assistant/classify-scam")
+async def api_classify_scam(req: ClassifyScamRequest):
+    """Classifies communication text across the 6 major Indian fraud typologies."""
+    classification = ScamTypologyClassifier.classify(req.message_text)
+    return classification.model_dump()
+
+@app.post("/api/assistant/extract-complaint")
+@app.post("/api/v1/forensics/tarka/assistant/extract-complaint")
+async def api_extract_complaint(req: ExtractComplaintRequest):
+    """Extracts structured entities, suspect accounts, VPAs, and loss tranches from 1930 narrative."""
+    record = ComplaintNarrativeExtractor.extract_entities(req.complaint_text, complaint_ref=req.complaint_ref)
+    return record.model_dump()
+

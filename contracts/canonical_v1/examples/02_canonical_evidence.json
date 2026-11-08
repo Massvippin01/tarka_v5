@@ -1,0 +1,47 @@
+{
+  "evidence_id": "EVID_HDFC_001",
+  "case_id": "CASE_SUTRAM_2026_001",
+  "source_type": "BANK_STATEMENT",
+  "source_identifier": "HDFC_Acct_1092837465_Oct2026.csv",
+  "original_object_ref": "vault://cases/149/raw/hdfc_acct_1092837465.csv",
+  "sha256_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "acquisition_metadata": {
+    "officer_name": "Insp. Vikram Sharma",
+    "officer_badge": "DL-CYBER-8842",
+    "acquisition_tool": "Tarka Secure Vault Intake v5.0",
+    "acquisition_timestamp_utc": "2026-10-15T11:30:00Z",
+    "storage_location": "/var/tarka/vault/cases/149/raw/hdfc_001.csv"
+  },
+  "original_event_timestamp": "15-10-2026 14:02:15 IST",
+  "received_timestamp_utc": "2026-10-15T11:30:00Z",
+  "parser_name": "HDFC_CSV_Parser",
+  "parser_version": "1.2.0",
+  "transformation_history": [
+    {
+      "step_number": 1,
+      "operation": "RAW_BYTE_INGESTION_AND_SHA256",
+      "tool_or_parser": "TarkaVaultCore",
+      "timestamp_utc": "2026-10-15T11:30:00Z",
+      "output_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "step_number": 2,
+      "operation": "ROW_NORMALIZATION_ISO8601",
+      "tool_or_parser": "HDFC_CSV_Parser",
+      "timestamp_utc": "2026-10-15T11:30:05Z",
+      "output_hash": "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+    }
+  ],
+  "integrity_state": "INTACT",
+  "evidence_classification": "PRIMARY",
+  "access_restrictions": [
+    "CONFIDENTIAL",
+    "INVESTIGATION_TEAM_ONLY"
+  ],
+  "trust_tier": "T1",
+  "schema_version": "v1.0.0",
+  "metadata": {
+    "institution_id": "INST_HDFC_01",
+    "total_records": 12
+  }
+}

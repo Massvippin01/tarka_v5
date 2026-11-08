@@ -57,5 +57,33 @@ describe("layoutNetwork geometry and port contract", () => {
     expect(layoutJa4Only.edges.every((e) => e.type === "ja4")).toBe(true);
     expect(layoutJa4Only.edges.length).toBe(5); // hero->hub + 4 accounts
   });
+
+  it("guarantees non-overlapping collision-free clearance when cashflow nodes are included", () => {
+    const layout = layoutNetwork(1200, 700, true, "cashflow", true);
+    const victim = layout.nodes.find((n) => n.id === "node-victim")!;
+    const tetherHub = layout.nodes.find((n) => n.id === "hub-tether")!;
+    const ja4Hub = layout.nodes.find((n) => n.id === "hub-ja4")!;
+    const cafHub = layout.nodes.find((n) => n.id === "hub-caf")!;
+    const atm = layout.nodes.find((n) => n.id === "node-atm")!;
+
+    expect(victim).toBeDefined();
+    expect(atm).toBeDefined();
+
+    // Check clearance between Victim right edge and Tether hub left edge
+    const victimRight = victim.x + victim.w;
+    const tetherLeft = tetherHub.x;
+    expect(tetherLeft - victimRight).toBeGreaterThanOrEqual(40);
+
+    // Check clearance between Tether hub and JA4 hub
+    expect(ja4Hub.x - (tetherHub.x + tetherHub.w)).toBeGreaterThanOrEqual(40);
+
+    // Check clearance between JA4 hub and CAF hub
+    expect(cafHub.x - (ja4Hub.x + ja4Hub.w)).toBeGreaterThanOrEqual(40);
+
+    // Check clearance between CAF hub right edge and ATM left edge
+    const cafRight = cafHub.x + cafHub.w;
+    const atmLeft = atm.x;
+    expect(atmLeft - cafRight).toBeGreaterThanOrEqual(40);
+  });
 });
 

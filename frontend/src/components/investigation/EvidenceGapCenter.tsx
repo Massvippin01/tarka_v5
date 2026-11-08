@@ -23,7 +23,7 @@ export const EvidenceGapCenter: React.FC = () => {
     let isMounted = true;
     const fetchGaps = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/gaps`);
+        const res = await fetch(`/api/v1/investigations/${activeCaseId}/gaps`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setGaps(data.gaps || []);

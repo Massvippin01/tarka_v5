@@ -14,6 +14,7 @@ from tarka.parsers.base import (
     register_parser_version,
     register_normalization_version,
 )
+from tarka.parsers.excel_parser import ExcelParser, ExcelParseResult, SheetInfo
 
 __all__ = [
     "ParseResult",
@@ -28,4 +29,7 @@ __all__ = [
     "list_registered_normalizations",
     "register_parser_version",
     "register_normalization_version",
+    "ExcelParser",
+    "ExcelParseResult",
+    "SheetInfo",
 ]

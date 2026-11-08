@@ -1,3 +1,11 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-mono/700.css';
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
 @import './styles/tokens.css';
@@ -13,7 +21,7 @@ body,
   padding: 0;
   background-color: var(--bento-canvas, #F4F6FB);
   color: var(--bento-text-primary, #0F172A);
-  font-family: 'Inter Variable', var(--font-sans);
+  font-family: var(--font-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -30,7 +38,7 @@ h1, h2, h3, h4, h5, h6,
 .lg-btn,
 .bento-badge,
 .bento-btn {
-  font-family: 'Inter Variable', var(--font-sans);
+  font-family: var(--font-sans);
 }
 
 code,
@@ -39,7 +47,7 @@ kbd,
 samp,
 .font-mono-tabular,
 .mono-num {
-  font-family: 'JetBrains Mono Variable', var(--font-mono);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

@@ -1,0 +1,20 @@
+{
+  "success": false,
+  "error": {
+    "code": "STATUTORY_WARRANT_REQUIRED",
+    "message": "Cross-institutional Private Set Intersection requires valid BSA Section 63 judicial warrant reference.",
+    "details": [
+      {
+        "code": "MISSING_WARRANT_ID",
+        "message": "Field statutory_authorisation_ref is invalid or unverified.",
+        "field": "statutory_authorisation_ref",
+        "context": {
+          "provided": null,
+          "statute": "Bharatiya Sakshya Adhiniyam 2023 \u00a763"
+        }
+      }
+    ],
+    "timestamp_utc": "2026-10-15T12:05:00Z",
+    "correlation_id": "CORR_ERR_991823"
+  }
+}

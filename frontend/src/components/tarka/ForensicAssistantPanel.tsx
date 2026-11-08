@@ -34,6 +34,16 @@ interface ForensicAssistantPanelProps {
 
 const SUGGESTED_PROMPTS = [
   {
+    icon: "🛡️",
+    title: "6-Typology Scam Audit",
+    prompt: "Classify this communication under the 6 major Indian cyber fraud typologies (Digital Arrest, Part-time Job, KYC, Electricity, Stocks, Loan App) and cite applicable BNS sections.",
+  },
+  {
+    icon: "📋",
+    title: "1930 NCRP Extraction",
+    prompt: "Extract structured entities (victim phone, suspect VPAs, bank accounts, RRN, loss amount) from the 1930 Cybercrime Helpline complaint.",
+  },
+  {
     icon: "💳",
     title: "Amount Discrepancy",
     prompt: "Explain the ₹25,000 vs ₹15,000 payment discrepancy between the bank ledger and the screenshot claim.",

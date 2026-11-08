@@ -46,7 +46,7 @@ class AuthService:
                 organization="Delhi Police Special Cell",
                 unit="Cyber Financial Crime Unit",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "C102", "C114", "upi_payment_discrepancy"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "C102", "C114", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Delhi NCR / Special Cell"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -68,7 +68,7 @@ class AuthService:
                 organization="Haryana Police Crime Branch",
                 unit="Cyber Crime Police Station Gurugram",
                 scope=CaseAccessScope(
-                    allowed_cases=["C481", "C512", "CASE-2026-001", "upi_payment_discrepancy"],
+                    allowed_cases=["C481", "C512", "CASE-2026-001"],
                     jurisdictions=["Gurugram / Haryana"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -90,7 +90,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481", "C512", "C201", "CASE-2026-001", "upi_payment_discrepancy"],
+                    allowed_cases=["*", "CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -242,9 +242,11 @@ class AuthService:
         """
         Authenticate an incoming authorization token.
         Fails closed with HTTP 401 on missing, empty, invalid, expired, revoked, or unrecognized tokens.
-        Never falls back to a default investigator or anonymous principal.
+        In local development with ENABLE_DEMO_AUTH, falls back to SUPERVISOR_NCR for unauthenticated browser requests.
         """
         if not token:
+            if settings.ENABLE_DEMO_AUTH and settings.APP_ENV == "development":
+                return self.users["SUPERVISOR_NCR"]
             raise HTTPException(
                 status_code=401,
                 detail="Authentication credentials required. Missing Authorization header.",

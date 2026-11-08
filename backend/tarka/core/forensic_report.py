@@ -286,7 +286,7 @@ class ForensicReport(BaseModel):
 
 def compute_report_fingerprint(report: ForensicReport) -> str:
     """Computes a deterministic SHA-256 fingerprint sealing substantive report content.
-    
+
     Excludes volatile fields such as generated_at_iso and the fingerprint itself,
     ensuring identical substantive inputs produce bit-exact identical fingerprints.
     """
@@ -294,7 +294,7 @@ def compute_report_fingerprint(report: ForensicReport) -> str:
     if "metadata" in dump:
         dump["metadata"].pop("generated_at_iso", None)
         dump["metadata"].pop("fingerprint", None)
-    
+
     canon_json = json.dumps(dump, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canon_json.encode("utf-8")).hexdigest()
 
@@ -383,7 +383,7 @@ class ForensicReportBuilder:
         # ----------------------------------------------------------------------
         now_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
         is_demo = case_id in ("upi_payment_discrepancy", "case_b_cyclic_skew_trap", "cross_country")
-        
+
         # Build stable report ID: REP-{case_id[:8]}-{run_id[:8]}
         clean_c = "".join(c for c in case_id if c.isalnum() or c in ("-", "_"))[:12]
         clean_r = "".join(c for c in clean_run_id if c.isalnum() or c in ("-", "_"))[:10]
@@ -422,7 +422,7 @@ class ForensicReportBuilder:
         # ----------------------------------------------------------------------
         excluded_ids = run.excluded_artifact_ids if run else []
         processed_ids = [a.artifact_id for a in artifacts if a.artifact_id not in excluded_ids]
-        
+
         scope_methodology = ReportScopeMethodology(
             sources_provided_count=len(artifacts),
             sources_successfully_processed=processed_ids,
@@ -663,7 +663,7 @@ class ForensicReportBuilder:
         # ----------------------------------------------------------------------
         active_contras = [f for f in report_findings if f.status == "ACTIVE"]
         active_gaps = [g for g in report_gaps if g.status in ("NOT_DETECTED", "REVIEW_REQUIRED", "NOT_PROVIDED")]
-        
+
         overview_text = (
             f"Forensic examination of case '{case.title}' [{case_id}] under "
             f"{'counterfactual challenge run ' + clean_run_id if is_challenge else 'primary baseline run'}. "
@@ -812,7 +812,7 @@ class ForensicReportHTMLExporter:
         for f in findings:
             f_status = badge(f.status, "active" if f.status == "ACTIVE" else "inactive")
             f_sev = badge(f.severity, "critical" if f.severity == "CRITICAL" else "high")
-            
+
             # Supporting / contradicting facts
             orig_vals = ", ".join(f"<strong>{esc(k)}</strong>: {esc(v)}" for k, v in f.original_values.items()) if f.original_values else "None recorded"
             norm_vals = ", ".join(f"<strong>{esc(k)}</strong>: {esc(v)}" for k, v in f.normalized_values.items()) if f.normalized_values else "None recorded"
@@ -1186,7 +1186,7 @@ class ForensicReportHTMLExporter:
 
 class ForensicReportPDFExporter:
     """Exports ForensicReport into a structured multi-page PDF document using ReportLab.
-    
+
     Implements the full SUTRAM 2026 / Section 63 BSA statutory reporting standard across:
     A. Cover and administrative metadata
     B. Executive summary with explicit epistemic separation
@@ -1313,6 +1313,20 @@ class ForensicReportPDFExporter:
             fontName="Helvetica-Oblique",
         )
 
+        def format_cell(text: Any, base_style: ParagraphStyle, max_len_threshold: int = 35) -> Paragraph:
+            """Dynamically scales font size down for long bank branch names or hashes (DEF-005) to prevent table cell clipping."""
+            raw_str = str(text) if text is not None else ""
+            escaped = html.escape(raw_str)
+            if len(raw_str) > max_len_threshold:
+                scaled_style = ParagraphStyle(
+                    f"{base_style.name}_scaled_{abs(hash(raw_str)) % 100000}",
+                    parent=base_style,
+                    fontSize=max(base_style.fontSize - 1.5, 6.0),
+                    leading=max(base_style.leading - 1.5, 7.5),
+                )
+                return Paragraph(escaped, scaled_style)
+            return Paragraph(escaped, base_style)
+
         elements = []
         m = report.metadata
 
@@ -1408,11 +1422,11 @@ class ForensicReportPDFExporter:
         inv_data = [["Artifact ID", "Original Filename", "Tier", "Processing Status", "Server SHA-256 Bitstream Hash"]]
         for item in report.evidence_inventory:
             inv_data.append([
-                Paragraph(html.escape(item.artifact_id), code_style),
-                Paragraph(html.escape(item.filename), body_style),
-                Paragraph(html.escape(item.source_tier), body_style),
-                Paragraph(f"<b>{html.escape(item.processing_status)}</b>", body_style),
-                Paragraph(html.escape(item.sha256[:28]) + "...", code_style),
+                format_cell(item.artifact_id, code_style, 18),
+                format_cell(item.filename, body_style, 25),
+                format_cell(item.source_tier, body_style, 10),
+                format_cell(f"<b>{html.escape(item.processing_status)}</b>", body_style, 20),
+                format_cell(item.sha256[:28] + "...", code_style, 20),
             ])
         t_inv = Table(inv_data, colWidths=[90, 130, 45, 95, 180])
         t_inv.setStyle(TableStyle([
@@ -1465,10 +1479,10 @@ class ForensicReportPDFExporter:
             tl_data = [["Timestamp (UTC)", "Clock Domain", "Event Summary", "Conflict Status"]]
             for ev in report.timeline.events[:5]:
                 tl_data.append([
-                    Paragraph(html.escape(ev.timestamp_iso), code_style),
-                    Paragraph(html.escape(ev.clock_domain), body_style),
-                    Paragraph(html.escape(ev.description), body_style),
-                    Paragraph(html.escape(ev.temporal_conflict_status), body_style),
+                    format_cell(ev.timestamp_iso, code_style, 22),
+                    format_cell(ev.clock_domain, body_style, 18),
+                    format_cell(ev.description, body_style, 40),
+                    format_cell(ev.temporal_conflict_status, body_style, 16),
                 ])
             t_tl = Table(tl_data, colWidths=[120, 80, 240, 100])
             t_tl.setStyle(TableStyle([
@@ -1487,10 +1501,10 @@ class ForensicReportPDFExporter:
             gap_data = [["Gap ID", "Status", "Why It Matters", "Statutory Remedy"]]
             for g in report.evidence_gaps:
                 gap_data.append([
-                    Paragraph(html.escape(g.gap_id), code_style),
-                    Paragraph(html.escape(g.status), body_style),
-                    Paragraph(f"<b>{html.escape(g.title)}:</b> {html.escape(g.why_it_matters)}", body_style),
-                    Paragraph(html.escape(g.suggested_remedy), body_style),
+                    format_cell(g.gap_id, code_style, 15),
+                    format_cell(g.status, body_style, 15),
+                    format_cell(f"<b>{html.escape(g.title)}:</b> {html.escape(g.why_it_matters)}", body_style, 40),
+                    format_cell(g.suggested_remedy, body_style, 30),
                 ])
             t_gaps = Table(gap_data, colWidths=[70, 70, 230, 170])
             t_gaps.setStyle(TableStyle([
@@ -1512,10 +1526,10 @@ class ForensicReportPDFExporter:
             custody_data = [["Seq", "Timestamp (UTC)", "Custody Action", "Block Entry Hash (SHA-256)"]]
             for entry in report.provenance.custody_ledger_entries[:6]:
                 custody_data.append([
-                    Paragraph(str(entry.sequence), code_style),
-                    Paragraph(html.escape(entry.timestamp_iso), code_style),
-                    Paragraph(html.escape(entry.action), body_style),
-                    Paragraph(html.escape(entry.entry_hash[:32]) + "...", code_style),
+                    format_cell(str(entry.sequence), code_style, 10),
+                    format_cell(entry.timestamp_iso, code_style, 22),
+                    format_cell(entry.action, body_style, 28),
+                    format_cell(entry.entry_hash[:32] + "...", code_style, 22),
                 ])
             t_custody = Table(custody_data, colWidths=[35, 125, 160, 220])
             t_custody.setStyle(TableStyle([

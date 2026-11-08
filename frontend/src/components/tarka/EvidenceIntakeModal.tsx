@@ -258,7 +258,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                   onChange={handleFileSelect}
                   multiple
                   style={{ display: "none" }}
-                  accept=".csv,.tsv,.txt,.log,.json,.png,.jpg,.jpeg"
+                  accept=".csv,.tsv,.txt,.log,.json,.xlsx,.xls,.pdf,.png,.jpg,.jpeg"
                 />
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
                   <UploadCloud size={38} style={{ color: "#60A5FA", strokeWidth: 1.5 }} />
@@ -267,7 +267,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                   Drag & Drop forensic files or click to browse
                 </div>
                 <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "6px" }}>
-                  Supported formats: Bank/UPI CSVs, Telco CDR CSVs, WhatsApp Exports (.txt), Claims JSON, Tower Coordinates, and EXIF Photos.
+                  Supported formats: Multi-Sheet XLSX, Bank/UPI CSVs, Telco CDR CSVs, WhatsApp Exports (.txt), Claims JSON, Tower Coordinates, and EXIF Photos.
                 </div>
                 <div style={{ fontSize: "11px", color: "#64748B", marginTop: "6px", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                   Strict Byte-Conservation • Non-Destructive SHA-256 Hashing • Custody Ledger Preservation

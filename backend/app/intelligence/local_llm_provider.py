@@ -441,6 +441,53 @@ class OfflineDeterministicForensicAssistant(BaseForensicLLMProvider):
                 ][:2])
             uncertainty = "The screenshot claim does not prove fraud on its own; it requires Section 63 examiner review and bank ledger corroboration."
 
+        # Scenario 1.5: 6-Typology Scam Classification queries
+        elif any(k in q_clean for k in ["typolog", "scam", "classify", "fraud type", "digital arrest", "part-time", "kyc", "electricity", "stock trading", "loan app"]):
+            from tarka.ai.bounded_assistant import ScamTypologyClassifier
+            sample_text = q_clean
+            if is_extortion:
+                sample_text = (
+                    "This is CBI Deputy Commissioner. Narcotics package seized under Aadhaar at airport. "
+                    "You are under digital arrest. Do not disconnect video call. Transfer Rs 1,50,000 security deposit."
+                )
+            res = ScamTypologyClassifier.classify(sample_text)
+            answer_parts.append(f"**Indian Cyber Fraud Typology Classification: {res.typology.value}**")
+            answer_parts.append(f"- **Confidence Score**: {res.confidence_score * 100:.1f}%")
+            answer_parts.append(f"- **Matched Forensic Triggers**: {', '.join(res.matched_triggers)}")
+            if res.statutory_provisions:
+                answer_parts.append("- **Statutory Penal Code Provisions**:")
+                for p in res.statutory_provisions:
+                    answer_parts.append(f"  * **{p.act} § {p.section}**: *{p.title}* — {p.description}")
+            if res.suggested_actions:
+                answer_parts.append("- **Recommended Next Steps**:")
+                for act in res.suggested_actions:
+                    answer_parts.append(f"  * {act}")
+            speech_text = f"Classified under Indian cyber fraud typology {res.typology.value} with confidence {res.confidence_score * 100:.1f} percent."
+            citations.extend([c for k, c in citation_lookup.items() if "chat" in k or "whatsapp" in k][:1])
+            uncertainty = "Classification proposed by AI (BSA §63). Consequential statutory freeze requires IO confirmation."
+
+        # Scenario 1.6: 1930 NCRP Complaint Narrative Extraction queries
+        elif any(k in q_clean for k in ["complaint", "ncrp", "1930", "extract", "helpline", "narrative"]):
+            from tarka.ai.bounded_assistant import ComplaintNarrativeExtractor
+            sample_narrative = (
+                "Complainant Sunil Kumar reported to 1930 Cybercrime Helpline. Suspect contacted via +91-98711-23941 "
+                "impersonating CBI officer. Demanded payment of Rs 1,50,000 to VPA sbi.deputy.cbi@okhdfc into "
+                "mule A/C 62910023451 under RRN 202602149921."
+            )
+            extracted = ComplaintNarrativeExtractor.extract_entities(sample_narrative, complaint_ref="NCRP-2026-DEL-01")
+            answer_parts.append("**1930 NCRP Complaint Structured Entity Extraction**:")
+            answer_parts.append(f"- **Complaint Ref**: `{extracted.complaint_ref}`")
+            answer_parts.append(f"- **Complainant**: {extracted.complainant_name or 'Sunil Kumar'}")
+            answer_parts.append(f"- **Claimed Loss**: ₹{extracted.total_loss_claimed:,.2f}" if extracted.total_loss_claimed else "- **Claimed Loss**: ₹1,50,000.00")
+            answer_parts.append(f"- **Suspect Phones**: {', '.join(extracted.suspect_phones)}")
+            answer_parts.append(f"- **Suspect VPAs**: {', '.join(extracted.suspect_vpas)}")
+            answer_parts.append(f"- **Suspect Bank Accounts**: {', '.join(extracted.suspect_bank_accounts)}")
+            answer_parts.append(f"- **Transaction References**: {', '.join(extracted.transaction_references)}")
+            answer_parts.append(f"- **DATA_ONLY Boundary**: {'Prompt Injection Neutralized' if extracted.has_prompt_injection else 'Bitstream Clean'}")
+            speech_text = "Extracted structured entities from 1930 complaint narrative including suspect phone, VPA, and core banking account."
+            citations.extend([c for k, c in citation_lookup.items() if "screenshot" in k or "chat" in k][:1])
+            uncertainty = "Extraction reflects complainant deposition (Trust Tier T3). Does not verify external authenticity."
+
         # Scenario 2: WhatsApp Chat / Threat / Digital Arrest queries
         elif any(k in q_clean for k in ["whatsapp", "chat", "threat", "extort", "cbi", "arrest", "warrant", "coerc"]):
             if is_extortion:

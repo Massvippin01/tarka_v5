@@ -22,7 +22,7 @@ export const InvestigationTimeline: React.FC = () => {
     let isMounted = true;
     const fetchTimeline = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/timeline`);
+        const res = await fetch(`/api/v1/investigations/${activeCaseId}/timeline`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setEntries(data.entries || []);

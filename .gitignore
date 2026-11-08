@@ -6,6 +6,8 @@ backend/.env
 # Python
 __pycache__/
 *.py[cod]
+*.db
+backend/data/*.db
 venv/
 backend/venv/
 

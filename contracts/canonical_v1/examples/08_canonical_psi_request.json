@@ -1,0 +1,19 @@
+{
+  "request_id": "PSI_REQ_2026_091",
+  "case_id": "CASE_SUTRAM_2026_001",
+  "requesting_institution_id": "INST_HDFC_01",
+  "participating_institution_ids": [
+    "INST_HDFC_01",
+    "INST_SBI_01",
+    "INST_AIRTEL_01"
+  ],
+  "identifier_type": "MSISDN",
+  "normalisation_profile": "CANONICAL_V1",
+  "protocol_identifier": "ECDH_SECP256K1_PSI",
+  "protocol_version": "1.0",
+  "permitted_output": "CARDINALITY_ONLY",
+  "statutory_authorisation_ref": "S63_BSA_WARRANT_2026_091",
+  "audit_reference": "AUDIT_PSI_2026_10_15_001",
+  "created_timestamp_utc": "2026-10-15T12:00:00Z",
+  "schema_version": "v1.0.0"
+}

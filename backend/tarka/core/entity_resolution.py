@@ -14,7 +14,9 @@ Hard Rules:
 
 from __future__ import annotations
 
+import ipaddress
 import re
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Tuple
 from pydantic import BaseModel, Field
@@ -90,10 +92,10 @@ class EntityMatch(BaseModel):
 class EntityProfile(BaseModel):
     """Resolved entity cluster grouping corroborated identifiers."""
     entity_id: str = Field(description="Canonical entity handle (e.g. ENTITY-PHONE-9876543210 or ENTITY-USER-A)")
-    display_name: str = Field(description="Human-readable label for investigator view")
+    display_name: str = Field(default="", description="Human-readable label for investigator view")
     identifiers: Dict[str, List[str]] = Field(
         default_factory=dict,
-        description="Normalized identifiers grouped by type (phone, vpa, account_suffix, rrn, imei, names)",
+        description="Normalized identifiers grouped by type (phone, vpa, account_suffix, rrn, imei, name)",
     )
     associated_evidence_ids: List[str] = Field(default_factory=list, description="Linked Evidence DNA IDs")
     associated_artifact_ids: List[str] = Field(default_factory=list, description="Linked Artifact IDs")
@@ -102,6 +104,64 @@ class EntityProfile(BaseModel):
         default=ExaminerReviewState.UNREVIEWED,
         description="Review state for entity grouping",
     )
+
+    def __init__(
+        self,
+        entity_id: str,
+        display_name: Optional[str] = None,
+        canonical_name: Optional[str] = None,
+        normalized_phone: Optional[str] = None,
+        normalized_upi_vpa: Optional[str] = None,
+        normalized_device_imei: Optional[str] = None,
+        normalized_account_number: Optional[str] = None,
+        identifiers: Optional[Dict[str, List[str]]] = None,
+        **kwargs: Any,
+    ) -> None:
+        ident_dict = dict(identifiers or {})
+        if canonical_name and "name" not in ident_dict:
+            ident_dict["name"] = [canonical_name]
+        if normalized_phone and "phone" not in ident_dict:
+            ident_dict["phone"] = [normalized_phone]
+        if normalized_upi_vpa and "vpa" not in ident_dict:
+            ident_dict["vpa"] = [normalized_upi_vpa]
+        if normalized_device_imei and "imei" not in ident_dict:
+            ident_dict["imei"] = [normalized_device_imei]
+        if normalized_account_number and "account_number" not in ident_dict:
+            ident_dict["account_number"] = [normalized_account_number]
+
+        disp = display_name or canonical_name or (ident_dict.get("phone", [None])[0]) or (ident_dict.get("vpa", [None])[0]) or entity_id
+
+        super().__init__(
+            entity_id=entity_id,
+            display_name=disp,
+            identifiers=ident_dict,
+            **kwargs,
+        )
+
+    @property
+    def canonical_name(self) -> Optional[str]:
+        names = self.identifiers.get("name", [])
+        return names[0] if names else self.display_name
+
+    @property
+    def normalized_phone(self) -> Optional[str]:
+        phones = self.identifiers.get("phone", [])
+        return phones[0] if phones else None
+
+    @property
+    def normalized_upi_vpa(self) -> Optional[str]:
+        vpas = self.identifiers.get("vpa", [])
+        return vpas[0] if vpas else None
+
+    @property
+    def normalized_device_imei(self) -> Optional[str]:
+        imeis = self.identifiers.get("imei", [])
+        return imeis[0] if imeis else None
+
+    @property
+    def normalized_account_number(self) -> Optional[str]:
+        accs = self.identifiers.get("account_number", []) or self.identifiers.get("account_suffix", [])
+        return accs[0] if accs else None
 
 
 
@@ -163,6 +223,126 @@ def normalize_person_name(name: str) -> Optional[str]:
     if len(cleaned) >= 2 and cleaned not in ["system", "unknown", "user", "admin"]:
         return cleaned
     return None
+
+
+def normalize_ip(ip_str: str) -> Optional[Dict[str, Any]]:
+    """Normalizes IPv4 or IPv6 string, strips ports, and identifies CGNAT/private ranges.
+
+    Enforces DoT License Clause 39.20:
+    Public and CGNAT gateway IPs require dynamic NAT port translation records.
+    Constitutional Invariant: Never attribute an individual from an IP address alone.
+    """
+    cleaned = ip_str.strip()
+    port: Optional[int] = None
+
+    # Handle IPv4 with port: 103.21.144.92:44321
+    if ":" in cleaned and not cleaned.startswith("[") and cleaned.count(":") == 1:
+        ip_part, port_part = cleaned.split(":")
+        try:
+            port = int(port_part)
+            cleaned = ip_part
+        except ValueError:
+            pass
+    # Handle IPv6 with port: [2405:201:...]:8080
+    elif cleaned.startswith("[") and "]:" in cleaned:
+        ip_part, port_part = cleaned.split("]:")
+        cleaned = ip_part.lstrip("[")
+        try:
+            port = int(port_part)
+        except ValueError:
+            pass
+
+    try:
+        ip_obj = ipaddress.ip_address(cleaned)
+    except ValueError:
+        return None
+
+    cgnat_network = ipaddress.ip_network("100.64.0.0/10")
+    is_cgnat = ip_obj in cgnat_network if ip_obj.version == 4 else False
+    is_private = ip_obj.is_private
+
+    statutory_caution: Optional[str] = None
+    if is_cgnat:
+        statutory_caution = (
+            "RFC 6598 CGNAT Shared Pool IP (100.64.0.0/10). "
+            "DoT Clause 39.20 mandates source port allocation records to correlate subscriber session. "
+            "Individual attribution prohibited without verified ISP NAT IPDR translation."
+        )
+    elif ip_obj.is_global and not port:
+        statutory_caution = (
+            "Public Gateway IP without source port translation record. "
+            "DoT Clause 39.20 mandates external port binding for multi-tenant gateway disambiguation."
+        )
+
+    return {
+        "canonical_ip": str(ip_obj),
+        "port": port,
+        "ip_version": ip_obj.version,
+        "is_cgnat": is_cgnat,
+        "is_private": is_private,
+        "is_public_gateway": ip_obj.is_global,
+        "requires_port_translation": is_cgnat or (ip_obj.is_global and port is None),
+        "statutory_caution": statutory_caution,
+    }
+
+
+def normalize_bank_account(account_str: str, ifsc: Optional[str] = None) -> Optional[Dict[str, str]]:
+    """Normalizes Indian core banking account numbers and IFSC.
+
+    Validates account length (9-18 digits for Indian CBS),
+    validates IFSC format (4 letters, '0', 6 alphanumeric characters),
+    and generates canonical composite keys and masked representations.
+    """
+    cleaned_acc = re.sub(r"[^\d]", "", account_str.strip())
+    if not (9 <= len(cleaned_acc) <= 18):
+        return None
+
+    canonical_ifsc: Optional[str] = None
+    bank_code: Optional[str] = None
+    if ifsc:
+        cleaned_ifsc = re.sub(r"[\s\-]", "", ifsc.strip().upper())
+        if re.match(r"^[A-Z]{4}0[A-Z0-9]{6}$", cleaned_ifsc):
+            canonical_ifsc = cleaned_ifsc
+            bank_code = cleaned_ifsc[:4]
+
+    suffix_last4 = cleaned_acc[-4:]
+    masked_acc = f"**** **** {suffix_last4}"
+    composite_key = f"{canonical_ifsc}:{cleaned_acc}" if canonical_ifsc else cleaned_acc
+
+    return {
+        "account_number": cleaned_acc,
+        "ifsc": canonical_ifsc,
+        "bank_code": bank_code,
+        "composite_key": composite_key,
+        "masked_account": masked_acc,
+        "suffix_last4": suffix_last4,
+    }
+
+
+def normalize_upi_id(vpa_str: str) -> Optional[Dict[str, str]]:
+    """Normalizes and validates UPI Virtual Payment Address (VPA).
+
+    Extracts handle username and PSP domain (e.g. oksbi, okhdfcbank, paytm, ybl, axl, ibl).
+    Validates character bounds (2-256 chars, allowed symbols: . _ -).
+    """
+    cleaned = vpa_str.strip().lower()
+    if "@" not in cleaned:
+        return None
+
+    parts = cleaned.split("@", 1)
+    username, psp_handle = parts[0], parts[1]
+
+    if not re.match(r"^[a-z0-9.\-_]{2,256}$", username):
+        return None
+    if not re.match(r"^[a-z0-9]{2,64}$", psp_handle):
+        return None
+
+    canonical_vpa = f"{username}@{psp_handle}"
+    return {
+        "canonical_vpa": canonical_vpa,
+        "username": username,
+        "psp_handle": psp_handle,
+    }
 
 
 class HardVetoEngine:
@@ -498,3 +678,279 @@ class EntityResolver:
                     match_counter += 1
 
         return list(profiles_by_id.values()), matches
+
+
+# ==============================================================================
+# SECTION 2.1: IDENTITY CONFLICT DETECTION & INVESTIGATOR DECISION ENGINE
+# ==============================================================================
+
+class IdentityConflictType(str, Enum):
+    """Categorization of identity contradictions, ambiguities, and data completeness gaps."""
+    NAME_MISMATCH = "NAME_MISMATCH"
+    DUPLICATE_ACCOUNT = "DUPLICATE_ACCOUNT"
+    ORPHAN_VPA = "ORPHAN_VPA"
+    SHARED_CGNAT_AMBIGUITY = "SHARED_CGNAT_AMBIGUITY"
+    SHARED_DEVICE_AMBIGUITY = "SHARED_DEVICE_AMBIGUITY"
+    TIME_WINDOW_DISJOINT = "TIME_WINDOW_DISJOINT"
+    INCOMPLETE_IDENTIFIERS = "INCOMPLETE_IDENTIFIERS"
+
+
+class IdentityConflict(BaseModel):
+    """Forensic record of detected conflicting or ambiguous identity attributes."""
+    conflict_id: str = Field(..., description="Unique conflict identifier (e.g. CNF-001)")
+    conflict_type: IdentityConflictType = Field(..., description="Type of identity contradiction or ambiguity")
+    entity_ids: List[str] = Field(default_factory=list, description="IDs of affected entities")
+    conflicting_attributes: Dict[str, Any] = Field(default_factory=dict, description="Attribute keys and conflicting values")
+    evidence_refs: List[str] = Field(default_factory=list, description="Exhibits proving the conflict")
+    statutory_caution: str = Field(..., description="Legal/statutory warning explaining constitutional constraints")
+    resolution_required: bool = Field(default=True, description="True if manual investigator review is required before merging")
+
+
+class HardVetoViolationError(Exception):
+    """Raised when an automated or investigator action violates a constitutional hard veto constraint."""
+    pass
+
+
+class IdentityConflictDetector:
+    """Detects duplicate, conflicting, ambiguous, and incomplete identity attributes."""
+
+    @staticmethod
+    def detect_conflicts(
+        profiles: List[EntityProfile],
+        records: Optional[List[Dict[str, Any]]] = None,
+    ) -> List[IdentityConflict]:
+        conflicts: List[IdentityConflict] = []
+        c_counter = 1
+
+        # 1. Detect Incomplete Identifiers
+        for p in profiles:
+            has_anchor = bool(
+                p.normalized_phone
+                or p.normalized_upi_vpa
+                or p.normalized_device_imei
+                or p.normalized_account_number
+            )
+            if not has_anchor:
+                conflicts.append(
+                    IdentityConflict(
+                        conflict_id=f"CNF-{c_counter:04d}",
+                        conflict_type=IdentityConflictType.INCOMPLETE_IDENTIFIERS,
+                        entity_ids=[p.entity_id],
+                        conflicting_attributes={"name": p.canonical_name},
+                        evidence_refs=p.associated_evidence_ids,
+                        statutory_caution=(
+                            "Entity profile lacks verified anchors (phone, account, VPA, IMEI). "
+                            "Incomplete identity must not be linked without corroborating evidence."
+                        ),
+                        resolution_required=True,
+                    )
+                )
+                c_counter += 1
+
+        # 2. Pairwise Profile Conflicts (Duplicate Account, Name Mismatch, Shared Ambiguity)
+        for i in range(len(profiles)):
+            for j in range(i + 1, len(profiles)):
+                p1 = profiles[i]
+                p2 = profiles[j]
+
+                # Check Name Mismatch across identical phone or account
+                same_anchor = (
+                    (p1.normalized_phone and p2.normalized_phone and p1.normalized_phone == p2.normalized_phone)
+                    or (p1.normalized_account_number and p2.normalized_account_number and p1.normalized_account_number == p2.normalized_account_number)
+                )
+                if same_anchor and p1.canonical_name and p2.canonical_name:
+                    n1 = p1.canonical_name.strip().upper()
+                    n2 = p2.canonical_name.strip().upper()
+                    if n1 != n2 and n1 not in n2 and n2 not in n1:
+                        conflicts.append(
+                            IdentityConflict(
+                                conflict_id=f"CNF-{c_counter:04d}",
+                                conflict_type=IdentityConflictType.NAME_MISMATCH,
+                                entity_ids=[p1.entity_id, p2.entity_id],
+                                conflicting_attributes={"name_p1": p1.canonical_name, "name_p2": p2.canonical_name},
+                                evidence_refs=list(set(p1.associated_evidence_ids + p2.associated_evidence_ids)),
+                                statutory_caution=(
+                                    f"Conflicting KYC names ('{p1.canonical_name}' vs '{p2.canonical_name}') "
+                                    f"linked to common anchor. Requires verification against core banking records."
+                                ),
+                                resolution_required=True,
+                            )
+                        )
+                        c_counter += 1
+
+                # Check Shared Device Ambiguity without common ownership
+                if (
+                    p1.normalized_device_imei
+                    and p2.normalized_device_imei
+                    and p1.normalized_device_imei == p2.normalized_device_imei
+                    and p1.entity_id != p2.entity_id
+                ):
+                    conflicts.append(
+                        IdentityConflict(
+                            conflict_id=f"CNF-{c_counter:04d}",
+                            conflict_type=IdentityConflictType.SHARED_DEVICE_AMBIGUITY,
+                            entity_ids=[p1.entity_id, p2.entity_id],
+                            conflicting_attributes={"shared_imei": p1.normalized_device_imei},
+                            evidence_refs=list(set(p1.associated_evidence_ids + p2.associated_evidence_ids)),
+                            statutory_caution=(
+                                "Shared IMEI / Hardware Device detected across multiple entities. "
+                                "Constitutional Rule: Common ownership must never be inferred from shared hardware alone."
+                            ),
+                            resolution_required=False,  # Ambiguity noted, not a blocking merge conflict
+                        )
+                    )
+                    c_counter += 1
+
+        # 3. Detect Orphan VPAs and CGNAT Ambiguities from auxiliary records
+        if records:
+            for rec in records:
+                vpa = rec.get("vpa")
+                acc = rec.get("account_number")
+                phone = rec.get("msisdn")
+                if vpa and not acc and not phone:
+                    conflicts.append(
+                        IdentityConflict(
+                            conflict_id=f"CNF-{c_counter:04d}",
+                            conflict_type=IdentityConflictType.ORPHAN_VPA,
+                            entity_ids=[rec.get("entity_id", "UNKNOWN")],
+                            conflicting_attributes={"vpa": vpa},
+                            evidence_refs=[rec.get("evidence_id", "EV-UNKNOWN")],
+                            statutory_caution=(
+                                f"UPI VPA '{vpa}' lacks underlying bank account or registered mobile subscriber record."
+                            ),
+                            resolution_required=True,
+                        )
+                    )
+                    c_counter += 1
+
+                ip_str = rec.get("ip_address")
+                if ip_str:
+                    norm_ip_data = normalize_ip(ip_str)
+                    if norm_ip_data and norm_ip_data.get("requires_port_translation"):
+                        conflicts.append(
+                            IdentityConflict(
+                                conflict_id=f"CNF-{c_counter:04d}",
+                                conflict_type=IdentityConflictType.SHARED_CGNAT_AMBIGUITY,
+                                entity_ids=[rec.get("entity_id", "UNKNOWN")],
+                                conflicting_attributes={"ip_address": ip_str},
+                                evidence_refs=[rec.get("evidence_id", "EV-UNKNOWN")],
+                                statutory_caution=norm_ip_data.get("statutory_caution") or (
+                                    "Shared IP gateway ambiguity. DoT Clause 39.20 prohibits individual attribution without NAT port records."
+                                ),
+                                resolution_required=False,
+                            )
+                        )
+                        c_counter += 1
+
+        return conflicts
+
+
+class DecisionType(str, Enum):
+    """Investigator decision actions on candidate identity linkages."""
+    ACCEPT_MATCH = "ACCEPT_MATCH"
+    REJECT_MATCH = "REJECT_MATCH"
+    MERGE_ENTITIES = "MERGE_ENTITIES"
+    SPLIT_ENTITY = "SPLIT_ENTITY"
+
+
+class EntityDecision(BaseModel):
+    """Immutable audit record of human investigator entity resolution decision."""
+    decision_id: str = Field(..., description="Unique decision ID (e.g. DEC-001)")
+    decision_type: DecisionType = Field(..., description="Action taken by investigator")
+    target_entity_ids: List[str] = Field(..., description="Target entities affected")
+    investigator_id: str = Field(..., description="Badge or username of authorized investigator")
+    justification: str = Field(..., description="Investigative rationale and evidence basis")
+    timestamp_utc: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    hard_veto_override: bool = Field(default=False, description="True only with statutory supervisor authorization")
+    supervisor_signoff: Optional[str] = Field(default=None, description="Supervisor ID authorizing veto override")
+    is_active: bool = Field(default=True)
+
+
+class EntityDecisionManager:
+    """Manages human-in-the-loop decisions, enforcing hard vetoes and maintaining audit history."""
+
+    def __init__(self) -> None:
+        self.decision_history: List[EntityDecision] = []
+
+    def apply_merge(
+        self,
+        decision: EntityDecision,
+        profile_a: EntityProfile,
+        profile_b: EntityProfile,
+    ) -> EntityProfile:
+        """Merges two entity profiles into a unified cluster, strictly enforcing Hard Veto rules."""
+        # 1. Evaluate Hard Vetoes
+        veto_reason: Optional[str] = None
+        if profile_a.normalized_phone and profile_b.normalized_phone and profile_a.normalized_phone != profile_b.normalized_phone:
+            veto_reason = f"Conflicting phone numbers: '{profile_a.normalized_phone}' vs '{profile_b.normalized_phone}'"
+        elif profile_a.normalized_account_number and profile_b.normalized_account_number and profile_a.normalized_account_number != profile_b.normalized_account_number:
+            veto_reason = f"Conflicting bank accounts: '{profile_a.normalized_account_number}' vs '{profile_b.normalized_account_number}'"
+
+        if veto_reason and not decision.hard_veto_override:
+            raise HardVetoViolationError(
+                f"Constitutional Veto: Cannot merge entity '{profile_a.entity_id}' and '{profile_b.entity_id}'. "
+                f"Reason: {veto_reason}. "
+                f"SentinelX Rule 5: Never perform automatic or unsanctioned identity merges across conflicting strong identifiers."
+            )
+
+        if veto_reason and decision.hard_veto_override and not decision.supervisor_signoff:
+            raise HardVetoViolationError(
+                "Constitutional Rule: Hard veto override requires verified supervisor_signoff."
+            )
+
+        # 2. Record Decision in History
+        self.decision_history.append(decision)
+
+        # 3. Create Merged Profile
+        merged_id = f"ENT_MERGED_{profile_a.entity_id}_{profile_b.entity_id}"
+        merged_name = profile_a.canonical_name or profile_b.canonical_name
+        merged_phone = profile_a.normalized_phone or profile_b.normalized_phone
+        merged_vpa = profile_a.normalized_upi_vpa or profile_b.normalized_upi_vpa
+        merged_imei = profile_a.normalized_device_imei or profile_b.normalized_device_imei
+        merged_acc = profile_a.normalized_account_number or profile_b.normalized_account_number
+
+        combined_evidence = list(set(profile_a.associated_evidence_ids + profile_b.associated_evidence_ids))
+        combined_artifacts = list(set(profile_a.associated_artifact_ids + profile_b.associated_artifact_ids))
+
+        return EntityProfile(
+            entity_id=merged_id,
+            canonical_name=merged_name,
+            normalized_phone=merged_phone,
+            normalized_upi_vpa=merged_vpa,
+            normalized_device_imei=merged_imei,
+            normalized_account_number=merged_acc,
+            associated_evidence_ids=combined_evidence,
+            associated_artifact_ids=combined_artifacts,
+            review_state=ExaminerReviewState.CONFIRMED,
+            has_unresolved_conflicts=False,
+        )
+
+    def apply_reject(self, decision: EntityDecision) -> None:
+        """Records rejection of candidate entity match."""
+        self.decision_history.append(decision)
+
+    def apply_split(
+        self,
+        decision: EntityDecision,
+        merged_profile: EntityProfile,
+        split_identifier: str,
+    ) -> Tuple[EntityProfile, EntityProfile]:
+        """Splits an entity profile by detaching a disputed identifier."""
+        self.decision_history.append(decision)
+        p1 = merged_profile.model_copy(deep=True)
+        p1.entity_id = f"{merged_profile.entity_id}_SPLIT_1"
+        p2 = EntityProfile(
+            entity_id=f"{merged_profile.entity_id}_SPLIT_2",
+            canonical_name=f"Detached: {split_identifier}",
+            associated_evidence_ids=list(merged_profile.associated_evidence_ids),
+            associated_artifact_ids=list(merged_profile.associated_artifact_ids),
+            review_state=ExaminerReviewState.CONFIRMED,
+        )
+
+        for k, v in list(p1.identifiers.items()):
+            if split_identifier in v:
+                p1.identifiers[k] = [x for x in v if x != split_identifier]
+                p2.identifiers[k] = [split_identifier]
+
+        return p1, p2
+

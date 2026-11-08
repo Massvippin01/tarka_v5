@@ -25,10 +25,11 @@ import {
   TimelineStrip,
 } from "../../components/tarka/kit";
 import {
-  computeTaintEngine,
   generateBnssDrafts,
 } from "../../utils/taintLienEngine";
 import { recoveryModel } from "../../utils/recoveryModel";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSankeyGraph";
 import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDecayChart";
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
@@ -39,9 +40,23 @@ type TaintWorkspaceMode = "dag" | "orders";
 type FlowViewType = "sankey" | "dag";
 
 export const TaintEngineScreen: React.FC = () => {
-  const { mutations, toggleMutation } = useTarkaGlobal();
-  const { density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
 
   // Active 2-Mode Workspace (Default: Mode 1 Interactive Taint DAG)
   const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<TaintWorkspaceMode>("dag");
@@ -59,23 +74,55 @@ export const TaintEngineScreen: React.FC = () => {
   // 4. Selected Node for Drawer
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  // 5. Single Mathematical Selector Source of Truth
+  // 5. Dynamic Engine State & Accounting Model
+  const engineState = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseTaintData(
+      activeCaseId || "CASE-2026-001",
+      investigation,
+      isInjectClean,
+      freezeBudgetK
+    );
+  }, [activeCaseId, investigation, isInjectClean, freezeBudgetK]);
+
   const recModel = useMemo(() => {
     return recoveryModel(isInjectClean, freezeBudgetK);
-  }, [isInjectClean, freezeBudgetK]);
-
-  // 6. Compute Engine State
-  const engineState = useMemo(() => {
-    return computeTaintEngine(isInjectClean, freezeBudgetK);
   }, [isInjectClean, freezeBudgetK]);
 
   // 7. Active BNSS Notice Selection (106 vs 107)
   const [selectedNoticeType, setSelectedNoticeType] = useState<"106" | "107">("106");
 
-  // 8. BNSS Draft State
+  // Dynamic Graph Nodes for Taint Visualization
+  const victimNode = useMemo(() => {
+    return investigation.nodes.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || investigation.nodes[0];
+  }, [investigation]);
+
+  const l1Node = useMemo(() => {
+    return investigation.nodes.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("M1") || n.id.includes("PRIMARY")) || investigation.nodes[1];
+  }, [investigation]);
+
+  const l2aNode = useMemo(() => {
+    return investigation.nodes.find((n) => n.id.includes("2A") || (n.entityType === "LAYER_2_CONDUIT" && n.id !== "M2B-CONDUIT")) || investigation.nodes[2];
+  }, [investigation]);
+
+  const l2bNode = useMemo(() => {
+    return investigation.nodes.find((n) => n.id.includes("2B") || (n.entityType === "LAYER_2_CONDUIT" && n.id !== "M2A-CONDUIT")) || investigation.nodes[3];
+  }, [investigation]);
+
+  const merchantNode = useMemo(() => {
+    return investigation.nodes.find((n) => n.entityType === "BONA_FIDE_MERCHANT" || n.id.includes("MERCHANT") || n.id.includes("APEX")) || investigation.nodes[4];
+  }, [investigation]);
+
+  const atmNode = useMemo(() => {
+    return investigation.nodes.find((n) => n.entityType === "LAYER_3_SINK" || n.id.includes("ATM") || n.id.includes("SINK")) || investigation.nodes[5];
+  }, [investigation]);
+
+  // 8. Dynamic BNSS Draft State
   const bnssDrafts = useMemo(() => {
-    return generateBnssDrafts("ICICI 001405008129", "ICICI Bank", isInjectClean ? 120000 : 180000);
-  }, [isInjectClean]);
+    const targetAccount = `${l1Node?.bank || "Bank"} ${l1Node?.accountMasked || "Masked"}`;
+    const targetBank = l1Node?.bank || "Bank Nodal";
+    const lienAmt = engineState.summary.librRecoverable;
+    return generateBnssDrafts(targetAccount, targetBank, lienAmt);
+  }, [l1Node, engineState]);
 
   const activeDraft = useMemo(() => {
     return selectedNoticeType === "106" ? bnssDrafts.notice106 : bnssDrafts.application107;
@@ -114,14 +161,14 @@ export const TaintEngineScreen: React.FC = () => {
       <StoryBanner
         screenId="taint"
         takeaway={
-          activeDiscoveredCluster
-            ? `Dinic Min-Cut isolates outward flow; LIBR doctrine secures ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} recoverable capital while shielding innocent commercial capital.`
-            : "Dinic Min-Cut freezes K=3 accounts isolating 100% of outward flow; LIBR doctrine secures ₹3,80,000 recoverable capital while shielding innocent commercial capital."
+          <span>
+            <strong>Dinic Min-Cut ({investigation.firNumber})</strong> freezes K={freezeBudgetK} accounts isolating outward flow for {investigation.complainantName}; LIBR secures ₹{engineState.summary.librRecoverable.toLocaleString("en-IN")} recoverable capital while shielding innocent commercial capital.
+          </span>
         }
         evidenceChips={[
-          { tier: "T1", label: "ICICI Finacle CBS", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T1", label: "SBI Switch RRN", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T2", label: "GSTIN 07AAACA1234F1Z8", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+          { tier: "T1", label: "Bank Switch RRN", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
+          { tier: "T2", label: "Commercial Exemption", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
         ]}
       />
 
@@ -141,18 +188,18 @@ export const TaintEngineScreen: React.FC = () => {
       >
         <KpiTile
           title="Victim loss"
-          value={activeDiscoveredCluster ? `₹${activeDiscoveredCluster.totalDrained.toLocaleString()}` : "₹5,00,000"}
+          value={activeDiscoveredCluster ? `₹${activeDiscoveredCluster.totalDrained.toLocaleString()}` : `₹${engineState.summary.initialVictimLoss.toLocaleString()}`}
           icon={DollarSign}
           iconColor="#E11D48"
           iconBg="#FFE4E6"
           statusBadge={{ text: "T+0 DEBIT", variant: "rose" }}
-          subtitle={activeDiscoveredCluster ? `Victim: ${activeDiscoveredCluster.victimAccount}` : "2 Linked Extortion Debits"}
+          subtitle={activeDiscoveredCluster ? `Victim: ${activeDiscoveredCluster.victimAccount}` : `${investigation.complainantName} Extortion Outflow`}
           microVisual="ring"
           progressPct={100}
           provenanceTooltip={
             activeDiscoveredCluster
               ? `Defrauded victim outflow of ₹${activeDiscoveredCluster.totalDrained.toLocaleString()} entering ${activeDiscoveredCluster.layer1Conduit} conduit.`
-              : "Sunil Kumar suffered 2 linked debits: Debit #1 ₹2,15,000 (Row #14) + Debit #2 ₹2,85,000 (Row #15) = ₹5,00,000 total loss entering Vikram Shah conduit."
+              : `${victimNode?.label || "Victim"} suffered illicit debits totaling ₹${engineState.summary.initialVictimLoss.toLocaleString()} entering ${l1Node?.label || "conduit"}.`
           }
         />
 
@@ -173,7 +220,7 @@ export const TaintEngineScreen: React.FC = () => {
           provenanceTooltip={
             activeDiscoveredCluster
               ? `Judicial Lowest Intermediate Balance Rule (LIBR) caps specific lien at ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} on merchant.`
-              : "Judicial Lowest Intermediate Balance Rule (LIBR) caps lien at ₹3.80L after deducting ₹1.20L irreversible ATM cashout."
+              : `Judicial Lowest Intermediate Balance Rule (LIBR) caps lien at ₹${(engineState.summary.librRecoverable / 100000).toFixed(2)}L after accounting for outward dissipation.`
           }
         />
 
@@ -581,10 +628,10 @@ export const TaintEngineScreen: React.FC = () => {
                             <span style={{ fontSize: "8.5px", fontWeight: 800, color: "#BE123C", textTransform: "uppercase" }}>Victim Source</span>
                             <span style={{ fontSize: "7.5px", fontFamily: "var(--font-mono)", color: "#64748B" }}>09:30:15 IST</span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Sunil Kumar</div>
-                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>SBI 30910029101</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{victimNode?.label || "Victim"}</div>
+                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>{victimNode?.bank || "Bank"} {victimNode?.accountMasked || ""}</div>
                           <div style={{ fontSize: "11.5px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                            -₹5,00,000.00
+                            -₹{engineState.summary.initialVictimLoss.toLocaleString()}
                           </div>
                         </div>
 
@@ -604,10 +651,10 @@ export const TaintEngineScreen: React.FC = () => {
                               § 107 FROZEN
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Vikram Shah</div>
-                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>SBI 41088291083 (Dwell: 112s)</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{l1Node?.label || "Mule Layer 1"}</div>
+                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>{l1Node?.bank || "Bank"} {l1Node?.accountMasked || ""}</div>
                           <div style={{ fontSize: "11px", fontWeight: 800, color: "#B45309", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                            Inflow: ₹5,00,000
+                            Inflow: ₹{engineState.summary.initialVictimLoss.toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -620,7 +667,7 @@ export const TaintEngineScreen: React.FC = () => {
                         </svg>
                       </div>
 
-                      {/* COLUMN 3: Rohit Verma & Sameer Khan */}
+                      {/* COLUMN 3: Mule L2 (Split A & Split B) */}
                       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "8px" }}>
                         <div
                           onClick={() => setSelectedNodeId("rohit")}
@@ -638,10 +685,10 @@ export const TaintEngineScreen: React.FC = () => {
                               {freezeBudgetK >= 2 ? "§ 107 FROZEN" : "UNFROZEN"}
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Rohit Verma</div>
-                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>HDFC 5010029419920</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{l2aNode?.label || "Mule L2 (Split A)"}</div>
+                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>{l2aNode?.bank || "Bank"} {l2aNode?.accountMasked || ""}</div>
                           <div style={{ fontSize: "8.5px", color: "#0F172A", marginTop: "2px" }}>
-                            Inflow: <strong>₹3,00,000</strong> | Apex: <strong>₹1,80,000</strong>
+                            Inflow: <strong>₹{(Math.round(engineState.summary.initialVictimLoss * 0.6)).toLocaleString()}</strong>
                           </div>
                         </div>
 
@@ -661,10 +708,10 @@ export const TaintEngineScreen: React.FC = () => {
                               {freezeBudgetK >= 3 ? "§ 107 FROZEN" : "LEAK ESCAPE"}
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Sameer Khan</div>
-                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>AXIS 9140200410291</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{l2bNode?.label || "Mule L2 (Split B)"}</div>
+                          <div style={{ fontSize: "8.5px", color: "#64748B" }}>{l2bNode?.bank || "Bank"} {l2bNode?.accountMasked || ""}</div>
                           <div style={{ fontSize: "8.5px", color: "#0F172A", marginTop: "2px" }}>
-                            Inflow: <strong>₹2,00,000</strong> | ATM: <strong>₹1,20,000</strong>
+                            Inflow: <strong>₹{(Math.round(engineState.summary.initialVictimLoss * 0.4)).toLocaleString()}</strong>
                           </div>
                         </div>
                       </div>
@@ -677,7 +724,7 @@ export const TaintEngineScreen: React.FC = () => {
                         </svg>
                       </div>
 
-                      {/* COLUMN 5: Apex Electronics & Noida ATM */}
+                      {/* COLUMN 5: Merchant & Terminal ATM */}
                       <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "8px" }}>
                         <div
                           onClick={() => setSelectedNodeId("apex")}
@@ -695,10 +742,10 @@ export const TaintEngineScreen: React.FC = () => {
                               § 106 LIEN ONLY
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Apex Electronics Pvt Ltd</div>
-                          <div style={{ fontSize: "8px", color: "#64748B" }}>GST: 07AAACA1234F1Z8</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{merchantNode?.label || "Innocent Merchant"}</div>
+                          <div style={{ fontSize: "8px", color: "#64748B" }}>Account: {merchantNode?.accountMasked || "Escrow"}</div>
                           <div style={{ fontSize: "9px", fontWeight: 800, color: "#0284C7", marginTop: "2px" }}>
-                            Lien: ₹1,80,000 (Protected)
+                            Lien: ₹{engineState.summary.librRecoverable.toLocaleString()} (Protected)
                           </div>
                         </div>
 
@@ -718,7 +765,7 @@ export const TaintEngineScreen: React.FC = () => {
                               {freezeBudgetK >= 3 ? "SEALED EXIT" : "DISPENSING"}
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>Noida Sec 18 ATM DL-049</div>
+                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A", marginTop: "1px" }}>{atmNode?.label || "Terminal Cashout ATM"}</div>
                           <div style={{ fontSize: "10px", fontWeight: 800, color: "#BE123C", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
                             Dispensed: ₹1,20,000 (Cash)
                           </div>
@@ -752,7 +799,7 @@ export const TaintEngineScreen: React.FC = () => {
                       <div style={{ fontSize: "9px", color: "#64748B" }}>
                         {freezeBudgetK >= 3
                           ? "Open Escape Routes to Unfrozen Sinks: 0 / 4 (100% Reachability Sealed ✓)"
-                          : `Residual Outward Leakage: ₹${(engineState.minCut.residualLeakageAmount).toLocaleString()} / ₹5,00,000`}
+                          : `Residual Outward Leakage: ₹${(engineState.minCut.residualLeakageAmount).toLocaleString()} / ₹${engineState.summary.initialVictimLoss.toLocaleString()}`}
                       </div>
                     </div>
                   </div>

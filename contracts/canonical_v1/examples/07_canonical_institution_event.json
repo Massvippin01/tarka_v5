@@ -1,0 +1,26 @@
+{
+  "event_id": "EVT_INST_HDFC_001",
+  "institution_id": "INST_HDFC_01",
+  "event_type": "TRANSACTION_FLAGGED",
+  "schema_version": "v1.0.0",
+  "sequence_number": 104,
+  "source_timestamp_utc": "2026-10-15T08:32:15Z",
+  "received_timestamp_utc": "2026-10-15T08:32:17Z",
+  "idempotency_key": "IDEM_HDFC_TXN_001",
+  "payload_commitment": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "correlation_id": "CORR_149_001",
+  "causality_metadata": {
+    "lamport_ts": 15,
+    "vector_clock": {
+      "INST_HDFC_01": 12,
+      "INST_SBI_01": 8
+    }
+  },
+  "event_validation_state": "COMMITTED",
+  "prior_event_reference": "EVT_INST_HDFC_000",
+  "signature_reference": "sig_ed25519_hdfc_switch_01",
+  "payload": {
+    "flag_reason": "Mule siphonage velocity > 300,000 INR/min",
+    "account_frozen": true
+  }
+}

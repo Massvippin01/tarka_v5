@@ -858,3 +858,43 @@ def get_system_operational_status() -> Dict[str, Any]:
     return adapter.get_system_status()
 
 
+# --- Section 4 Polish: Bounded Assistant, Scam Typology & Excel Ingestion ---
+
+@router.post("/cases/{case_id}/classify-scam", tags=["Grounded Assistant"])
+def classify_scam_message(
+    case_id: str,
+    payload: Dict[str, str],
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Classifies message or deposition text across 6 Indian cyber fraud typologies."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+
+    from tarka.ai.bounded_assistant import ScamTypologyClassifier
+    message_text = payload.get("message_text", "")
+    if not message_text:
+        raise HTTPException(status_code=400, detail="Missing 'message_text'")
+    res = ScamTypologyClassifier.classify(message_text)
+    return res.model_dump()
+
+
+@router.post("/cases/{case_id}/extract-complaint", tags=["Grounded Assistant"])
+def extract_complaint_narrative(
+    case_id: str,
+    payload: Dict[str, str],
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Extracts structured entities, suspect accounts, VPAs, and loss amounts from 1930 NCRP complaint narrative."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+
+    from tarka.ai.bounded_assistant import ComplaintNarrativeExtractor
+    complaint_text = payload.get("complaint_text", "")
+    complaint_ref = payload.get("complaint_ref")
+    if not complaint_text:
+        raise HTTPException(status_code=400, detail="Missing 'complaint_text'")
+    res = ComplaintNarrativeExtractor.extract_entities(complaint_text, complaint_ref=complaint_ref)
+    return res.model_dump()
+
+
+

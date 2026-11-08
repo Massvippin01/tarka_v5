@@ -71,7 +71,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
         arguments: { query: q },
       });
 
-      const res = await axios.post("http://localhost:8000/api/v1/investigation/copilot", {
+      const res = await axios.post("/api/v1/investigation/copilot", {
         query: q,
         scope: {
           case_id: activeCaseId,
@@ -129,7 +129,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
   const handleVerifySubmit = async (action: string) => {
     if (!verifyingClaim) return;
     try {
-      await axios.post("http://localhost:8000/api/v1/investigation/verify-claim", {
+      await axios.post("/api/v1/investigation/verify-claim", {
         claim_id: verifyingClaim.claim_id,
         action: action,
         investigator_notes: verificationNotes,

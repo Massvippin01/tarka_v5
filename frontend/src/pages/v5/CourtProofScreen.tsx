@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Scale,
   Download,
@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
+import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import {
   KpiTile,
   StoryBanner,
@@ -37,69 +40,44 @@ import { EndToEndReconstructionStrip } from "../../components/tarka/investigatio
 type DossierTab = "loo" | "certificates" | "syndicate" | "transformation";
 
 export const CourtProofScreen: React.FC = () => {
-  const { density, activeDiscoveredCluster } = useTarkaUiStore();
+  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
+
+  const investigation = useMemo(() => {
+    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
+    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
+      return {
+        ...base,
+        firNumber: activeCase.firNumber,
+        complainantName: activeCase.complainantName,
+        bookedLossInr: activeCase.bookedLossInr,
+        claimedLossInr: activeCase.claimedLossInr,
+      };
+    }
+    return base;
+  }, [reconstructedInvestigation, activeCase]);
+
+  const dynamicArtifacts = useMemo(() => {
+    return CaseSyncBridge.getInstance().deriveCaseCourtArtifacts(activeCaseId || "CASE-2026-001", investigation);
+  }, [activeCaseId, investigation]);
 
   const ja4 = activeDiscoveredCluster?.convergedJa4 || "t13d1516h2_8daaf6";
   const imei = activeDiscoveredCluster?.convergedImei || "867492061234564";
   const tac = imei.slice(0, 8);
   const recoverableLien = activeDiscoveredCluster
     ? `₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()}`
-    : "₹3,80,000";
+    : `₹${(investigation.recoverableLibrInr || 380000).toLocaleString("en-IN")}`;
 
   const [activeDossierTab, setActiveDossierTab] = useState<DossierTab>("loo");
   const [auditSentenceIdx, setAuditSentenceIdx] = useState<number>(0);
 
-  // 1. Initial 5 Case Artifacts
-  const initialArtifacts: CaseArtifact[] = [
-    {
-      id: "art-victim-screenshot",
-      name: "#01 Video Call Screenshot",
-      tier: "TIER_2_CORROBORATIVE",
-      custodian: "Sunil Kumar (Victim)",
-      sha256: "c89148bc92019482019a84719284102948192841029481928410294819284102",
-      isExcluded: false,
-      canBeExcluded: true,
-    },
-    {
-      id: "art-sbi-cbs",
-      name: "#02 SBI CBS Ledger",
-      tier: "TIER_1_INDEPENDENT",
-      custodian: "State Bank of India (Global IT Centre)",
-      sha256: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567",
-      isExcluded: false,
-      canBeExcluded: true,
-    },
-    {
-      id: "art-npci-switch",
-      name: "#03 NPCI Central Switch Log",
-      tier: "TIER_1_INDEPENDENT",
-      custodian: "NPCI Central Gateway Node",
-      sha256: "9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
-      isExcluded: false,
-      canBeExcluded: true,
-    },
-    {
-      id: "art-airtel-cgnat",
-      name: "#04 Airtel CGNAT IPDR",
-      tier: "TIER_1_INDEPENDENT",
-      custodian: "Bharti Airtel Lawful Intercept",
-      sha256: "4d71290481029481029481029481029481029481029481029481029481029481",
-      isExcluded: false,
-      canBeExcluded: true,
-    },
-    {
-      id: "art-whatsapp",
-      name: "#05 WhatsApp Chat Export",
-      tier: "TIER_2_CORROBORATIVE",
-      custodian: "Complainant Cellular Handset",
-      sha256: "88ab102938475610293847561029384756102938475610293847561029384756",
-      isExcluded: false,
-      canBeExcluded: true,
-    },
-  ];
+  // 1. Case Artifacts initialized from database / investigation
+  const [artifacts, setArtifacts] = useState<CaseArtifact[]>(dynamicArtifacts);
 
-  const [artifacts, setArtifacts] = useState<CaseArtifact[]>(initialArtifacts);
+  useEffect(() => {
+    setArtifacts(dynamicArtifacts);
+  }, [dynamicArtifacts]);
 
   const toggleArtifact = (id: string) => {
     setArtifacts((prev) =>
@@ -108,7 +86,7 @@ export const CourtProofScreen: React.FC = () => {
   };
 
   const resetArtifacts = () => {
-    setArtifacts(initialArtifacts);
+    setArtifacts(dynamicArtifacts);
     setAlibis((prev) => prev.map((a) => ({ ...a, isChallenged: false })));
   };
 
@@ -210,8 +188,8 @@ export const CourtProofScreen: React.FC = () => {
 
   // 4. BSA Section 63 Split Schedules
   const bsaSchedules = useMemo(() => {
-    return generateBsa63SplitSchedules("CASE-2026-001");
-  }, []);
+    return generateBsa63SplitSchedules(activeCaseId || "CASE-2026-001");
+  }, [activeCaseId]);
 
   const [activeBsaTab, setActiveBsaTab] = useState<
     "partB" | "bank" | "isp" | "handset" | "bnss106" | "bnss107"
@@ -240,8 +218,8 @@ export const CourtProofScreen: React.FC = () => {
 
   // 5. Paper Anchor (Ed25519 & BIP-39 Phonetic Digest)
   const paperAnchor = useMemo(() => {
-    return getCanonicalPaperAnchor("CASE-2026-001");
-  }, []);
+    return getCanonicalPaperAnchor(activeCaseId || "CASE-2026-001");
+  }, [activeCaseId]);
 
   const handleExportVerifyHtml = () => {
     const htmlContent = generateOfflineVerifyHtml(paperAnchor);
@@ -249,7 +227,7 @@ export const CourtProofScreen: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "TARKA_CASE-2026-001_Verify_Offline.html";
+    link.download = `TARKA_${activeCaseId || "CASE-2026-001"}_Verify_Offline.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -282,11 +260,11 @@ export const CourtProofScreen: React.FC = () => {
       {/* STORY BANNER */}
       <StoryBanner
         screenId="court-proof"
-        takeaway="Leave-one-out stress testing proves all 5 material findings survive complete exclusion of Tier-2/3 artifacts; Section 63(4) dual certificates and CBI ₹10.42 Cr threshold verified."
+        takeaway={`BSA 2023 Section 63(4) statutory certificate pack for ${investigation.complainantName} (${investigation.firNumber}): all material findings survive complete exclusion of Tier-2 civilian artifacts; verified under judicial seal.`}
         evidenceChips={[
           { tier: "T1", label: "RFC-3161 Timestamp", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
           { tier: "T1", label: "Ed25519 Judicial Seal", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T1", label: "CBI Mandate Audit", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: "Evidence Audit Root", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
         ]}
       />
 

@@ -36,7 +36,7 @@ export const GlobalCommandSearch: React.FC<GlobalCommandSearchProps> = ({ isOpen
     }
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:8000/api/v1/investigation/search/federated?q=${encodeURIComponent(val.trim())}`);
+      const res = await axios.get(`/api/v1/investigation/search/federated?q=${encodeURIComponent(val.trim())}`);
       setResults(res.data.results || []);
       setTelemetry({
         duration: res.data.query_duration_ms,

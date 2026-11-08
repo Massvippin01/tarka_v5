@@ -16,9 +16,7 @@ import {
   Copy,
   Plus,
   ArrowLeft,
-  FileUp,
   AlertTriangle,
-  Database,
   Clock,
   Sparkles,
 } from "lucide-react";
@@ -34,6 +32,7 @@ import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
 import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
 import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
 import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
+import { PrivacyCryptoWorkbench } from "../tarka/privacy/PrivacyCryptoWorkbench";
 import { BenchmarkLabScreen } from "../../pages/v5/BenchmarkLabScreen";
 import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
 import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
@@ -44,6 +43,7 @@ import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
 import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
 import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
+import { ForensicWorkstationScreen } from "../../pages/v5/ForensicWorkstationScreen";
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -75,7 +75,6 @@ export const TarkaGlobalShell: React.FC = () => {
     density,
     setDensity,
     toggleBenchmarkLab,
-    togglePublicDatasetModal,
     activeDiscoveredCluster,
     setActiveDiscoveredCluster,
     selectedEvidenceEdge,
@@ -174,6 +173,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           e.preventDefault();
           setActivePage("workbench");
           setActiveRoute("court-proof");
+        } else if (e.key === "7") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("privacy-crypto");
+        } else if (e.key === "8") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("workstation");
         } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           setActivePage("benchmark");
@@ -262,6 +269,28 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       badgeVariant: "emerald" as const,
       tooltip: "PS4 Deliverable #5: MHA Jan 2026 SOP Orders, CBI STR Memo & LOO Proof (Alt+6)",
       isLocked: intakeGate?.isHalted,
+    },
+    {
+      id: "privacy-crypto" as TarkaRoute,
+      step: "07",
+      title: "Privacy, Cryptography & Formal Verification Hub",
+      shortTitle: "Privacy & ZKP",
+      subtitle: "BFT Consensus & SMT",
+      badgeText: "BFT + ZK",
+      badgeVariant: "indigo" as const,
+      tooltip: "PS04 Member B: ECDH-PSI, Circom ZKP, 4-Node PBFT & Z3 Verification (Alt+7)",
+      isLocked: false,
+    },
+    {
+      id: "workstation" as TarkaRoute,
+      step: "08",
+      title: "Forensic Deep Workstation: Loom, Lens & Flight Recorder",
+      shortTitle: "Forensic Loom",
+      subtitle: "SMT Lens & Audit Log",
+      badgeText: "LOOM",
+      badgeVariant: "emerald" as const,
+      tooltip: "Signature Forensic Systems: Temporal Loom, Claim Dependency Lens & Flight Recorder (Alt+8)",
+      isLocked: false,
     },
   ];
 
@@ -474,7 +503,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                               {cw.title}
                             </div>
                             <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                              {cw.policeStation.split(",")[0]} · {cw.complainantName}
+                              {(cw.policeStation || "PS Noida").split(",")[0]} · {cw.complainantName || "Complainant"}
                             </div>
                           </div>
                         );
@@ -831,7 +860,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         >
           {/* Left: Top-Level Mode Switcher + Breadcrumb / Active Case Switcher */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flexShrink: 1 }}>
-            {/* Top-Level Mode Switcher (Workspaces | Case Workbench | Benchmark Lab) */}
+            {/* Top-Level Mode Switcher (Workspaces | Workbench) */}
             <div
               style={{
                 display: "inline-flex",
@@ -890,30 +919,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   transition: "all 0.12s ease",
                 }}
               >
-                <span>🔍 Case Workbench</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActivePage("benchmark")}
-                title="Benchmark & Diagnostics Lab: Streaming & 27-Check Matrix (Alt+D / Alt+B)"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "3px 8px",
-                  borderRadius: "5px",
-                  fontSize: "11px",
-                  fontWeight: activePage === "benchmark" ? 800 : 600,
-                  background: activePage === "benchmark" ? "#FFFFFF" : "transparent",
-                  color: activePage === "benchmark" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "benchmark" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "benchmark" ? "1px solid #C7D2FE" : "1px solid transparent",
-                  cursor: "pointer",
-                  transition: "all 0.12s ease",
-                }}
-              >
-                <span>⚡ Benchmark Lab</span>
+                <span>🔍 Workbench</span>
               </button>
             </div>
 
@@ -925,222 +931,145 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   {activeCase?.firNumber || "CASE"}
                 </span>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {currentNav.title}
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  {currentNav.shortTitle || currentNav.title}
                 </span>
-                <span className="hidden md:inline-flex flex-shrink-0">
+                <span className="hidden xl:inline-flex flex-shrink-0">
                   <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
-                </span>
-                <span
-                  style={{
-                    fontSize: "9.5px",
-                    fontWeight: 800,
-                    color: "#047857",
-                    background: "#ECFDF5",
-                    border: "1px solid #A7F3D0",
-                    padding: "1px 6px",
-                    borderRadius: "4px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    flexShrink: 0,
-                  }}
-                  title="Air-Gap Compliance: Zero external runtime network requests, connect-src 'none' enforced (BSA 2023 §63)"
-                >
-                  <Lock size={10} color="#059669" />
-                  <span>AIR-GAP</span>
                 </span>
               </>
             )}
           </div>
 
-          {/* Center: Operational Timeline Stage Popover (Screens 01-06) */}
-          {activePage === "workbench" && (
-            <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
-              <Popover.Trigger asChild>
-                <button
-                  type="button"
-                  title="Operational Timeline Calibration (Click to jump between T+0m to T+48h)"
-                  className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                  style={{
-                    height: "28px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    background: "#F8FAFC",
-                    border: "1px solid #CBD5E1",
-                    color: "#0F172A",
-                    fontWeight: 700,
-                    fontSize: "11px",
-                    borderRadius: "6px",
-                    padding: "0 8px",
-                    cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                    flexShrink: 0,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <Clock size={12} color="#4F46E5" />
-                  <span style={{ fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
-                    {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
-                  </span>
-                  <ChevronDown size={11} color="#64748B" />
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content
-                  align="center"
-                  sideOffset={6}
-                  style={{
-                    width: "290px",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
-                    padding: "8px",
-                    zIndex: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <div style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
-                    OPERATIONAL TIMELINE CALIBRATION
-                  </div>
-                  {clockStages.map((stg, idx) => {
-                    const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setTimeOffsetHours(stg.offset);
-                          setClockPopoverOpen(false);
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "6px 8px",
-                          borderRadius: "5px",
-                          border: isCurrent ? "1px solid #C7D2FE" : "1px solid transparent",
-                          background: isCurrent ? "#EEF2FF" : "transparent",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: isCurrent ? "#4338CA" : "#0F172A" }}>
-                            {stg.label}
-                          </div>
-                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                            {stg.title}
-                          </div>
-                        </div>
-                        {isCurrent && (
-                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
-          )}
-
-          {/* Right Header Controls: [Density Slider] · [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
+          {/* Right Header Controls: [Timeline Stage] · [Density Toggle] · [⚡ 1930 SLA] · [Mutator] · [Lab] · [Brief] · [Voice AI] · [Export §63] · [+ Evidence] */}
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            {/* View Density Slide Toggle: Standard vs Short / Small View */}
-            <div
+            {/* Operational Timeline Stage Popover (Screens 01-06) */}
+            {activePage === "workbench" && (
+              <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
+                <Popover.Trigger asChild>
+                  <button
+                    type="button"
+                    title="Operational Timeline Calibration (Click to jump between T+0m to T+48h)"
+                    className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                    style={{
+                      height: "28px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      background: "#F8FAFC",
+                      border: "1px solid #CBD5E1",
+                      color: "#0F172A",
+                      fontWeight: 700,
+                      fontSize: "11px",
+                      borderRadius: "6px",
+                      padding: "0 8px",
+                      cursor: "pointer",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                      flexShrink: 0,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Clock size={12} color="#4F46E5" />
+                    <span style={{ fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                      {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
+                    </span>
+                    <ChevronDown size={11} color="#64748B" />
+                  </button>
+                </Popover.Trigger>
+                <Popover.Portal>
+                  <Popover.Content
+                    align="center"
+                    sideOffset={6}
+                    style={{
+                      width: "290px",
+                      background: "#FFFFFF",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "8px",
+                      boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
+                      padding: "8px",
+                      zIndex: 100,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px",
+                    }}
+                  >
+                    <div style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                      OPERATIONAL TIMELINE CALIBRATION
+                    </div>
+                    {clockStages.map((stg, idx) => {
+                      const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setTimeOffsetHours(stg.offset);
+                            setClockPopoverOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "6px 8px",
+                            borderRadius: "5px",
+                            border: isCurrent ? "1px solid #C7D2FE" : "1px solid transparent",
+                            background: isCurrent ? "#EEF2FF" : "transparent",
+                            cursor: "pointer",
+                            textAlign: "left",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: isCurrent ? "#4338CA" : "#0F172A" }}>
+                              {stg.label}
+                            </div>
+                            <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                              {stg.title}
+                            </div>
+                          </div>
+                          {isCurrent && (
+                            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </Popover.Content>
+                </Popover.Portal>
+              </Popover.Root>
+            )}
+            {/* View Density Compact Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setDensity(density === "comfortable" ? "compact" : "comfortable")}
+              title={`Switch dashboard view to ${density === "comfortable" ? "Compact" : "Standard"} layout`}
+              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
+                height: "28px",
                 display: "inline-flex",
                 alignItems: "center",
-                background: "#E2E8F0",
+                gap: "4px",
+                background: "#F8FAFC",
                 border: "1px solid #CBD5E1",
-                borderRadius: "20px",
-                padding: "2px",
-                height: "28px",
-                boxSizing: "border-box",
-                position: "relative",
-                userSelect: "none",
+                color: "#334155",
+                fontWeight: 600,
+                fontSize: "11px",
+                borderRadius: "6px",
+                padding: "0 8px",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
-              role="radiogroup"
-              aria-label="Dashboard View Density"
             >
-              {/* Sliding Background Indicator Pill */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "2px",
-                  bottom: "2px",
-                  left: density === "comfortable" ? "2px" : "calc(50% + 1px)",
-                  width: "calc(50% - 3px)",
-                  background: "#FFFFFF",
-                  borderRadius: "16px",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08)",
-                  transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
-                  zIndex: 1,
-                  pointerEvents: "none",
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() => setDensity("comfortable")}
-                role="radio"
-                aria-checked={density === "comfortable"}
-                title="Standard Comfortable View"
-                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: density === "comfortable" ? "#0F172A" : "#64748B",
-                  fontWeight: density === "comfortable" ? 700 : 500,
-                  fontSize: "10.5px",
-                  padding: "2px 8px",
-                  borderRadius: "16px",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  position: "relative",
-                  zIndex: 2,
-                  transition: "color 0.18s ease",
-                }}
-              >
-                <Maximize2 size={10} color={density === "comfortable" ? "#4F46E5" : "#64748B"} />
-                <span>Standard</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDensity("compact")}
-                role="radio"
-                aria-checked={density === "compact"}
-                title="Short / Small Dashboard View"
-                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: density === "compact" ? "#0F172A" : "#64748B",
-                  fontWeight: density === "compact" ? 700 : 500,
-                  fontSize: "10.5px",
-                  padding: "2px 8px",
-                  borderRadius: "16px",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "3px",
-                  position: "relative",
-                  zIndex: 2,
-                  transition: "color 0.18s ease",
-                }}
-              >
-                <Minimize2 size={10} color={density === "compact" ? "#4F46E5" : "#64748B"} />
-                <span>Small View</span>
-              </button>
-            </div>
+              {density === "comfortable" ? (
+                <>
+                  <Minimize2 size={11} color="#4F46E5" />
+                  <span>Compact</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 size={11} color="#4F46E5" />
+                  <span>Standard</span>
+                </>
+              )}
+            </button>
 
             {/* ⚡ 1930 Golden Hour Batch Dispatch Popover */}
             <Popover.Root open={goldenHourOpen} onOpenChange={setGoldenHourOpen}>
@@ -1162,12 +1091,13 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     padding: "0 8px",
                     cursor: "pointer",
                     boxShadow: "0 1px 2px rgba(217, 119, 6, 0.15)",
+                    flexShrink: 0,
                   }}
                 >
                   <Zap size={11} color="#D97706" />
-                  <span>⚡ 1930 Golden Hour</span>
+                  <span>1930 SLA</span>
                   <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "0.5px 3.5px", borderRadius: "3px" }}>
-                    118m SLA
+                    118m
                   </span>
                 </button>
               </Popover.Trigger>
@@ -1277,8 +1207,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
-                padding: "0 9px",
+                padding: "0 8px",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
               <Zap size={11} color={activeMutationsCount > 0 ? "#E11D48" : "#64748B"} />
@@ -1307,6 +1238,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   padding: "0 7px",
                   cursor: "pointer",
                   boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
+                  flexShrink: 0,
                 }}
               >
                 <Zap size={11} color="#059669" />
@@ -1322,47 +1254,6 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   }}
                 >
                   Alt+B
-                </span>
-              </button>
-            )}
-
-            {/* Public Dataset Benchmark Trigger (Only shown on workbench to avoid header overlap) */}
-            {activePage === "workbench" && (
-              <button
-                type="button"
-                onClick={togglePublicDatasetModal}
-                className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                title="Open Public Dataset Benchmark (PaySim, IBM AML, IEEE-CIS) (Alt+D)"
-                style={{
-                  height: "28px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: "#EEF2FF",
-                  border: "1px solid #C7D2FE",
-                  color: "#3730A3",
-                  fontWeight: 700,
-                  fontSize: "11px",
-                  borderRadius: "6px",
-                  padding: "0 7px",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
-                }}
-              >
-                <Database size={11} color="#4F46E5" />
-                <span className="hidden xl:inline">Public</span>
-                <span>Datasets</span>
-                <span
-                  style={{
-                    fontSize: "9px",
-                    padding: "1px 3px",
-                    borderRadius: "3px",
-                    background: "#E0E7FF",
-                    color: "#4338CA",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  Alt+D
                 </span>
               </button>
             )}
@@ -1387,10 +1278,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 padding: "0 8px",
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+                flexShrink: 0,
               }}
             >
               <Sparkles size={11} color="#4F46E5" />
-              <span className="hidden xl:inline">Intelligence</span>
               <span>Brief</span>
             </button>
 
@@ -1406,17 +1297,18 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 alignItems: "center",
                 gap: "4px",
                 background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
+                border: "1px solid #CBD5E1",
                 color: "#334155",
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
-                padding: "0 7px",
+                padding: "0 8px",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
-              <Mic size={11} color="#64748B" />
-              <span className="hidden 2xl:inline">Voice AI</span>
+              <Mic size={11} color="#4F46E5" />
+              <span>Voice AI</span>
             </button>
 
             {/* Export §63 PDF */}
@@ -1444,6 +1336,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 padding: "0 8px",
                 cursor: intakeGate?.isHalted ? "not-allowed" : "pointer",
                 boxShadow: intakeGate?.isHalted ? "none" : "0 1px 2px rgba(0,0,0,0.1)",
+                flexShrink: 0,
               }}
             >
               <FileDown size={11} />
@@ -1465,13 +1358,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 border: "1px solid #4338CA",
                 background: "#4F46E5",
                 color: "#FFFFFF",
-                cursor: "pointer",
-                fontSize: "11px",
                 fontWeight: 700,
+                fontSize: "11px",
+                cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+                flexShrink: 0,
               }}
             >
-              <FileUp size={11} />
+              <Plus size={12} />
               <span>+ Evidence</span>
             </button>
           </div>
@@ -1800,16 +1694,18 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          {activePage === "workspaces" && <CaseWorkspaceScreen />}
+          {(activePage === "workspaces" || activeRoute === "workspace") && <CaseWorkspaceScreen />}
           {activePage === "benchmark" && <BenchmarkLabScreen />}
-          {activePage === "workbench" && (
+          {activePage === "workbench" && activeRoute !== "workspace" && (
             <>
-              {(activeRoute === "intake" || activeRoute === "workspace") && <IntakeScreen />}
+              {activeRoute === "intake" && <IntakeScreen />}
               {activeRoute === "entities" && <EntityResolutionScreen />}
               {activeRoute === "attribution" && <AttributionScreen />}
               {activeRoute === "network" && <FraudNetworkScreen />}
               {activeRoute === "taint-engine" && <TaintEngineScreen />}
               {activeRoute === "court-proof" && <CourtProofScreen />}
+              {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
+              {activeRoute === "workstation" && <ForensicWorkstationScreen />}
             </>
           )}
         </div>

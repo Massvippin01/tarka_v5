@@ -1,0 +1,24 @@
+{
+  "relationship_id": "REL_001",
+  "source_entity_id": "ENT_VICTIM_001",
+  "target_entity_id": "ENT_MULE_001",
+  "relationship_type": "TRANSFERRED_FUNDS",
+  "nature": "OBSERVED",
+  "confidence_score": 1.0,
+  "source_evidence_refs": [
+    "EVID_HDFC_001",
+    "EVID_SBI_001"
+  ],
+  "matching_criteria": {
+    "transaction_id": "TXN_UPI_001",
+    "amount": 500000.0
+  },
+  "valid_time_interval": {
+    "start_iso": "2026-10-15T08:32:15Z",
+    "end_iso": "2026-10-15T08:32:15Z"
+  },
+  "contradictory_observations": [],
+  "investigator_review_state": "VERIFIED",
+  "schema_version": "v1.0.0",
+  "metadata": {}
+}
