@@ -4397,6 +4397,7 @@ async def api_court_proof_cbi_syndicate():
 # SECTION 4 POLISH ENDPOINTS: EXCEL MULTI-SHEET & BOUNDED ASSISTANT
 # ==============================================================================
 
+from pydantic import BaseModel, Field
 from tarka.parsers.excel_parser import ExcelParser, SheetInfo, ExcelParseResult
 from tarka.ai.bounded_assistant import (
     ScamTypologyClassifier,
