@@ -1433,7 +1433,14 @@ class SafeForensicAgentOrchestrator:
         has_nav_target = any(
             t in q for t in ["timeline", "evidence", "contradiction", "provenance", "gap", "robustness", "report", "overview", "system"]
         )
-        if has_nav_target and (is_explicit_nav or (is_open_or_show and is_view_target)):
+        clean_q = q.strip(". !?")
+        is_direct_view_command = clean_q in (
+            "open evidence", "open the evidence", "show evidence", "show the evidence",
+            "show the timeline", "show timeline", "open the timeline", "open timeline",
+            "open the report library", "open report library", "open reports", "open the reports",
+            "return to the overview", "return to overview", "show overview", "show the overview", "open overview",
+        )
+        if has_nav_target and (is_explicit_nav or (is_open_or_show and is_view_target) or is_direct_view_command):
             target_view = "overview"
             if "timeline" in q:
                 target_view = "timeline"
