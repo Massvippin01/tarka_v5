@@ -12,6 +12,7 @@ import {
   EyeOff,
   Layers,
 } from "lucide-react";
+import { StoryBanner, KpiTile } from "../kit";
 
 export const PrivacyCryptoWorkbench: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"psi" | "zkp" | "pbft" | "claims">("psi");
@@ -108,134 +109,220 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   const [excludeScreenshot, setExcludeScreenshot] = useState<boolean>(false);
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans">
-      {/* Top Header */}
-      <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
-                Institutional Privacy, Cryptography & Formal Verification Hub
-              </h1>
-              <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                100% Executable Verified
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              SUTRAM 2026 PS04 · Multi-Party ECDH-PSI · Circom ZK-SNARK Verifier · 4-Node PBFT Consensus · Formal Claim DAG
-            </p>
-          </div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "calc(100dvh - 52px)",
+        maxHeight: "calc(100dvh - 52px)",
+        padding: "8px 16px 12px 16px",
+        gap: "8px",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        background: "#F8FAFC",
+        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
+      }}
+    >
+      {/* 1. STORY BANNER */}
+      <StoryBanner
+        screenId="privacy-crypto"
+        takeaway="Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus guarantee inter-bank mule detection without exposing innocent civilian banking data."
+        evidenceChips={[
+          { tier: "T1", label: "SECP256k1 Curve", hash: "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798" },
+          { tier: "T1", label: "Circom ZKP Key", hash: "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90" },
+          { tier: "T1", label: "PBFT State Root", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+        ]}
+      />
+
+      {/* 2. KPI ROW (4 TILES) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "8px",
+        }}
+      >
+        <KpiTile
+          title="ECDH-PSI PRIVACY"
+          value="100%"
+          suffix=" Zero-Leak"
+          icon={KeyRound}
+          iconColor="#4F46E5"
+          iconBg="#EEF2FF"
+          statusBadge={{ text: "SECP256k1", variant: "emerald" }}
+          subtitle="Non-matching records mathematically protected"
+        />
+        <KpiTile
+          title="CIRCOM ZKP BOUND"
+          value="≤ ₹5.00L"
+          icon={Lock}
+          iconColor="#0D9488"
+          iconBg="#F0FDFA"
+          statusBadge={{ text: isZkpValid ? "SAT VERIFIED" : "FAIL CLOSED", variant: isZkpValid ? "emerald" : "rose" }}
+          subtitle="Zero-knowledge private transaction sum proof"
+        />
+        <KpiTile
+          title="PBFT QUORUM"
+          value="3 / 4"
+          suffix=" Nodes"
+          icon={Network}
+          iconColor="#9333EA"
+          iconBg="#FAF5FF"
+          statusBadge={{ text: "2f + 1 MET", variant: "emerald" }}
+          subtitle="Tolerates 1 Byzantine forged/crashing node"
+        />
+        <KpiTile
+          title="CLAIM DAG STATES"
+          value="5"
+          suffix=" States"
+          icon={Layers}
+          iconColor="#EA580C"
+          iconBg="#FFF7ED"
+          statusBadge={{ text: excludeScreenshot ? "CHALLENGER" : "BASELINE", variant: "indigo" }}
+          subtitle="Acyclic causal derivation and ablation proof"
+        />
+      </div>
+
+      {/* 3. WORKBENCH SUB-HEADER & NAVIGATION TABS */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "#FFFFFF",
+          padding: "6px 12px",
+          borderRadius: "8px",
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <ShieldCheck size={18} color="#4F46E5" />
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
+            Cryptographic & Formal Verification Workstreams
+          </span>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
+              background: "#ECFDF5",
+              color: "#059669",
+              border: "1px solid #A7F3D0",
+            }}
+          >
+            SUTRAM 2026 MEMBER B
+          </span>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium">
-          <button
-            onClick={() => setActiveTab("psi")}
-            className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-              activeTab === "psi"
-                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>1. Private Set Intersection</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("zkp")}
-            className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-              activeTab === "zkp"
-                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>2. Zero-Knowledge Proofs</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("pbft")}
-            className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-              activeTab === "pbft"
-                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Network className="w-3.5 h-3.5" />
-            <span>3. PBFT Consensus</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("claims")}
-            className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
-              activeTab === "claims"
-                ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>4. Claim DAG & Counterfactual</span>
-          </button>
+        {/* Tab Buttons */}
+        <div style={{ display: "flex", gap: "4px", background: "#F1F5F9", padding: "3px", borderRadius: "6px" }}>
+          {[
+            { id: "psi", label: "1. Private Set Intersection", icon: KeyRound },
+            { id: "zkp", label: "2. Zero-Knowledge Proofs", icon: Lock },
+            { id: "pbft", label: "3. PBFT Consensus", icon: Network },
+            { id: "claims", label: "4. Claim DAG & Counterfactual", icon: Layers },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "5px 12px",
+                  borderRadius: "5px",
+                  border: isActive ? "1px solid #CBD5E1" : "1px solid transparent",
+                  background: isActive ? "#FFFFFF" : "transparent",
+                  color: isActive ? "#4F46E5" : "#64748B",
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <Icon size={13} color={isActive ? "#4F46E5" : "#64748B"} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      {/* 4. TAB CONTENT CONTAINER */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          paddingRight: "2px",
+        }}
+      >
         {/* ==================================================================== */}
         {/* TAB 1: PRIVATE SET INTERSECTION (ECDH-PSI)                           */}
         {/* ==================================================================== */}
         {activeTab === "psi" && (
-          <div className="space-y-6 max-w-6xl mx-auto">
-            {/* Context Banner */}
-            <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/20 flex items-start space-x-3">
-              <KeyRound className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200">
-                  Workstream B1: Multi-Party Elliptic Curve Diffie-Hellman Private Set Intersection (ECDH-PSI)
-                </h3>
-                <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
-                  Enables Bank A (HDFC), Bank B (ICICI), and Institution C (AXIS) to discover matching mule identifiers
-                  without revealing non-matching customer records. Uses SECP256k1 discrete logarithm double-blinding:{" "}
-                  <code className="px-1 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/80 font-mono text-[11px]">
-                    P_AB = k_A · k_B · H(x) == k_B · k_A · H(y) = P_BA
-                  </code>
-                  . Complies with Section 63 BSA 2023 & DPDPA 2023 purpose limitation.
-                </p>
-              </div>
-            </div>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {/* Controls Bar */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shadow-sm">
-              <div className="flex items-center space-x-4">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#FFFFFF",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
-                    CORRELATION IDENTIFIER TYPE
-                  </label>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>
+                    Correlation Identifier Type
+                  </span>
                   <select
                     value={psiIdType}
                     onChange={(e) => setPsiIdType(e.target.value as any)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:ring-2 focus:ring-indigo-500"
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid #CBD5E1",
+                      background: "#F8FAFC",
+                      color: "#0F172A",
+                    }}
                   >
                     <option value="MSISDN">Mobile Phone Number (Indian E.164 +91)</option>
                     <option value="PAN">Permanent Account Number (PAN)</option>
                     <option value="UPI_VPA">Virtual Payment Address (UPI VPA)</option>
                   </select>
                 </div>
-                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+
+                <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} />
+
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
-                    PARTICIPATING INSTITUTIONS
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>
+                    Participating Inter-Bank Nodes
                   </span>
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-900">
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
                       HDFC Bank (Bank A)
                     </span>
-                    <span className="text-slate-400 font-bold">+</span>
-                    <span className="px-2 py-1 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-200 dark:border-amber-900">
+                    <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
+                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A" }}>
                       ICICI Bank (Bank B)
                     </span>
-                    <span className="text-slate-400 font-bold">+</span>
-                    <span className="px-2 py-1 rounded bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-semibold border border-purple-200 dark:border-purple-900">
+                    <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
+                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FAF5FF", color: "#7E22CE", border: "1px solid #E9D5FF" }}>
                       Axis Bank (Node C)
                     </span>
                   </div>
@@ -243,153 +330,240 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
               </div>
 
               <button
+                type="button"
                 onClick={handleRunPsi}
                 disabled={psiRunning}
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center space-x-2 shadow-md transition-all disabled:opacity-50"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: psiRunning ? "#94A3B8" : "#4F46E5",
+                  color: "#FFFFFF",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: psiRunning ? "wait" : "pointer",
+                  boxShadow: "0 1px 3px rgba(79,70,229,0.3)",
+                }}
               >
                 {psiRunning ? (
                   <>
-                    <RotateCcw className="w-4 h-4 animate-spin" />
+                    <RotateCcw size={14} className="animate-spin" />
                     <span>Blinding SECP256k1 Points...</span>
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4" />
+                    <Play size={14} />
                     <span>Execute Tripartite ECDH-PSI</span>
                   </>
                 )}
               </button>
             </div>
 
-            {/* 3 Institution Vault Cards */}
-            <div className="grid grid-cols-3 gap-4">
-              {/* HDFC Vault */}
-              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="font-bold text-xs text-blue-700 dark:text-blue-400">INST_HDFC (Complainant Bank)</span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-mono">
+            {/* 3 Bank Vault Cards Grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+              {/* Vault 1: HDFC */}
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #BFDBFE",
+                  padding: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#1D4ED8" }}>INST_HDFC (Complainant Bank)</span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#EFF6FF", color: "#1D4ED8", padding: "1px 6px", borderRadius: "4px" }}>
                     {bankData.HDFC[psiIdType].length} Records
                   </span>
                 </div>
-                <div className="space-y-1.5 text-xs font-mono">
-                  {bankData.HDFC[psiIdType].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-2 rounded border flex items-center justify-between ${
-                        item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200"
-                          : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                      }`}
-                    >
-                      <span>{item}</span>
-                      <span className="text-[10px] font-sans px-1 rounded bg-white dark:bg-slate-800 border">
-                        {item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "Target Mule"
-                          : "Confidential Client"}
-                      </span>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {bankData.HDFC[psiIdType].map((item, idx) => {
+                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                          background: isMule ? "#FFF1F2" : "#F8FAFC",
+                          fontSize: "11px",
+                          fontFamily: "var(--font-mono, monospace)",
+                        }}
+                      >
+                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
+                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
+                          {isMule ? "Target Mule" : "Confidential"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="pt-2 text-[11px] text-slate-400 italic">
-                  Private Key: <span className="font-mono text-slate-500">k_HDFC = 0x8f2a...c4e1</span> (Kept local)
+                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
+                  Private Key: <code style={{ color: "#475569" }}>k_HDFC = 0x8f2a...c4e1</code> (Kept air-gapped)
                 </div>
               </div>
 
-              {/* ICICI Vault */}
-              <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="font-bold text-xs text-amber-700 dark:text-amber-400">INST_ICICI (Layer-2 Bank)</span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-mono">
+              {/* Vault 2: ICICI */}
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #FDE68A",
+                  padding: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#B45309" }}>INST_ICICI (Layer-2 Mule Bank)</span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#FFFBEB", color: "#B45309", padding: "1px 6px", borderRadius: "4px" }}>
                     {bankData.ICICI[psiIdType].length} Records
                   </span>
                 </div>
-                <div className="space-y-1.5 text-xs font-mono">
-                  {bankData.ICICI[psiIdType].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-2 rounded border flex items-center justify-between ${
-                        item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200"
-                          : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                      }`}
-                    >
-                      <span>{item}</span>
-                      <span className="text-[10px] font-sans px-1 rounded bg-white dark:bg-slate-800 border">
-                        {item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "Target Mule"
-                          : "Confidential Client"}
-                      </span>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {bankData.ICICI[psiIdType].map((item, idx) => {
+                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                          background: isMule ? "#FFF1F2" : "#F8FAFC",
+                          fontSize: "11px",
+                          fontFamily: "var(--font-mono, monospace)",
+                        }}
+                      >
+                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
+                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
+                          {isMule ? "Target Mule" : "Confidential"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="pt-2 text-[11px] text-slate-400 italic">
-                  Private Key: <span className="font-mono text-slate-500">k_ICICI = 0x3d7b...9a12</span> (Kept local)
+                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
+                  Private Key: <code style={{ color: "#475569" }}>k_ICICI = 0x3d7b...9a12</code> (Kept air-gapped)
                 </div>
               </div>
 
-              {/* AXIS Vault */}
-              <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-white dark:bg-slate-900 shadow-sm space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <span className="font-bold text-xs text-purple-700 dark:text-purple-400">INST_AXIS (Beneficiary Node)</span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 font-mono">
+              {/* Vault 3: AXIS */}
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  borderRadius: "8px",
+                  border: "1px solid #E9D5FF",
+                  padding: "10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#7E22CE" }}>INST_AXIS (Beneficiary Node)</span>
+                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#FAF5FF", color: "#7E22CE", padding: "1px 6px", borderRadius: "4px" }}>
                     {bankData.AXIS[psiIdType].length} Records
                   </span>
                 </div>
-                <div className="space-y-1.5 text-xs font-mono">
-                  {bankData.AXIS[psiIdType].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-2 rounded border flex items-center justify-between ${
-                        item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200"
-                          : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                      }`}
-                    >
-                      <span>{item}</span>
-                      <span className="text-[10px] font-sans px-1 rounded bg-white dark:bg-slate-800 border">
-                        {item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate")
-                          ? "Target Mule"
-                          : "Confidential Client"}
-                      </span>
-                    </div>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {bankData.AXIS[psiIdType].map((item, idx) => {
+                    const isMule = item.includes("9876543210") || item.includes("BZCPK8812M") || item.includes("mule_syndicate");
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                          background: isMule ? "#FFF1F2" : "#F8FAFC",
+                          fontSize: "11px",
+                          fontFamily: "var(--font-mono, monospace)",
+                        }}
+                      >
+                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
+                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
+                          {isMule ? "Target Mule" : "Confidential"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="pt-2 text-[11px] text-slate-400 italic">
-                  Private Key: <span className="font-mono text-slate-500">k_AXIS = 0x11c0...4f88</span> (Kept local)
+                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
+                  Private Key: <code style={{ color: "#475569" }}>k_AXIS = 0x11c0...4f88</code> (Kept air-gapped)
                 </div>
               </div>
             </div>
 
-            {/* Discovered Match Output */}
+            {/* Discovered Match Output Banner */}
             {psiCompleted && (
-              <div className="p-5 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="font-bold text-sm text-emerald-900 dark:text-emerald-100">
+              <div
+                style={{
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  borderRadius: "8px",
+                  padding: "12px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <CheckCircle2 size={18} color="#059669" />
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#065F46" }}>
                       Tripartite Intersection Result: 1 Inter-Bank Mule Discovered
                     </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
+                  <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "#D1FAE5", color: "#065F46" }}>
                     Zero Non-Matching Accounts Exposed
                   </span>
                 </div>
 
-                <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 font-mono text-xs flex items-center justify-between">
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: "#FFFFFF",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #D1FAE5",
+                    fontSize: "12px",
+                    fontFamily: "var(--font-mono, monospace)",
+                  }}
+                >
                   <div>
-                    <span className="text-slate-500 mr-2">Discovered Permitted Match:</span>
-                    <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+                    <span style={{ color: "#64748B", marginRight: "8px" }}>Discovered Permitted Match:</span>
+                    <span style={{ fontWeight: 800, color: "#BE123C", fontSize: "13px" }}>
                       {psiIdType === "MSISDN" ? "+919876543210" : psiIdType === "PAN" ? "BZCPK8812M" : "mule_syndicate@okhdfcbank"}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-400">
-                    Curve Point Digest: <code className="text-indigo-600 dark:text-indigo-400 font-bold">0279be667ef9dcbb...a06295</code>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>
+                    Curve Point Digest: <code style={{ fontWeight: 700, color: "#4F46E5" }}>0279be667ef9dcbb...a06295</code>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1">
-                  <span>Privacy Proof: Discrete logarithm problem on SECP256k1 prevents dictionary recovery of unblinded inputs.</span>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">Audit Reference: #PSI-AUDIT-9941</span>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#047857" }}>
+                  <span>Discrete logarithm problem on SECP256k1 prevents dictionary recovery of unblinded inputs.</span>
+                  <span style={{ fontWeight: 700 }}>Audit Reference: #PSI-AUDIT-9941</span>
                 </div>
               </div>
             )}
@@ -400,183 +574,275 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 2: ZERO-KNOWLEDGE PROOFS (ZKP)                                   */}
         {/* ==================================================================== */}
         {activeTab === "zkp" && (
-          <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Context Banner */}
-            <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 flex items-start space-x-3">
-              <Lock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-blue-900 dark:text-blue-200">
-                  Workstream B2: Groth16 / Circom Zero-Knowledge Threshold Verifier
-                </h3>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  Enables a financial institution to mathematically prove that its batch of committed transactions
-                  satisfies a regulatory threshold constraint (e.g., Total Inflow ≤ ₹5,00,000) without disclosing
-                  individual transaction amounts, beneficiary identities, or account balances to investigators.
-                </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {/* Left Column: Prover Space */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+                padding: "14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <KeyRound size={16} color="#4F46E5" />
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
+                    Bank Air-Gapped Prover Space (Private)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPrivateWitness(!showPrivateWitness)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: "transparent",
+                    border: "none",
+                    color: "#4F46E5",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {showPrivateWitness ? <EyeOff size={13} /> : <Eye size={13} />}
+                  <span>{showPrivateWitness ? "Hide Witness" : "Inspect Witness"}</span>
+                </button>
+              </div>
+
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B" }}>
+                PRIVATE TRANSACTION BATCH (5 ITEMS):
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                {privateTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      background: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
+                      fontSize: "11px",
+                      fontFamily: "var(--font-mono, monospace)",
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 700, color: "#334155", marginRight: "8px" }}>{tx.id}</span>
+                      <span style={{ color: "#64748B" }}>→ {tx.recipient}</span>
+                    </div>
+                    <span style={{ fontWeight: 700, color: "#0F172A" }}>
+                      {showPrivateWitness ? `₹${tx.amount.toLocaleString()}` : "••••••••"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  background: "#EEF2FF",
+                  border: "1px solid #C7D2FE",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                <span style={{ color: "#4338CA" }}>Calculated Private Sum:</span>
+                <span style={{ color: "#3730A3", fontFamily: "var(--font-mono, monospace)", fontSize: "13px" }}>
+                  {showPrivateWitness ? `₹${totalBatchAmount.toLocaleString()}` : "HIDDEN (PASSIVE WITNESS)"}
+                </span>
+              </div>
+
+              {/* Circuit Info Box */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  borderRadius: "6px",
+                  border: "1px solid #E2E8F0",
+                  padding: "8px 12px",
+                  fontSize: "11px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                  color: "#64748B",
+                  marginTop: "auto",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Circom Circuit:</span>
+                  <code style={{ color: "#4F46E5", fontWeight: 700 }}>transaction_threshold.circom</code>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>R1CS Constraints:</span>
+                  <span style={{ fontFamily: "var(--font-mono, monospace)" }}>132 linear constraints</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Proving System:</span>
+                  <span style={{ fontFamily: "var(--font-mono, monospace)" }}>Groth16 / BN254</span>
+                </div>
               </div>
             </div>
 
-            {/* Split Grid: Prover (Private) vs Verifier (Public) */}
-            <div className="grid grid-cols-2 gap-6">
-              {/* Left Column: Prover Space */}
-              <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <KeyRound className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Bank Air-Gapped Prover Space (Private)
-                    </h4>
-                  </div>
-                  <button
-                    onClick={() => setShowPrivateWitness(!showPrivateWitness)}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center space-x-1 font-medium"
-                  >
-                    {showPrivateWitness ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    <span>{showPrivateWitness ? "Hide Witness" : "Inspect Witness"}</span>
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-xs text-slate-500 font-semibold">PRIVATE TRANSACTION BATCH (5 ITEMS):</div>
-                  <div className="space-y-1.5 font-mono text-xs">
-                    {privateTransactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="p-2 rounded bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between"
-                      >
-                        <div>
-                          <span className="font-bold text-slate-700 dark:text-slate-300 mr-2">{tx.id}</span>
-                          <span className="text-slate-500">→ {tx.recipient}</span>
-                        </div>
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          {showPrivateWitness ? `₹${tx.amount.toLocaleString()}` : "••••••••"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 flex items-center justify-between text-xs font-semibold">
-                  <span>Calculated Private Sum:</span>
-                  <span className="font-bold text-indigo-700 dark:text-indigo-300 font-mono text-sm">
-                    {showPrivateWitness ? `₹${totalBatchAmount.toLocaleString()}` : "HIDDEN (PASSIVE WITNESS)"}
+            {/* Right Column: Verifier Space */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+                padding: "14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <ShieldCheck size={16} color="#059669" />
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
+                    Independent Auditor Verifier Space (Public)
                   </span>
                 </div>
+                <span style={{ fontSize: "10px", fontWeight: 700, background: "#F1F5F9", color: "#64748B", padding: "2px 6px", borderRadius: "4px" }}>
+                  Public Inputs Only
+                </span>
+              </div>
 
-                {/* Circuit Info */}
-                <div className="p-3 rounded bg-slate-50 dark:bg-slate-800/40 border text-[11px] space-y-1 text-slate-500">
-                  <div className="flex justify-between">
-                    <span>Circom Circuit:</span>
-                    <code className="text-indigo-600 dark:text-indigo-400 font-mono">transaction_threshold.circom</code>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>R1CS Constraints:</span>
-                    <span className="font-mono">132 linear constraints</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Proving System:</span>
-                    <span className="font-mono">Groth16 / BN254</span>
-                  </div>
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "4px" }}>
+                  PUBLIC REGULATORY THRESHOLD (IN RUPEES)
+                </label>
+                <input
+                  type="number"
+                  value={zkpThreshold}
+                  onChange={(e) => setZkpThreshold(Number(e.target.value))}
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    border: "1px solid #CBD5E1",
+                    background: "#F8FAFC",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono, monospace)",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  borderRadius: "6px",
+                  border: "1px solid #E2E8F0",
+                  padding: "8px 12px",
+                  fontSize: "11px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                  color: "#64748B",
+                  fontFamily: "var(--font-mono, monospace)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Expected Merkle Root:</span>
+                  <span style={{ fontWeight: 700, color: "#0F172A" }}>0x4a9b...7e11</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Batch Size:</span>
+                  <span>5 transactions</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Proof Elements (πA, πB, πC):</span>
+                  <span style={{ color: "#059669", fontWeight: 700 }}>3 group points (256 bytes)</span>
                 </div>
               </div>
 
-              {/* Right Column: Verifier Space */}
-              <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Independent Auditor Verifier Space (Public)
-                    </h4>
-                  </div>
-                  <span className="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-slate-500">
-                    Public Inputs Only
-                  </span>
-                </div>
+              {/* Adversarial Attack Simulator */}
+              <div
+                style={{
+                  background: "#FFFBEB",
+                  borderRadius: "6px",
+                  border: "1px solid #FDE68A",
+                  padding: "10px 12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                }}
+              >
+                <span style={{ fontSize: "10px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
+                  Adversarial Attack Simulator (Judge Testing)
+                </span>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#78350F", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={zkpTamperProof}
+                    onChange={(e) => setZkpTamperProof(e.target.checked)}
+                  />
+                  <span>Inject Forged πA Group Point (Tampered Proof Element)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#78350F", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={zkpTamperThreshold}
+                    onChange={(e) => setZkpTamperThreshold(e.target.checked)}
+                  />
+                  <span>Tamper Public Threshold to ₹2,00,000 (Violate Bound)</span>
+                </label>
+              </div>
 
-                <div className="space-y-3 text-xs">
+              {/* Verification Outcome */}
+              <div
+                style={{
+                  background: isZkpValid ? "#ECFDF5" : "#FFF1F2",
+                  border: isZkpValid ? "1px solid #A7F3D0" : "1px solid #FECDD3",
+                  borderRadius: "8px",
+                  padding: "10px 14px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: "auto",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  {isZkpValid ? <CheckCircle2 size={20} color="#059669" /> : <XCircle size={20} color="#BE123C" />}
                   <div>
-                    <label className="text-slate-500 font-semibold block mb-1">PUBLIC REGULATORY THRESHOLD (IN RUPEES)</label>
-                    <input
-                      type="number"
-                      value={zkpThreshold}
-                      onChange={(e) => setZkpThreshold(Number(e.target.value))}
-                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono font-bold text-sm"
-                    />
-                  </div>
-
-                  <div className="p-3 rounded bg-slate-50 dark:bg-slate-800/50 border font-mono text-[11px] space-y-1 text-slate-600 dark:text-slate-400">
-                    <div className="flex justify-between">
-                      <span>Expected Merkle Root:</span>
-                      <span className="text-slate-900 dark:text-white font-bold">0x4a9b...7e11</span>
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: isZkpValid ? "#065F46" : "#9F1239" }}>
+                      {isZkpValid ? "ZKP VERIFICATION: ACCEPTED" : "ZKP VERIFICATION: REJECTED (FAIL CLOSED)"}
                     </div>
-                    <div className="flex justify-between">
-                      <span>Batch Size:</span>
-                      <span>5 transactions</span>
+                    <div style={{ fontSize: "10px", color: isZkpValid ? "#047857" : "#BE123C", opacity: 0.9 }}>
+                      {isZkpValid
+                        ? `Mathematically proven: Batch sum ≤ ₹${zkpThreshold.toLocaleString()} without revealing private amounts.`
+                        : zkpTamperProof
+                        ? "Cryptographic rejection: Malformed or forged group element πA."
+                        : "Public inputs hash mismatch: Constraint sum > threshold."}
                     </div>
-                    <div className="flex justify-between">
-                      <span>Proof Elements (πA, πB, πC):</span>
-                      <span className="text-emerald-600">3 group points (256 bytes)</span>
-                    </div>
-                  </div>
-
-                  {/* Adversarial Tamper Toggles */}
-                  <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 space-y-2">
-                    <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 block">
-                      ADVERSARIAL ATTACK SIMULATOR (JUDGE TESTING)
-                    </span>
-                    <label className="flex items-center space-x-2 text-xs cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={zkpTamperProof}
-                        onChange={(e) => setZkpTamperProof(e.target.checked)}
-                        className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
-                      />
-                      <span>Inject Forged πA Group Point (Tampered Proof Element)</span>
-                    </label>
-                    <label className="flex items-center space-x-2 text-xs cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={zkpTamperThreshold}
-                        onChange={(e) => setZkpTamperThreshold(e.target.checked)}
-                        className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
-                      />
-                      <span>Tamper Public Threshold to ₹2,00,000 (Violate Bound)</span>
-                    </label>
-                  </div>
-
-                  {/* Verification Outcome */}
-                  <div
-                    className={`p-4 rounded-xl border flex items-center justify-between ${
-                      isZkpValid
-                        ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
-                        : "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      {isZkpValid ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                      ) : (
-                        <XCircle className="w-6 h-6 text-rose-600 dark:text-rose-400 flex-shrink-0" />
-                      )}
-                      <div>
-                        <div className="font-bold text-sm">
-                          {isZkpValid ? "ZKP VERIFICATION: ACCEPTED" : "ZKP VERIFICATION: REJECTED (FAIL CLOSED)"}
-                        </div>
-                        <div className="text-[11px] opacity-80">
-                          {isZkpValid
-                            ? `Mathematically proven: Batch sum ≤ ₹${zkpThreshold.toLocaleString()} without revealing private amounts.`
-                            : zkpTamperProof
-                            ? "Cryptographic rejection: Malformed or forged group element πA."
-                            : "Public inputs hash mismatch: Constraint sum > threshold."}
-                        </div>
-                      </div>
-                    </div>
-                    <span className="font-mono text-xs font-bold px-2 py-1 rounded bg-white dark:bg-slate-900 border">
-                      {isZkpValid ? "0.42 ms" : "0.08 ms"}
-                    </span>
                   </div>
                 </div>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono, monospace)",
+                    background: "#FFFFFF",
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    border: "1px solid #E2E8F0",
+                    color: "#334155",
+                  }}
+                >
+                  {isZkpValid ? "0.42 ms" : "0.08 ms"}
+                </span>
               </div>
             </div>
           </div>
@@ -586,80 +852,102 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 3: 4-NODE PBFT CONSENSUS EXPERIMENT                             */}
         {/* ==================================================================== */}
         {activeTab === "pbft" && (
-          <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Context Banner */}
-            <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 flex items-start space-x-3">
-              <Network className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-purple-900 dark:text-purple-200">
-                  Workstream B4: 4-Node Practical Byzantine Fault Tolerance (PBFT) Experiment
-                </h3>
-                <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                  Coordinates real-time inter-bank mule freezing directives across 4 validator nodes (n=4, f=1).
-                  Tolerates up to 1 crashing or actively Byzantine node sending forged digests while guaranteeing quorum{" "}
-                  <code className="px-1 py-0.5 rounded bg-purple-100 dark:bg-purple-900/80 font-mono text-[11px]">
-                    2f + 1 = 3
-                  </code>
-                  .
-                </p>
-              </div>
-            </div>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {/* Controls Bar */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shadow-sm">
-              <div className="flex items-center space-x-4">
-                <div>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
-                    BYZANTINE NODE 3 FAULT BEHAVIOR
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setPbftFaultMode("HONEST")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                        pbftFaultMode === "HONEST"
-                          ? "bg-emerald-50 dark:bg-emerald-950 border-emerald-400 text-emerald-800 dark:text-emerald-200 font-bold"
-                          : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                      }`}
-                    >
-                      1. All 4 Nodes Honest
-                    </button>
-                    <button
-                      onClick={() => setPbftFaultMode("SILENT")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                        pbftFaultMode === "SILENT"
-                          ? "bg-amber-50 dark:bg-amber-950 border-amber-400 text-amber-800 dark:text-amber-200 font-bold"
-                          : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                      }`}
-                    >
-                      2. Node 3 Crashed / Silent
-                    </button>
-                    <button
-                      onClick={() => setPbftFaultMode("CONFLICTING")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                        pbftFaultMode === "CONFLICTING"
-                          ? "bg-rose-50 dark:bg-rose-950 border-rose-400 text-rose-800 dark:text-rose-200 font-bold"
-                          : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                      }`}
-                    >
-                      3. Node 3 Active Byzantine Forgery
-                    </button>
-                  </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#FFFFFF",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <div>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>
+                  Byzantine Node 3 Fault Behavior
+                </span>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setPbftFaultMode("HONEST")}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: pbftFaultMode === "HONEST" ? 700 : 500,
+                      background: pbftFaultMode === "HONEST" ? "#ECFDF5" : "#F8FAFC",
+                      color: pbftFaultMode === "HONEST" ? "#065F46" : "#64748B",
+                      border: pbftFaultMode === "HONEST" ? "1px solid #A7F3D0" : "1px solid #CBD5E1",
+                      cursor: "pointer",
+                    }}
+                  >
+                    1. All 4 Nodes Honest
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPbftFaultMode("SILENT")}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: pbftFaultMode === "SILENT" ? 700 : 500,
+                      background: pbftFaultMode === "SILENT" ? "#FFFBEB" : "#F8FAFC",
+                      color: pbftFaultMode === "SILENT" ? "#B45309" : "#64748B",
+                      border: pbftFaultMode === "SILENT" ? "1px solid #FDE68A" : "1px solid #CBD5E1",
+                      cursor: "pointer",
+                    }}
+                  >
+                    2. Node 3 Crashed / Silent
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPbftFaultMode("CONFLICTING")}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: pbftFaultMode === "CONFLICTING" ? 700 : 500,
+                      background: pbftFaultMode === "CONFLICTING" ? "#FFF1F2" : "#F8FAFC",
+                      color: pbftFaultMode === "CONFLICTING" ? "#9F1239" : "#64748B",
+                      border: pbftFaultMode === "CONFLICTING" ? "1px solid #FECDD3" : "1px solid #CBD5E1",
+                      cursor: "pointer",
+                    }}
+                  >
+                    3. Node 3 Active Byzantine Forgery
+                  </button>
                 </div>
               </div>
 
               <button
+                type="button"
                 onClick={handleRunPbft}
                 disabled={pbftRunning}
-                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center space-x-2 shadow-md transition-all disabled:opacity-50"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 16px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: pbftRunning ? "#94A3B8" : "#9333EA",
+                  color: "#FFFFFF",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: pbftRunning ? "wait" : "pointer",
+                  boxShadow: "0 1px 3px rgba(147,51,234,0.3)",
+                }}
               >
                 {pbftRunning ? (
                   <>
-                    <RotateCcw className="w-4 h-4 animate-spin" />
+                    <RotateCcw size={14} className="animate-spin" />
                     <span>Exchanging 3-Phase Votes...</span>
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4" />
+                    <Play size={14} />
                     <span>Simulate Consensus Round #{pbftRound}</span>
                   </>
                 )}
@@ -667,87 +955,110 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
             </div>
 
             {/* 4 Validator Grid */}
-            <div className="grid grid-cols-4 gap-4">
-              {pbftNodes.map((node) => (
-                <div
-                  key={node.id}
-                  className={`p-4 rounded-xl border bg-white dark:bg-slate-900 shadow-sm space-y-3 ${
-                    node.role === "Byzantine"
-                      ? "border-rose-400 dark:border-rose-800 bg-rose-50/20"
-                      : "border-slate-200 dark:border-slate-800"
-                  }`}
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <span className="font-bold text-xs">{node.name}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
-                        node.role === "Leader"
-                          ? "bg-indigo-100 text-indigo-800"
-                          : node.role === "Byzantine"
-                          ? "bg-rose-100 text-rose-800"
-                          : "bg-slate-100 text-slate-800"
-                      }`}
-                    >
-                      {node.role}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between text-slate-500">
-                      <span>Pre-Prepare:</span>
-                      <span className="font-mono text-emerald-600 font-bold">Verified</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Prepare Vote:</span>
-                      <span className="font-mono text-emerald-600 font-bold">
-                        {node.role === "Byzantine" && pbftFaultMode === "CONFLICTING"
-                          ? "Forged Digest"
-                          : node.role === "Byzantine" && pbftFaultMode === "SILENT"
-                          ? "Dropped"
-                          : "Quorum Met (2/2)"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Commit Vote:</span>
-                      <span className="font-mono text-emerald-600 font-bold">
-                        {node.role === "Byzantine" && pbftFaultMode === "CONFLICTING"
-                          ? "Rejected"
-                          : node.role === "Byzantine" && pbftFaultMode === "SILENT"
-                          ? "No Response"
-                          : "Quorum Met (3/3)"}
-                      </span>
-                    </div>
-                  </div>
-
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+              {pbftNodes.map((node) => {
+                const isByz = node.role === "Byzantine";
+                return (
                   <div
-                    className={`pt-2 text-center text-xs font-bold py-1.5 rounded ${
-                      node.status === "COMMITTED"
-                        ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200"
-                        : "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200"
-                    }`}
+                    key={node.id}
+                    style={{
+                      background: isByz ? "#FFF1F2" : "#FFFFFF",
+                      borderRadius: "8px",
+                      border: isByz ? "1px solid #FECDD3" : "1px solid #E2E8F0",
+                      padding: "12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
                   >
-                    {node.status}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>{node.name}</span>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                          background: node.role === "Leader" ? "#EEF2FF" : isByz ? "#FFE4E6" : "#F1F5F9",
+                          color: node.role === "Leader" ? "#4338CA" : isByz ? "#9F1239" : "#475569",
+                        }}
+                      >
+                        {node.role}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", color: "#64748B" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Pre-Prepare:</span>
+                        <span style={{ fontWeight: 700, color: "#059669" }}>Verified</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Prepare Vote:</span>
+                        <span style={{ fontWeight: 700, color: isByz && pbftFaultMode !== "HONEST" ? "#DC2626" : "#059669" }}>
+                          {isByz && pbftFaultMode === "CONFLICTING"
+                            ? "Forged Digest"
+                            : isByz && pbftFaultMode === "SILENT"
+                            ? "Dropped"
+                            : "Quorum Met (2/2)"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Commit Vote:</span>
+                        <span style={{ fontWeight: 700, color: isByz && pbftFaultMode !== "HONEST" ? "#DC2626" : "#059669" }}>
+                          {isByz && pbftFaultMode === "CONFLICTING"
+                            ? "Rejected"
+                            : isByz && pbftFaultMode === "SILENT"
+                            ? "No Response"
+                            : "Quorum Met (3/3)"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        textAlign: "center",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        padding: "4px",
+                        borderRadius: "5px",
+                        marginTop: "auto",
+                        background: node.status === "COMMITTED" ? "#D1FAE5" : "#FFE4E6",
+                        color: node.status === "COMMITTED" ? "#065F46" : "#9F1239",
+                      }}
+                    >
+                      {node.status}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Quorum Summary */}
-            <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div
+              style={{
+                background: "#ECFDF5",
+                border: "1px solid #A7F3D0",
+                borderRadius: "8px",
+                padding: "10px 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <CheckCircle2 size={18} color="#059669" />
                 <div>
-                  <span className="font-bold text-xs text-emerald-900 dark:text-emerald-100 block">
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#065F46", display: "block" }}>
                     PBFT Consensus Guaranteed: Quorum 3/4 Committed (2f + 1 Met)
                   </span>
-                  <span className="text-[11px] text-slate-500">
-                    Even under active adversarial forgery by Node 3, honest nodes 0, 1, and 2 reach strict agreement.
+                  <span style={{ fontSize: "10px", color: "#047857" }}>
+                    Even under active adversarial forgery by Node 3, honest nodes 0, 1, and 2 reach strict distributed agreement.
                   </span>
                 </div>
               </div>
-              <div className="text-right text-xs font-mono">
-                <span className="text-slate-500 block">Round Latency:</span>
-                <span className="font-bold text-slate-900 dark:text-white">0.90 ms (32 messages)</span>
+              <div style={{ textAlign: "right", fontSize: "11px", fontFamily: "var(--font-mono, monospace)" }}>
+                <span style={{ color: "#64748B", display: "block" }}>Round Latency:</span>
+                <span style={{ fontWeight: 800, color: "#0F172A" }}>0.90 ms (32 messages)</span>
               </div>
             </div>
           </div>
@@ -757,120 +1068,158 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 4: CLAIM COMPILER & COUNTERFACTUAL ARENA                          */}
         {/* ==================================================================== */}
         {activeTab === "claims" && (
-          <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Context Banner */}
-            <div className="p-4 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/50 dark:bg-teal-950/20 flex items-start space-x-3">
-              <Layers className="w-5 h-5 text-teal-600 dark:text-teal-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-bold text-teal-900 dark:text-teal-200">
-                  Workstream A1 & A3: Forensic Claim Compiler & Counterfactual Evidence Exclusion
-                </h3>
-                <p className="text-xs text-teal-700 dark:text-teal-300 mt-1">
-                  Organizes investigative observations into an acyclic dependency DAG across 5 formal states:{" "}
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">SUPPORTED</span>,{" "}
-                  <span className="font-semibold text-rose-700 dark:text-rose-300">CONTRADICTED</span>,{" "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-300">UNCERTAIN</span>,{" "}
-                  <span className="font-semibold text-slate-600">UNSUPPORTED</span>, and{" "}
-                  <span className="font-semibold text-slate-400">NOT_EVALUATED</span>. Toggle the counterfactual exclusion
-                  below to see which findings dissolve and which independent corroborations survive.
-                </p>
-              </div>
-            </div>
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {/* Counterfactual Exclusion Toggle */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shadow-sm">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#FFFFFF",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
               <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  COUNTERFACTUAL EVIDENCE CHALLENGE
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", display: "block" }}>
+                  COUNTERFACTUAL EVIDENCE CHALLENGE (DEFENSE EXCLUSION)
                 </span>
-                <span className="text-xs text-slate-500">
+                <span style={{ fontSize: "11px", color: "#64748B" }}>
                   Simulate legal defense objection: exclude unverified WhatsApp receipt screenshot (ART-SCREENSHOT)
                 </span>
               </div>
               <button
+                type="button"
                 onClick={() => setExcludeScreenshot(!excludeScreenshot)}
-                className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all flex items-center space-x-2 ${
-                  excludeScreenshot
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-600/20"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border hover:bg-slate-200"
-                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 14px",
+                  borderRadius: "6px",
+                  border: excludeScreenshot ? "none" : "1px solid #CBD5E1",
+                  background: excludeScreenshot ? "#DC2626" : "#F8FAFC",
+                  color: excludeScreenshot ? "#FFFFFF" : "#0F172A",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: excludeScreenshot ? "0 1px 3px rgba(220,38,38,0.3)" : "none",
+                }}
               >
                 <span>{excludeScreenshot ? "Artifact Excluded (Challenger Run)" : "Exclude Screenshot Artifact"}</span>
               </button>
             </div>
 
             {/* Claim DAG List */}
-            <div className="space-y-3">
-              {/* Claim 1: Disputed Screenshot Claim */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {/* Claim 1 */}
               <div
-                className={`p-4 rounded-xl border transition-all ${
-                  excludeScreenshot
-                    ? "bg-slate-50/50 dark:bg-slate-900/30 border-slate-300 dark:border-slate-800 opacity-60"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm"
-                }`}
+                style={{
+                  background: excludeScreenshot ? "#F8FAFC" : "#FFFFFF",
+                  border: excludeScreenshot ? "1px solid #E2E8F0" : "1px solid #CBD5E1",
+                  borderRadius: "8px",
+                  padding: "12px 14px",
+                  opacity: excludeScreenshot ? 0.65 : 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
               >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900 dark:text-white">CLM-01: Disputed ₹15,000 Transfer Claim</span>
-                    <span className="text-slate-400">| Source: ART-SCREENSHOT</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-01: Disputed ₹15,000 Transfer Claim</span>
+                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-SCREENSHOT (Tier-3)</span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      excludeScreenshot
-                        ? "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                        : "bg-emerald-100 text-emerald-800"
-                    }`}
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      background: excludeScreenshot ? "#F1F5F9" : "#ECFDF5",
+                      color: excludeScreenshot ? "#64748B" : "#047857",
+                      border: excludeScreenshot ? "1px solid #E2E8F0" : "1px solid #A7F3D0",
+                    }}
                   >
                     {excludeScreenshot ? "UNSUPPORTED (DISSOLVED)" : "SUPPORTED"}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
                   {excludeScreenshot
                     ? "Finding deactivated: Primary supporting artifact was excluded from evidence scope."
                     : "Complainant asserts transfer of ₹15,000 based on unverified smartphone gallery screenshot."}
                 </p>
               </div>
 
-              {/* Claim 2: Actual Bank Debit */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900 dark:text-white">CLM-02: Core Finacle Bank Debit ₹2,500</span>
-                    <span className="text-slate-400">| Source: ART-FINACLE-LOG (T1 Authority)</span>
+              {/* Claim 2 */}
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-02: Core Finacle Bank Debit ₹2,500</span>
+                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-FINACLE-LOG (Tier-1 Authority)</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      background: "#ECFDF5",
+                      color: "#047857",
+                      border: "1px solid #A7F3D0",
+                    }}
+                  >
                     SUPPORTED (SURVIVES)
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+                <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
                   Core banking switch confirms actual debit of ₹2,500.00. Unaffected by screenshot exclusion.
                 </p>
               </div>
 
-              {/* Claim 3: Amount Mismatch Contradiction */}
+              {/* Claim 3 */}
               <div
-                className={`p-4 rounded-xl border transition-all ${
-                  excludeScreenshot
-                    ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800"
-                    : "bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800"
-                }`}
+                style={{
+                  background: excludeScreenshot ? "#ECFDF5" : "#FFF1F2",
+                  border: excludeScreenshot ? "1px solid #A7F3D0" : "1px solid #FECDD3",
+                  borderRadius: "8px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
               >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold">CLM-03: Amount Discrepancy Conflict</span>
-                    <span className="text-slate-400">| Z3 Formal Contradiction</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-03: Amount Discrepancy Conflict</span>
+                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Z3 SMT Formal Contradiction</span>
                   </div>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      excludeScreenshot
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-rose-100 text-rose-800"
-                    }`}
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      background: excludeScreenshot ? "#D1FAE5" : "#FFE4E6",
+                      color: excludeScreenshot ? "#065F46" : "#9F1239",
+                      border: excludeScreenshot ? "1px solid #A7F3D0" : "1px solid #FECDD3",
+                    }}
                   >
                     {excludeScreenshot ? "CONTRADICTION DISSOLVED" : "CONTRADICTED"}
                   </span>
                 </div>
-                <p className="text-xs mt-2">
+                <p style={{ margin: 0, fontSize: "11px", color: excludeScreenshot ? "#047857" : "#BE123C" }}>
                   {excludeScreenshot
                     ? "Contradiction resolved: Upon excluding the disputed screenshot, the conflict between ₹15,000 and ₹2,500 evaporates, leaving the authentic ₹2,500 debit."
                     : "Mathematical SMT conflict: Screenshot asserts ₹15,000 while Finacle switch asserts ₹2,500."}
@@ -883,4 +1232,3 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
     </div>
   );
 };
-

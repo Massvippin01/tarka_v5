@@ -176,13 +176,37 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
   const getStateBadge = (state: ClaimImpactItem["simulatedState"]) => {
     switch (state) {
       case "SUPPORTED":
-        return { label: "SUPPORTED", bg: "rgba(200, 247, 81, 0.14)", text: "#C8F751", border: "rgba(200, 247, 81, 0.35)", icon: <CheckCircle size={11} /> };
+        return {
+          label: "SUPPORTED",
+          bg: "#ECFDF5",
+          text: "#059669",
+          border: "#A7F3D0",
+          icon: <CheckCircle size={11} />,
+        };
       case "CONTRADICTED":
-        return { label: "CONTRADICTED", bg: "rgba(182, 91, 72, 0.15)", text: "#B65B48", border: "rgba(182, 91, 72, 0.35)", icon: <AlertTriangle size={11} /> };
+        return {
+          label: "CONTRADICTED",
+          bg: "#FFF1F2",
+          text: "#BE123C",
+          border: "#FECDD3",
+          icon: <AlertTriangle size={11} />,
+        };
       case "UNCERTAIN":
-        return { label: "UNCERTAIN", bg: "rgba(82, 124, 154, 0.15)", text: "#527C9A", border: "rgba(82, 124, 154, 0.35)", icon: <HelpCircle size={11} /> };
+        return {
+          label: "UNCERTAIN",
+          bg: "#EFF6FF",
+          text: "#2563EB",
+          border: "#BFDBFE",
+          icon: <HelpCircle size={11} />,
+        };
       case "UNSUPPORTED":
-        return { label: "COLLAPSED", bg: "rgba(255, 255, 255, 0.05)", text: "#9CA3AF", border: "rgba(255, 255, 255, 0.15)", icon: <XCircle size={11} /> };
+        return {
+          label: "COLLAPSED",
+          bg: "#F1F5F9",
+          text: "#475569",
+          border: "#CBD5E1",
+          icon: <XCircle size={11} />,
+        };
     }
   };
 
@@ -193,38 +217,54 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
     <div
       className={`claim-dependency-lens ${className}`}
       style={{
-        background: "var(--surface-primary, #152220)",
-        border: "1px solid var(--border-structural, rgba(107, 119, 112, 0.35))",
-        borderRadius: "10px",
+        background: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        borderRadius: "8px",
         padding: "16px",
-        color: "var(--text-primary, #F4F6F4)",
-        fontFamily: "var(--font-sans, sans-serif)",
+        color: "#0F172A",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid var(--border-subtle, rgba(107, 119, 112, 0.18))", paddingBottom: "12px" }}>
+      {/* 1. Header Bar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+          borderBottom: "1px solid #E2E8F0",
+          paddingBottom: "12px",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <GitBranch size={18} style={{ color: "var(--fieldnote-signal-lime, #C8F751)" }} />
-            <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, letterSpacing: "0.02em" }}>
+            <GitBranch size={18} color="#4F46E5" />
+            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.01em", color: "#0F172A" }}>
               CLAIM DEPENDENCY LENS & COUNTERFACTUAL ABLATION
             </h3>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
+                fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
-                background: "rgba(200, 247, 81, 0.12)",
-                color: "#C8F751",
-                border: "1px solid rgba(200, 247, 81, 0.32)",
+                background: "#EEF2FF",
+                color: "#4F46E5",
+                border: "1px solid #C7D2FE",
                 fontFamily: "var(--font-mono, monospace)",
               }}
             >
               FORMAL SMT IMPACT RE-EVALUATION
             </span>
           </div>
-          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary, #A3B1AA)" }}>
-            Ablate individual evidence pieces to observe formal constraint satisfaction and finding stability under counterfactual challenges for Case <span style={{ color: "#C8F751", fontFamily: "var(--font-mono, monospace)" }}>{caseId}</span>.
+          <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.4 }}>
+            Ablate individual evidence pieces to observe formal constraint satisfaction and finding stability under counterfactual challenges for Case{" "}
+            <span style={{ color: "#4F46E5", fontWeight: 700, fontFamily: "var(--font-mono, monospace)" }}>
+              {caseId}
+            </span>.
           </p>
         </div>
 
@@ -232,56 +272,78 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {excludedCount > 0 && (
             <button
+              type="button"
               onClick={() => {
                 const reset = artifacts.map((a) => ({ ...a, isExcluded: false }));
                 setArtifacts(reset);
                 recomputeImpact([]);
               }}
               style={{
-                padding: "4px 8px",
+                padding: "5px 10px",
                 fontSize: "11px",
-                background: "transparent",
-                color: "var(--text-secondary, #A3B1AA)",
-                border: "1px solid var(--border-subtle, rgba(107, 119, 112, 0.3))",
-                borderRadius: "4px",
+                fontWeight: 600,
+                background: "#F8FAFC",
+                color: "#475569",
+                border: "1px solid #CBD5E1",
+                borderRadius: "5px",
                 cursor: "pointer",
+                transition: "all 0.12s ease",
               }}
             >
               Reset All
             </button>
           )}
+
           <button
+            type="button"
             onClick={handleRunBackendChallenge}
             disabled={isSimulating}
             style={{
-              padding: "6px 12px",
+              padding: "6px 14px",
               fontSize: "11px",
-              fontWeight: 600,
-              background: "var(--fieldnote-signal-lime, #C8F751)",
-              color: "#101918",
+              fontWeight: 700,
+              background: isSimulating ? "#94A3B8" : "#4F46E5",
+              color: "#FFFFFF",
               border: "none",
-              borderRadius: "4px",
+              borderRadius: "5px",
               cursor: isSimulating ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+              transition: "all 0.12s ease",
             }}
           >
-            <RefreshCw size={12} className={isSimulating ? "spin-animate" : ""} />
+            <RefreshCw size={12} style={{ animation: isSimulating ? "spin 1s linear infinite" : undefined }} />
             {isSimulating ? "Solving Z3 Constraints..." : "Commit Challenge to Backend"}
           </button>
         </div>
       </div>
 
-      {/* Main Grid: Artifact Ablator on Left, Claim Impact Matrix on Right */}
+      {/* 2. Main Grid: Artifact Ablator on Left, Claim Impact Matrix on Right */}
       <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: "16px" }}>
         {/* Left: Artifact Toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", textTransform: "uppercase" }}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#334155",
+                textTransform: "uppercase",
+                letterSpacing: "0.03em",
+              }}
+            >
               Case Artifact Ledger ({artifacts.length})
             </span>
-            <span style={{ fontSize: "10px", color: excludedCount > 0 ? "#B65B48" : "#6B7770", fontFamily: "var(--font-mono, monospace)" }}>
+            <span
+              style={{
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: excludedCount > 0 ? "#BE123C" : "#64748B",
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            >
               {excludedCount} Ablated
             </span>
           </div>
@@ -292,11 +354,12 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                 key={art.id}
                 onClick={() => toggleArtifact(art.id)}
                 style={{
-                  background: art.isExcluded ? "rgba(182, 91, 72, 0.12)" : "rgba(0, 0, 0, 0.25)",
-                  border: art.isExcluded ? "1px solid rgba(182, 91, 72, 0.45)" : "1px solid rgba(107, 119, 112, 0.25)",
+                  background: art.isExcluded ? "#FFF1F2" : "#FFFFFF",
+                  border: art.isExcluded ? "1px solid #FECDD3" : "1px solid #E2E8F0",
                   borderRadius: "6px",
                   padding: "10px 12px",
                   cursor: "pointer",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -305,9 +368,10 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                     style={{
                       fontSize: "10px",
                       padding: "1px 6px",
-                      borderRadius: "3px",
-                      background: art.isExcluded ? "rgba(182, 91, 72, 0.2)" : "rgba(82, 124, 154, 0.2)",
-                      color: art.isExcluded ? "#B65B48" : "#527C9A",
+                      borderRadius: "4px",
+                      background: art.isExcluded ? "#F1F5F9" : "#EEF2FF",
+                      color: art.isExcluded ? "#64748B" : "#4F46E5",
+                      border: `1px solid ${art.isExcluded ? "#E2E8F0" : "#C7D2FE"}`,
                       fontFamily: "var(--font-mono, monospace)",
                     }}
                   >
@@ -317,17 +381,35 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                     style={{
                       fontSize: "10px",
                       fontWeight: 700,
-                      color: art.isExcluded ? "#B65B48" : "#C8F751",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                      background: art.isExcluded ? "#FFE4E6" : "#ECFDF5",
+                      color: art.isExcluded ? "#BE123C" : "#059669",
+                      border: `1px solid ${art.isExcluded ? "#FECDD3" : "#A7F3D0"}`,
                       fontFamily: "var(--font-mono, monospace)",
                     }}
                   >
                     {art.isExcluded ? "EXCLUDED [ABLATED]" : "INCLUDED [ACTIVE]"}
                   </span>
                 </div>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: art.isExcluded ? "var(--text-muted, #6B7770)" : "#F4F6F4", textDecoration: art.isExcluded ? "line-through" : "none" }}>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: art.isExcluded ? "#94A3B8" : "#0F172A",
+                    textDecoration: art.isExcluded ? "line-through" : "none",
+                  }}
+                >
                   {art.name}
                 </div>
-                <div style={{ fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)", marginTop: "4px" }}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#64748B",
+                    fontFamily: "var(--font-mono, monospace)",
+                    marginTop: "4px",
+                  }}
+                >
                   {art.id} • {art.dependentClaimIds.length} dependent claim(s)
                 </div>
               </div>
@@ -338,10 +420,25 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
         {/* Right: Claim Impact Matrix */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-secondary, #A3B1AA)", textTransform: "uppercase" }}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "#334155",
+                textTransform: "uppercase",
+                letterSpacing: "0.03em",
+              }}
+            >
               Formal SMT Claim Re-evaluation Matrix
             </span>
-            <span style={{ fontSize: "11px", color: flippedCount > 0 ? "#C8F751" : "#6B7770", fontFamily: "var(--font-mono, monospace)" }}>
+            <span
+              style={{
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: flippedCount > 0 ? "#D97706" : "#64748B",
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            >
               {flippedCount} finding state{flippedCount === 1 ? "" : "s"} mutated
             </span>
           </div>
@@ -355,25 +452,37 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                 <div
                   key={claim.claimId}
                   style={{
-                    background: claim.affectedByAblation ? "rgba(200, 247, 81, 0.05)" : "rgba(0, 0, 0, 0.2)",
-                    border: claim.affectedByAblation ? "1px solid rgba(200, 247, 81, 0.35)" : "1px solid rgba(107, 119, 112, 0.2)",
+                    background: claim.affectedByAblation ? "#FFFBEB" : "#FFFFFF",
+                    border: claim.affectedByAblation ? "1px solid #FDE68A" : "1px solid #E2E8F0",
                     borderRadius: "6px",
                     padding: "12px",
+                    boxShadow: claim.affectedByAblation
+                      ? "0 1px 3px rgba(217, 119, 6, 0.08)"
+                      : "0 1px 2px rgba(0,0,0,0.02)",
+                    transition: "all 0.15s ease",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                      <span
+                        style={{
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          color: "#64748B",
+                          fontFamily: "var(--font-mono, monospace)",
+                        }}
+                      >
                         {claim.claimId}
                       </span>
                       {claim.affectedByAblation && (
                         <span
                           style={{
                             fontSize: "9px",
-                            padding: "1px 5px",
+                            padding: "1px 6px",
                             borderRadius: "3px",
-                            background: "rgba(200, 247, 81, 0.2)",
-                            color: "#C8F751",
+                            background: "#FEF3C7",
+                            color: "#B45309",
+                            border: "1px solid #FDE68A",
                             fontWeight: 700,
                             fontFamily: "var(--font-mono, monospace)",
                           }}
@@ -385,15 +494,21 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
 
                     {/* Before -> After Badges */}
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          color: "#64748B",
+                          fontFamily: "var(--font-mono, monospace)",
+                        }}
+                      >
                         {baselineBadge.label}
                       </span>
-                      <ArrowRight size={10} style={{ color: "var(--text-muted, #6B7770)" }} />
+                      <ArrowRight size={10} color="#94A3B8" />
                       <span
                         style={{
                           fontSize: "10px",
                           fontWeight: 700,
-                          padding: "2px 6px",
+                          padding: "2px 7px",
                           borderRadius: "4px",
                           background: badge.bg,
                           color: badge.text,
@@ -409,12 +524,37 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                     </div>
                   </div>
 
-                  <p style={{ margin: "4px 0 6px", fontSize: "12px", lineHeight: "1.4", color: "#F4F6F4" }}>
+                  <p style={{ margin: "4px 0 6px", fontSize: "12px", lineHeight: "1.45", color: "#0F172A" }}>
                     {claim.statement}
                   </p>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px", color: "var(--text-muted, #6B7770)", fontFamily: "var(--font-mono, monospace)" }}>
-                    <span>Z3 Solver: <strong>{claim.formalSolverStatus}</strong></span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "10px",
+                      color: "#64748B",
+                      fontFamily: "var(--font-mono, monospace)",
+                      paddingTop: "6px",
+                      borderTop: "1px solid #F1F5F9",
+                    }}
+                  >
+                    <span>
+                      Z3 Solver:{" "}
+                      <strong
+                        style={{
+                          color:
+                            claim.formalSolverStatus === "SAT"
+                              ? "#059669"
+                              : claim.formalSolverStatus === "UNSAT"
+                              ? "#BE123C"
+                              : "#B45309",
+                        }}
+                      >
+                        {claim.formalSolverStatus}
+                      </strong>
+                    </span>
                     <span>{claim.explanation}</span>
                   </div>
                 </div>

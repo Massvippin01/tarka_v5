@@ -83,13 +83,11 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100dvh - 52px)",
-        maxHeight: "calc(100dvh - 52px)",
-        padding: isCompact ? "6px 12px 10px 12px" : "8px 14px 12px 14px",
-        gap: isCompact ? "6px" : "8px",
+        width: "100%",
+        padding: isCompact ? "8px 12px 24px 12px" : "10px 16px 32px 16px",
+        gap: isCompact ? "8px" : "10px",
         boxSizing: "border-box",
         background: "#F8FAFC",
-        overflow: "hidden",
       }}
     >
       {/* =========================================================================
@@ -184,18 +182,16 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
           ========================================================================= */}
       <main
         style={{
-          flex: "1 1 0%",
-          minHeight: 0,
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gap: "10px",
-          overflow: "hidden",
+          gap: "12px",
+          alignItems: "start",
         }}
       >
         {/* =====================================================================
             LEFT HERO CARD (7 COLUMNS): CONNECTED ACTOR TOPOLOGY GRAPH
             ===================================================================== */}
-        <div style={{ gridColumn: "span 7", height: "100%", minHeight: 0 }}>
+        <div style={{ gridColumn: "span 7", display: "flex", flexDirection: "column" }}>
           <SectionCard
             title="Fraud-Network & Actor Relationship Topology Graph"
             subtitle="Discovers hidden physical links tying 4 disparate mule accounts to 1 controller cluster."
@@ -205,16 +201,16 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
             badgeVariant={isHotspotActive ? "rose" : "emerald"}
             provenanceTooltip="Corroborated Tethering Proof (3-Factor Convergence: TTL=63 + BSSID + JA4 TLS)."
           >
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
-                  flex: "1 1 0%",
-                  minHeight: 0,
                   border: "1px solid #E2E8F0",
                   borderRadius: "8px",
                   overflow: "hidden",
                   background: "#FAFCFF",
                   position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 <EvidenceNetworkGraph
@@ -258,7 +254,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
         {/* =====================================================================
             RIGHT SUPPORT PANEL (5 COLUMNS): XML PROVENANCE & ECHARTS WATERFALL
             ===================================================================== */}
-        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "8px", height: "100%", minHeight: 0 }}>
+        <div style={{ gridColumn: "span 5", display: "flex", flexDirection: "column", gap: "10px" }}>
           {/* Card 1: UPI Device XML card with compact Provenance table (Shrinks to content) */}
           <SectionCard
             title="UPI 2.0 <Device> XML & Provenance"
@@ -267,7 +263,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
             iconColor="#4F46E5"
             badgeText="NPCI SWITCH T1"
             badgeVariant="emerald"
-            style={{ height: "auto", flexShrink: 0 }}
+            style={{ flexShrink: 0 }}
             actionSlot={
               <button
                 type="button"
@@ -405,7 +401,7 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
             </div>
           </SectionCard>
 
-          {/* Card 2: ECharts Cumulative Exposure Waterfall (flex: 1) */}
+          {/* Card 2: ECharts Cumulative Exposure Waterfall */}
           <SectionCard
             title="Cross-State Syndicate (â‚¹10.42 Cr Total)"
             subtitle="Cumulative exposure across 14 FIRs (Exceeds CBI Mandate â‚¹10.00 Cr)"
@@ -413,11 +409,11 @@ Total Syndicate Transaction Exposure: â‚¹10,42,18,900.00 (Exceeds CBI Mandate â‚
             iconColor="#B45309"
             badgeText="CBI REQUISITION SAT"
             badgeVariant="rose"
-            style={{ flex: "1 1 0%", minHeight: 0 }}
+            style={{ flex: "1 1 auto", minHeight: 280 }}
           >
-            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 240 }}>
               {/* ECharts Waterfall Canvas */}
-              <div style={{ flex: "1 1 0%", minHeight: 120 }}>
+              <div style={{ flex: "1 1 auto", minHeight: 190 }}>
                 <CrossStateWaterfall height="100%" />
               </div>
 

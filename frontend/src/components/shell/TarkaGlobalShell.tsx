@@ -45,7 +45,7 @@ import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
 import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
 import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
-import { TarkaForensicWorkstation } from "../tarka/TarkaForensicWorkstation";
+import { ForensicWorkstationScreen } from "../../pages/v5/ForensicWorkstationScreen";
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -1843,7 +1843,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               {activeRoute === "taint-engine" && <TaintEngineScreen />}
               {activeRoute === "court-proof" && <CourtProofScreen />}
               {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
-              {activeRoute === "workstation" && <TarkaForensicWorkstation />}
+              {activeRoute === "workstation" && <ForensicWorkstationScreen />}
             </>
           )}
         </div>
