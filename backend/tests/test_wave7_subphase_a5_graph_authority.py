@@ -911,6 +911,10 @@ class TestSecurityAndPromptInjection:
 
 class TestPerformanceBenchmarks:
     def test_1k_nodes_projection_latency(self, engine: GraphProjectionEngine):
+        # Pre-warm Neo4j connectivity check so TCP timeout on missing local daemon does not distort in-memory benchmark
+        from app.database.db import verify_neo4j_connection
+        verify_neo4j_connection()
+
         t0 = time.perf_counter()
         for i in range(1000):
             node = GraphNodeOntology(

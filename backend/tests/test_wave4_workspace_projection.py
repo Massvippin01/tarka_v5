@@ -88,6 +88,9 @@ def workspace_env():
     )
 
     client = TestClient(app)
+    from app.services.auth_service import AuthService
+    token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+    client.headers.update({"Authorization": f"Bearer {token}"})
 
     yield gateway, store, client, temp_dir
     shutil.rmtree(temp_dir, ignore_errors=True)

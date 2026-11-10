@@ -1896,7 +1896,46 @@ class SafeForensicAgentOrchestrator:
             pipeline_log.append({"state": "VERIFIED", "status": "COMPLETED"})
 
             exec_elapsed_ms = round((time.perf_counter() - t_exec_start) * 1000, 2)
-            target_lang = session.get("language_code") or language_code or "en-IN"
+            has_indic = any(
+                ('\u0900' <= ch <= '\u097f') or  # Devanagari
+                ('\u0980' <= ch <= '\u09ff') or  # Bengali
+                ('\u0b80' <= ch <= '\u0bff')     # Tamil
+                for ch in (query or "")
+            )
+            q_lower = (query or "").lower()
+
+            if session_id and session.get("language_code"):
+                # Active conversational session with established language
+                if "english" in q_lower:
+                    target_lang = "en-IN"
+                    session["language_code"] = "en-IN"
+                elif any(w in q_lower for w in ["tamil", "தமிழ்"]) or any('\u0b80' <= ch <= '\u0bff' for ch in (query or "")):
+                    target_lang = "ta-IN"
+                    session["language_code"] = "ta-IN"
+                elif any(w in q_lower for w in ["hindi", "हिन्दी", "हिंदी"]) or any('\u0900' <= ch <= '\u097f' for ch in (query or "")):
+                    target_lang = "hi-IN"
+                    session["language_code"] = "hi-IN"
+                elif any(w in q_lower for w in ["bengali", "bangla", "বাংলা"]) or any('\u0980' <= ch <= '\u09ff' for ch in (query or "")):
+                    target_lang = "bn-IN"
+                    session["language_code"] = "bn-IN"
+                else:
+                    # Persist session language across turns
+                    target_lang = session["language_code"]
+            else:
+                # Standalone query or new session
+                if any(w in q_lower for w in ["tamil", "தமிழ்"]) or any('\u0b80' <= ch <= '\u0bff' for ch in (query or "")):
+                    target_lang = "ta-IN"
+                elif any(w in q_lower for w in ["hindi", "हिन्दी", "हिंदी"]) or any('\u0900' <= ch <= '\u097f' for ch in (query or "")):
+                    target_lang = "hi-IN"
+                elif any(w in q_lower for w in ["bengali", "bangla", "বাংলা"]) or any('\u0980' <= ch <= '\u09ff' for ch in (query or "")):
+                    target_lang = "bn-IN"
+                elif language_code and language_code != "en-IN":
+                    target_lang = language_code
+                else:
+                    target_lang = "en-IN"
+
+                if session_id:
+                    session["language_code"] = target_lang
 
             # Generate natural, expressive, speech-safe response
             spoken_text = ForensicSpokenResponseGenerator.generate(

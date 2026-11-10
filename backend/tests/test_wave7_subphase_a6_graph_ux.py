@@ -620,7 +620,11 @@ from app.main import app
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(app)
+    c = TestClient(app)
+    from app.services.auth_service import AuthService
+    token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+    c.headers.update({"Authorization": f"Bearer {token}"})
+    return c
 
 
 class TestGraphProjectionRESTEndpoints:
