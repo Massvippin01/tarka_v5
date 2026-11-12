@@ -29,12 +29,12 @@ export interface BentoKpiCardProps {
 }
 
 const statusBadgeStyles = {
-  emerald: { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" },
-  rose: { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" },
-  indigo: { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" },
-  amber: { bg: "#FFFBEB", text: "#B45309", border: "#FDE68A" },
-  slate: { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" },
-  purple: { bg: "#F5F3FF", text: "#6D28D9", border: "#DDD6FE" },
+  emerald: { bg: "rgba(16, 185, 129, 0.16)", text: "#34D399", border: "rgba(16, 185, 129, 0.35)" },
+  rose: { bg: "rgba(244, 63, 94, 0.16)", text: "#FB7185", border: "rgba(244, 63, 94, 0.35)" },
+  indigo: { bg: "rgba(6, 182, 212, 0.16)", text: "#22D3EE", border: "rgba(34, 211, 238, 0.35)" },
+  amber: { bg: "rgba(245, 158, 11, 0.16)", text: "#FBBF24", border: "rgba(245, 158, 11, 0.35)" },
+  slate: { bg: "rgba(255, 255, 255, 0.06)", text: "#94A3B8", border: "rgba(255, 255, 255, 0.10)" },
+  purple: { bg: "rgba(139, 92, 246, 0.16)", text: "#A78BFA", border: "rgba(139, 92, 246, 0.35)" },
 };
 
 export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
@@ -44,8 +44,8 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
   statusBadge,
   subtitle,
   icon: Icon,
-  iconColor = "#4F46E5",
-  iconBg = "#EEF2FF",
+  iconColor = "#06B6D4",
+  iconBg = "rgba(6, 182, 212, 0.14)",
   className = "",
   meta,
 }) => {
@@ -61,15 +61,15 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
     <div
       className={`bento-card ${className}`}
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E2E8F0",
+        background: "var(--reui-card-bg, #0F1B2E)",
+        border: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
         borderRadius: "14px",
         padding: "14px 18px",
         height: "96px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9)",
+        boxShadow: "0 4px 20px -2px rgba(0, 0, 0, 0.40), inset 0 1px 0 0 rgba(255, 255, 255, 0.06)",
         boxSizing: "border-box",
         overflow: "hidden",
       }}
@@ -95,7 +95,7 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
             style={{
               fontSize: "12.5px",
               fontWeight: 600,
-              color: "#475569",
+              color: "var(--reui-text-secondary, #94A3B8)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -120,13 +120,13 @@ export const BentoKpiCard: React.FC<BentoKpiCardProps> = ({
         )}
       </div>
 
-      {/* Row 2 (Bottom): Hero Value in #09090B + Single-Line Semantic Pill Badge */}
+      {/* Row 2 (Bottom): Hero Value in High-Definition Strong Text + Single-Line Semantic Pill Badge */}
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "8px", width: "100%" }}>
         <span
           style={{
             fontSize: metric.length > 15 ? "18px" : metric.length > 11 ? "20px" : "24px",
             fontWeight: 800,
-            color: "#09090B",
+            color: "var(--reui-text-strong, #FFFFFF)",
             letterSpacing: "-0.03em",
             whiteSpace: "nowrap",
             overflow: "hidden",

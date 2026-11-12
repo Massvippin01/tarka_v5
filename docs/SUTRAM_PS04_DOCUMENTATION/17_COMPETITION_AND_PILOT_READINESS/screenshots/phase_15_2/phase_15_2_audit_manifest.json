@@ -1,0 +1,814 @@
+{
+  "audit_phase": "Phase 15.2 Performance, Accessibility & Mobile Excellence",
+  "executed_at": "2026-11-12T21:44:50.661Z",
+  "theme": "obsidian-glass (Midnight Navy #060B14 / Ocean Blue #0F1B2E / Cyan #06B6D4)",
+  "modes_validated": [
+    "guided",
+    "analyst",
+    "review"
+  ],
+  "app_base_url": "http://127.0.0.1:4173",
+  "viewports": [
+    {
+      "name": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    {
+      "name": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "isMobile": true
+    },
+    {
+      "name": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "isMobile": false
+    },
+    {
+      "name": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "isMobile": false
+    },
+    {
+      "name": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "isMobile": false
+    }
+  ],
+  "captures": [
+    {
+      "stage_id": "01_intake",
+      "stage_title": "01 Evidence Intake & Gate",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "01_intake_mobile_390x844.png",
+      "size_bytes": 84647,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "02_entities",
+      "stage_title": "02 Entity Resolution",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "02_entities_mobile_390x844.png",
+      "size_bytes": 100202,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "03_attribution",
+      "stage_title": "03 Attribution & CGNAT",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "03_attribution_mobile_390x844.png",
+      "size_bytes": 87354,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "04_network",
+      "stage_title": "04 Fraud Network Graph",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "04_network_mobile_390x844.png",
+      "size_bytes": 86569,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "05_taint_engine",
+      "stage_title": "05 Taint Engine & Min-Cut",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "05_taint_engine_mobile_390x844.png",
+      "size_bytes": 82888,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "06_court_proof_mobile_390x844.png",
+      "size_bytes": 87886,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "07_privacy_crypto",
+      "stage_title": "07 Privacy & ZKP Hub",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "07_privacy_crypto_mobile_390x844.png",
+      "size_bytes": 72842,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "08_workstation",
+      "stage_title": "08 Deep Forensic Loom",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "08_workstation_mobile_390x844.png",
+      "size_bytes": 76641,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "09_workspaces",
+      "stage_title": "Case Workspaces Hub",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "09_workspaces_mobile_390x844.png",
+      "size_bytes": 80956,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "10_benchmark",
+      "stage_title": "Benchmark Lab",
+      "mode": "analyst",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "10_benchmark_mobile_390x844.png",
+      "size_bytes": 81029,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "guided_01_intake",
+      "stage_title": "01 Evidence Intake & Gate (Guided Mode HUD)",
+      "mode": "guided",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "guided_01_intake_mobile_390x844.png",
+      "size_bytes": 82903,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "review_06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof (Forensic Review HUD)",
+      "mode": "review",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "review_06_court_proof_mobile_390x844.png",
+      "size_bytes": 87995,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "mobile_drawer",
+      "stage_title": "Mobile Navigation Drawer (Collapsible Overlay)",
+      "mode": "mobile",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "mobile_drawer_mobile_390x844.png",
+      "size_bytes": 109638,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "sarvam_voice_modal",
+      "stage_title": "Sarvam Voice Assistant Modal (Phase 15.2 Glass)",
+      "mode": "modal",
+      "viewport": "mobile_390x844",
+      "width": 390,
+      "height": 844,
+      "filename": "sarvam_voice_modal_mobile_390x844.png",
+      "size_bytes": 76151,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "01_intake",
+      "stage_title": "01 Evidence Intake & Gate",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "01_intake_mobile_360x800.png",
+      "size_bytes": 72758,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "02_entities",
+      "stage_title": "02 Entity Resolution",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "02_entities_mobile_360x800.png",
+      "size_bytes": 86589,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "03_attribution",
+      "stage_title": "03 Attribution & CGNAT",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "03_attribution_mobile_360x800.png",
+      "size_bytes": 78147,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "04_network",
+      "stage_title": "04 Fraud Network Graph",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "04_network_mobile_360x800.png",
+      "size_bytes": 77572,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "05_taint_engine",
+      "stage_title": "05 Taint Engine & Min-Cut",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "05_taint_engine_mobile_360x800.png",
+      "size_bytes": 75944,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "06_court_proof_mobile_360x800.png",
+      "size_bytes": 78338,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "07_privacy_crypto",
+      "stage_title": "07 Privacy & ZKP Hub",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "07_privacy_crypto_mobile_360x800.png",
+      "size_bytes": 65586,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "08_workstation",
+      "stage_title": "08 Deep Forensic Loom",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "08_workstation_mobile_360x800.png",
+      "size_bytes": 66994,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "09_workspaces",
+      "stage_title": "Case Workspaces Hub",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "09_workspaces_mobile_360x800.png",
+      "size_bytes": 72986,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "10_benchmark",
+      "stage_title": "Benchmark Lab",
+      "mode": "analyst",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "10_benchmark_mobile_360x800.png",
+      "size_bytes": 73248,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "guided_01_intake",
+      "stage_title": "01 Evidence Intake & Gate (Guided Mode HUD)",
+      "mode": "guided",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "guided_01_intake_mobile_360x800.png",
+      "size_bytes": 73733,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "review_06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof (Forensic Review HUD)",
+      "mode": "review",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "review_06_court_proof_mobile_360x800.png",
+      "size_bytes": 79484,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "mobile_drawer",
+      "stage_title": "Mobile Navigation Drawer (Collapsible Overlay)",
+      "mode": "mobile",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "mobile_drawer_mobile_360x800.png",
+      "size_bytes": 99290,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "sarvam_voice_modal",
+      "stage_title": "Sarvam Voice Assistant Modal (Phase 15.2 Glass)",
+      "mode": "modal",
+      "viewport": "mobile_360x800",
+      "width": 360,
+      "height": 800,
+      "filename": "sarvam_voice_modal_mobile_360x800.png",
+      "size_bytes": 72277,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "01_intake",
+      "stage_title": "01 Evidence Intake & Gate",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "01_intake_tablet_768x1024.png",
+      "size_bytes": 171588,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "02_entities",
+      "stage_title": "02 Entity Resolution",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "02_entities_tablet_768x1024.png",
+      "size_bytes": 174590,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "03_attribution",
+      "stage_title": "03 Attribution & CGNAT",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "03_attribution_tablet_768x1024.png",
+      "size_bytes": 185905,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "04_network",
+      "stage_title": "04 Fraud Network Graph",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "04_network_tablet_768x1024.png",
+      "size_bytes": 152551,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "05_taint_engine",
+      "stage_title": "05 Taint Engine & Min-Cut",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "05_taint_engine_tablet_768x1024.png",
+      "size_bytes": 177631,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "06_court_proof_tablet_768x1024.png",
+      "size_bytes": 136826,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "07_privacy_crypto",
+      "stage_title": "07 Privacy & ZKP Hub",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "07_privacy_crypto_tablet_768x1024.png",
+      "size_bytes": 114946,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "08_workstation",
+      "stage_title": "08 Deep Forensic Loom",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "08_workstation_tablet_768x1024.png",
+      "size_bytes": 153117,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "09_workspaces",
+      "stage_title": "Case Workspaces Hub",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "09_workspaces_tablet_768x1024.png",
+      "size_bytes": 181817,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "10_benchmark",
+      "stage_title": "Benchmark Lab",
+      "mode": "analyst",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "10_benchmark_tablet_768x1024.png",
+      "size_bytes": 139147,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "guided_01_intake",
+      "stage_title": "01 Evidence Intake & Gate (Guided Mode HUD)",
+      "mode": "guided",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "guided_01_intake_tablet_768x1024.png",
+      "size_bytes": 174932,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "review_06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof (Forensic Review HUD)",
+      "mode": "review",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "review_06_court_proof_tablet_768x1024.png",
+      "size_bytes": 139528,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "sarvam_voice_modal",
+      "stage_title": "Sarvam Voice Assistant Modal (Phase 15.2 Glass)",
+      "mode": "modal",
+      "viewport": "tablet_768x1024",
+      "width": 768,
+      "height": 1024,
+      "filename": "sarvam_voice_modal_tablet_768x1024.png",
+      "size_bytes": 133888,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "01_intake",
+      "stage_title": "01 Evidence Intake & Gate",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "01_intake_laptop_1366x768.png",
+      "size_bytes": 238202,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "02_entities",
+      "stage_title": "02 Entity Resolution",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "02_entities_laptop_1366x768.png",
+      "size_bytes": 200811,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "03_attribution",
+      "stage_title": "03 Attribution & CGNAT",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "03_attribution_laptop_1366x768.png",
+      "size_bytes": 461174,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "04_network",
+      "stage_title": "04 Fraud Network Graph",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "04_network_laptop_1366x768.png",
+      "size_bytes": 194417,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "05_taint_engine",
+      "stage_title": "05 Taint Engine & Min-Cut",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "05_taint_engine_laptop_1366x768.png",
+      "size_bytes": 210093,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "06_court_proof_laptop_1366x768.png",
+      "size_bytes": 171466,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "07_privacy_crypto",
+      "stage_title": "07 Privacy & ZKP Hub",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "07_privacy_crypto_laptop_1366x768.png",
+      "size_bytes": 142391,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "08_workstation",
+      "stage_title": "08 Deep Forensic Loom",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "08_workstation_laptop_1366x768.png",
+      "size_bytes": 171796,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "09_workspaces",
+      "stage_title": "Case Workspaces Hub",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "09_workspaces_laptop_1366x768.png",
+      "size_bytes": 194825,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "10_benchmark",
+      "stage_title": "Benchmark Lab",
+      "mode": "analyst",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "10_benchmark_laptop_1366x768.png",
+      "size_bytes": 175116,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "guided_01_intake",
+      "stage_title": "01 Evidence Intake & Gate (Guided Mode HUD)",
+      "mode": "guided",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "guided_01_intake_laptop_1366x768.png",
+      "size_bytes": 237692,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "review_06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof (Forensic Review HUD)",
+      "mode": "review",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "review_06_court_proof_laptop_1366x768.png",
+      "size_bytes": 173463,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "sarvam_voice_modal",
+      "stage_title": "Sarvam Voice Assistant Modal (Phase 15.2 Glass)",
+      "mode": "modal",
+      "viewport": "laptop_1366x768",
+      "width": 1366,
+      "height": 768,
+      "filename": "sarvam_voice_modal_laptop_1366x768.png",
+      "size_bytes": 182017,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "01_intake",
+      "stage_title": "01 Evidence Intake & Gate",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "01_intake_desktop_1440x900.png",
+      "size_bytes": 251868,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "02_entities",
+      "stage_title": "02 Entity Resolution",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "02_entities_desktop_1440x900.png",
+      "size_bytes": 211618,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "03_attribution",
+      "stage_title": "03 Attribution & CGNAT",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "03_attribution_desktop_1440x900.png",
+      "size_bytes": 315255,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "04_network",
+      "stage_title": "04 Fraud Network Graph",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "04_network_desktop_1440x900.png",
+      "size_bytes": 232403,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "05_taint_engine",
+      "stage_title": "05 Taint Engine & Min-Cut",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "05_taint_engine_desktop_1440x900.png",
+      "size_bytes": 263784,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "06_court_proof_desktop_1440x900.png",
+      "size_bytes": 173504,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "07_privacy_crypto",
+      "stage_title": "07 Privacy & ZKP Hub",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "07_privacy_crypto_desktop_1440x900.png",
+      "size_bytes": 139298,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "08_workstation",
+      "stage_title": "08 Deep Forensic Loom",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "08_workstation_desktop_1440x900.png",
+      "size_bytes": 188279,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "09_workspaces",
+      "stage_title": "Case Workspaces Hub",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "09_workspaces_desktop_1440x900.png",
+      "size_bytes": 229372,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "10_benchmark",
+      "stage_title": "Benchmark Lab",
+      "mode": "analyst",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "10_benchmark_desktop_1440x900.png",
+      "size_bytes": 192740,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "guided_01_intake",
+      "stage_title": "01 Evidence Intake & Gate (Guided Mode HUD)",
+      "mode": "guided",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "guided_01_intake_desktop_1440x900.png",
+      "size_bytes": 258582,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "review_06_court_proof",
+      "stage_title": "06 BSA §63 Court Proof (Forensic Review HUD)",
+      "mode": "review",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "review_06_court_proof_desktop_1440x900.png",
+      "size_bytes": 175868,
+      "status": "SUCCESS"
+    },
+    {
+      "stage_id": "sarvam_voice_modal",
+      "stage_title": "Sarvam Voice Assistant Modal (Phase 15.2 Glass)",
+      "mode": "modal",
+      "viewport": "desktop_1440x900",
+      "width": 1440,
+      "height": 900,
+      "filename": "sarvam_voice_modal_desktop_1440x900.png",
+      "size_bytes": 201127,
+      "status": "SUCCESS"
+    }
+  ],
+  "overflow_audits": {
+    "mobile_390x844": {
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "isContained": true
+    },
+    "mobile_360x800": {
+      "clientWidth": 360,
+      "scrollWidth": 360,
+      "bodyScrollWidth": 360,
+      "isContained": true
+    },
+    "tablet_768x1024": {
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "bodyScrollWidth": 768,
+      "isContained": true
+    },
+    "laptop_1366x768": {
+      "clientWidth": 1366,
+      "scrollWidth": 1366,
+      "bodyScrollWidth": 1366,
+      "isContained": true
+    },
+    "desktop_1440x900": {
+      "clientWidth": 1440,
+      "scrollWidth": 1440,
+      "bodyScrollWidth": 1440,
+      "isContained": true
+    }
+  }
+}

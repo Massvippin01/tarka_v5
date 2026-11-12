@@ -9,23 +9,23 @@
    1. DESIGN TOKENS
    -------------------------------------------------------------------------- */
 :root {
-  /* Graphite Foundations */
-  --glass-bg-base: #06070A;
-  --glass-bg-deep: #080B10;
-  --glass-bg-canvas: #0B0E17;
-  --glass-bg-surface-solid: #10141F;
+  /* Midnight Navy Foundations (Admin Dashboard V2) */
+  --glass-bg-base: #060B14;
+  --glass-bg-deep: #080E1A;
+  --glass-bg-canvas: #0B1220;
+  --glass-bg-surface-solid: #0F1B2E;
 
   /* Ambient Illumination Layers */
   --glass-ambient-primary: rgba(37, 99, 235, 0.12);
   --glass-ambient-secondary: rgba(139, 92, 246, 0.08);
-  --glass-ambient-cyan: rgba(6, 182, 212, 0.07);
+  --glass-ambient-cyan: rgba(6, 182, 212, 0.10);
 
-  /* Translucent Liquid Glass Tiers */
-  --glass-tint-level-1: rgba(14, 18, 28, 0.65);       /* Canvas Panels / Cards */
-  --glass-tint-level-2: rgba(18, 24, 38, 0.76);       /* Left Rail / Top Bar / Table Shells */
-  --glass-tint-level-3: rgba(22, 30, 48, 0.85);       /* Inspector / Modals / Dialogs */
-  --glass-tint-floating: rgba(26, 36, 58, 0.90);      /* Floating Voice Capsule / Popovers */
-  --glass-tint-active: rgba(37, 99, 235, 0.22);        /* Selected interactive pill */
+  /* Translucent Liquid Glass Tiers (Ocean Blue Overlays) */
+  --glass-tint-level-1: rgba(15, 27, 46, 0.75);       /* Canvas Panels / Cards */
+  --glass-tint-level-2: rgba(19, 34, 56, 0.85);       /* Left Rail / Top Bar / Table Shells */
+  --glass-tint-level-3: rgba(25, 42, 69, 0.92);       /* Inspector / Modals / Dialogs */
+  --glass-tint-floating: rgba(19, 34, 56, 0.96);      /* Floating Voice Capsule / Popovers */
+  --glass-tint-active: rgba(6, 182, 212, 0.20);       /* Selected interactive pill */
 
   /* Backdrop Blur & Saturation */
   --glass-blur-sm: blur(12px) saturate(150%);

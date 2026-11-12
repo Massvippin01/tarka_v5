@@ -5,6 +5,7 @@ import type { ReconstructedEdge, ReconstructedInvestigation } from "../utils/inv
 export type TopLevelPage = "workspaces" | "workbench" | "benchmark";
 export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
 export type UiDensity = "comfortable" | "compact";
+export type InvestigationPresentationMode = "guided" | "analyst" | "review";
 
 export interface TarkaUiState {
   // Top-Level Application Page Routing
@@ -41,6 +42,11 @@ export interface TarkaUiState {
   presentationMode: boolean;
   setPresentationMode: (mode: boolean) => void;
   togglePresentationMode: () => void;
+
+  // Phase 15 Adaptive Investigation Presentation Modes
+  investigationMode: InvestigationPresentationMode;
+  setInvestigationMode: (mode: InvestigationPresentationMode) => void;
+  cycleInvestigationMode: () => void;
 
   // Plain-English Explain Simply mode
   explainSimply: boolean;
@@ -95,6 +101,15 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     ? "compact"
     : "comfortable";
 
+  const initialInvestigationMode = ((): InvestigationPresentationMode => {
+    if (typeof window === "undefined") return "analyst";
+    const stored = localStorage.getItem("tarka_investigation_mode");
+    if (stored === "guided" || stored === "analyst" || stored === "review") {
+      return stored as InvestigationPresentationMode;
+    }
+    return "analyst";
+  })();
+
   return {
     activePage: getInitialActivePage(),
     setActivePage: (page) => set({ activePage: page }),
@@ -134,6 +149,25 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     presentationMode: false,
     setPresentationMode: (mode) => set({ presentationMode: mode }),
     togglePresentationMode: () => set((state) => ({ presentationMode: !state.presentationMode })),
+
+    investigationMode: initialInvestigationMode,
+    setInvestigationMode: (mode) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("tarka_investigation_mode", mode);
+      }
+      set({ investigationMode: mode });
+    },
+    cycleInvestigationMode: () => {
+      set((state) => {
+        const modes: InvestigationPresentationMode[] = ["guided", "analyst", "review"];
+        const nextIdx = (modes.indexOf(state.investigationMode) + 1) % modes.length;
+        const nextMode = modes[nextIdx];
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tarka_investigation_mode", nextMode);
+        }
+        return { investigationMode: nextMode };
+      });
+    },
 
     explainSimply: false,
     setExplainSimply: (val) => set({ explainSimply: val }),

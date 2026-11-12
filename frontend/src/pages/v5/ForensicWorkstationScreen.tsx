@@ -29,7 +29,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
         gap: "8px",
         overflow: "hidden",
         boxSizing: "border-box",
-        background: "#F8FAFC",
+        background: "transparent",
         fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
@@ -100,16 +100,16 @@ export const ForensicWorkstationScreen: React.FC = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          background: "#FFFFFF",
+          background: "var(--reui-card-bg, #0F1B2E)",
           padding: "6px 12px",
           borderRadius: "8px",
-          border: "1px solid #E2E8F0",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+          border: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
+          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.25)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Activity size={18} color="#4F46E5" />
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
+          <Activity size={18} color="#06B6D4" />
+          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--reui-text-strong, #FFFFFF)" }}>
             Signature Digital Forensics Instrumentation
           </span>
           <span
@@ -118,9 +118,9 @@ export const ForensicWorkstationScreen: React.FC = () => {
               fontWeight: 700,
               padding: "2px 6px",
               borderRadius: "4px",
-              background: "#ECFDF5",
-              color: "#059669",
-              border: "1px solid #A7F3D0",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "#34D399",
+              border: "1px solid rgba(16, 185, 129, 0.30)",
             }}
           >
             ACTIVE CASE: {activeCaseId || "CASE-2026-001"}
@@ -128,7 +128,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
         </div>
 
         {/* Tab Buttons */}
-        <div style={{ display: "flex", gap: "4px", background: "#F1F5F9", padding: "3px", borderRadius: "6px" }}>
+        <div style={{ display: "flex", gap: "4px", background: "rgba(255, 255, 255, 0.04)", padding: "3px", borderRadius: "6px" }}>
           {[
             { id: "loom", label: "1. Temporal Evidence Loom", icon: Clock },
             { id: "lens", label: "2. Claim Dependency Lens", icon: Layers },
@@ -148,17 +148,17 @@ export const ForensicWorkstationScreen: React.FC = () => {
                   gap: "6px",
                   padding: "5px 12px",
                   borderRadius: "5px",
-                  border: isActive ? "1px solid #CBD5E1" : "1px solid transparent",
-                  background: isActive ? "#FFFFFF" : "transparent",
-                  color: isActive ? "#4F46E5" : "#64748B",
+                  border: isActive ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
+                  background: isActive ? "rgba(6, 182, 212, 0.20)" : "transparent",
+                  color: isActive ? "#22D3EE" : "var(--reui-text-secondary, #94A3B8)",
                   fontWeight: isActive ? 700 : 500,
                   fontSize: "11px",
                   cursor: "pointer",
-                  boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  boxShadow: isActive ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
                   transition: "all 0.12s ease",
                 }}
               >
-                <Icon size={13} color={isActive ? "#4F46E5" : "#64748B"} />
+                <Icon size={13} color={isActive ? "#22D3EE" : "#94A3B8"} />
                 <span>{tab.label}</span>
               </button>
             );
