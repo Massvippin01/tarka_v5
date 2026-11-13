@@ -240,7 +240,9 @@ Do this:
    built from those transactions.
 3. Turn ENABLE_DEMO_AUTH off inside the pytest fixtures (monkeypatch settings) so
    the 54 auth tests pass regardless of the local .env. Set the SQLAlchemy engine echo from
-   DEBUG_SQL (default false).
+   DEBUG_SQL (default false). Isolate tests from the dev database: running pytest left 4 junk cases
+   (e2e_p0d_*) in the dev forensics store; point tests at a temp DB/store via a fixture and clean
+   those 4 cases out.
    Also fix AuthService.validate_case_scope (backend/app/services/auth_service.py): it returns True for
    a supervisor on a case that doesn't exist ("CASE-UNKNOWN-999"). Unknown cases must be denied for
    every role (test_wave6_phase8_jwt_rbac.py::test_rbac_case_access_scope_enforcement). Align the
@@ -409,8 +411,22 @@ Extend that provider instead of adding a new one:
   (Prompt 8). The LLM only turns those feature contributions into plain English/Hindi sentences and
   must not invent reasons. Add an endpoint GET /api/v1/cases/{id}/accounts/{acct}/explanation that
   returns {score, contributions[], narrative_en, narrative_hi, model_used}.
+- TESTED RECIPE for the narration (llama3.1:8b on the RTX 4060: ~49 tok/s, ~8s per explanation when warm,
+  ~40s cold load). An unconstrained prompt FAILED in testing: it dropped a +16 reason, re-ranked the
+  rest, wrote "high risk of fraud", and translated "Axis Bank" as "अक्षय बैंक". What worked:
+  1. Code sorts the contributions and passes them as an ORDERED list of plain sentences.
+  2. System prompt: "mention every reason, in the given order, and nothing else; never use the words
+     fraud/guilty/criminal, say 'lead strength'; copy names, bank names, account numbers and amounts
+     EXACTLY in Latin script, even inside Hindi". Use Ollama `format: "json"`, temperature 0.1.
+  3. Post-validate the output: every name/account/amount from the input must appear verbatim, no
+     banned words, no rupee amount or account that wasn't in the input. On failure, retry once, then
+     fall back to a deterministic template sentence per reason. Cache narratives per (account, score
+     version).
 - Make REASONING_PROVIDER actually select the provider (today it's ignored), and raise the first-call
-  timeout to cover model load (~60s), then 30s.
+  timeout to cover model load (~60s), then 30s. Warm the model at backend startup with a 1-token call.
+- The copilot currently answers "No Evidence Ingested" for CASE-2026-001..004 because the forensics
+  evidence store has no artifacts for them (only `upi_payment_discrepancy` does). Seed the demo cases'
+  evidence into that store from the canonical fixtures (Prompts 1 and 7).
 - Show the active model ("llama3.1:8b · local · offline") in the UI so judges see nothing leaves the machine. Rules: answers must cite evidence IDs /
 transaction IDs that render as clickable chips that navigate to the item; refuse to state guilt; if
 data is missing, say so. Fall back to deterministic templated answers when no LLM key is configured,

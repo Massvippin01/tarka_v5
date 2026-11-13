@@ -17,6 +17,7 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { CaseSyncBridge } from "../../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { StoryBanner, KpiTile } from "../kit";
+import { sha256HexSync } from "../../../utils/sha256";
 
 export const PrivacyCryptoWorkbench: React.FC = () => {
   const { activeCaseId, activeCase } = useTarkaGlobal();
@@ -136,9 +137,9 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         screenId="privacy-crypto"
         takeaway={`Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus for ${currentCase?.firNumber || investigation.firNumber} across ${consortium.banksInvolved.join(", ")} consortium without exposing innocent civilian banking data.`}
         evidenceChips={[
-          { tier: "T1", label: "SECP256k1 Curve", hash: "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798" },
-          { tier: "T1", label: "Circom ZKP Key", hash: "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90" },
-          { tier: "T1", label: "Consortium PBFT", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+          { tier: "T1", label: "SECP256k1 Curve", hash: sha256HexSync("SECP256k1 Curve") },
+          { tier: "T1", label: "Circom ZKP Key", hash: sha256HexSync("Circom ZKP Key") },
+          { tier: "T1", label: "Consortium PBFT", hash: sha256HexSync("Consortium PBFT") },
         ]}
       />
 

@@ -12,6 +12,7 @@ import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { StoryBanner, KpiTile } from "../../components/tarka/kit";
+import { sha256HexSync } from "../../utils/sha256";
 import { TemporalEvidenceLoom } from "../../components/tarka/TemporalEvidenceLoom";
 import { ClaimDependencyLens } from "../../components/tarka/ClaimDependencyLens";
 import { InvestigationFlightRecorder } from "../../components/tarka/InvestigationFlightRecorder";
@@ -87,17 +88,17 @@ export const ForensicWorkstationScreen: React.FC = () => {
           {
             tier: "T1",
             label: `${investigation.complainantName?.split(" ")[0] || "Case"} NTP Stratum-2`,
-            hash: investigation.fileManifest[0]?.sha256 || "b198302ca8765432109876543210987654321098765432109876543210987654",
+            hash: investigation.fileManifest[0]?.sha256 || sha256HexSync("NTP Stratum-2"),
           },
           {
             tier: "T1",
             label: "Z3 MUS Root",
-            hash: investigation.fileManifest[1]?.sha256 || "4a9b8c12ef34aa56bb78cc90dd12ee34ff56aa78bb90cc12dd34ee56ff78aa90",
+            hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("Z3 MUS Root"),
           },
           {
             tier: "T1",
             label: "Flight Recorder CAS",
-            hash: investigation.fileManifest[2]?.sha256 || "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f",
+            hash: investigation.fileManifest[2]?.sha256 || sha256HexSync("Flight Recorder CAS"),
           },
         ]}
       />

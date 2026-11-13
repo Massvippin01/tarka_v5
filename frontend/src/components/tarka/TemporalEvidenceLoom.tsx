@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Clock, Layers, GitCommit, AlertOctagon, Sliders, Copy, Check } from "lucide-react";
+import { sha256HexSync, canonicalJson } from "../../utils/sha256";
 
 export interface LoomTrackEvent {
   id: string;
@@ -23,82 +24,81 @@ interface TemporalEvidenceLoomProps {
   className?: string;
 }
 
-const DEFAULT_LOOM_EVENTS: LoomTrackEvent[] = [
+const RAW_LOOM_EVENTS = [
   {
     id: "LOOM-EVT-001",
-    track: "COMPLAINT",
-    title: "1930 NCRP Cyber Crime Portal Complaint Registered",
-    sourceTimestamp: "2026-10-12T09:15:00Z",
-    receivedTimestamp: "2026-10-12T09:15:22Z",
-    clockOffsetMs: 22000,
-    confidence: 1.0,
-    artifactId: "ART-NCRP-88219",
-    artifactHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    details: { victim: "Smt. Sunita Rao", reported_loss: "INR 1,84,000", typology: "Digital Arrest Fraud" },
-  },
-  {
-    id: "LOOM-EVT-002",
-    track: "TELECOM",
+    track: "TELECOM" as const,
     title: "SIM-Swap Event Triggered at Telco Tower (NCR-Gurugram)",
-    sourceTimestamp: "2026-10-12T09:18:14Z",
-    receivedTimestamp: "2026-10-12T09:21:00Z",
-    clockOffsetMs: 166000,
+    sourceTimestamp: "2026-10-12T09:10:00Z",
+    receivedTimestamp: "2026-10-12T09:11:00Z",
+    clockOffsetMs: 60000,
     confidence: 0.98,
     artifactId: "ART-CDR-99120",
-    artifactHash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     hasContradiction: true,
     contradictionNote: "IMSI activated on tower while subscriber passport records departure to Dubai",
     details: { imsi: "404450192837192", tower_id: "DEL-SEC-4-TOWER", cell_id: "CELL-981" },
   },
   {
-    id: "LOOM-EVT-003",
-    track: "BANKING",
-    title: "Primary UPI Debit: Victim to Layer-1 Mule (A/C 99182)",
-    sourceTimestamp: "2026-10-12T09:24:41Z",
-    receivedTimestamp: "2026-10-12T09:24:43Z",
-    clockOffsetMs: 2000,
-    confidence: 1.0,
-    artifactId: "ART-UPI-TX-001",
-    artifactHash: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-    details: { rrn: "428190019281", amount: "INR 1,84,000", remitter: "sunita@okhdfc", beneficiary: "mule1@ybl" },
-  },
-  {
-    id: "LOOM-EVT-004",
-    track: "DEVICE",
+    id: "LOOM-EVT-002",
+    track: "DEVICE" as const,
     title: "IPDR Handshake from CGNAT Pool (Port Allocation 18420)",
     sourceTimestamp: "2026-10-12T09:24:39Z",
-    receivedTimestamp: "2026-10-12T09:26:10Z",
-    clockOffsetMs: 91000,
+    receivedTimestamp: "2026-10-12T09:24:40Z",
+    clockOffsetMs: 1000,
     confidence: 0.94,
     artifactId: "ART-IPDR-POOL-04",
-    artifactHash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
     details: { public_ip: "103.21.144.12", translated_port: 18420, private_ip: "10.48.12.9" },
   },
   {
-    id: "LOOM-EVT-005",
-    track: "BANKING",
+    id: "LOOM-EVT-003",
+    track: "BANKING" as const,
+    title: "Primary UPI Debit: Victim to Layer-1 Mule (A/C 99182)",
+    sourceTimestamp: "2026-10-12T09:25:00Z",
+    receivedTimestamp: "2026-10-12T09:25:02Z",
+    clockOffsetMs: 2000,
+    confidence: 1.0,
+    artifactId: "ART-UPI-TX-001",
+    details: { rrn: "428190019281", amount: "₹1,84,000", remitter: "sunita@okhdfc", beneficiary: "mule1@ybl" },
+  },
+  {
+    id: "LOOM-EVT-004",
+    track: "BANKING" as const,
     title: "Layer-1 Split: Mule Account to 3 Digital Wallets",
     sourceTimestamp: "2026-10-12T09:28:10Z",
     receivedTimestamp: "2026-10-12T09:28:12Z",
     clockOffsetMs: 2000,
     confidence: 1.0,
     artifactId: "ART-UPI-TX-002",
-    artifactHash: "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
-    details: { splits: "₹60,000 + ₹60,000 + ₹64,000", latency_seconds: "209s" },
+    details: { splits: "₹60,000 + ₹60,000 + ₹64,000", latency_seconds: "190s" },
+  },
+  {
+    id: "LOOM-EVT-005",
+    track: "COMPLAINT" as const,
+    title: "1930 NCRP Cyber Crime Portal Complaint Registered",
+    sourceTimestamp: "2026-10-12T09:45:00Z",
+    receivedTimestamp: "2026-10-12T09:45:22Z",
+    clockOffsetMs: 22000,
+    confidence: 1.0,
+    artifactId: "ART-NCRP-88219",
+    details: { victim: "Smt. Sunita Rao", reported_loss: "₹1,84,000", typology: "Digital Arrest Fraud" },
   },
   {
     id: "LOOM-EVT-006",
-    track: "CAS_INGEST",
+    track: "CAS_INGEST" as const,
     title: "Evidence Gateway Bitstream Acquisition & Section 63 BSA Checksum Seal",
-    sourceTimestamp: "2026-10-12T09:35:00Z",
-    receivedTimestamp: "2026-10-12T09:35:01Z",
+    sourceTimestamp: "2026-10-12T09:50:00Z",
+    receivedTimestamp: "2026-10-12T09:50:01Z",
     clockOffsetMs: 1000,
     confidence: 1.0,
     artifactId: "ART-CAS-SEAL-01",
-    artifactHash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
     details: { status: "BITSTREAM_SEALED", storage_tier: "IMMUTABLE_CAS_S3" },
   },
 ];
+
+const DEFAULT_LOOM_EVENTS: LoomTrackEvent[] = RAW_LOOM_EVENTS.map((evt) => ({
+  ...evt,
+  artifactHash: sha256HexSync(canonicalJson({ id: evt.id, title: evt.title, artifactId: evt.artifactId })),
+}));
 
 export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
   caseId,

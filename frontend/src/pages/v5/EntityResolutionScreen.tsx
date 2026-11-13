@@ -21,6 +21,7 @@ import {
   ScaleBar,
 } from "../../components/tarka/kit";
 import { getBnss94EntityResolutionDirective } from "../../utils/statutoryDirectives";
+import { sha256HexSync } from "../../utils/sha256";
 
 interface CanonicalEntity {
   id: string;
@@ -182,9 +183,9 @@ export const EntityResolutionScreen: React.FC = () => {
         screenId="entities"
         takeaway={`Deterministic multi-source resolution for ${investigation.complainantName} (${investigation.firNumber}): resolved ${canonicalEntities.length} canonical entities across ${rawTokenList.length} evidentiary tokens; hard-veto protection active.`}
         evidenceChips={[
-          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Core Banking"} Narration`, hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T2", label: "WhatsApp Coercion Header", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T1", label: "ICICI GSTIN Return", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Core Banking"} Narration`, hash: sha256HexSync("Core Banking Narration") },
+          { tier: "T2", label: "WhatsApp Coercion Header", hash: sha256HexSync("WhatsApp Coercion Header") },
+          { tier: "T1", label: "ICICI GSTIN Return", hash: sha256HexSync("ICICI GSTIN Return") },
         ]}
       />
 

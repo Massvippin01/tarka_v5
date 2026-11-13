@@ -2,6 +2,7 @@ import React from "react";
 import { useInvestigation } from "../../context/InvestigationContext";
 import { EntityDossier } from "../EntityDossier";
 import { RelationshipInspector } from "../RelationshipInspector";
+import { sha256HexSync } from "../../utils/sha256";
 
 export const ForensicDetailSurface: React.FC = () => {
   const {
@@ -95,7 +96,7 @@ export const ForensicDetailSurface: React.FC = () => {
                   <div style={styles.stepContent}>
                     <span style={styles.stepLabel}>1. RAW CAS ARTIFACT</span>
                     <span style={styles.stepHash}>
-                      sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                      sha256:{sha256HexSync("RAW_CAS_ARTIFACT_ANPR_SENSOR_GATEWAY_2026-08-14")}
                     </span>
                     <span style={styles.stepMeta}>Acquired: 2026-08-14 23:42:18 IST · ANPR Sensor Gateway</span>
                   </div>

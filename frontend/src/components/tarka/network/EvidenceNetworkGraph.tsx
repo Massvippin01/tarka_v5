@@ -29,6 +29,7 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { buildCase002Bundle, buildCase003Bundle } from "../../../services/caseSyncBridge";
+import { sha256HexSync, canonicalJson } from "../../../utils/sha256";
 
 export type EdgeFilterType = "all" | "cashflow" | "tether" | "ja4" | "caf" | "c2";
 
@@ -1886,7 +1887,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         : `Link: ${edge.sourceId} → ${edge.targetId}`,
                       category: isCashEdge ? "Financial Money Trail" : edge.type.toUpperCase(),
                       source: isCashEdge ? "Core Banking Ledger & NPCI Telemetry" : "Network Correlation Engine",
-                      sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                      sha256: sha256HexSync(canonicalJson({ src: edge.sourceId, tgt: edge.targetId, amt: edge.amount, ts: edge.timestamp })),
                       statutoryBasis: isCashEdge ? "BNSS §106/§107 & BSA §63(4)" : "BSA §63(4) Electronic Record Admissibility",
                       details: isCashEdge
                         ? `Transaction flow ${edge.amount} recorded at ${edge.timestamp}. Provenance verified via CBS transaction logs and Clayton's Case LIBR principle.`
@@ -2438,7 +2439,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       title: node.label,
                       category: "Controlled Mule Account",
                       source: "Core Banking Ledger & Cyber Crime Freeze",
-                      sha256: "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+                      sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label, role: node.role })),
                       statutoryBasis: "BNSS §107 Provisional Seizure Order",
                       details: `${node.role || "Mule Account"} · ${node.sublabel}`,
                       linkedEntities: ["Controller Device Cluster"],

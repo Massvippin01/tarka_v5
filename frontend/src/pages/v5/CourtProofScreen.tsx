@@ -30,6 +30,7 @@ import {
   type CaseArtifact,
   type AlibiChallenge,
 } from "../../utils/courtProofEngine";
+import { sha256HexSync } from "../../utils/sha256";
 import {
   getBnss106PoliceSpecificLienNotice,
   getBnss107JudicialAttachmentApplication,
@@ -262,9 +263,9 @@ export const CourtProofScreen: React.FC = () => {
         screenId="court-proof"
         takeaway={`BSA 2023 Section 63(4) statutory certificate pack for ${investigation.complainantName} (${investigation.firNumber}): all material findings survive complete exclusion of Tier-2 civilian artifacts; verified under judicial seal.`}
         evidenceChips={[
-          { tier: "T1", label: "RFC-3161 Timestamp", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T1", label: "Ed25519 Judicial Seal", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T1", label: "Evidence Audit Root", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: "RFC-3161 Timestamp", hash: sha256HexSync("RFC-3161 Timestamp") },
+          { tier: "T1", label: "Ed25519 Judicial Seal", hash: sha256HexSync("Ed25519 Judicial Seal") },
+          { tier: "T1", label: "Evidence Audit Root", hash: investigation.postIngestionMerkleRoot },
         ]}
       />
 
@@ -999,7 +1000,7 @@ export const CourtProofScreen: React.FC = () => {
                     Verified Statutory Evidence Binding:
                   </div>
                   <div style={{ fontSize: "8px", fontFamily: "monospace", color: "#3730A3", marginTop: "1px" }}>
-                    SHA-256 Digest: b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567
+                    SHA-256 Digest: {investigation.fileManifest[0]?.sha256 || sha256HexSync("SBI_FINACLE_CBS")}
                   </div>
                 </div>
               </div>

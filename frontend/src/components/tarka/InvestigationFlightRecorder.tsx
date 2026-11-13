@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Disc, SkipBack, SkipForward, User, Cpu, Bot, CheckCircle, Copy, Check } from "lucide-react";
+import { hashChainSync } from "../../utils/sha256";
 
 export type FlightRecorderActorType = "HUMAN_EXAMINER" | "AUTOMATED_SYSTEM" | "AI_ASSISTANT";
 
@@ -23,86 +24,77 @@ interface InvestigationFlightRecorderProps {
   className?: string;
 }
 
-const DEFAULT_RECORDER_ENTRIES: FlightRecorderEntry[] = [
+const RAW_RECORDER_EVENTS = [
   {
     sequence: 1,
     timestamp: "2026-10-12T09:15:00Z",
-    actorType: "HUMAN_EXAMINER",
+    actorType: "HUMAN_EXAMINER" as const,
     actorId: "POL-DEL-102",
     actorRole: "Investigating Officer (Delhi Cell)",
     action: "CASE_WORKSPACE_INITIALIZED",
     details: "Case upi_payment_discrepancy initiated under Section 63 BSA statutory mandate.",
-    eventHash: "a1f09c8d7e6b5a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
-    previousHash: "0000000000000000000000000000000000000000000000000000000000000000",
-    verified: true,
     statutoryCategory: "SEC_63_BSA_INIT",
   },
   {
     sequence: 2,
     timestamp: "2026-10-12T09:16:30Z",
-    actorType: "AUTOMATED_SYSTEM",
+    actorType: "AUTOMATED_SYSTEM" as const,
     actorId: "EVIDENCE_GATEWAY_V5",
     actorRole: "Storage CAS Authority",
     action: "RAW_BYTE_INGESTION_AND_SEAL",
-    details: "Acquired ART-BANK-001 (bank_statement.xlsx). SHA-256 computed: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8.",
-    eventHash: "b2e18d9c0f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
-    previousHash: "a1f09c8d7e6b5a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
-    verified: true,
+    details: "Acquired ART-BANK-001 (bank_statement.xlsx). SHA-256 computed from raw payload bytes.",
     statutoryCategory: "CAS_BYTE_PRESERVATION",
   },
   {
     sequence: 3,
     timestamp: "2026-10-12T09:17:15Z",
-    actorType: "AI_ASSISTANT",
+    actorType: "AI_ASSISTANT" as const,
     actorId: "TARKA_SCAM_LLM_V1",
     actorRole: "Bounded Neural Classifier",
     action: "PROPOSE_SCAM_TYPOLOGY_CANDIDATE",
     details: "Classified complaint text with 94.2% confidence as Digital Arrest Fraud. Flagged: PROPOSED_ONLY.",
-    eventHash: "c3d27e8b1a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e",
-    previousHash: "b2e18d9c0f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
-    verified: true,
     statutoryCategory: "AI_NON_PROMOTABLE_PROPOSAL",
   },
   {
     sequence: 4,
     timestamp: "2026-10-12T09:20:00Z",
-    actorType: "HUMAN_EXAMINER",
+    actorType: "HUMAN_EXAMINER" as const,
     actorId: "POL-DEL-102",
     actorRole: "Investigating Officer (Delhi Cell)",
     action: "EXAMINER_REVIEW_DECISION",
     details: "Accepted AI classification candidate. Formally promoted typology to verified case category.",
-    eventHash: "d4c36e7a2b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e",
-    previousHash: "c3d27e8b1a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e",
-    verified: true,
     statutoryCategory: "STATUTORY_HUMAN_OVERSIGHT",
   },
   {
     sequence: 5,
     timestamp: "2026-10-12T09:22:45Z",
-    actorType: "AUTOMATED_SYSTEM",
+    actorType: "AUTOMATED_SYSTEM" as const,
     actorId: "Z3_SMT_MUS_SOLVER",
     actorRole: "Formal Theorem Prover",
     action: "FINANCIAL_CONSERVATION_PROOF",
     details: "Proved conservation of funds across 4 hops. Constraint satisfied (SAT). Execution time: 4.8ms.",
-    eventHash: "e5b45f6a3c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f",
-    previousHash: "d4c36e7a2b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e",
-    verified: true,
     statutoryCategory: "SMT_FORMAL_VERIFICATION",
   },
   {
     sequence: 6,
     timestamp: "2026-10-12T09:25:10Z",
-    actorType: "AUTOMATED_SYSTEM",
+    actorType: "AUTOMATED_SYSTEM" as const,
     actorId: "BFT_CONSENSUS_ENGINE",
     actorRole: "4-Validator PBFT Cluster",
     action: "SHARED_EVENT_BLOCK_COMMITTED",
     details: "Quorum of 3/4 validators achieved across HDFC, ICICI, and Telco nodes. Block #104 committed.",
-    eventHash: "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f",
-    previousHash: "e5b45f6a3c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f",
-    verified: true,
     statutoryCategory: "PBFT_DISTRIBUTED_CONSENSUS",
   },
 ];
+
+const computedChains = hashChainSync(RAW_RECORDER_EVENTS);
+
+const DEFAULT_RECORDER_ENTRIES: FlightRecorderEntry[] = RAW_RECORDER_EVENTS.map((evt, idx) => ({
+  ...evt,
+  eventHash: computedChains[idx].eventHash,
+  previousHash: computedChains[idx].previousHash,
+  verified: true,
+}));
 
 export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderProps> = ({
   caseId,

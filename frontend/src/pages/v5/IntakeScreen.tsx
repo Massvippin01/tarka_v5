@@ -24,6 +24,7 @@ import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { getCanonicalCase } from "../../fixtures/cases";
 import { formatInr } from "../../utils/formatters";
+import { sha256HexSync } from "../../utils/sha256";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
@@ -277,9 +278,9 @@ export const IntakeScreen: React.FC = () => {
         screenId="intake"
         takeaway={`CBS double-entry invariant verification for ${investigation.complainantName} (${investigation.firNumber}): verifies ₹${investigation.bookedLossInr.toLocaleString("en-IN")} booked outflow across banking exhibits.`}
         evidenceChips={[
-          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567" },
-          { tier: "T1", label: "NPCI Switch STAN", hash: "9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd" },
-          { tier: "T3", label: "Victim Telemetry", hash: "c89148bc92019482019a84719284102948192841029481928410294819284102" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: investigation.fileManifest[0]?.sha256 || sha256HexSync("CBS") },
+          { tier: "T1", label: "NPCI Switch STAN", hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("NPCI") },
+          { tier: "T3", label: "Victim Telemetry", hash: investigation.fileManifest[2]?.sha256 || sha256HexSync("Telemetry") },
         ]}
       />
 

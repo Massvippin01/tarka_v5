@@ -1,6 +1,7 @@
 import React from "react";
 import * as HoverCard from "@radix-ui/react-hover-card";
 import { CheckCircle2 } from "lucide-react";
+import { sha256HexSync } from "../../../utils/sha256";
 
 export interface EvidenceChipProps {
   tier: "T1" | "T2" | "T3";
@@ -14,7 +15,7 @@ export interface EvidenceChipProps {
 export const EvidenceChip: React.FC<EvidenceChipProps> = ({
   tier,
   label,
-  hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  hash = sha256HexSync("EVIDENCE_CHIP_DEFAULT_PAYLOAD"),
   detail = "Cryptographically signed evidentiary artifact",
   custodyStatus = "Chain of Custody: INTACT (RFC-3161 Anchor)",
   className = "",

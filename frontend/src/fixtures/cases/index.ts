@@ -3,6 +3,7 @@ import case002Raw from './CASE-2026-002.json';
 import case003Raw from './CASE-2026-003.json';
 import case004Raw from './CASE-2026-004.json';
 import type { ReconstructedInvestigation, ReconstructedNode, ReconstructedEdge } from '../../utils/investigationReconstructor';
+import { sha256HexSync, computeMerkleRootSync, canonicalJson } from '../../utils/sha256';
 
 export interface CanonicalCaseComplainant {
   name: string;
@@ -207,7 +208,13 @@ export function buildCaseBundleFromFixture(fixture: CanonicalCaseFixture): Recon
       technicalOffset: fixture.caseId === "CASE-2026-001" ? "0x14209..0x15080" : "0x0000",
       discrepancyNote: fixture.receiptClaim.discrepancyNote,
     },
-    postIngestionMerkleRoot: "0".repeat(64),
+    postIngestionMerkleRoot: computeMerkleRootSync([
+      sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: `${fixture.complainant.bank}_Finacle_Statement.csv` })),
+      sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "NPCI_Central_Switch_Log.csv" })),
+      sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "Telecom_CGNAT_IPDR.csv" })),
+      sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "1930_NCRP_Intake_Dossier.pdf" })),
+      sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "Mule_KYC_Verification.csv" })),
+    ]),
     nodes,
     edges,
     transformationSteps: [],
@@ -222,10 +229,46 @@ export function buildCaseBundleFromFixture(fixture: CanonicalCaseFixture): Recon
       {
         fileName: `${fixture.complainant.bank.replace(/\s+/g, "_")}_Finacle_Statement.csv`,
         fileId: `art-${fixture.caseId}-01`,
-        byteSize: 1420,
-        sha256: "0".repeat(64),
+        byteSize: 142800,
+        sha256: sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: `${fixture.complainant.bank}_Finacle_Statement.csv` })),
         tier: "T1",
         custodian: fixture.complainant.bank,
+        status: "PASS",
+      },
+      {
+        fileName: "NPCI_Central_Switch_Log.csv",
+        fileId: `art-${fixture.caseId}-02`,
+        byteSize: 28400,
+        sha256: sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "NPCI_Central_Switch_Log.csv" })),
+        tier: "T1",
+        custodian: "NPCI Central Gateway Node",
+        status: "PASS",
+      },
+      {
+        fileName: "Telecom_CGNAT_IPDR.csv",
+        fileId: `art-${fixture.caseId}-03`,
+        byteSize: 9820,
+        sha256: sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "Telecom_CGNAT_IPDR.csv" })),
+        tier: "T1",
+        custodian: "Bharti Airtel DoT Enclave",
+        status: "PASS",
+      },
+      {
+        fileName: "1930_NCRP_Intake_Dossier.pdf",
+        fileId: `art-${fixture.caseId}-04`,
+        byteSize: 18450,
+        sha256: sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "1930_NCRP_Intake_Dossier.pdf" })),
+        tier: fixture.caseId === "CASE-2026-001" ? "T3" : "T2",
+        custodian: "NCRP 1930 Portal",
+        status: fixture.caseId === "CASE-2026-001" ? "QUARANTINED" : "PASS",
+      },
+      {
+        fileName: "Mule_KYC_Verification.csv",
+        fileId: `art-${fixture.caseId}-05`,
+        byteSize: 15300,
+        sha256: sha256HexSync(canonicalJson({ caseId: fixture.caseId, file: "Mule_KYC_Verification.csv" })),
+        tier: "T1",
+        custodian: "Consortium Nodal Officers",
         status: "PASS",
       },
     ],

@@ -28,6 +28,7 @@ import {
   generateBnssDrafts,
 } from "../../utils/taintLienEngine";
 import { recoveryModel } from "../../utils/recoveryModel";
+import { sha256HexSync } from "../../utils/sha256";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSankeyGraph";
@@ -166,9 +167,9 @@ export const TaintEngineScreen: React.FC = () => {
           </span>
         }
         evidenceChips={[
-          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T1", label: "Bank Switch RRN", hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T2", label: "Commercial Exemption", hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: `${investigation.nodes[0]?.bank || "Bank"} CBS`, hash: investigation.fileManifest[0]?.sha256 || sha256HexSync("Bank CBS") },
+          { tier: "T1", label: "Bank Switch RRN", hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("Bank Switch RRN") },
+          { tier: "T2", label: "Commercial Exemption", hash: sha256HexSync("Commercial Exemption") },
         ]}
       />
 

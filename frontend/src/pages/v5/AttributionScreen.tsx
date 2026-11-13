@@ -31,6 +31,7 @@ import {
 } from "../../utils/cgnatAttribution";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { sha256HexSync } from "../../utils/sha256";
 
 export const AttributionScreen: React.FC = () => {
   const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
@@ -191,9 +192,9 @@ export const AttributionScreen: React.FC = () => {
         screenId="attribution"
         takeaway={`Sequential CGNAT intersection for ${investigation.complainantName} (${investigation.firNumber}): collapses tower subscribers at ${attributionProfile.cellTower} to 1 unique handset (IMEI ${targetImei}); dual-SIM TAC ${targetTac} and Z3 clock offset prove physical hardware twin.`}
         evidenceChips={[
-          { tier: "T1", label: `${attributionProfile.isp.split(" ")[0]} IPDR`, hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" },
-          { tier: "T1", label: "NPCI Device XML", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
-          { tier: "T1", label: `TAC ${targetTac} Hardware`, hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" },
+          { tier: "T1", label: `${attributionProfile.isp.split(" ")[0]} IPDR`, hash: investigation.fileManifest[2]?.sha256 || sha256HexSync("IPDR") },
+          { tier: "T1", label: "NPCI Device XML", hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("NPCI_XML") },
+          { tier: "T1", label: `TAC ${targetTac} Hardware`, hash: sha256HexSync(`TAC_${targetTac}_HARDWARE`) },
         ]}
       />
 

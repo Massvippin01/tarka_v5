@@ -18,6 +18,7 @@ import {
   Check,
   FileCode,
 } from "lucide-react";
+import { sha256HexSync } from "../../utils/sha256";
 
 interface PipelineStage {
   id: string;
@@ -68,7 +69,7 @@ const PIPELINE_STAGES: PipelineStage[] = [
     codeSnippet: {
       language: "json",
       title: "Custody Head Registration Ledger",
-      code: `{\n  "case_id": "CASE-2026-001",\n  "artifact_id": "ART-BANK-003",\n  "filename": "bank_statement_cbs.csv",\n  "source_tier": "T1_AUTHORITATIVE_RECORD",\n  "sha256": "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567",\n  "byte_count": 142800,\n  "acquisition_officer": "ACP Rajesh Kumar",\n  "intake_timestamp": "2026-09-22T09:30:15.120Z",\n  "custody_verification": "VALID_ZERO_BIT_FLIP"\n}`,
+      code: `{\n  "case_id": "CASE-2026-001",\n  "artifact_id": "ART-BANK-003",\n  "filename": "bank_statement_cbs.csv",\n  "source_tier": "T1_AUTHORITATIVE_RECORD",\n  "sha256": "${sha256HexSync("bank_statement_cbs.csv")}",\n  "byte_count": 142800,\n  "acquisition_officer": "ACP Rajesh Kumar",\n  "intake_timestamp": "2026-09-22T09:30:15.120Z",\n  "custody_verification": "VALID_ZERO_BIT_FLIP"\n}`,
     },
   },
   {
@@ -128,7 +129,7 @@ const PIPELINE_STAGES: PipelineStage[] = [
     codeSnippet: {
       language: "typescript",
       title: "Provenance DAG Lineage Node",
-      code: `{\n  "node_id": "FINDING-CONTRA-001",\n  "node_type": "CONTRADICTION",\n  "label": "Claimed Transfer (₹1.5L) ≠ CBS Credit (₹50K)",\n  "parent_fact_ids": ["FACT-CLAIM-001", "FACT-CBS-001"],\n  "parent_artifact_hashes": [\n    "d4e567a12b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e", // fake_payment_screenshot.json\n    "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567"  // bank_statement_cbs.csv\n  ],\n  "mathematical_invariance": "FINANCIAL_LEDGER_PARITY_UNSAT"\n}`,
+      code: `{\n  "node_id": "FINDING-CONTRA-001",\n  "node_type": "CONTRADICTION",\n  "label": "Claimed Transfer (₹1.5L) ≠ CBS Credit (₹50K)",\n  "parent_fact_ids": ["FACT-CLAIM-001", "FACT-CBS-001"],\n  "parent_artifact_hashes": [\n    "${sha256HexSync("fake_payment_screenshot.json")}", // fake_payment_screenshot.json\n    "${sha256HexSync("bank_statement_cbs.csv")}"  // bank_statement_cbs.csv\n  ],\n  "mathematical_invariance": "FINANCIAL_LEDGER_PARITY_UNSAT"\n}`,
     },
   },
   {

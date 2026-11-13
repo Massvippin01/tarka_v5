@@ -17,6 +17,7 @@ import {
 } from "../utils/investigationReconstructor";
 import type { LedgerRowData } from "../utils/intakeFalsifier";
 import { CANONICAL_CASES, getCanonicalCase, buildCaseBundleFromFixture } from "../fixtures/cases";
+import { sha256HexSync, computeMerkleRootSync, canonicalJson, hashChainSync } from "../utils/sha256";
 import type { MuleLoginSession } from "../utils/cgnatAttribution";
 import type {
   TeDagNode,
@@ -147,16 +148,6 @@ export interface CaseAttributionProfile {
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 
-function pseudoSha256(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const hex = Math.abs(hash).toString(16).padStart(8, "0");
-  return `b94d27b9${hex}3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9`.slice(0, 64);
-}
-
 /**
  * Builds a deterministic, forensic case bundle for CASE-2026-002:
  * Malicious Wedding Card .apk & Dual-SIM Swap (Dr. Meera Nair · Hyderabad)
@@ -256,7 +247,7 @@ export function buildDynamicCaseBundle(c: CaseWorkspace): ReconstructedInvestiga
       technicalOffset: "0x0000",
       discrepancyNote: "Integrity verified",
     },
-    postIngestionMerkleRoot: pseudoSha256(`${c.caseId}-MERKLE`),
+    postIngestionMerkleRoot: computeMerkleRootSync(nodes.map((n) => sha256HexSync(canonicalJson(n)))),
     nodes,
     edges,
     transformationSteps: [],
@@ -1032,7 +1023,7 @@ export class CaseSyncBridge {
         name: `#01 Video Call Screenshot`,
         tier: "TIER_2_CORROBORATIVE",
         custodian: `${inv.complainantName} (Complainant)`,
-        sha256: pseudoSha256(`${caseId}-SCREENSHOT`),
+        sha256: sha256HexSync(canonicalJson({ caseId, file: "SCREENSHOT", custodian: inv.complainantName })),
         isExcluded: false,
         canBeExcluded: true,
       },
@@ -1041,7 +1032,7 @@ export class CaseSyncBridge {
         name: `#02 Core Banking CBS Ledger`,
         tier: "TIER_1_INDEPENDENT",
         custodian: `${inv.nodes[0]?.bank || "Bank"} IT Nodal Gateway`,
-        sha256: pseudoSha256(`${caseId}-CBS`),
+        sha256: sha256HexSync(canonicalJson({ caseId, file: "CBS", custodian: inv.nodes[0]?.bank })),
         isExcluded: false,
         canBeExcluded: true,
       },
@@ -1050,7 +1041,7 @@ export class CaseSyncBridge {
         name: `#03 NPCI Central Switch Session Log`,
         tier: "TIER_1_INDEPENDENT",
         custodian: "NPCI Central Gateway Node",
-        sha256: pseudoSha256(`${caseId}-NPCI`),
+        sha256: sha256HexSync(canonicalJson({ caseId, file: "NPCI", rail: "UPI/IMPS" })),
         isExcluded: false,
         canBeExcluded: true,
       },
@@ -1059,7 +1050,7 @@ export class CaseSyncBridge {
         name: `#04 Telco Lawful Intercept IPDR`,
         tier: "TIER_1_INDEPENDENT",
         custodian: "Cellular Service Provider Lawful Intercept Node",
-        sha256: pseudoSha256(`${caseId}-TELCO`),
+        sha256: sha256HexSync(canonicalJson({ caseId, file: "TELCO", net: "IPDR" })),
         isExcluded: false,
         canBeExcluded: true,
       },
@@ -1068,7 +1059,7 @@ export class CaseSyncBridge {
         name: `#05 Mobile Handset Telemetry`,
         tier: "TIER_2_CORROBORATIVE",
         custodian: "Investigative Seizure Evidence Locker",
-        sha256: pseudoSha256(`${caseId}-HANDSET`),
+        sha256: sha256HexSync(canonicalJson({ caseId, file: "HANDSET", imei: "867492061234567" })),
         isExcluded: false,
         canBeExcluded: true,
       },
@@ -1144,9 +1135,9 @@ export class CaseSyncBridge {
     const tx2 = inv.edges[1];
 
     const lossStr = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
-    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "bank_statement.csv", sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" };
-    const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" };
-    const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" };
+    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "bank_statement.csv", sha256: sha256HexSync("bank_statement.csv") };
+    const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
+    const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
 
     return [
       {
@@ -1264,10 +1255,10 @@ export class CaseSyncBridge {
     const victim = inv.nodes.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || inv.nodes[0];
     const l1 = inv.nodes.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("M1") || n.id.includes("PRIMARY")) || inv.nodes[1];
     const telco = inv.nodes.find((n) => n.id.includes("TWR") || n.id.includes("CELL") || n.id.includes("TELCO")) || inv.nodes[5] || inv.nodes[0];
-    const art1 = inv.fileManifest[0] || { fileId: "ART-BANK-001", fileName: "bank_statement.csv", sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" };
-    const art2 = inv.fileManifest[1] || { fileId: "ART-CDR-002", fileName: "telecom_cdr.csv", sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" };
-    const art3 = inv.fileManifest[2] || { fileId: "ART-IPDR-003", fileName: "cgnat_syslog.json", sha256: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" };
-    const art4 = inv.fileManifest[3] || { fileId: "ART-DEVICE-004", fileName: "device_telemetry.json", sha256: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918" };
+    const art1 = inv.fileManifest[0] || { fileId: "ART-BANK-001", fileName: "bank_statement.csv", sha256: sha256HexSync("bank_statement.csv") };
+    const art2 = inv.fileManifest[1] || { fileId: "ART-CDR-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
+    const art3 = inv.fileManifest[2] || { fileId: "ART-IPDR-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
+    const art4 = inv.fileManifest[3] || { fileId: "ART-DEVICE-004", fileName: "device_telemetry.json", sha256: sha256HexSync("device_telemetry.json") };
 
     const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
 
@@ -1355,115 +1346,99 @@ export class CaseSyncBridge {
     caseId: string,
     inv: ReconstructedInvestigation
   ): FlightRecorderEntry[] {
-    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" };
+    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: sha256HexSync("cbs_statement.csv") };
     const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
 
-    return [
+    const rawFlightEvents = [
       {
         sequence: 1,
         timestamp: "2026-09-22T09:15:00Z",
-        actorType: "HUMAN_EXAMINER",
+        actorType: "HUMAN_EXAMINER" as const,
         actorId: "POL-DEL-102",
         actorRole: "Investigating Officer (Cyber Cell)",
         action: "CASE_WORKSPACE_INITIALIZED",
         details: `Case ${caseId} (${inv.firNumber}) initiated under Section 63 BSA statutory mandate. Complainant: ${inv.complainantName}.`,
-        eventHash: "a1f09c8d7e6b5a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
-        previousHash: "0000000000000000000000000000000000000000000000000000000000000000",
-        verified: true,
         statutoryCategory: "SEC_63_BSA_INIT",
       },
       {
         sequence: 2,
         timestamp: "2026-09-22T09:16:30Z",
-        actorType: "AUTOMATED_SYSTEM",
+        actorType: "AUTOMATED_SYSTEM" as const,
         actorId: "EVIDENCE_GATEWAY_V5",
         actorRole: "Storage CAS Authority",
         action: "RAW_BYTE_INGESTION_AND_SEAL",
         details: `Acquired ${art1.fileName}. SHA-256 computed: ${art1.sha256}.`,
-        eventHash: "b2e18d9c0f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
-        previousHash: "a1f09c8d7e6b5a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
-        verified: true,
         statutoryCategory: "CAS_BYTE_PRESERVATION",
       },
       {
         sequence: 3,
         timestamp: "2026-09-22T09:17:15Z",
-        actorType: "AI_ASSISTANT",
+        actorType: "AI_ASSISTANT" as const,
         actorId: "TARKA_SCAM_LLM_V1",
         actorRole: "Bounded Neural Classifier",
         action: "PROPOSE_SCAM_TYPOLOGY_CANDIDATE",
         details: `Classified ${inv.firNumber} with 95.8% confidence. Flagged: PROPOSED_ONLY per Constitution Section 5.`,
-        eventHash: "c3d27e8b1a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e",
-        previousHash: "b2e18d9c0f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c",
-        verified: true,
         statutoryCategory: "AI_NON_PROMOTABLE_PROPOSAL",
       },
       {
         sequence: 4,
         timestamp: "2026-09-22T09:20:00Z",
-        actorType: "HUMAN_EXAMINER",
+        actorType: "HUMAN_EXAMINER" as const,
         actorId: "POL-DEL-102",
         actorRole: "Investigating Officer (Cyber Cell)",
         action: "EXAMINER_REVIEW_DECISION",
         details: `Accepted AI candidate classification. Formally promoted typology to verified case category for ${caseId}.`,
-        eventHash: "d4c36e7a2b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e",
-        previousHash: "c3d27e8b1a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e",
-        verified: true,
         statutoryCategory: "STATUTORY_HUMAN_OVERSIGHT",
       },
       {
         sequence: 5,
         timestamp: "2026-09-22T09:22:45Z",
-        actorType: "AUTOMATED_SYSTEM",
+        actorType: "AUTOMATED_SYSTEM" as const,
         actorId: "Z3_SMT_MUS_SOLVER",
         actorRole: "Formal Theorem Prover",
         action: "FINANCIAL_CONSERVATION_PROOF",
         details: `Proved conservation of funds (${lossFormatted}) across graph hops. Constraint satisfied (SAT). Execution time: 4.2ms.`,
-        eventHash: "e5b45f6a3c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f",
-        previousHash: "d4c36e7a2b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e",
-        verified: true,
         statutoryCategory: "SMT_FORMAL_VERIFICATION",
       },
       {
         sequence: 6,
         timestamp: "2026-09-22T09:25:10Z",
-        actorType: "AUTOMATED_SYSTEM",
+        actorType: "AUTOMATED_SYSTEM" as const,
         actorId: "BFT_CONSENSUS_ENGINE",
         actorRole: "Consortium PBFT Cluster",
         action: "SHARED_EVENT_BLOCK_COMMITTED",
         details: `Quorum of 3/4 validators achieved across consortium nodes. Block #104 committed for ${caseId}.`,
-        eventHash: "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f",
-        previousHash: "e5b45f6a3c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f",
-        verified: true,
         statutoryCategory: "DISTRIBUTED_CONSENSUS",
       },
       {
         sequence: 7,
         timestamp: "2026-09-22T09:30:00Z",
-        actorType: "AUTOMATED_SYSTEM",
+        actorType: "AUTOMATED_SYSTEM" as const,
         actorId: "TAINT_LIEN_ENGINE",
         actorRole: "LIBR Statutory Calculator",
         action: "TAINT_LIEN_COMPUTED",
         details: `LIBR calculation completed for ${caseId}. Recoverable lien isolated while shielding innocent merchant capital.`,
-        eventHash: "7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c",
-        previousHash: "f6a54e5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f",
-        verified: true,
         statutoryCategory: "BNSS_106_COMPLIANCE",
       },
       {
         sequence: 8,
         timestamp: "2026-09-22T09:35:00Z",
-        actorType: "HUMAN_EXAMINER",
+        actorType: "HUMAN_EXAMINER" as const,
         actorId: "POL-DEL-102",
         actorRole: "Investigating Officer (Cyber Cell)",
         action: "BSA_SECTION_63_CERTIFICATE_ISSUED",
         details: `Court proof package and Ed25519 hash seal generated for ${caseId} (${inv.firNumber}).`,
-        eventHash: "8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d",
-        previousHash: "7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c",
-        verified: true,
         statutoryCategory: "BSA_COURT_SEAL",
       },
     ];
+
+    const chains = hashChainSync(rawFlightEvents);
+    return rawFlightEvents.map((evt, idx) => ({
+      ...evt,
+      eventHash: chains[idx].eventHash,
+      previousHash: chains[idx].previousHash,
+      verified: true,
+    }));
   }
 
   /**
@@ -1478,9 +1453,9 @@ export class CaseSyncBridge {
     const tx1 = inv.edges[0];
 
     const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
-    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8" };
-    const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" };
-    const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a" };
+    const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: sha256HexSync("cbs_statement.csv") };
+    const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
+    const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
 
     const nodes: CustomDAGNode[] = [
       // Layer 1: Artifacts

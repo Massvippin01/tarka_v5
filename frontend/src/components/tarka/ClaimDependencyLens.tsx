@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { GitBranch, AlertTriangle, CheckCircle, XCircle, HelpCircle, ArrowRight, RefreshCw } from "lucide-react";
+import { sha256HexSync } from "../../utils/sha256";
 
 export interface EvidenceArtifactItem {
   id: string;
@@ -33,7 +34,7 @@ const DEFAULT_ARTIFACTS: EvidenceArtifactItem[] = [
     id: "ART-BANK-001",
     name: "HDFC Primary Current Account Statement (A/C 99182)",
     sourceType: "BANK_STATEMENT_XLSX",
-    hash: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    hash: sha256HexSync("HDFC Primary Current Account Statement (A/C 99182)"),
     isExcluded: false,
     dependentClaimIds: ["CLM-001", "CLM-002", "CLM-004"],
   },
@@ -41,7 +42,7 @@ const DEFAULT_ARTIFACTS: EvidenceArtifactItem[] = [
     id: "ART-CDR-002",
     name: "Gurugram Tower Call Detail Record (SIM 98110-XXXXX)",
     sourceType: "CDR_TELECOM_CSV",
-    hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    hash: sha256HexSync("Gurugram Tower Call Detail Record (SIM 98110-XXXXX)"),
     isExcluded: false,
     dependentClaimIds: ["CLM-002", "CLM-003"],
   },
@@ -49,7 +50,7 @@ const DEFAULT_ARTIFACTS: EvidenceArtifactItem[] = [
     id: "ART-IPDR-003",
     name: "ISP NAT Translation Log (Port 18420)",
     sourceType: "IPDR_LOG_JSON",
-    hash: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+    hash: sha256HexSync("ISP NAT Translation Log (Port 18420)"),
     isExcluded: false,
     dependentClaimIds: ["CLM-003"],
   },
@@ -57,7 +58,7 @@ const DEFAULT_ARTIFACTS: EvidenceArtifactItem[] = [
     id: "ART-PASSPORT-004",
     name: "Bureau of Immigration Exit Stamp (IGI Terminal 3)",
     sourceType: "IMMIGRATION_RECORD_PDF",
-    hash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+    hash: sha256HexSync("Bureau of Immigration Exit Stamp (IGI Terminal 3)"),
     isExcluded: false,
     dependentClaimIds: ["CLM-003"],
   },

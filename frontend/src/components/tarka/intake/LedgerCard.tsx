@@ -26,6 +26,7 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 import { formatInr } from "../../../utils/formatters";
+import { sha256HexSync, computeMerkleRootSync, canonicalJson } from "../../../utils/sha256";
 
 export type ValidatedLedgerRow = LedgerRowData & {
   expectedBalance?: number;
@@ -53,12 +54,12 @@ export interface LedgerCardProps {
 }
 
 const ROW_HASHES: Record<number, string> = {
-  11: "a18f4019e078b61c8a14b5c772099307ef1968d04265ccf7c706bf9508bc5b51",
-  12: "d32840c1122a6111f1295b9c77109307ef1968d04265ccf7c706bf9508bc5b52",
-  13: "e43920f2133b7222f2306c0d88210418fa2079e15376dd08d817ca0619cd6c63",
-  14: "f54a31a3244c8333a3417d1e99321529ab318af26487ee19e928db1720de7d74",
-  15: "065b42b4355d9444b4528e2fa0432630bc429b037598ff20fa39ec2831ef8e85",
-  16: "176c53c5466ea555c5639f30b1543741cd530c1486a900310b4afd3942f09f96",
+  11: sha256HexSync("ROW_11_OPENING_BALANCE"),
+  12: sha256HexSync("ROW_12_UPI_RETAIL_STORE"),
+  13: sha256HexSync("ROW_13_NEFT_SALARY_SETTLEMENT"),
+  14: sha256HexSync("ROW_14_PRIMARY_DRAIN_IMPS"),
+  15: sha256HexSync("ROW_15_ATM_CASH_WITHDRAWAL"),
+  16: sha256HexSync("ROW_16_SECONDARY_DRAIN"),
 };
 
 export const LedgerCard: React.FC<LedgerCardProps> = ({
@@ -105,7 +106,8 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
   };
 
   const handleCopySha = () => {
-    navigator.clipboard.writeText("3f8a412e8b2c9d1109aa77f1b29c5e3170d496a793c12a884efb01449de1e9b1");
+    const fullLedgerMerkle = computeMerkleRootSync(rows.map((r) => sha256HexSync(canonicalJson(r))));
+    navigator.clipboard.writeText(fullLedgerMerkle);
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2000);
   };

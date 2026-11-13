@@ -20,6 +20,7 @@ import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 import { ScaleBar } from "../kit/ScaleBar";
+import { sha256HexSync, computeMerkleRootSync } from "../../../utils/sha256";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -69,8 +70,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   // Tab 5 (Entities) state
   const [hoveredEntity, setHoveredEntity] = useState<string | null>(null);
 
-  const fullMerkleRoot = "0xb189f3a9712a45d886910384cf22da810842e09153b6fa034e3209847492c810";
-  const tamperedMerkleRoot = "0xdeadbeef712a45d886910384cf22da810842e09153b6fa034e3209847492beef";
+  const fullMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
+  const tamperedMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01_tampered", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
 
   // Re-verify Merkle path when sibling tamper state changes
   useEffect(() => {
@@ -1087,7 +1088,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   <span style={{ color: "#047857", fontWeight: 700 }}>Finacle Certified Original</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px", wordBreak: "break-all" }}>
-                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                  {sha256HexSync("Rev 1 Stream Finacle Certified Original")}
                 </div>
               </div>
 
@@ -1097,7 +1098,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   <span style={{ color: "#BE123C", fontWeight: 700 }}>Canva Web Export (+18.4 KB)</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", color: "#BE123C", marginTop: "2px", wordBreak: "break-all" }}>
-                  7d1b54f9a0c8432a98eef65bc042a1948efb4e1329a4309a6f1d8c919f2a41d0
+                  {sha256HexSync("Rev 2 Append Canva Web Export")}
                 </div>
               </div>
             </div>

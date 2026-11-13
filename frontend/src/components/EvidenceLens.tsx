@@ -1,5 +1,6 @@
 import React from "react";
 import { useInvestigation } from "../context/InvestigationContext";
+import { sha256HexSync, canonicalJson } from "../utils/sha256";
 
 interface EvidenceRecord {
   id: string;
@@ -14,56 +15,57 @@ interface EvidenceRecord {
   status: "VERIFIED" | "PENDING_REVIEW" | "CORROBORATED";
 }
 
-const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = [
+const MOCK_RAW_EVIDENCE_ITEMS = [
   {
     id: "EV-2026-101",
     title: "FSL Digital Forensics Extraction — WhatsApp Chat Log #8042",
-    sourceSystem: "FSL",
+    sourceSystem: "FSL" as const,
     recordId: "FSL-DEL-2026-8812",
-    sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     provenanceStage: "RAW RECORD  OBSERVATION  SIGNAL  EVIDENCE  CLAIM",
     confidence: 0.99,
     supportingEntities: ["P001", "PH001", "ACC992"],
     contradictingEntities: [],
-    status: "CORROBORATED",
+    status: "CORROBORATED" as const,
   },
   {
     id: "EV-2026-102",
     title: "Bank Statement — ICICI Mule Account ACC992 Ledger",
-    sourceSystem: "FINANCIAL",
+    sourceSystem: "FINANCIAL" as const,
     recordId: "ICICI-TXN-99120",
-    sha256: "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
     provenanceStage: "RAW RECORD  OBSERVATION  SIGNAL  EVIDENCE",
     confidence: 0.98,
     supportingEntities: ["ACC992", "ACC481"],
     contradictingEntities: [],
-    status: "VERIFIED",
+    status: "VERIFIED" as const,
   },
   {
     id: "EV-2026-103",
     title: "Telecom Call Data Record — CDR001 (340s Intercept)",
-    sourceSystem: "CDR",
+    sourceSystem: "CDR" as const,
     recordId: "AIRTEL-CDR-2026-0814",
-    sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
     provenanceStage: "RAW RECORD  SIGNAL  EVIDENCE",
     confidence: 0.95,
     supportingEntities: ["PH001", "PH002"],
     contradictingEntities: [],
-    status: "VERIFIED",
+    status: "VERIFIED" as const,
   },
   {
     id: "EV-2026-104",
     title: "ANPR Highway Camera Snapshot — DND Flyway Toll Gate #4",
-    sourceSystem: "ANPR",
+    sourceSystem: "ANPR" as const,
     recordId: "ANPR-DEL-8812",
-    sha256: "4b227777d4da1691cb48f219149ce57b28251e76500c9835077717872a128260",
     provenanceStage: "RAW RECORD  OBSERVATION  EVIDENCE",
     confidence: 0.92,
     supportingEntities: ["V188", "P001"],
     contradictingEntities: ["P001_ALIBI_CP"],
-    status: "CORROBORATED",
+    status: "CORROBORATED" as const,
   },
 ];
+
+const MOCK_EVIDENCE_ITEMS: EvidenceRecord[] = MOCK_RAW_EVIDENCE_ITEMS.map((item) => ({
+  ...item,
+  sha256: sha256HexSync(canonicalJson(item)),
+}));
 
 export const EvidenceLens: React.FC = () => {
   const { selectEntity, selectEvidence, runCopilotQuery } = useInvestigation();
