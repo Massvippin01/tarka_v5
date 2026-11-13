@@ -33,3 +33,4 @@ build:
 
 lint:
 	cd frontend && npm run lint
+

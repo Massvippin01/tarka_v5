@@ -221,3 +221,4 @@ def test_deterministic_template_recipe_invariants():
     assert "92102004810291" in en and "92102004810291" in hi
     assert not re.search(r"\b(fraud|guilty|criminal)\b", en, re.I)
     assert not re.search(r"\b(fraud|guilty|criminal)\b", hi, re.I)
+
