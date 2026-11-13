@@ -41,6 +41,7 @@ import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
+import { forensicsApi } from "../../api/forensicsApi";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -231,6 +232,26 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
     const time = new Date().toTimeString().split(" ")[0];
     setMutationReceipts((prev) => [{ id: `rcpt-${Date.now()}-${Math.random()}`, time, text, type }, ...prev.slice(0, 7)]);
   };
+
+  // Backend connection status probe for zero-error offline resilience
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
+  useEffect(() => {
+    let isMounted = true;
+    const probe = async () => {
+      try {
+        await forensicsApi.getHealth();
+        if (isMounted) setIsBackendOnline(true);
+      } catch {
+        if (isMounted) setIsBackendOnline(false);
+      }
+    };
+    probe();
+    const interval = setInterval(probe, 25000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Global Ctrl+B (sidebar) and F (presentation mode) shortcuts
   useEffect(() => {
@@ -1303,6 +1324,29 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <span className="hidden xl:inline-flex flex-shrink-0">
               <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
             </span>
+            {!isBackendOnline ? (
+              <span
+                data-testid="offline-demo-pill"
+                className="flex-shrink-0"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  color: "#FBBF24",
+                  background: "rgba(245, 158, 11, 0.16)",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-mono)",
+                }}
+                title="Backend server offline · Operating deterministically with local verified fixtures"
+              >
+                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#F59E0B" }} />
+                Offline demo data
+              </span>
+            ) : null}
           </div>
 
           {/* ZONE 3 (RIGHT): Exactly 5 Visible Actions + Single '⋯ More' Popover */}

@@ -96,7 +96,6 @@ describe("WCAG 2.1 Contrast Ratio Verification Suite (Phase 15.2)", () => {
 
   describe("Extended Dark Palette & Badge Contrasts", () => {
     const slateDark = "#0F172A";
-    const slateSurface = "#1E293B";
 
     it("verifies badge text contrast on status pills in dark mode (>= 4.5:1 AA)", () => {
       expect(getContrastRatio("#34D399", slateDark)).toBeGreaterThanOrEqual(4.5);
