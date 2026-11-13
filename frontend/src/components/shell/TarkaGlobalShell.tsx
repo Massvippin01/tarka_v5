@@ -40,6 +40,7 @@ import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContex
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
+import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -162,6 +163,7 @@ export const TarkaGlobalShell: React.FC = () => {
     investigationMode,
     setInvestigationMode,
     cycleInvestigationMode,
+    startJudgeDemo,
     density,
     setDensity,
     activeDiscoveredCluster,
@@ -594,6 +596,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       }}
     >
       <TarkaCommandPalette />
+      <JudgeModeWalkthrough />
 
       {/* Mobile Drawer Backdrop */}
       {isMobile && !sidebarCollapsed && (
@@ -1177,7 +1180,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             >
               <button
                 type="button"
-                onClick={() => setInvestigationMode("guided")}
+                onClick={() => {
+                  setInvestigationMode("guided");
+                  startJudgeDemo();
+                }}
                 title="Guided Investigation: Step-by-step guidance for frontline officers & rapid response (Alt+M)"
                 style={{
                   display: "inline-flex",
@@ -1781,8 +1787,29 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 {getStageGuidanceAction(activeRoute)}
               </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "10px", color: "#94A3B8" }}>Press Alt+M to switch to Analyst view</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={startJudgeDemo}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+                  color: "#FFFFFF",
+                  fontSize: "10.5px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 1px 4px rgba(6, 182, 212, 0.3)",
+                }}
+              >
+                <Sparkles size={11} />
+                <span>⚡ 3-Min Judge Demo</span>
+              </button>
+              <span style={{ fontSize: "10px", color: "#94A3B8" }}>Press Alt+M for Analyst view</span>
             </div>
           </div>
         )}

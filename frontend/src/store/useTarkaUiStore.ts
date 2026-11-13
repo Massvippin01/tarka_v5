@@ -53,6 +53,19 @@ export interface TarkaUiState {
   setExplainSimply: (val: boolean) => void;
   toggleExplainSimply: () => void;
 
+  // Prompt 14: Judge Mode Guided 3-Minute Demo Walkthrough
+  judgeDemoActive: boolean;
+  judgeDemoStep: number;
+  judgeDemoAutoPlay: boolean;
+  setJudgeDemoActive: (active: boolean) => void;
+  setJudgeDemoStep: (step: number) => void;
+  setJudgeDemoAutoPlay: (auto: boolean) => void;
+  toggleJudgeDemoAutoPlay: () => void;
+  startJudgeDemo: () => void;
+  stopJudgeDemo: () => void;
+  nextJudgeDemoStep: () => void;
+  prevJudgeDemoStep: () => void;
+
   // Command palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
@@ -191,6 +204,19 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     explainSimply: true,
     setExplainSimply: (val) => set({ explainSimply: val }),
     toggleExplainSimply: () => set((state) => ({ explainSimply: !state.explainSimply })),
+
+    // Prompt 14: Judge Demo Walkthrough State
+    judgeDemoActive: false,
+    judgeDemoStep: 0,
+    judgeDemoAutoPlay: false,
+    setJudgeDemoActive: (active) => set({ judgeDemoActive: active }),
+    setJudgeDemoStep: (step) => set({ judgeDemoStep: step }),
+    setJudgeDemoAutoPlay: (auto) => set({ judgeDemoAutoPlay: auto }),
+    toggleJudgeDemoAutoPlay: () => set((state) => ({ judgeDemoAutoPlay: !state.judgeDemoAutoPlay })),
+    startJudgeDemo: () => set({ judgeDemoActive: true, judgeDemoStep: 0, judgeDemoAutoPlay: true }),
+    stopJudgeDemo: () => set({ judgeDemoActive: false, judgeDemoAutoPlay: false }),
+    nextJudgeDemoStep: () => set((state) => ({ judgeDemoStep: Math.min(state.judgeDemoStep + 1, 5) })),
+    prevJudgeDemoStep: () => set((state) => ({ judgeDemoStep: Math.max(state.judgeDemoStep - 1, 0) })),
 
     commandPaletteOpen: false,
     setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
