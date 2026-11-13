@@ -12,9 +12,10 @@ export type ActiveRoute =
   | "network"
   | "taint-engine"
   | "court-proof"
-  | "privacy-crypto";
+  | "privacy-crypto"
+  | "report";
 
-export type TarkaRoute = ActiveRoute | "workstation" | "workflow";
+export type TarkaRoute = ActiveRoute | "workstation" | "workflow" | "benchmarks";
 
 export type ArtifactVectorType =
   | "CBS_LEDGER"
@@ -506,6 +507,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (view === "privacy-crypto" || view === "privacy" || path.includes("privacy")) return "privacy-crypto";
       if (view === "workstation" || view === "tarka" || path.includes("workstation")) return "workstation";
       if (view === "workflow" || path.includes("workflow")) return "workflow";
+      if (view === "report" || path.includes("report")) return "report";
       if (view === "intake" || path.includes("intake")) return "intake";
     }
     return "workspace"; // Default to Screen 00 Workspace Hub
@@ -553,6 +555,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
           else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
           else if (v === "workstation") setActiveRouteState("workstation");
+          else if (v === "report") setActiveRouteState("report");
         }
       }
     };

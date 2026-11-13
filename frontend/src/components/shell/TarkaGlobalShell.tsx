@@ -50,6 +50,7 @@ const CaseWorkspaceScreen = lazy(() => import("../../pages/v5/CaseWorkspaceScree
 const PrivacyCryptoWorkbench = lazy(() => import("../tarka/privacy/PrivacyCryptoWorkbench").then((m) => ({ default: m.PrivacyCryptoWorkbench })));
 const BenchmarkLabScreen = lazy(() => import("../../pages/v5/BenchmarkLabScreen").then((m) => ({ default: m.BenchmarkLabScreen })));
 const ForensicWorkstationScreen = lazy(() => import("../../pages/v5/ForensicWorkstationScreen").then((m) => ({ default: m.ForensicWorkstationScreen })));
+const ReportScreen = lazy(() => import("../../pages/v5/ReportScreen").then((m) => ({ default: m.ReportScreen })));
 
 // Lazy-loaded modal dialogs and drawers
 const EvidenceIntakeModal = lazy(() => import("../tarka/workspace/EvidenceIntakeModal").then((m) => ({ default: m.EvidenceIntakeModal })));
@@ -419,10 +420,6 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
   ];
 
   const currentNav = navItems.find((n) => n.id === activeRoute) || navItems[0];
-
-  const handlePrintPdf = () => {
-    window.print();
-  };
 
   // Determine effective sidebar state (56px collapsed vs 232px expanded/peeking)
   const isExpanded = isMobile ? !sidebarCollapsed : (!sidebarCollapsed || isHoverPeeking);
@@ -1427,12 +1424,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               disabled={intakeGate?.isHalted}
-              onClick={handlePrintPdf}
+              onClick={() => setActiveRoute("report")}
               className="hover:bg-slate-800 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title={
                 intakeGate?.isHalted
                   ? "Export disabled: Falsification Gate halted downstream admissibility"
-                  : "Generate & Export §63(4) BSA Evidence Certificate"
+                  : "View & Export Certified A4 Report (BSA §63(4))"
               }
               style={{
                 height: "28px",
@@ -2115,6 +2112,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 {activeRoute === "court-proof" && <CourtProofScreen />}
                 {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
                 {activeRoute === "workstation" && <ForensicWorkstationScreen />}
+                {activeRoute === "report" && <ReportScreen />}
               </>
             )}
           </Suspense>
