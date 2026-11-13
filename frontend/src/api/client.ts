@@ -1,12 +1,15 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "",
+  baseURL: import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? "" : "http://127.0.0.1:8000"),
   timeout: 35000,
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("sentinelx_auth_token") || localStorage.getItem("sentinelx_auth_token");
+  const token =
+    typeof sessionStorage !== "undefined"
+      ? sessionStorage.getItem("sentinelx_auth_token") || localStorage.getItem("sentinelx_auth_token")
+      : null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

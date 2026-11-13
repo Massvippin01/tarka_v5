@@ -945,3 +945,119 @@ async def get_case_mule_scores(
         raise HTTPException(status_code=500, detail=str(err))
 
 
+class ResolveEntitiesRequest(BaseModel):
+    mentions: Optional[List[Dict[str, Any]]] = None
+    threshold: float = 0.75
+
+
+class EntityDecisionRequest(BaseModel):
+    clusterId: str
+    mentionId: Optional[str] = None
+    pairKey: Optional[str] = None
+    decision: str  # ACCEPT, REJECT, SPLIT
+    notes: Optional[str] = None
+    officerId: Optional[str] = "IO-409"
+
+
+CASE_ENTITY_DECISIONS: Dict[str, Dict[str, str]] = {}
+
+
+@router.post("/{case_id}/resolve-entities")
+async def resolve_case_entities(
+    case_id: str,
+    req: Optional[ResolveEntitiesRequest] = None,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Resolves heterogeneous raw extracted evidence mentions into canonical investigative profiles.
+    Evaluates phone normalization, VPA handle stem decomposition, IFSC-to-bank resolution,
+    Indic transliteration, Soundex/Jaro-Winkler phonetic similarity, and strict hard-vetoes.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    from app.services.case_entity_resolution_service import (
+        CaseEntityResolutionEngine,
+        extract_default_mentions_for_case,
+    )
+
+    threshold = req.threshold if req else 0.75
+    incoming_mentions = req.mentions if (req and req.mentions) else None
+
+    if incoming_mentions:
+        mentions = incoming_mentions
+    else:
+        mentions = extract_default_mentions_for_case(case_id)
+
+    engine = CaseEntityResolutionEngine()
+    decisions = CASE_ENTITY_DECISIONS.get(case_id, {})
+    clusters = engine.cluster_mentions(mentions, threshold=threshold, decisions=decisions)
+
+    # Compute deterministic SHA-256 state proof
+    state_serialized = json.dumps(clusters, sort_keys=True, default=str)
+    audit_proof = f"0x{hashlib.sha256(state_serialized.encode('utf-8')).hexdigest()}"
+
+    return {
+        "caseId": case_id,
+        "clusters": clusters,
+        "totalMentions": len(mentions),
+        "totalClusters": len(clusters),
+        "auditProof": audit_proof,
+    }
+
+
+@router.post("/{case_id}/entity-decisions")
+async def record_entity_decision(
+    case_id: str,
+    req: EntityDecisionRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Records an investigator's judicial Accept / Reject / Split review decision.
+    Appends an immutable entry to the hash-chained audit trail (Constitution Rule 7).
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    decision_norm = req.decision.strip().upper()
+    if decision_norm not in ("ACCEPT", "REJECT", "SPLIT"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid decision '{req.decision}'. Must be ACCEPT, REJECT, or SPLIT."
+        )
+
+    # Key for pairwise decision if provided
+    case_decisions = CASE_ENTITY_DECISIONS.setdefault(case_id, {})
+    if req.pairKey:
+        case_decisions[req.pairKey] = decision_norm
+    elif req.clusterId and req.mentionId:
+        case_decisions[f"{req.clusterId}:{req.mentionId}"] = decision_norm
+    else:
+        case_decisions[req.clusterId] = decision_norm
+
+    # Log to hash-chained audit trail
+    from app.services.audit_service import AuditService
+    audit_service = AuditService.get_instance()
+    audit_entry = audit_service.log_event(
+        event_type="ENTITY_RESOLUTION_DECISION",
+        actor_id=user.user_id,
+        case_id=case_id,
+        action_details={
+            "clusterId": req.clusterId,
+            "mentionId": req.mentionId,
+            "pairKey": req.pairKey,
+            "decision": decision_norm,
+            "notes": req.notes,
+            "officerId": req.officerId,
+        },
+    )
+
+    return {
+        "success": True,
+        "caseId": case_id,
+        "clusterId": req.clusterId,
+        "decision": decision_norm,
+        "auditEventId": audit_entry["audit_id"],
+        "sha256Hash": audit_entry["event_hash"],
+        "timestamp": audit_entry["timestamp"],
+    }
+
+
+

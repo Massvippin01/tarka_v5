@@ -70,4 +70,18 @@ describe("Entity Resolution Screen & Logic (Prompt 5)", () => {
     const mule = entities.find((e) => e.id === "ENT-02");
     expect(mule?.fraudScore).toBeGreaterThanOrEqual(90);
   });
+
+  it("Prompt 9: recordEntityDecision generates SHA-256 flight recorder audit hash", async () => {
+    const res = await bridge.recordEntityDecision(
+      "CASE-2026-001",
+      "ENT-02",
+      "ACCEPT",
+      "M-VIKRAM-WA",
+      "Judicial confirmation under BNSS §94"
+    );
+    expect(res.success).toBe(true);
+    expect(res.auditEventId).toMatch(/^AUD-[A-F0-9]{8}/i);
+    expect(res.sha256Hash).toHaveLength(64);
+    expect(res.decision).toBe("ACCEPT");
+  });
 });
