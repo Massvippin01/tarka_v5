@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel, Field
 
 from app.database.models import CaseModel, EvidenceArtifactModel, EvidenceCustodyRecordModel, AuditEventModel
@@ -17,6 +17,8 @@ from app.services.auth_service import AuthService, get_current_user
 
 logger = logging.getLogger("sentinelx.api.case")
 router = APIRouter()
+
+CASE_BUNDLES_LIVE: Dict[str, Any] = {}
 
 
 class IngestArtifactRequest(BaseModel):
@@ -341,6 +343,9 @@ async def get_case_bundle(
     """
     AuthService.get_instance().enforce_case_access(user, case_id)
 
+    if case_id in CASE_BUNDLES_LIVE:
+        return CASE_BUNDLES_LIVE[case_id]
+
     async with UnitOfWork() as uow:
         case = await uow.cases.get(case_id)
         if not case:
@@ -373,7 +378,13 @@ async def get_case_bundle(
             for a in db_artifacts
         ]
 
-        fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{case.id}.json"
+        # Locate canonical fixture by requested case_id, case_number, or id
+        target_slug = case_id if (case_id and case_id.startswith("CASE-")) else (case.case_number or case.id)
+        fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{target_slug}.json"
+        if not fixture_file.exists() and case.case_number:
+            fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{case.case_number}.json"
+        if not fixture_file.exists():
+            fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{case.id}.json"
         if fixture_file.exists():
             with open(fixture_file, "r", encoding="utf-8") as f:
                 cdata = json.load(f)
@@ -922,6 +933,46 @@ async def get_case_bundle(
         }
 
 
+@router.post("/{case_id}/ingest")
+async def ingest_case_files(
+    case_id: str,
+    files: List[UploadFile] = File(...),
+    complainant_name: Optional[str] = Form(None),
+    fir_number: Optional[str] = Form(None),
+    police_station: Optional[str] = Form(None),
+    typology: Optional[str] = Form(None),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Live upload-anything investigation pipeline.
+    Parses heterogeneous evidence files, extracts entities, performs deterministic resolution,
+    constructs the transaction graph, scores mule accounts, and streams progress over SSE.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    from app.services.live_investigation_pipeline import LiveInvestigationPipeline
+
+    file_tuples = []
+    for f in files:
+        data = await f.read()
+        file_tuples.append((f.filename or "uploaded_evidence.csv", data))
+
+    pipeline = LiveInvestigationPipeline()
+    result = await pipeline.execute_live_ingestion(
+        case_id=case_id,
+        files=file_tuples,
+        metadata={
+            "complainant_name": complainant_name,
+            "fir_number": fir_number,
+            "police_station": police_station,
+            "typology": typology,
+        },
+        officer=user.display_name or "Insp. R. K. Sharma (IO-409)",
+    )
+
+    CASE_BUNDLES_LIVE[case_id] = result
+    return result
+
+
 @router.get("/{case_id}/mule-scores")
 async def get_case_mule_scores(
     case_id: str,
@@ -933,6 +984,10 @@ async def get_case_mule_scores(
     and risk bands.
     """
     AuthService.get_instance().enforce_case_access(user, case_id)
+
+    if case_id in CASE_BUNDLES_LIVE and CASE_BUNDLES_LIVE[case_id].get("muleScores"):
+        return CASE_BUNDLES_LIVE[case_id]["muleScores"]
+
     from app.services.mule_scoring_service import MuleScoringEngine
 
     engine = MuleScoringEngine()
@@ -981,6 +1036,16 @@ async def resolve_case_entities(
 
     threshold = req.threshold if req else 0.75
     incoming_mentions = req.mentions if (req and req.mentions) else None
+
+    if not incoming_mentions and case_id in CASE_BUNDLES_LIVE and CASE_BUNDLES_LIVE[case_id].get("clusters"):
+        live_clusters = CASE_BUNDLES_LIVE[case_id]["clusters"]
+        return {
+            "caseId": case_id,
+            "clusters": live_clusters,
+            "totalMentions": sum(c.get("memberCount", 1) for c in live_clusters),
+            "totalClusters": len(live_clusters),
+            "auditProof": CASE_BUNDLES_LIVE[case_id].get("postIngestionMerkleRoot", "0xlive"),
+        }
 
     if incoming_mentions:
         mentions = incoming_mentions

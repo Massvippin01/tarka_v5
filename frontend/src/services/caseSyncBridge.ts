@@ -168,6 +168,14 @@ export interface CaseAttributionProfile {
 
 
 /**
+ * Builds a deterministic, forensic case bundle for CASE-2026-001:
+ * CBI/TRAI Fake Digital Arrest Extortion (Sunil Kumar · Noida)
+ */
+export function buildCase001Bundle(): ReconstructedInvestigation {
+  return buildCaseBundleFromFixture(getCanonicalCase("CASE-2026-001"));
+}
+
+/**
  * Builds a deterministic, forensic case bundle for CASE-2026-002:
  * Malicious Wedding Card .apk & Dual-SIM Swap (Dr. Meera Nair · Hyderabad)
  */
@@ -375,7 +383,7 @@ export class CaseSyncBridge {
     }
 
     if (caseId === "CASE-2026-001") {
-      return reconstruct5FileInvestigation();
+      return buildCase001Bundle();
     }
     if (caseId === "CASE-2026-002") {
       return buildCase002Bundle();
@@ -575,6 +583,31 @@ export class CaseSyncBridge {
         decision,
       };
     }
+  }
+
+  /**
+   * Ingest evidentiary files into the live investigation pipeline.
+   * Runs: parse -> extraction -> resolution -> transaction graph -> mule scoring -> flight recorder.
+   */
+  public async ingestEvidenceFiles(
+    caseId: string,
+    files: (File | { filename: string; content: string })[]
+  ): Promise<any> {
+    const formData = new FormData();
+    for (const f of files) {
+      if (f instanceof File) {
+        formData.append("files", f, f.name);
+      } else {
+        const blob = new Blob([f.content], { type: "text/csv" });
+        formData.append("files", blob, f.filename);
+      }
+    }
+
+    const res = await apiClient.post(`/api/v1/cases/${caseId}/ingest`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 30000,
+    });
+    return res.data;
   }
 
   /**

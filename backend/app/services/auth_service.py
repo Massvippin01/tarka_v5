@@ -90,7 +90,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),

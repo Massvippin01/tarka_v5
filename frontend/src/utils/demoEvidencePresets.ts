@@ -1,0 +1,65 @@
+/**
+ * TARKA — Standard Evaluation Evidence Presets
+ * Pre-packaged evidence files corresponding to demo_evidence_files/
+ * Allows 1-click execution or drag-and-drop file evaluation.
+ */
+
+export interface DemoEvidenceFile {
+  id: string;
+  filename: string;
+  title: string;
+  typology: string;
+  description: string;
+  badgeColor: string;
+  content: string;
+}
+
+export const DEMO_EVIDENCE_PRESETS: DemoEvidenceFile[] = [
+  {
+    id: "DEMO-01",
+    filename: "01_digital_arrest_extortion.csv",
+    title: "01. Digital Arrest Extortion",
+    typology: "Digital Arrest Extortion (TRAI/CBI Impersonation)",
+    description: "CBI/TRAI threat call, 8 transactions, Vikram Shah L1 mule, Rohit Verma L2, Apex Electronics merchant veto.",
+    badgeColor: "#E11D48",
+    content: `Txn Date,Particulars,Ref No,Debit,Credit,Balance,Channel
+2026-09-22 08:30:14,NEFT/CREDIT/BSNL_PENSION_CELL/SALARY,NEFT-SALARY-449,0.00,25000.00,554140.00,NEFT
+2026-09-22 09:14:22,UPI/DR/626510001921/VIKRAM_SHAH/UTIB/vikramshah@okaxis,626510001921,285000.00,0.00,269140.00,UPI
+2026-09-22 09:18:04,UPI/DR/626510001922/VIKRAM_SHAH/UTIB/vikram.pay@okaxis,626510001922,195000.00,0.00,74140.00,UPI
+2026-09-22 09:20:00,IMPS/DR/626510001923/DEEPAK_MEENA/PUNB/14200015004102,626510001923,20000.00,0.00,54140.00,IMPS
+2026-09-22 09:21:11,IMPS/TX/626510001924/ROHIT_VERMA/HDFC/50100418921992,626510001924,240000.00,0.00,45000.00,IMPS
+2026-09-22 09:23:45,IMPS/TX/626510001925/SAMEER_KHAN/ICIC/081401508129,626510001925,180000.00,0.00,60000.00,IMPS
+2026-09-22 09:27:10,RTGS/TX/626510001926/APEX_ELECTRONICS/ICIC/004205001192,626510001926,180000.00,0.00,60000.00,RTGS
+2026-09-22 09:31:00,ATM/WDL/626510001927/NOIDA_SEC18_ATM_DL049,626510001927,120000.00,0.00,0.00,ATM`,
+  },
+  {
+    id: "DEMO-02",
+    filename: "02_investment_scam_syndicate.csv",
+    title: "02. Investment Scam Syndicate",
+    typology: "High-Yield QuantX VIP Pool Investment Fraud",
+    description: "Fake Telegram stock tips, Rajesh Khanna Kotak accumulator mule, 4 conduit accounts, crypto OTC exit.",
+    badgeColor: "#4F46E5",
+    content: `Txn Date,Particulars,Ref No,Debit,Credit,Balance,Channel
+2026-09-23 10:15:00,UPI/CR/OPENING_DEPOSIT/SELF,UPI-INIT-101,0.00,750000.00,750000.00,UPI
+2026-09-23 11:02:18,UPI/DR/630114002911/RAJESH_KHANNA/KKBK/9012384102/quantx.vip@okkotak,630114002911,350000.00,0.00,400000.00,UPI
+2026-09-23 11:24:45,UPI/DR/630114002912/RAJESH_KHANNA/KKBK/9012384102/rajesh.pool@okkotak,630114002912,250000.00,0.00,150000.00,UPI
+2026-09-23 11:35:10,IMPS/TX/630114002913/ANIL_KUMAR/SBIN/30192841092,630114002913,150000.00,0.00,200000.00,IMPS
+2026-09-23 11:38:00,IMPS/TX/630114002914/SURESH_BABU/HDFC/501002918201,630114002914,180000.00,0.00,20000.00,IMPS
+2026-09-23 11:42:30,IMPS/TX/630114002915/SUNITA_DEVI/PUNB/110200150921,630114002915,120000.00,0.00,80000.00,IMPS
+2026-09-23 11:55:00,RTGS/TX/630114002916/CRYPTO_ESCROW_OTC/UTIB/919020019283,630114002916,150000.00,0.00,50000.00,RTGS`,
+  },
+  {
+    id: "DEMO-03",
+    filename: "03_sim_swap_takeover.csv",
+    title: "03. SIM-Swap Takeover",
+    typology: "Night-Time Telco SIM Swap & Banking Takeover",
+    description: "01:00 AM SIM cloning, ICICI conduit Kabir Sheikh, Manoj Tiwari layer, gift voucher POS cashout.",
+    badgeColor: "#D97706",
+    content: `Txn Date,Particulars,Ref No,Debit,Credit,Balance,Channel
+2026-09-24 01:15:22,IMPS/DR/719200449101/KABIR_SHEIKH/ICIC/019201509182,719200449101,200000.00,0.00,480000.00,IMPS
+2026-09-24 01:28:44,IMPS/DR/719200449102/KABIR_SHEIKH/ICIC/019201509182,719200449102,180000.00,0.00,300000.00,IMPS
+2026-09-24 01:45:10,IMPS/TX/719200449103/MANOJ_TIWARI/UTIB/920010049182,719200449103,150000.00,0.00,150000.00,IMPS
+2026-09-24 02:10:00,POS/TX/719200449104/GIFT_VOUCHER_HUB/HDFC/501003918210,719200449104,130000.00,0.00,20000.00,POS
+2026-09-24 02:40:15,ATM/WDL/719200449105/MUMBAI_BANDRA_ATM_04,719200449105,20000.00,0.00,0.00,ATM`,
+  },
+];

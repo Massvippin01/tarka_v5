@@ -554,6 +554,13 @@ class TarkaForensicsAdapter:
 
     def export_sentinelx_graph(self, case_id: str, run_id: Optional[str] = None) -> Dict[str, Any]:
         """Projects TARKA facts, entities, claims, and correlations into SentinelX graph format."""
+        try:
+            from app.api.case import CASE_BUNDLES_LIVE
+            if case_id in CASE_BUNDLES_LIVE:
+                return CASE_BUNDLES_LIVE[case_id]
+        except Exception:
+            pass
+
         artifacts = self.store.list_artifacts(case_id)
         facts = self.store.list_canonical_facts(case_id)
         base_run = self.store.get_or_create_baseline_run(case_id)
