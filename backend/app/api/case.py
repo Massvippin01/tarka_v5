@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import json
 import hashlib
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.database.models import CaseModel, EvidenceArtifactModel, EvidenceCustodyRecordModel, AuditEventModel
 from app.repositories.unit_of_work import UnitOfWork
-from app.schemas.case import CaseCreate, CaseResponse
+from app.schemas.case import CaseCreate, CaseResponse, CasePatch, CaseStatusRequest, CaseLinkRequest
 from app.domain.auth import UserIdentity
 from app.services.auth_service import AuthService, get_current_user
 
@@ -19,6 +20,69 @@ logger = logging.getLogger("sentinelx.api.case")
 router = APIRouter()
 
 CASE_BUNDLES_LIVE: Dict[str, Any] = {}
+
+LIFECYCLE_STATES = {
+    "DRAFT",
+    "INTAKE",
+    "INVESTIGATING",
+    "ACTION_PENDING",
+    "FROZEN",
+    "PARTIALLY_RECOVERED",
+    "COURT_READY",
+    "CLOSED",
+    "ARCHIVED",
+}
+
+STATUS_NORMALIZATION = {
+    "INVESTIGATION_ACTIVE": "INVESTIGATING",
+    "OPEN": "INTAKE",
+}
+
+ALLOWED_TRANSITIONS = {
+    "DRAFT": {"INTAKE", "ARCHIVED"},
+    "INTAKE": {"INVESTIGATING", "ACTION_PENDING", "ARCHIVED"},
+    "INVESTIGATING": {"ACTION_PENDING", "INTAKE", "FROZEN", "PARTIALLY_RECOVERED", "COURT_READY", "ARCHIVED"},
+    "INVESTIGATION_ACTIVE": {"ACTION_PENDING", "INTAKE", "FROZEN", "PARTIALLY_RECOVERED", "COURT_READY", "ARCHIVED", "INVESTIGATING"},
+    "ACTION_PENDING": {"FROZEN", "PARTIALLY_RECOVERED", "INVESTIGATING", "ARCHIVED"},
+    "FROZEN": {"COURT_READY", "PARTIALLY_RECOVERED", "INVESTIGATING", "ARCHIVED"},
+    "PARTIALLY_RECOVERED": {"COURT_READY", "FROZEN", "INVESTIGATING", "ARCHIVED"},
+    "COURT_READY": {"CLOSED", "INVESTIGATING", "ARCHIVED"},
+    "CLOSED": {"ARCHIVED", "INVESTIGATING"},
+    "ARCHIVED": {"DRAFT", "INTAKE", "INVESTIGATING", "CLOSED"},
+}
+
+
+def build_case_response(case: CaseModel, artifacts_count: int = 0) -> CaseResponse:
+    meta = dict(case.metadata_json or {})
+    return CaseResponse(
+        id=case.id,
+        case_number=case.case_number,
+        fir_number=case.fir_number,
+        title=case.title,
+        description=case.description,
+        crime_type=case.crime_type,
+        typology=meta.get("typology") or case.crime_type,
+        priority=case.priority,
+        status=case.status,
+        police_station=case.police_station,
+        station_id=meta.get("station_id") or case.police_station,
+        assigned_io=meta.get("assigned_io") or meta.get("lead_investigator") or "Investigating Officer",
+        tags=meta.get("tags") or [],
+        archived_at=meta.get("archived_at"),
+        closed_at=meta.get("closed_at"),
+        closure_reason=meta.get("closure_reason"),
+        created_by=meta.get("created_by") or "system",
+        created_at=case.created_at.isoformat() if case.created_at else None,
+        updated_at=case.updated_at.isoformat() if case.updated_at else None,
+        complainant_name=meta.get("complainant_name"),
+        claimed_loss_inr=meta.get("claimed_loss_inr"),
+        booked_loss_inr=meta.get("booked_loss_inr"),
+        recoverable_inr=meta.get("recoverable_inr"),
+        golden_hour_remaining_mins=meta.get("golden_hour_remaining_mins"),
+        metadata_json=meta,
+        artifacts_count=artifacts_count,
+        syndicate_links=meta.get("syndicate_links") or [],
+    )
 
 
 class IngestArtifactRequest(BaseModel):
@@ -36,14 +100,32 @@ class IngestArtifactRequest(BaseModel):
 
 
 @router.get("", response_model=List[CaseResponse])
-async def list_cases(user: UserIdentity = Depends(get_current_user)):
+async def list_cases(
+    status: Optional[str] = None,
+    q: Optional[str] = None,
+    io: Optional[str] = None,
+    typology: Optional[str] = None,
+    sort: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 100,
+    user: UserIdentity = Depends(get_current_user),
+):
     """
-    Authoritative transactional listing of investigative cases from SQL Database.
+    Authoritative transactional listing and filtering of investigative cases from SQL Database.
+    Supports filtering by status, search query q, assigned io, typology, sorting, and pagination.
     Preserves RBAC case scope authorization.
     """
     auth_service = AuthService.get_instance()
     async with UnitOfWork() as uow:
-        cases = await uow.cases.list_all()
+        cases, _ = await uow.cases.list_filtered(
+            status=status,
+            q=q,
+            io=io,
+            typology=typology,
+            sort=sort,
+            page=page,
+            page_size=page_size,
+        )
 
         responses = []
         for c in cases:
@@ -51,21 +133,7 @@ async def list_cases(user: UserIdentity = Depends(get_current_user)):
                 continue
 
             artifacts = await uow.evidence.list_artifacts_by_case(c.id)
-            responses.append(
-                CaseResponse(
-                    id=c.id,
-                    case_number=c.case_number,
-                    fir_number=c.fir_number,
-                    title=c.title,
-                    description=c.description,
-                    crime_type=c.crime_type,
-                    priority=c.priority,
-                    status=c.status,
-                    police_station=c.police_station,
-                    metadata_json=c.metadata_json,
-                    artifacts_count=len(artifacts),
-                )
-            )
+            responses.append(build_case_response(c, len(artifacts)))
         return responses
 
 
@@ -88,43 +156,80 @@ async def create_case(
                 detail=f"Case with ID '{case_id}' already exists in database.",
             )
 
+        meta = dict(request.metadata_json or {})
+        if not meta.get("complainant_name"):
+            meta["complainant_name"] = "Verified Complainant"
+        if not meta.get("lead_investigator"):
+            meta["lead_investigator"] = request.assigned_io or user.display_name or "Investigating Officer"
+        if request.assigned_io:
+            meta["assigned_io"] = request.assigned_io
+        if request.typology:
+            meta["typology"] = request.typology
+        if request.tags:
+            meta["tags"] = request.tags
+        if request.station_id:
+            meta["station_id"] = request.station_id
+        if request.claimed_loss_inr is not None:
+            meta["claimed_loss_inr"] = request.claimed_loss_inr
+        elif "claimed_loss_inr" not in meta:
+            meta["claimed_loss_inr"] = 250000.0
+        if request.booked_loss_inr is not None:
+            meta["booked_loss_inr"] = request.booked_loss_inr
+        elif "booked_loss_inr" not in meta:
+            meta["booked_loss_inr"] = 250000.0
+        if "recoverable_inr" not in meta:
+            meta["recoverable_inr"] = meta.get("booked_loss_inr", 0) * 0.72
+        if "golden_hour_remaining_mins" not in meta:
+            meta["golden_hour_remaining_mins"] = 120
+        if "ncrp_ack_no" not in meta:
+            meta["ncrp_ack_no"] = f"1930-ACK-{request.case_number[-6:]}"
+        if "current_stage" not in meta:
+            meta["current_stage"] = "intake"
+        if "gates_passed" not in meta:
+            meta["gates_passed"] = 1
+        if "gates_halted" not in meta:
+            meta["gates_halted"] = False
+        if "syndicate_links" not in meta:
+            meta["syndicate_links"] = []
+        meta["created_by"] = user.user_id
+
+        initial_status = (request.status or "INTAKE").upper().strip()
+        if initial_status not in LIFECYCLE_STATES:
+            initial_status = "INTAKE"
+
         case_model = CaseModel(
             id=case_id,
             case_number=request.case_number,
             title=request.title,
             fir_number=request.fir_number or f"FIR #{request.case_number[-4:]}/2026",
-            crime_type=request.crime_type or "DIGITAL_ARREST",
+            crime_type=request.crime_type or request.typology or "DIGITAL_ARREST",
             priority=request.priority or "HIGH_SYNDICATE",
-            status="INVESTIGATION_ACTIVE",
+            status=initial_status,
             police_station=request.police_station or "Noida Cyber Crime PS, UP",
             source="NCRP_1930",
             description=request.description or "",
-            metadata_json=request.metadata_json or {
-                "complainant_name": "Verified Complainant",
-                "lead_investigator": user.display_name or "Investigating Officer",
-                "claimed_loss_inr": 250000,
-                "booked_loss_inr": 250000,
-                "recoverable_inr": 180000,
-                "commercial_shielded_inr": 120000,
-                "golden_hour_remaining_mins": 90,
-                "ncrp_ack_no": f"1930-ACK-{request.case_number[-6:]}",
-                "current_stage": "intake",
-                "gates_passed": 1,
-                "gates_halted": False,
-                "syndicate_links": [],
-            },
+            metadata_json=meta,
         )
         await uow.cases.create(case_model)
 
+        audit_details = {
+            "fir_number": case_model.fir_number,
+            "title": case_model.title,
+            "status": case_model.status,
+            "priority": case_model.priority,
+            "created_by": user.user_id,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+
         audit_event = AuditEventModel(
-            event_id=f"AUD-{case_id}-CREATE",
+            event_id=f"AUD-{case_id}-CREATE-{uuid.uuid4().hex[:8]}",
             case_id=case_id,
             actor_id=user.user_id,
             action="CREATE_CASE_WORKSPACE",
             resource_type="CASE",
             resource_id=case_id,
-            payload_hash="0" * 64,
-            details_json={"fir_number": case_model.fir_number, "title": case_model.title},
+            payload_hash=payload_hash,
+            details_json=audit_details,
         )
         await uow.audit.append_event(audit_event)
         await uow.commit()
@@ -133,19 +238,7 @@ async def create_case(
         if user.scope and case_id not in user.scope.allowed_cases:
             user.scope.allowed_cases.append(case_id)
 
-        return CaseResponse(
-            id=case_model.id,
-            case_number=case_model.case_number,
-            fir_number=case_model.fir_number,
-            title=case_model.title,
-            description=case_model.description,
-            crime_type=case_model.crime_type,
-            priority=case_model.priority,
-            status=case_model.status,
-            police_station=case_model.police_station,
-            metadata_json=case_model.metadata_json,
-            artifacts_count=0,
-        )
+        return build_case_response(case_model, 0)
 
 
 @router.get("/{case_id}", response_model=CaseResponse)
@@ -166,19 +259,442 @@ async def get_case(
             raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
 
         artifacts = await uow.evidence.list_artifacts_by_case(case.id)
-        return CaseResponse(
-            id=case.id,
-            case_number=case.case_number,
-            fir_number=case.fir_number,
-            title=case.title,
-            description=case.description,
-            crime_type=case.crime_type,
-            priority=case.priority,
-            status=case.status,
-            police_station=case.police_station,
-            metadata_json=case.metadata_json,
-            artifacts_count=len(artifacts),
+        return build_case_response(case, len(artifacts))
+
+
+@router.patch("/{case_id}", response_model=CaseResponse)
+async def patch_case(
+    case_id: str,
+    patch: CasePatch,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Partial update of an investigative case with validation and append-only audit event.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        if (case.status or "").upper() == "ARCHIVED":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Case is ARCHIVED and read-only. Restore case to perform edits.",
+            )
+
+        meta = dict(case.metadata_json or {})
+        before_state = {
+            "title": case.title,
+            "description": case.description,
+            "priority": case.priority,
+            "crime_type": case.crime_type,
+            "police_station": case.police_station,
+            "fir_number": case.fir_number,
+            "metadata_json": dict(meta),
+        }
+
+        if patch.title is not None:
+            case.title = patch.title
+        if patch.description is not None:
+            case.description = patch.description
+        if patch.priority is not None:
+            case.priority = patch.priority
+        if patch.crime_type is not None:
+            case.crime_type = patch.crime_type
+        if patch.police_station is not None:
+            case.police_station = patch.police_station
+        if patch.fir_number is not None:
+            case.fir_number = patch.fir_number
+        if patch.typology is not None:
+            meta["typology"] = patch.typology
+        if patch.assigned_io is not None:
+            meta["assigned_io"] = patch.assigned_io
+            meta["lead_investigator"] = patch.assigned_io
+        if patch.tags is not None:
+            meta["tags"] = patch.tags
+        if patch.station_id is not None:
+            meta["station_id"] = patch.station_id
+        if patch.claimed_loss_inr is not None:
+            meta["claimed_loss_inr"] = patch.claimed_loss_inr
+        if patch.booked_loss_inr is not None:
+            meta["booked_loss_inr"] = patch.booked_loss_inr
+        if patch.recoverable_inr is not None:
+            meta["recoverable_inr"] = patch.recoverable_inr
+        if patch.metadata_json is not None:
+            meta.update(patch.metadata_json)
+
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        after_state = {
+            "title": case.title,
+            "description": case.description,
+            "priority": case.priority,
+            "crime_type": case.crime_type,
+            "police_station": case.police_station,
+            "fir_number": case.fir_number,
+            "metadata_json": dict(meta),
+        }
+
+        audit_details = {"before": before_state, "after": after_state}
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-PATCH-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="UPDATE_CASE",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
         )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        return build_case_response(case, len(artifacts))
+
+
+@router.post("/{case_id}/status", response_model=CaseResponse)
+async def update_case_status(
+    case_id: str,
+    payload: CaseStatusRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Transition case lifecycle status with strict allowed transitions enforcement and immutable audit.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    target_status = payload.status.upper().strip()
+    if target_status not in LIFECYCLE_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown lifecycle status '{payload.status}'. Valid states: {sorted(list(LIFECYCLE_STATES))}",
+        )
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        current_status = (case.status or "INTAKE").upper().strip()
+        current_norm = STATUS_NORMALIZATION.get(current_status, current_status)
+        target_norm = STATUS_NORMALIZATION.get(target_status, target_status)
+
+        if target_norm == current_norm:
+            artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+            return build_case_response(case, len(artifacts))
+
+        allowed = ALLOWED_TRANSITIONS.get(current_norm, set())
+        if target_norm not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Invalid lifecycle transition from '{current_status}' to '{target_status}'. Allowed next states: {sorted(list(allowed))}",
+            )
+
+        meta = dict(case.metadata_json or {})
+        before_status = case.status
+
+        # If transitioning to CLOSED, require checklist or reason
+        if target_norm == "CLOSED":
+            if not payload.reason and not payload.closure_checklist:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Closure reason or completed closure checklist is required to close a case.",
+                )
+            meta["closed_at"] = datetime.now(timezone.utc).isoformat()
+            meta["closure_reason"] = payload.reason or "Case resolved"
+            if payload.closure_checklist:
+                meta["closure_checklist"] = payload.closure_checklist
+
+        case.status = target_norm
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {
+            "from_status": before_status,
+            "to_status": target_norm,
+            "reason": payload.reason,
+            "closure_checklist": payload.closure_checklist,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-STATUS-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="CASE_STATUS_CHANGE",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        return build_case_response(case, len(artifacts))
+
+
+@router.post("/{case_id}/archive", response_model=CaseResponse)
+async def archive_case(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Archive a case. Makes it read-only.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        if (case.status or "").upper() == "ARCHIVED":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Case is already ARCHIVED.")
+
+        meta = dict(case.metadata_json or {})
+        meta["previous_status"] = case.status
+        meta["archived_at"] = datetime.now(timezone.utc).isoformat()
+        before_status = case.status
+
+        case.status = "ARCHIVED"
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {"action": "ARCHIVE", "previous_status": before_status}
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-ARCHIVE-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="CASE_ARCHIVED",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        return build_case_response(case, len(artifacts))
+
+
+@router.post("/{case_id}/restore", response_model=CaseResponse)
+async def restore_case(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Restore an ARCHIVED case back to active status.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        if (case.status or "").upper() != "ARCHIVED":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Only ARCHIVED cases can be restored.")
+
+        meta = dict(case.metadata_json or {})
+        restored_status = meta.get("previous_status", "INVESTIGATING")
+        if restored_status == "ARCHIVED":
+            restored_status = "INVESTIGATING"
+
+        meta["archived_at"] = None
+        case.status = restored_status
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {"action": "RESTORE", "restored_to": restored_status}
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-RESTORE-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="CASE_RESTORED",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        return build_case_response(case, len(artifacts))
+
+
+@router.delete("/{case_id}")
+async def delete_draft_case(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Delete a case workspace. Strictly allowed only for DRAFT cases with zero evidence artifacts.
+    Any non-DRAFT case or case with evidence returns HTTP 409 Conflict.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        if (case.status or "").upper() != "DRAFT":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot delete case '{case_id}' with status '{case.status}'. Only DRAFT cases can be deleted.",
+            )
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        if len(artifacts) > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot delete DRAFT case '{case_id}' because it has {len(artifacts)} associated evidence exhibits.",
+            )
+
+        audit_details = {"action": "DELETE_DRAFT_CASE", "case_number": case.case_number, "title": case.title}
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-DEL-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="DELETE_DRAFT_CASE",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+
+        await uow.cases.delete(case.id)
+        await uow.commit()
+
+        return {"success": True, "deleted_case_id": case.id}
+
+
+@router.post("/{case_id}/links", response_model=CaseResponse)
+async def link_case(
+    case_id: str,
+    payload: CaseLinkRequest,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Link a related FIR or case to this case workspace with bidirectional association.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        target = await uow.cases.get(payload.target_case_id)
+        if not target:
+            target = await uow.cases.get_by_case_number(payload.target_case_id)
+        if not target:
+            raise HTTPException(status_code=404, detail=f"Target case '{payload.target_case_id}' to link not found.")
+
+        meta = dict(case.metadata_json or {})
+        links = list(meta.get("syndicate_links") or [])
+        link_entry = {
+            "target_case_id": target.id,
+            "target_case_number": target.case_number,
+            "target_fir": target.fir_number,
+            "link_type": payload.link_type or "RELATED_FIR",
+            "notes": payload.notes or "",
+            "linked_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if not any(l.get("target_case_id") == target.id for l in links):
+            links.append(link_entry)
+        meta["syndicate_links"] = links
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        target_meta = dict(target.metadata_json or {})
+        target_links = list(target_meta.get("syndicate_links") or [])
+        rev_entry = {
+            "target_case_id": case.id,
+            "target_case_number": case.case_number,
+            "target_fir": case.fir_number,
+            "link_type": payload.link_type or "RELATED_FIR",
+            "notes": payload.notes or "",
+            "linked_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if not any(l.get("target_case_id") == case.id for l in target_links):
+            target_links.append(rev_entry)
+        target_meta["syndicate_links"] = target_links
+        target.metadata_json = target_meta
+
+        audit_details = {
+            "source_case": case.id,
+            "target_case": target.id,
+            "link_type": payload.link_type,
+            "notes": payload.notes,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-LINK-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="LINK_CASE",
+            resource_type="CASE",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        artifacts = await uow.evidence.list_artifacts_by_case(case.id)
+        return build_case_response(case, len(artifacts))
+
+
+@router.get("/{case_id}/audit")
+async def get_case_audit(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Returns immutable append-only audit trail records for this case.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+
+    async with UnitOfWork() as uow:
+        events = await uow.audit.list_events_by_case(case_id)
+        return [
+            {
+                "event_id": e.event_id,
+                "case_id": e.case_id,
+                "actor_id": e.actor_id,
+                "action": e.action,
+                "resource_type": e.resource_type,
+                "resource_id": e.resource_id,
+                "payload_hash": e.payload_hash,
+                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                "details": e.details_json,
+            }
+            for e in events
+        ]
 
 
 @router.get("/{case_id}/artifacts")

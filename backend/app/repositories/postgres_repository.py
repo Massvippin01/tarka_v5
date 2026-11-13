@@ -46,6 +46,92 @@ class PostgresCaseRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def update(self, case: CaseModel) -> CaseModel:
+        await self.session.flush()
+        return case
+
+    async def delete(self, case_id: str) -> None:
+        case = await self.get(case_id)
+        if case:
+            await self.session.delete(case)
+            await self.session.flush()
+
+    async def list_filtered(
+        self,
+        status: Optional[str] = None,
+        q: Optional[str] = None,
+        io: Optional[str] = None,
+        typology: Optional[str] = None,
+        sort: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[List[CaseModel], int]:
+        all_cases = await self.list_all()
+        filtered: List[CaseModel] = []
+        for c in all_cases:
+            meta = c.metadata_json or {}
+            # Status filter
+            if status:
+                st = (c.status or "").upper()
+                target_st = status.upper()
+                if target_st == "INVESTIGATING" and st in ("INVESTIGATION_ACTIVE", "INVESTIGATING"):
+                    pass
+                elif st != target_st:
+                    continue
+
+            # Typology filter
+            if typology:
+                c_typology = (meta.get("typology") or c.crime_type or "").lower()
+                if typology.lower() not in c_typology:
+                    continue
+
+            # IO filter
+            if io:
+                c_io = (meta.get("assigned_io") or meta.get("lead_investigator") or "").lower()
+                if io.lower() not in c_io:
+                    continue
+
+            # Text search filter
+            if q:
+                search_term = q.lower()
+                complainant = str(meta.get("complainant_name", "")).lower()
+                searchable = f"{c.id} {c.case_number} {c.fir_number or ''} {c.title} {complainant} {c.description or ''}".lower()
+                if search_term not in searchable:
+                    continue
+
+            filtered.append(c)
+
+        # Sort
+        if sort:
+            parts = sort.split(":")
+            sort_field = parts[0].lower()
+            descending = len(parts) > 1 and parts[1].lower() == "desc"
+
+            def sort_key(item: CaseModel):
+                m = item.metadata_json or {}
+                if sort_field == "created_at":
+                    return item.created_at
+                elif sort_field == "priority":
+                    p_order = {
+                        "CRITICAL_GOLDEN_HOUR": 0, "P1_CRITICAL": 0,
+                        "HIGH_SYNDICATE": 1, "P2_HIGH": 1,
+                        "MEDIUM": 2, "P3_MEDIUM": 2,
+                        "LOW": 3, "P4_LOW": 3
+                    }
+                    return p_order.get(item.priority, 99)
+                elif sort_field in ("loss", "loss_amount", "booked_loss_inr"):
+                    return float(m.get("booked_loss_inr", 0))
+                elif sort_field == "title":
+                    return item.title.lower()
+                return item.id
+
+            filtered.sort(key=sort_key, reverse=descending)
+
+        total_count = len(filtered)
+        start_idx = max(0, (page - 1) * page_size)
+        end_idx = start_idx + page_size
+        return filtered[start_idx:end_idx], total_count
+
 
 class PostgresEvidenceRepository:
     """

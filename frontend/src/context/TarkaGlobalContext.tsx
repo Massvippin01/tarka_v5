@@ -115,6 +115,7 @@ interface TarkaGlobalContextType {
   setActiveCaseId: (caseId: string) => void;
   activeCase: CaseWorkspace;
   caseWorkspaces: CaseWorkspace[];
+  setCaseWorkspaces: React.Dispatch<React.SetStateAction<CaseWorkspace[]>>;
   selectCaseWorkspace: (caseId: string, navigateToStage?: ActiveRoute) => void;
   createNewCaseWorkspace: (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">) => string;
   registerDiscoveredCase: (workspace: CaseWorkspace) => void;
@@ -849,6 +850,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setActiveCaseId,
         activeCase,
         caseWorkspaces,
+        setCaseWorkspaces,
         selectCaseWorkspace,
         createNewCaseWorkspace,
         registerDiscoveredCase,

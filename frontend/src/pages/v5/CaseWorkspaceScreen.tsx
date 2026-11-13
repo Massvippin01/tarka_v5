@@ -17,6 +17,7 @@ import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { useTarkaGlobal, type ActiveRoute, type CaseWorkspace } from "../../context/TarkaGlobalContext";
 import { useCaseWorkbenchStore } from "../../store/useCaseWorkbenchStore";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { queryClient } from "../../queryClient";
 
 import { SaaSMetricBanner } from "../../components/tarka/workspace/SaaSMetricBanner";
 import { CaseTableView } from "../../components/tarka/workspace/CaseTableView";
@@ -25,13 +26,16 @@ import { CaseTimelineView } from "../../components/tarka/workspace/CaseTimelineV
 import { BulkIngestionHubView } from "../../components/tarka/workspace/BulkIngestionHubView";
 import { BulkIngestionModal } from "../../components/tarka/workspace/BulkIngestionModal";
 import { CrossCaseComparatorDrawer } from "../../components/tarka/workspace/CrossCaseComparatorDrawer";
+import { CreateCaseWizard } from "../../components/tarka/cases/CreateCaseWizard";
+import { EditCaseSheet } from "../../components/tarka/cases/EditCaseSheet";
+import { LinkCaseModal } from "../../components/tarka/cases/LinkCaseModal";
 
 export const CaseWorkspaceScreen: React.FC = () => {
   const {
     caseWorkspaces,
+    setCaseWorkspaces,
     activeCaseId,
     selectCaseWorkspace,
-    openNewCaseModal,
   } = useTarkaGlobal();
 
   const { setActivePage, setReconstructedInvestigation } = useTarkaUiStore();
@@ -42,7 +46,14 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterMode, setFilterMode] = useState<"ALL" | "GOLDEN_HOUR" | "SYNDICATE" | "COURT_READY">("ALL");
+  const [filterMode, setFilterMode] = useState<
+    "ALL" | "GOLDEN_HOUR" | "SYNDICATE" | "ACTION_PENDING" | "COURT_READY" | "CLOSED" | "ARCHIVED"
+  >("ALL");
+
+  // Wizard & Sheet states
+  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
+  const [editingCase, setEditingCase] = useState<CaseWorkspace | null>(null);
+  const [linkingCase, setLinkingCase] = useState<CaseWorkspace | null>(null);
 
   // Bulk Ingestion & Comparator Drawer states
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -73,12 +84,14 @@ export const CaseWorkspaceScreen: React.FC = () => {
         const matches =
           c.caseId.toLowerCase().includes(q) ||
           c.firNumber.toLowerCase().includes(q) ||
-          c.ncrpAckNo.toLowerCase().includes(q) ||
+          (c.ncrpAckNo && c.ncrpAckNo.toLowerCase().includes(q)) ||
           c.title.toLowerCase().includes(q) ||
           c.complainantName.toLowerCase().includes(q) ||
-          c.leadInvestigator.toLowerCase().includes(q);
+          (c.leadInvestigator && c.leadInvestigator.toLowerCase().includes(q));
         if (!matches) return false;
       }
+
+      const statusKey = ((c as any).status || "INVESTIGATING").toUpperCase();
 
       if (filterMode === "GOLDEN_HOUR") {
         return c.goldenHourRemainingMins > 0;
@@ -86,8 +99,17 @@ export const CaseWorkspaceScreen: React.FC = () => {
       if (filterMode === "SYNDICATE") {
         return c.syndicateLinks && c.syndicateLinks.length > 0;
       }
+      if (filterMode === "ACTION_PENDING") {
+        return statusKey === "ACTION_PENDING";
+      }
       if (filterMode === "COURT_READY") {
-        return c.priority === "COURT_FILING_READY" || c.gatesPassed >= 4;
+        return statusKey === "COURT_READY" || c.priority === "COURT_FILING_READY" || c.gatesPassed >= 4;
+      }
+      if (filterMode === "CLOSED") {
+        return statusKey === "CLOSED";
+      }
+      if (filterMode === "ARCHIVED") {
+        return statusKey === "ARCHIVED";
       }
 
       return true;
@@ -116,9 +138,65 @@ export const CaseWorkspaceScreen: React.FC = () => {
     }
   };
 
+  const handleArchiveCase = async (caseId: string) => {
+    const confirmArchive = window.confirm(`Archive case ${caseId}? It will become read-only.`);
+    if (!confirmArchive) return;
+    try {
+      const res = await fetch(`/api/v1/cases/${caseId}/archive`, { method: "POST" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setCaseWorkspaces((prev: CaseWorkspace[]) =>
+        prev.map((c: CaseWorkspace) => (c.caseId === caseId ? { ...c, status: "ARCHIVED" as any } : c))
+      );
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
+      toast.success(`Case ${caseId} archived (read-only)`);
+    } catch (err: any) {
+      toast.error(`Archive failed: ${err.message}`);
+    }
+  };
+
+  const handleDeleteDraft = async (caseId: string) => {
+    const confirmDel = window.confirm(`Permanently delete DRAFT case ${caseId}?`);
+    if (!confirmDel) return;
+    try {
+      const res = await fetch(`/api/v1/cases/${caseId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      setCaseWorkspaces((prev: CaseWorkspace[]) => prev.filter((c: CaseWorkspace) => c.caseId !== caseId));
+      queryClient.invalidateQueries({ queryKey: ["cases"] });
+      toast.success(`Draft case ${caseId} deleted`);
+    } catch (err: any) {
+      toast.error(`Deletion failed: ${err.message}`);
+    }
+  };
+
+  const handleBulkAssign = (caseIds: string[]) => {
+    const io = window.prompt("Assign Lead IO to selected cases:", "Insp. R. K. Sharma (IO-409)");
+    if (!io) return;
+    setCaseWorkspaces((prev: CaseWorkspace[]) =>
+      prev.map((c: CaseWorkspace) => (caseIds.includes(c.caseId) ? { ...c, leadInvestigator: io } : c))
+    );
+    toast.success(`Assigned ${io} to ${caseIds.length} case(s)`);
+  };
+
+  const handleBulkArchive = async (caseIds: string[]) => {
+    const confirmArchive = window.confirm(`Archive ${caseIds.length} selected cases?`);
+    if (!confirmArchive) return;
+    for (const cid of caseIds) {
+      await fetch(`/api/v1/cases/${cid}/archive`, { method: "POST" }).catch(() => {});
+    }
+    setCaseWorkspaces((prev: CaseWorkspace[]) =>
+      prev.map((c: CaseWorkspace) => (caseIds.includes(c.caseId) ? { ...c, status: "ARCHIVED" as any } : c))
+    );
+    queryClient.invalidateQueries({ queryKey: ["cases"] });
+    toast.success(`Archived ${caseIds.length} cases`);
+  };
+
   return (
     <div
       id="tarka-workspace-body"
+      data-case-id={activeCaseId || "CASE-2026-001"}
       style={{
         flex: "1 1 0%",
         minHeight: 0,
@@ -132,78 +210,63 @@ export const CaseWorkspaceScreen: React.FC = () => {
         boxSizing: "border-box",
       }}
     >
-      {/* =========================================================================
-          STATION COMMAND TOPBAR (LINEAR / JIRA STYLE)
-          ========================================================================= */}
+      {/* STATION COMMAND TOPBAR */}
       <div
         style={{
           flexShrink: 0,
-          background: "var(--reui-card-bg, #0F1B2E)",
-          borderBottom: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
-          padding: "8px 14px",
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E2E8F0",
+          padding: "8px 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          flexWrap: "wrap",
-          zIndex: 20,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
         }}
       >
-        {/* Left: Station Identity & Unit Selector */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* Left: Station Identity */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
           <div
             style={{
               width: "28px",
               height: "28px",
-              borderRadius: "7px",
+              borderRadius: "6px",
               background: "#EEF2FF",
               border: "1px solid #C7D2FE",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#4F46E5",
-              boxShadow: "0 1px 2px rgba(79, 70, 229, 0.15)",
-              flexShrink: 0,
             }}
           >
-            <Shield size={16} strokeWidth={2.4} />
+            <Shield size={15} color="#4F46E5" />
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              <span
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 900,
-                  color: "#F8FAFC",
-                  letterSpacing: "0.02em",
-                  fontFamily: "var(--font-mono, monospace)",
-                }}
-              >
-                NOIDA NODE #UP-16
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>
+                Multi-Case Command Hub
               </span>
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "9.5px",
                   fontWeight: 800,
-                  padding: "2px 7px",
+                  padding: "1px 5px",
                   borderRadius: "4px",
-                  background: "rgba(16, 185, 129, 0.16)",
-                  color: "#34D399",
-                  border: "1px solid rgba(16, 185, 129, 0.35)",
-                  whiteSpace: "nowrap",
+                  background: "#ECFDF5",
+                  color: "#059669",
+                  border: "1px solid #A7F3D0",
                 }}
               >
-                LIVE SAMANVAYA ENCLAVE
+                PROD-ACTIVE
               </span>
             </div>
-            <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "2px" }}>
+            <div style={{ fontSize: "10px", color: "#64748B" }}>
               Cyber Crime PS Noida · State Jurisdiction UP-West
             </div>
           </div>
         </div>
 
         {/* Center: Search & Filter Pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 340px", maxWidth: "480px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 380px", maxWidth: "600px" }}>
           {/* Quick Search Input */}
           <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center" }}>
             <Search size={13} color="#94A3B8" style={{ position: "absolute", left: "9px", pointerEvents: "none" }} />
@@ -243,7 +306,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
             )}
           </div>
 
-          {/* Quick Filter Pills */}
+          {/* Saved Filter Pills */}
           <div
             style={{
               display: "inline-flex",
@@ -252,60 +315,42 @@ export const CaseWorkspaceScreen: React.FC = () => {
               borderRadius: "6px",
               padding: "2px",
               flexShrink: 0,
+              gap: "2px",
             }}
           >
-            <button
-              type="button"
-              onClick={() => setFilterMode("ALL")}
-              style={{
-                border: "none",
-                borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "ALL" ? 800 : 500,
-                background: filterMode === "ALL" ? "#FFFFFF" : "transparent",
-                color: filterMode === "ALL" ? "#0F172A" : "#64748B",
-                cursor: "pointer",
-              }}
-            >
-              All ({caseWorkspaces.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterMode("GOLDEN_HOUR")}
-              style={{
-                border: "none",
-                borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "GOLDEN_HOUR" ? 800 : 500,
-                background: filterMode === "GOLDEN_HOUR" ? "#FEF3C7" : "transparent",
-                color: filterMode === "GOLDEN_HOUR" ? "#92400E" : "#64748B",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "2px",
-              }}
-            >
-              <Zap size={10} color="#D97706" />
-              <span>SLA</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterMode("SYNDICATE")}
-              style={{
-                border: "none",
-                borderRadius: "4px",
-                padding: "3px 7px",
-                fontSize: "10.5px",
-                fontWeight: filterMode === "SYNDICATE" ? 800 : 500,
-                background: filterMode === "SYNDICATE" ? "#EEF2FF" : "transparent",
-                color: filterMode === "SYNDICATE" ? "#4338CA" : "#64748B",
-                cursor: "pointer",
-              }}
-            >
-              Syndicates
-            </button>
+            {[
+              { id: "ALL", label: `All (${caseWorkspaces.length})` },
+              { id: "GOLDEN_HOUR", label: "SLA Active", icon: Zap },
+              { id: "SYNDICATE", label: "Syndicates" },
+              { id: "ACTION_PENDING", label: "Action Pending" },
+              { id: "COURT_READY", label: "Court Ready" },
+              { id: "CLOSED", label: "Closed" },
+              { id: "ARCHIVED", label: "Archived" },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilterMode(f.id as any)}
+                style={{
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "3px 6px",
+                  fontSize: "10px",
+                  fontWeight: filterMode === f.id ? 800 : 500,
+                  background: filterMode === f.id ? "#FFFFFF" : "transparent",
+                  color: filterMode === f.id ? "#0F172A" : "#64748B",
+                  boxShadow: filterMode === f.id ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {f.icon && <f.icon size={10} color="#D97706" />}
+                <span>{f.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -409,25 +454,27 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
           <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
 
-          {/* Action: New Case */}
+          {/* Action: New Case Wizard */}
           <button
             type="button"
-            onClick={openNewCaseModal}
+            data-testid="create-case-button"
+            onClick={() => setIsCreateWizardOpen(true)}
             style={{
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
-              border: "1px solid #CBD5E1",
-              background: "#FFFFFF",
-              color: "#1E293B",
+              padding: "5px 11px",
+              borderRadius: "6px",
+              border: "1px solid #0284C7",
+              background: "#0284C7",
+              color: "#FFFFFF",
               fontSize: "11px",
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(2, 132, 199, 0.25)",
             }}
           >
-            <Plus size={12} color="#4F46E5" />
+            <Plus size={12} />
             <span>New Case</span>
           </button>
 
@@ -439,8 +486,8 @@ export const CaseWorkspaceScreen: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
+              padding: "5px 10px",
+              borderRadius: "6px",
               border: "1px solid #4338CA",
               background: "#4F46E5",
               color: "#FFFFFF",
@@ -463,8 +510,8 @@ export const CaseWorkspaceScreen: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              padding: "4px 9px",
-              borderRadius: "5px",
+              padding: "5px 9px",
+              borderRadius: "6px",
               border: "1px solid #10B981",
               background: "#ECFDF5",
               color: "#065F46",
@@ -485,8 +532,8 @@ export const CaseWorkspaceScreen: React.FC = () => {
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              padding: "4px 8px",
-              borderRadius: "5px",
+              padding: "5px 9px",
+              borderRadius: "6px",
               border: "1px solid #C7D2FE",
               background: "#EEF2FF",
               color: "#3730A3",
@@ -501,14 +548,10 @@ export const CaseWorkspaceScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* =========================================================================
-          EXECUTIVE SAAS 5-METRIC KPI BANNER
-          ========================================================================= */}
+      {/* EXECUTIVE SAAS 5-METRIC KPI BANNER */}
       <SaaSMetricBanner cases={caseWorkspaces} />
 
-      {/* =========================================================================
-          ACTIVE WORKSPACE VIEW (TABLE / BOARD / TIMELINE / BULK)
-          ========================================================================= */}
+      {/* ACTIVE WORKSPACE VIEW */}
       <div style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {viewMode === "table" && (
           <CaseTableView
@@ -516,6 +559,12 @@ export const CaseWorkspaceScreen: React.FC = () => {
             activeCaseId={activeCaseId}
             onSelectCase={handleSelectCase}
             onOpenCompare={handleOpenCompare}
+            onEditCase={(caseItem) => setEditingCase(caseItem)}
+            onLinkCase={(caseItem) => setLinkingCase(caseItem)}
+            onArchiveCase={handleArchiveCase}
+            onDeleteDraft={handleDeleteDraft}
+            onBulkAssign={handleBulkAssign}
+            onBulkArchive={handleBulkArchive}
           />
         )}
 
@@ -544,9 +593,24 @@ export const CaseWorkspaceScreen: React.FC = () => {
         )}
       </div>
 
-      {/* =========================================================================
-          DRAWERS & MODALS: BULK INGESTION & CROSS-CASE COMPARATOR
-          ========================================================================= */}
+      {/* DRAWERS & MODALS */}
+      <CreateCaseWizard
+        isOpen={isCreateWizardOpen}
+        onClose={() => setIsCreateWizardOpen(false)}
+      />
+
+      <EditCaseSheet
+        caseData={editingCase}
+        isOpen={Boolean(editingCase)}
+        onClose={() => setEditingCase(null)}
+      />
+
+      <LinkCaseModal
+        sourceCase={linkingCase}
+        isOpen={Boolean(linkingCase)}
+        onClose={() => setLinkingCase(null)}
+      />
+
       <BulkIngestionModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}

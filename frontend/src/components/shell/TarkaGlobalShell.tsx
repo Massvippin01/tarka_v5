@@ -33,6 +33,7 @@ import {
   Compass,
   Microscope,
   Search,
+  Archive,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
@@ -69,6 +70,8 @@ const SarvamVoiceModal = lazy(() => import("../tarka/SarvamVoiceModal").then((m)
 const RelationshipEvidenceSheet = lazy(() => import("../tarka/investigation/RelationshipEvidenceSheet").then((m) => ({ default: m.RelationshipEvidenceSheet })));
 const InvestigationIntelligenceBrief = lazy(() => import("../tarka/investigation/InvestigationIntelligenceBrief").then((m) => ({ default: m.InvestigationIntelligenceBrief })));
 const TransformationAuditLog = lazy(() => import("../tarka/investigation/TransformationAuditLog").then((m) => ({ default: m.TransformationAuditLog })));
+import { UpgradedCaseSwitcher } from "./UpgradedCaseSwitcher";
+import { CaseStatusControl } from "../tarka/cases/CaseStatusControl";
 
 // Polished Obsidian Glass Suspense Fallback
 const ScreenSuspenseFallback: React.FC = () => (
@@ -185,7 +188,6 @@ export const TarkaGlobalShell: React.FC = () => {
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
-  const [headerCaseOpen, setHeaderCaseOpen] = useState<boolean>(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(() =>
@@ -1331,6 +1333,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <span className="hidden xl:inline-flex flex-shrink-0">
               <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
             </span>
+            {activePage !== "benchmark" && activePage !== "workspaces" && activeRoute !== "workspace" && (
+              <span className="flex-shrink-0">
+                <CaseStatusControl
+                  caseId={activeCaseId}
+                  currentStatus={(activeCase as any)?.status || "INVESTIGATING"}
+                  isArchived={(activeCase as any)?.status === "ARCHIVED"}
+                />
+              </span>
+            )}
             {!isBackendOnline ? (
               <span
                 data-testid="offline-demo-pill"
@@ -1358,139 +1369,17 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
           {/* ZONE 3 (RIGHT): Exactly 5 Visible Actions + Single '⋯ More' Popover */}
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            {/* 1. Case Switcher */}
-            <Popover.Root open={headerCaseOpen} onOpenChange={setHeaderCaseOpen}>
-              <Popover.Trigger asChild>
-                <button
-                  type="button"
-                  data-testid="case-switcher-button"
-                  title={`Active Case: ${activeCase?.firNumber || "CASE"} · ${activeCase?.title || ""}`}
-                  className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                  style={{
-                    height: "28px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    background: "rgba(6, 182, 212, 0.12)",
-                    border: "1px solid rgba(34, 211, 238, 0.30)",
-                    borderRadius: "6px",
-                    padding: "0 8px",
-                    color: "#22D3EE",
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Shield size={12} color="#22D3EE" />
-                  <span style={{ fontFamily: "var(--font-mono)" }}>
-                    {activeCase ? `${activeCase.caseId} · ${activeCase.firNumber}` : (activeCaseId || "SWITCH CASE")}
-                  </span>
-                  <ChevronDown size={11} color="#94A3B8" />
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content
-                  align="end"
-                  sideOffset={6}
-                  style={{
-                    width: "340px",
-                    background: "#132238",
-                    border: "1px solid rgba(255, 255, 255, 0.14)",
-                    borderRadius: "10px",
-                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.75)",
-                    padding: "10px",
-                    zIndex: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                    color: "#F8FAFC",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
-                    <span style={{ fontSize: "10px", fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      SWITCH ACTIVE CASE
-                    </span>
-                    <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" dot={false} />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "240px", overflowY: "auto" }}>
-                    {caseWorkspaces.map((cw) => {
-                      const isCurrent = cw.caseId === activeCaseId;
-                      return (
-                        <div
-                          key={cw.caseId}
-                          data-case-option={cw.caseId}
-                          onClick={() => {
-                            const targetRoute = (activeRoute === "benchmarks" ? "intake" : activeRoute) as any;
-                            selectCaseWorkspace(cw.caseId, targetRoute);
-                            setHeaderCaseOpen(false);
-                          }}
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "2px",
-                            padding: "8px 10px",
-                            borderRadius: "6px",
-                            background: isCurrent ? "rgba(6, 182, 212, 0.18)" : "rgba(255, 255, 255, 0.03)",
-                            border: isCurrent ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid rgba(255, 255, 255, 0.06)",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: "11px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#22D3EE" : "#CBD5E1" }}>
-                              {cw.caseId} · {cw.firNumber}
-                            </span>
-                            {cw.goldenHourRemainingMins > 0 ? (
-                              <span style={{ fontSize: "9px", fontWeight: 700, color: "#FBBF24", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
-                                ⚡ {cw.goldenHourRemainingMins}m
-                              </span>
-                            ) : isCurrent ? (
-                              <span style={{ fontSize: "9px", fontWeight: 700, color: "#34D399", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
-                                ACTIVE
-                              </span>
-                            ) : null}
-                          </div>
-                          <div style={{ fontSize: "12px", fontWeight: 700, color: "#F8FAFC" }}>
-                            {cw.complainantName || "Victim Unspecified"}
-                          </div>
-                          <div style={{ fontSize: "10.5px", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {cw.title}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "6px" }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        openNewCaseModal();
-                        setHeaderCaseOpen(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "4px",
-                        padding: "5px 8px",
-                        borderRadius: "6px",
-                        background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
-                        color: "#FFFFFF",
-                        border: "none",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <Plus size={12} />
-                      <span>New Case Workspace</span>
-                    </button>
-                  </div>
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
+            {/* 1. Upgraded Case Switcher */}
+            <UpgradedCaseSwitcher
+              activeCase={activeCase}
+              activeCaseId={activeCaseId}
+              caseWorkspaces={caseWorkspaces}
+              onSelectCase={(targetCaseId) => {
+                const targetRoute = (activeRoute === "benchmarks" ? "intake" : activeRoute) as any;
+                selectCaseWorkspace(targetCaseId, targetRoute);
+              }}
+              onOpenNewCase={openNewCaseModal}
+            />
 
             {/* 2. Brief */}
             <button
@@ -2243,6 +2132,31 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
+          {/* Read-Only Archived Case Warning Banner */}
+          {(activeCase as any)?.status === "ARCHIVED" && activePage === "workbench" && (
+            <div
+              data-testid="archived-case-banner"
+              style={{
+                background: "#FEF3C7",
+                borderBottom: "1px solid #FCD34D",
+                padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                color: "#92400E",
+                fontSize: "12px",
+                fontWeight: 600,
+                flexShrink: 0,
+                zIndex: 20,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Archive size={14} color="#D97706" />
+                <span>This case is ARCHIVED and read-only. All evidence mutations and statutory actions are locked.</span>
+              </div>
+            </div>
+          )}
+
           <ErrorBoundary fallbackTitle="Screen Render Notice">
             <Suspense fallback={<ScreenSuspenseFallback />}>
               {activePage === "benchmark" ? (
