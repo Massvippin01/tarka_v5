@@ -93,5 +93,29 @@ describe("WCAG 2.1 Contrast Ratio Verification Suite (Phase 15.2)", () => {
       expect(cr).toBeGreaterThanOrEqual(5.0);
     });
   });
+
+  describe("Extended Dark Palette & Badge Contrasts", () => {
+    const slateDark = "#0F172A";
+    const slateSurface = "#1E293B";
+
+    it("verifies badge text contrast on status pills in dark mode (>= 4.5:1 AA)", () => {
+      expect(getContrastRatio("#34D399", slateDark)).toBeGreaterThanOrEqual(4.5);
+      expect(getContrastRatio("#FBBF24", slateDark)).toBeGreaterThanOrEqual(4.5);
+      expect(getContrastRatio("#FB7185", slateDark)).toBeGreaterThanOrEqual(4.5);
+      expect(getContrastRatio("#818CF8", slateDark)).toBeGreaterThanOrEqual(4.5);
+      expect(getContrastRatio("#22D3EE", slateDark)).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it("verifies primary action buttons meet WCAG AA contrast (>= 4.5:1)", () => {
+      // White text on Indigo #4F46E5 (Primary Action)
+      expect(getContrastRatio("#FFFFFF", "#4F46E5")).toBeGreaterThanOrEqual(4.5);
+      // White text on Dark Emerald #047857
+      expect(getContrastRatio("#FFFFFF", "#047857")).toBeGreaterThanOrEqual(4.5);
+      // White text on Slate Surface #0F172A
+      expect(getContrastRatio("#FFFFFF", slateDark)).toBeGreaterThanOrEqual(4.5);
+      // Non-text UI control contrast meets WCAG 2.1 SC 1.4.11 (>= 3.0:1)
+      expect(getContrastRatio("#059669", slateDark)).toBeGreaterThanOrEqual(3.0);
+    });
+  });
 });
 

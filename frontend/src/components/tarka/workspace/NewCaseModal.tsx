@@ -27,6 +27,12 @@ export const NewCaseModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
 
+  const handleClose = () => {
+    setErrorMsg(null);
+    setCreatedCaseId(null);
+    closeNewCaseModal();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isNewCaseModalOpen) {
@@ -38,12 +44,6 @@ export const NewCaseModal: React.FC = () => {
   }, [isNewCaseModalOpen]);
 
   if (!isNewCaseModalOpen) return null;
-
-  const handleClose = () => {
-    setErrorMsg(null);
-    setCreatedCaseId(null);
-    closeNewCaseModal();
-  };
 
   const handleAutoFillEmergency = () => {
     setFirNumber("FIR #188/2026");

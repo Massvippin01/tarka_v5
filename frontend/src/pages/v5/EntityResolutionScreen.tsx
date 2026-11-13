@@ -22,6 +22,7 @@ import {
   type CanonicalEntity,
   type RawToken,
 } from "../../services/caseSyncBridge";
+import { getCanonicalCase } from "../../fixtures/cases";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import {
   KpiTile,
@@ -132,15 +133,16 @@ export const EntityResolutionScreen: React.FC = () => {
 
   const canonicalEntities: CanonicalEntity[] = useMemo(() => {
     if (activeDiscoveredCluster) {
-      const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
-      const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
-      const l2a = activeDiscoveredCluster.layer2SplitConduits?.[0] || "ICICI_MULE_PRIYA_SHARMA";
-      const l2b = activeDiscoveredCluster.layer2SplitConduits?.[1] || "HDFC_MULE_DEV_PATEL";
-      const merchant = activeDiscoveredCluster.innocentMerchant || "ICICI_MERCH_METRO_GOLD_GST";
+      const canonicalCase = getCanonicalCase(activeCaseId || "CASE-2026-001");
+      const victim = activeDiscoveredCluster.victimAccount || canonicalCase.complainant.name || "Victim Source Account";
+      const conduit = activeDiscoveredCluster.layer1Conduit || canonicalCase.accounts.find((a: { muleLayer?: string; holderName?: string }) => a.muleLayer === "L1")?.holderName || "Layer 1 Conduit";
+      const l2a = activeDiscoveredCluster.layer2SplitConduits?.[0] || canonicalCase.accounts.find((a: { muleLayer?: string; holderName?: string }) => a.muleLayer === "L2")?.holderName || "Layer 2 Mule";
+      const l2b = activeDiscoveredCluster.layer2SplitConduits?.[1] || "Secondary Mule";
+      const merchant = activeDiscoveredCluster.innocentMerchant || canonicalCase.accounts.find((a: { holderType?: string; holderName?: string }) => a.holderType === "MERCHANT")?.holderName || "Commercial Merchant";
       const gstin = activeDiscoveredCluster.merchantGstin || "07AAACA1234F1Z8";
-      const imei = activeDiscoveredCluster.convergedImei || "359988007766552";
-      const ja4 = activeDiscoveredCluster.convergedJa4 || "t13d1516h2_99aabbccddeeff01";
-      const bssid = activeDiscoveredCluster.bssidHotspot || "AA:BB:CC:11:22:33";
+      const imei = activeDiscoveredCluster.convergedImei || canonicalCase.accounts.find((a: { deviceImei?: string }) => Boolean(a.deviceImei))?.deviceImei || "IMEI Not Recorded";
+      const ja4 = activeDiscoveredCluster.convergedJa4 || canonicalCase.syndicateLinks?.find((s: { sharedAnchorType?: string; sharedAnchorValue?: string }) => s.sharedAnchorType === "JA4_TLS")?.sharedAnchorValue || "JA4 Not Recorded";
+      const bssid = activeDiscoveredCluster.bssidHotspot || canonicalCase.accounts.find((a: { bssidHotspot?: string }) => Boolean(a.bssidHotspot))?.bssidHotspot || "BSSID Not Recorded";
 
       return [
         {

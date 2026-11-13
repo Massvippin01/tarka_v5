@@ -1,270 +1,195 @@
 # TARKA (तर्क)
-### Indigenous Digital Forensics Investigation & Evidence-Analysis Platform
+### Indigenous AI-Powered Cyber Fraud Investigation & Attribution Platform
+**SUTRAM 2026 / SIH 2026 — Problem Statement PS04**
 
-> **TARKA** is a voice-first, AI-assisted digital forensics platform designed for investigating complex financial fraud, cybercrime, and multi-source discrepancy cases. It pairs deterministic formal logic verification (via the Z3 SMT solver) with cryptographic evidence preservation (SHA-256 CAS), immutable chain-of-custody ledgers, and conversational Indic voice intelligence powered by Sarvam AI.
+> **Pitch Line:** *"Drop in any bank statement, complaint, and CDR. In 10 seconds TARKA extracts and resolves every identity, maps the mule network, explains why each account is suspicious, and drafts the statutory freeze requests. Every number is traceable to evidence with a real SHA-256 chain."*
 
 ---
 
-## Quick Start (30 Seconds to Launch)
+## ⚡ 60-Second Quickstart
 
-```powershell
-# 1. Clone the repository
-git clone https://github.com/Yaathrapalani/tarka.git
-cd tarka
+Launch the entire stack (FastAPI Backend + Vite Frontend) with a single command:
 
-# 2. Configure environment
-Copy-Item .env.example .env
-Copy-Item backend\.env.example backend\.env
+### Option A: Via NPM (Cross-Platform)
+```bash
+# 1. Clone repository
+git clone https://github.com/Massvippin01/tarka_v5.git
+cd tarka_v5
 
-# 3. Start Backend (Terminal 1)
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-
-# 4. Start Frontend (Terminal 2)
-cd ..\frontend
-npm install
-npm run dev
-
-# 5. Open your browser:
-# http://127.0.0.1:5173/?case=upi_payment_discrepancy&nav=investigations
+# 2. Start backend (:8000) and frontend (:5173) concurrently
+npm run dev:all
 ```
 
+### Option B: Via Make
+```bash
+make dev
+```
+
+### Option C: Via Docker Compose
+```bash
+docker compose up -d
+```
+
+Open your browser at:
+👉 **`http://localhost:5173/?case=CASE-2026-001&view=intake`**
+
+To launch the guided 3-minute demo mode for judges:
+👉 Click **"Judge Demo"** on the top header or navigate to `?case=CASE-2026-001&view=intake&guided=true`.
+
 ---
 
-## What TARKA Does
+## 🎯 SUTRAM PS04 Deliverable Mapping
 
-Traditional forensic workflows suffer from cognitive overload when cross-referencing conflicting bank statements, chat logs, call detail records (CDRs), and screenshot receipts. TARKA addresses this through four core capabilities:
+TARKA delivers all 5 required components of the SUTRAM PS04 challenge specification through dedicated interactive screens backed by production-ready APIs:
 
-1. **Deterministic Contradiction Detection**: Replaces statistical guessing with formal Z3 SMT constraint solving. Mathematical inconsistencies (e.g., a ₹25,000 ledger debit vs. a ₹15,000 screenshot claim) are proven with mathematical certainty.
-2. **Cryptographic Content-Addressed Storage (CAS)**: Every piece of evidence is immutable and hashed via SHA-256 upon intake. Raw evidence bytes are preserved bit-for-bit in an append-only custody ledger.
-3. **Conversational Multilingual Voice (Sarvam AI)**: Natural turn-taking in Indian English, Tamil, Hindi, Telugu, and Bengali via Sarvam Saaras STT (`saaras:v4`) and Bulbul TTS (`bulbul:v4-flash`). Operates with zero robotic browser speech fallback.
-4. **Statutory Legal Compliance (Section 63 BSA)**: Automatically generates cryptographically sealed, tamper-evident forensic certificates compliant with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023.
+| PS04 Deliverable | Primary Screen | Primary REST API Endpoint | Forensic Engine & Capability |
+| :--- | :--- | :--- | :--- |
+| **1. Entity Extraction & Resolution** | **Screen 02**: Identity & Resolution (`/v5/entities`) | `POST /api/v1/cases/{id}/resolve-entities`<br>`POST /api/v1/cases/{id}/entity-resolution/actions` | Disambiguates phone numbers, UPI IDs, emails, and bank accounts into unified personas. Displays algorithmic confidence scores, rationale, and investigator **Accept / Reject / Split** controls. |
+| **2. Relationship Discovery** | **Screen 04**: Network Topology (`/v5/network`) | `GET /api/v1/cases/{id}/graph`<br>`POST /api/v1/cases/{id}/expand-node` | Dynamic ELK layout engine maps multi-hop fund routing, co-location, shared IP/IMEI links, and money trail clustering without fixed coordinates. |
+| **3. Transaction-Flow Analysis** | **Screen 03**: Flow & Ledger Analysis (`/v5/mules`) | `GET /api/v1/analyze/mules/{id}`<br>`GET /api/v1/cases/{id}/transactions` | Mathematical conservation-of-funds verification, rapid dispersal detection (turnaround < 10 mins), structuring, and fan-out/fan-in flow identification. |
+| **4. Mule-Account Scoring & Attribution** | **Screen 04 Dossier** & **Screen 05**: Attribution (`/v5/attribution`) | `GET /api/v1/cases/{id}/accounts/{acct}/explanation`<br>`GET /api/v1/cases/{id}/attribution-funnel` | Multi-factor risk scoring (turnaround, fan-out, KYC mismatch, dormant activation). Generates grounded bilingual explanations (English & Hindi) and 5-stage CGNAT de-NATing attribution funnels. |
+| **5. Actionable Intelligence Reports** | **Screen 06**: Dossier & Reports (`/v5/reports`) | `GET /api/v1/forensics/cases/{id}/report`<br>`POST /api/v1/cases/{id}/notices/draft` | Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023 certified PDF evidence bundles, automated Section 94 CrPC / 106 BNSS bank freeze requisitions, and SHA-256 Merkle custody JSON. |
 
 ---
 
-## System Architecture
+## 🏛️ System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Frontend ["TARKA Frontend (React 19 + Vite + TypeScript)"]
-        UI[Forensic Workstation & Graph Explorer]
-        VAD[Local Web Audio VAD & Noise Suppression]
-        Orb[Tarka Particle Orb Interface]
-        Client[Axios Client with Request Timeout Guard]
+    subgraph Client ["Frontend: React 19 + Vite + TypeScript"]
+        Shell["TarkaGlobalShell (Header, Breadcrumb, Case Switcher)"]
+        JudgeMode["Judge Demo Walkthrough (Guided 3-Min Path)"]
+        Screens["Forensic Screens (Intake, Entities, Ledger, Network, Attribution, Report)"]
+        CopilotUI["Grounded Investigation Copilot & Evidence Citations"]
+        ELKGraph["ELK.js Dynamic Flow Graph & Node Dossier"]
     end
 
-    subgraph Backend ["TARKA Core Services (FastAPI)"]
-        API[Forensics & Investigation REST API]
-        Auth[AuthService & Statutory RBAC Gate]
-        Agent[Conversational Forensics Agent]
-        Z3[Z3 SMT Solver Contradiction Engine]
-        BSAReport[Section 63 BSA Certificate Generator]
-        VoiceSvc[Sarvam Voice Service]
+    subgraph Backend ["Backend: FastAPI (Python 3.12)"]
+        AuthGate["AuthService & Statutory RBAC Gateway"]
+        CaseAPI["Case & Transaction Ledger API"]
+        Resolver["Entity Resolution Engine (Levenshtein + Jaro-Winkler + Graph Links)"]
+        MuleEngine["Mule Scoring Engine (Fan-out, Velocity, KYC, Turnaround)"]
+        CopilotEngine["Grounded Copilot Narration (Ollama Llama 3.1:8b / Fallback Template)"]
+        Z3Engine["Z3 SMT Formal Logic Contradiction Engine"]
+        ReportGen["Section 63 BSA PDF & CrPC 94 Requisition Generator"]
     end
 
-    subgraph Storage ["Authority & Evidence Persistence"]
-        CAS[Content-Addressed Evidence Vault (SHA-256)]
-        CustodyDB[(SQLite / PostgreSQL Custody Ledger)]
-        GraphDB[(Neo4j Knowledge Graph Projection)]
+    subgraph Authority ["Storage & Evidence Authority"]
+        CAS["Content-Addressed Storage (SHA-256 Bitstream CAS)"]
+        CustodyDB[("Transactional Authority (SQLite / PostgreSQL)")]
+        FlightRecorder[("Append-Only Cryptographic Flight Recorder & Merkle Root")]
     end
 
-    subgraph CloudVoice ["External Speech Engine (Server-Side Only)"]
-        SarvamCloud[Sarvam AI Cloud: Saaras STT & Bulbul TTS]
-    end
+    Shell --> Screens
+    JudgeMode --> Screens
+    Screens --> AuthGate
+    CopilotUI --> CopilotEngine
+    ELKGraph --> CaseAPI
 
-    UI --> Client
-    VAD --> Orb
-    Orb --> Client
-    Client --> API
-    API --> Auth
-    Auth --> Agent
-    Agent --> Z3
-    Agent --> BSAReport
-    Agent --> VoiceSvc
-    VoiceSvc -->|HTTPS / Private Key| SarvamCloud
-    Z3 --> CAS
-    BSAReport --> CustodyDB
-    Agent --> GraphDB
+    AuthGate --> CaseAPI
+    AuthGate --> Resolver
+    AuthGate --> MuleEngine
+    AuthGate --> CopilotEngine
+    AuthGate --> Z3Engine
+    AuthGate --> ReportGen
+
+    CaseAPI --> CustodyDB
+    Resolver --> CustodyDB
+    MuleEngine --> CustodyDB
+    ReportGen --> CAS
+    CaseAPI --> FlightRecorder
 ```
 
 ---
 
-## Feature & Dependency Matrix
+## 📸 Screen-by-Screen Tour
 
-| Component | Status | Dependency | Fallback / Offline Behavior |
-|---|---|---|---|
-| **Z3 SMT Contradiction Engine** | **VERIFIED** | Python `z3-solver` | Self-contained, fully local, deterministic. |
-| **Evidence CAS & Merkle Custody**| **VERIFIED** | Local Filesystem / SQLite | Bitstream verified via SHA-256 CAS; stored in `data/cases/<case_id>/`. |
-| **Section 63 BSA PDF Generator** | **VERIFIED** | Python `reportlab` | Generates sealed statutory certificates locally. |
-| **Conversational Voice Assistant** | **VERIFIED** | Sarvam AI Cloud (Optional) | If `SARVAM_API_KEY` is missing, fails closed with transparent text-only rationale. |
-| **Knowledge Graph Traversal** | **VERIFIED** | Neo4j / In-Memory Network | Interactive 2D/3D explorer works in-memory without Neo4j. |
-| **Statutory Policy Engine** | **VERIFIED** | Python / OPA (Optional) | Local fail-closed enforcement if OPA container is offline. |
+### Screen 01: Intake & Ledger Verification
+*Extracts raw evidence, validates balance continuity, and flags financial discrepancies.*
+- **Computed Conservation**: Inflows, Outflows, and Net Balances verified row-by-row.
+- **Flight Recorder**: Real browser-native `crypto.subtle.digest` SHA-256 hash chains.
+- **Evidence Intactness**: Cryptographic Merkle tree verification against CAS bitstreams.
 
----
-
-## Prerequisites
-
-- **Operating System**: Windows 10/11, macOS, or Ubuntu Linux.
-- **Python**: Version `3.11` or `3.12` (with pip and venv).
-- **Node.js**: Version `18.x`, `20.x`, or `22.x` (with npm).
-- **Git**: Installed and available in PATH.
-- *(Optional)* **Docker Desktop**: If running containerized PostgreSQL, Neo4j, or MinIO.
-- *(Optional)* **Sarvam AI API Key**: For neural Indic voice synthesis ([sarvam.ai](https://sarvam.ai)).
+![Screen 01 Intake](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/01_intake_desktop_1440x900.png)
 
 ---
 
-## Environment Configuration
+### Screen 02: Identity & Entity Resolution
+*Resolves disparate identity fragments (emails, UPI handles, phones, accounts) into personas.*
+- **Real Entity Resolution**: Jaro-Winkler string similarity + shared identifier graph clustering.
+- **Why Modal**: Detailed attribution factors explaining each proposed identity match.
+- **Investigator Agency**: Complete Human-in-the-Loop decision control (Accept, Reject, Split).
 
-Copy the example template to create your `.env` file:
-
-```powershell
-Copy-Item .env.example .env
-Copy-Item backend\.env.example backend\.env
-```
-
-Key environment variables in `.env`:
-
-```ini
-# Core Configuration
-APP_ENV=development
-DEBUG=true
-SECRET_KEY=tarka_secure_development_secret_key_minimum_32_characters
-
-# Voice Configuration (Sarvam AI)
-# Obtain your key at: https://sarvam.ai
-SARVAM_API_KEY=your_sarvam_api_key_here
-SARVAM_API_BASE_URL=https://api.sarvam.ai
-SARVAM_STT_MODEL=saaras:v4
-SARVAM_TTS_MODEL=bulbul:v4-flash
-SARVAM_DEFAULT_SPEAKER=shubh_enhi_ads
-```
-
-> **Security Note**: Never commit `.env` or expose `SARVAM_API_KEY` to client-side bundles. TARKA keeps all speech provider credentials strictly server-side.
+![Screen 02 Entities](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/02_entities_desktop_1440x900.png)
 
 ---
 
-## Development Workflows
+### Screen 03: Flow & Ledger Analysis
+*Tracks multi-hop fund dispersal, structuring thresholds, and turnaround velocity.*
+- **Fund Conservation**: Proves where victim funds dispersed across Layer 1, 2, and 3 mules.
+- **Turnaround Velocity**: Highlights immediate drain operations (< 10 minutes between credit and debit).
 
-### 1. Native Windows Workflow (Recommended)
+![Screen 03 Attribution & Flow](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/03_attribution_desktop_1440x900.png)
 
-Run the backend and frontend in separate PowerShell terminal windows:
+---
 
-```powershell
-# Terminal 1: Backend
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+### Screen 04: Dynamic Network Topology & Node Dossier
+*ELK-powered force and layered graph layout showing suspect relationships and flow topology.*
+- **Dynamic Layout**: Computes optimal node coordinates on the fly for any case or uploaded file.
+- **Node Dossier**: Deep dive into account history, mule score breakdown, and transaction waterfall.
+- **Grounded Copilot**: Explainable mule scoring narratives in English and Hindi with clickable evidence chips.
 
-# Terminal 2: Frontend
-cd frontend
-npm install
-npm run dev
-```
+![Screen 04 Network](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/04_network_desktop_1440x900.png)
 
-### 2. Docker Compose Workflow
+---
 
-To launch the full containerized stack:
+### Screen 05: Attribution & CGNAT De-NATing
+*5-stage investigative funnel correlating public IP, source port, timestamp, and ISP subscriber identity.*
+- **CGNAT Funnel**: Resolves public carrier-grade NAT logs to subscriber IMSI/MSISDN.
+- **Cell Tower Triangulation**: Correlates CDR cell ID tower azimuth with suspect banking timestamps.
 
-```powershell
-# Start services in the background
-docker compose -f docker-compose.dev.yml up -d
+![Screen 05 Attribution](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/05_taint_engine_desktop_1440x900.png)
 
-# Check health and status
-docker compose -f docker-compose.dev.yml ps
+---
 
-# View backend logs
-docker compose -f docker-compose.dev.yml logs -f backend
+### Screen 06: Statutory Case Intelligence Report
+*Generates court-admissible forensic packages adhering to Indian cyber law.*
+- **Section 63 BSA 2023 Certificate**: Cryptographically sealed forensic hash report.
+- **Section 94 CrPC / 106 BNSS Notices**: Automated freeze requisition letters for banks.
+- **Court-Proof Checklist**: Real-time validation of hash integrity and unbroken custody chains.
 
-# Stop services safely without deleting data
-docker compose -f docker-compose.dev.yml stop
+![Screen 06 Court Proof](docs/SUTRAM_PS04_DOCUMENTATION/17_COMPETITION_AND_PILOT_READINESS/screenshots/phase_15_2/06_court_proof_desktop_1440x900.png)
+
+---
+
+## ⚖️ Constitutional Investigative Invariants
+
+TARKA operates under strict forensic and legal invariants:
+1. **Human Decides, AI Proposes, Evidence Verifies**: TARKA never brands a citizen as "guilty" or "criminal" — it scores empirical risk factors and surfaces structured rationale for human officers.
+2. **Real Cryptography Only**: Every piece of evidence is hashed with SHA-256. Zero placeholder hashes or magic numbers.
+3. **Canonical Data Authority**: All screens derive numbers from canonical case fixtures (`CASE-2026-001` through `CASE-2026-004`). If two screens display a figure, they call the exact same computation.
+4. **Indian Statutory Standards**: All financial figures are formatted in the Indian numbering system (`₹1,00,000` via `formatInr()`), and legal deliverables match the Bharatiya Sakshya Adhiniyam, 2023.
+
+---
+
+## 🧪 Testing & Verification
+
+Run the full automated test suite across frontend and backend:
+
+```bash
+# Run both frontend and backend suites
+npm test
+
+# Or run separately:
+npm run test:frontend  # Vitest (117 tests green, cross-screen consistency)
+npm run test:backend   # Pytest (1,195+ tests green, security, RBAC, copilot evals)
+npm run lint           # ESLint (0 errors)
+npm run build          # TypeScript compilation & Vite production bundle
 ```
 
 ---
 
-## First-Run Demo: `upi_payment_discrepancy`
+## 👥 SUTRAM PS04 Team & Attribution
 
-TARKA includes a self-contained synthetic case: `upi_payment_discrepancy`.
-
-1. Launch TARKA and open:  
-   **`http://127.0.0.1:5173/?case=upi_payment_discrepancy&nav=investigations`**
-2. Click the central **Voice Sphere** or **"Start Conversation"** button.
-3. Click the suggested query: **`"Explain this case in simple English."`**
-4. **Observe the Results**:
-   - The Z3 solver compares the banking debit ledger (₹25,000) against the visual screenshot claim (₹15,000).
-   - TARKA explains the mathematical contradiction in plain language.
-   - Spoken audio is synthesized via Sarvam Bulbul with zero robotic browser speech fallback.
-   - Click **"Preview Bank Record"** or **"Preview Screenshot Claim"** to inspect raw SHA-256 CAS bitstreams.
-5. Click **`"Generate statutory Section 63 BSA report"`** to generate a signed legal certificate.
-
----
-
-## Conversational Voice Assistant Specifications
-
-- **Foundational Models**: Sarvam Saaras STT (`saaras:v4`) and Bulbul TTS (`bulbul:v4-flash`).
-- **Supported Languages**: Indian English (`en-IN`), Tamil (`ta-IN`), Hindi (`hi-IN`), Telugu (`te-IN`), Bengali (`bn-IN`).
-- **Verified Personas**: `shubh_enhi_ads` (Formal Male), `simran_enhi_companion` (Conversational Female), `gokul_ta_narration` (Tamil Male), `kavitha_te_narration` (Telugu Female), `arnab_bn_conversation` (Bengali Male).
-- **Hands-Free Ambient Listening**: Ephemeral audio ring buffer with local Voice Activity Detection (VAD) and Acoustic Echo Cancellation (AEC).
-- **Epistemic Privacy Boundary**: Raw case evidence is **never** sent to speech APIs. Only sanitized, structured forensic summaries generated by the local solver are synthesized.
-
----
-
-## Verification & Testing
-
-```powershell
-# Run acceptance and regression test suites
-python -m pytest backend/tests/test_tarka_multilingual_voice_acceptance.py backend/tests/test_tarka_voice_modal_refinement.py backend/tests/test_sarvam_live_smoke.py
-
-# Run live Sarvam Bulbul synthesis smoke test (requires SARVAM_API_KEY)
-$env:RUN_LIVE_SARVAM_TEST = "1"
-python -m pytest backend/tests/test_sarvam_live_smoke.py -v
-
-# Run frontend production build validation
-cd frontend
-npm run build
-```
-
----
-
-## Troubleshooting
-
-| Symptom | Cause | Remedy |
-|---|---|---|
-| `Voice synthesis unconfigured` notice | `SARVAM_API_KEY` is not set in `.env`. | This is expected in offline mode. TARKA renders text-only forensic rationale. Add a key to `.env` to enable audible speech. |
-| Port 8000 or 5173 occupied | A previous process is still running. | Run `netstat -ano \| findstr :8000` in PowerShell and stop the conflicting PID. |
-| Microphone permission error | Browser blocked microphone access. | Click the permissions icon in the address bar and allow microphone access. |
-| PowerShell script activation blocked | Windows execution policy restriction. | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in PowerShell. |
-
----
-
-## Repository Structure
-
-```
-├── backend/
-│   ├── app/
-│   │   ├── api/             # FastAPI REST endpoints (cases, evidence, voice, reports)
-│   │   ├── intelligence/    # Sarvam voice service, Z3 solver, reasoning engines
-│   │   ├── domain/          # Core forensic models (entities, relationships, findings)
-│   │   └── services/        # Authentication, custody chain, statutory governance
-│   └── tests/               # Unit, acceptance, regression, and live smoke test suites
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # Particle orb, voice modal, evidence graph, timeline lens
-│   │   ├── context/         # Investigation context and state machines
-│   │   └── api/             # Frontend API client with timeout guards
-│   └── public/              # Static assets and icons
-├── data/cases/              # Synthetic case fixtures (upi_payment_discrepancy)
-├── docs/                    # Getting started, configuration reference, release notes
-├── docker-compose.dev.yml   # Local development container topology
-└── docker-compose.yml       # Production baseline container topology
-```
-
----
-
-## License & Attribution
-
-Developed for the **SUTRAM 2026 / SIH 2026** Datathon. All case, person, and transaction data in `data/cases/` is purely synthetic and fictional.
+Developed with pride for **SUTRAM 2026 / SIH 2026 Datathon**.  
+*All synthetic cases, identities, phone numbers, and bank account numbers are purely fictional and created for testing and demonstration purposes.*

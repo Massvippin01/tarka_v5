@@ -259,47 +259,6 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
   const [internalSelectedId, setInternalSelectedId] = useState<string>("FINDING-LEDGER-UNSAT");
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
-  if (!hasValidNodes) {
-    return (
-      <div
-        className={className}
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
-          borderRadius: "8px",
-          padding: "36px 20px",
-          textAlign: "center",
-          color: "#64748B",
-        }}
-      >
-        <div style={{ fontSize: "36px", marginBottom: "12px" }}>🧬</div>
-        <div style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
-          Provenance Graph in Clean Standby
-        </div>
-        <p style={{ fontSize: "12px", color: "#64748B", margin: "8px auto 16px", maxWidth: "480px", lineHeight: 1.5 }}>
-          Zero evidence bitstreams are currently registered in this case. Ingest case evidence files to automatically compute SHA-256 bitstream custody and generate the formal Z3 theorem graph.
-        </p>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "11px",
-            color: "#4F46E5",
-            background: "#EEF2FF",
-            padding: "6px 14px",
-            borderRadius: "6px",
-            border: "1px solid #C7D2FE",
-            fontWeight: 600,
-          }}
-        >
-          <Boxes size={14} />
-          <span>Click <strong>"+ Evidence"</strong> in the top bar to ingest bitstreams</span>
-        </div>
-      </div>
-    );
-  }
-
   const selectedNodeId = externalSelectedNodeId || internalSelectedId;
 
   const handleSelectNode = (nodeId: string) => {
@@ -356,6 +315,47 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
       { id: "STAGE_FINDING", title: "4. Statutory Findings", subtitle: "Court Admissible Legal Proofs", items: findings },
     ];
   }, [activeDag]);
+
+  if (!hasValidNodes) {
+    return (
+      <div
+        className={className}
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          borderRadius: "8px",
+          padding: "36px 20px",
+          textAlign: "center",
+          color: "#64748B",
+        }}
+      >
+        <div style={{ fontSize: "36px", marginBottom: "12px" }}>🧬</div>
+        <div style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A" }}>
+          Provenance Graph in Clean Standby
+        </div>
+        <p style={{ fontSize: "12px", color: "#64748B", margin: "8px auto 16px", maxWidth: "480px", lineHeight: 1.5 }}>
+          Zero evidence bitstreams are currently registered in this case. Ingest case evidence files to automatically compute SHA-256 bitstream custody and generate the formal Z3 theorem graph.
+        </p>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "11px",
+            color: "#4F46E5",
+            background: "#EEF2FF",
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "1px solid #C7D2FE",
+            fontWeight: 600,
+          }}
+        >
+          <Boxes size={14} />
+          <span>Click <strong>"+ Evidence"</strong> in the top bar to ingest bitstreams</span>
+        </div>
+      </div>
+    );
+  }
 
   const getNodeStyles = (node: DAGNode) => {
     const status = (node.status || "").toUpperCase();

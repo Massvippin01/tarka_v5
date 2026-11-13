@@ -168,6 +168,15 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       : 0;
 
   const [experienceLevel, setExperienceLevelState] = useState<ExperienceLevel>(initialExperienceLevel);
+  const [lastEvent, setLastEvent] = useState<DomainEvent | null>(null);
+
+  const dispatchEvent = (type: DomainEventType, payload: Record<string, any>) => {
+    setLastEvent({
+      type,
+      payload,
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   const setExperienceLevel = (level: ExperienceLevel) => {
     setExperienceLevelState(level);
@@ -208,7 +217,6 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotQuery, setCopilotQuery] = useState("");
-  const [lastEvent, setLastEvent] = useState<DomainEvent | null>(null);
   const [realtimeState, setRealtimeState] = useState<RealtimeConnectionState>("LIVE");
   const [newEvidenceAlert, setNewEvidenceAlert] = useState(false);
   const [lastSequenceNumber, setLastSequenceNumber] = useState(1);
@@ -293,14 +301,6 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       if (eventSource) eventSource.close();
     };
   }, [activeCaseId]);
-
-  const dispatchEvent = (type: DomainEventType, payload: Record<string, any>) => {
-    setLastEvent({
-      type,
-      payload,
-      timestamp: new Date().toISOString(),
-    });
-  };
 
   const navigateTo = (nav: NavRoute, lens?: WorkspaceLens) => {
     const targetLens = lens || activeLens;

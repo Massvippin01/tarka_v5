@@ -154,10 +154,13 @@ export const IntakeScreen: React.FC = () => {
   // Base Raw CBS Ledger Rows (SBI Finacle 10.x, Account #30981140029 or Discovered Cluster)
   const rawRows: LedgerRowData[] = useMemo(() => {
     if (activeDiscoveredCluster) {
-      const victim = activeDiscoveredCluster.victimAccount || "SBI_VIC_ARJUN_MEHTA";
-      const conduit = activeDiscoveredCluster.layer1Conduit || "AXIS_MULE_KARAN_DAS";
+      const canonicalCase = getCanonicalCase(activeCaseId || "CASE-2026-001");
+      const victim = activeDiscoveredCluster.victimAccount || canonicalCase.complainant.name || "Victim Source Account";
+      const conduit = activeDiscoveredCluster.layer1Conduit || canonicalCase.accounts.find((a: { muleLayer?: string; holderName?: string }) => a.muleLayer === "L1")?.holderName || "Layer 1 Mule";
       const doctored = activeDiscoveredCluster.doctoredBalanceRows?.[0];
       const forgedRrn = activeDiscoveredCluster.forgedRrnRows?.[0];
+      const defaultTxnId = canonicalCase.transactions[0]?.id || "TXN-PRIMARY-01";
+      const defaultRrn = canonicalCase.transactions[0]?.rrn || "RRN-UNRECORDED";
 
       const claimedError = doctored ? (doctored.claimedBalError ?? (doctored as any).claimed_bal_error ?? 200000) : 200000;
       const bookedDebit1 = doctored ? (doctored.bookedDebit ?? (doctored as any).booked_debit ?? 280000) : 280000;
@@ -194,11 +197,11 @@ export const IntakeScreen: React.FC = () => {
           balance: bal1,
         },
         {
-          id: doctored ? (doctored.txId ?? (doctored as any).tx_id ?? "TXN-0014205") : "TXN-0014205",
+          id: doctored ? (doctored.txId ?? (doctored as any).tx_id ?? defaultTxnId) : defaultTxnId,
           sequenceNo: 3,
           timestamp: "2026-09-22T10:00:14",
-          description: `UPI/DR/${forgedRrn ? forgedRrn.rrn : "610514882109"}/${conduit}`,
-          rrn: forgedRrn ? forgedRrn.rrn : "610514882109",
+          description: `UPI/DR/${forgedRrn ? forgedRrn.rrn : defaultRrn}/${conduit}`,
+          rrn: forgedRrn ? forgedRrn.rrn : defaultRrn,
           debit: bookedDebit1,
           credit: 0.0,
           balance: rowTamperedBal,

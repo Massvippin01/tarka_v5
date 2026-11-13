@@ -81,12 +81,10 @@ jobs:
             -k "not live_s3" \
             --junitxml=reports/junit-evidence-integrity.xml -v
 
-      - name: Execute Canonical TARKA Forensics Suite
+      - name: Execute Full TARKA & Backend Pytest Suite
         run: |
-          python -m pytest \
-            backend/tests/test_tarka_sentinelx_integration.py \
-            backend/tests_tarka/ \
-            --junitxml=reports/junit-tarka.xml -q
+          ENABLE_DEMO_AUTH=false python -m pytest backend/tests -q --ignore=backend/tests/test_sarvam_live_smoke.py \
+            --junitxml=reports/junit-backend-suite.xml
 
       - name: Redact Secrets and Archive Test Reports (Gate 8)
         if: always()
@@ -118,6 +116,12 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm ci
+
+      - name: Lint Frontend Codebase (0 Errors)
+        run: npm run lint
+
+      - name: Run Vitest Unit & Cross-Screen Consistency Suite
+        run: npx vitest run
 
       - name: Typecheck and Compile Production Assets
         run: npm run build
