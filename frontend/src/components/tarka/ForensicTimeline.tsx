@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Clock, AlertTriangle } from "lucide-react";
+import { formatInr } from "../../utils/formatters";
 
 export interface TimelineEvent {
   event_id: string;
@@ -161,6 +162,7 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({
                 <div style={{ marginTop: "12px", paddingTop: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#6B7280", flexWrap: "wrap", gap: "8px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <span>Source: <strong style={{ color: "#D1D5DB" }}>{evt.evidence?.source_filename || "Ledger Record"}</strong></span>
+                    {evt.amount !== undefined && <span style={{ color: "#34D399", fontWeight: 700, fontFamily: "var(--font-mono)" }}>{formatInr(evt.amount)}</span>}
                     {evt.identifiers?.rrn && <span>RRN: <code style={{ color: "#93C5FD", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>{evt.identifiers.rrn}</code></span>}
                   </div>
                   <div style={{ color: "#9CA3AF" }}>

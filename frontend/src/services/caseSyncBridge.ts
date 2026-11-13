@@ -18,6 +18,7 @@ import {
 import type { LedgerRowData } from "../utils/intakeFalsifier";
 import { CANONICAL_CASES, getCanonicalCase, buildCaseBundleFromFixture } from "../fixtures/cases";
 import { sha256HexSync, computeMerkleRootSync, canonicalJson, hashChainSync } from "../utils/sha256";
+import { formatInr } from "../utils/formatters";
 import type { MuleLoginSession } from "../utils/cgnatAttribution";
 import type {
   TeDagNode,
@@ -1128,116 +1129,67 @@ export class CaseSyncBridge {
     caseId: string,
     inv: ReconstructedInvestigation
   ): LoomTrackEvent[] {
-    const victim = inv.nodes.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || inv.nodes[0];
-    const l1 = inv.nodes.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("M1") || n.id.includes("PRIMARY")) || inv.nodes[1];
-    const telco = inv.nodes.find((n) => n.id.includes("TWR") || n.id.includes("CELL") || n.id.includes("TELCO")) || inv.nodes[5] || inv.nodes[0];
-    const tx1 = inv.edges[0];
-    const tx2 = inv.edges[1];
+    const fixture = getCanonicalCase(caseId);
+    if (fixture && fixture.timelineEvents && fixture.timelineEvents.length > 0) {
+      return fixture.timelineEvents.map((evt, idx) => {
+        let trackType: LoomTrackEvent["track"] = "BANKING";
+        const trk = (evt.track || "").toUpperCase();
+        if (trk.includes("NCRP") || trk.includes("COMPLAINT") || trk.includes("PHISHING")) {
+          trackType = "COMPLAINT";
+        } else if (trk.includes("TELCO") || trk.includes("WHATSAPP") || trk.includes("TELEGRAM")) {
+          trackType = "TELECOM";
+        } else if (trk.includes("DEVICE") || trk.includes("IPDR") || trk.includes("CGNAT")) {
+          trackType = "DEVICE";
+        } else if (trk.includes("CAS") || trk.includes("STATUTORY")) {
+          trackType = "CAS_INGEST";
+        } else {
+          trackType = "BANKING";
+        }
 
-    const lossStr = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
+        const artifactId = `ART-${caseId}-${idx + 1}`;
+        const artifactHash = sha256HexSync(canonicalJson({ id: evt.eventId, title: evt.title, ts: evt.timestampUtc }));
+        const sourceDate = new Date(evt.timestampUtc);
+        const receivedDate = new Date(sourceDate.getTime() + ((idx % 3) + 1) * 1000);
+
+        return {
+          id: evt.eventId || `LOOM-${caseId}-${idx + 1}`,
+          track: trackType,
+          title: evt.title,
+          sourceTimestamp: evt.timestampUtc,
+          receivedTimestamp: receivedDate.toISOString(),
+          clockOffsetMs: ((idx % 3) + 1) * 1000,
+          confidence: evt.severity === "NORMAL" ? 0.95 : 1.0,
+          artifactId,
+          artifactHash,
+          hasContradiction: evt.severity === "ALERT",
+          contradictionNote: evt.severity === "ALERT" ? evt.detail : undefined,
+          details: {
+            detail: evt.detail,
+            severity: evt.severity,
+            sourceTrack: evt.track,
+            caseId: fixture.caseId,
+            firNumber: fixture.firNumber,
+            complainant: fixture.complainant.name,
+            bookedLoss: formatInr(fixture.financials.bookedLossInr),
+          },
+        };
+      });
+    }
+
+    const lossStr = formatInr(inv.bookedLossInr || 500000);
     const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "bank_statement.csv", sha256: sha256HexSync("bank_statement.csv") };
-    const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
-    const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
-
     return [
       {
         id: `LOOM-${caseId}-01`,
-        track: "COMPLAINT",
-        title: `1930 NCRP Cyber Crime Portal Complaint Registered (${inv.firNumber})`,
-        sourceTimestamp: "2026-09-22T09:15:00Z",
-        receivedTimestamp: "2026-09-22T09:15:22Z",
-        clockOffsetMs: 22000,
-        confidence: 1.0,
-        artifactId: `NCRP-${caseId}`,
-        artifactHash: art1.sha256,
-        details: {
-          complainant: inv.complainantName,
-          reported_loss: lossStr,
-          fir: inv.firNumber,
-          mandate: "Section 63 BSA & 1930 Cyber Fraud Portal",
-        },
-      },
-      {
-        id: `LOOM-${caseId}-02`,
-        track: "TELECOM",
-        title: `Tower Ingress & Handshake at ${telco?.label || "Cell Tower"}`,
-        sourceTimestamp: "2026-09-22T09:18:14Z",
-        receivedTimestamp: "2026-09-22T09:21:00Z",
-        clockOffsetMs: 166000,
-        confidence: 0.98,
-        artifactId: art2.fileId || "ART-TELCO",
-        artifactHash: art2.sha256,
-        hasContradiction: true,
-        contradictionNote: "IMSI pinged while device location logs suggest distant residential broadband",
-        details: {
-          tower: telco?.label || "Telco Tower",
-          cell_id: `CELL-${caseId.slice(-3)}`,
-          carrier: telco?.bank || "Airtel/Jio",
-        },
-      },
-      {
-        id: `LOOM-${caseId}-03`,
         track: "BANKING",
-        title: `Primary UPI Debit: ${victim?.label || "Victim"} to ${l1?.label || "Layer-1 Conduit"}`,
-        sourceTimestamp: "2026-09-22T09:24:41Z",
-        receivedTimestamp: "2026-09-22T09:24:43Z",
+        title: `Primary Ledger Inflow`,
+        sourceTimestamp: "2026-09-22T03:00:14Z",
+        receivedTimestamp: "2026-09-22T03:00:16Z",
         clockOffsetMs: 2000,
         confidence: 1.0,
-        artifactId: art1.fileId || "ART-CBS-01",
+        artifactId: art1.fileId || "ART-001",
         artifactHash: art1.sha256,
-        details: {
-          rrn: tx1?.rrn || "626510149921",
-          amount: tx1 ? `₹${tx1.amount.toLocaleString()}` : lossStr,
-          remitter: `${victim?.label} (${victim?.bank || "Bank"})`,
-          beneficiary: `${l1?.label} (${l1?.bank || "Mule Bank"})`,
-        },
-      },
-      {
-        id: `LOOM-${caseId}-04`,
-        track: "DEVICE",
-        title: `IPDR Handshake from CGNAT Pool (Port Allocation)`,
-        sourceTimestamp: "2026-09-22T09:24:39Z",
-        receivedTimestamp: "2026-09-22T09:26:10Z",
-        clockOffsetMs: 91000,
-        confidence: 0.94,
-        artifactId: art3.fileId || "ART-IPDR-01",
-        artifactHash: art3.sha256,
-        details: {
-          public_ip: `103.21.144.${parseInt(caseId.slice(-3)) || 12}`,
-          translated_port: 18400 + (parseInt(caseId.slice(-3)) || 20),
-          protocol: "TLSv1.3/JA4",
-        },
-      },
-      {
-        id: `LOOM-${caseId}-05`,
-        track: "BANKING",
-        title: `Layer-1 Rapid Fan-out: Conduit Dispersal to Mule Accounts`,
-        sourceTimestamp: "2026-09-22T09:28:10Z",
-        receivedTimestamp: "2026-09-22T09:28:12Z",
-        clockOffsetMs: 2000,
-        confidence: 1.0,
-        artifactId: art1.fileId || "ART-CBS-02",
-        artifactHash: art1.sha256,
-        details: {
-          splits: tx2 ? `₹${tx2.amount.toLocaleString()} downstream` : "Layer-2 Dispersal",
-          latency_seconds: "209s",
-        },
-      },
-      {
-        id: `LOOM-${caseId}-06`,
-        track: "CAS_INGEST",
-        title: `Evidence Gateway CAS Seal: SHA-256 Bitstream Hash Immutability`,
-        sourceTimestamp: "2026-09-22T09:35:00Z",
-        receivedTimestamp: "2026-09-22T09:35:01Z",
-        clockOffsetMs: 1000,
-        confidence: 1.0,
-        artifactId: "ART-CAS-SEAL",
-        artifactHash: art1.sha256,
-        details: {
-          status: "BITSTREAM_SEALED",
-          storage_tier: "IMMUTABLE_CAS_S3",
-          primary_artifact: art1.fileName,
-        },
+        details: { loss: lossStr },
       },
     ];
   }
@@ -1260,7 +1212,7 @@ export class CaseSyncBridge {
     const art3 = inv.fileManifest[2] || { fileId: "ART-IPDR-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
     const art4 = inv.fileManifest[3] || { fileId: "ART-DEVICE-004", fileName: "device_telemetry.json", sha256: sha256HexSync("device_telemetry.json") };
 
-    const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
+    const lossFormatted = formatInr(inv.bookedLossInr || 500000);
 
     const artifacts: EvidenceArtifactItem[] = [
       {
@@ -1347,7 +1299,7 @@ export class CaseSyncBridge {
     inv: ReconstructedInvestigation
   ): FlightRecorderEntry[] {
     const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: sha256HexSync("cbs_statement.csv") };
-    const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
+    const lossFormatted = formatInr(inv.bookedLossInr || 500000);
 
     const rawFlightEvents = [
       {
@@ -1452,7 +1404,7 @@ export class CaseSyncBridge {
     const telco = inv.nodes.find((n) => n.id.includes("TWR") || n.id.includes("CELL") || n.id.includes("TELCO")) || inv.nodes[5] || inv.nodes[0];
     const tx1 = inv.edges[0];
 
-    const lossFormatted = `₹${(inv.bookedLossInr || 500000).toLocaleString()}`;
+    const lossFormatted = formatInr(inv.bookedLossInr || 500000);
     const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: sha256HexSync("cbs_statement.csv") };
     const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
     const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };

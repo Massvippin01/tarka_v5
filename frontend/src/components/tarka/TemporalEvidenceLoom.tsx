@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Clock, Layers, GitCommit, AlertOctagon, Sliders, Copy, Check } from "lucide-react";
 import { sha256HexSync, canonicalJson } from "../../utils/sha256";
+import { validateChronology, formatChronologyTimestamp } from "../../utils/chronologyValidator";
+import { formatInr } from "../../utils/formatters";
 
 export interface LoomTrackEvent {
   id: string;
@@ -110,10 +112,23 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
   const [activeEvent, setActiveEvent] = useState<LoomTrackEvent | null>(events[0] || null);
   const [showDriftOverlay, setShowDriftOverlay] = useState<boolean>(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<"IST" | "UTC">("IST");
 
   useEffect(() => {
     setActiveEvent(events[0] || null);
   }, [events]);
+
+  const chronologyAnalysis = useMemo(() => {
+    return validateChronology(events);
+  }, [events]);
+
+  const conflictMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of chronologyAnalysis.conflicts) {
+      map.set(c.eventId, c.message);
+    }
+    return map;
+  }, [chronologyAnalysis]);
 
   const tracks: LoomTrackEvent["track"][] = ["COMPLAINT", "TELECOM", "BANKING", "DEVICE", "CAS_INGEST"];
 
@@ -172,7 +187,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <Layers size={18} color="#4F46E5" />
             <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, letterSpacing: "0.01em", color: "#0F172A" }}>
               TEMPORAL EVIDENCE LOOM
@@ -191,6 +206,26 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
             >
               MULTI-SOURCE TRACK CORRELATION
             </span>
+            {chronologyAnalysis.conflictCount > 0 && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  background: "#FEE2E2",
+                  color: "#B91C1C",
+                  border: "1px solid #FCA5A5",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontFamily: "var(--font-mono, monospace)",
+                }}
+              >
+                <AlertOctagon size={12} color="#DC2626" />
+                {chronologyAnalysis.conflictCount} CHRONOLOGY CONFLICT{chronologyAnalysis.conflictCount > 1 ? "S" : ""}
+              </span>
+            )}
           </div>
           <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.4 }}>
             Cross-institution synchronized multi-track temporal alignment, dual timestamps, and clock drift isolation for Case{" "}
@@ -201,7 +236,29 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
         </div>
 
         {/* Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => setTimezone((tz) => (tz === "IST" ? "UTC" : "IST"))}
+            style={{
+              padding: "5px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              background: timezone === "IST" ? "#F0FDF4" : "#F8FAFC",
+              color: timezone === "IST" ? "#166534" : "#334155",
+              border: `1px solid ${timezone === "IST" ? "#BBF7D0" : "#CBD5E1"}`,
+              borderRadius: "5px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+              transition: "all 0.12s ease",
+            }}
+          >
+            <Clock size={12} />
+            Timezone: <strong>{timezone}</strong>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowDriftOverlay(!showDriftOverlay)}
@@ -342,6 +399,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   ) : (
                     trackEvts.map((evt) => {
                       const isSelected = activeEvent?.id === evt.id;
+                      const hasConflict = conflictMap.has(evt.id);
                       return (
                         <div
                           key={evt.id}
@@ -355,11 +413,15 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                             justifyContent: "space-between",
                             background: isSelected
                               ? "#EEF2FF"
+                              : hasConflict
+                              ? "#FEF2F2"
                               : evt.hasContradiction
                               ? "#FFF1F2"
                               : "#FFFFFF",
                             border: isSelected
                               ? "1px solid #818CF8"
+                              : hasConflict
+                              ? "1px solid #FCA5A5"
                               : evt.hasContradiction
                               ? "1px solid #FECDD3"
                               : "1px solid #E2E8F0",
@@ -373,7 +435,9 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            {evt.hasContradiction ? (
+                            {hasConflict ? (
+                              <AlertOctagon size={14} color="#DC2626" />
+                            ) : evt.hasContradiction ? (
                               <AlertOctagon size={14} color="#E11D48" />
                             ) : (
                               <GitCommit size={14} color={isSelected ? "#4F46E5" : badge.dot} />
@@ -383,7 +447,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                                 style={{
                                   fontSize: "12px",
                                   fontWeight: 600,
-                                  color: isSelected ? "#4F46E5" : "#0F172A",
+                                  color: hasConflict ? "#DC2626" : isSelected ? "#4F46E5" : "#0F172A",
                                 }}
                               >
                                 {evt.title}
@@ -396,8 +460,21 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                                   marginTop: "2px",
                                 }}
                               >
-                                Source: {evt.sourceTimestamp}
+                                {timezone}: {formatChronologyTimestamp(evt.sourceTimestamp, timezone)}
                               </div>
+                              {hasConflict && (
+                                <div
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "#DC2626",
+                                    fontWeight: 700,
+                                    marginTop: "3px",
+                                    fontFamily: "var(--font-mono, monospace)",
+                                  }}
+                                >
+                                  ⚠️ Chronology Conflict: {conflictMap.get(evt.id)}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -510,12 +587,12 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   }}
                 >
                   <div>
-                    <span style={{ color: "#64748B" }}>Source Event (Wall): </span>
-                    <strong style={{ color: "#0F172A" }}>{activeEvent.sourceTimestamp}</strong>
+                    <span style={{ color: "#64748B" }}>Source Event ({timezone}): </span>
+                    <strong style={{ color: "#0F172A" }}>{formatChronologyTimestamp(activeEvent.sourceTimestamp, timezone)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: "#64748B" }}>Ingest / Received: </span>
-                    <strong style={{ color: "#0D9488" }}>{activeEvent.receivedTimestamp}</strong>
+                    <span style={{ color: "#64748B" }}>Ingest / Received ({timezone}): </span>
+                    <strong style={{ color: "#0D9488" }}>{formatChronologyTimestamp(activeEvent.receivedTimestamp, timezone)}</strong>
                   </div>
                   <div
                     style={{
@@ -535,6 +612,34 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Chronology Conflict Callout */}
+              {conflictMap.has(activeEvent.id) && (
+                <div
+                  style={{
+                    background: "#FEF2F2",
+                    border: "1px solid #FECACA",
+                    borderRadius: "5px",
+                    padding: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      color: "#DC2626",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    <AlertOctagon size={13} /> CAUSALITY / CHRONOLOGY CONFLICT DETECTED
+                  </div>
+                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#991B1B", lineHeight: 1.4 }}>
+                    {conflictMap.get(activeEvent.id)}
+                  </p>
+                </div>
+              )}
 
               {/* Contradiction Callout */}
               {activeEvent.hasContradiction && (
@@ -674,7 +779,11 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                       }}
                     >
                       <span style={{ color: "#64748B" }}>{k}:</span>
-                      <span style={{ color: "#0F172A", fontWeight: 600 }}>{String(v)}</span>
+                      <span style={{ color: "#0F172A", fontWeight: 600 }}>
+                        {typeof v === "number" && (k.toLowerCase().includes("loss") || k.toLowerCase().includes("amount") || k.toLowerCase().includes("inr"))
+                          ? formatInr(v)
+                          : String(v)}
+                      </span>
                     </div>
                   ))}
                 </div>

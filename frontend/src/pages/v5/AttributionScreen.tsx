@@ -132,8 +132,8 @@ export const AttributionScreen: React.FC = () => {
     const activeDotCount = isPortDropped
       ? Math.round((340 / 10000) * (cols * rows))
       : survivingCandidateCount === 1
-      ? 1
-      : Math.max(1, Math.round((survivingCandidateCount / 10000) * (cols * rows)));
+        ? 1
+        : Math.max(1, Math.round((survivingCandidateCount / 10000) * (cols * rows)));
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -171,7 +171,7 @@ export const AttributionScreen: React.FC = () => {
     }
   }, [survivingCandidateCount, isPortDropped]);
 
-  
+
   return (
     <div
       className={`tarka-attribution-root ${isCompact ? "tarka-density-compact" : ""}`}
