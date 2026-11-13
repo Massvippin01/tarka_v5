@@ -111,6 +111,7 @@ export interface RawToken {
   label: string;
   targetEntityId: string;
   badgeColor: string;
+  aliasReason?: string;
 }
 
 export interface CanonicalEntity {
@@ -609,34 +610,48 @@ export class CaseSyncBridge {
     inv.nodes.forEach((node, idx) => {
       const isVictim = node.entityType === "VICTIM" || node.id.includes("VICTIM");
       const isL1 = node.entityType === "LAYER_1_MULE" || node.id.includes("PRIMARY") || node.id.includes("M1");
-      const isL2 = node.entityType === "LAYER_2_CONDUIT" || node.id.includes("CONDUIT") || node.id.includes("2A") || node.id.includes("2B");
-      const isMerchant = node.entityType === "BONA_FIDE_MERCHANT";
+      const isL2 = node.entityType === "LAYER_2_CONDUIT" || node.id.includes("CONDUIT") || node.id.includes("2A") || node.id.includes("2B") || node.id.includes("2C");
+      const isMerchant = node.entityType === "BONA_FIDE_MERCHANT" || node.label.toLowerCase().includes("apex") || node.id.includes("APEX");
 
       let roleBadge = "INVESTIGATIVE ENTITY";
       let roleColor: "rose" | "indigo" | "amber" | "emerald" = "amber";
-      let fraudScore = 50;
+
+      let isHardVeto = false;
+      let hardVetoReason: string | undefined = undefined;
+
+      let subScores = { velocity: 50, deviceOverlap: 50, structuring: 50, kycDiscrepancy: 50 };
 
       if (isVictim) {
         roleBadge = "VICTIM ORIGIN";
         roleColor = "indigo";
-        fraudScore = 0;
+        subScores = { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 };
       } else if (isL1) {
         roleBadge = "L1 CONDUIT MULE";
         roleColor = "rose";
-        fraudScore = 98;
+        subScores = { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 };
+      } else if (isMerchant) {
+        roleBadge = "✓ HARD VETO SHIELD";
+        roleColor = "emerald";
+        isHardVeto = true;
+        hardVetoReason = "Active GSTIN 07AAACA1234F1Z8 · Verified retail bullion ledger · Clean turnover shielded under BNSS §106.";
+        subScores = { velocity: 4, deviceOverlap: 0, structuring: 6, kycDiscrepancy: 0 };
       } else if (isL2) {
         roleBadge = "L2 SPLIT CONDUIT";
         roleColor = "amber";
-        fraudScore = 94;
-      } else if (isMerchant) {
-        roleBadge = "VERIFIED MERCHANT";
-        roleColor = "emerald";
-        fraudScore = 15;
+        subScores = { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 };
       } else {
         roleBadge = "TERMINAL SINK";
         roleColor = "rose";
-        fraudScore = 92;
+        subScores = { velocity: 40, deviceOverlap: 80, structuring: 70, kycDiscrepancy: 60 };
       }
+
+      // Feature-derived risk score: 0.35 velocity + 0.30 deviceOverlap + 0.20 structuring + 0.15 kycDiscrepancy
+      const fraudScore = Math.round(
+        subScores.velocity * 0.35 +
+        subScores.deviceOverlap * 0.30 +
+        subScores.structuring * 0.20 +
+        subScores.kycDiscrepancy * 0.15
+      );
 
       const entityTokens: string[] = [
         `${node.bank} ${node.accountMasked}`,
@@ -647,29 +662,27 @@ export class CaseSyncBridge {
         entityTokens.push(`MSISDN: +91-98${caseId.slice(-3)}44210`);
         entityTokens.push("Target of Extortion / Coercion");
       } else if (isL1) {
-        const vpaName = node.label.toLowerCase().replace(/[^a-z]/g, "");
-        entityTokens.push(`VPA: ${vpaName}@okaxis`);
-        entityTokens.push(`Finacle Dwell: 112s`);
+        entityTokens.push("VPA: vikramshah@okaxis");
+        entityTokens.push("Alias VPA: vikram.pay@okaxis");
+        entityTokens.push("Alias Match: same PSP handle stem + same beneficiary account");
+        entityTokens.push("Finacle Dwell: 112s");
+      } else if (isMerchant) {
+        entityTokens.push("GSTIN: 07AAACA1234F1Z8");
+        entityTokens.push("Clean Turnover Shielded");
       } else if (isL2) {
         entityTokens.push(`Introducer: ${node.introducerId}`);
-        entityTokens.push(`JA4 TLS: t13d1516h2_8daaf6`);
+        entityTokens.push("JA4 TLS: t13d1516h2_8daaf6");
       }
 
       const summary = isVictim
-        ? `Target of extortion under ${inv.firNumber}. Suffered ₹${inv.bookedLossInr.toLocaleString("en-IN")} defrauded outflow.`
+        ? `Target of extortion under ${inv.firNumber}. Suffered ${formatInr(inv.bookedLossInr)} defrauded outflow.`
         : isL1
         ? `Primary recipient of fraudulent inflow. Rapid pass-through conduit to downstream layering accounts within 120s.`
+        : isMerchant
+        ? `Innocent commercial merchant. Protected under BNSS §106 specific lien shielding lawful commercial turnover.`
         : isL2
         ? `Layer-2 conduit utilized for structured split disbursements to evade single-transaction threshold alerts.`
         : `Terminal settlement or cashout point identified in forensic graph.`;
-
-      const subScores = isVictim
-        ? { velocity: 0, deviceOverlap: 0, structuring: 0, kycDiscrepancy: 0 }
-        : isL1
-        ? { velocity: 98, deviceOverlap: 100, structuring: 94, kycDiscrepancy: 95 }
-        : isL2
-        ? { velocity: 92, deviceOverlap: 96, structuring: 90, kycDiscrepancy: 88 }
-        : { velocity: 40, deviceOverlap: 80, structuring: 70, kycDiscrepancy: 60 };
 
       const entId = `ENT-${String(idx + 1).padStart(2, "0")}`;
       entities.push({
@@ -680,6 +693,8 @@ export class CaseSyncBridge {
         roleColor,
         tokens: entityTokens,
         fraudScore,
+        isHardVeto,
+        hardVetoReason,
         summary,
         subScores,
       });
@@ -709,10 +724,21 @@ export class CaseSyncBridge {
           id: `T-${String(tokenSeq++).padStart(2, "0")}`,
           source: "WhatsApp Telemetry (T3)",
           sourceType: "whatsapp",
-          label: "Demanded Beneficiary VPA",
-          value: `${node.label.toLowerCase().replace(/[^a-z]/g, "")}@okaxis`,
+          label: "Primary Demanded VPA",
+          value: "vikramshah@okaxis",
           targetEntityId: entId,
           badgeColor: "#BE123C",
+          aliasReason: "same PSP handle stem + same beneficiary account",
+        });
+        tokens.push({
+          id: `T-${String(tokenSeq++).padStart(2, "0")}`,
+          source: "UPI Payment QR Scan (T2)",
+          sourceType: "apk",
+          label: "Secondary Beneficiary VPA (Alias)",
+          value: "vikram.pay@okaxis",
+          targetEntityId: entId,
+          badgeColor: "#BE123C",
+          aliasReason: "same PSP handle stem + same beneficiary account",
         });
         tokens.push({
           id: `T-${String(tokenSeq++).padStart(2, "0")}`,
@@ -732,6 +758,25 @@ export class CaseSyncBridge {
           targetEntityId: entId,
           badgeColor: "#BE123C",
         });
+      } else if (isMerchant) {
+        tokens.push({
+          id: `T-${String(tokenSeq++).padStart(2, "0")}`,
+          source: "ICICI Merchant POS (T1)",
+          sourceType: "pos",
+          label: "Retail POS Terminal",
+          value: `${node.bank} ${node.accountMasked}`,
+          targetEntityId: entId,
+          badgeColor: "#059669",
+        });
+        tokens.push({
+          id: `T-${String(tokenSeq++).padStart(2, "0")}`,
+          source: "GSTN API Return (T1)",
+          sourceType: "cbs",
+          label: "Active GSTIN Registration",
+          value: "07AAACA1234F1Z8",
+          targetEntityId: entId,
+          badgeColor: "#059669",
+        });
       } else if (isL2) {
         tokens.push({
           id: `T-${String(tokenSeq++).padStart(2, "0")}`,
@@ -741,6 +786,16 @@ export class CaseSyncBridge {
           value: `${node.bank} ${node.accountMasked}`,
           targetEntityId: entId,
           badgeColor: "#B45309",
+        });
+      } else {
+        tokens.push({
+          id: `T-${String(tokenSeq++).padStart(2, "0")}`,
+          source: "SBI ATM Kiosk (T1)",
+          sourceType: "cdr",
+          label: "ATM Kiosk Terminal",
+          value: `${node.label} (${node.accountMasked})`,
+          targetEntityId: entId,
+          badgeColor: "#BE123C",
         });
       }
     });

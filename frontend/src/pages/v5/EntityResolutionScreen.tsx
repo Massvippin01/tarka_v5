@@ -156,6 +156,13 @@ export const EntityResolutionScreen: React.FC = () => {
 
   const selectedEntity = canonicalEntities.find((e) => e.id === selectedEntityId) || canonicalEntities[1];
 
+  const vetoedEntities = useMemo(() => {
+    return canonicalEntities.filter((e) => e.isHardVeto);
+  }, [canonicalEntities]);
+
+  const vetoedEntity = vetoedEntities[0] || canonicalEntities.find((e) => e.name.toLowerCase().includes("apex") || e.roleColor === "emerald");
+  const senderEntity = canonicalEntities.find((e) => e.roleColor === "amber" || e.id === "ENT-03");
+
   const handleCopyDirective = () => {
     navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
     setIsCopied(true);
@@ -200,41 +207,41 @@ export const EntityResolutionScreen: React.FC = () => {
       >
         <KpiTile
           title="Raw identifiers"
-          value="24 Mentions"
+          value={`${rawTokenList.length} Mentions`}
           icon={Dna}
           iconColor="#4F46E5"
           iconBg="#EEF2FF"
-          statusBadge={{ text: "4 SOURCES", variant: "indigo" }}
+          statusBadge={{ text: `${rawTokenList.length} TOKENS`, variant: "indigo" }}
           subtitle="WhatsApp, APK, CBS, CDR"
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="24 noisy extracted identifiers parsed from chats, APK payloads, switch logs, and CDRs."
+          provenanceTooltip={`${rawTokenList.length} noisy extracted identifiers parsed from chats, APK payloads, switch logs, and CDRs.`}
         />
 
         <KpiTile
           title="Canonical entities"
-          value="5 Profiles"
+          value={`${canonicalEntities.length} Profiles`}
           icon={Users}
           iconColor="#059669"
           iconBg="#ECFDF5"
-          statusBadge={{ text: "18 → 5 ENTITIES", variant: "emerald" }}
+          statusBadge={{ text: `${rawTokenList.length} → ${canonicalEntities.length} ENTITIES`, variant: "emerald" }}
           subtitle="Deterministic Join (Zero Collisions)"
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Exact join across primary keys (VPA, AOF, IMEI, GSTIN) resolves 18 actors into 5 distinct profiles."
+          provenanceTooltip={`Exact join across primary keys (VPA, AOF, IMEI, GSTIN) resolves ${rawTokenList.length} raw tokens into ${canonicalEntities.length} distinct profiles.`}
         />
 
         <KpiTile
           title="Merges vetoed"
-          value="1 Shielded"
+          value={`${vetoedEntities.length} Shielded`}
           icon={ShieldCheck}
           iconColor="#059669"
           iconBg="#ECFDF5"
           statusBadge={{ text: "GST PROTECTED", variant: "emerald" }}
-          subtitle="Apex Electronics Pvt Ltd"
+          subtitle={vetoedEntity ? vetoedEntity.name : "Apex Electronics Pvt Ltd"}
           microVisual="ring"
           progressPct={100}
-          provenanceTooltip="Active GSTIN 07AAACA1234F1Z8 and 420 monthly retail POS swipes hard-veto false mule syndicate merge."
+          provenanceTooltip="Active GSTIN 07AAACA1234F1Z8 and verified retail commercial history hard-veto false mule syndicate merge."
         />
 
         <KpiTile
@@ -347,6 +354,11 @@ export const EntityResolutionScreen: React.FC = () => {
                       <div style={{ fontSize: "9px", fontFamily: "monospace", color: token.badgeColor, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {token.value}
                       </div>
+                      {token.aliasReason && (
+                        <div style={{ fontSize: "7.5px", color: "#4F46E5", background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "3px", padding: "1px 4px", marginTop: "2px", fontWeight: 700 }}>
+                          🔗 Alias: {token.aliasReason}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -355,7 +367,7 @@ export const EntityResolutionScreen: React.FC = () => {
               {/* RIGHT COLUMN: CANONICAL ENTITIES */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", overflowY: "auto", overscrollBehavior: "contain", paddingRight: "2px" }}>
                 <div style={{ fontSize: "9px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", marginBottom: "2px" }}>
-                  Canonical Investigative Profiles (5)
+                  Canonical Investigative Profiles ({canonicalEntities.length})
                 </div>
 
                 {canonicalEntities.map((entity) => {
@@ -430,7 +442,7 @@ export const EntityResolutionScreen: React.FC = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: "9px", fontWeight: 800, color: "#991B1B" }}>
-                      ⛔ HARD-VETO GUARDRAIL: Rohit Verma (ENT-03) ↛ Apex Electronics (ENT-05)
+                      ⛔ HARD-VETO GUARDRAIL: {senderEntity ? `${senderEntity.name} (${senderEntity.id})` : "Rohit Verma (ENT-03)"} ↛ {vetoedEntity ? `${vetoedEntity.name} (${vetoedEntity.id})` : "Apex Electronics (ENT-06)"}
                     </div>
                     <div style={{ fontSize: "8px", color: "#9F1239" }}>
                       Commercial POS history + active GSTIN halts automated mule grouping, ensuring Section 106 specific lien applies.
@@ -552,6 +564,21 @@ export const EntityResolutionScreen: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Resolved Alias Detection Card */}
+              {(selectedEntity.id === "ENT-02" || selectedEntity.name.toLowerCase().includes("vikram")) && (
+                <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "5px", padding: "6px 8px" }}>
+                  <div style={{ fontSize: "9px", fontWeight: 700, color: "#3730A3" }}>
+                    🔗 Resolved Alias Pair (2 VPA Handles → 1 Subject)
+                  </div>
+                  <div style={{ fontSize: "8.5px", color: "#4338CA", marginTop: "2px", fontFamily: "monospace" }}>
+                    <code>vikramshah@okaxis</code> ↔ <code>vikram.pay@okaxis</code>
+                  </div>
+                  <div style={{ fontSize: "8px", color: "#4F46E5", marginTop: "1px" }}>
+                    Reason: same PSP handle stem + same beneficiary account
+                  </div>
+                </div>
+              )}
             </div>
           </SectionCard>
 
