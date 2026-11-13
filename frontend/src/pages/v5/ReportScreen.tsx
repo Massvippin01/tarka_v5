@@ -45,6 +45,44 @@ export const ReportScreen: React.FC = () => {
   const unrecoverableCashout = fixture.financials.unrecoverableCashoutInr;
   const goldenHourMins = fixture.financials.goldenHourRemainingMins;
 
+  const { governmentHeader, issuingAuthority } = useMemo(() => {
+    const ps = fixture.policeStation || "";
+    if (ps.includes("UP") || ps.includes("Noida") || ps.includes("Uttar Pradesh") || ps.includes("Gautam Buddh Nagar")) {
+      return {
+        governmentHeader: "GOVERNMENT OF UTTAR PRADESH · POLICE DEPARTMENT",
+        issuingAuthority: `Issued by Investigating Officer, ${ps || "Cyber Crime Police Station, Gautam Buddh Nagar"}`,
+      };
+    }
+    if (ps.includes("Telangana") || ps.includes("Cyberabad") || ps.includes("Hyderabad")) {
+      return {
+        governmentHeader: "GOVERNMENT OF TELANGANA · POLICE DEPARTMENT",
+        issuingAuthority: `Issued by Investigating Officer, ${ps}`,
+      };
+    }
+    if (ps.includes("Mumbai") || ps.includes("Maharashtra") || ps.includes("BKC")) {
+      return {
+        governmentHeader: "GOVERNMENT OF MAHARASHTRA · POLICE DEPARTMENT",
+        issuingAuthority: `Issued by Investigating Officer, ${ps}`,
+      };
+    }
+    if (ps.includes("Karnataka") || ps.includes("Bangalore") || ps.includes("Bengaluru")) {
+      return {
+        governmentHeader: "GOVERNMENT OF KARNATAKA · POLICE DEPARTMENT",
+        issuingAuthority: `Issued by Investigating Officer, ${ps}`,
+      };
+    }
+    if (ps.includes("Delhi")) {
+      return {
+        governmentHeader: "GOVERNMENT OF NCT OF DELHI · POLICE DEPARTMENT",
+        issuingAuthority: `Issued by Investigating Officer, ${ps}`,
+      };
+    }
+    return {
+      governmentHeader: "STATE POLICE DEPARTMENT · CYBER CRIME CELL",
+      issuingAuthority: `Issued by Investigating Officer, ${ps || "Cyber Crime Police Station"}`,
+    };
+  }, [fixture.policeStation]);
+
   // Active Notice Tab State
   const [activeNoticeTab, setActiveNoticeTab] = useState<"freeze" | "telecom" | "npci" | "i4c">("freeze");
   const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
@@ -437,7 +475,7 @@ Investigating Officer, Cyber Crime PS Noida`,
           }}
         >
           <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "1px", color: "#475569" }}>
-            GOVERNMENT OF NCT OF DELHI · POLICE DEPARTMENT
+            {governmentHeader}
           </div>
           <div style={{ fontSize: "18px", fontWeight: 900, color: "#0F172A", margin: "4px 0" }}>
             SPECIAL CYBER CRIME INVESTIGATION &amp; FORENSIC REPORT
@@ -446,7 +484,7 @@ Investigating Officer, Cyber Crime PS Noida`,
             CERTIFICATE OF ELECTRONIC EVIDENCE UNDER SECTION 63(4) BHARATIYA SAKSHYA ADHINIYAM, 2023
           </div>
           <div style={{ fontSize: "10.5px", color: "#64748B", marginTop: "4px" }}>
-            Issued by Investigating Officer, Cyber Crime Police Station, Gautam Buddh Nagar
+            {issuingAuthority}
           </div>
         </div>
 

@@ -289,6 +289,19 @@ export function buildDynamicCaseBundle(c: CaseWorkspace): ReconstructedInvestiga
   };
 }
 
+export function getArtifactDisplayName(art: any, fallbackIndex?: number): string {
+  if (!art) return fallbackIndex !== undefined ? `Evidence Exhibit #${fallbackIndex}` : "Evidence Exhibit";
+  const name =
+    art.fileName ||
+    art.filename ||
+    art.file_name ||
+    art.name ||
+    art.fileId ||
+    art.title ||
+    (fallbackIndex !== undefined ? `Evidence Exhibit #${fallbackIndex}` : "Evidence Exhibit");
+  return String(name).trim();
+}
+
 /**
  * CaseSyncBridge: Synchronizes cases with backend API or offline fallback
  */
@@ -1282,15 +1295,18 @@ export class CaseSyncBridge {
     inv: ReconstructedInvestigation
   ): CaseArtifact[] {
     if (inv.fileManifest && inv.fileManifest.length > 0) {
-      return inv.fileManifest.map((f, idx) => ({
-        id: `art-${caseId.slice(-3)}-0${idx + 1}`,
-        name: `#0${idx + 1} ${f.fileName}`,
-        tier: idx < 3 ? "TIER_1_INDEPENDENT" : "TIER_2_CORROBORATIVE",
-        custodian: f.custodian || "Consortium IT Nodal Officer",
-        sha256: f.sha256,
-        isExcluded: false,
-        canBeExcluded: true,
-      }));
+      return inv.fileManifest.map((f: any, idx) => {
+        const rawName = getArtifactDisplayName(f, idx + 1);
+        return {
+          id: f.id || f.fileId || `art-${caseId.slice(-3)}-0${idx + 1}`,
+          name: rawName.startsWith("#") ? rawName : `#0${idx + 1} ${rawName}`,
+          tier: (f.tier === "T1" || f.tier === "TIER_1_CERTIFIED" || idx < 3) ? "TIER_1_INDEPENDENT" : "TIER_2_CORROBORATIVE",
+          custodian: f.custodian || "Consortium IT Nodal Officer",
+          sha256: f.sha256 || sha256HexSync(rawName),
+          isExcluded: false,
+          canBeExcluded: true,
+        };
+      });
     }
 
     return [
@@ -1487,38 +1503,43 @@ export class CaseSyncBridge {
     const art3 = inv.fileManifest[2] || { fileId: "ART-IPDR-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
     const art4 = inv.fileManifest[3] || { fileId: "ART-DEVICE-004", fileName: "device_telemetry.json", sha256: sha256HexSync("device_telemetry.json") };
 
+    const name1 = getArtifactDisplayName(art1, 1);
+    const name2 = getArtifactDisplayName(art2, 2);
+    const name3 = getArtifactDisplayName(art3, 3);
+    const name4 = getArtifactDisplayName(art4, 4);
+
     const lossFormatted = formatInr(inv.bookedLossInr || 500000);
 
     const artifacts: EvidenceArtifactItem[] = [
       {
         id: "ART-BANK-001",
-        name: `${victim?.bank || "Bank"} Primary Statement (${art1.fileName})`,
+        name: `${victim?.bank || "Bank"} Primary Statement (${name1})`,
         sourceType: "BANK_STATEMENT_CSV",
-        hash: art1.sha256,
+        hash: art1.sha256 || sha256HexSync(name1),
         isExcluded: false,
         dependentClaimIds: ["CLM-001", "CLM-002", "CLM-004"],
       },
       {
         id: "ART-CDR-002",
-        name: `Telecom Call Detail Records (${art2.fileName})`,
+        name: `Telecom Call Detail Records (${name2})`,
         sourceType: "CDR_TELECOM_CSV",
-        hash: art2.sha256,
+        hash: art2.sha256 || sha256HexSync(name2),
         isExcluded: false,
         dependentClaimIds: ["CLM-002", "CLM-003"],
       },
       {
         id: "ART-IPDR-003",
-        name: `ISP CGNAT Translation Logs (${art3.fileName})`,
+        name: `ISP CGNAT Translation Logs (${name3})`,
         sourceType: "IPDR_LOG_JSON",
-        hash: art3.sha256,
+        hash: art3.sha256 || sha256HexSync(name3),
         isExcluded: false,
         dependentClaimIds: ["CLM-003"],
       },
       {
         id: "ART-DEVICE-004",
-        name: `Controller Telemetry Extraction (${art4.fileName})`,
+        name: `Controller Telemetry Extraction (${name4})`,
         sourceType: "DEVICE_FORENSIC_JSON",
-        hash: art4.sha256,
+        hash: art4.sha256 || sha256HexSync(name4),
         isExcluded: false,
         dependentClaimIds: ["CLM-003"],
       },
@@ -1574,6 +1595,7 @@ export class CaseSyncBridge {
     inv: ReconstructedInvestigation
   ): FlightRecorderEntry[] {
     const art1 = inv.fileManifest[0] || { fileId: "ART-001", fileName: "cbs_statement.csv", sha256: sha256HexSync("cbs_statement.csv") };
+    const name1 = getArtifactDisplayName(art1, 1);
     const lossFormatted = formatInr(inv.bookedLossInr || 500000);
 
     const rawFlightEvents = [
@@ -1594,7 +1616,7 @@ export class CaseSyncBridge {
         actorId: "EVIDENCE_GATEWAY_V5",
         actorRole: "Storage CAS Authority",
         action: "RAW_BYTE_INGESTION_AND_SEAL",
-        details: `Acquired ${art1.fileName}. SHA-256 computed: ${art1.sha256}.`,
+        details: `Acquired ${name1}. SHA-256 computed: ${art1.sha256}.`,
         statutoryCategory: "CAS_BYTE_PRESERVATION",
       },
       {
@@ -1684,11 +1706,15 @@ export class CaseSyncBridge {
     const art2 = inv.fileManifest[1] || { fileId: "ART-002", fileName: "telecom_cdr.csv", sha256: sha256HexSync("telecom_cdr.csv") };
     const art3 = inv.fileManifest[2] || { fileId: "ART-003", fileName: "cgnat_syslog.json", sha256: sha256HexSync("cgnat_syslog.json") };
 
+    const name1 = getArtifactDisplayName(art1, 1);
+    const name2 = getArtifactDisplayName(art2, 2);
+    const name3 = getArtifactDisplayName(art3, 3);
+
     const nodes: CustomDAGNode[] = [
       // Layer 1: Artifacts
       {
         node_id: `ART-${caseId}-01`,
-        label: art1.fileName,
+        label: name1,
         node_type: "ARTIFACT",
         status: "SURVIVING",
         source_tier: "T1",
@@ -1696,7 +1722,7 @@ export class CaseSyncBridge {
       },
       {
         node_id: `ART-${caseId}-02`,
-        label: art2.fileName,
+        label: name2,
         node_type: "ARTIFACT",
         status: "SURVIVING",
         source_tier: "T1",
@@ -1704,7 +1730,7 @@ export class CaseSyncBridge {
       },
       {
         node_id: `ART-${caseId}-03`,
-        label: art3.fileName,
+        label: name3,
         node_type: "ARTIFACT",
         status: "SURVIVING",
         source_tier: "T2",

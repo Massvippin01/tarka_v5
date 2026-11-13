@@ -497,8 +497,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const path = window.location.pathname.toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
-      if (view === "benchmark") return "workspace";
-      if (view === "workspace" || path.includes("workspace")) return "workspace";
+      if (view === "benchmark" || view === "benchmarks") return "benchmarks";
+      if (view === "workspace" || view === "workspaces" || path.includes("workspace")) return "workspace";
       if (view === "attribution" || path.includes("attribution")) return "attribution";
       if (view === "entities" || view === "entity" || path.includes("entities")) return "entities";
       if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
@@ -540,9 +540,10 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       const v = params.get("view") || params.get("screen");
       if (v) {
-        if (v === "benchmark") {
+        if (v === "benchmark" || v === "benchmarks") {
+          setActiveRouteState("benchmarks");
           useTarkaUiStore.getState().setActivePage("benchmark");
-        } else if (v === "workspace") {
+        } else if (v === "workspace" || v === "workspaces") {
           setActiveRouteState("workspace");
           useTarkaUiStore.getState().setActivePage("workspaces");
         } else {
@@ -577,7 +578,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       if (!url.searchParams.has("view")) {
         const initialPage = useTarkaUiStore.getState().activePage;
-        url.searchParams.set("view", initialPage === "benchmark" ? "benchmark" : activeRoute);
+        url.searchParams.set("view", initialPage === "benchmark" ? "benchmarks" : activeRoute);
         hasLegacy = true;
       }
       if (hasLegacy) {
@@ -667,7 +668,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setActiveCaseIdState(caseId);
     setEvidenceModalTargetCaseId(caseId);
     const currentPage = useTarkaUiStore.getState().activePage;
-    const view = currentPage === "benchmark" ? "benchmark" : activeRoute;
+    const view = currentPage === "benchmark" ? "benchmarks" : activeRoute;
     syncTarkaUrl(caseId, view);
   }, [activeRoute]);
 

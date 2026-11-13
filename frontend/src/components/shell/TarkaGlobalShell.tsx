@@ -36,12 +36,13 @@ import {
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
-import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
+import { useTarkaGlobal, type TarkaRoute, syncTarkaUrl } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
 import { forensicsApi } from "../../api/forensicsApi";
+import { ErrorBoundary } from "../common/ErrorBoundary";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -486,10 +487,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
   const renderNavButton = (item: (typeof navItems)[0]) => {
     const isActive =
-      activePage === "workbench"
-        ? activeRoute === item.id
-        : (item.id === "workspace" && activePage === "workspaces") ||
-          (item.id === "benchmarks" && activePage === "benchmark");
+      activePage === "benchmark"
+        ? item.id === "benchmarks"
+        : activePage === "workspaces"
+        ? item.id === "workspace"
+        : activeRoute === item.id;
     const IconComp = item.icon;
     return (
       <button
@@ -498,8 +500,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         onClick={() => {
           if (item.id === "workspace") {
             setActivePage("workspaces");
+            syncTarkaUrl(activeCaseId, "workspace");
           } else if (item.id === "benchmarks") {
             setActivePage("benchmark");
+            syncTarkaUrl(activeCaseId, "benchmarks");
           } else {
             setActivePage("workbench");
             setActiveRoute(item.id);
@@ -2230,42 +2234,54 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          <Suspense fallback={<ScreenSuspenseFallback />}>
-            {activePage === "benchmark" ? (
-              <BenchmarkLabScreen />
-            ) : activePage === "workspaces" || activeRoute === "workspace" ? (
-              <CaseWorkspaceScreen />
-            ) : (
-              <>
-                {activeRoute === "intake" && <IntakeScreen />}
-                {activeRoute === "entities" && <EntityResolutionScreen />}
-                {activeRoute === "attribution" && <AttributionScreen />}
-                {activeRoute === "network" && <FraudNetworkScreen />}
-                {activeRoute === "taint-engine" && <TaintEngineScreen />}
-                {activeRoute === "court-proof" && <CourtProofScreen />}
-                {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
-                {activeRoute === "workstation" && <ForensicWorkstationScreen />}
-                {activeRoute === "report" && <ReportScreen />}
-              </>
-            )}
-          </Suspense>
+          <ErrorBoundary fallbackTitle="Screen Render Notice">
+            <Suspense fallback={<ScreenSuspenseFallback />}>
+              {activePage === "benchmark" ? (
+                <BenchmarkLabScreen />
+              ) : activePage === "workspaces" || activeRoute === "workspace" ? (
+                <CaseWorkspaceScreen />
+              ) : (
+                <>
+                  {activeRoute === "intake" && <IntakeScreen />}
+                  {activeRoute === "entities" && <EntityResolutionScreen />}
+                  {activeRoute === "attribution" && <AttributionScreen />}
+                  {activeRoute === "network" && <FraudNetworkScreen />}
+                  {activeRoute === "taint-engine" && <TaintEngineScreen />}
+                  {activeRoute === "court-proof" && <CourtProofScreen />}
+                  {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
+                  {activeRoute === "workstation" && <ForensicWorkstationScreen />}
+                  {activeRoute === "report" && <ReportScreen />}
+                </>
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
 
       {/* Live Cryptographic Evidence Intake & Case Modals (Lazy Loaded) */}
       <Suspense fallback={null}>
-        <EvidenceIntakeModal />
-        <NewCaseModal />
-        <BenchmarkLabDrawer />
-        <PublicDatasetBenchmarkModal />
+        <ErrorBoundary fallbackTitle="Evidence Modal Notice">
+          <EvidenceIntakeModal />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="New Case Modal Notice">
+          <NewCaseModal />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="Benchmark Drawer Notice">
+          <BenchmarkLabDrawer />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="Benchmark Modal Notice">
+          <PublicDatasetBenchmarkModal />
+        </ErrorBoundary>
 
         {/* Voice Assistant Modal */}
         {voiceOpen && (
-          <SarvamVoiceModal
-            caseId={activeCaseId || "CASE-2026-001"}
-            isOpen={voiceOpen}
-            onClose={() => setVoiceOpen(false)}
-          />
+          <ErrorBoundary fallbackTitle="Voice Assistant Notice">
+            <SarvamVoiceModal
+              caseId={activeCaseId || "CASE-2026-001"}
+              isOpen={voiceOpen}
+              onClose={() => setVoiceOpen(false)}
+            />
+          </ErrorBoundary>
         )}
 
         {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
@@ -2278,15 +2294,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           }}
         />
 
-        <InvestigationIntelligenceBrief
-          isOpen={intelligenceBriefOpen}
-          onClose={() => setIntelligenceBriefOpen(false)}
-        />
+        <ErrorBoundary fallbackTitle="Investigation Intelligence Brief Notice">
+          <InvestigationIntelligenceBrief
+            isOpen={intelligenceBriefOpen}
+            onClose={() => setIntelligenceBriefOpen(false)}
+          />
+        </ErrorBoundary>
 
-        <TransformationAuditLog
-          isOpen={transformationAuditModalOpen}
-          onClose={() => setTransformationAuditModalOpen(false)}
-        />
+        <ErrorBoundary fallbackTitle="Transformation Audit Log Notice">
+          <TransformationAuditLog
+            isOpen={transformationAuditModalOpen}
+            onClose={() => setTransformationAuditModalOpen(false)}
+          />
+        </ErrorBoundary>
       </Suspense>
     </div>
   );

@@ -80,7 +80,7 @@ export const CgnatFunnelChart: React.FC<CgnatFunnelChartProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold tracking-tight text-white">
-              <GlossaryTerm term="CGNAT">CGNAT</GlossaryTerm> Subscriber Attribution Funnel
+              <GlossaryTerm term="CGNAT" explanation="Carrier-Grade Network Address Translation: multiplexing thousands of subscribers behind shared public IPv4 addresses.">CGNAT</GlossaryTerm> Subscriber Attribution Funnel
             </span>
             <span
               className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
@@ -112,39 +112,114 @@ export const CgnatFunnelChart: React.FC<CgnatFunnelChartProps> = ({
         )}
       </div>
 
-      {/* Funnel Visual Stages */}
-      <div className="flex flex-col gap-2.5 my-3 flex-1 justify-center">
+      {/* Funnel Visual Stages: Clean Horizontal Funnel (Label Left, Bar Centre, Count + % Right) */}
+      <div className="flex flex-col gap-2 my-3 flex-1 justify-center">
         {stages.map((stage) => {
           const Icon = stage.icon;
           return (
-            <div key={stage.id} className="relative group">
-              <div className="flex items-center justify-between text-xs mb-1 px-1">
-                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Icon className="w-3.5 h-3.5 text-slate-400" />
-                  {stage.title}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-white">{stage.label}</span>
-                  <span className="text-[11px] text-slate-400 font-mono">({stage.reduction})</span>
+            <div
+              key={stage.id}
+              className="cgnat-stage-row p-2.5 rounded-lg border transition-all"
+              style={{
+                background: "rgba(15, 23, 42, 0.65)",
+                borderColor: "rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <div className="flex items-center gap-3 w-full">
+                {/* Left: Stage Title & Subtitle (200px) */}
+                <div style={{ width: "200px", flexShrink: 0, minWidth: 0 }}>
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: stage.color }} />
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: "#F8FAFC",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={stage.title}
+                    >
+                      {stage.title}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#94A3B8",
+                      marginTop: "2px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                    title={stage.detail}
+                  >
+                    {stage.detail}
+                  </div>
                 </div>
-              </div>
 
-              {/* Funnel Bar */}
-              <div className="w-full bg-slate-800/80 rounded-md h-7 overflow-hidden p-0.5 relative flex items-center border border-slate-700/60">
+                {/* Center: Clean Progress Bar (flex 1) */}
+                <div style={{ flex: "1 1 0%", minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "16px",
+                      borderRadius: "6px",
+                      background: "rgba(30, 41, 59, 0.8)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      overflow: "hidden",
+                      position: "relative",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${Math.max(stage.widthPct, 2)}%`,
+                        background: stage.color,
+                        borderRadius: "5px",
+                        transition: "width 0.5s ease",
+                        boxShadow: `0 0 10px ${stage.color}40`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Right: Count & Percentage Chip (160px) */}
                 <div
-                  className="h-full rounded transition-all duration-500 flex items-center px-2.5 justify-between"
                   style={{
-                    width: `${Math.max(stage.widthPct, 15)}%`,
-                    backgroundColor: stage.color,
-                    boxShadow: `0 0 12px ${stage.color}33`,
+                    width: "160px",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: "8px",
                   }}
                 >
-                  <span className="text-[11px] font-bold text-white font-mono drop-shadow-sm whitespace-nowrap">
+                  <span
+                    style={{
+                      fontSize: "12.5px",
+                      fontWeight: 800,
+                      fontFamily: "var(--font-mono, monospace)",
+                      color: "#F8FAFC",
+                    }}
+                  >
                     {stage.count.toLocaleString()}
                   </span>
-                </div>
-                <div className="absolute right-3 text-[11px] text-slate-400 truncate max-w-[65%]">
-                  {stage.detail}
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: "rgba(255, 255, 255, 0.08)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      color: stage.color === "#64748B" ? "#E2E8F0" : stage.color,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {stage.reduction}
+                  </span>
                 </div>
               </div>
             </div>
@@ -153,9 +228,9 @@ export const CgnatFunnelChart: React.FC<CgnatFunnelChartProps> = ({
       </div>
 
       {/* Mathematical Proof & Odds Formula Card */}
-      <div className="mt-2 p-3 rounded-lg bg-slate-950/70 border border-slate-800/80">
+      <div className="mt-2 p-3 rounded-lg bg-slate-950/80 border border-slate-800">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
             <Info className="w-4 h-4 text-cyan-400" />
             <span>Mathematical Coincidence Proof (Odds Claim Formula):</span>
           </div>
@@ -164,15 +239,15 @@ export const CgnatFunnelChart: React.FC<CgnatFunnelChartProps> = ({
           </span>
         </div>
 
-        <div className="mt-2 text-center p-2 rounded bg-slate-900/80 border border-slate-800 font-mono text-xs text-cyan-300 overflow-x-auto">
+        <div className="mt-2 text-center p-2 rounded bg-slate-900 border border-slate-700/80 font-mono text-xs text-cyan-300 overflow-x-auto">
           P(Match) = (1 / N_tower) × (Δt / T_window) × (1 / N_ports) × P(TAC) ={" "}
           <strong className="text-emerald-400">{isPortDropped ? "1 in 833" : "1 in 7,142,857"}</strong>
         </div>
 
-        <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+        <p className="text-[11px] text-slate-300 mt-2 leading-relaxed">
           {isPortDropped ? (
             <span className="text-amber-300 flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5 inline" />
+              <AlertTriangle className="w-3.5 h-3.5 inline shrink-0" />
               Without source port matching, coincidental match ambiguity rises to 1 in 833. Issue a DoT Clause 39.20 order for dynamic translation logs.
             </span>
           ) : (
@@ -183,3 +258,4 @@ export const CgnatFunnelChart: React.FC<CgnatFunnelChartProps> = ({
     </div>
   );
 };
+

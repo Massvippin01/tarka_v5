@@ -24,28 +24,34 @@ export const ScreenFindingCard: React.FC<ScreenFindingCardProps> = ({
     switch (status) {
       case "alert":
         return {
-          bg: "rgba(239, 68, 68, 0.08)",
-          border: "rgba(239, 68, 68, 0.3)",
+          bg: "rgba(15, 23, 42, 0.88)",
+          border: "rgba(239, 68, 68, 0.4)",
           accent: "#EF4444",
-          badgeBg: "rgba(239, 68, 68, 0.15)",
-          badgeText: "#F87171",
+          badgeBg: "rgba(239, 68, 68, 0.18)",
+          badgeText: "#FCA5A5",
+          text: "#F8FAFC",
+          meta: "#94A3B8",
         };
       case "warning":
         return {
-          bg: "rgba(245, 158, 11, 0.08)",
-          border: "rgba(245, 158, 11, 0.3)",
+          bg: "rgba(15, 23, 42, 0.88)",
+          border: "rgba(245, 158, 11, 0.4)",
           accent: "#F59E0B",
-          badgeBg: "rgba(245, 158, 11, 0.15)",
-          badgeText: "#FBBF24",
+          badgeBg: "rgba(245, 158, 11, 0.18)",
+          badgeText: "#FCD34D",
+          text: "#F8FAFC",
+          meta: "#94A3B8",
         };
       case "verified":
       default:
         return {
-          bg: "rgba(16, 185, 129, 0.08)",
-          border: "rgba(16, 185, 129, 0.3)",
+          bg: "rgba(15, 23, 42, 0.88)",
+          border: "rgba(16, 185, 129, 0.35)",
           accent: "#10B981",
-          badgeBg: "rgba(16, 185, 129, 0.15)",
+          badgeBg: "rgba(16, 185, 129, 0.18)",
           badgeText: "#34D399",
+          text: "#F8FAFC",
+          meta: "#94A3B8",
         };
     }
   };
@@ -58,7 +64,7 @@ export const ScreenFindingCard: React.FC<ScreenFindingCardProps> = ({
       style={{
         background: colors.bg,
         border: `1px solid ${colors.border}`,
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
       }}
     >
       <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -80,17 +86,34 @@ export const ScreenFindingCard: React.FC<ScreenFindingCardProps> = ({
             >
               Investigator Finding
             </span>
-            <span className="text-xs text-slate-500 font-mono">
+            <span
+              style={{
+                color: colors.meta,
+                fontSize: "11px",
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            >
               {evidenceTag}
             </span>
           </div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-snug">
+          <p
+            style={{
+              color: colors.text,
+              fontSize: "13px",
+              fontWeight: 600,
+              lineHeight: 1.45,
+              margin: 0,
+            }}
+          >
             {finding}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-200/50 dark:border-slate-800">
+      <div
+        className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0"
+        style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}
+      >
         <div className="text-left md:text-right">
           <div
             className="text-lg font-bold font-mono tracking-tight"
@@ -98,7 +121,9 @@ export const ScreenFindingCard: React.FC<ScreenFindingCardProps> = ({
           >
             {metric}
           </div>
-          <div className="text-[11px] text-slate-500 font-medium">{metricLabel}</div>
+          <div style={{ color: colors.meta, fontSize: "11px", fontWeight: 500 }}>
+            {metricLabel}
+          </div>
         </div>
 
         <button
@@ -113,3 +138,4 @@ export const ScreenFindingCard: React.FC<ScreenFindingCardProps> = ({
     </div>
   );
 };
+

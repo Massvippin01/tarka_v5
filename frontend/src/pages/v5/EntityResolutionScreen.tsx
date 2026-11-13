@@ -126,10 +126,12 @@ export const EntityResolutionScreen: React.FC = () => {
     return [...dynamicData.tokens, ...customMentions];
   }, [dynamicData, customMentions]);
 
-  const filteredTokens = rawTokenList.filter((t) => {
-    if (selectedTokenType === "ALL") return true;
-    return t.sourceType === selectedTokenType;
-  });
+  const filteredTokens = useMemo(() => {
+    return rawTokenList.filter((t) => {
+      if (selectedTokenType === "ALL") return true;
+      return t.sourceType === selectedTokenType;
+    });
+  }, [rawTokenList, selectedTokenType]);
 
   const canonicalEntities: CanonicalEntity[] = useMemo(() => {
     if (activeDiscoveredCluster) {
@@ -264,7 +266,24 @@ export const EntityResolutionScreen: React.FC = () => {
         });
       }
     });
-    setSvgLines(lines);
+    setSvgLines((prev) => {
+      if (
+        prev.length === lines.length &&
+        prev.every(
+          (p, i) =>
+            p.x1 === lines[i].x1 &&
+            p.y1 === lines[i].y1 &&
+            p.x2 === lines[i].x2 &&
+            p.y2 === lines[i].y2 &&
+            p.color === lines[i].color &&
+            p.isLinkedToSelected === lines[i].isLinkedToSelected &&
+            p.tokenId === lines[i].tokenId
+        )
+      ) {
+        return prev;
+      }
+      return lines;
+    });
   }, [filteredTokens, selectedEntityId]);
 
   useEffect(() => {

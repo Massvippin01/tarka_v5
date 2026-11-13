@@ -228,7 +228,9 @@ export const CaseBoardView: React.FC<CaseBoardViewProps> = ({
                     {/* Syndicate Links Pills */}
                     {c.syndicateLinks && c.syndicateLinks.length > 0 && (
                       <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "2px" }}>
-                        {c.syndicateLinks.map((link: { linkedCaseId: string }, i: number) => (
+                        {Array.from(
+                          new Map(c.syndicateLinks.map((link: { linkedCaseId: string }) => [link.linkedCaseId, link])).values()
+                        ).map((link, i: number) => (
                           <button
                             key={i}
                             type="button"

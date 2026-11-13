@@ -216,16 +216,17 @@ export const KpiTile: React.FC<KpiTileProps> = ({
           <div
             data-testid="kpi-value"
             style={{
-              fontSize: "clamp(15px, 1.4vw, 19px)",
+              fontSize: isNumber ? "clamp(15px, 1.4vw, 19px)" : "clamp(12px, 1.1vw, 14px)",
               fontWeight: 800,
               color: "var(--reui-text-strong, #FFFFFF)",
               fontFamily: "var(--font-sans)",
               fontVariantNumeric: "tabular-nums",
-              lineHeight: 1.2,
+              lineHeight: 1.25,
               display: "flex",
               alignItems: "baseline",
               gap: "2px",
-              whiteSpace: "nowrap",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
             }}
           >
             {isNumber ? (

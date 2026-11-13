@@ -169,33 +169,34 @@ export const CaseWorkspaceScreen: React.FC = () => {
             <Shield size={16} strokeWidth={2.4} />
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span
                 style={{
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 900,
-                  color: "#0F172A",
+                  color: "#F8FAFC",
                   letterSpacing: "0.02em",
-                  fontFamily: "var(--font-mono)",
+                  fontFamily: "var(--font-mono, monospace)",
                 }}
               >
                 NOIDA NODE #UP-16
               </span>
               <span
                 style={{
-                  fontSize: "9px",
+                  fontSize: "10px",
                   fontWeight: 800,
-                  padding: "1px 5px",
-                  borderRadius: "3px",
-                  background: "#ECFDF5",
-                  color: "#047857",
-                  border: "1px solid #A7F3D0",
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  background: "rgba(16, 185, 129, 0.16)",
+                  color: "#34D399",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  whiteSpace: "nowrap",
                 }}
               >
                 LIVE SAMANVAYA ENCLAVE
               </span>
             </div>
-            <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+            <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "2px" }}>
               Cyber Crime PS Noida · State Jurisdiction UP-West
             </div>
           </div>

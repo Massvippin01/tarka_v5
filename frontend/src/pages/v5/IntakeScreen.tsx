@@ -71,6 +71,11 @@ export const IntakeScreen: React.FC = () => {
     return bal2 - drainAmount;
   }, [canonicalCase, investigation]);
 
+  const bookedLoss = canonicalCase.financials.bookedLossInr;
+  const claimedLoss = canonicalCase.financials.claimedLossInr;
+  const deltaLoss = Math.abs(bookedLoss - claimedLoss);
+  const suppressionRatio = (bookedLoss / Math.max(claimedLoss, 1)).toFixed(1);
+
   // Editable Row #14 Balance State
   const [customRow14Balance, setCustomRow14Balance] = useState<string>(
     isRow14Tampered ? (normalRow14Bal - 200000).toFixed(2) : normalRow14Bal.toFixed(2)
@@ -86,21 +91,23 @@ export const IntakeScreen: React.FC = () => {
   useEffect(() => {
     if (activeDiscoveredCluster) {
       if (activeDiscoveredCluster.forgedRrnRows?.[0]?.rrn) {
-        setRrnInput(activeDiscoveredCluster.forgedRrnRows[0].rrn);
+        const nextRrn = activeDiscoveredCluster.forgedRrnRows[0].rrn;
+        setRrnInput((prev) => (prev !== nextRrn ? nextRrn : prev));
       }
       if (activeDiscoveredCluster.doctoredBalanceRows?.[0]) {
         const d = activeDiscoveredCluster.doctoredBalanceRows[0];
         const errorVal = d.claimedBalError ?? (d as any).claimed_bal_error ?? 200000;
-        setCustomRow14Balance(isRow14Tampered ? (836550 - errorVal).toFixed(2) : "836550.00");
+        const targetBal = isRow14Tampered ? (836550 - errorVal).toFixed(2) : "836550.00";
+        setCustomRow14Balance((prev) => (prev !== targetBal ? targetBal : prev));
       }
     } else {
       const primaryTx = canonicalCase.transactions.find((t) => t.category === "VICTIM_DRAIN");
-      if (primaryTx?.rrn) {
-        setRrnInput(primaryTx.rrn);
-      } else if (investigation.edges[0]?.rrn) {
-        setRrnInput(investigation.edges[0].rrn);
+      const nextRrn = primaryTx?.rrn || investigation.edges[0]?.rrn;
+      if (nextRrn) {
+        setRrnInput((prev) => (prev !== nextRrn ? nextRrn : prev));
       }
-      setCustomRow14Balance(isRow14Tampered ? (normalRow14Bal - 200000).toFixed(2) : normalRow14Bal.toFixed(2));
+      const targetBal = isRow14Tampered ? (normalRow14Bal - 200000).toFixed(2) : normalRow14Bal.toFixed(2);
+      setCustomRow14Balance((prev) => (prev !== targetBal ? targetBal : prev));
     }
   }, [isRow14Tampered, activeDiscoveredCluster, investigation, normalRow14Bal, canonicalCase]);
 
@@ -354,15 +361,15 @@ export const IntakeScreen: React.FC = () => {
 
         <KpiTile
           title="Claim vs. booked"
-          value="-₹2,00,000.00"
+          value={`-₹${deltaLoss.toLocaleString("en-IN")}`}
           icon={AlertTriangle}
           iconColor="#E11D48"
           iconBg="#FFE4E6"
-          statusBadge={{ text: "14.3× SUPPRESSED", variant: "rose" }}
-          subtitle="Claimed: ₹15K vs CBS: ₹2.15L"
+          statusBadge={{ text: `${suppressionRatio}× SUPPRESSED`, variant: "rose" }}
+          subtitle={`Claimed: ${formatInr(claimedLoss, { compact: true })} vs CBS: ${formatInr(bookedLoss, { compact: true })}`}
           microVisual="ring"
-          progressPct={7}
-          provenanceTooltip="Canva receipt overwrote genuine ₹2,15,000 CBS debit with fraudulent ₹15,000 text."
+          progressPct={Math.min(100, Math.round((claimedLoss / Math.max(bookedLoss, 1)) * 100))}
+          provenanceTooltip={`Canva receipt suppressed genuine ${formatInr(bookedLoss)} CBS debit to fraudulent ${formatInr(claimedLoss)} claim.`}
           onClick={() => setActiveDockTab("pdf")}
         />
 

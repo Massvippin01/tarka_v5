@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Scale,
   Download,
@@ -190,6 +190,48 @@ export const CourtProofScreen: React.FC = () => {
     },
   ];
 
+  const getClaimSupportForArtifact = useCallback((
+    claim: typeof claimsMatrix[0],
+    artifact: CaseArtifact,
+    index: number
+  ): "PRIMARY" | "CORROBORATIVE" | "NONE" => {
+    // 1. Direct ID match
+    if ((claim.supports as any)[artifact.id]) {
+      return (claim.supports as any)[artifact.id];
+    }
+
+    // 2. Named token / slot alias matching:
+    const nameLower = (artifact.name || "").toLowerCase();
+    const idLower = (artifact.id || "").toLowerCase();
+
+    let slotKey = "";
+    if (nameLower.includes("cbs") || nameLower.includes("finacle") || idLower.includes("cbs") || index === 1) {
+      slotKey = "art-sbi-cbs";
+    } else if (nameLower.includes("switch") || nameLower.includes("npci") || idLower.includes("switch") || index === 2) {
+      slotKey = "art-npci-switch";
+    } else if (nameLower.includes("cgnat") || nameLower.includes("ipdr") || nameLower.includes("telecom") || idLower.includes("cgnat") || index === 4) {
+      slotKey = "art-airtel-cgnat";
+    } else if (nameLower.includes("whatsapp") || nameLower.includes("chat") || nameLower.includes("kyc") || index === 3) {
+      slotKey = "art-whatsapp";
+    } else if (nameLower.includes("screenshot") || nameLower.includes("complaint") || nameLower.includes("ncrp") || index === 0) {
+      slotKey = "art-victim-screenshot";
+    }
+
+    if (slotKey && (claim.supports as any)[slotKey]) {
+      return (claim.supports as any)[slotKey];
+    }
+
+    return artifact.tier?.startsWith("TIER_1") ? "CORROBORATIVE" : "NONE";
+  }, []);
+
+  const survivingClaimsCount = useMemo(() => {
+    return claimsMatrix.filter((claim) => {
+      return artifacts.some(
+        (a, idx) => !a.isExcluded && (a.tier?.startsWith("TIER_1") || idx < 3) && getClaimSupportForArtifact(claim, a, idx) === "PRIMARY"
+      );
+    }).length;
+  }, [claimsMatrix, artifacts, getClaimSupportForArtifact]);
+
   // 4. BSA Section 63 Split Schedules
   const bsaSchedules = useMemo(() => {
     return generateBsa63SplitSchedules(activeCaseId || "CASE-2026-001");
@@ -286,14 +328,17 @@ export const CourtProofScreen: React.FC = () => {
       >
         <KpiTile
           title="Findings surviving"
-          value="5 of 5 Material Claims"
+          value={`${survivingClaimsCount} of ${claimsMatrix.length} Material Claims`}
           icon={Scale}
-          iconColor="#059669"
-          iconBg="#ECFDF5"
-          statusBadge={{ text: "100% SURVIVAL", variant: "emerald" }}
+          iconColor={survivingClaimsCount === claimsMatrix.length ? "#059669" : survivingClaimsCount >= 3 ? "#D97706" : "#E11D48"}
+          iconBg={survivingClaimsCount === claimsMatrix.length ? "#ECFDF5" : survivingClaimsCount >= 3 ? "#FEF3C7" : "#FFE4E6"}
+          statusBadge={{
+            text: `${Math.round((survivingClaimsCount / claimsMatrix.length) * 100)}% SURVIVAL`,
+            variant: survivingClaimsCount === claimsMatrix.length ? "emerald" : survivingClaimsCount >= 3 ? "amber" : "rose",
+          }}
           subtitle="Arjun Panditrao Khotkar Invariant"
           microVisual="ring"
-          progressPct={100}
+          progressPct={Math.round((survivingClaimsCount / claimsMatrix.length) * 100)}
           provenanceTooltip="All 5 core charges stand independently on immutable Tier-1 logs even upon complete exclusion of civilian chats."
         />
 
@@ -542,16 +587,16 @@ export const CourtProofScreen: React.FC = () => {
                 >
                   {claimsMatrix.map((claim) => {
                     const activeT1 = artifacts.some(
-                      (a) => !a.isExcluded && a.tier.startsWith("TIER_1") && claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY"
+                      (a, idx) => !a.isExcluded && (a.tier?.startsWith("TIER_1") || idx < 3) && getClaimSupportForArtifact(claim, a, idx) === "PRIMARY"
                     );
                     const activeT2 = artifacts.some(
-                      (a) => !a.isExcluded && claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
+                      (a, idx) => !a.isExcluded && getClaimSupportForArtifact(claim, a, idx) === "CORROBORATIVE"
                     );
                     const survives = activeT1;
 
                     // Collect supporting evidence artifacts for this claim
                     const supportingArtifacts = artifacts.filter(
-                      (a) => claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY" || claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
+                      (a, idx) => getClaimSupportForArtifact(claim, a, idx) !== "NONE"
                     );
 
                     return (
@@ -584,7 +629,7 @@ export const CourtProofScreen: React.FC = () => {
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                               {supportingArtifacts.map((art) => {
-                                const supp = claim.supports[art.id as keyof typeof claim.supports];
+                                const supp = getClaimSupportForArtifact(claim, art, artifacts.indexOf(art));
                                 const isExcluded = art.isExcluded;
                                 return (
                                   <span

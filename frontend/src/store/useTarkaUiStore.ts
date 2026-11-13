@@ -98,13 +98,13 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     if (typeof window === "undefined") return "workspaces";
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
-    if (view === "benchmark") return "benchmark";
-    if (view === "workspace") return "workspaces";
-    if (view && ["intake", "entities", "attribution", "network", "taint-engine", "court-proof", "privacy-crypto", "workstation"].includes(view)) {
+    if (view === "benchmark" || view === "benchmarks") return "benchmark";
+    if (view === "workspace" || view === "workspaces") return "workspaces";
+    if (view && ["intake", "entities", "attribution", "network", "taint-engine", "court-proof", "privacy-crypto", "workstation", "report"].includes(view)) {
       return "workbench";
     }
     const page = params.get("page") || params.get("mode");
-    if (page === "benchmark" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
+    if (page === "benchmark" || page === "benchmarks" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
     if (page === "workbench" || page === "case" || params.get("stage")) return "workbench";
     if (page === "workspaces" || page === "workspace") return "workspaces";
     return "workspaces";

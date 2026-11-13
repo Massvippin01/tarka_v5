@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Play,
   Pause,
@@ -163,7 +164,7 @@ export const JudgeModeWalkthrough: React.FC = () => {
   const Icon = currentStep.icon;
   const progressPct = ((STEP_DURATION_SECONDS - secondsRemaining) / STEP_DURATION_SECONDS) * 100;
 
-  return (
+  const overlayContent = (
     <div
       className="judge-walkthrough-overlay fixed inset-0 z-[9999] pointer-events-none flex flex-col justify-end p-4 md:p-6"
       style={{
@@ -317,4 +318,7 @@ export const JudgeModeWalkthrough: React.FC = () => {
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(overlayContent, document.body) : overlayContent;
 };
+

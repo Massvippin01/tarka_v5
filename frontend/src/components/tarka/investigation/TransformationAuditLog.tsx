@@ -26,8 +26,11 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
 }) => {
   const [copiedRoot, setCopiedRoot] = useState(false);
   const { reconstructedInvestigation } = useTarkaUiStore();
-  const investigation = reconstructedInvestigation || reconstruct5FileInvestigation();
-  const steps = investigation.transformationSteps;
+  const defaultInv = reconstruct5FileInvestigation();
+  const investigation = reconstructedInvestigation || defaultInv;
+  const steps = Array.isArray(investigation?.transformationSteps) && investigation.transformationSteps.length > 0
+    ? investigation.transformationSteps
+    : defaultInv.transformationSteps;
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,10 +86,10 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
             </span>
           </div>
           <div style={{ fontSize: "11px", color: "#9F1239", marginTop: "4px", lineHeight: 1.4 }}>
-            <strong>{investigation.preIngestionTamper.finding}</strong>
+            <strong>{investigation?.preIngestionTamper?.finding || defaultInv.preIngestionTamper.finding}</strong>
           </div>
           <div style={{ fontSize: "10px", color: "#E11D48", marginTop: "4px" }}>
-            {investigation.preIngestionTamper.discrepancyNote}
+            {investigation?.preIngestionTamper?.discrepancyNote || defaultInv.preIngestionTamper.discrepancyNote}
           </div>
         </div>
 

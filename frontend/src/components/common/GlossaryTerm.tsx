@@ -2,7 +2,7 @@ import React from "react";
 
 export interface GlossaryTermProps {
   term: string;
-  explanation?: string;
+  explanation: string;
   children?: React.ReactNode;
 }
 
@@ -53,3 +53,4 @@ export const GlossaryTerm: React.FC<GlossaryTermProps> = ({ term, explanation, c
     </span>
   );
 };
+

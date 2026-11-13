@@ -276,7 +276,9 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                   <td style={{ padding: "8px 10px" }}>
                     {c.syndicateLinks && c.syndicateLinks.length > 0 ? (
                       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                        {c.syndicateLinks.map((link: { linkedCaseId: string; sharedAnchorType?: string; sharedAnchorValue?: string }, i: number) => (
+                        {Array.from(
+                          new Map(c.syndicateLinks.map((link: { linkedCaseId: string; sharedAnchorType?: string; sharedAnchorValue?: string }) => [link.linkedCaseId, link])).values()
+                        ).map((link, i: number) => (
                           <button
                             key={i}
                             type="button"
