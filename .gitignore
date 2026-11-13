@@ -10,6 +10,8 @@ __pycache__/
 backend/data/*.db
 venv/
 backend/venv/
+backend/.venv312/
+.claude/
 
 # Node
 node_modules/

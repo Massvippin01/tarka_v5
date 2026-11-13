@@ -1125,4 +1125,30 @@ async def record_entity_decision(
     }
 
 
+@router.get("/{case_id}/accounts/{account_id}/explanation")
+async def get_account_explanation(
+    case_id: str,
+    account_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Returns explainable AI narrative for an account's mule score in English and Hindi.
+    Strictly follows SentinelX Constitution: the WHY comes from the deterministic mule model,
+    LLM only narrates without inventing reasons or declaring guilt.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    from app.intelligence.local_llm_provider import default_llm_provider
+    try:
+        explanation = default_llm_provider.generate_account_explanation(case_id, account_id)
+        return explanation
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case fixture not found for '{case_id}'")
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=f"Account '{account_id}' not found in case '{case_id}'")
+    except Exception as e:
+        logger.error(f"Error generating explanation for account {account_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 

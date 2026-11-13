@@ -60,13 +60,24 @@ class TarkaForensicsAdapter:
         """Ensures the canonical synthetic case is seeded and ready with evidence."""
         seed_demo_case_if_needed()
         is_extortion = case_id.upper().startswith("CASE-2026-001")
+        is_case_002 = case_id.upper().startswith("CASE-2026-002")
+        is_case_003 = case_id.upper().startswith("CASE-2026-003")
+        is_case_004 = case_id.upper().startswith("CASE-2026-004")
+
         case = self.store.get_case(case_id)
         if not case:
+            case_titles = {
+                "CASE-2026-001": ("Operation Digital Arrest Extortion", "ACP Rajesh Kumar"),
+                "CASE-2026-002": ("High-Yield Investment Scam Syndicate", "Insp. Meenakshi S."),
+                "CASE-2026-003": ("Precursor SIM-Swap Takeover", "ACP Vikramaditya"),
+                "CASE-2026-004": ("Corporate BEC & Vendor Invoice Spoofing", "Insp. R. K. Sharma"),
+            }
+            title, inv = case_titles.get(case_id, ("Operation Digital Arrest Extortion" if is_extortion else "UPI Payment Discrepancy", "ACP Rajesh Kumar" if is_extortion else "Insp. Vikramaditya"))
             case = self.store.create_case(
                 case_id=case_id,
-                title="Operation Digital Arrest Extortion" if is_extortion else "UPI Payment Discrepancy",
-                description="1930 Cybercrime Helpline Multi-Layered UPI Extortion investigation." if is_extortion else "Investigation of ₹25,000 digital payment discrepancy across chat, bank statement, telecom CDR, and claim receipts.",
-                investigator="ACP Rajesh Kumar" if is_extortion else "Insp. Vikramaditya",
+                title=title,
+                description=f"Automated forensic intake and multi-vector analysis for {case_id}.",
+                investigator=inv,
             )
         existing_arts = self.store.list_artifacts(case_id)
         existing_fnames = {a.filename for a in existing_arts}
@@ -148,6 +159,53 @@ class TarkaForensicsAdapter:
                         source_tier=tier,
                         intake_officer="ACP Rajesh Kumar",
                         intake_notes=f"Primary intake evidence for Operation Digital Arrest: {fname}",
+                    )
+        elif is_case_002 or is_case_003 or is_case_004:
+            demo_case_files = {
+                "bank_statement_cbs.csv": (
+                    TrustTier.T1,
+                    (
+                        "Transaction Date,Value Date,Description,Chq/Ref No,Debit,Credit,Balance\n"
+                        "2026-09-20 11:20:00,2026-09-20,NEFT/OUT/CANONICAL/VICTIM/MULE,REF1002941,250000.00,0.00,12500.00\n"
+                        "2026-09-20 11:35:00,2026-09-20,RTGS/OUT/CANONICAL/VICTIM/MULE2,REF1002942,450000.00,0.00,1200.00\n"
+                    ).encode("utf-8"),
+                ),
+                "npci_switch_raw.json": (
+                    TrustTier.T2,
+                    json.dumps({
+                        "case_ref": case_id,
+                        "switch_log_id": f"SW-{case_id}",
+                        "timestamp": "2026-09-20T11:20:05.110Z",
+                        "settled": True,
+                    }, indent=2).encode("utf-8"),
+                ),
+                "telecom_cdr_airtel.csv": (
+                    TrustTier.T1,
+                    (
+                        "Call_ID,Caller_MSISDN,Callee_MSISDN,Start_Time,Duration_Sec,Call_Type,First_Cell_ID,Last_Cell_ID,IMEI\n"
+                        f"CDR-{case_id}-01,+919871100001,+919810099999,2026-09-20 11:15:00,940,VOIP_INCOMING,DL-TWR-891,DL-TWR-891,867492061234564\n"
+                    ).encode("utf-8"),
+                ),
+                "1930_ncrp_dossier.json": (
+                    TrustTier.T1,
+                    json.dumps({
+                        "acknowledgement_no": f"NCRP-{case_id}",
+                        "intake_timestamp": "2026-09-20T11:00:00+05:30",
+                        "portal": "NCRP 1930 Helpline",
+                        "case_id": case_id,
+                        "status": "ALLOCATED_TO_STATE_CYBER_CELL",
+                    }, indent=2).encode("utf-8"),
+                ),
+            }
+            for fname, (tier, b) in demo_case_files.items():
+                if fname not in existing_fnames:
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=b,
+                        source_tier=tier,
+                        intake_officer="Cyber Crime PS",
+                        intake_notes=f"Primary evidence for {case_id}: {fname}",
                     )
         elif not existing_arts and FIXTURES_FRAUD_DIR.exists():
             tier_map = {

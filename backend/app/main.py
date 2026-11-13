@@ -21,6 +21,11 @@ async def lifespan(app: FastAPI):
     # Enforce strict startup configuration validation
     settings.validate_startup_configuration()
     initialize_database()
+    try:
+        from app.intelligence.local_llm_provider import warmup_model
+        warmup_model(timeout_secs=5.0)
+    except Exception as e:
+        logger.warning(f"Ollama SLM model warmup non-blocking notice: {e}")
     yield
 
 

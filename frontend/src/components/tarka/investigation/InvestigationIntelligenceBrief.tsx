@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Copy,
@@ -7,11 +7,16 @@ import {
   Printer,
   ChevronDown,
   ChevronUp,
-  Scale,
+  Send,
+  Loader2,
+  Bot,
+  ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
+import { forensicsApi } from "../../../api/forensicsApi";
 
 interface InvestigationIntelligenceBriefProps {
   isOpen: boolean;
@@ -33,11 +38,33 @@ export const InvestigationIntelligenceBrief: React.FC<InvestigationIntelligenceB
     7: true,
   });
 
+  const [activeModelBadge, setActiveModelBadge] = useState<string>("llama3.1:8b · local · offline");
+  const [copilotQuery, setCopilotQuery] = useState<string>("");
+  const [copilotLoading, setCopilotLoading] = useState<boolean>(false);
+  const [copilotResponse, setCopilotResponse] = useState<{
+    answer_markdown: string;
+    citations: Array<{
+      citation_id?: string;
+      artifact_id?: string;
+      source_filename?: string;
+      sha256_short?: string;
+      trust_tier?: string;
+      snippet?: string;
+    }>;
+    speech_text?: string;
+    uncertainty_disclosure?: string;
+    badge?: string;
+  } | null>(null);
+
   const { reconstructedInvestigation } = useTarkaUiStore();
   const investigation = reconstructedInvestigation || reconstruct5FileInvestigation();
   const brief = investigation.sevenQuestionBrief;
+  const currentCaseId =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("case") || brief.caseId || "CASE-2026-001"
+      : brief.caseId || "CASE-2026-001";
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
         onClose();
@@ -46,6 +73,22 @@ export const InvestigationIntelligenceBrief: React.FC<InvestigationIntelligenceB
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    forensicsApi
+      .getAssistantRuntime()
+      .then((status: any) => {
+        if (status?.badge) {
+          setActiveModelBadge(status.badge);
+        } else if (status?.active_model) {
+          setActiveModelBadge(`${status.active_model} · local · offline`);
+        }
+      })
+      .catch(() => {
+        setActiveModelBadge("offline-rules · local");
+      });
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -90,6 +133,24 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
     window.print();
   };
 
+  const handleExecuteCopilotQuery = async (queryText?: string) => {
+    const textToSend = (queryText || copilotQuery).trim();
+    if (!textToSend || copilotLoading) return;
+
+    setCopilotLoading(true);
+    try {
+      const resp = await forensicsApi.queryAssistant(currentCaseId, textToSend);
+      setCopilotResponse(resp);
+      if (queryText) {
+        setCopilotQuery(queryText);
+      }
+    } catch (err: any) {
+      toast.error("Copilot query failed. Offline fallback active.");
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -125,7 +186,7 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
         onClick={(e) => e.stopPropagation()}
       >
         {/* =========================================================================
-            HEADER BAR
+            HEADER BAR WITH ACTIVE MODEL BADGE
             ========================================================================= */}
         <div
           style={{
@@ -157,7 +218,7 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A" }}>
-                  7-Question Explainable Investigation Intelligence Brief
+                  TARKA Forensic Copilot & Intelligence Brief
                 </span>
                 <span
                   style={{
@@ -170,11 +231,37 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
                     border: "1px solid #A7F3D0",
                   }}
                 >
-                  FIR #0149/2026
+                  {currentCaseId}
                 </span>
+                {/* Active Model Badge */}
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    background: "#F1F5F9",
+                    border: "1px solid #CBD5E1",
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                  title="Local AI Inference: zero case data leaves this machine"
+                >
+                  <span
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      background: "#10B981",
+                    }}
+                  />
+                  <span>{activeModelBadge}</span>
+                </div>
               </div>
               <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
-                Generated: {brief.generatedIst} · Cross-Artifact Correlation across 5 Evidentiary Files
+                Case: {brief.firNumber} · Cross-Artifact Evidence Grounding & BSA § 63 Seals
               </div>
             </div>
           </div>
@@ -199,7 +286,7 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
               }}
             >
               {copiedAll ? <Check size={13} /> : <Copy size={13} />}
-              <span>{copiedAll ? "Copied Full Brief" : "Copy Brief Text"}</span>
+              <span>{copiedAll ? "Copied" : "Copy Brief"}</span>
             </button>
 
             <button
@@ -243,20 +330,203 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
         </div>
 
         {/* =========================================================================
-            EXECUTIVE SUMMARY CALLOUT
+            GROUNDED AI COPILOT INTERACTIVE QUERY BAR
             ========================================================================= */}
         <div
           style={{
             padding: "12px 20px",
+            background: "#FAF5FF",
+            borderBottom: "1px solid #F3E8FF",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700, color: "#6B21A8" }}>
+              <Bot size={14} color="#7C3AED" />
+              <span>Grounded AI Forensic Copilot (Natural-Language Investigation)</span>
+            </div>
+            <span style={{ fontSize: "10px", color: "#9333EA", fontWeight: 600 }}>
+              Cites Bitstream Hashes & Transaction IDs
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              type="text"
+              value={copilotQuery}
+              onChange={(e) => setCopilotQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleExecuteCopilotQuery();
+              }}
+              placeholder="Ask copilot: e.g. Which accounts should I freeze first? Is Vikram Shah linked to other FIRs?"
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #D8B4FE",
+                fontSize: "12px",
+                color: "#1E293B",
+                background: "#FFFFFF",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => handleExecuteCopilotQuery()}
+              disabled={copilotLoading || !copilotQuery.trim()}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                background: "#7C3AED",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 700,
+                border: "none",
+                cursor: copilotLoading || !copilotQuery.trim() ? "not-allowed" : "pointer",
+                opacity: copilotLoading || !copilotQuery.trim() ? 0.6 : 1,
+              }}
+            >
+              {copilotLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              <span>{copilotLoading ? "Analyzing..." : "Ask Copilot"}</span>
+            </button>
+          </div>
+
+          {/* Quick Pre-canned Question Pills */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "10.5px", color: "#7E22CE", fontWeight: 600 }}>Suggested:</span>
+            {[
+              "Which accounts should I freeze first?",
+              "Is Vikram Shah linked to other FIRs?",
+              "Summarise the money trail in Hindi",
+            ].map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleExecuteCopilotQuery(p)}
+                style={{
+                  padding: "3px 9px",
+                  borderRadius: "12px",
+                  background: "#EDE9FE",
+                  border: "1px solid #DDD6FE",
+                  color: "#6D28D9",
+                  fontSize: "10.5px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Copilot Active Answer Box */}
+          {copilotResponse && (
+            <div
+              style={{
+                marginTop: "6px",
+                padding: "12px",
+                borderRadius: "8px",
+                background: "#FFFFFF",
+                border: "1px solid #C084FC",
+                boxShadow: "0 2px 6px rgba(124, 58, 237, 0.08)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <ShieldCheck size={14} color="#059669" />
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#1E293B" }}>
+                    Verified Forensic Analysis Response
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCopilotResponse(null)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#94A3B8",
+                    fontSize: "11px",
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div
+                style={{
+                  fontSize: "12px",
+                  lineHeight: 1.55,
+                  color: "#1E293B",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {copilotResponse.answer_markdown}
+              </div>
+
+              {/* Clickable Citations */}
+              {copilotResponse.citations && copilotResponse.citations.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                  <span style={{ fontSize: "10.5px", fontWeight: 700, color: "#475569" }}>
+                    Evidence Citations:
+                  </span>
+                  {copilotResponse.citations.map((c, i) => (
+                    <span
+                      key={i}
+                      onClick={() => {
+                        toast.info(`Artifact: ${c.source_filename || c.artifact_id} | SHA-256: ${c.sha256_short}...`);
+                      }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "2px 7px",
+                        borderRadius: "4px",
+                        background: c.trust_tier === "T1" ? "#EFF6FF" : "#FEF3C7",
+                        border: `1px solid ${c.trust_tier === "T1" ? "#BFDBFE" : "#FDE68A"}`,
+                        color: c.trust_tier === "T1" ? "#1D4ED8" : "#B45309",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                      title="Click to view artifact verification details"
+                    >
+                      <ExternalLink size={10} />
+                      <span>{c.source_filename || c.artifact_id}</span>
+                      <span style={{ opacity: 0.8 }}>({c.trust_tier || "T2"})</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* =========================================================================
+            EXECUTIVE SUMMARY CALLOUT
+            ========================================================================= */}
+        <div
+          style={{
+            padding: "10px 20px",
             background: "#EFF6FF",
             borderBottom: "1px solid #DBEAFE",
             flexShrink: 0,
           }}
         >
-          <div style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", color: "#1D4ED8", letterSpacing: "0.04em" }}>
+          <div style={{ fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", color: "#1D4ED8", letterSpacing: "0.04em" }}>
             Executive Intelligence Summary
           </div>
-          <p style={{ fontSize: "11.5px", color: "#1E3A8A", lineHeight: 1.5, margin: "4px 0 0 0" }}>
+          <p style={{ fontSize: "11.5px", color: "#1E3A8A", lineHeight: 1.45, margin: "2px 0 0 0" }}>
             {brief.executiveSummary}
           </p>
         </div>
@@ -322,129 +592,61 @@ TARKA produces Forensic Technical Findings and Draft Statutory Requisitions for 
                     >
                       {q.questionId}
                     </span>
-                    <div>
-                      <div style={{ fontSize: "12.5px", fontWeight: 800, color: "#0F172A" }}>
-                        {q.questionText}
-                      </div>
-                      <div style={{ fontSize: "11px", color: isInsufficient ? "#B45309" : "#475569", fontWeight: 600, marginTop: "2px" }}>
-                        {q.headlineSummary}
-                      </div>
-                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#1E293B" }}>
+                      {q.questionText}
+                    </span>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span
                       style={{
-                        padding: "1.5px 6px",
+                        padding: "2px 6px",
                         borderRadius: "4px",
-                        fontSize: "9.5px",
+                        fontSize: "10px",
                         fontWeight: 700,
-                        background: "#F1F5F9",
-                        color: "#475569",
-                        border: "1px solid #E2E8F0",
+                        background: isInsufficient ? "#FEF3C7" : "#ECFDF5",
+                        color: isInsufficient ? "#B45309" : "#059669",
                       }}
                     >
-                      {q.statutoryBasis}
+                      {Math.round(q.confidenceScore * 100)}% Confidence
                     </span>
-                    <button
-                      type="button"
-                      style={{ background: "transparent", border: "none", color: "#64748B", cursor: "pointer", padding: "2px" }}
-                    >
-                      {isExp ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </button>
+                    {isExp ? <ChevronUp size={14} color="#64748B" /> : <ChevronDown size={14} color="#64748B" />}
                   </div>
                 </div>
 
                 {/* Accordion Body */}
                 {isExp && (
-                  <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div
-                      style={{
-                        fontSize: "11.5px",
-                        color: "#1E293B",
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-line",
-                      }}
-                    >
+                  <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ fontSize: "11.5px", color: "#334155", lineHeight: 1.5 }}>
                       {q.answerMarkdown}
                     </div>
 
-                    {/* Evidentiary Citations Chips */}
-                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px", paddingTop: "4px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
-                        Citations:
-                      </span>
-                      {q.evidenceChips.map((chip, cIdx) => (
-                        <div
-                          key={cIdx}
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${chip.label}: ${chip.hash} (${chip.detail})`);
-                            toast.success(`Copied citation for ${chip.label}`);
-                          }}
-                          title={`Click to copy: ${chip.sourceFile} - ${chip.detail}`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            padding: "2px 7px",
-                            borderRadius: "4px",
-                            background: chip.tier === "T3" ? "#FFF1F2" : chip.tier === "T2" ? "#FFFBEB" : "#F8FAFC",
-                            border: `1px solid ${chip.tier === "T3" ? "#FECDD3" : chip.tier === "T2" ? "#FDE68A" : "#E2E8F0"}`,
-                            fontSize: "10px",
-                            cursor: "pointer",
-                          }}
-                        >
+                    {/* Evidence Chips */}
+                    {q.evidenceChips && q.evidenceChips.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+                        {q.evidenceChips.map((c, i) => (
                           <span
+                            key={i}
                             style={{
-                              fontWeight: 800,
-                              fontSize: "8.5px",
-                              padding: "0.5px 3px",
-                              borderRadius: "2px",
-                              background: chip.tier === "T3" ? "#FFE4E6" : chip.tier === "T2" ? "#FEF3C7" : "#DCFCE7",
-                              color: chip.tier === "T3" ? "#BE123C" : chip.tier === "T2" ? "#92400E" : "#15803D",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              fontSize: "10px",
+                              fontWeight: 600,
+                              background: "#F1F5F9",
+                              color: "#475569",
+                              border: "1px solid #E2E8F0",
                             }}
                           >
-                            {chip.tier}
+                            [{c.tier}] {c.label} ({c.hash})
                           </span>
-                          <span style={{ fontWeight: 700, color: "#0F172A" }}>{chip.label}</span>
-                          <code style={{ fontSize: "9.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                            {chip.hash.slice(0, 8)}
-                          </code>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
-        </div>
-
-        {/* =========================================================================
-            FOOTER DISCLAIMER
-            ========================================================================= */}
-        <div
-          style={{
-            padding: "10px 20px",
-            background: "#F8FAFC",
-            borderTop: "1px solid #E2E8F0",
-            fontSize: "10.5px",
-            color: "#64748B",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Scale size={14} color="#4F46E5" />
-            <span>
-              TARKA Forensic Technical Intelligence · Draft Requisitions Prepared for IO & Custodian Execution.
-            </span>
-          </div>
-          <span style={{ fontWeight: 700, color: "#334155" }}>
-            BSA §63(4) Court Admissibility Reserved
-          </span>
         </div>
       </div>
     </div>

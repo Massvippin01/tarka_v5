@@ -591,6 +591,8 @@ def query_grounded_assistant(
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
 
+    adapter.ensure_synthetic_case(case_id)
+    adapter.ensure_synthetic_case(case_id)
     artifacts = adapter.list_artifacts(case_id)
 
     facts = adapter.store.list_canonical_facts(case_id)
@@ -636,6 +638,7 @@ def voice_interact(
             "requires_human_confirmation": True,
         }
 
+    adapter.ensure_synthetic_case(case_id)
     artifacts = adapter.list_artifacts(case_id)
     facts = adapter.store.list_canonical_facts(case_id)
     contradictions = adapter.get_contradictions(case_id).get("contradictions", [])
