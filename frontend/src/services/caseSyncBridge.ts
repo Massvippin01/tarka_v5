@@ -16,6 +16,7 @@ import {
   type ReconstructedEdge,
 } from "../utils/investigationReconstructor";
 import type { LedgerRowData } from "../utils/intakeFalsifier";
+import { CANONICAL_CASES, getCanonicalCase, buildCaseBundleFromFixture } from "../fixtures/cases";
 import type { MuleLoginSession } from "../utils/cgnatAttribution";
 import type {
   TeDagNode,
@@ -144,7 +145,7 @@ export interface CaseAttributionProfile {
   smt2Script: string;
 }
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 
 function pseudoSha256(seed: string): string {
   let hash = 0;
@@ -161,213 +162,7 @@ function pseudoSha256(seed: string): string {
  * Malicious Wedding Card .apk & Dual-SIM Swap (Dr. Meera Nair · Hyderabad)
  */
 export function buildCase002Bundle(): ReconstructedInvestigation {
-  const nodes: ReconstructedNode[] = [
-    {
-      id: "M0-VICTIM",
-      label: "Dr. Meera Nair",
-      entityType: "VICTIM",
-      bank: "ICICI Bank",
-      accountMasked: "XXXX-XXXX-9102",
-      ifsc: "ICIC0001821",
-      panMasked: "ABXXX1290C",
-      introducerId: "SELF",
-      tenureMonths: 84,
-      evidenceStatus: "VICTIM",
-      sourceFiles: ["ICICI_Finacle_Stmt_9102.csv"],
-      details: "Victim Remitter Account (Targeted via APK Phishing)",
-    },
-    {
-      id: "M1-PRIMARY",
-      label: "Kiran Kumar (L1 Mule)",
-      entityType: "LAYER_1_MULE",
-      bank: "Kotak Mahindra Bank",
-      accountMasked: "XXXX-XXXX-3341",
-      ifsc: "KKBK0000412",
-      panMasked: "CKXXX7712M",
-      introducerId: "Mewat-Sim-4401",
-      tenureMonths: 2,
-      evidenceStatus: "VERIFIED_ACCUSED",
-      sourceFiles: ["Kotak_CBS_Mule_KYC.csv"],
-      details: "Primary Inflow Mule (Immediate UPI Receiver)",
-    },
-    {
-      id: "M2A-CONDUIT",
-      label: "Naresh Babu (L2A)",
-      entityType: "LAYER_2_CONDUIT",
-      bank: "Canara Bank",
-      accountMasked: "XXXX-XXXX-5510",
-      ifsc: "CNRB0002104",
-      panMasked: "DGXXX3390P",
-      introducerId: "Mewat-Sim-4401",
-      tenureMonths: 1,
-      evidenceStatus: "VERIFIED_ACCUSED",
-      sourceFiles: ["Canara_CBS_Mule_KYC.csv"],
-      details: "Secondary Layering Conduit (Secured Under §106)",
-    },
-    {
-      id: "M2B-CONDUIT",
-      label: "Devendra Rao (L2B)",
-      entityType: "LAYER_2_CONDUIT",
-      bank: "State Bank of India",
-      accountMasked: "XXXX-XXXX-7729",
-      ifsc: "SBIN0004910",
-      panMasked: "FAXXX1102K",
-      introducerId: "Mewat-Sim-4401",
-      tenureMonths: 3,
-      evidenceStatus: "VERIFIED_ACCUSED",
-      sourceFiles: ["SBI_CBS_Mule_KYC.csv"],
-      details: "Secondary Layering Conduit (Secured Under §106)",
-    },
-    {
-      id: "M3-SINK",
-      label: "Gachibowli ATM DL-99",
-      entityType: "LAYER_3_SINK",
-      bank: "SBI ATM Enclave",
-      accountMasked: "ATM-HYD-9902",
-      ifsc: "SBIN0000000",
-      panMasked: "EXEMPT",
-      introducerId: "NA",
-      tenureMonths: 120,
-      evidenceStatus: "VERIFIED_ACCUSED",
-      sourceFiles: ["SBI_ATM_Journal.csv"],
-      details: "Terminal Physical Cashout Sink",
-    },
-  ];
-
-  const edges: ReconstructedEdge[] = [
-    {
-      id: "E1-INFLOW-002",
-      sourceNodeId: "M0-VICTIM",
-      targetNodeId: "M1-PRIMARY",
-      sourceLabel: "Dr. Meera Nair",
-      targetLabel: "Kiran Kumar",
-      amount: 840000,
-      rail: "UPI",
-      rrn: "429100881920",
-      timestampIst: "2026-09-22 09:50:12 IST",
-      matchClassification: "EXACT_DETERMINISTIC",
-      supportingEvidence: [
-        {
-          sourceFile: "ICICI_Finacle_Stmt_9102.csv",
-          artifactId: "art-02-stmt",
-          corroboratingAttribute: "UPI Debit RRN 429100881920",
-          rawLogValue: "DR -₹8,40,000.00 to Kiran Kumar",
-          timestamp: "09:50:12 IST",
-        },
-      ],
-      contradictoryEvidence: [],
-      recommendedAction: {
-        legalSection: "BNSS §106 Summons",
-        statutoryAction: "Freeze beneficiary account",
-        cautionNotice: "Immediate P0 golden hour lien",
-        priority: "CRITICAL_P0",
-      },
-      sourceFiles: ["ICICI_Finacle_Stmt_9102.csv"],
-    },
-    {
-      id: "E2-SPLIT-L2A",
-      sourceNodeId: "M1-PRIMARY",
-      targetNodeId: "M2A-CONDUIT",
-      sourceLabel: "Kiran Kumar",
-      targetLabel: "Naresh Babu",
-      amount: 500000,
-      rail: "IMPS",
-      rrn: "429100881933",
-      timestampIst: "2026-09-22 09:52:45 IST",
-      matchClassification: "EXACT_DETERMINISTIC",
-      supportingEvidence: [],
-      contradictoryEvidence: [],
-      recommendedAction: {
-        legalSection: "BNSS §106/§107 Provisional Freeze",
-        statutoryAction: "Freeze ₹5,00,000 in Canara Bank",
-        cautionNotice: "Secured before cashout",
-        priority: "CRITICAL_P0",
-      },
-      sourceFiles: ["Kotak_CBS_Mule_KYC.csv"],
-    },
-    {
-      id: "E3-SPLIT-L2B",
-      sourceNodeId: "M1-PRIMARY",
-      targetNodeId: "M2B-CONDUIT",
-      sourceLabel: "Kiran Kumar",
-      targetLabel: "Devendra Rao",
-      amount: 340000,
-      rail: "IMPS",
-      rrn: "429100881944",
-      timestampIst: "2026-09-22 09:53:10 IST",
-      matchClassification: "EXACT_DETERMINISTIC",
-      supportingEvidence: [],
-      contradictoryEvidence: [],
-      recommendedAction: {
-        legalSection: "BNSS §106/§107 Provisional Freeze",
-        statutoryAction: "Freeze remaining ₹1,20,000",
-        cautionNotice: "₹2,20,000 withdrawn via ATM",
-        priority: "CRITICAL_P0",
-      },
-      sourceFiles: ["Kotak_CBS_Mule_KYC.csv"],
-    },
-    {
-      id: "E4-ATM-CASHOUT",
-      sourceNodeId: "M2B-CONDUIT",
-      targetNodeId: "M3-SINK",
-      sourceLabel: "Devendra Rao",
-      targetLabel: "Gachibowli ATM",
-      amount: 220000,
-      rail: "ATM_CASH",
-      rrn: "ATM-TXN-881902",
-      timestampIst: "2026-09-22 10:14:00 IST",
-      matchClassification: "EXACT_DETERMINISTIC",
-      supportingEvidence: [],
-      contradictoryEvidence: [],
-      recommendedAction: {
-        legalSection: "BNSS §94 Notice for CCTV",
-        statutoryAction: "Requisition CCTV footage from SBI Nodal",
-        cautionNotice: "Terminal cashout point",
-        priority: "HIGH_P1",
-      },
-      sourceFiles: ["SBI_ATM_Journal.csv"],
-    },
-  ];
-
-  return {
-    caseId: "CASE-2026-002",
-    firNumber: "FIR #152/2026",
-    policeStation: "Cyberabad PS, Telangana",
-    complainantName: "Dr. Meera Nair",
-    claimedLossInr: 840000,
-    bookedLossInr: 840000,
-    recoverableLibrInr: 620000,
-    shieldedCommercialInr: 0,
-    preIngestionTamper: {
-      hasTamper: false,
-      sourceFile: "None",
-      finding: "No post-issuance edits detected",
-      technicalOffset: "0x0000",
-      discrepancyNote: "Integrity verified",
-    },
-    postIngestionMerkleRoot: pseudoSha256("CASE-2026-002-MERKLE"),
-    nodes,
-    edges,
-    transformationSteps: [],
-    sevenQuestionBrief: {
-      caseId: "CASE-2026-002",
-      firNumber: "FIR #152/2026",
-      generatedIst: "2026-09-22 10:35:00 IST",
-      executiveSummary: "Victim Dr. Meera Nair defrauded of ₹8,40,000. ₹6,20,000 secured under BNSS §106.",
-      questions: [],
-    },
-    fileManifest: [
-      {
-        fileName: "Wedding_Invite_Cards.apk",
-        fileId: "art-02-apk",
-        byteSize: 890000,
-        sha256: pseudoSha256("APK"),
-        tier: "T2",
-        custodian: "Victim Handset",
-        status: "PASS",
-      },
-    ],
-  };
+  return buildCaseBundleFromFixture(getCanonicalCase("CASE-2026-002"));
 }
 
 /**
@@ -375,90 +170,15 @@ export function buildCase002Bundle(): ReconstructedInvestigation {
  * Institutional QIB IPO Allotment Syndicate (Rajeshwari Textiles · 5 States)
  */
 export function buildCase003Bundle(): ReconstructedInvestigation {
-  const nodes: ReconstructedNode[] = [
-    {
-      id: "M0-VICTIM",
-      label: "Rajeshwari Textiles Pvt Ltd",
-      entityType: "VICTIM",
-      bank: "HDFC Bank Corporate",
-      accountMasked: "XXXX-XXXX-0012",
-      ifsc: "HDFC0000992",
-      panMasked: "AAACR1290K",
-      introducerId: "SELF",
-      tenureMonths: 120,
-      evidenceStatus: "VICTIM",
-      sourceFiles: ["HDFC_Corp_Stmt_0012.csv"],
-      details: "Corporate Victim (Institutional Escrow Fraud)",
-    },
-    {
-      id: "M1-APEX",
-      label: "Apex Investment Pool A/c #901",
-      entityType: "LAYER_1_MULE",
-      bank: "Federal Bank Escrow",
-      accountMasked: "XXXX-XXXX-9901",
-      ifsc: "FDRL0001092",
-      panMasked: "ZZZAP9921M",
-      introducerId: "Dubai-Offshore-88",
-      tenureMonths: 1,
-      evidenceStatus: "VERIFIED_ACCUSED",
-      sourceFiles: ["Federal_Bank_Escrow_KYC.csv"],
-      details: "Syndicate Pooling Aggregator",
-    },
-  ];
+  return buildCaseBundleFromFixture(getCanonicalCase("CASE-2026-003"));
+}
 
-  const edges: ReconstructedEdge[] = [
-    {
-      id: "E1-INFLOW-003",
-      sourceNodeId: "M0-VICTIM",
-      targetNodeId: "M1-APEX",
-      sourceLabel: "Rajeshwari Textiles",
-      targetLabel: "Apex Investment Pool",
-      amount: 104218900,
-      rail: "IMPS",
-      rrn: "RTGS-CORP-9912048",
-      timestampIst: "2026-09-20 14:10:00 IST",
-      matchClassification: "EXACT_DETERMINISTIC",
-      supportingEvidence: [],
-      contradictoryEvidence: [],
-      recommendedAction: {
-        legalSection: "CBI Section 91 Requisition",
-        statutoryAction: "Cross-state multi-jurisdiction lien",
-        cautionNotice: "Exceeds ₹10.00 Cr CBI statutory threshold",
-        priority: "CRITICAL_P0",
-      },
-      sourceFiles: ["Federal_Bank_Escrow_KYC.csv"],
-    },
-  ];
-
-  return {
-    caseId: "CASE-2026-003",
-    firNumber: "RC-09/2026",
-    policeStation: "I4C Samanvaya Multi-State Task Force",
-    complainantName: "Rajeshwari Textiles Pvt Ltd",
-    claimedLossInr: 104218900,
-    bookedLossInr: 104218900,
-    recoverableLibrInr: 78500000,
-    shieldedCommercialInr: 0,
-    preIngestionTamper: {
-      hasTamper: false,
-      sourceFile: "None",
-      finding: "No post-issuance edits detected",
-      technicalOffset: "0x0000",
-      discrepancyNote: "Integrity verified",
-    },
-    postIngestionMerkleRoot: pseudoSha256("CASE-2026-003-MERKLE"),
-    nodes,
-    edges,
-    transformationSteps: [],
-    sevenQuestionBrief: {
-      caseId: "CASE-2026-003",
-      firNumber: "RC-09/2026",
-      generatedIst: "2026-09-22 10:40:00 IST",
-      executiveSummary: "Institutional IPO Allotment Syndicate crossing ₹10 Cr CBI threshold.",
-      questions: [],
-    },
-    fileManifest: [],
-  };
+/**
+ * Builds a deterministic case bundle for CASE-2026-004:
+ * Telegram Task Fraud & Crypto Siphon (Pooja Hegde · Bangalore)
+ */
+export function buildCase004Bundle(): ReconstructedInvestigation {
+  return buildCaseBundleFromFixture(getCanonicalCase("CASE-2026-004"));
 }
 
 /**
@@ -653,6 +373,12 @@ export class CaseSyncBridge {
     if (caseId === "CASE-2026-003") {
       return buildCase003Bundle();
     }
+    if (caseId === "CASE-2026-004") {
+      return buildCase004Bundle();
+    }
+    if (CANONICAL_CASES[caseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[caseId]);
+    }
 
     if (caseMetadata) {
       return buildDynamicCaseBundle(caseMetadata);
@@ -780,15 +506,20 @@ export class CaseSyncBridge {
     customTamperVal?: string,
     permute: boolean = false
   ): LedgerRowData[] {
-    const victim = inv.nodes.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || inv.nodes[0];
-    const l1Mule = inv.nodes.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("PRIMARY") || n.id.includes("M1")) || inv.nodes[1];
-    const primaryEdge = inv.edges[0];
-    const drainAmount = primaryEdge?.amount || inv.bookedLossInr || 500000;
-    const drainRrn = primaryEdge?.rrn || `626510${caseId.slice(-3)}921`;
+    const fixture = getCanonicalCase(caseId);
+    const victim = inv?.nodes?.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || inv?.nodes?.[0];
+    const l1Mule = inv?.nodes?.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("PRIMARY") || n.id.includes("M1")) || inv?.nodes?.[1];
+    const primaryEdge = inv?.edges?.[0];
 
-    const bal0 = Math.round(drainAmount * 1.45 + 115890);
+    const drainTxns = fixture.transactions.filter((tx) => tx.category === "VICTIM_DRAIN");
+    const drainAmount = drainTxns[0]?.amount || primaryEdge?.amount || inv.bookedLossInr || 285000;
+    const drainRrn = drainTxns[0]?.rrn || primaryEdge?.rrn || `626510${caseId.slice(-3)}921`;
+    const secondaryTx = drainTxns[1];
+
+    const bal0 = fixture.complainant.openingBalance || 529140.0;
     const bal1 = bal0 - 3450;
-    const bal2 = bal1 + 125000;
+    const salaryCredit = fixture.complainant.salaryCredit || 125000;
+    const bal2 = bal1 + salaryCredit;
     const normalBal3 = bal2 - drainAmount;
 
     let row3Bal = normalBal3;
@@ -801,7 +532,8 @@ export class CaseSyncBridge {
     }
 
     const bal4 = row3Bal - 4200;
-    const bal5 = bal4 - (primaryEdge ? Math.round(drainAmount * 0.1) : 10000);
+    const secondaryAmount = secondaryTx ? secondaryTx.amount : (primaryEdge ? Math.round(drainAmount * 0.1) : 10000);
+    const bal5 = bal4 - secondaryAmount;
 
     const timePrefix = "2026-09-22T";
     const rows: LedgerRowData[] = [
@@ -809,7 +541,7 @@ export class CaseSyncBridge {
         id: `CBS-${caseId.slice(-3)}-01`,
         sequenceNo: 11,
         timestamp: `${timePrefix}09:15:02`,
-        description: `OPENING BALANCE B/F [${victim?.bank || "CBS"} A/C ${victim?.accountMasked || "Masked"}]`,
+        description: `OPENING BALANCE B/F [${victim?.bank || fixture.complainant.bank} A/C ${victim?.accountMasked || fixture.complainant.accountMasked}]`,
         rrn: "—",
         debit: 0.0,
         credit: 0.0,
@@ -832,7 +564,7 @@ export class CaseSyncBridge {
         description: "NEFT/CR/LEGITIMATE_SALARY_SETTLEMENT",
         rrn: "SBIN260922123456",
         debit: 0.0,
-        credit: 125000.0,
+        credit: salaryCredit,
         balance: bal2,
       },
       {
@@ -859,9 +591,9 @@ export class CaseSyncBridge {
         id: `CBS-${caseId.slice(-3)}-06`,
         sequenceNo: 16,
         timestamp: `${timePrefix}10:28:45`,
-        description: `IMPS/DR/SECONDARY_LAYERING_DISBURSEMENT`,
-        rrn: "626512994031",
-        debit: primaryEdge ? Math.round(drainAmount * 0.1) : 10000,
+        description: secondaryTx ? `UPI/DR/${secondaryTx.rrn}/TRANCHE_2_EXTORTION` : `IMPS/DR/SECONDARY_LAYERING_DISBURSEMENT`,
+        rrn: secondaryTx ? secondaryTx.rrn : "626512994031",
+        debit: secondaryAmount,
         credit: 0.0,
         balance: bal5,
       },

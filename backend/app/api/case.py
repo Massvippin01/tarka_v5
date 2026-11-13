@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -369,6 +371,85 @@ async def get_case_bundle(
             }
             for a in db_artifacts
         ]
+
+        fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{case.id}.json"
+        if fixture_file.exists():
+            with open(fixture_file, "r", encoding="utf-8") as f:
+                cdata = json.load(f)
+                nodes = []
+                for a in cdata.get("accounts", []):
+                    nodes.append({
+                        "id": a["nodeId"],
+                        "label": a["holderName"],
+                        "entityType": a["holderType"],
+                        "bank": a["bank"],
+                        "accountMasked": a["accountMasked"],
+                        "ifsc": a["ifsc"],
+                        "panMasked": a["panMasked"],
+                        "introducerId": a.get("introducerId", "SELF"),
+                        "tenureMonths": a.get("tenureMonths", 12),
+                        "evidenceStatus": a["evidenceStatus"],
+                        "sourceFiles": ["Finacle_CBS_Statement.csv", "NPCI_Switch_Log.csv"],
+                        "details": f"{a['holderType']} · {a['bank']} ({a['accountMasked']})",
+                    })
+
+                node_map = {n["id"]: n for n in nodes}
+                for a in cdata.get("accounts", []):
+                    node_map[a["accountNumber"]] = node_map[a["nodeId"]]
+                    node_map[a["holderName"]] = node_map[a["nodeId"]]
+
+                edges = []
+                drain_txns = [
+                    tx for tx in cdata.get("transactions", [])
+                    if tx["category"] in ("VICTIM_DRAIN", "LAYERING", "COMMERCIAL_ESCROW", "ATM_CASHOUT")
+                ]
+                for idx, tx in enumerate(drain_txns):
+                    src = node_map.get(tx["fromAccount"], node_map.get(tx["fromName"], nodes[0]))
+                    tgt = node_map.get(tx["toAccount"], node_map.get(tx["toName"], nodes[1]))
+                    edges.append({
+                        "id": f"E{idx + 1}-{tx['id']}",
+                        "source": src["id"],
+                        "target": tgt["id"],
+                        "sourceNodeId": src["id"],
+                        "targetNodeId": tgt["id"],
+                        "sourceLabel": src["label"],
+                        "targetLabel": tgt["label"],
+                        "relationshipType": "FUND_TRANSFER",
+                        "amountInr": tx["amount"],
+                        "amount": tx["amount"],
+                        "channel": tx["paymentRail"],
+                        "rail": tx["paymentRail"],
+                        "rrn": tx["rrn"],
+                        "timestampIst": tx["timestampIst"],
+                        "corroboration": f"{tx['paymentRail']} RRN {tx['rrn']}",
+                        "forensicNote": tx["particulars"],
+                    })
+
+                return {
+                    "caseId": cdata["caseId"],
+                    "firNumber": cdata["firNumber"],
+                    "policeStation": cdata["policeStation"],
+                    "complainantName": cdata["complainant"]["name"],
+                    "claimedLossInr": cdata["financials"]["claimedLossInr"],
+                    "bookedLossInr": cdata["financials"]["bookedLossInr"],
+                    "recoverableLibrInr": cdata["financials"]["recoverableLibrInr"],
+                    "shieldedCommercialInr": cdata["financials"]["shieldedCommercialInr"],
+                    "preIngestionTamper": cdata["caseId"] == "CASE-2026-001",
+                    "postIngestionMerkleRoot": "0" * 64,
+                    "nodes": nodes,
+                    "edges": edges,
+                    "transformationSteps": [],
+                    "sevenQuestionBrief": {
+                        "who": f"Victim: {cdata['complainant']['name']}",
+                        "what": f"{cdata['title']}: ₹{cdata['financials']['bookedLossInr']:,}",
+                        "when": "Incident Date: 2026-09-22",
+                        "where": cdata["policeStation"],
+                        "why": "Cyber extortion syndicate",
+                        "how": "Multi-hop layering",
+                        "legalNextStep": "Provisional lien under Section 106 BNSS",
+                    },
+                    "fileManifest": file_manifest,
+                }
 
         if case.id == "CASE-2026-002" or case.crime_type == "APK_SIM_SWAP":
             nodes = [

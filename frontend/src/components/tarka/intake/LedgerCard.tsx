@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Search,
@@ -25,6 +25,7 @@ import { type LedgerRowData } from "../../../utils/intakeFalsifier";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
+import { formatInr } from "../../../utils/formatters";
 
 export type ValidatedLedgerRow = LedgerRowData & {
   expectedBalance?: number;
@@ -45,6 +46,10 @@ export interface LedgerCardProps {
   onTogglePolarity: () => void;
   permuteActive: boolean;
   onTogglePermute: () => void;
+  claimedAmount?: number;
+  claimedLabel?: string;
+  cbsBookedAmount?: number;
+  disputedRrn?: string;
 }
 
 const ROW_HASHES: Record<number, string> = {
@@ -70,6 +75,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
   onTogglePolarity,
   permuteActive,
   onTogglePermute,
+  claimedAmount,
+  claimedLabel,
+  cbsBookedAmount,
+  disputedRrn,
 }) => {
   const { density, setSelectedRowSeq, setActiveDockTab } = useTarkaUiStore();
 
@@ -131,13 +140,48 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
 
   const rowHeight = density === "compact" ? 34 : 38;
 
-  // Double-entry calculation
-  const openingBal = 615890.0;
-  const totalCredits = 125000.0;
-  const totalDebits = 232650.0;
-  const expectedClosing = openingBal + totalCredits - totalDebits; // 508,240.00
-  const actualClosing = isRow14Tampered ? 308240.0 : 508240.0;
-  const residual = actualClosing - expectedClosing; // 0 or -200,000
+  // Double-entry calculation dynamically derived from rows prop
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => a.sequenceNo - b.sequenceNo);
+  }, [rows]);
+
+  const openingBal = sortedRows[0]?.balance ?? 0.0;
+  const creditRows = sortedRows.filter((r: ValidatedLedgerRow) => (r.credit ?? 0) > 0);
+  const debitRows = sortedRows.filter((r: ValidatedLedgerRow) => (r.debit ?? 0) > 0);
+  const totalCredits = creditRows.reduce((sum: number, r: ValidatedLedgerRow) => sum + (r.credit ?? 0), 0);
+  const totalDebits = debitRows.reduce((sum: number, r: ValidatedLedgerRow) => sum + (r.debit ?? 0), 0);
+  const creditsCount = creditRows.length;
+  const debitsCount = debitRows.length;
+  const expectedClosing = openingBal + totalCredits - totalDebits;
+  const actualClosing = sortedRows[sortedRows.length - 1]?.balance ?? expectedClosing;
+  const residual = actualClosing - expectedClosing;
+
+  // Per-row invariant check: Bal[k] == Bal[k-1] + Cr[k] - Dr[k]
+  const rowValidation = useMemo(() => {
+    let firstFailingSeq: number | null = null;
+    const failingRowMap: Record<number, boolean> = {};
+
+    for (let i = 1; i < sortedRows.length; i++) {
+      const prev = sortedRows[i - 1];
+      const curr = sortedRows[i];
+      const expectedCurrBal = prev.balance + (curr.credit ?? 0) - (curr.debit ?? 0);
+      if (Math.abs(curr.balance - expectedCurrBal) > 0.01) {
+        failingRowMap[curr.sequenceNo] = true;
+        if (firstFailingSeq === null) {
+          firstFailingSeq = curr.sequenceNo;
+        }
+      }
+    }
+    return { firstFailingSeq, failingRowMap };
+  }, [sortedRows]);
+
+  // Derived disputed vs claimed figures
+  const disputedRow = sortedRows.find((r: ValidatedLedgerRow) => r.sequenceNo === 14);
+  const effectiveClaimed = claimedAmount ?? 15000;
+  const effectiveCbsBooked = cbsBookedAmount ?? (disputedRow?.debit || 285000);
+  const deltaLoss = effectiveCbsBooked - effectiveClaimed;
+  const ratioLoss = (effectiveCbsBooked / Math.max(1, effectiveClaimed)).toFixed(1);
+  const effectiveDisputedRrn = disputedRrn || disputedRow?.rrn || "626510149921";
 
   return (
     <div
@@ -486,7 +530,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              ₹15,000.00
+              {formatInr(effectiveClaimed)}
             </span>
             <span
               style={{
@@ -499,7 +543,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 borderRadius: "3px",
               }}
             >
-              Canva
+              {claimedLabel || "Canva"}
             </span>
           </div>
 
@@ -508,10 +552,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             <StripeSegmentedBar
               height={11}
               showLabels={false}
-              totalValue={215000}
+              totalValue={effectiveCbsBooked}
               segments={[
-                { id: "claimed", label: "Claim", value: 15000, color: "#10B981" },
-                { id: "suppressed", label: "Deficit", value: 200000, isHatched: true, color: "crimson" },
+                { id: "claimed", label: "Claim", value: effectiveClaimed, color: "#10B981" },
+                { id: "suppressed", label: "Deficit", value: Math.max(0, deltaLoss), isHatched: true, color: "crimson" },
               ]}
             />
           </div>
@@ -530,7 +574,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
               flexShrink: 0,
             }}
           >
-            ≠ Δ ₹2.00L Deficit (14.3×)
+            ≠ Δ {formatInr(deltaLoss, { compact: true })} Deficit ({ratioLoss}×)
           </span>
 
           <ArrowRight size={10} color="#64748B" style={{ flexShrink: 0 }} />
@@ -547,12 +591,12 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              ₹2,15,000.00
+              {formatInr(effectiveCbsBooked)}
             </span>
             <button
               type="button"
               onClick={() => {
-                onSelectRrn("626510149921");
+                onSelectRrn(effectiveDisputedRrn);
                 setActiveDockTab("rrn");
               }}
               style={{
@@ -570,9 +614,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 cursor: "pointer",
                 whiteSpace: "nowrap",
               }}
-              title="Inspect UTR 626510149921 in RRN Dissector"
+              title={`Inspect UTR ${effectiveDisputedRrn} in RRN Dissector`}
             >
-              <span>#626510149921</span>
+              <span>#{effectiveDisputedRrn}</span>
               <ExternalLink size={8} />
             </button>
           </div>
@@ -1180,7 +1224,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 boxShadow: residual === 0 ? "0 0 0 2px rgba(16, 185, 129, 0.1)" : "0 0 0 2px rgba(225, 29, 72, 0.1)",
               }}
             >
-              {residual === 0 ? "CONSERVED: Δ = ₹0.00 ✓" : `UNSAT DEFICIT: Δ -₹${Math.abs(residual).toLocaleString("en-IN", { minimumFractionDigits: 2 })} ✗`}
+              {residual === 0 ? "CONSERVED: Δ = ₹0.00 ✓" : `UNSAT DEFICIT: Δ ${formatInr(residual)} ✗`}
             </span>
           </div>
 
@@ -1205,7 +1249,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             >
               <div style={{ color: "#64748B", fontSize: "9px", fontWeight: 600 }}>Opening Balance B/F</div>
               <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#0F172A", marginTop: "2px" }}>
-                ₹6,15,890.00
+                {formatInr(openingBal)}
               </div>
             </div>
 
@@ -1238,9 +1282,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 boxShadow: "0 1px 2px rgba(16, 185, 129, 0.05)",
               }}
             >
-              <div style={{ color: "#047857", fontSize: "9px", fontWeight: 700 }}>Total Credits (1)</div>
+              <div style={{ color: "#047857", fontSize: "9px", fontWeight: 700 }}>Total Credits ({creditsCount})</div>
               <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#047857", marginTop: "2px" }}>
-                +₹1,25,000.00
+                +{formatInr(totalCredits)}
               </div>
             </div>
 
@@ -1273,9 +1317,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 boxShadow: "0 1px 2px rgba(225, 29, 72, 0.05)",
               }}
             >
-              <div style={{ color: "#BE123C", fontSize: "9px", fontWeight: 700 }}>Total Debits (5)</div>
+              <div style={{ color: "#BE123C", fontSize: "9px", fontWeight: 700 }}>Total Debits ({debitsCount})</div>
               <div style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "11px", color: "#BE123C", marginTop: "2px" }}>
-                −₹2,32,650.00
+                −{formatInr(totalDebits)}
               </div>
             </div>
 
@@ -1320,7 +1364,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                   marginTop: "2px",
                 }}
               >
-                ₹{actualClosing.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                {formatInr(actualClosing)}
               </div>
             </div>
           </div>
@@ -1342,11 +1386,11 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           >
             <div>
               <strong style={{ color: "#0F172A" }}>Mathematical Proof: </strong>
-              Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>k ∈ [11..16]</code> satisfies double-entry conservation invariant <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>Bal[k] = Bal[k-1] + Cr[k] − Dr[k]</code>.
+              Every transaction sequence <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>k ∈ [{sortedRows[0]?.sequenceNo ?? 11}..{sortedRows[sortedRows.length - 1]?.sequenceNo ?? 16}]</code> satisfies double-entry conservation invariant <code style={{ fontFamily: "var(--font-mono)", background: "#F1F5F9", padding: "1px 4px", borderRadius: "3px", color: "#0F172A" }}>Bal[k] = Bal[k-1] + Cr[k] − Dr[k]</code>.
             </div>
             {residual !== 0 && (
               <span style={{ fontSize: "9px", fontWeight: 800, color: "#BE123C", background: "#FFE4E6", padding: "1px 6px", borderRadius: "3px", flexShrink: 0, marginLeft: "8px" }}>
-                BREACH AT SEQ #14
+                BREACH AT SEQ #{rowValidation.firstFailingSeq ?? 14}
               </span>
             )}
           </div>

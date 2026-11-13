@@ -22,6 +22,8 @@ import { InspectorDock } from "../../components/tarka/intake/InspectorDock";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { getCanonicalCase } from "../../fixtures/cases";
+import { formatInr } from "../../utils/formatters";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
@@ -53,9 +55,23 @@ export const IntakeScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [permuteActive, setPermuteActive] = useState<boolean>(false);
 
+  const canonicalCase = useMemo(() => {
+    return getCanonicalCase(activeCaseId || "CASE-2026-001");
+  }, [activeCaseId]);
+
+  const normalRow14Bal = useMemo(() => {
+    const bal0 = canonicalCase.complainant.openingBalance;
+    const bal1 = bal0 - 3450;
+    const salaryCredit = canonicalCase.complainant.salaryCredit || 125000;
+    const bal2 = bal1 + salaryCredit;
+    const drainTx = canonicalCase.transactions.find((t) => t.category === "VICTIM_DRAIN");
+    const drainAmount = drainTx ? drainTx.amount : (investigation.edges[0]?.amount || 285000);
+    return bal2 - drainAmount;
+  }, [canonicalCase, investigation]);
+
   // Editable Row #14 Balance State
   const [customRow14Balance, setCustomRow14Balance] = useState<string>(
-    isRow14Tampered ? "322440.00" : "522440.00"
+    isRow14Tampered ? (normalRow14Bal - 200000).toFixed(2) : normalRow14Bal.toFixed(2)
   );
 
   // NPCI RRN Dissector Input
@@ -75,15 +91,16 @@ export const IntakeScreen: React.FC = () => {
         const errorVal = d.claimedBalError ?? (d as any).claimed_bal_error ?? 200000;
         setCustomRow14Balance(isRow14Tampered ? (836550 - errorVal).toFixed(2) : "836550.00");
       }
-    } else if (investigation.edges[0]?.rrn) {
-      setRrnInput(investigation.edges[0].rrn);
-      const loss = investigation.bookedLossInr || 500000;
-      const normalBal = Math.round(loss * 1.45 + 115890) - 3450 + 125000 - loss;
-      setCustomRow14Balance(isRow14Tampered ? (normalBal - 200000).toFixed(2) : normalBal.toFixed(2));
     } else {
-      setCustomRow14Balance(isRow14Tampered ? "322440.00" : "522440.00");
+      const primaryTx = canonicalCase.transactions.find((t) => t.category === "VICTIM_DRAIN");
+      if (primaryTx?.rrn) {
+        setRrnInput(primaryTx.rrn);
+      } else if (investigation.edges[0]?.rrn) {
+        setRrnInput(investigation.edges[0].rrn);
+      }
+      setCustomRow14Balance(isRow14Tampered ? (normalRow14Bal - 200000).toFixed(2) : normalRow14Bal.toFixed(2));
     }
-  }, [isRow14Tampered, activeDiscoveredCluster, investigation]);
+  }, [isRow14Tampered, activeDiscoveredCluster, investigation, normalRow14Bal, canonicalCase]);
 
   // Global Keyboard Shortcuts (/ search, T toggle tamper, P permute, Esc clear)
   useEffect(() => {
@@ -106,8 +123,8 @@ export const IntakeScreen: React.FC = () => {
         toggleMutation("alterBankRow14");
         toast(
           isRow14Tampered
-            ? "Row #14 Restored to ₹5,22,440.00 ✓"
-            : "Row #14 Tampered to ₹3,22,440.00 (-₹2.00L Deficit) ✗",
+            ? `Row #14 Restored to ${formatInr(normalRow14Bal)} ✓`
+            : `Row #14 Tampered to ${formatInr(normalRow14Bal - 200000)} (-₹2.00L Deficit) ✗`,
           {
             description: isRow14Tampered
               ? "All double-entry invariants satisfied."
@@ -412,7 +429,7 @@ export const IntakeScreen: React.FC = () => {
               isRow14Tampered={isRow14Tampered}
               customRow14Balance={customRow14Balance}
               onCustomBalanceChange={(val) => setCustomRow14Balance(val)}
-              onResetRow14Balance={() => setCustomRow14Balance("522440.00")}
+              onResetRow14Balance={() => setCustomRow14Balance(normalRow14Bal.toFixed(2))}
               onSelectRrn={(rrn) => {
                 setRrnInput(rrn);
                 setActiveDockTab("rrn");
@@ -433,6 +450,10 @@ export const IntakeScreen: React.FC = () => {
                   return next;
                 })
               }
+              claimedAmount={canonicalCase.receiptClaim?.claimedAmount}
+              claimedLabel={canonicalCase.receiptClaim?.label}
+              cbsBookedAmount={canonicalCase.transactions.find((t) => t.category === "VICTIM_DRAIN")?.amount ?? investigation.edges[0]?.amount}
+              disputedRrn={canonicalCase.transactions.find((t) => t.category === "VICTIM_DRAIN")?.rrn ?? investigation.edges[0]?.rrn}
             />
           </Panel>
 
