@@ -84,10 +84,14 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
   const getInitialActivePage = (): TopLevelPage => {
     if (typeof window === "undefined") return "workspaces";
     const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    if (view === "benchmark") return "benchmark";
+    if (view === "workspace") return "workspaces";
+    if (view && ["intake", "entities", "attribution", "network", "taint-engine", "court-proof", "privacy-crypto", "workstation"].includes(view)) {
+      return "workbench";
+    }
     const page = params.get("page") || params.get("mode");
     if (page === "benchmark" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
-    const view = params.get("view");
-    if (view && view !== "workspace") return "workbench";
     if (page === "workbench" || page === "case" || params.get("stage")) return "workbench";
     if (page === "workspaces" || page === "workspace") return "workspaces";
     return "workspaces";
@@ -112,7 +116,22 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
 
   return {
     activePage: getInitialActivePage(),
-    setActivePage: (page) => set({ activePage: page }),
+    setActivePage: (page) => {
+      set({ activePage: page });
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level", "screen", "page", "stage", "benchmark"];
+        legacyParams.forEach((k) => url.searchParams.delete(k));
+        const caseId = url.searchParams.get("case") || "CASE-2026-001";
+        url.searchParams.set("case", caseId);
+        if (page === "benchmark") {
+          url.searchParams.set("view", "benchmark");
+        } else if (page === "workspaces") {
+          url.searchParams.set("view", "workspace");
+        }
+        window.history.replaceState({}, "", url.toString());
+      }
+    },
 
     activeDiscoveredCluster: null,
     setActiveDiscoveredCluster: (cluster) => set({ activeDiscoveredCluster: cluster }),

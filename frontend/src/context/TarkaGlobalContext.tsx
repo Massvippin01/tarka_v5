@@ -480,12 +480,23 @@ const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = [
 
 const TarkaGlobalContext = createContext<TarkaGlobalContextType | undefined>(undefined);
 
+export function syncTarkaUrl(caseId: string, view: string) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level", "screen", "page", "stage", "benchmark"];
+  legacyParams.forEach((k) => url.searchParams.delete(k));
+  url.searchParams.set("case", caseId);
+  url.searchParams.set("view", view);
+  window.history.replaceState({}, "", url.toString());
+}
+
 export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getInitialRoute = (): TarkaRoute => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname.toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
+      if (view === "benchmark") return "workspace";
       if (view === "workspace" || path.includes("workspace")) return "workspace";
       if (view === "attribution" || path.includes("attribution")) return "attribution";
       if (view === "entities" || view === "entity" || path.includes("entities")) return "entities";
@@ -527,19 +538,53 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
       const v = params.get("view") || params.get("screen");
       if (v) {
-        if (v === "workspace") setActiveRouteState("workspace");
-        else if (v === "network" || v === "fraud-network") setActiveRouteState("network");
-        else if (v === "intake") setActiveRouteState("intake");
-        else if (v === "attribution") setActiveRouteState("attribution");
-        else if (v === "entities" || v === "entity") setActiveRouteState("entities");
-        else if (v === "taint-engine" || v === "taint") setActiveRouteState("taint-engine");
-        else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
-        else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
+        if (v === "benchmark") {
+          useTarkaUiStore.getState().setActivePage("benchmark");
+        } else if (v === "workspace") {
+          setActiveRouteState("workspace");
+          useTarkaUiStore.getState().setActivePage("workspaces");
+        } else {
+          useTarkaUiStore.getState().setActivePage("workbench");
+          if (v === "network" || v === "fraud-network") setActiveRouteState("network");
+          else if (v === "intake") setActiveRouteState("intake");
+          else if (v === "attribution") setActiveRouteState("attribution");
+          else if (v === "entities" || v === "entity") setActiveRouteState("entities");
+          else if (v === "taint-engine" || v === "taint") setActiveRouteState("taint-engine");
+          else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
+          else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
+          else if (v === "workstation") setActiveRouteState("workstation");
+        }
       }
     };
+
+    // Clean legacy URL parameters on initial load
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level", "screen", "page", "stage", "benchmark"];
+      let hasLegacy = false;
+      for (const p of legacyParams) {
+        if (url.searchParams.has(p)) {
+          url.searchParams.delete(p);
+          hasLegacy = true;
+        }
+      }
+      if (!url.searchParams.has("case")) {
+        url.searchParams.set("case", activeCaseId);
+        hasLegacy = true;
+      }
+      if (!url.searchParams.has("view")) {
+        const initialPage = useTarkaUiStore.getState().activePage;
+        url.searchParams.set("view", initialPage === "benchmark" ? "benchmark" : activeRoute);
+        hasLegacy = true;
+      }
+      if (hasLegacy) {
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+
     window.addEventListener("popstate", handleUrlChange);
     return () => window.removeEventListener("popstate", handleUrlChange);
-  }, [activeCaseId]);
+  }, [activeCaseId, activeRoute]);
 
   // Initial Sync from Backend Database
   useEffect(() => {
@@ -607,22 +652,21 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const setActiveRoute = useCallback((route: TarkaRoute) => {
     setActiveRouteState(route);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", route);
-      window.history.pushState({}, "", url.toString());
+    if (route === "workspace") {
+      useTarkaUiStore.getState().setActivePage("workspaces");
+    } else {
+      useTarkaUiStore.getState().setActivePage("workbench");
     }
-  }, []);
+    syncTarkaUrl(activeCaseId, route);
+  }, [activeCaseId]);
 
   const setActiveCaseId = useCallback((caseId: string) => {
     setActiveCaseIdState(caseId);
     setEvidenceModalTargetCaseId(caseId);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("case", caseId);
-      window.history.replaceState({}, "", url.toString());
-    }
-  }, []);
+    const currentPage = useTarkaUiStore.getState().activePage;
+    const view = currentPage === "benchmark" ? "benchmark" : activeRoute;
+    syncTarkaUrl(caseId, view);
+  }, [activeRoute]);
 
   // Multi-Case Action: Select Workspace and Transition to Stage
   const selectCaseWorkspace = useCallback((caseId: string, navigateToStage?: ActiveRoute) => {
