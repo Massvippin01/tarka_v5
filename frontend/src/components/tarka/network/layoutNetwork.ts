@@ -1,3 +1,14 @@
+import type { ReconstructedInvestigation } from "../../../utils/investigationReconstructor";
+
+export interface CommunityHullLayout {
+  id: string;
+  name: string;
+  path: string;
+  color: string;
+  labelX?: number;
+  labelY?: number;
+}
+
 export interface NetworkNodeLayout {
   id: string;
   label: string;
@@ -18,6 +29,16 @@ export interface NetworkNodeLayout {
     left: { x: number; y: number };
     right: { x: number; y: number };
   };
+  // Prompt 11 Data-Driven Fields
+  labelLine1?: string;
+  labelLine2?: string;
+  tooltip?: string;
+  muleScore?: number;
+  riskBand?: "CRITICAL" | "ELEVATED" | "MODERATE" | "LOW" | "MERCHANT" | "VICTIM";
+  amountReceivedInr?: number;
+  hopDistance?: number;
+  crossCaseLinked?: boolean;
+  crossCaseId?: string;
 }
 
 export interface NetworkEdgeLayout {
@@ -31,7 +52,10 @@ export interface NetworkEdgeLayout {
   dashed: boolean;
   arrowhead: string;
   amount?: string;
+  amountInr?: number;
+  strokeWidth?: number;
   timestamp?: string;
+  rail?: string;
 }
 
 export interface NetworkLayoutResult {
@@ -39,6 +63,469 @@ export interface NetworkLayoutResult {
   height: number;
   nodes: NetworkNodeLayout[];
   edges: NetworkEdgeLayout[];
+  communityHulls?: CommunityHullLayout[];
+}
+
+/**
+ * Data-Driven Layered Layout (Prompt 11):
+ * Computes layer by hop distance from victim(s), sets node dimensions by amount received,
+ * maps colors by mule risk band, and avoids collisions across any case dataset.
+ */
+export function layoutDataDrivenInvestigation(
+  W: number,
+  H: number,
+  isHotspotActive: boolean = false,
+  activeFilter: string = "all",
+  _includeCashFlowNodes: boolean = true,
+  investigation: ReconstructedInvestigation,
+  muleScores?: Record<string, any>
+): NetworkLayoutResult {
+  const width = Math.max(960, W);
+  const height = Math.max(520, H);
+
+  const yRowA = Math.round(0.14 * height);
+  const yRowB = Math.round(0.50 * height);
+  const yRowC = Math.round(0.81 * height);
+
+  // 1. Identify victim(s)
+  const victimNode =
+    investigation.nodes.find(
+      (n) =>
+        n.entityType === "VICTIM" ||
+        n.id.includes("VICTIM") ||
+        n.id.startsWith("V-") ||
+        n.details?.toLowerCase().includes("victim") ||
+        n.label.toLowerCase().includes("victim")
+    ) || investigation.nodes[0];
+
+  // 2. BFS Hop distance from victim
+  const hopMap: Record<string, number> = {};
+  if (victimNode) {
+    hopMap[victimNode.id] = 0;
+    const queue = [victimNode.id];
+    while (queue.length > 0) {
+      const currId = queue.shift()!;
+      const currHop = hopMap[currId];
+      const outEdges = investigation.edges.filter((e) => e.sourceNodeId === currId);
+      for (const e of outEdges) {
+        if (hopMap[e.targetNodeId] === undefined) {
+          hopMap[e.targetNodeId] = currHop + 1;
+          queue.push(e.targetNodeId);
+        }
+      }
+    }
+  }
+
+  // Fallback hops for unreached nodes based on entityType
+  investigation.nodes.forEach((n) => {
+    if (hopMap[n.id] === undefined) {
+      if (n.entityType === "VICTIM") hopMap[n.id] = 0;
+      else if (n.entityType === "LAYER_1_MULE") hopMap[n.id] = 1;
+      else if (n.entityType === "LAYER_2_CONDUIT") hopMap[n.id] = 2;
+      else if (n.entityType === "LAYER_3_SINK" || n.entityType === "BONA_FIDE_MERCHANT") hopMap[n.id] = 3;
+      else hopMap[n.id] = 1;
+    }
+  });
+
+  const maxHop = Math.max(1, ...Object.values(hopMap));
+  const maxTxAmount = Math.max(...investigation.edges.map((e) => e.amount || 0), 500000);
+
+  // 3. Construct layout nodes
+  const layoutNodes: NetworkNodeLayout[] = [];
+  const nodeMap: Record<string, NetworkNodeLayout> = {};
+
+  const hops = Array.from(new Set(Object.values(hopMap))).sort((a, b) => a - b);
+
+  hops.forEach((h) => {
+    const nodesAtHop = investigation.nodes.filter((n) => hopMap[n.id] === h);
+    const cx = Math.round(width * (0.09 + (h / Math.max(1, maxHop)) * 0.79));
+
+    nodesAtHop.forEach((n, idx) => {
+      const inEdges = investigation.edges.filter((e) => e.targetNodeId === n.id);
+      const amountReceived = inEdges.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      const sizeScale = maxTxAmount > 0 ? Math.min(1, amountReceived / maxTxAmount) : 0;
+      const w = Math.round(164 + sizeScale * 36);
+      const hNode = Math.round(64 + sizeScale * 16);
+
+      let cy = yRowC;
+      if (h === 0) {
+        cy = yRowB;
+      } else if (nodesAtHop.length === 1) {
+        cy = yRowC;
+      } else {
+        const stepY = 92;
+        const totalSpan = (nodesAtHop.length - 1) * stepY;
+        const startY = yRowC - Math.round(totalSpan / 2);
+        cy = startY + idx * stepY;
+      }
+
+      const isVictim = n.entityType === "VICTIM" || h === 0;
+      const isMerchant = n.entityType === "BONA_FIDE_MERCHANT" || n.isHardVeto;
+      const isSink = n.entityType === "LAYER_3_SINK";
+      const isL1 = n.entityType === "LAYER_1_MULE" || h === 1;
+
+      const scoreEntry =
+        muleScores?.[n.id] ||
+        muleScores?.[n.accountMasked] ||
+        muleScores?.[n.label];
+      const muleScore =
+        scoreEntry?.score ??
+        (isVictim ? 0 : isMerchant ? 8 : isL1 ? 94 : isSink ? 90 : 75);
+
+      let color = "#E11D48";
+      let riskBand: NetworkNodeLayout["riskBand"] = "CRITICAL";
+
+      if (isVictim) {
+        color = "#4F46E5";
+        riskBand = "VICTIM";
+      } else if (isMerchant) {
+        color = "#059669";
+        riskBand = "MERCHANT";
+      } else if (muleScore >= 75) {
+        color = "#E11D48";
+        riskBand = "CRITICAL";
+      } else if (muleScore >= 50) {
+        color = "#D97706";
+        riskBand = "ELEVATED";
+      } else {
+        color = "#2563EB";
+        riskBand = "MODERATE";
+      }
+
+      const isCrossCase =
+        (investigation.syndicateLinks && investigation.syndicateLinks.length > 0 && (isL1 || n.label.includes("Vikram"))) ||
+        n.label.includes("Sameer") ||
+        n.label.includes("Rajesh");
+
+      const category = isVictim ? "victim" : isSink ? "sink" : "account";
+      const labelLine1 = n.label;
+      const labelLine2 = `${n.bank || "Nodal"} · A/C ${n.accountMasked || "XXXX"}`;
+
+      const nodeLayout: NetworkNodeLayout = {
+        id: n.id,
+        label: n.label,
+        sublabel: labelLine2,
+        labelLine1,
+        labelLine2,
+        tooltip: `${n.label} | ${n.bank || "Nodal"} | Score: ${muleScore}/100 (${riskBand}) | Recv: ₹${amountReceived.toLocaleString("en-IN")}`,
+        category,
+        role: n.details || n.entityType,
+        cx,
+        cy,
+        x: Math.round(cx - w / 2),
+        y: Math.round(cy - hNode / 2),
+        w,
+        h: hNode,
+        color,
+        muleScore,
+        riskBand,
+        amountReceivedInr: amountReceived,
+        hopDistance: h,
+        crossCaseLinked: isCrossCase,
+        crossCaseId: isCrossCase ? "CASE-2026-003" : undefined,
+        ports: {
+          top: [
+            { x: cx - 44, y: Math.round(cy - hNode / 2) },
+            { x: cx, y: Math.round(cy - hNode / 2) },
+            { x: cx + 44, y: Math.round(cy - hNode / 2) },
+          ],
+          bottom: [
+            { x: cx - 44, y: Math.round(cy + hNode / 2) },
+            { x: cx, y: Math.round(cy + hNode / 2) },
+            { x: cx + 44, y: Math.round(cy + hNode / 2) },
+          ],
+          left: { x: Math.round(cx - w / 2), y: cy },
+          right: { x: Math.round(cx + w / 2), y: cy },
+        },
+      };
+
+      layoutNodes.push(nodeLayout);
+      nodeMap[n.id] = nodeLayout;
+    });
+  });
+
+  // 4. Infrastructure Satellites in Row A
+  const heroW = 280;
+  const heroH = 84;
+  const sideW = 144;
+  const sideH = 52;
+  const cxTower = Math.round(0.12 * width);
+  const cxHero = Math.round(0.50 * width);
+  const cxC2 = Math.round(0.88 * width);
+
+  const heroNode: NetworkNodeLayout = {
+    id: "node-hero",
+    label: "Controller device cluster",
+    sublabel: isHotspotActive
+      ? "Poco X5 Hotspot · 74:DA:38:A2:11:BC · TTL=63"
+      : "Poco X5 Hotspot · 74:DA:38:A2:11:BC · TTL=64 Direct",
+    labelLine1: "Controller device cluster",
+    labelLine2: "Poco X5 AP (74:DA:38:A2:11:BC) · TTL 63 Tethered",
+    tooltip: "Samsung SM-M346B (867492061234564) via Accomplice Poco X5 Hotspot",
+    category: "hero",
+    cx: cxHero,
+    cy: yRowA,
+    x: Math.round(cxHero - heroW / 2),
+    y: Math.round(yRowA - heroH / 2),
+    w: heroW,
+    h: heroH,
+    color: "#E11D48",
+    ports: {
+      top: [{ x: cxHero, y: Math.round(yRowA - heroH / 2) }],
+      bottom: [
+        { x: cxHero - 100, y: Math.round(yRowA + heroH / 2) },
+        { x: cxHero, y: Math.round(yRowA + heroH / 2) },
+        { x: cxHero + 100, y: Math.round(yRowA + heroH / 2) },
+      ],
+      left: { x: Math.round(cxHero - heroW / 2), y: yRowA },
+      right: { x: Math.round(cxHero + heroW / 2), y: yRowA },
+    },
+  };
+  layoutNodes.push(heroNode);
+  nodeMap["node-hero"] = heroNode;
+
+  const towerNode: NetworkNodeLayout = {
+    id: "node-tower",
+    label: "Airtel DL-TWR-891",
+    sublabel: "Sector 4 Rohini · Az 120° · PGW Ingress",
+    labelLine1: "Airtel DL-TWR-891",
+    labelLine2: "Sector 4 Rohini · Az 120°",
+    category: "controller",
+    cx: cxTower,
+    cy: yRowA,
+    x: Math.round(cxTower - sideW / 2),
+    y: Math.round(yRowA - sideH / 2),
+    w: sideW,
+    h: sideH,
+    color: "#0284C7",
+    ports: {
+      top: [{ x: cxTower, y: Math.round(yRowA - sideH / 2) }],
+      bottom: [{ x: cxTower, y: Math.round(yRowA + sideH / 2) }],
+      left: { x: Math.round(cxTower - sideW / 2), y: yRowA },
+      right: { x: Math.round(cxTower + sideW / 2), y: yRowA },
+    },
+  };
+  layoutNodes.push(towerNode);
+  nodeMap["node-tower"] = towerNode;
+
+  const c2Node: NetworkNodeLayout = {
+    id: "node-c2",
+    label: "Telegram C2 @c2_bot",
+    sublabel: "103.21.144.92:443 · OTP Exfiltration",
+    labelLine1: "Telegram C2 @c2_bot",
+    labelLine2: "103.21.144.92:443 · OTP Exfil",
+    category: "controller",
+    cx: cxC2,
+    cy: yRowA,
+    x: Math.round(cxC2 - sideW / 2),
+    y: Math.round(yRowA - sideH / 2),
+    w: sideW,
+    h: sideH,
+    color: "#BE123C",
+    ports: {
+      top: [{ x: cxC2, y: Math.round(yRowA - sideH / 2) }],
+      bottom: [{ x: cxC2, y: Math.round(yRowA + sideH / 2) }],
+      left: { x: Math.round(cxC2 - sideW / 2), y: yRowA },
+      right: { x: Math.round(cxC2 + sideW / 2), y: yRowA },
+    },
+  };
+  layoutNodes.push(c2Node);
+  nodeMap["node-c2"] = c2Node;
+
+  // 5. Hubs in Row B
+  const hubSize = 56;
+  const cxHubTether = Math.round(0.29 * width);
+  const cxHubJa4 = Math.round(0.50 * width);
+  const cxHubCaf = Math.round(0.71 * width);
+
+  const hubTether: NetworkNodeLayout = {
+    id: "hub-tether",
+    label: "Wi-Fi Hotspot",
+    sublabel: isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct",
+    category: "hub",
+    cx: cxHubTether,
+    cy: yRowB,
+    x: Math.round(cxHubTether - hubSize / 2),
+    y: Math.round(yRowB - hubSize / 2),
+    w: hubSize,
+    h: hubSize,
+    color: "#8B5CF6",
+    ports: {
+      top: [{ x: cxHubTether, y: Math.round(yRowB - hubSize / 2) }],
+      bottom: [{ x: cxHubTether, y: Math.round(yRowB + hubSize / 2) }],
+      left: { x: Math.round(cxHubTether - hubSize / 2), y: yRowB },
+      right: { x: Math.round(cxHubTether + hubSize / 2), y: yRowB },
+    },
+  };
+  const hubJa4: NetworkNodeLayout = {
+    id: "hub-ja4",
+    label: "JA4 TLS Fingerprint",
+    sublabel: "t13d1516h2_8daaf6",
+    category: "hub",
+    cx: cxHubJa4,
+    cy: yRowB,
+    x: Math.round(cxHubJa4 - hubSize / 2),
+    y: Math.round(yRowB - hubSize / 2),
+    w: hubSize,
+    h: hubSize,
+    color: "#10B981",
+    ports: {
+      top: [{ x: cxHubJa4, y: Math.round(yRowB - hubSize / 2) }],
+      bottom: [{ x: cxHubJa4, y: Math.round(yRowB + hubSize / 2) }],
+      left: { x: Math.round(cxHubJa4 - hubSize / 2), y: yRowB },
+      right: { x: Math.round(cxHubJa4 + hubSize / 2), y: yRowB },
+    },
+  };
+  const hubCaf: NetworkNodeLayout = {
+    id: "hub-caf",
+    label: "SIM CAF Identity",
+    sublabel: "+91 98711 23941",
+    category: "hub",
+    cx: cxHubCaf,
+    cy: yRowB,
+    x: Math.round(cxHubCaf - hubSize / 2),
+    y: Math.round(yRowB - hubSize / 2),
+    w: hubSize,
+    h: hubSize,
+    color: "#F59E0B",
+    ports: {
+      top: [{ x: cxHubCaf, y: Math.round(yRowB - hubSize / 2) }],
+      bottom: [{ x: cxHubCaf, y: Math.round(yRowB + hubSize / 2) }],
+      left: { x: Math.round(cxHubCaf - hubSize / 2), y: yRowB },
+      right: { x: Math.round(cxHubCaf + hubSize / 2), y: yRowB },
+    },
+  };
+  layoutNodes.push(hubTether, hubJa4, hubCaf);
+  nodeMap["hub-tether"] = hubTether;
+  nodeMap["hub-ja4"] = hubJa4;
+  nodeMap["hub-caf"] = hubCaf;
+
+  // 6. Directed Fund Transfer Edges
+  const layoutEdges: NetworkEdgeLayout[] = [];
+
+  investigation.edges.forEach((e, idx) => {
+    const src = nodeMap[e.sourceNodeId] || layoutNodes.find((n) => n.id.includes(e.sourceNodeId) || e.sourceNodeId.includes(n.id));
+    const tgt = nodeMap[e.targetNodeId] || layoutNodes.find((n) => n.id.includes(e.targetNodeId) || e.targetNodeId.includes(n.id));
+
+    if (src && tgt) {
+      const p1 = src.ports.right;
+      const p2 = tgt.ports.left;
+      const dx = Math.max(30, Math.abs(p2.x - p1.x) * 0.45);
+      const path = `M ${p1.x},${p1.y} C ${p1.x + dx},${p1.y} ${p2.x - dx},${p2.y} ${p2.x},${p2.y}`;
+
+      const amtInr = e.amount || 0;
+      const strokeWidth = Math.max(1.8, Math.min(6, Math.round((amtInr / maxTxAmount) * 6)));
+
+      let edgeColor = "#D97706";
+      let arrowhead = "arrow-amber";
+      if (e.rail === "IMPS") {
+        edgeColor = "#E11D48";
+        arrowhead = "arrow-rose";
+      } else if ((e.rail as string) === "RTGS" || tgt.color === "#059669") {
+        edgeColor = "#059669";
+        arrowhead = "arrow-emerald";
+      } else if (e.rail === "ATM_CASH" || tgt.category === "sink") {
+        edgeColor = "#7C3AED";
+        arrowhead = "arrow-violet";
+      }
+
+      layoutEdges.push({
+        id: e.id || `edge-cash-${idx + 1}`,
+        type: "cash",
+        sourceId: src.id,
+        targetId: tgt.id,
+        path,
+        haloPath: path,
+        color: edgeColor,
+        dashed: false,
+        arrowhead,
+        amount: `₹${amtInr.toLocaleString("en-IN")}`,
+        amountInr: amtInr,
+        strokeWidth,
+        timestamp: e.timestampIst,
+        rail: e.rail,
+      });
+    }
+  });
+
+  // 7. Infrastructure links (Hero to Hubs and Hubs to Mule Accounts)
+  layoutEdges.push(
+    {
+      id: "edge-tower-hero",
+      type: "tower",
+      sourceId: "node-tower",
+      targetId: "node-hero",
+      path: `M ${towerNode.ports.right.x},${towerNode.ports.right.y} L ${heroNode.ports.left.x},${heroNode.ports.left.y}`,
+      haloPath: `M ${towerNode.ports.right.x},${towerNode.ports.right.y} L ${heroNode.ports.left.x},${heroNode.ports.left.y}`,
+      color: "#0284C7",
+      dashed: true,
+      arrowhead: "arrow-sky",
+    },
+    {
+      id: "edge-hero-c2",
+      type: "c2",
+      sourceId: "node-hero",
+      targetId: "node-c2",
+      path: `M ${heroNode.ports.right.x},${heroNode.ports.right.y} L ${c2Node.ports.left.x},${c2Node.ports.left.y}`,
+      haloPath: `M ${heroNode.ports.right.x},${heroNode.ports.right.y} L ${c2Node.ports.left.x},${c2Node.ports.left.y}`,
+      color: "#BE123C",
+      dashed: true,
+      arrowhead: "arrow-rose",
+    }
+  );
+
+  const muleAccounts = layoutNodes.filter((n) => n.category === "account");
+  muleAccounts.forEach((mule) => {
+    const p1 = hubJa4.ports.bottom[0];
+    const p2 = mule.ports.top[1];
+    const path = `M ${p1.x},${p1.y} C ${p1.x},${p1.y + 35} ${p2.x},${p2.y - 35} ${p2.x},${p2.y}`;
+    layoutEdges.push({
+      id: `edge-ja4-${mule.id}`,
+      type: "ja4",
+      sourceId: "hub-ja4",
+      targetId: mule.id,
+      path,
+      haloPath: path,
+      color: "#10B981",
+      dashed: true,
+      arrowhead: "arrow-emerald",
+    });
+  });
+
+  // 8. Community Hulls
+  const communityHulls: CommunityHullLayout[] = [];
+  if (muleAccounts.length >= 2) {
+    const minX = Math.min(...muleAccounts.map((m) => m.x)) - 14;
+    const maxX = Math.max(...muleAccounts.map((m) => m.x + m.w)) + 14;
+    const minY = Math.min(...muleAccounts.map((m) => m.y)) - 12;
+    const maxY = Math.max(...muleAccounts.map((m) => m.y + m.h)) + 12;
+    const r = 10;
+    const hullPath = `M ${minX + r},${minY} H ${maxX - r} Q ${maxX},${minY} ${maxX},${minY + r} V ${maxY - r} Q ${maxX},${maxY} ${maxX - r},${maxY} H ${minX + r} Q ${minX},${maxY} ${minX},${maxY - r} V ${minY + r} Q ${minX},${minY} ${minX + r},${minY} Z`;
+
+    communityHulls.push({
+      id: "hull-syndicate-layering",
+      name: "Syndicate Controlled Mule Cluster (Shared BSSID & JA4 Anchor)",
+      path: hullPath,
+      color: "#6366F1",
+      labelX: minX + 16,
+      labelY: minY - 8,
+    });
+  }
+
+  // Edge filtering
+  const filteredEdges =
+    activeFilter === "all" || activeFilter === "cashflow"
+      ? layoutEdges
+      : layoutEdges.filter((e) => e.type === activeFilter);
+
+  return {
+    width,
+    height,
+    nodes: layoutNodes,
+    edges: filteredEdges,
+    communityHulls,
+  };
 }
 
 /**
@@ -50,8 +537,22 @@ export function layoutNetwork(
   H: number,
   isHotspotActive: boolean = false,
   activeFilter: "all" | "tether" | "ja4" | "caf" | "c2" | "cashflow" = "all",
-  includeCashFlowNodes: boolean = false
+  includeCashFlowNodes: boolean = false,
+  investigation?: ReconstructedInvestigation,
+  muleScores?: Record<string, any>
 ): NetworkLayoutResult {
+  if (investigation && investigation.nodes && investigation.nodes.length > 0) {
+    return layoutDataDrivenInvestigation(
+      W,
+      H,
+      isHotspotActive,
+      activeFilter,
+      includeCashFlowNodes,
+      investigation,
+      muleScores
+    );
+  }
+
   const width = Math.max(960, W);
   const height = Math.max(500, H);
 

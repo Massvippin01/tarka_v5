@@ -71,6 +71,7 @@ export interface ReconstructedNode {
   bssidHotspot?: string;
   gstin?: string;
   mcaCin?: string;
+  isHardVeto?: boolean;
   details: string;
 }
 
@@ -164,6 +165,12 @@ export interface ReconstructedInvestigation {
     custodian: string;
     status: "PASS" | "QUARANTINED";
   }>;
+  muleScores?: Record<string, any>;
+  syndicateLinks?: any[];
+  clusters?: any[];
+  rawMentions?: any[];
+  canonicalEntities?: any[];
+  flightRecorderMerkleRoot?: string;
 }
 
 /* =========================================================================

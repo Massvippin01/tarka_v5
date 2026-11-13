@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { layoutNetwork } from "../layoutNetwork";
+import { layoutNetwork, type NetworkNodeLayout } from "../layoutNetwork";
+import { getCanonicalCase, buildCaseBundleFromFixture } from "../../../../fixtures/cases";
+import type { ReconstructedInvestigation } from "../../../../utils/investigationReconstructor";
 
 describe("layoutNetwork geometry and port contract", () => {
   it("calculates exact node bounds and positions at 1536x864", () => {
@@ -84,6 +86,87 @@ describe("layoutNetwork geometry and port contract", () => {
     const cafRight = cafHub.x + cafHub.w;
     const atmLeft = atm.x;
     expect(atmLeft - cafRight).toBeGreaterThanOrEqual(40);
+  });
+
+  it("renders Cases 001-004 and an uploaded case without any node collisions (Prompt 11)", () => {
+    const caseIds = ["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004"];
+
+    function doNodesOverlap(a: NetworkNodeLayout, b: NetworkNodeLayout): boolean {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    caseIds.forEach((caseId) => {
+      const fixture = getCanonicalCase(caseId);
+      const inv = buildCaseBundleFromFixture(fixture);
+      const layout = layoutNetwork(1440, 800, true, "all", true, inv);
+
+      expect(layout.nodes.length).toBeGreaterThan(3);
+
+      for (let i = 0; i < layout.nodes.length; i++) {
+        for (let j = i + 1; j < layout.nodes.length; j++) {
+          const n1 = layout.nodes[i];
+          const n2 = layout.nodes[j];
+          const overlaps = doNodesOverlap(n1, n2);
+          if (overlaps) {
+            console.error(
+              `Collision in ${caseId}: [${n1.id}] (${n1.x},${n1.y},${n1.w},${n1.h}) and [${n2.id}] (${n2.x},${n2.y},${n2.w},${n2.h})`
+            );
+          }
+          expect(overlaps).toBe(false);
+        }
+      }
+    });
+
+    // Uploaded live case with 6 heterogeneous nodes
+    const uploadedInv: any = {
+      caseId: "CASE-2026-LIVE-UPLOAD",
+      firNumber: "FIR #999/2026",
+      policeStation: "Cyber Cell HQ",
+      complainantName: "Vipin Sharma",
+      claimedLossInr: 1220000,
+      bookedLossInr: 1220000,
+      recoverableLibrInr: 950000,
+      shieldedCommercialInr: 270000,
+      nodes: [
+        { id: "U-VICTIM", label: "Vipin Sharma (Victim)", entityType: "VICTIM", bank: "HDFC", accountMasked: "...1122" },
+        { id: "U-MULE1", label: "Pooja Verma", entityType: "LAYER_1_MULE", bank: "Axis", accountMasked: "...3344" },
+        { id: "U-MULE2", label: "Akash Deep", entityType: "LAYER_2_CONDUIT", bank: "ICICI", accountMasked: "...5566" },
+        { id: "U-MULE3", label: "Suresh Rao", entityType: "LAYER_2_CONDUIT", bank: "SBI", accountMasked: "...7788" },
+        { id: "U-MERCHANT", label: "QuickPay Merchant", entityType: "BONA_FIDE_MERCHANT", bank: "Kotak", accountMasked: "...9900" },
+        { id: "U-SINK", label: "Cashpoint Sink", entityType: "LAYER_3_SINK", bank: "Paytm", accountMasked: "...2233" },
+      ],
+      edges: [
+        { id: "UE1", sourceNodeId: "U-VICTIM", targetNodeId: "U-MULE1", amount: 1220000, rail: "IMPS", timestampIst: "10:00:00" },
+        { id: "UE2", sourceNodeId: "U-MULE1", targetNodeId: "U-MULE2", amount: 600000, rail: "RTGS", timestampIst: "10:05:00" },
+        { id: "UE3", sourceNodeId: "U-MULE1", targetNodeId: "U-MULE3", amount: 620000, rail: "IMPS", timestampIst: "10:06:00" },
+        { id: "UE4", sourceNodeId: "U-MULE2", targetNodeId: "U-MERCHANT", amount: 300000, rail: "UPI", timestampIst: "10:10:00" },
+        { id: "UE5", sourceNodeId: "U-MULE3", targetNodeId: "U-SINK", amount: 500000, rail: "ATM_CASH", timestampIst: "10:15:00" },
+      ],
+      muleScores: {
+        "U-MULE1": { score: 92, riskBand: "CRITICAL", topReasons: ["High velocity outbound", "Zero dwell time"] },
+        "U-MULE2": { score: 84, riskBand: "CRITICAL", topReasons: ["Immediate conduit hop"] },
+        "U-MULE3": { score: 79, riskBand: "CRITICAL", topReasons: ["Large structured split"] },
+        "U-MERCHANT": { score: 12, riskBand: "MERCHANT", topReasons: ["Bona fide merchant turnover"] },
+        "U-SINK": { score: 88, riskBand: "CRITICAL", topReasons: ["Physical cash withdrawal point"] },
+      },
+    };
+
+    const uploadedLayout = layoutNetwork(1440, 800, true, "all", true, uploadedInv as unknown as ReconstructedInvestigation);
+    expect(uploadedLayout.nodes.length).toBeGreaterThan(5);
+
+    for (let i = 0; i < uploadedLayout.nodes.length; i++) {
+      for (let j = i + 1; j < uploadedLayout.nodes.length; j++) {
+        const n1 = uploadedLayout.nodes[i];
+        const n2 = uploadedLayout.nodes[j];
+        const overlaps = doNodesOverlap(n1, n2);
+        expect(overlaps).toBe(false);
+      }
+    }
   });
 });
 

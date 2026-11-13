@@ -189,7 +189,9 @@ export const EvidenceIntakeModal: React.FC = () => {
     setIsPipelineRunning(true);
     setPipelineProgressPercent(15);
 
-    const targetCaseId = currentCase?.caseId || "CASE-2026-001";
+    const targetCaseId = currentCase?.caseId?.startsWith("CASE-2026-LIVE")
+      ? currentCase.caseId
+      : "CASE-2026-LIVE-001";
 
     const initialStages: PipelineStage[] = [
       { id: "STAGE_1", label: "Heterogeneous Ledger Parsing", detail: "Normalizing banking CSV columns & transaction streams", status: "RUNNING" },

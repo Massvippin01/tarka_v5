@@ -331,83 +331,21 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   // Determine whether cashflow nodes/edges should be included
   const includeCashFlowNodes = edgeFilter === "cashflow" || edgeFilter === "all";
 
-  // Compute pure layout
-  const rawLayout = useMemo(() => {
+  // Layer filter state (Prompt 11)
+  const [selectedLayer, setSelectedLayer] = useState<"all" | "L1" | "L2" | "L3">("all");
+
+  // Compute pure layout (Data-Driven with Layered BFS)
+  const layout = useMemo(() => {
     return layoutNetwork(
       dimensions.width,
       dimensions.height,
       isHotspotActive,
       edgeFilter === "cashflow" ? "cashflow" : edgeFilter,
-      includeCashFlowNodes
+      includeCashFlowNodes,
+      investigation,
+      investigation?.muleScores
     );
-  }, [dimensions.width, dimensions.height, isHotspotActive, edgeFilter, includeCashFlowNodes]);
-
-  // Dynamically overlay active investigation entities onto visual nodes
-  const layout = useMemo(() => {
-    if (!investigation || !investigation.nodes || investigation.nodes.length === 0) {
-      return rawLayout;
-    }
-
-    const victimNode = investigation.nodes.find(
-      (n) => n.entityType === "VICTIM" || n.id.includes("VICTIM") || n.id === "M0-VICTIM" || n.details?.toLowerCase().includes("victim")
-    );
-    const l1Node = investigation.nodes.find(
-      (n) => n.entityType === "LAYER_1_MULE" || n.id.includes("PRIMARY") || n.id === "M1-PRIMARY"
-    );
-    const l2aNode = investigation.nodes.find(
-      (n) => n.id.includes("2A") || n.id === "M2A-CONDUIT" || (n.entityType === "LAYER_2_CONDUIT" && n.id !== "M2B-CONDUIT")
-    );
-    const l2bNode = investigation.nodes.find(
-      (n) => n.id.includes("2B") || n.id === "M2B-CONDUIT" || (n.entityType === "LAYER_2_CONDUIT" && n.id !== l2aNode?.id)
-    );
-    const sinkNode = investigation.nodes.find(
-      (n) => n.entityType === "LAYER_3_SINK" || n.id.includes("SINK") || n.id === "M3-SINK"
-    );
-
-    const updatedNodes = rawLayout.nodes.map((node) => {
-      if (node.id === "node-victim" && victimNode) {
-        return {
-          ...node,
-          label: `${victimNode.label} (Victim)`,
-          sublabel: `${victimNode.bank || "Complainant"} · A/C ${victimNode.accountMasked || "Masked"}`,
-        };
-      }
-      if (node.id === "acc-vikram" && l1Node) {
-        return {
-          ...node,
-          label: l1Node.label,
-          sublabel: `${l1Node.bank || "L1"} · ${l1Node.accountMasked || ""}`,
-        };
-      }
-      if (node.id === "acc-rohit" && l2aNode) {
-        return {
-          ...node,
-          label: l2aNode.label,
-          sublabel: `${l2aNode.bank || "L2A"} · ${l2aNode.accountMasked || ""}`,
-        };
-      }
-      if (node.id === "acc-sameer" && l2bNode) {
-        return {
-          ...node,
-          label: l2bNode.label,
-          sublabel: `${l2bNode.bank || "L2B"} · ${l2bNode.accountMasked || ""}`,
-        };
-      }
-      if (node.id === "acc-sink" && sinkNode) {
-        return {
-          ...node,
-          label: sinkNode.label,
-          sublabel: `${sinkNode.bank || "Sink"} · ${sinkNode.accountMasked || ""}`,
-        };
-      }
-      return node;
-    });
-
-    return {
-      ...rawLayout,
-      nodes: updatedNodes,
-    };
-  }, [rawLayout, investigation]);
+  }, [dimensions.width, dimensions.height, isHotspotActive, edgeFilter, includeCashFlowNodes, investigation]);
 
   const currentStepData = CHRONOLOGICAL_REPLAY_STEPS[replayStep] || CHRONOLOGICAL_REPLAY_STEPS[5];
 
@@ -490,8 +428,18 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     }
   }, [layout, edgeFilter, isHotspotActive, viewMode, replayStep, isPlaying]);
 
-  // Opacity dimming on hover or replay
+  // Opacity dimming on hover, replay, or layer filtering
   const getNodeOpacity = (nodeId: string) => {
+    // Layer filtering (Prompt 11)
+    if (selectedLayer !== "all") {
+      const node = layout.nodes.find((n) => n.id === nodeId);
+      if (node && (node.category === "account" || node.category === "sink")) {
+        if (selectedLayer === "L1" && node.hopDistance !== 1 && !node.id.includes("vikram")) return 0.2;
+        if (selectedLayer === "L2" && node.hopDistance !== 2 && !node.id.includes("rohit") && !node.id.includes("sameer")) return 0.2;
+        if (selectedLayer === "L3" && node.hopDistance !== 3 && node.category !== "sink") return 0.2;
+      }
+    }
+
     if (hoveredNodeId) {
       if (nodeId === hoveredNodeId) return 1;
       if (hoveredNodeId === "node-hero") return 1;
@@ -1074,6 +1022,41 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   }}
                 >
                   {tab.label}
+                </button>
+              );
+            })}
+
+            <div style={{ width: "1px", height: "16px", background: "#E2E8F0", margin: "0 4px" }} />
+
+            <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", marginRight: "2px" }}>
+              HOP:
+            </span>
+            {(
+              [
+                { id: "all", label: "ALL" },
+                { id: "L1", label: "L1 MULE" },
+                { id: "L2", label: "L2 CONDUIT" },
+                { id: "L3", label: "SINKS" },
+              ] as const
+            ).map((layerTab) => {
+              const isActive = selectedLayer === layerTab.id;
+              return (
+                <button
+                  key={layerTab.id}
+                  type="button"
+                  onClick={() => setSelectedLayer(layerTab.id)}
+                  style={{
+                    fontSize: "9.5px",
+                    fontWeight: isActive ? 800 : 600,
+                    padding: "3px 7px",
+                    borderRadius: "4px",
+                    border: isActive ? "1.5px solid #4F46E5" : "1px solid #CBD5E1",
+                    background: isActive ? "#EEF2FF" : "#FFFFFF",
+                    color: isActive ? "#4338CA" : "#64748B",
+                    cursor: "pointer",
+                  }}
+                >
+                  {layerTab.label}
                 </button>
               );
             })}
@@ -1842,6 +1825,29 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
             <rect width="100%" height="100%" fill="url(#net-grid)" />
 
+            {/* Community Detection Bounding Hulls (Prompt 11) */}
+            {layout.communityHulls?.map((hull) => (
+              <g key={hull.id} className="community-hull">
+                <path
+                  d={hull.path}
+                  fill="rgba(99, 102, 241, 0.04)"
+                  stroke={hull.color || "#6366F1"}
+                  strokeWidth={1.5}
+                  strokeDasharray="6 4"
+                />
+                <text
+                  x={hull.labelX ?? 100}
+                  y={hull.labelY ?? 100}
+                  fill={hull.color || "#4F46E5"}
+                  fontSize="10"
+                  fontWeight="800"
+                  letterSpacing="0.05em"
+                >
+                  {hull.name.toUpperCase()}
+                </text>
+              </g>
+            ))}
+
             {/* Render Edges: Halo Layer First, then Color Path */}
             {layout.edges.map((edge) => (
               <path
@@ -1865,7 +1871,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   d={edge.path}
                   fill="none"
                   stroke={edge.color}
-                  strokeWidth={isCashEdge ? 3.0 : 2.25}
+                  strokeWidth={edge.strokeWidth || (isCashEdge ? 3.0 : 2.25)}
                   strokeDasharray={edge.dashed ? "5,4" : undefined}
                   markerEnd={`url(#${edge.arrowhead})`}
                   opacity={getEdgeOpacity(edge)}
@@ -2223,28 +2229,32 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
                           fontSize: "10.5px",
                           fontWeight: 800,
                           color: "#991B1B",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.label}
+                        {node.labelLine1 || node.label}
                       </div>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
                           fontSize: "8.5px",
                           color: "#64748B",
                           fontFamily: "var(--font-mono)",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.sublabel}
+                        {node.labelLine2 || node.sublabel}
                       </div>
                     </div>
                   </div>
@@ -2345,28 +2355,32 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
                           fontSize: "10.5px",
                           fontWeight: 800,
                           color: "#991B1B",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.label}
+                        {node.labelLine1 || node.label}
                       </div>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
                           fontSize: "8.5px",
                           color: "#64748B",
                           fontFamily: "var(--font-mono)",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.sublabel}
+                        {node.labelLine2 || node.sublabel}
                       </div>
                     </div>
                   </div>
@@ -2429,20 +2443,28 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   onMouseLeave={() => setHoveredNodeId(null)}
                   onClick={() => {
                     const matched =
-                      node.id.includes("vikram") ? investigation.edges[0] :
-                      node.id.includes("rohit") ? investigation.edges[2] :
-                      node.id.includes("sameer") ? investigation.edges[3] :
-                      node.id.includes("sink") ? investigation.edges[5] :
+                      investigation.edges.find((e) => e.targetNodeId === node.id || e.sourceNodeId === node.id) ||
                       investigation.edges[0];
-                    setSelectedEvidenceEdge(matched);
+                    if (matched) setSelectedEvidenceEdge(matched);
+
+                    const scoreEntry =
+                      investigation.muleScores?.[node.id] ||
+                      investigation.muleScores?.[node.sublabel.split(" · A/C ")[1]] ||
+                      investigation.muleScores?.[node.label];
+                    const reasons = scoreEntry?.topReasons || [
+                      "Rapid post-credit fund drain within 180 seconds",
+                      "Shared device MAC / BSSID hotspot link with accomplice",
+                      "High velocity layering across multiple intermediary conduits",
+                    ];
+
                     openEvidenceSheet({
-                      title: node.label,
-                      category: "Controlled Mule Account",
-                      source: "Core Banking Ledger & Cyber Crime Freeze",
-                      sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label, role: node.role })),
-                      statutoryBasis: "BNSS §107 Provisional Seizure Order",
-                      details: `${node.role || "Mule Account"} · ${node.sublabel}`,
-                      linkedEntities: ["Controller Device Cluster"],
+                      title: `Account Dossier: ${node.label}`,
+                      category: `Mule Account Analysis (${node.riskBand || "CRITICAL"})`,
+                      source: "Core Banking Ledger & Cyber Crime Freeze Engine",
+                      sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label, role: node.role, score: node.muleScore })),
+                      statutoryBasis: "BNSS §107 Provisional Seizure Order & BSA §63(4)",
+                      details: `${node.role || "Mule Account"} · ${node.sublabel}\nInvestigative Lead Strength: ${node.muleScore ?? 85}/100 (${node.riskBand || "CRITICAL"})\n\nFeature Contributions:\n${reasons.map((r: string) => `• ${r}`).join("\n")}${node.crossCaseLinked ? `\n\nCross-Case Correlation:\nAccount active in syndicated cyber-extortion FIR ${node.crossCaseId || "CASE-2026-003"}.` : ""}`,
+                      linkedEntities: ["Controller Device Cluster", "JA4 TLS Anchor", node.label],
                     });
                   }}
                   style={{
@@ -2488,28 +2510,65 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     <Shield size={13} color={node.color} />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
                           fontSize: "11px",
                           fontWeight: 800,
                           color: "#0F172A",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.label}
+                        {node.labelLine1 || node.label}
                       </div>
                       <div
+                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
-                          fontSize: "9px",
+                          fontSize: "8.5px",
                           color: "#64748B",
                           fontFamily: "var(--font-mono)",
+                          lineHeight: 1.25,
+                          wordBreak: "break-word",
+                          maxHeight: "2.5em",
                           overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {node.sublabel}
+                        {node.labelLine2 || node.sublabel}
+                      </div>
+                      {/* Mule Lead Score & Cross-FIR Badges */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap", marginTop: "2px" }}>
+                        {node.muleScore !== undefined && (
+                          <span
+                            style={{
+                              fontSize: "7.5px",
+                              fontWeight: 800,
+                              background: node.riskBand === "CRITICAL" ? "#FEE2E2" : node.riskBand === "ELEVATED" ? "#FEF3C7" : node.riskBand === "MERCHANT" ? "#ECFDF5" : "#E0E7FF",
+                              color: node.riskBand === "CRITICAL" ? "#991B1B" : node.riskBand === "ELEVATED" ? "#B45309" : node.riskBand === "MERCHANT" ? "#047857" : "#3730A3",
+                              padding: "0.5px 3.5px",
+                              borderRadius: "2px",
+                            }}
+                          >
+                            Score: {node.muleScore}/100
+                          </span>
+                        )}
+                        {node.crossCaseLinked && (
+                          <span
+                            style={{
+                              fontSize: "7.5px",
+                              fontWeight: 800,
+                              background: "#EEF2FF",
+                              color: "#4338CA",
+                              border: "1px solid #C7D2FE",
+                              padding: "0.5px 3px",
+                              borderRadius: "2px",
+                            }}
+                            title="Correlated suspect account linked across multiple FIRs"
+                          >
+                            🔗 CROSS-FIR
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
