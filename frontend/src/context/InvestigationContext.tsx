@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useCaseStore } from "../store/useCaseStore";
 import type { OperatingContext } from "../types/operatingContext";
 import { OperatingContextService } from "../services/operatingContextService";
 import { commandBus } from "../services/commandBusService";
@@ -189,7 +190,11 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [isOnboarding, setIsOnboarding] = useState<boolean>(!hasExistingSession);
   const [operatingContext, setOperatingContext] = useState<OperatingContext | null>(null);
-  const [activeCaseId, setActiveCaseId] = useState<string>(initialCaseParam || storedCaseId || "CASE-2026-001");
+  const storeCaseId = useCaseStore((s) => s.activeCaseId);
+  const activeCaseId = storeCaseId || initialCaseParam || storedCaseId || "";
+  const setActiveCaseId = useCallback((c: string) => {
+    useCaseStore.getState().setActiveCaseId(c);
+  }, []);
 
   const [activeNav, setActiveNavState] = useState<NavRoute>(
     (initialParams.get("nav") as NavRoute) || "investigations"

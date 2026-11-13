@@ -19,6 +19,11 @@ export interface MoneyFlowSankeyGraphProps {
   selectedRule: "LIBR" | "FIFO" | "PRO_RATA";
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
+  victimName?: string;
+  victimAccount?: string;
+  lossAmount?: number;
+  primaryMuleName?: string;
+  primaryMuleAccount?: string;
 }
 
 interface CustomNodeData {
@@ -48,6 +53,11 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
   onToggleInjectClean,
   selectedNodeId,
   onSelectNode,
+  victimName,
+  victimAccount,
+  lossAmount,
+  primaryMuleName,
+  primaryMuleAccount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -88,8 +98,8 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
       window.__tarkaViz = window.__tarkaViz || {};
       window.__tarkaViz.sankey = {
         stats: () => ({
-          totalLoss: 500000,
-          recoverable: 380000,
+          totalLoss: lossAmount || 500000,
+          recoverable: Math.round((lossAmount || 500000) * 0.76),
           freezeBudgetK,
           isInjectClean,
           nodeCount: isInjectClean ? 9 : 8,
@@ -97,25 +107,25 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
         }),
       };
     }
-  }, [freezeBudgetK, isInjectClean]);
+  }, [freezeBudgetK, isInjectClean, lossAmount]);
 
   // Nodes & Links Data
   const rawData = useMemo(() => {
     const rawNodes: CustomNodeData[] = [
       {
         id: "sunil",
-        name: "Sunil Kumar",
-        subname: "SBI 30910029101",
+        name: victimName || "Victim Account",
+        subname: victimAccount || "Victim Core Banking",
         category: "victim",
         treatment: "victim",
-        balance: 500000,
+        balance: lossAmount || 500000,
         statute: "Victim Origin",
         column: 0,
       },
       {
         id: "vikram",
-        name: "Vikram Shah",
-        subname: "SBI 41088291083",
+        name: primaryMuleName || "Primary Mule",
+        subname: primaryMuleAccount || "L1 Mule Nodal",
         category: "mule",
         treatment: "frozen",
         balance: 500000,

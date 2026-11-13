@@ -31,6 +31,7 @@ import { recoveryModel } from "../../utils/recoveryModel";
 import { sha256HexSync } from "../../utils/sha256";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
+import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSankeyGraph";
 import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDecayChart";
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
@@ -42,23 +43,17 @@ type TaintWorkspaceMode = "dag" | "orders";
 type FlowViewType = "sankey" | "dag";
 
 export const TaintEngineScreen: React.FC = () => {
-  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    const canonical = activeCaseId ? getCanonicalCase(activeCaseId) : null;
+    if (canonical) {
+      return buildCaseBundleFromFixture(canonical);
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [activeCaseId, reconstructedInvestigation]);
 
   // Active 2-Mode Workspace (Default: Mode 1 Interactive Taint DAG)
   const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<TaintWorkspaceMode>("dag");
@@ -79,7 +74,7 @@ export const TaintEngineScreen: React.FC = () => {
   // 5. Dynamic Engine State & Accounting Model
   const engineState = useMemo(() => {
     return CaseSyncBridge.getInstance().deriveCaseTaintData(
-      activeCaseId || "CASE-2026-001",
+      activeCaseId || "",
       investigation,
       isInjectClean,
       freezeBudgetK
@@ -87,8 +82,8 @@ export const TaintEngineScreen: React.FC = () => {
   }, [activeCaseId, investigation, isInjectClean, freezeBudgetK]);
 
   const recModel = useMemo(() => {
-    return recoveryModel(isInjectClean, freezeBudgetK);
-  }, [isInjectClean, freezeBudgetK]);
+    return recoveryModel(isInjectClean, freezeBudgetK, activeCaseId || undefined);
+  }, [isInjectClean, freezeBudgetK, activeCaseId]);
 
   // 7. Active BNSS Notice Selection (106 vs 107)
   const [selectedNoticeType, setSelectedNoticeType] = useState<"106" | "107">("106");
@@ -144,6 +139,7 @@ export const TaintEngineScreen: React.FC = () => {
 
   return (
     <div
+      data-case-id={activeCaseId || ""}
       className={`tarka-taint-root ${isCompact ? "tarka-density-compact" : ""}`}
       style={{
         display: "flex",
@@ -603,6 +599,11 @@ export const TaintEngineScreen: React.FC = () => {
                           selectedRule={selectedRule}
                           selectedNodeId={selectedNodeId}
                           onSelectNode={setSelectedNodeId}
+                          victimName={investigation.complainantName}
+                          lossAmount={investigation.bookedLossInr}
+                          primaryMuleName={l1Node?.label}
+                          primaryMuleAccount={l1Node?.bank ? `${l1Node.bank} ${l1Node.accountMasked}` : undefined}
+                          victimAccount={victimNode?.bank ? `${victimNode.bank} ${victimNode.accountMasked}` : undefined}
                         />
                       </div>
 
@@ -882,6 +883,8 @@ export const TaintEngineScreen: React.FC = () => {
                 selectedNodeId={selectedNodeId}
                 onCloseNodeDrawer={() => setSelectedNodeId(null)}
                 onOpenOrders={() => setActiveWorkspaceMode("orders")}
+                caseId={activeCaseId || undefined}
+                victimName={investigation.complainantName}
               />
             </SectionCard>
           </div>

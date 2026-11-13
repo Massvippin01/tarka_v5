@@ -43,6 +43,9 @@ import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
 import { forensicsApi } from "../../api/forensicsApi";
 import { ErrorBoundary } from "../common/ErrorBoundary";
+import { CANONICAL_CASES } from "../../fixtures/cases";
+import { CaseNotFoundScreen } from "../../pages/v5/CaseNotFoundScreen";
+import { CaseFingerprintDevOverlay } from "../common/CaseFingerprintDevOverlay";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -1360,6 +1363,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Popover.Trigger asChild>
                 <button
                   type="button"
+                  data-testid="case-switcher-button"
                   title={`Active Case: ${activeCase?.firNumber || "CASE"} · ${activeCase?.title || ""}`}
                   className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                   style={{
@@ -1380,7 +1384,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 >
                   <Shield size={12} color="#22D3EE" />
                   <span style={{ fontFamily: "var(--font-mono)" }}>
-                    {activeCase?.firNumber ? activeCase.firNumber.replace(/FIR #/i, "CASE-") : "CASE-001"}
+                    {activeCase ? `${activeCase.caseId} · ${activeCase.firNumber}` : (activeCaseId || "SWITCH CASE")}
                   </span>
                   <ChevronDown size={11} color="#94A3B8" />
                 </button>
@@ -1390,7 +1394,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="end"
                   sideOffset={6}
                   style={{
-                    width: "300px",
+                    width: "340px",
                     background: "#132238",
                     border: "1px solid rgba(255, 255, 255, 0.14)",
                     borderRadius: "10px",
@@ -1410,21 +1414,23 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     </span>
                     <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" dot={false} />
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "200px", overflowY: "auto" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "240px", overflowY: "auto" }}>
                     {caseWorkspaces.map((cw) => {
                       const isCurrent = cw.caseId === activeCaseId;
                       return (
                         <div
                           key={cw.caseId}
+                          data-case-option={cw.caseId}
                           onClick={() => {
-                            selectCaseWorkspace(cw.caseId, activeRoute === "workspace" ? "workspace" : cw.currentStage);
+                            const targetRoute = (activeRoute === "benchmarks" ? "intake" : activeRoute) as any;
+                            selectCaseWorkspace(cw.caseId, targetRoute);
                             setHeaderCaseOpen(false);
                           }}
                           style={{
                             display: "flex",
                             flexDirection: "column",
                             gap: "2px",
-                            padding: "6px 8px",
+                            padding: "8px 10px",
                             borderRadius: "6px",
                             background: isCurrent ? "rgba(6, 182, 212, 0.18)" : "rgba(255, 255, 255, 0.03)",
                             border: isCurrent ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid rgba(255, 255, 255, 0.06)",
@@ -1432,8 +1438,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#22D3EE" : "#CBD5E1" }}>
-                              {cw.firNumber}
+                            <span style={{ fontSize: "11px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#22D3EE" : "#CBD5E1" }}>
+                              {cw.caseId} · {cw.firNumber}
                             </span>
                             {cw.goldenHourRemainingMins > 0 ? (
                               <span style={{ fontSize: "9px", fontWeight: 700, color: "#FBBF24", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
@@ -1445,7 +1451,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                               </span>
                             ) : null}
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: "#F8FAFC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: "#F8FAFC" }}>
+                            {cw.complainantName || "Victim Unspecified"}
+                          </div>
+                          <div style={{ fontSize: "10.5px", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {cw.title}
                           </div>
                         </div>
@@ -2240,6 +2249,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <BenchmarkLabScreen />
               ) : activePage === "workspaces" || activeRoute === "workspace" ? (
                 <CaseWorkspaceScreen />
+              ) : !Boolean(
+                  !activeCaseId ||
+                  CANONICAL_CASES[activeCaseId] ||
+                  caseWorkspaces.some((c) => c.caseId === activeCaseId || (c as any).id === activeCaseId)
+                ) ? (
+                <CaseNotFoundScreen caseId={activeCaseId} />
               ) : (
                 <>
                   {activeRoute === "intake" && <IntakeScreen />}
@@ -2308,6 +2323,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           />
         </ErrorBoundary>
       </Suspense>
+
+      {/* Case Fingerprint Dev Overlay (Ctrl+Shift+D) */}
+      <CaseFingerprintDevOverlay />
     </div>
   );
 };

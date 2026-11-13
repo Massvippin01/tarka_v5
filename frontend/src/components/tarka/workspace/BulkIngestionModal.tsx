@@ -53,7 +53,7 @@ export const BulkIngestionModal: React.FC<BulkIngestionModalProps> = ({
 }) => {
   const { caseWorkspaces, ingestArtifactToCase, activeCaseId } = useTarkaGlobal();
 
-  const [selectedCaseId, setSelectedCaseId] = useState<string>(targetCaseId || activeCaseId || "CASE-2026-001");
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(targetCaseId || activeCaseId || "");
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const workerRef = useRef<Worker | null>(null);

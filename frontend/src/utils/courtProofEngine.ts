@@ -129,12 +129,15 @@ export function evaluateLeaveOneOut(
 
 import { computePhoneticReadout } from "./forensicCrypto";
 import { sha256HexSync, computeMerkleRootSync } from "./sha256";
+import { CANONICAL_CASES } from "../fixtures/cases";
 
 // 2. Generate BSA Section 63(4) Split Schedules
 export function generateBsa63SplitSchedules(caseId: string): Bsa63Schedules {
+  const canonical = CANONICAL_CASES[caseId];
+  const complainantName = canonical?.complainant?.name || "Sunil Kumar";
   const cbsDigest = sha256HexSync(`SBI_FINACLE_10_CBS_STATEMENT_${caseId}`);
   return {
-    partA_Handset: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (CUSTODIAN OF PRIMARY HANDSET)\n\nI, Sunil Kumar, residing at Flat 402, Sector 62, Noida, do hereby certify that:\n1. I am the lawful owner and registered subscriber of the cellular device Samsung Galaxy M34 (IMEI: 867492061234567).\n2. The digital screenshots and call recording files submitted to the Investigating Officer on 22-09-2026 were extracted directly from the aforesaid handset in regular course without hardware or software alteration.\n\nDATED: 22-09-2026\nSIGNATURE: [SUNIL KUMAR - COMPLAINANT]`,
+    partA_Handset: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (CUSTODIAN OF PRIMARY HANDSET)\n\nI, ${complainantName}, residing at Flat 402, Sector 62, Noida, do hereby certify that:\n1. I am the lawful owner and registered subscriber of the cellular device Samsung Galaxy M34 (IMEI: 867492061234567).\n2. The digital screenshots and call recording files submitted to the Investigating Officer on 22-09-2026 were extracted directly from the aforesaid handset in regular course without hardware or software alteration.\n\nDATED: 22-09-2026\nSIGNATURE: [${complainantName.toUpperCase()} - COMPLAINANT]`,
 
     partA_BankNodal: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (BANK NODAL CBS SYSTEM ADMINISTRATOR)\n\nI, R. K. Sharma, Chief Manager (Systems), State Bank of India, Global IT Centre, do hereby solemnly certify that:\n1. The electronic account statements for Account No. 30910029101 and 41088291083 were produced by our central Core Banking System (Finacle 10.x).\n2. The Finacle database servers operated under cryptographic write-once audit logging (NTP-synchronized within ±2ms to NPL India time).\n3. SHA-256 Digest: ${cbsDigest}\n\nDATED: 23-09-2026\nSIGNATURE: [R. K. SHARMA - SBI NODAL]`,
 

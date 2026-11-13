@@ -177,10 +177,9 @@ SUBJECT: DEMAND FOR CERTIFIED RAW UPI 2.0 SWITCH XML LOGS & TLS FINGERPRINTS.
 Sir/Madam,
 In ongoing investigation of FIR No. ${fixture.firNumber}, kindly furnish certified electronic records under Section 63(4) BSA 2023 for the following UPI switch transactions:
 
-- Transaction RRN: 626509188410 (₹2,85,000.00 at 09:14:22 IST)
-- Transaction RRN: 626509188411 (₹2,15,000.00 at 09:18:05 IST)
-- Source VPA: quicktransfer.nodal@axisbank
-- Payer: Sunil Kumar | Payee: Vikram Shah
+- Transaction RRN: ${fixture.transactions[0]?.rrn || "626509188410"} (${formatInr(fixture.transactions[0]?.amount || bookedLoss)} at ${fixture.transactions[0]?.timestampIst?.split(" ")[1] || "09:14:22"} IST)
+- Source VPA: ${fixture.transactions[0]?.fromVpa || "quicktransfer.nodal@axisbank"}
+- Payer: ${fixture.complainant.name} | Payee: ${fixture.accounts.find(a => a.holderType === "LAYER_1_MULE")?.holderName || "Primary Mule"}
 
 Required Records:
 1. Verbatim raw switch XML stanzas including <Device> and <Payer> XML payloads.
@@ -267,7 +266,7 @@ Investigating Officer, Cyber Crime PS Noida`,
   };
 
   return (
-    <div style={{ background: "#F8FAFC", minHeight: "100vh", color: "#0F172A", fontFamily: "var(--font-sans, system-ui)" }}>
+    <div data-case-id={caseId} style={{ background: "#F8FAFC", minHeight: "100vh", color: "#0F172A", fontFamily: "var(--font-sans, system-ui)" }}>
       {/* =========================================================================
           PRINT STYLESHEET (ENFORCES CRISP LIGHT A4 WITHOUT UI CHROME)
           ========================================================================= */}
@@ -611,7 +610,7 @@ Investigating Officer, Cyber Crime PS Noida`,
           </div>
 
           <p style={{ fontSize: "11px", lineHeight: 1.6, color: "#334155", margin: 0 }}>
-            <b>Executive Finding:</b> Investigation establishes that on 22-Sep-2026, complainant Sunil Kumar suffered an unauthorized aggregate drain of <b>{formatInr(bookedLoss)}</b> from his State Bank of India salary account. Stolen capital was systematically layered through primary mule Vikram Shah (Axis Bank) within 112 seconds, subsequently fanned out into ICICI Bank (Rohit Sharma - L2 Conduit), State Bank of India (Sameer Khan - L2 Conduit), commercial escrow (QuickPay), and an unrecoverable cash withdrawal of <b>{formatInr(unrecoverableCashout)}</b> at Rohini Sector-4 ATM DL-049. Golden-hour window status remains active with <b>{goldenHourMins} minutes</b> remaining for statutory lien execution.
+            <b>Executive Finding:</b> Investigation establishes that on 22-Sep-2026, complainant {fixture.complainant.name} suffered an unauthorized aggregate drain of <b>{formatInr(bookedLoss)}</b> from their {fixture.complainant.bank} account. Stolen capital was systematically layered through primary mule {fixture.accounts.find(a => a.holderType === "LAYER_1_MULE")?.holderName || "Primary Mule"} ({fixture.accounts.find(a => a.holderType === "LAYER_1_MULE")?.bank || "Mule Bank"}) within 112 seconds, subsequently fanned out into conduit accounts, commercial escrow, and an unrecoverable cash withdrawal of <b>{formatInr(unrecoverableCashout)}</b>. Golden-hour window status remains active with <b>{goldenHourMins} minutes</b> remaining for statutory lien execution.
           </p>
         </section>
 
@@ -673,15 +672,15 @@ Investigating Officer, Cyber Crime PS Noida`,
               <text x="605" y="38" fill="#047857" fontSize="8" fontWeight="800">UPI ₹1.80L</text>
               <text x="605" y="120" fill="#6D28D9" fontSize="8" fontWeight="800">CASH ₹1.20L</text>
 
-              {/* Node 1: Victim Sunil */}
+              {/* Node 1: Victim */}
               <rect x="15" y="50" width="110" height="50" rx="5" fill="#FFFFFF" stroke="#DC2626" strokeWidth="1.5" />
-              <text x="70" y="70" textAnchor="middle" fill="#991B1B" fontSize="10" fontWeight="900">Sunil Kumar</text>
-              <text x="70" y="85" textAnchor="middle" fill="#64748B" fontSize="8" fontFamily="monospace">SBI · Loss ₹5.00L</text>
+              <text x="70" y="70" textAnchor="middle" fill="#991B1B" fontSize="10" fontWeight="900">{fixture.complainant.name}</text>
+              <text x="70" y="85" textAnchor="middle" fill="#64748B" fontSize="8" fontFamily="monospace">{fixture.complainant.bank.split(" ")[0]} · Loss {formatInr(bookedLoss)}</text>
 
-              {/* Node 2: L1 Mule Vikram */}
+              {/* Node 2: L1 Mule */}
               <rect x="260" y="50" width="110" height="50" rx="5" fill="#FFFFFF" stroke="#E11D48" strokeWidth="1.5" />
-              <text x="315" y="70" textAnchor="middle" fill="#0F172A" fontSize="10" fontWeight="900">Vikram Shah</text>
-              <text x="315" y="85" textAnchor="middle" fill="#E11D48" fontSize="8" fontWeight="800">L1 Mule · Axis Bank</text>
+              <text x="315" y="70" textAnchor="middle" fill="#0F172A" fontSize="10" fontWeight="900">{fixture.accounts.find(a => a.holderType === "LAYER_1_MULE")?.holderName || "Primary Mule"}</text>
+              <text x="315" y="85" textAnchor="middle" fill="#E11D48" fontSize="8" fontWeight="800">L1 Mule · {fixture.accounts.find(a => a.holderType === "LAYER_1_MULE")?.bank || "Mule Bank"}</text>
 
               {/* Node 3A: L2 Conduit Rohit */}
               <rect x="470" y="20" width="110" height="48" rx="5" fill="#FFFFFF" stroke="#D97706" strokeWidth="1.5" />

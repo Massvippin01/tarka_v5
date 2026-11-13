@@ -23,6 +23,7 @@ import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { buildCase002Bundle, buildCase003Bundle } from "../../services/caseSyncBridge";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 export const FraudNetworkScreen: React.FC = () => {
@@ -33,6 +34,9 @@ export const FraudNetworkScreen: React.FC = () => {
   const investigation = useMemo(() => {
     if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
       return reconstructedInvestigation;
+    }
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
     }
     if (activeCaseId === "CASE-2026-002") {
       return buildCase002Bundle();
@@ -95,6 +99,7 @@ Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84)
   return (
     <div
       className={`tarka-fraud-network-root ${isCompact ? "tarka-density-compact" : ""}`}
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

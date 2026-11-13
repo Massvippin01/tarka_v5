@@ -3,6 +3,7 @@ import { computePhoneticReadout, type ChainOfCustodyRecord } from "../utils/fore
 import { sha256HexSync } from "../utils/sha256";
 import { CaseSyncBridge } from "../services/caseSyncBridge";
 import { useTarkaUiStore } from "../store/useTarkaUiStore";
+import { useCaseStore } from "../store/useCaseStore";
 
 export type ActiveRoute =
   | "workspace"
@@ -661,12 +662,15 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } else {
       useTarkaUiStore.getState().setActivePage("workbench");
     }
-    syncTarkaUrl(activeCaseId, route);
+    const currentCase = useCaseStore.getState().activeCaseId || activeCaseId;
+    useCaseStore.getState().setActiveView(route);
+    syncTarkaUrl(currentCase, route);
   }, [activeCaseId]);
 
   const setActiveCaseId = useCallback((caseId: string) => {
     setActiveCaseIdState(caseId);
     setEvidenceModalTargetCaseId(caseId);
+    useCaseStore.getState().setActiveCaseId(caseId);
     const currentPage = useTarkaUiStore.getState().activePage;
     const view = currentPage === "benchmark" ? "benchmarks" : activeRoute;
     syncTarkaUrl(caseId, view);
@@ -674,11 +678,15 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Multi-Case Action: Select Workspace and Transition to Stage
   const selectCaseWorkspace = useCallback((caseId: string, navigateToStage?: ActiveRoute) => {
-    setActiveCaseId(caseId);
+    setActiveCaseIdState(caseId);
+    setEvidenceModalTargetCaseId(caseId);
+    useCaseStore.getState().setActiveCaseId(caseId);
     const targetCase = caseWorkspaces.find((c) => c.caseId === caseId);
     const dest = navigateToStage || targetCase?.currentStage || "intake";
-    setActiveRoute(dest);
-  }, [caseWorkspaces, setActiveCaseId, setActiveRoute]);
+    setActiveRouteState(dest);
+    useCaseStore.getState().setActiveView(dest);
+    syncTarkaUrl(caseId, dest);
+  }, [caseWorkspaces]);
 
   // Multi-Case Action: Create New Workspace
   const createNewCaseWorkspace = useCallback(

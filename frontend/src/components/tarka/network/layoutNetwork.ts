@@ -997,8 +997,8 @@ export function layoutNetwork(
     const victimH = 54;
     nodes.push({
       id: "node-victim",
-      label: "Sunil Kumar (Victim)",
-      sublabel: "SBI A/C 30910029101 · Outflow: ₹5.00L",
+      label: `${investigation?.complainantName || "Victim"} (Victim)`,
+      sublabel: `Outflow: ₹${(investigation?.bookedLossInr || 500000).toLocaleString("en-IN")}`,
       role: "Victim Remitter Account",
       category: "victim",
       cx: cxVictim,

@@ -51,5 +51,9 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['e2e/**', 'node_modules/**'],
+    },
   }
 })

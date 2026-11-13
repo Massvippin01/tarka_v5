@@ -22,7 +22,7 @@ import { InspectorDock } from "../../components/tarka/intake/InspectorDock";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
-import { getCanonicalCase } from "../../fixtures/cases";
+import { getCanonicalCase, CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { formatInr } from "../../utils/formatters";
 import { sha256HexSync } from "../../utils/sha256";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
@@ -31,23 +31,19 @@ export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
   useOverflowGuard();
 
-  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, setActiveRoute } = useTarkaGlobal();
   const { setActiveDockTab, density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const isRow14Tampered = !!mutations.alterBankRow14;
   const isForgedRrn = !!mutations.forgeRrnTimestamp;
@@ -268,6 +264,7 @@ export const IntakeScreen: React.FC = () => {
   return (
     <div
       className="tarka-intake-root"
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

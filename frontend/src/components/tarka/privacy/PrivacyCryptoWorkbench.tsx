@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -16,6 +16,7 @@ import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { CaseSyncBridge } from "../../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../../fixtures/cases";
 import { StoryBanner, KpiTile } from "../kit";
 import { sha256HexSync } from "../../../utils/sha256";
 
@@ -26,8 +27,14 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   const currentCase = activeCase;
 
   const investigation = useMemo(() => {
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
+    }
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
     return reconstructedInvestigation || reconstruct5FileInvestigation();
-  }, [reconstructedInvestigation]);
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const consortium = useMemo(() => {
     return CaseSyncBridge.getInstance().deriveCasePrivacyConsortium(
@@ -63,7 +70,11 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   // ============================================================================
   // TAB 2: ZERO-KNOWLEDGE PROOF (ZKP) STATE
   // ============================================================================
-  const [zkpThreshold, setZkpThreshold] = useState<number>(500000); // ₹5,00,000
+  const caseBookedLoss = investigation.bookedLossInr || 500000;
+  const [zkpThreshold, setZkpThreshold] = useState<number>(caseBookedLoss);
+  useEffect(() => {
+    setZkpThreshold(caseBookedLoss);
+  }, [caseBookedLoss]);
   const [zkpTamperProof, setZkpTamperProof] = useState<boolean>(false);
   const [zkpTamperThreshold, setZkpTamperThreshold] = useState<boolean>(false);
   const [showPrivateWitness, setShowPrivateWitness] = useState<boolean>(false);
@@ -119,6 +130,7 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
 
   return (
     <div
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

@@ -415,7 +415,11 @@ export class CaseSyncBridge {
       return buildDynamicCaseBundle(caseMetadata);
     }
 
-    return reconstruct5FileInvestigation();
+    if (caseId === "CASE-2026-001") {
+      return reconstruct5FileInvestigation();
+    }
+
+    throw new Error(`Case not found: ${caseId}`);
   }
 
   /**

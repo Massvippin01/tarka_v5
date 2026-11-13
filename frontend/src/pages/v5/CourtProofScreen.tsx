@@ -40,27 +40,25 @@ import {
 } from "../../utils/statutoryDirectives";
 import { TransformationAuditLog } from "../../components/tarka/investigation/TransformationAuditLog";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
+import { formatInr } from "../../utils/formatters";
 
 type DossierTab = "loo" | "certificates" | "syndicate" | "transformation";
 
 export const CourtProofScreen: React.FC = () => {
-  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { activeCaseId } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const dynamicArtifacts = useMemo(() => {
     return CaseSyncBridge.getInstance().deriveCaseCourtArtifacts(activeCaseId || "CASE-2026-001", investigation);
@@ -131,11 +129,18 @@ export const CourtProofScreen: React.FC = () => {
     }
   };
 
+  const bookedLoss = investigation.bookedLossInr || 500000;
+  const claimedLoss = investigation.claimedLossInr || 300000;
+  const delta = bookedLoss - claimedLoss;
+  const deltaLabel = delta > 0 ? `${formatInr(delta)} Hidden CBS Debit` : `${formatInr(bookedLoss)} Verified CBS Debit`;
+  const recoverableLienVal = investigation.recoverableLibrInr || 380000;
+  const lienLabel = `${formatInr(recoverableLienVal)} Proportional Merchant Lien`;
+
   // Support matrix: 5 Material Findings x 5 Ingested Artifacts
-  const claimsMatrix = [
+  const claimsMatrix = useMemo(() => [
     {
       id: "c1",
-      name: "1. ₹2.00L Hidden CBS Debit",
+      name: `1. ${deltaLabel}`,
       supports: {
         "art-victim-screenshot": "CORROBORATIVE",
         "art-sbi-cbs": "PRIMARY",
@@ -179,7 +184,7 @@ export const CourtProofScreen: React.FC = () => {
     },
     {
       id: "c5",
-      name: "5. ₹1.80L Proportional Merchant Lien",
+      name: `5. ${lienLabel}`,
       supports: {
         "art-victim-screenshot": "NONE",
         "art-sbi-cbs": "PRIMARY",
@@ -188,7 +193,7 @@ export const CourtProofScreen: React.FC = () => {
         "art-whatsapp": "NONE",
       },
     },
-  ];
+  ], [deltaLabel, lienLabel]);
 
   const getClaimSupportForArtifact = useCallback((
     claim: typeof claimsMatrix[0],
@@ -246,8 +251,8 @@ export const CourtProofScreen: React.FC = () => {
     if (activeBsaTab === "bank") return bsaSchedules.partA_BankNodal;
     if (activeBsaTab === "isp") return bsaSchedules.partA_IspRouter;
     if (activeBsaTab === "handset") return bsaSchedules.partA_Handset;
-    if (activeBsaTab === "bnss106") return getBnss106PoliceSpecificLienNotice();
-    return getBnss107JudicialAttachmentApplication();
+    if (activeBsaTab === "bnss106") return getBnss106PoliceSpecificLienNotice(activeCaseId || undefined);
+    return getBnss107JudicialAttachmentApplication(activeCaseId || undefined);
   }, [activeBsaTab, bsaSchedules]);
 
   const [isScheduleCopied, setIsScheduleCopied] = useState(false);
@@ -291,6 +296,7 @@ export const CourtProofScreen: React.FC = () => {
   return (
     <div
       className={`tarka-court-root ${isCompact ? "tarka-density-compact" : ""}`}
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

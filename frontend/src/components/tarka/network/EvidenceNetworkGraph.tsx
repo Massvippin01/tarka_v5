@@ -29,6 +29,8 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { buildCase002Bundle, buildCase003Bundle } from "../../../services/caseSyncBridge";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../../fixtures/cases";
+import { formatInr } from "../../../utils/formatters";
 import { sha256HexSync, canonicalJson } from "../../../utils/sha256";
 
 export type EdgeFilterType = "all" | "cashflow" | "tether" | "ja4" | "caf" | "c2";
@@ -222,6 +224,168 @@ export const CHRONOLOGICAL_REPLAY_STEPS: ReplayStepData[] = [
   },
 ];
 
+export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayStepData[] {
+  if (caseId === "CASE-2026-001" || !canonicalCase) {
+    return CHRONOLOGICAL_REPLAY_STEPS;
+  }
+  const victim = canonicalCase.complainant?.name || "Victim";
+  const lossFormatted = formatInr(canonicalCase.financials?.bookedLossInr || 500000);
+  const l1Mule = canonicalCase.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE")?.holderName || "Primary Mule";
+  const l2Mule = canonicalCase.accounts?.find((a: any) => a.holderType === "LAYER_2_CONDUIT")?.holderName || "Intermediary Mule";
+  const merchant = canonicalCase.accounts?.find((a: any) => a.holderType === "BONA_FIDE_MERCHANT")?.holderName || "Commercial Merchant";
+  const bank = canonicalCase.complainant?.bank || "Core Banking";
+  const acc = canonicalCase.complainant?.accountMasked || "A/c";
+  const station = canonicalCase.policeStation || "Cyber Crime Police Station";
+  const recoverable = formatInr(canonicalCase.financials?.recoverableLibrInr || Math.round((canonicalCase.financials?.bookedLossInr || 500000) * 0.75));
+
+  return [
+    {
+      step: 0,
+      phaseId: "sim-swap",
+      timeLabel: "T - 16m",
+      clockTime: "09:44:00 IST",
+      title: "PRE-ATTACK BTS REGISTRATION & RECONNAISSANCE",
+      headline: `Pre-attack surveillance and account reconnaissance on victim ${victim}`,
+      narrative: `Attacker executes unauthorized credential and SIM reconnaissance targeting victim ${victim} (${canonicalCase.complainant?.phone || "+91-98711-23941"}). Attacker hijacks authentication channel before bank alert triggers.`,
+      amount: "—",
+      statutory: "DoT License Clause 39.20 & Telco BTS Stratum-2",
+      activeNodeIds: ["node-tower", "node-victim"],
+      activeEdgeIds: ["edge-tower-hero"],
+      muleBalances: {
+        "node-victim": { balance: lossFormatted, note: `Victim Balance (${bank} ${acc})`, tone: "slate" },
+        "acc-vikram": { balance: "₹0", note: "L1 Primary Mule Standby", tone: "slate" },
+        "acc-rohit": { balance: "₹0", note: "L2A Conduit Standby", tone: "slate" },
+        "acc-sameer": { balance: "₹0", note: "L2B Conduit Standby", tone: "slate" },
+        "acc-sink": { balance: "₹0", note: "Escrow Sink Standby", tone: "slate" },
+        "node-atm": { balance: "₹0", note: "ATM Terminal Standby", tone: "slate" },
+      },
+    },
+    {
+      step: 1,
+      phaseId: "primary-inflow",
+      timeLabel: "T + 00m",
+      clockTime: "10:00:14 IST",
+      title: "PRIMARY FRAUDULENT INFLOW (VICTIM → L1 MULE)",
+      headline: `Victim ${victim} debited ${lossFormatted} via ${bank} to primary mule ${l1Mule}`,
+      narrative: `Victim ${victim} (${bank} ${acc}) is fraudulently debited ${lossFormatted}. Funds credit instantly into L1 primary mule ${l1Mule}. NPCI Central Switch captures device telemetry.`,
+      amount: lossFormatted,
+      statutory: "BSA §63(4) Electronic Stanza & NPCI Central Switch T1",
+      activeNodeIds: ["node-victim", "acc-vikram"],
+      activeEdgeIds: ["edge-cash-victim-vikram"],
+      muleBalances: {
+        "node-victim": { balance: "₹0", change: `-${lossFormatted}`, note: "Debited via Core Banking", tone: "rose" },
+        "acc-vikram": { balance: lossFormatted, change: `+${lossFormatted}`, note: `Credited in Full (${l1Mule})`, tone: "emerald" },
+        "acc-rohit": { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
+        "acc-sameer": { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
+        "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
+        "node-atm": { balance: "₹0", note: "ATM Standby", tone: "slate" },
+      },
+    },
+    {
+      step: 2,
+      phaseId: "ap-binding",
+      timeLabel: "T + 04m",
+      clockTime: "10:04:12 IST",
+      title: "HOTSPOT TETHERING & JA4 TLS AP BINDING",
+      headline: `Accomplice Wi-Fi Hotspot binds mule banking sessions simultaneously`,
+      narrative: `Controller Device Cluster activates portable Wi-Fi AP. Packet Gateway confirms decremented TTL=63 (-1 hop). Identical client TLS fingerprint across banking sessions proves single physical operator.`,
+      amount: "—",
+      statutory: "ISO/IEC 27037 & DoT License Clause 39.20 (TTL=63 Corroboration)",
+      activeNodeIds: ["node-hero", "hub-tether", "hub-ja4", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink"],
+      activeEdgeIds: [
+        "edge-hero-tether",
+        "edge-tether-vikram",
+        "edge-tether-rohit",
+        "edge-tether-sameer",
+        "edge-tether-sink",
+        "edge-hero-ja4",
+        "edge-ja4-vikram",
+        "edge-ja4-rohit",
+        "edge-ja4-sameer",
+        "edge-ja4-sink",
+      ],
+      muleBalances: {
+        "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
+        "acc-vikram": { balance: lossFormatted, note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "emerald" },
+        "acc-rohit": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
+        "acc-sameer": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
+        "acc-sink": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
+        "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
+      },
+    },
+    {
+      step: 3,
+      phaseId: "fan-out",
+      timeLabel: "T + 09m",
+      clockTime: "10:09:45 IST",
+      title: "RAPID LAYERING FAN-OUT (L1 → L2A & L2B)",
+      headline: `${l1Mule} fans out ${lossFormatted} rapidly to intermediary accounts (${l2Mule})`,
+      narrative: `${l1Mule} disperses ${lossFormatted} across intermediary accounts including ${l2Mule}. Deliberate layering fan-out orchestrated to evade immediate single-account lien limits.`,
+      amount: lossFormatted,
+      statutory: "CBS Core Banking Ledgers & Switch Telemetry",
+      activeNodeIds: ["acc-vikram", "acc-rohit", "acc-sameer"],
+      activeEdgeIds: ["edge-cash-vikram-rohit", "edge-cash-vikram-sameer"],
+      muleBalances: {
+        "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
+        "acc-vikram": { balance: "₹0", change: `-${lossFormatted}`, note: "Fully Dispersed to Layer 2 Mules", tone: "amber" },
+        "acc-rohit": { balance: "Intermediary Hold", change: "+Layering", note: `Credited ${l2Mule}`, tone: "emerald" },
+        "acc-sameer": { balance: "Secondary Hold", change: "+Layering", note: "Credited Intermediary", tone: "emerald" },
+        "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
+        "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
+      },
+    },
+    {
+      step: 4,
+      phaseId: "cashout-sink",
+      timeLabel: "T + 18m",
+      clockTime: "10:18:22 IST",
+      title: "IMMEDIATE PHYSICAL CASHOUT & ESCROW SINK",
+      headline: `Mule syndicate executes cashout and merchant terminal transfers (${merchant})`,
+      narrative: `Mule accounts execute cash withdrawals and swipe transactions via ${merchant} POS terminals to conceal asset trail before cyber police intercept.`,
+      amount: lossFormatted,
+      statutory: "ATM Electronic Journal & CCTV Log · Merchant Escrow Ledger",
+      activeNodeIds: ["acc-sameer", "node-atm", "acc-rohit", "acc-sink"],
+      activeEdgeIds: ["edge-cash-sameer-atm", "edge-cash-rohit-sink"],
+      muleBalances: {
+        "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
+        "acc-vikram": { balance: "₹0", note: "Exhausted", tone: "slate" },
+        "acc-rohit": { balance: "Partial Hold", change: "-Escrow", note: "Remaining in Account", tone: "amber" },
+        "acc-sameer": { balance: "Partial Hold", change: "-ATM", note: "Remaining in Account", tone: "amber" },
+        "acc-sink": { balance: "Escrow Hold", change: "+Escrow", note: `Locked in ${merchant} Escrow`, tone: "indigo" },
+        "node-atm": { balance: "Withdrawn", change: "Cash Out", note: "Physical Currency Dispensed", tone: "rose" },
+      },
+    },
+    {
+      step: 5,
+      phaseId: "freeze-secured",
+      timeLabel: "T + 2.5h",
+      clockTime: "10:30:00 IST",
+      title: "STATUTORY FREEZE & LIBR RECOVERY (BNSS §106/§107)",
+      headline: `Section 106/107 BNSS freeze executed; ${recoverable} secured under Clayton's Case LIBR rule`,
+      narrative: `${station} transmits emergency provisional debit freezes under BNSS §106/§107. Clayton's Case Lowest Intermediate Balance Rule (LIBR) legally binds recoverable assets. Net recovered: ${recoverable} / ${lossFormatted}.`,
+      amount: `${recoverable} Secured (Restitution Ready)`,
+      statutory: "BNSS §106/§107 & BSA §63 Electronic Admissibility Protocol",
+      recoverySummary: `${recoverable} SECURED (RESTITUTION READY UNDER LIBR DOCTRINE)`,
+      activeNodeIds: ["node-victim", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink", "node-atm"],
+      activeEdgeIds: [
+        "edge-cash-victim-vikram",
+        "edge-cash-vikram-rohit",
+        "edge-cash-vikram-sameer",
+        "edge-cash-sameer-atm",
+        "edge-cash-rohit-sink",
+      ],
+      muleBalances: {
+        "node-victim": { balance: recoverable, note: "Secured for Restitution", tone: "emerald" },
+        "acc-vikram": { balance: "₹0 (Frozen)", note: "BNSS §107 Debit Freeze", tone: "slate" },
+        "acc-rohit": { balance: "Frozen", note: "BNSS §107 Debit Freeze", tone: "emerald" },
+        "acc-sameer": { balance: "Frozen", note: "BNSS §107 Debit Freeze", tone: "emerald" },
+        "acc-sink": { balance: "Liened", note: "Merchant Escrow Lien Secured", tone: "emerald" },
+        "node-atm": { balance: "Withdrawn", note: "CCTV Physical Evidence Seized", tone: "rose" },
+      },
+    },
+  ];
+}
+
 export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   isHotspotActive,
   onToggleHotspot,
@@ -245,6 +409,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const investigation = useMemo(() => {
     if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
       return reconstructedInvestigation;
+    }
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
     }
     if (activeCaseId === "CASE-2026-002") {
       return buildCase002Bundle();
@@ -347,7 +514,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     );
   }, [dimensions.width, dimensions.height, isHotspotActive, edgeFilter, includeCashFlowNodes, investigation]);
 
-  const currentStepData = CHRONOLOGICAL_REPLAY_STEPS[replayStep] || CHRONOLOGICAL_REPLAY_STEPS[5];
+  const caseId = activeCaseId || "CASE-2026-001";
+  const canonicalCase = (activeCaseId && CANONICAL_CASES[activeCaseId]) ? CANONICAL_CASES[activeCaseId] : CANONICAL_CASES["CASE-2026-001"];
+  const replaySteps = useMemo(() => {
+    return getCaseReplaySteps(caseId, canonicalCase);
+  }, [caseId, canonicalCase]);
+  const currentStepData = replaySteps[replayStep] || replaySteps[5] || CHRONOLOGICAL_REPLAY_STEPS[5];
 
   // Replay playback timer
   useEffect(() => {
@@ -493,6 +665,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       ref={containerRef}
       className="hero-canvas-container"
       data-testid="hero-canvas"
+      data-case-id={caseId}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -1576,7 +1749,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap" }}>
             {[
               { idx: 0, label: "0: SIM SWAP" },
-              { idx: 1, label: "1: INFLOW ₹5L" },
+              { idx: 1, label: `1: INFLOW ${investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "FUNDS"}` },
               { idx: 2, label: "2: AP BIND" },
               { idx: 3, label: "3: FAN-OUT" },
               { idx: 4, label: "4: CASHOUT" },
@@ -2179,18 +2352,22 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   tabIndex={0}
                   onMouseEnter={() => setHoveredNodeId(node.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() =>
+                  onClick={() => {
+                    const vName = canonicalCase?.complainant?.name || node.label || "Victim";
+                    const vBank = canonicalCase?.complainant?.bank || (node as any).bank || "Bank";
+                    const fir = canonicalCase?.firNumber || "FIR";
+                    const lossStr = canonicalCase ? formatInr(canonicalCase.financials.bookedLossInr) : "Booked Loss";
+                    const l1Mule = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE")?.holderName || "L1 Mule";
                     openEvidenceSheet({
-                      title: "Victim Sunil Kumar (SBI Account)",
+                      title: `Victim ${vName} (${vBank} Account)`,
                       category: "Crime Inception / Complainant",
-                      source: "NCRP 1930 Helpline & SBI Core Banking RRN 42910029101",
+                      source: `${canonicalCase?.ncrpAckNo || "NCRP 1930 Helpline"} & ${vBank} Core Banking`,
                       sha256: "01c77f0a8c29341098bca44019488a09b3019f",
-                      statutoryBasis: "FIR #149/2026 U/S 66D IT Act & 318(4) BNS",
-                      details:
-                        "Victim reported immediate unauthorized debits following a SIM-swap phishing call. Initial loss ₹5,00,000.",
-                      linkedEntities: ["Vikram Shah (L1 Mule)"],
-                    })
-                  }
+                      statutoryBasis: `FIR #${fir} U/S 66D IT Act & 318(4) BNS`,
+                      details: `Victim reported unauthorized debits following cyber-extortion fraud. Initial booked loss ${lossStr}.`,
+                      linkedEntities: [l1Mule],
+                    });
+                  }}
                   style={{
                     position: "absolute",
                     left: node.x,
@@ -2282,7 +2459,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         fontWeight: 700,
                       }}
                     >
-                      Loss: ₹5.00L
+                      Loss: {investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Loss Recorded"}
                     </span>
                   </div>
                 </div>
@@ -2667,7 +2844,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 {
                   vector: "UPI 2.0 Inflow & Dispersal Flow",
                   type: "Financial Ledgers",
-                  m1: "₹5.00L Inflow",
+                  m1: `${investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Inflow"} Inflow`,
                   m2a: "₹3.00L Split",
                   m2b: "₹2.00L Split",
                   sink: "₹1.80L Escrow",

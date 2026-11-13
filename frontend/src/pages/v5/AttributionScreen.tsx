@@ -33,25 +33,22 @@ import {
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { sha256HexSync } from "../../utils/sha256";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 
 export const AttributionScreen: React.FC = () => {
-  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   // Interactive Z3 SMT Clock-Offset State (-5.0s to +5.0s, NTP sync default = 0.0s)
   const [clockOffset, setClockOffset] = useState<number>(0.0);
@@ -96,7 +93,7 @@ export const AttributionScreen: React.FC = () => {
   };
 
   const handleCopyDotDirective = () => {
-    const directiveText = getDot3920PortBlockDirective();
+    const directiveText = getDot3920PortBlockDirective(activeCaseId || undefined);
     navigator.clipboard.writeText(directiveText);
     setIsDirectiveCopied(true);
     toast.success("DoT Clause 39.20 Requisition copied to clipboard!");
@@ -104,7 +101,7 @@ export const AttributionScreen: React.FC = () => {
   };
 
   const handleCopyImeiDirective = () => {
-    const directiveText = getBnss94ImeiSeizureDirective();
+    const directiveText = getBnss94ImeiSeizureDirective(activeCaseId || undefined);
     navigator.clipboard.writeText(directiveText);
     setIsImeiCopied(true);
     toast.success("§94 BNSS IMEI Seizure Directive copied to clipboard!");
@@ -115,6 +112,7 @@ export const AttributionScreen: React.FC = () => {
   return (
     <div
       className={`tarka-attribution-root ${isCompact ? "tarka-density-compact" : ""}`}
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

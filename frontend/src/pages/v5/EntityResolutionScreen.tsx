@@ -22,7 +22,7 @@ import {
   type CanonicalEntity,
   type RawToken,
 } from "../../services/caseSyncBridge";
-import { getCanonicalCase } from "../../fixtures/cases";
+import { getCanonicalCase, CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import {
   KpiTile,
@@ -51,23 +51,19 @@ export interface CandidateMergeLink {
 }
 
 export const EntityResolutionScreen: React.FC = () => {
-  const { activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
+  const { activeCaseId, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const dynamicData = useMemo(() => {
     return CaseSyncBridge.getInstance().deriveCaseCanonicalEntities(activeCaseId || "CASE-2026-001", investigation);
@@ -297,7 +293,7 @@ export const EntityResolutionScreen: React.FC = () => {
   }, [updateSvgLines, customMentions, selectedTokenType, bipartiteMapActive]);
 
   const handleCopyDirective = () => {
-    navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
+    navigator.clipboard.writeText(getBnss94EntityResolutionDirective(activeCaseId || undefined));
     setIsCopied(true);
     toast.success("§ 94 BNSS Cross-Bank KYC & CAF Requisition copied to clipboard!");
     setTimeout(() => setIsCopied(false), 2000);
@@ -436,6 +432,7 @@ export const EntityResolutionScreen: React.FC = () => {
   return (
     <div
       className={`tarka-entity-resolution-root ${isCompact ? "tarka-density-compact" : ""}`}
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",

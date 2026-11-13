@@ -13,29 +13,26 @@ import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { StoryBanner, KpiTile } from "../../components/tarka/kit";
 import { sha256HexSync } from "../../utils/sha256";
+import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { TemporalEvidenceLoom } from "../../components/tarka/TemporalEvidenceLoom";
 import { ClaimDependencyLens } from "../../components/tarka/ClaimDependencyLens";
 import { InvestigationFlightRecorder } from "../../components/tarka/InvestigationFlightRecorder";
 import { ProvenanceDAGView } from "../../components/graphs/ProvenanceDAGView";
 
 export const ForensicWorkstationScreen: React.FC = () => {
-  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { activeCaseId } = useTarkaGlobal();
   const { reconstructedInvestigation } = useTarkaUiStore();
   const [activeTab, setActiveTab] = useState<"loom" | "lens" | "recorder" | "provenance">("loom");
 
   const investigation = useMemo(() => {
-    const base = reconstructedInvestigation || reconstruct5FileInvestigation();
-    if (activeCase && activeCase.caseId !== "CASE-2026-001") {
-      return {
-        ...base,
-        firNumber: activeCase.firNumber,
-        complainantName: activeCase.complainantName,
-        bookedLossInr: activeCase.bookedLossInr,
-        claimedLossInr: activeCase.claimedLossInr,
-      };
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
-    return base;
-  }, [reconstructedInvestigation, activeCase]);
+    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    }
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [reconstructedInvestigation, activeCaseId]);
 
   const chronologyEvents = useMemo(() => {
     return CaseSyncBridge.getInstance().deriveCaseWorkstationChronology(
@@ -67,6 +64,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
 
   return (
     <div
+      data-case-id={activeCaseId || ""}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -182,7 +180,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
               border: "1px solid rgba(16, 185, 129, 0.30)",
             }}
           >
-            ACTIVE CASE: {activeCaseId || "CASE-2026-001"}
+            ACTIVE CASE: {activeCaseId || "SELECT CASE"}
           </span>
         </div>
 

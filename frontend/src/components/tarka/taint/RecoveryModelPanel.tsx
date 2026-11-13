@@ -13,6 +13,8 @@ interface RecoveryModelPanelProps {
   selectedNodeId: string | null;
   onCloseNodeDrawer: () => void;
   onOpenOrders: () => void;
+  caseId?: string;
+  victimName?: string;
 }
 
 export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
@@ -21,8 +23,10 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
   selectedNodeId,
   onCloseNodeDrawer,
   onOpenOrders,
+  caseId,
+  victimName,
 }) => {
-  const model = recoveryModel(isInjectClean, freezeBudgetK);
+  const model = recoveryModel(isInjectClean, freezeBudgetK, caseId);
 
   // If a node is selected, render the Node Drawer view
   if (selectedNodeId) {
@@ -40,11 +44,11 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
       }
     > = {
       sunil: {
-        title: "Sunil Kumar (Complainant)",
+        title: `${victimName || "Victim"} (Complainant)`,
         role: "Victim Origin",
-        bank: "State Bank of India",
-        account: "SBI 30910029101",
-        amount: "-₹5,00,000.00",
+        bank: "Origin Bank",
+        account: "Origin Salary A/C",
+        amount: `-₹${model.grossVictimLoss.toLocaleString("en-IN")}.00`,
         statute: "BNSS §106 Victim Inception",
         dwell: "0s (Direct Debit)",
         description: "Victim debited via fraudulent APK credential sniff and coerced UPI intent session.",

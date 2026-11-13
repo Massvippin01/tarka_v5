@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useCaseStore } from "./useCaseStore";
 import type { DiscoveredFraudCluster } from "../utils/publicDatasetAdapters";
 import type { ReconstructedEdge, ReconstructedInvestigation } from "../utils/investigationReconstructor";
 
@@ -135,8 +136,12 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
         const url = new URL(window.location.href);
         const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level", "screen", "page", "stage", "benchmark"];
         legacyParams.forEach((k) => url.searchParams.delete(k));
-        const caseId = url.searchParams.get("case") || "CASE-2026-001";
-        url.searchParams.set("case", caseId);
+        const currentCase = useCaseStore.getState().activeCaseId || url.searchParams.get("case");
+        if (currentCase) {
+          url.searchParams.set("case", currentCase);
+        } else {
+          url.searchParams.delete("case");
+        }
         if (page === "benchmark") {
           url.searchParams.set("view", "benchmark");
         } else if (page === "workspaces") {

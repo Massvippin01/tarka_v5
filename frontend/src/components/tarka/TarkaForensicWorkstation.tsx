@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useCaseStore } from "../../store/useCaseStore";
 import {
   LayoutDashboard,
   Boxes,
@@ -332,19 +333,15 @@ export const TarkaForensicWorkstation: React.FC = () => {
       const c = p.get("case");
       if (c) return c;
     }
-    return "CASE-2026-001";
+    return useCaseStore.getState().activeCaseId || "";
   };
 
-  const [activeCaseId, setActiveCaseIdState] = useState<string>(getInitialCaseId);
+  const storeCaseId = useCaseStore((s) => s.activeCaseId);
+  const activeCaseId = storeCaseId || getInitialCaseId();
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   const setActiveCaseId = useCallback((caseId: string) => {
-    setActiveCaseIdState(caseId);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("case", caseId);
-      window.history.replaceState({}, "", url.toString());
-    }
+    useCaseStore.getState().setActiveCaseId(caseId);
   }, []);
 
   const handleCopyHash = (hash: string) => {
