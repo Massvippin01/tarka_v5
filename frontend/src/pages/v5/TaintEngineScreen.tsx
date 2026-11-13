@@ -35,13 +35,14 @@ import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSank
 import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDecayChart";
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 type TaintRule = "LIBR" | "FIFO" | "PRO_RATA";
 type TaintWorkspaceMode = "dag" | "orders";
 type FlowViewType = "sankey" | "dag";
 
 export const TaintEngineScreen: React.FC = () => {
-  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
@@ -175,6 +176,17 @@ export const TaintEngineScreen: React.FC = () => {
 
       {/* 5-File Cross-Artifact Evidentiary Reconstruction Strip */}
       <EndToEndReconstructionStrip />
+
+      {/* Top Investigator Finding Card */}
+      <ScreenFindingCard
+        finding="₹3,80,000 still recoverable across 3 mule accounts under Lowest Intermediate Balance Rule (LIBR)."
+        metric="₹3,80,000 Recoverable"
+        metricLabel="LIBR Min-Cut Active"
+        actionLabel="Inspect Fraud Network"
+        onAction={() => setActiveRoute("network")}
+        status="verified"
+        evidenceTag="LIBR Proportional Debit Lien Engine"
+      />
 
       {/* =========================================================================
           ROW 1: TOP 4 EXECUTIVE KPI TILES (<= 12 CHAR HERO VALUE)

@@ -1,5 +1,6 @@
-import { SignalSieveCanvas } from "../../components/tarka/attribution/SignalSieveCanvas";
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import { CgnatFunnelChart } from "../../components/tarka/attribution/CgnatFunnelChart";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import React, { useState, useMemo } from "react";
 import {
   Radio,
   Smartphone,
@@ -34,7 +35,7 @@ import { reconstruct5FileInvestigation } from "../../utils/investigationReconstr
 import { sha256HexSync } from "../../utils/sha256";
 
 export const AttributionScreen: React.FC = () => {
-  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
@@ -110,67 +111,6 @@ export const AttributionScreen: React.FC = () => {
     setTimeout(() => setIsImeiCopied(false), 2000);
   };
 
-  // 4. 10,000-Subscriber Haystack Canvas Renderer
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx.clearRect(0, 0, width, height);
-
-    // Render 120 columns x 24 rows = 2,880 visual dots representing the 10,000 pool
-    const cols = 120;
-    const rows = 24;
-    const cellW = width / cols;
-    const cellH = height / rows;
-
-    const activeDotCount = isPortDropped
-      ? Math.round((340 / 10000) * (cols * rows))
-      : survivingCandidateCount === 1
-        ? 1
-        : Math.max(1, Math.round((survivingCandidateCount / 10000) * (cols * rows)));
-
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        const x = c * cellW + cellW / 2;
-        const y = r * cellH + cellH / 2;
-
-        if (idx === 0) {
-          // TARGET NEEDLE (IMEI 867492061234564)
-          ctx.beginPath();
-          ctx.arc(x, y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = "#10B981";
-          ctx.fill();
-
-          // Pulsing halo ring around target
-          ctx.beginPath();
-          ctx.arc(x, y, 7, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(16, 185, 129, 0.6)";
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-        } else if (idx < activeDotCount) {
-          // SURVIVING CANDIDATES
-          ctx.beginPath();
-          ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-          ctx.fillStyle = isPortDropped ? "#F59E0B" : "#4F46E5";
-          ctx.fill();
-        } else {
-          // INACTIVE SUBSCRIBERS IN TOWER POOL
-          ctx.beginPath();
-          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-          ctx.fillStyle = "#CBD5E1";
-          ctx.fill();
-        }
-      }
-    }
-  }, [survivingCandidateCount, isPortDropped]);
-
 
   return (
     <div
@@ -196,6 +136,17 @@ export const AttributionScreen: React.FC = () => {
           { tier: "T1", label: "NPCI Device XML", hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("NPCI_XML") },
           { tier: "T1", label: `TAC ${targetTac} Hardware`, hash: sha256HexSync(`TAC_${targetTac}_HARDWARE`) },
         ]}
+      />
+
+      {/* Top Investigator Finding Card */}
+      <ScreenFindingCard
+        finding="Dynamic CGNAT port + IMEI twin isolates 1 suspect handset from 10,000 candidates with p=1.4×10⁻⁷."
+        metric="1 Handset Isolated"
+        metricLabel="P = 1.4 × 10⁻⁷ Odds"
+        actionLabel="Review Freeze Directives"
+        onAction={() => setActiveRoute("report")}
+        status="verified"
+        evidenceTag="CGNAT Port Funnel & IMEI Attribution"
       />
 
       {/* KPI ROW: 4 TILES WITH UNTRUNCATED LABELS */}
@@ -316,53 +267,15 @@ export const AttributionScreen: React.FC = () => {
                 style={{
                   flex: "1 1 0%",
                   minHeight: 0,
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "8px",
                   overflow: "hidden",
-                  background: "#FAFCFF",
                   position: "relative",
                 }}
               >
-                <SignalSieveCanvas
+                <CgnatFunnelChart
                   isPortDropped={isPortDropped}
                   onTogglePortDropped={() => toggleMutation("dropCgnatSourcePort")}
+                  targetImei={targetImei}
                 />
-              </div>
-
-              {/* Footer Unambiguous Attribution Banner */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  background: isPortDropped ? "#FFFBEB" : "#ECFDF5",
-                  border: `1px solid ${isPortDropped ? "#FDE68A" : "#A7F3D0"}`,
-                  fontSize: "10.5px",
-                  color: isPortDropped ? "#92400E" : "#065F46",
-                  marginTop: "6px",
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Check size={13} color={isPortDropped ? "#D97706" : "#059669"} />
-                  <span style={{ fontWeight: 700 }}>
-                    {isPortDropped
-                      ? "PORT OMISSION DETECTED: Ambiguity expanded to 340 handsets across port block 44000-44511."
-                      : `UNAMBIGUOUS ATTRIBUTION: S₁ ∩ S₂ ∩ S₃ ∩ S₄ = { Target IMEI ${targetImei} }`}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: "9.5px",
-                    fontFamily: "var(--font-mono)",
-                    fontWeight: 800,
-                    color: isPortDropped ? "#D97706" : "#059669",
-                  }}
-                >
-                  P = 1.40 × 10⁻⁷
-                </span>
               </div>
             </div>
           </SectionCard>

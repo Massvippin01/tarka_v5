@@ -27,6 +27,8 @@ import {
   Scale,
   ShieldCheck,
   Binary,
+  FileCheck,
+  Cpu,
   MoreHorizontal,
   Compass,
   Microscope,
@@ -101,14 +103,15 @@ const ScreenSuspenseFallback: React.FC = () => (
 const getStageGuidanceTitle = (route: TarkaRoute): string => {
   switch (route) {
     case "workspace": return "Multi-Case Command Hub";
-    case "intake": return "Stage 01: Multi-Vector Intake & Falsification Gate";
-    case "entities": return "Stage 02: Entity Extraction & Hard-Veto Shield";
-    case "attribution": return "Stage 03: CGNAT Attribution & SIM-Swap Funnel";
-    case "network": return "Stage 04: Fraud Network & Actor Attribution";
-    case "taint-engine": return "Stage 05: LIBR Proportional Debit Lien Engine";
-    case "court-proof": return "Stage 06: BSA § 63 Evidence Certificate";
-    case "privacy-crypto": return "Stage 07: Cryptographic Verification & ZKP";
-    case "workstation": return "Stage 08: Deep Forensic Instrumentation";
+    case "intake": return "Step 01: Evidence & Ledger — Did the money really leave?";
+    case "entities": return "Step 02: People & Accounts — Who is who?";
+    case "taint-engine": return "Step 03: Money Trail — Where did it go?";
+    case "network": return "Step 04: Fraud Network — Who is connected?";
+    case "attribution": return "Step 05: Device & SIM Attribution — Which phone/SIM did it?";
+    case "report": return "Step 06: Report & Actions — Freeze orders & court certificate";
+    case "court-proof": return "Advanced Lab: BSA § 63 Evidence Certificate";
+    case "privacy-crypto": return "Advanced Lab: Cryptographic Verification & ZKP";
+    case "workstation": return "Advanced Lab: Deep Forensic Loom & Flight Recorder";
     default: return "Forensic Investigation Workflow";
   }
 };
@@ -116,12 +119,13 @@ const getStageGuidanceTitle = (route: TarkaRoute): string => {
 const getStageGuidanceAction = (route: TarkaRoute): string => {
   switch (route) {
     case "workspace": return "Select active FIR case or import digital evidence files.";
-    case "intake": return "Verify Finacle CBS commitments and PDF incremental xref trailer integrity.";
-    case "entities": return "Evaluate extracted identity tokens against Hard-Veto Shield.";
-    case "attribution": return "Confirm 340→1 CGNAT port funnel and zero NTP clock drift delta.";
-    case "network": return "Trace syndicate hops, mule rings, and digital arrest controllers.";
-    case "taint-engine": return "Execute min-cut algorithm; isolate ₹1.80L fraud while protecting clean capital.";
-    case "court-proof": return "Verify SHA-256 CAS integrity and export Section 63(4) admissible PDF.";
+    case "intake": return "Verify Finacle CBS statement & detect tampering in forged receipts.";
+    case "entities": return "Merge suspect aliases across bank accounts while protecting commercial entities.";
+    case "taint-engine": return "Trace fund dispersion under Lowest Intermediate Balance Rule (LIBR).";
+    case "network": return "Discover syndicate links, accomplice Wi-Fi hotspots, and mule rings.";
+    case "attribution": return "Isolate suspect handset via CGNAT port allocation and IMEI TAC.";
+    case "report": return "Review executive summary and export auto-drafted §106/§107 freeze directives.";
+    case "court-proof": return "Verify SHA-256 CAS integrity and export Section 63(4) admissible dossier.";
     case "privacy-crypto": return "Inspect Zero-Knowledge proofs and HSM signature attestations.";
     case "workstation": return "Analyze multi-track temporal evidence loom and Z3 claim ablation.";
     default: return "Follow verified evidentiary findings.";
@@ -256,7 +260,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         } else if (e.key === "3") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("attribution");
+          setActiveRoute("taint-engine");
         } else if (e.key === "4") {
           e.preventDefault();
           setActivePage("workbench");
@@ -264,16 +268,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         } else if (e.key === "5") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("taint-engine");
+          setActiveRoute("attribution");
         } else if (e.key === "6") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("court-proof");
+          setActiveRoute("report");
         } else if (e.key === "7") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("privacy-crypto");
+          setActiveRoute("court-proof");
         } else if (e.key === "8") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("privacy-crypto");
+        } else if (e.key === "9") {
           e.preventDefault();
           setActivePage("workbench");
           setActiveRoute("workstation");
@@ -290,117 +298,149 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar, togglePresentationMode, setActiveRoute, setActivePage]);
 
-  // 6 Core PS4 Deliverable Pipeline Navigation Items
-  const navItems = [
-    {
-      id: "workspace" as TarkaRoute,
-      step: "00",
-      title: "Station Command & Workspaces Hub",
-      shortTitle: "Command Hub",
-      subtitle: "Bento Workspaces",
-      badgeText: `${caseWorkspaces.length} Cases`,
-      badgeVariant: "indigo" as const,
-      tooltip: "00 Command Hub — Multi-Case Command Workspace & Intake Hub (Alt+0)",
-      icon: FolderKanban,
-      isLocked: false,
-    },
+  // Command Hub Navigation Item
+  const workspaceNavItem = {
+    id: "workspace" as TarkaRoute,
+    step: "00",
+    title: "Station Command & Workspaces Hub",
+    shortTitle: "Command Hub",
+    subtitle: "Multi-Case Command Hub",
+    badgeText: `${caseWorkspaces.length} Cases`,
+    badgeVariant: "indigo" as const,
+    tooltip: "00 Command Hub — Multi-Case Command Workspace & Intake Hub (Alt+0)",
+    icon: FolderKanban,
+    isLocked: false,
+  };
+
+  // 6 Plain-Language Core PS4 Deliverable Pipeline Navigation Items
+  const coreNavItems = [
     {
       id: "intake" as TarkaRoute,
       step: "01",
-      title: "Multi-Vector Intake & Falsification Gate",
-      shortTitle: "Evidence Intake",
-      subtitle: "Ledger & PDF Integrity",
-      badgeText: mutations.alterBankRow14 ? "Fail" : "2",
-      badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
-      tooltip: "01 Evidence Intake — Ledger Falsification, RRN Protocol & PDF Trailer Audit (Alt+1)",
+      title: "1 Evidence & Ledger",
+      shortTitle: "1 Evidence & Ledger",
+      subtitle: "Did the money really leave?",
+      badgeText: mutations.alterBankRow14 ? "Tampered" : "Valid",
+      badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("emerald" as const),
+      tooltip: "01 Evidence & Ledger — Did the money really leave? (Alt+1)",
       icon: FileSpreadsheet,
       isLocked: false,
     },
     {
       id: "entities" as TarkaRoute,
       step: "02",
-      title: "Entity Extraction & Resolution Framework",
-      shortTitle: "Entity Resolution",
-      subtitle: "Multi-Source Extraction",
+      title: "2 People & Accounts",
+      shortTitle: "2 People & Accounts",
+      subtitle: "Who is who?",
       badgeText: "5 Ent",
       badgeVariant: "indigo" as const,
-      tooltip: "02 Entity Resolution — Multi-Source Extraction & Hard-Veto Shield (Alt+2)",
+      tooltip: "02 People & Accounts — Who is who? (Alt+2)",
       icon: Users,
       isLocked: intakeGate?.isHalted,
     },
     {
-      id: "attribution" as TarkaRoute,
+      id: "taint-engine" as TarkaRoute,
       step: "03",
-      title: "Fraud Attribution & SIM-Swap Engine",
-      shortTitle: "CGNAT Attribution",
-      subtitle: "Port Funnel & IMEI Twin",
-      badgeText: "1:1",
+      title: "3 Money Trail",
+      shortTitle: "3 Money Trail",
+      subtitle: "Where did it go?",
+      badgeText: "LIBR",
       badgeVariant: "emerald" as const,
-      tooltip: "03 CGNAT Attribution — CGNAT 340→1 Funnel & Z3 SMT Clock Proof (Alt+3)",
-      icon: Crosshair,
+      tooltip: "03 Money Trail — Where did it go? (Alt+3)",
+      icon: GitMerge,
       isLocked: intakeGate?.isHalted,
     },
     {
       id: "network" as TarkaRoute,
       step: "04",
-      title: "Fraud-Network & Actor Relationships",
-      shortTitle: "Fraud Network",
-      subtitle: "Actor Relationships",
-      badgeText: "TTL=63",
+      title: "4 Fraud Network",
+      shortTitle: "4 Fraud Network",
+      subtitle: "Who is connected?",
+      badgeText: "Syndicate",
       badgeVariant: "indigo" as const,
-      tooltip: "04 Fraud Network — Wi-Fi Hotspot BSSID, JA4 TLS & Syndicate Graph (Alt+4)",
+      tooltip: "04 Fraud Network — Who is connected? (Alt+4)",
       icon: Network,
       isLocked: intakeGate?.isHalted,
     },
     {
-      id: "taint-engine" as TarkaRoute,
+      id: "attribution" as TarkaRoute,
       step: "05",
-      title: "Transaction Flow & Mule Taint DAG",
-      shortTitle: "Taint DAG",
-      subtitle: "Mule Flow & Min-Cut",
-      badgeText: "K=3",
-      badgeVariant: "indigo" as const,
-      tooltip: "05 Taint DAG — 5-Column Money Trail, LIBR/FIFO & Dinic Min-Cut (Alt+5)",
-      icon: GitMerge,
+      title: "5 Device & SIM Attribution",
+      shortTitle: "5 Device & SIM",
+      subtitle: "Which phone/SIM did it?",
+      badgeText: "1:1 Match",
+      badgeVariant: "emerald" as const,
+      tooltip: "05 Device & SIM Attribution — Which phone/SIM did it? (Alt+5)",
+      icon: Crosshair,
       isLocked: intakeGate?.isHalted,
     },
     {
-      id: "court-proof" as TarkaRoute,
+      id: "report" as TarkaRoute,
       step: "06",
-      title: "Actionable Intelligence & BSA §63(4) Dossier",
+      title: "6 Report & Actions",
+      shortTitle: "6 Report & Actions",
+      subtitle: "Freeze orders & court certificate",
+      badgeText: "Directives",
+      badgeVariant: "emerald" as const,
+      tooltip: "06 Report & Actions — Freeze orders & court certificate (Alt+6)",
+      icon: Scale,
+      isLocked: false,
+    },
+  ];
+
+  // Advanced Forensic Lab Navigation Items
+  const advancedNavItems = [
+    {
+      id: "court-proof" as TarkaRoute,
+      step: "L1",
+      title: "Court Evidence Dossier",
       shortTitle: "Court Dossier",
-      subtitle: "MHA SOP & BSA §63",
+      subtitle: "BSA §63(4) Certificate",
       badgeText: "§63(4)",
       badgeVariant: "emerald" as const,
-      tooltip: "06 Court Dossier — MHA Jan 2026 SOP Orders, CBI STR Memo & LOO Proof (Alt+6)",
-      icon: Scale,
-      isLocked: intakeGate?.isHalted,
+      tooltip: "Court Evidence Dossier — BSA §63(4) Certificate & LOO Proof (Alt+7)",
+      icon: FileCheck,
+      isLocked: false,
     },
     {
       id: "privacy-crypto" as TarkaRoute,
-      step: "07",
-      title: "Privacy, Cryptography & Formal Verification Hub",
+      step: "L2",
+      title: "Privacy, Cryptography & ZKP",
       shortTitle: "Privacy & ZKP",
-      subtitle: "BFT Consensus & SMT",
-      badgeText: "BFT + ZK",
+      subtitle: "ECDH-PSI & ZKP proofs",
+      badgeText: "ZKP",
       badgeVariant: "indigo" as const,
-      tooltip: "07 Privacy & ZKP — ECDH-PSI, Circom ZKP, 4-Node PBFT & Z3 Verification (Alt+7)",
+      tooltip: "Privacy, Cryptography & ZKP Lab (Alt+8)",
       icon: ShieldCheck,
       isLocked: false,
     },
     {
       id: "workstation" as TarkaRoute,
-      step: "08",
-      title: "Forensic Deep Workstation: Loom, Lens & Flight Recorder",
+      step: "L3",
+      title: "Forensic Loom Workstation",
       shortTitle: "Forensic Loom",
-      subtitle: "SMT Lens & Audit Log",
+      subtitle: "Temporal Loom & SMT Lens",
       badgeText: "LOOM",
       badgeVariant: "emerald" as const,
-      tooltip: "08 Forensic Loom — Temporal Loom, Claim Dependency Lens & Flight Recorder (Alt+8)",
+      tooltip: "Forensic Loom Workstation — Temporal Loom & SMT Lens (Alt+9)",
       icon: Binary,
       isLocked: false,
     },
+    {
+      id: "benchmarks" as TarkaRoute,
+      step: "L4",
+      title: "Benchmark & Stress Lab",
+      shortTitle: "Benchmark Lab",
+      subtitle: "100k-row throughput",
+      badgeText: "100k Rows",
+      badgeVariant: "indigo" as const,
+      tooltip: "Benchmark & Stress Lab (Alt+B)",
+      icon: Cpu,
+      isLocked: false,
+    },
   ];
+
+  const navItems = [workspaceNavItem, ...coreNavItems, ...advancedNavItems];
 
   // Ingested File Tree Artifacts
   const ingestedFiles = [
@@ -420,6 +460,119 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
   ];
 
   const currentNav = navItems.find((n) => n.id === activeRoute) || navItems[0];
+
+  const renderNavButton = (item: (typeof navItems)[0]) => {
+    const isActive =
+      activePage === "workbench"
+        ? activeRoute === item.id
+        : (item.id === "workspace" && activePage === "workspaces") ||
+          (item.id === "benchmarks" && activePage === "benchmark");
+    const IconComp = item.icon;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          if (item.id === "workspace") {
+            setActivePage("workspaces");
+          } else if (item.id === "benchmarks") {
+            setActivePage("benchmark");
+          } else {
+            setActivePage("workbench");
+            setActiveRoute(item.id);
+          }
+        }}
+        title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
+        className="hover:bg-cyan-500/10 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: isExpanded ? "space-between" : "center",
+          padding: isExpanded ? "7px 9px" : "6px 0",
+          borderRadius: "8px",
+          background: isActive ? "rgba(6, 182, 212, 0.16)" : "transparent",
+          border: isActive ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid transparent",
+          color: isActive ? "#FFFFFF" : "#94A3B8",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          transition: "all 0.12s ease",
+        }}
+      >
+        {isActive && (
+          <span
+            style={{
+              position: "absolute",
+              left: "0px",
+              top: "20%",
+              bottom: "20%",
+              width: "3px",
+              borderRadius: "0 3px 3px 0",
+              background: "#06B6D4",
+              boxShadow: "0 0 8px #22D3EE",
+            }}
+          />
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: isExpanded ? "6px" : "2px",
+              flexDirection: isExpanded ? "row" : "column",
+              flexShrink: 0,
+              width: isExpanded ? "auto" : "42px",
+            }}
+          >
+            <IconComp size={15} color={isActive ? "#22D3EE" : "#94A3B8"} />
+            <span
+              style={{
+                fontSize: isExpanded ? "11px" : "9.5px",
+                fontWeight: 800,
+                fontFamily: "var(--font-mono)",
+                color: isActive ? "#22D3EE" : "#94A3B8",
+                background: isActive ? "rgba(6, 182, 212, 0.22)" : "rgba(255, 255, 255, 0.04)",
+                padding: isExpanded ? "2px 5px" : "1px 3px",
+                borderRadius: "3px",
+                border: `1px solid ${isActive ? "rgba(34, 211, 238, 0.35)" : "rgba(255, 255, 255, 0.08)"}`,
+              }}
+            >
+              {item.step}
+            </span>
+          </div>
+          {isExpanded && (
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? "#FFFFFF" : "#E2E8F0",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.shortTitle}
+              </div>
+              <div style={{ fontSize: "9.5px", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {item.subtitle}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {isExpanded && (
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+            {item.isLocked && <Lock size={12} color="#FB7185" />}
+            <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
+          </div>
+        )}
+      </button>
+    );
+  };
 
   // Determine effective sidebar state (56px collapsed vs 232px expanded/peeking)
   const isExpanded = isMobile ? !sidebarCollapsed : (!sidebarCollapsed || isHoverPeeking);
@@ -669,112 +822,21 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
             {/* Navigation Engines */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {navItems.map((item) => {
-                const isActive = activeRoute === item.id;
-                const IconComp = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (item.id === "workspace") {
-                        setActivePage("workspaces");
-                      } else {
-                        setActivePage("workbench");
-                        setActiveRoute(item.id);
-                      }
-                    }}
-                    title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
-                    className="hover:bg-cyan-500/10 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
-                    style={{
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: isExpanded ? "space-between" : "center",
-                      padding: isExpanded ? "7px 9px" : "6px 0",
-                      borderRadius: "8px",
-                      background: isActive ? "rgba(6, 182, 212, 0.16)" : "transparent",
-                      border: isActive ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid transparent",
-                      color: isActive ? "#FFFFFF" : "#94A3B8",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
-                      transition: "all 0.12s ease",
-                    }}
-                  >
-                    {isActive && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          left: "0px",
-                          top: "20%",
-                          bottom: "20%",
-                          width: "3px",
-                          borderRadius: "0 3px 3px 0",
-                          background: "#06B6D4",
-                          boxShadow: "0 0 8px #22D3EE",
-                        }}
-                      />
-                    )}
+              {renderNavButton(workspaceNavItem)}
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: isExpanded ? "6px" : "2px",
-                          flexDirection: isExpanded ? "row" : "column",
-                          flexShrink: 0,
-                          width: isExpanded ? "auto" : "42px",
-                        }}
-                      >
-                        <IconComp size={15} color={isActive ? "#22D3EE" : "#94A3B8"} />
-                        <span
-                          style={{
-                            fontSize: isExpanded ? "11px" : "9.5px",
-                            fontWeight: 800,
-                            fontFamily: "var(--font-mono)",
-                            color: isActive ? "#22D3EE" : "#94A3B8",
-                            background: isActive ? "rgba(6, 182, 212, 0.22)" : "rgba(255, 255, 255, 0.04)",
-                            padding: isExpanded ? "2px 5px" : "1px 3px",
-                            borderRadius: "3px",
-                            border: `1px solid ${isActive ? "rgba(34, 211, 238, 0.35)" : "rgba(255, 255, 255, 0.08)"}`,
-                          }}
-                        >
-                          {item.step}
-                        </span>
-                      </div>
-                      {isExpanded && (
-                        <div style={{ minWidth: 0, overflow: "hidden" }}>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: isActive ? 700 : 500,
-                              color: isActive ? "#FFFFFF" : "#E2E8F0",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {item.shortTitle}
-                          </div>
-                          <div style={{ fontSize: "9.5px", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.subtitle}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              {isExpanded && (
+                <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.08em", padding: "8px 6px 3px" }}>
+                  Investigation Steps (1–6)
+                </div>
+              )}
+              {coreNavItems.map(renderNavButton)}
 
-                    {isExpanded && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        {item.isLocked && <Lock size={12} color="#FB7185" />}
-                        <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+              {isExpanded && (
+                <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.08em", padding: "12px 6px 3px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", marginTop: "6px" }}>
+                  Advanced Lab
+                </div>
+              )}
+              {advancedNavItems.map(renderNavButton)}
             </nav>
 
             {/* Artifacts Tree Popover Button */}

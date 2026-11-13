@@ -106,12 +106,12 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     : "comfortable";
 
   const initialInvestigationMode = ((): InvestigationPresentationMode => {
-    if (typeof window === "undefined") return "analyst";
+    if (typeof window === "undefined") return "guided";
     const stored = localStorage.getItem("tarka_investigation_mode");
     if (stored === "guided" || stored === "analyst" || stored === "review") {
       return stored as InvestigationPresentationMode;
     }
-    return "analyst";
+    return "guided";
   })();
 
   return {
@@ -188,7 +188,7 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
       });
     },
 
-    explainSimply: false,
+    explainSimply: true,
     setExplainSimply: (val) => set({ explainSimply: val }),
     toggleExplainSimply: () => set((state) => ({ explainSimply: !state.explainSimply })),
 

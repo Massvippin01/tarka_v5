@@ -857,6 +857,21 @@ class OllamaForensicProvider(BaseForensicLLMProvider):
                         "extraction_method": "BITSTREAM_REGISTRATION",
                     })
 
+            if not citations and artifacts:
+                for a in artifacts[:2]:
+                    aid = a.get("artifact_id", "")
+                    fn = a.get("filename", "")
+                    citations.append({
+                        "citation_id": f"cite:{aid}",
+                        "artifact_id": aid,
+                        "source_filename": fn,
+                        "sha256_short": (a.get("sha256") or "")[:8],
+                        "source_location": a.get("storage_path", "intake"),
+                        "trust_tier": a.get("source_tier", "T2"),
+                        "snippet": f"{fn} (SHA-256: {(a.get('sha256') or '')[:8]}...)",
+                        "extraction_method": "BITSTREAM_REGISTRATION",
+                    })
+
             return {
                 "grounded": True,
                 "model_used": active_model,

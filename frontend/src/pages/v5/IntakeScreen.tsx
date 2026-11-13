@@ -25,12 +25,13 @@ import { reconstruct5FileInvestigation } from "../../utils/investigationReconstr
 import { getCanonicalCase } from "../../fixtures/cases";
 import { formatInr } from "../../utils/formatters";
 import { sha256HexSync } from "../../utils/sha256";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
   useOverflowGuard();
 
-  const { mutations, toggleMutation, activeCaseId, activeCase } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
   const { setActiveDockTab, density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
@@ -286,6 +287,17 @@ export const IntakeScreen: React.FC = () => {
 
       {/* 5-File Evidentiary Reconstructor Strip */}
       <EndToEndReconstructionStrip />
+
+      {/* Top Investigator Finding Card */}
+      <ScreenFindingCard
+        finding={`Genuine Finacle CBS statement proves ${formatInr(canonicalCase.financials.bookedLossInr)} loss; Canva PDF receipt is forged (+14.2KB append).`}
+        metric={formatInr(canonicalCase.financials.bookedLossInr)}
+        metricLabel="T1 Finacle CBS Loss"
+        actionLabel="Review People & Accounts"
+        onAction={() => setActiveRoute("entities")}
+        status={isRow14Tampered ? "alert" : "verified"}
+        evidenceTag="Finacle CBS SHA-256 Verified"
+      />
 
 {/* =========================================================================
           ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)

@@ -10,6 +10,9 @@ import {
   FileText,
   Printer,
   ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -470,114 +473,163 @@ export const CourtProofScreen: React.FC = () => {
               }
             >
               <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, gap: "8px" }}>
-                {/* MATRIX TABLE */}
+                {/* EVIDENCE ARTIFACTS FILTER BAR */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 10px",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "6px",
+                    overflowX: "auto",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", whiteSpace: "nowrap" }}>
+                    Evidence Filter:
+                  </span>
+                  {artifacts.map((art) => (
+                    <button
+                      key={art.id}
+                      type="button"
+                      onClick={() => toggleArtifact(art.id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        border: art.isExcluded ? "1px dashed #CBD5E1" : "1px solid #CBD5E1",
+                        background: art.isExcluded ? "#F1F5F9" : "#FFFFFF",
+                        opacity: art.isExcluded ? 0.6 : 1,
+                        cursor: "pointer",
+                        textDecoration: art.isExcluded ? "line-through" : "none",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: art.isExcluded ? "#94A3B8" : "#1E293B",
+                      }}
+                      title="Click to toggle artifact exclusion in Leave-One-Out stress test"
+                    >
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          padding: "1px 4px",
+                          borderRadius: "2px",
+                          background: art.tier.startsWith("TIER_1") ? "#ECFDF5" : "#FEF3C7",
+                          color: art.tier.startsWith("TIER_1") ? "#047857" : "#B45309",
+                        }}
+                      >
+                        {art.tier.startsWith("TIER_1") ? "T1" : "T2"}
+                      </span>
+                      <span>{art.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* COMPACT EVIDENCE-VS-CLAIM CHECKLIST (NO EMPTY "—" CELLS) */}
                 <div
                   style={{
                     flex: "1 1 0%",
                     minHeight: 0,
                     overflowY: "auto",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "6px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
                   }}
                 >
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px" }}>
-                    <thead>
-                      <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
-                        <th style={{ padding: "6px 8px", textAlign: "left", color: "#475569", fontWeight: 700 }}>
-                          Material Prosecution Finding
-                        </th>
-                        {artifacts.map((art) => (
-                          <th
-                            key={art.id}
-                            onClick={() => toggleArtifact(art.id)}
-                            style={{
-                              padding: "6px 4px",
-                              textAlign: "center",
-                              color: art.isExcluded ? "#94A3B8" : "#0F172A",
-                              cursor: "pointer",
-                              textDecoration: art.isExcluded ? "line-through" : "none",
-                              background: art.isExcluded ? "#F1F5F9" : "transparent",
-                            }}
-                            title="Click to exclude this evidence artifact"
-                          >
-                            <div style={{ fontSize: "8.5px", fontWeight: 700 }}>{art.name.slice(0, 15)}</div>
-                            <span
-                              style={{
-                                fontSize: "7px",
-                                fontWeight: 800,
-                                padding: "1px 3px",
-                                borderRadius: "2px",
-                                background: art.tier.startsWith("TIER_1") ? "#ECFDF5" : "#FEF3C7",
-                                color: art.tier.startsWith("TIER_1") ? "#047857" : "#B45309",
-                              }}
-                            >
-                              {art.tier.startsWith("TIER_1") ? "T1" : "T2"}
-                            </span>
-                          </th>
-                        ))}
-                        <th style={{ padding: "6px 6px", textAlign: "center", color: "#0F172A", fontWeight: 800 }}>
-                          Survival Verdict
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {claimsMatrix.map((claim) => {
-                        const activeT1 = artifacts.some(
-                          (a) => !a.isExcluded && a.tier.startsWith("TIER_1") && claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY"
-                        );
-                        const activeT2 = artifacts.some(
-                          (a) => !a.isExcluded && claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
-                        );
-                        const survives = activeT1;
+                  {claimsMatrix.map((claim) => {
+                    const activeT1 = artifacts.some(
+                      (a) => !a.isExcluded && a.tier.startsWith("TIER_1") && claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY"
+                    );
+                    const activeT2 = artifacts.some(
+                      (a) => !a.isExcluded && claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
+                    );
+                    const survives = activeT1;
 
-                        return (
-                          <tr key={claim.id} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#0F172A" }}>
+                    // Collect supporting evidence artifacts for this claim
+                    const supportingArtifacts = artifacts.filter(
+                      (a) => claim.supports[a.id as keyof typeof claim.supports] === "PRIMARY" || claim.supports[a.id as keyof typeof claim.supports] === "CORROBORATIVE"
+                    );
+
+                    return (
+                      <div
+                        key={claim.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "10px 12px",
+                          background: "#FFFFFF",
+                          border: `1px solid ${survives ? "#E2E8F0" : "#FECDD3"}`,
+                          borderRadius: "8px",
+                          gap: "12px",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                          <div style={{ flexShrink: 0 }}>
+                            {survives ? (
+                              <CheckCircle2 size={18} color="#059669" />
+                            ) : activeT2 ? (
+                              <AlertTriangle size={18} color="#D97706" />
+                            ) : (
+                              <XCircle size={18} color="#E11D48" />
+                            )}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginBottom: "4px" }}>
                               {claim.name}
-                            </td>
-                            {artifacts.map((art) => {
-                              const supp = claim.supports[art.id as keyof typeof claim.supports];
-                              return (
-                                <td
-                                  key={art.id}
-                                  style={{
-                                    padding: "6px 4px",
-                                    textAlign: "center",
-                                    background: art.isExcluded ? "#F8FAFC" : "transparent",
-                                    opacity: art.isExcluded ? 0.35 : 1,
-                                  }}
-                                >
-                                  {supp === "PRIMARY" ? (
-                                    <span style={{ color: "#059669", fontWeight: "bold" }} title="Primary Tier-1 Proof">●</span>
-                                  ) : supp === "CORROBORATIVE" ? (
-                                    <span style={{ color: "#4F46E5", fontWeight: "bold" }} title="Corroborative Tier-2 Proof">◐</span>
-                                  ) : (
-                                    <span style={{ color: "#CBD5E1" }}>—</span>
-                                  )}
-                                </td>
-                              );
-                            })}
-                            <td style={{ padding: "6px 6px", textAlign: "center" }}>
-                              {survives ? (
-                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0" }}>
-                                  ✓ Survives (T1)
-                                </span>
-                              ) : activeT2 ? (
-                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#FEF3C7", color: "#B45309", border: "1px solid #FDE68A" }}>
-                                  ⚠ Tier-2 Only
-                                </span>
-                              ) : (
-                                <span style={{ fontSize: "8px", fontWeight: 800, padding: "2px 5px", borderRadius: "3px", background: "#FFF1F2", color: "#E11D48", border: "1px solid #FECDD3" }}>
-                                  ✗ Unsupported
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                              {supportingArtifacts.map((art) => {
+                                const supp = claim.supports[art.id as keyof typeof claim.supports];
+                                const isExcluded = art.isExcluded;
+                                return (
+                                  <span
+                                    key={art.id}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      fontSize: "11px",
+                                      padding: "2px 6px",
+                                      borderRadius: "4px",
+                                      background: isExcluded ? "#F1F5F9" : supp === "PRIMARY" ? "#ECFDF5" : "#EEF2FF",
+                                      color: isExcluded ? "#94A3B8" : supp === "PRIMARY" ? "#047857" : "#4338CA",
+                                      border: `1px solid ${isExcluded ? "#E2E8F0" : supp === "PRIMARY" ? "#A7F3D0" : "#C7D2FE"}`,
+                                      textDecoration: isExcluded ? "line-through" : "none",
+                                      opacity: isExcluded ? 0.6 : 1,
+                                    }}
+                                  >
+                                    <span style={{ fontWeight: 800 }}>{supp === "PRIMARY" ? "● Primary" : "◐ Corroborative"}:</span>
+                                    <span>{art.name}</span>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ flexShrink: 0 }}>
+                          {survives ? (
+                            <span style={{ fontSize: "11px", fontWeight: 800, padding: "4px 8px", borderRadius: "4px", background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0" }}>
+                              ✓ Survives (T1)
+                            </span>
+                          ) : activeT2 ? (
+                            <span style={{ fontSize: "11px", fontWeight: 800, padding: "4px 8px", borderRadius: "4px", background: "#FEF3C7", color: "#B45309", border: "1px solid #FDE68A" }}>
+                              ⚠ Tier-2 Only
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: "11px", fontWeight: 800, padding: "4px 8px", borderRadius: "4px", background: "#FFF1F2", color: "#E11D48", border: "1px solid #FECDD3" }}>
+                              ✗ Unsupported
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* 3 DEFENSE CHALLENGE DECK CARDS */}

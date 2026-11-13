@@ -31,6 +31,7 @@ import {
 } from "../../components/tarka/kit";
 import { getBnss94EntityResolutionDirective } from "../../utils/statutoryDirectives";
 import { sha256HexSync } from "../../utils/sha256";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 export interface CandidateMergeLink {
   id: string;
@@ -49,7 +50,7 @@ export interface CandidateMergeLink {
 }
 
 export const EntityResolutionScreen: React.FC = () => {
-  const { activeCaseId, activeCase } = useTarkaGlobal();
+  const { activeCaseId, activeCase, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
@@ -435,6 +436,17 @@ export const EntityResolutionScreen: React.FC = () => {
           { tier: "T2", label: "WhatsApp Coercion Header", hash: sha256HexSync("WhatsApp Coercion Header") },
           { tier: "T1", label: "ICICI GSTIN Return", hash: sha256HexSync("ICICI GSTIN Return") },
         ]}
+      />
+
+      {/* Top Investigator Finding Card */}
+      <ScreenFindingCard
+        finding="5 accounts resolved into 3 suspect identity clusters; QuickPay protected under commercial shield."
+        metric="3 Suspect Clusters"
+        metricLabel="Hard-Veto Shield Active"
+        actionLabel="Trace Money Trail"
+        onAction={() => setActiveRoute("taint-engine")}
+        status="verified"
+        evidenceTag="Multi-Source Identity Resolution"
       />
 
       {/* KPI ROW */}

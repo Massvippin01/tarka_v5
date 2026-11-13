@@ -12,6 +12,7 @@ import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cas
 import { formatInr } from "../../utils/formatters";
 import { sha256HexSync } from "../../utils/sha256";
 import type { ReconstructedInvestigation } from "../../utils/investigationReconstructor";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 export const ReportScreen: React.FC = () => {
   const { activeCaseId, setActiveRoute } = useTarkaGlobal();
@@ -395,6 +396,19 @@ Investigating Officer, Cyber Crime PS Noida`,
           </button>
         </div>
       </header>
+
+      {/* Top Investigator Finding Card (Screen Only) */}
+      <div className="no-print" style={{ maxWidth: "840px", margin: "16px auto 0", padding: "0 16px" }}>
+        <ScreenFindingCard
+          finding="Court dossier ready: 5 BNSS §106/§107 debit freeze orders and BSA §63(4) certificate auto-generated."
+          metric="5 Directives"
+          metricLabel="Ready for Judicial Service"
+          actionLabel="Download PDF & Freeze Notices"
+          onAction={handlePrintPdf}
+          status="verified"
+          evidenceTag="BNSS §106/§107 Statutory Orders"
+        />
+      </div>
 
       {/* =========================================================================
           A4 REPORT DOCUMENT CONTAINER (LIGHT THEME, PROFESSIONAL TYPOGRAPHY)

@@ -23,9 +23,10 @@ import { detectHotspotCollision } from "../../utils/cgnatAttribution";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { buildCase002Bundle, buildCase003Bundle } from "../../services/caseSyncBridge";
+import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 
 export const FraudNetworkScreen: React.FC = () => {
-  const { mutations, toggleMutation, activeCaseId } = useTarkaGlobal();
+  const { mutations, toggleMutation, activeCaseId, setActiveRoute } = useTarkaGlobal();
   const { density, activeDiscoveredCluster, setSelectedEvidenceEdge, reconstructedInvestigation } = useTarkaUiStore();
   const isCompact = density === "compact";
 
@@ -122,6 +123,17 @@ Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84)
 
       {/* 5-File Cross-Artifact Evidentiary Reconstruction Strip */}
       <EndToEndReconstructionStrip />
+
+      {/* Top Investigator Finding Card */}
+      <ScreenFindingCard
+        finding="4 mule accounts connected to accomplice Poco X5 hotspot via shared JA4 TLS signature."
+        metric="1 Hotspot · 4 Mules"
+        metricLabel="Shared JA4 Fingerprint"
+        actionLabel="Isolate Device & SIM"
+        onAction={() => setActiveRoute("attribution")}
+        status="verified"
+        evidenceTag="Multi-Modal Actor Attribution Graph"
+      />
 
       {/* =========================================================================
           ROW 1: TOP 4 EXECUTIVE KPI TILES (<= 12 CHAR HERO VALUE)
