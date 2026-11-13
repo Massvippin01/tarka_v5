@@ -195,6 +195,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
   const lastSpeechTimeRef = useRef<number>(0);
   const consecutiveVoiceFramesRef = useRef<number>(0);
   const playbackStartTimeRef = useRef<number>(0);
+  const lastAudioLevelUpdateRef = useRef<number>(0);
+  const lastAudioLevelValRef = useRef<number>(0);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -240,13 +242,20 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       cancelAnimationFrame(vadRafIdRef.current);
       vadRafIdRef.current = null;
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+    if (mediaRecorderRef.current) {
       try {
-        mediaRecorderRef.current.stop();
+        // Disarm event listeners so that stopping does not trigger post-cleanup transcription
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = null;
+        if (mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+        }
       } catch {
         // ignore
       }
+      mediaRecorderRef.current = null;
     }
+    audioChunksRef.current = [];
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
@@ -345,7 +354,16 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       }
       const rms = Math.sqrt(sumSquares / timeData.length);
       const levelPercent = Math.min(100, Math.round(rms * 250));
-      setAudioLevel(levelPercent);
+      const frameNow = Date.now();
+      // Throttle state update to at most 25 updates/sec or notable audible jumps to prevent 60fps re-render overhead
+      if (
+        frameNow - lastAudioLevelUpdateRef.current >= 40 ||
+        Math.abs(levelPercent - lastAudioLevelValRef.current) >= 4
+      ) {
+        lastAudioLevelUpdateRef.current = frameNow;
+        lastAudioLevelValRef.current = levelPercent;
+        setAudioLevel(levelPercent);
+      }
 
       // 2. Compute Voice Band Energy (approx 300Hz - 3400Hz speech formants)
       // With fftSize 512 and 16-48kHz sampleRate, speech band spans bins 5 to 60
@@ -447,9 +465,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
     vadRafIdRef.current = requestAnimationFrame(checkFrame);
   }, [cancelSpeech]);
 
-  // Start a recording chunk
-  const startRecordingTurn = useCallback(() => {
-    if (!mediaStreamRef.current) return;
+  // Start a recording chunk (supports hands-free automatic trigger and manual push-to-talk)
+  const startRecordingTurn = useCallback(async () => {
+    if (!mediaStreamRef.current) {
+      const granted = await setupMicrophoneStream();
+      if (!granted || !mediaStreamRef.current) return;
+    }
     try {
       audioChunksRef.current = [];
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -480,7 +501,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       setIsRecording(false);
       isRecordingRef.current = false;
     }
-  }, []);
+  }, [setupMicrophoneStream]);
   startRecordingTurnRef.current = startRecordingTurn;
 
   // Stop recording chunk
@@ -575,29 +596,30 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
         setVadState("PLAYING_RESPONSE");
         playbackStartTimeRef.current = Date.now();
 
-        player.onended = () => {
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
+        const handlePlaybackEnded = () => {
+          if (activeTurnTokenRef.current === turnToken) {
+            setIsSpeaking(false);
+            isSpeakingRef.current = false;
+            if (!isRecordingRef.current) {
+              setVadState("IDLE_LISTENING");
+            }
+          }
         };
 
-        player.onerror = () => {
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
-        };
+        player.onended = handlePlaybackEnded;
+        player.onerror = handlePlaybackEnded;
 
         player.play().catch((err) => {
           console.warn("Audio play prevented or interrupted:", err);
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
+          handlePlaybackEnded();
         });
       } catch (e) {
         console.error("Failed to play audio:", e);
         setIsSpeaking(false);
         isSpeakingRef.current = false;
-        setVadState("IDLE_LISTENING");
+        if (!isRecordingRef.current) {
+          setVadState("IDLE_LISTENING");
+        }
       }
     },
     []
@@ -707,8 +729,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             setTtsUnavailable(false);
             setTtsDiagnosticNotice("");
             playBase64Audio(res.speech.audio_base64, turnToken);
-          } else if (typeof window !== "undefined" && window.speechSynthesis && res.speech.spoken_text) {
-            // Air-gap offline voice fallback via Web Speech API (zero external calls)
+          } else if (res.speech.use_browser_speech && typeof window !== "undefined" && window.speechSynthesis && res.speech.spoken_text) {
+            // Air-gap offline voice fallback via Web Speech API (zero external calls, only when explicitly authorized)
             setActiveSpeechProvider("WEB_SPEECH_OFFLINE");
             setTtsUnavailable(false);
             setTtsDiagnosticNotice("Air-Gap Offline: Playing audio via browser on-device Web Speech API.");
@@ -720,14 +742,22 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             utterance.pitch = 1.0;
             utterance.lang = "en-IN";
             utterance.onend = () => {
-              setIsSpeaking(false);
-              isSpeakingRef.current = false;
-              setVadState("IDLE_LISTENING");
+              if (activeTurnTokenRef.current === turnToken) {
+                setIsSpeaking(false);
+                isSpeakingRef.current = false;
+                if (!isRecordingRef.current) {
+                  setVadState("IDLE_LISTENING");
+                }
+              }
             };
             utterance.onerror = () => {
-              setIsSpeaking(false);
-              isSpeakingRef.current = false;
-              setVadState("IDLE_LISTENING");
+              if (activeTurnTokenRef.current === turnToken) {
+                setIsSpeaking(false);
+                isSpeakingRef.current = false;
+                if (!isRecordingRef.current) {
+                  setVadState("IDLE_LISTENING");
+                }
+              }
             };
             window.speechSynthesis.speak(utterance);
           } else {
@@ -981,7 +1011,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             >
               CASE: {caseId}
             </span>
-            {sarvamStatus?.api_configured && sarvamStatus?.provider_reachable !== "no" ? (
+            {sarvamStatus?.api_configured && sarvamStatus?.provider_reachable !== "no" && sarvamStatus?.mode !== "OFFLINE_LOCAL_FALLBACK" ? (
               <span
                 style={{
                   fontSize: "11px",
@@ -997,7 +1027,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   gap: "4px",
                 }}
               >
-                <Radio size={10} color="#059669" /> 🟢 Live Cloud (Sarvam AI API · Saaras STT / Bulbul TTS)
+                <Radio size={10} color="#059669" /> 🟢 Sarvam AI Cloud Voice Active (Disclosed Transcription · Saaras STT / Bulbul TTS)
               </span>
             ) : (
               <span
@@ -1015,7 +1045,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   gap: "4px",
                 }}
               >
-                <Shield size={10} color="#4F46E5" /> 🔵 Deterministic Offline Mode (Local Air-Gapped Engine · 0 External Calls)
+                <Shield size={10} color="#4F46E5" /> 🔵 Deterministic Offline Air-Gap Mode (Local Air-Gapped Engine · 0 External Calls)
               </span>
             )}
           </div>
@@ -1869,19 +1899,45 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                       <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                         RECORD PREVIEW: {previewArtifact.filename}
                       </span>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          color: "#047857",
-                          backgroundColor: "#ECFDF5",
-                          padding: "1px 6px",
-                          borderRadius: "3px",
-                          fontFamily: "var(--font-mono)",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        Bitstream Intact
-                      </span>
+                      {previewArtifact.bitstream_verified ? (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#047857",
+                            backgroundColor: "#ECFDF5",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <Shield size={10} />
+                          {previewArtifact.source_tier === "STAGED"
+                            ? "Staged Bitstream (SHA-256 Calculated)"
+                            : "Bitstream Intact (SHA-256 Verified)"}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#DC2626",
+                            backgroundColor: "#FEF2F2",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <AlertTriangle size={10} />
+                          Bitstream Mismatch / Tampered
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => setPreviewArtifact(null)}
@@ -1971,7 +2027,11 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     }}
                   >
                     <span>
-                      SHA-256 confirms bitstream integrity during custody storage. Bitstream match proves bytes have not changed since acquisition.
+                      {previewArtifact.bitstream_verified
+                        ? previewArtifact.source_tier === "STAGED"
+                          ? "SHA-256 calculated from raw staging file bytes. Un-ingested local staging."
+                          : "SHA-256 confirms bitstream integrity during custody storage. Bitstream match proves bytes have not changed since acquisition."
+                        : "WARNING: Computed SHA-256 does not match recorded custody hash! Potential tampering or bitstream corruption detected."}
                     </span>
                     <a
                       href={previewArtifact.download_url}
@@ -2061,7 +2121,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
           }}
         >
           <div style={{ fontSize: "11px", color: "#64748B" }}>
-            Zero raw evidence transmitted • Deterministic Z3 formal verification • BSA Section 63 compliant
+            Local evidence custody preserved • Ephemeral voice buffer • Deterministic Z3 solver • BSA Sec 63 audit trail maintained
           </div>
           <button
             onClick={() => {

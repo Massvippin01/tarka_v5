@@ -777,6 +777,7 @@ def orchestrate_agent_action(
         "preview_artifact_id": execution.get("preview_artifact_id"),
         "speech": execution.get("speech"),
         "navigation_view": execution.get("navigation_view"),
+        "target_tab": execution.get("navigation_view"),
         "language_code": execution.get("language_code", req.language_code or "en-IN"),
         "execution_latency_ms": execution.get("execution_latency_ms"),
         "error": execution.get("error"),

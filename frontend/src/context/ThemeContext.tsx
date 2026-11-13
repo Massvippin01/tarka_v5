@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemeMode = "porcelain" | "obsidian" | "midnight-teal" | "obsidian-glass" | "high-contrast";
+export type ThemeMode = "obsidian-glass" | "midnight-teal" | "porcelain" | "obsidian" | "high-contrast";
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -14,12 +14,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("tarka_v5_theme");
-      if (stored === "porcelain" || stored === "obsidian" || stored === "midnight-teal") {
+      if (stored === "porcelain" || stored === "obsidian" || stored === "midnight-teal" || stored === "obsidian-glass" || stored === "high-contrast") {
         return stored as ThemeMode;
       }
     }
-    // Default to Daylight Executive Bento (porcelain)
-    return "porcelain";
+    // Phase 15 Canonical Default: Admin Dashboard V2 Midnight Navy & Ocean Blue Glass
+    return "obsidian-glass";
   });
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -31,9 +31,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cycleTheme = () => {
-    const modes: ThemeMode[] = ["porcelain", "obsidian", "midnight-teal"];
-    const currentNormalized = theme === "obsidian-glass" ? "obsidian" : theme;
-    const nextIdx = (modes.indexOf(currentNormalized as ThemeMode) + 1) % modes.length;
+    const modes: ThemeMode[] = ["obsidian-glass", "midnight-teal", "porcelain", "obsidian"];
+    const currentNormalized = theme;
+    const nextIdx = (modes.indexOf(currentNormalized) + 1) % modes.length;
     setTheme(modes[nextIdx]);
   };
 

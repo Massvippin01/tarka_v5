@@ -19,8 +19,8 @@ body,
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: var(--bento-canvas, #F4F6FB);
-  color: var(--bento-text-primary, #0F172A);
+  background-color: var(--bento-canvas, #060B14);
+  color: var(--reui-text-primary, #F8FAFC);
   font-family: var(--font-sans);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;

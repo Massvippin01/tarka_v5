@@ -1785,6 +1785,9 @@ def test_z_full_golden_investigation(memory_service, authorized_context):
 def test_fastapi_memory_api():
     """Verify HTTP endpoints for memory querying, snapshot, rehydration, and telemetry."""
     client = TestClient(app)
+    from app.services.auth_service import AuthService
+    token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+    client.headers.update({"Authorization": f"Bearer {token}"})
     # 1. Organizational knowledge
     r_org = client.get("/api/v1/memory/organizational")
     assert r_org.status_code == 200

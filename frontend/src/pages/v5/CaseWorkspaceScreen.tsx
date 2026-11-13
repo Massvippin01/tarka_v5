@@ -126,7 +126,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        background: "#F8FAFC",
+        background: "transparent",
         overflow: "hidden",
         fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
         boxSizing: "border-box",
@@ -138,8 +138,8 @@ export const CaseWorkspaceScreen: React.FC = () => {
       <div
         style={{
           flexShrink: 0,
-          background: "#FFFFFF",
-          borderBottom: "1px solid #E2E8F0",
+          background: "var(--reui-card-bg, #0F1B2E)",
+          borderBottom: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
           padding: "8px 14px",
           display: "flex",
           alignItems: "center",

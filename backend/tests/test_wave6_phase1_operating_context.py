@@ -15,7 +15,10 @@ from app.services.operating_context_service import OperatingContextService
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    c = TestClient(app)
+    token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+    c.headers.update({"Authorization": f"Bearer {token}"})
+    return c
 
 
 @pytest.fixture

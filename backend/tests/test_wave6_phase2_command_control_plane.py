@@ -21,7 +21,10 @@ from app.services.command.ui_action_registry import UIActionRegistry
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    c = TestClient(app)
+    token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+    c.headers.update({"Authorization": f"Bearer {token}"})
+    return c
 
 
 @pytest.fixture

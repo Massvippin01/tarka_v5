@@ -1,31 +1,96 @@
 /* ==========================================================================
-   TARKA v5.0 — DAYLIGHT EXECUTIVE SAAS BENTO DESIGN SYSTEM
-   Inspired by Salezy, FlowMail, Noteflow, Health, and ReUI.io
+   TARKA v5.0 — PHASE 15 ADAPTIVE INTELLIGENCE WORKBENCH DESIGN SYSTEM
+   Inspired by Admin Dashboard V2 (Midnight Navy #060B14, Ocean Blue #0F1B2E,
+   Controlled Cyan #06B6D4/#22D3EE, and Electric Blue #3B82F6)
    Used by National Cyber Crime Research & Digital Evidence Falsification
    ========================================================================== */
 
-:root {
-  /* Core Daylight Surface & Frame Tokens */
-  --bento-canvas: #F4F6FB;           /* Soft daylight canvas background */
-  --reui-frame-bg: #F4F5F9;          /* Outer app shell and sidebar */
-  --reui-canvas-bg: #F8FAFC;         /* Inset main workspace canvas */
-  --reui-card-bg: #FFFFFF;           /* Crisp pristine white card surface */
-  --reui-card-well: #F4F5F9;         /* Recessed well background */
+:root, [data-theme="obsidian-glass"], [data-theme="obsidian"] {
+  /* Core Canonical Admin Dashboard V2 Surface & Frame Tokens */
+  --bento-canvas: #060B14;           /* Midnight navy canvas background */
+  --reui-frame-bg: #060B14;          /* Outer app shell and sidebar */
+  --reui-canvas-bg: #0B1220;         /* Inset main workspace canvas */
+  --reui-card-bg: #0F1B2E;           /* Deep ocean-blue card surface */
+  --reui-card-well: #0B1220;         /* Recessed well background */
 
-  /* Hairline Borders */
-  --reui-border-strong: #E2E8F0;     /* Slate-200: Crisp 1px structural hairlines */
-  --reui-border-subtle: #F1F5F9;     /* Slate-100: Table row and cell dividers */
-  --reui-border-well: #E2E8F0;       /* Outer well border */
-  --reui-border-inner: rgba(15, 23, 42, 0.06); /* Inner card border */
+  /* Hairline Specular Borders */
+  --reui-border-strong: rgba(255, 255, 255, 0.10);  /* Crisp specular panel separation */
+  --reui-border-subtle: rgba(255, 255, 255, 0.05);  /* Table row and cell dividers */
+  --reui-border-well: rgba(255, 255, 255, 0.08);    /* Outer well border */
+  --reui-border-inner: rgba(255, 255, 255, 0.04);   /* Inner card border */
+  --reui-border-cyan: rgba(34, 211, 238, 0.30);     /* Active/focused cyan highlight */
 
   /* High-Definition Typography Tokens */
-  --reui-text-strong: #09090B;       /* Zinc-950: Razor-sharp primary headings and hero numbers */
-  --reui-text-primary: #0F172A;      /* Slate-900: Body headings, table numbers */
-  --reui-text-secondary: #475569;    /* Slate-600: Body labels, explanations (min contrast) */
-  --reui-text-muted: #64748B;        /* Slate-500: Metadata, captions (12px+ only) */
-  --reui-text-inverse: #FFFFFF;
+  --reui-text-strong: #FFFFFF;       /* Razor-sharp primary headings and hero numbers */
+  --reui-text-primary: #F8FAFC;      /* Body headings, table numbers */
+  --reui-text-secondary: #94A3B8;    /* Body labels, explanations */
+  --reui-text-muted: #64748B;        /* Metadata, captions */
+  --reui-text-inverse: #060B14;
 
   /* Executive Semantic Status Tokens */
+  --reui-emerald-bg: rgba(16, 185, 129, 0.14);
+  --reui-emerald-border: rgba(16, 185, 129, 0.32);
+  --reui-emerald-text: #34D399;
+  --reui-emerald-dot: #10B981;
+
+  --reui-rose-bg: rgba(244, 63, 94, 0.14);
+  --reui-rose-border: rgba(244, 63, 94, 0.32);
+  --reui-rose-text: #FB7185;
+  --reui-rose-dot: #F43F5E;
+
+  --reui-amber-bg: rgba(245, 158, 11, 0.14);
+  --reui-amber-border: rgba(245, 158, 11, 0.32);
+  --reui-amber-text: #FBBF24;
+  --reui-amber-dot: #F59E0B;
+
+  --reui-indigo-bg: rgba(6, 182, 212, 0.15);
+  --reui-indigo-border: rgba(34, 211, 238, 0.35);
+  --reui-indigo-text: #22D3EE;
+  --reui-indigo-solid: #06B6D4;
+
+  --reui-purple-bg: rgba(139, 92, 246, 0.14);
+  --reui-purple-border: rgba(139, 92, 246, 0.32);
+  --reui-purple-text: #A78BFA;
+  --reui-purple-dot: #8B5CF6;
+
+  /* Shadcn Token Mappings for Ingest & Form Controls */
+  --background: #060B14;
+  --foreground: #F8FAFC;
+  --card: #0F1B2E;
+  --card-foreground: #F8FAFC;
+  --popover: #132238;
+  --popover-foreground: #F8FAFC;
+  --primary: #06B6D4;
+  --primary-foreground: #060B14;
+  --muted: #132238;
+  --muted-foreground: #94A3B8;
+  --accent: #1A2C46;
+  --accent-foreground: #22D3EE;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #06B6D4;
+}
+
+[data-theme="porcelain"], [data-theme="daylight"] {
+  /* Core Daylight Surface & Frame Tokens (Preserved for Alt+T toggle) */
+  --bento-canvas: #F4F6FB;
+  --reui-frame-bg: #F4F5F9;
+  --reui-canvas-bg: #F8FAFC;
+  --reui-card-bg: #FFFFFF;
+  --reui-card-well: #F4F5F9;
+
+  --reui-border-strong: #E2E8F0;
+  --reui-border-subtle: #F1F5F9;
+  --reui-border-well: #E2E8F0;
+  --reui-border-inner: rgba(15, 23, 42, 0.06);
+  --reui-border-cyan: #38BDF8;
+
+  --reui-text-strong: #09090B;
+  --reui-text-primary: #0F172A;
+  --reui-text-secondary: #475569;
+  --reui-text-muted: #64748B;
+  --reui-text-inverse: #FFFFFF;
+
   --reui-emerald-bg: #ECFDF5;
   --reui-emerald-border: #A7F3D0;
   --reui-emerald-text: #059669;
@@ -51,7 +116,6 @@
   --reui-purple-text: #6D28D9;
   --reui-purple-dot: #8B5CF6;
 
-  /* Shadcn Token Mappings for Intake Screen */
   --background: #F4F6FB;
   --foreground: #0F172A;
   --card: #FFFFFF;
@@ -60,17 +124,17 @@
   --popover-foreground: #0F172A;
   --primary: #4F46E5;
   --primary-foreground: #FFFFFF;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #0F172A;
   --muted: #F1F5F9;
-  --muted-foreground: #475569;
-  --accent: #EEF2FF;
-  --accent-foreground: #4338CA;
-  --destructive: #E11D48;
-  --destructive-foreground: #FFFFFF;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
   --border: #E2E8F0;
   --input: #E2E8F0;
   --ring: #4F46E5;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --destructive: #E11D48;
+  --destructive-foreground: #FFFFFF;
   --radius: 14px;
 
   /* Local Air-Gapped Variable Fonts */
@@ -113,19 +177,21 @@ body {
 }
 
 .bento-card {
-  background: #FFFFFF;
-  border: 1px solid var(--reui-border-strong);
+  background: var(--reui-card-bg, #0F1B2E);
+  border: 1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08));
   border-radius: 14px;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.40), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
 .bento-card:hover {
-  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.06);
-  border-color: #CBD5E1;
+  box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.55), 0 0 16px -2px rgba(6, 182, 212, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+  border-color: rgba(34, 211, 238, 0.35);
 }
 
 /* ==========================================================================

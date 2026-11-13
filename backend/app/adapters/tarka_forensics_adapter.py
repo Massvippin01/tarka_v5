@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -834,23 +835,75 @@ class TarkaForensicsAdapter:
     # Narrow Safe Permitted File Discovery & Voice Ingestion Bridge (Phase 5)
     # -----------------------------------------------------------------------
 
+    def _ensure_staging_fixtures(self, staging_path: Path) -> None:
+        """Seeds permitted staging directory with canonical un-ingested case evidence fixtures if not present."""
+        # Safety Boundary: Strict environment check - NEVER synthesize fixtures in production or staging environments
+        app_env = os.getenv("APP_ENV", "development").strip().lower()
+        if app_env in ("production", "prod", "staging", "stage") and not os.getenv("PYTEST_CURRENT_TEST"):
+            logger.info("Skipping synthetic fixture seeding in non-development/non-test environment (%s)", app_env)
+            return
+
+        staging_path.mkdir(parents=True, exist_ok=True)
+        demo_dir = Path("demo_evidence_files/Case-1_UPI_Fraud_Discrepancy").resolve()
+        if not demo_dir.exists():
+            demo_dir = Path(__file__).resolve().parent.parent.parent.parent / "demo_evidence_files" / "Case-1_UPI_Fraud_Discrepancy"
+
+        fixture_map = {
+            "case_1_bank_statement.csv": "bank_statement.csv",
+            "case_1_screenshot_claim.json": "screenshot_claim.json",
+            "case_1_whatsapp_chat.txt": "whatsapp_chat.txt",
+            "case_1_cdr_records.csv": "cdr_records.csv",
+            "case_1_payment_receipt.png": "payment_receipt_screenshot.png",
+        }
+
+        for target_name, src_name in fixture_map.items():
+            target_file = staging_path / target_name
+            if not target_file.exists():
+                src_file = demo_dir / src_name
+                if src_file.exists():
+                    target_file.write_bytes(src_file.read_bytes())
+                elif target_name.endswith(".csv"):
+                    target_file.write_text(
+                        "Date,Time,Transaction_ID,RRN,Description,Debit,Credit,Balance,Payer_VPA,Payee_VPA\n"
+                        "14/02/2026,10:19:30,TXN20260214001,202602148891,UPI-MERCHANT-DEBIT,25000.00,0.00,45200.00,victim@okhdfc,merchant.pay@okaxis\n",
+                        encoding="utf-8",
+                    )
+                elif target_name.endswith(".json"):
+                    target_file.write_text(
+                        json.dumps({
+                            "claimed_amount": 25000.0,
+                            "claimed_timestamp": "2026-02-14T10:19:30+05:30",
+                            "payer_vpa": "victim@okhdfc",
+                            "payee_vpa": "merchant.pay@okaxis",
+                        }, indent=2),
+                        encoding="utf-8",
+                    )
+                elif target_name.endswith(".txt"):
+                    target_file.write_text(
+                        "[14/02/2026, 10:15] User: Transferred 25000.\n",
+                        encoding="utf-8",
+                    )
+
     def _resolve_permitted_dir(self, directory_alias: str = "Downloads") -> Path:
         """Resolves permitted directories strictly preventing path traversal or unrestricted filesystem access."""
         alias = (directory_alias or "Downloads").strip().lower()
+        repo_root = Path(__file__).resolve().parent.parent.parent.parent
         downloads_path = (Path.home() / "Downloads").resolve()
-        staging_path = (Path("backend/data/staging/downloads")).resolve()
-        fixtures_path = (Path("backend/tests_tarka/tests/fixtures/synthetic_fraud_case")).resolve()
+        staging_path = (repo_root / "backend" / "data" / "staging" / "downloads").resolve()
+        fixtures_path = (repo_root / "backend" / "tests_tarka" / "tests" / "fixtures" / "synthetic_fraud_case").resolve()
 
         if "staging" in alias:
             staging_path.mkdir(parents=True, exist_ok=True)
+            self._ensure_staging_fixtures(staging_path)
             return staging_path
         elif "fixture" in alias:
             return fixtures_path
         else:
-            # Default to Downloads; if inaccessible or empty, fall back safely to workspace staging
-            if downloads_path.exists():
+            # Default to Downloads; if inaccessible or empty of case files, fall back safely to workspace staging
+            if downloads_path.exists() and any(downloads_path.glob("case_1*")):
                 return downloads_path
             staging_path.mkdir(parents=True, exist_ok=True)
+            self._ensure_staging_fixtures(staging_path)
             return staging_path
 
     def search_permitted_local_files(self, query: str = "case 1", directory_alias: str = "Downloads") -> Dict[str, Any]:

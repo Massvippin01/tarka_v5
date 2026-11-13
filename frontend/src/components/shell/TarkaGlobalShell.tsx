@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   Shield,
   FileText,
@@ -25,25 +25,95 @@ import { toast } from "sonner";
 import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
-import { IntakeScreen } from "../../pages/v5/IntakeScreen";
-import { EntityResolutionScreen } from "../../pages/v5/EntityResolutionScreen";
-import { AttributionScreen } from "../../pages/v5/AttributionScreen";
-import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
-import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
-import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
-import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
-import { PrivacyCryptoWorkbench } from "../tarka/privacy/PrivacyCryptoWorkbench";
-import { BenchmarkLabScreen } from "../../pages/v5/BenchmarkLabScreen";
-import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
-import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
-import { BenchmarkLabDrawer } from "../tarka/benchmark/BenchmarkLabDrawer";
-import { PublicDatasetBenchmarkModal } from "../tarka/benchmark/PublicDatasetBenchmarkModal";
-import { SarvamVoiceModal } from "../tarka/SarvamVoiceModal";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
-import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
-import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
-import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
-import { ForensicWorkstationScreen } from "../../pages/v5/ForensicWorkstationScreen";
+
+// Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
+const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
+const EntityResolutionScreen = lazy(() => import("../../pages/v5/EntityResolutionScreen").then((m) => ({ default: m.EntityResolutionScreen })));
+const AttributionScreen = lazy(() => import("../../pages/v5/AttributionScreen").then((m) => ({ default: m.AttributionScreen })));
+const FraudNetworkScreen = lazy(() => import("../../pages/v5/FraudNetworkScreen").then((m) => ({ default: m.FraudNetworkScreen })));
+const TaintEngineScreen = lazy(() => import("../../pages/v5/TaintEngineScreen").then((m) => ({ default: m.TaintEngineScreen })));
+const CourtProofScreen = lazy(() => import("../../pages/v5/CourtProofScreen").then((m) => ({ default: m.CourtProofScreen })));
+const CaseWorkspaceScreen = lazy(() => import("../../pages/v5/CaseWorkspaceScreen").then((m) => ({ default: m.CaseWorkspaceScreen })));
+const PrivacyCryptoWorkbench = lazy(() => import("../tarka/privacy/PrivacyCryptoWorkbench").then((m) => ({ default: m.PrivacyCryptoWorkbench })));
+const BenchmarkLabScreen = lazy(() => import("../../pages/v5/BenchmarkLabScreen").then((m) => ({ default: m.BenchmarkLabScreen })));
+const ForensicWorkstationScreen = lazy(() => import("../../pages/v5/ForensicWorkstationScreen").then((m) => ({ default: m.ForensicWorkstationScreen })));
+
+// Lazy-loaded modal dialogs and drawers
+const EvidenceIntakeModal = lazy(() => import("../tarka/workspace/EvidenceIntakeModal").then((m) => ({ default: m.EvidenceIntakeModal })));
+const NewCaseModal = lazy(() => import("../tarka/workspace/NewCaseModal").then((m) => ({ default: m.NewCaseModal })));
+const BenchmarkLabDrawer = lazy(() => import("../tarka/benchmark/BenchmarkLabDrawer").then((m) => ({ default: m.BenchmarkLabDrawer })));
+const PublicDatasetBenchmarkModal = lazy(() => import("../tarka/benchmark/PublicDatasetBenchmarkModal").then((m) => ({ default: m.PublicDatasetBenchmarkModal })));
+const SarvamVoiceModal = lazy(() => import("../tarka/SarvamVoiceModal").then((m) => ({ default: m.SarvamVoiceModal })));
+const RelationshipEvidenceSheet = lazy(() => import("../tarka/investigation/RelationshipEvidenceSheet").then((m) => ({ default: m.RelationshipEvidenceSheet })));
+const InvestigationIntelligenceBrief = lazy(() => import("../tarka/investigation/InvestigationIntelligenceBrief").then((m) => ({ default: m.InvestigationIntelligenceBrief })));
+const TransformationAuditLog = lazy(() => import("../tarka/investigation/TransformationAuditLog").then((m) => ({ default: m.TransformationAuditLog })));
+
+// Polished Obsidian Glass Suspense Fallback
+const ScreenSuspenseFallback: React.FC = () => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      minHeight: "420px",
+      gap: "14px",
+      background: "transparent",
+    }}
+  >
+    <div
+      style={{
+        width: "36px",
+        height: "36px",
+        borderRadius: "50%",
+        border: "3px solid rgba(6, 182, 212, 0.20)",
+        borderTopColor: "#22D3EE",
+        animation: "spin 0.8s linear infinite",
+        boxShadow: "0 0 16px rgba(6, 182, 212, 0.35)",
+      }}
+    />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+      <span style={{ fontSize: "12px", fontWeight: 800, color: "#22D3EE", letterSpacing: "0.08em", fontFamily: "var(--font-mono)" }}>
+        STREAMING FORENSIC MODULE...
+      </span>
+      <span style={{ fontSize: "10px", color: "var(--text-muted, #8C9EB0)" }}>
+        Cryptographic Attestation & Component Invariants Active
+      </span>
+    </div>
+  </div>
+);
+
+const getStageGuidanceTitle = (route: TarkaRoute): string => {
+  switch (route) {
+    case "workspace": return "Multi-Case Command Hub";
+    case "intake": return "Stage 01: Multi-Vector Intake & Falsification Gate";
+    case "entities": return "Stage 02: Entity Extraction & Hard-Veto Shield";
+    case "attribution": return "Stage 03: CGNAT Attribution & SIM-Swap Funnel";
+    case "network": return "Stage 04: Fraud Network & Actor Attribution";
+    case "taint-engine": return "Stage 05: LIBR Proportional Debit Lien Engine";
+    case "court-proof": return "Stage 06: BSA § 63 Evidence Certificate";
+    case "privacy-crypto": return "Stage 07: Cryptographic Verification & ZKP";
+    case "workstation": return "Stage 08: Deep Forensic Instrumentation";
+    default: return "Forensic Investigation Workflow";
+  }
+};
+
+const getStageGuidanceAction = (route: TarkaRoute): string => {
+  switch (route) {
+    case "workspace": return "Select active FIR case or import digital evidence files.";
+    case "intake": return "Verify Finacle CBS commitments and PDF incremental xref trailer integrity.";
+    case "entities": return "Evaluate extracted identity tokens against Hard-Veto Shield.";
+    case "attribution": return "Confirm 340→1 CGNAT port funnel and zero NTP clock drift delta.";
+    case "network": return "Trace syndicate hops, mule rings, and digital arrest controllers.";
+    case "taint-engine": return "Execute min-cut algorithm; isolate ₹1.80L fraud while protecting clean capital.";
+    case "court-proof": return "Verify SHA-256 CAS integrity and export Section 63(4) admissible PDF.";
+    case "privacy-crypto": return "Inspect Zero-Knowledge proofs and HSM signature attestations.";
+    case "workstation": return "Analyze multi-track temporal evidence loom and Z3 claim ablation.";
+    default: return "Follow verified evidentiary findings.";
+  }
+};
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -72,6 +142,9 @@ export const TarkaGlobalShell: React.FC = () => {
     toggleSidebar,
     presentationMode,
     togglePresentationMode,
+    investigationMode,
+    setInvestigationMode,
+    cycleInvestigationMode,
     density,
     setDensity,
     toggleBenchmarkLab,
@@ -92,6 +165,17 @@ export const TarkaGlobalShell: React.FC = () => {
   const [goldenHourOpen, setGoldenHourOpen] = useState<boolean>(false);
   const [clockPopoverOpen, setClockPopoverOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const getCompiledGoldenHourDirectives = () => {
     return `=== TARKA GOLDEN HOUR 1930 DISPATCH PACK — FIR #149/2026 ===
@@ -184,6 +268,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           setActivePage("benchmark");
+        } else if (e.key === "m" || e.key === "M") {
+          e.preventDefault();
+          cycleInvestigationMode();
         }
       }
     };
@@ -318,23 +405,39 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
   };
 
   // Determine effective sidebar state (56px collapsed vs 232px expanded/peeking)
-  const isExpanded = !sidebarCollapsed || isHoverPeeking;
+  const isExpanded = isMobile ? !sidebarCollapsed : (!sidebarCollapsed || isHoverPeeking);
 
   return (
     <div
       style={{
         display: "flex",
-        width: "100vw",
+        width: "100%",
+        maxWidth: "100vw",
         height: "100vh",
-        background: "var(--reui-frame-bg, #F4F4F5)",
-        padding: "6px",
-        gap: "6px",
+        background: "var(--bento-canvas, #060B14)",
+        padding: isMobile ? "3px" : "6px",
+        gap: isMobile ? "3px" : "6px",
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflowX: "hidden",
+        overflowY: "hidden",
         fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
       }}
     >
       <TarkaCommandPalette />
+
+      {/* Mobile Drawer Backdrop */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          onClick={toggleSidebar}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(6, 11, 20, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 110,
+          }}
+        />
+      )}
 
       {/* =========================================================================
           1. SHADCN-STYLE COLLAPSIBLE SIDEBAR RAIL (56PX DEFAULT / 232PX EXPANDED)
@@ -343,29 +446,34 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       {!presentationMode && activePage === "workbench" && (
         <aside
           onMouseEnter={() => {
-            if (sidebarCollapsed) setIsHoverPeeking(true);
+            if (!isMobile && sidebarCollapsed) setIsHoverPeeking(true);
           }}
           onMouseLeave={() => {
-            if (sidebarCollapsed) setIsHoverPeeking(false);
+            if (!isMobile && sidebarCollapsed) setIsHoverPeeking(false);
           }}
           style={{
-            width: `${isExpanded ? 232 : 56}px`,
-            minWidth: `${isExpanded ? 232 : 56}px`,
-            maxWidth: `${isExpanded ? 232 : 56}px`,
-            height: "100%",
-            display: "flex",
+            display: isMobile && sidebarCollapsed ? "none" : "flex",
+            position: isMobile ? "fixed" : (isHoverPeeking ? "absolute" : "relative"),
+            left: isMobile ? "6px" : undefined,
+            top: isMobile ? "6px" : undefined,
+            bottom: isMobile ? "6px" : undefined,
+            width: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            minWidth: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            maxWidth: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            height: isMobile ? "calc(100% - 12px)" : "100%",
             flexDirection: "column",
             justifyContent: "space-between",
             flexShrink: 0,
             boxSizing: "border-box",
             padding: "8px 6px",
-            background: "#FFFFFF",
-            border: "1px solid #E2E8F0",
+            background: "var(--glass-tint-level-2, rgba(19, 34, 56, 0.95))",
+            border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
             borderRadius: "12px",
-            boxShadow: isHoverPeeking ? "0 10px 25px -5px rgba(15, 23, 42, 0.1)" : "0 1px 3px rgba(0,0,0,0.02)",
-            position: isHoverPeeking ? "absolute" : "relative",
-            zIndex: isHoverPeeking ? 100 : 10,
-            transition: "width 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease",
+            boxShadow: isMobile || isHoverPeeking ? "0 16px 36px -4px rgba(0, 0, 0, 0.85)" : "0 4px 20px -2px rgba(0, 0, 0, 0.40)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            zIndex: isMobile ? 120 : (isHoverPeeking ? 100 : 10),
+            transition: isMobile ? "none" : "width 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease",
             overflow: "hidden",
             whiteSpace: "nowrap",
           }}
@@ -380,19 +488,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     width: "28px",
                     height: "28px",
                     borderRadius: "7px",
-                    background: "#4F46E5",
+                    background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#FFFFFF",
-                    boxShadow: "0 1px 3px rgba(79, 70, 229, 0.3)",
+                    boxShadow: "0 2px 10px rgba(6, 182, 212, 0.35)",
                     flexShrink: 0,
                   }}
                 >
                   <Shield size={16} strokeWidth={2.4} />
                 </div>
                 {isExpanded && (
-                  <span style={{ fontSize: "15px", fontWeight: 800, letterSpacing: "-0.03em", color: "#09090B" }}>
+                  <span style={{ fontSize: "15px", fontWeight: 800, letterSpacing: "-0.03em", color: "#FFFFFF" }}>
                     TARKA
                   </span>
                 )}
@@ -406,10 +514,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <button
                   type="button"
                   title={`${activeCase?.firNumber || "Case"} · ${activeCase?.policeStation || ""} · ${activeCase?.title || ""}`}
-                  className="hover:border-slate-300 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
+                  className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
                   style={{
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
                     borderRadius: "8px",
                     padding: isExpanded ? "6px 8px" : "6px",
                     display: "flex",
@@ -423,23 +531,23 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   {isExpanded ? (
                     <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                        <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 4px", borderRadius: "3px" }}>
+                        <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#22D3EE", background: "rgba(6, 182, 212, 0.16)", border: "1px solid rgba(34, 211, 238, 0.25)", padding: "1px 4px", borderRadius: "3px" }}>
                           {activeCase?.firNumber || "CASE"}
                         </span>
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#64748B" }}>
+                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#94A3B8" }}>
                           {activeCase?.policeStation ? activeCase.policeStation.split(" ")[0] : "Station"}
                         </span>
                       </div>
-                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#F8FAFC", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {activeCase?.title ? activeCase.title.slice(0, 22) : "Digital Arrest"}...
                       </div>
                     </div>
                   ) : (
-                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#22D3EE" }}>
                       {activeCase?.firNumber ? activeCase.firNumber.replace(/[^0-9]/g, "").slice(0, 3) || "001" : "001"}
                     </span>
                   )}
-                  {isExpanded && <ChevronDown size={12} color="#71717A" />}
+                  {isExpanded && <ChevronDown size={12} color="#94A3B8" />}
                 </button>
               </Popover.Trigger>
 
@@ -449,19 +557,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="start"
                   sideOffset={8}
                   style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "10px",
                     padding: "10px 12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.70)",
                     width: "300px",
                     zIndex: 9999,
                     fontFamily: "var(--font-sans)",
+                    color: "#F8FAFC",
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         SWITCH ACTIVE CASE WORKSPACE
                       </span>
                       <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" dot={false} />
@@ -480,26 +589,26 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                               gap: "2px",
                               padding: "6px 8px",
                               borderRadius: "6px",
-                              background: isCurrent ? "#EEF2FF" : "#F8FAFC",
-                              border: isCurrent ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
+                              background: isCurrent ? "rgba(6, 182, 212, 0.18)" : "rgba(255, 255, 255, 0.03)",
+                              border: isCurrent ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid rgba(255, 255, 255, 0.06)",
                               cursor: "pointer",
                             }}
                           >
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#4338CA" : "#334155" }}>
+                              <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#22D3EE" : "#CBD5E1" }}>
                                 {cw.firNumber}
                               </span>
                               {cw.goldenHourRemainingMins > 0 ? (
-                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#B45309", background: "#FEF3C7", padding: "1px 4px", borderRadius: "3px" }}>
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#FBBF24", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
                                   ⚡ {cw.goldenHourRemainingMins}m
                                 </span>
                               ) : isCurrent ? (
-                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#34D399", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
                                   ACTIVE
                                 </span>
                               ) : null}
                             </div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#F8FAFC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {cw.title}
                             </div>
                             <div style={{ fontSize: "9.5px", color: "#64748B" }}>
@@ -510,7 +619,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       })}
                     </div>
 
-                    <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "6px", display: "flex", gap: "6px" }}>
+                    <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "6px", display: "flex", gap: "6px" }}>
                       <button
                         type="button"
                         onClick={openNewCaseModal}
@@ -522,12 +631,13 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           gap: "4px",
                           padding: "5px 8px",
                           borderRadius: "6px",
-                          background: "#4F46E5",
+                          background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                           color: "#FFFFFF",
                           border: "none",
                           fontSize: "11px",
-                          fontWeight: 600,
+                          fontWeight: 700,
                           cursor: "pointer",
+                          boxShadow: "0 2px 8px rgba(6, 182, 212, 0.25)",
                         }}
                       >
                         <Plus size={12} />
@@ -535,7 +645,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       </button>
                     </div>
                   </div>
-                  <Popover.Arrow style={{ fill: "#FFFFFF" }} />
+                  <Popover.Arrow style={{ fill: "#132238" }} />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
@@ -557,7 +667,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       }
                     }}
                     title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
-                    className="hover:bg-slate-100/70 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
+                    className="hover:bg-cyan-500/10 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
                     style={{
                       position: "relative",
                       display: "flex",
@@ -565,9 +675,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       justifyContent: isExpanded ? "space-between" : "center",
                       padding: isExpanded ? "7px 9px" : "8px 0",
                       borderRadius: "8px",
-                      background: isActive ? "#F1F5F9" : "transparent",
-                      border: isActive ? "1px solid #E2E8F0" : "1px solid transparent",
-                      color: "#09090B",
+                      background: isActive ? "rgba(6, 182, 212, 0.16)" : "transparent",
+                      border: isActive ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid transparent",
+                      color: isActive ? "#FFFFFF" : "#94A3B8",
                       cursor: "pointer",
                       textAlign: "left",
                       width: "100%",
@@ -583,7 +693,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           bottom: "20%",
                           width: "3px",
                           borderRadius: "0 3px 3px 0",
-                          background: "#4F46E5",
+                          background: "#06B6D4",
+                          boxShadow: "0 0 8px #22D3EE",
                         }}
                       />
                     )}
@@ -594,11 +705,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           fontSize: "11px",
                           fontWeight: 800,
                           fontFamily: "var(--font-mono)",
-                          color: isActive ? "#4338CA" : "#64748B",
-                          background: isActive ? "#EEF2FF" : "#F8FAFC",
+                          color: isActive ? "#22D3EE" : "#94A3B8",
+                          background: isActive ? "rgba(6, 182, 212, 0.22)" : "rgba(255, 255, 255, 0.04)",
                           padding: "2px 6px",
                           borderRadius: "4px",
-                          border: `1px solid ${isActive ? "#C7D2FE" : "#E2E8F0"}`,
+                          border: `1px solid ${isActive ? "rgba(34, 211, 238, 0.35)" : "rgba(255, 255, 255, 0.08)"}`,
                           flexShrink: 0,
                         }}
                       >
@@ -610,7 +721,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                             style={{
                               fontSize: "12px",
                               fontWeight: isActive ? 700 : 500,
-                              color: isActive ? "#09090B" : "#475569",
+                              color: isActive ? "#FFFFFF" : "#E2E8F0",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -618,7 +729,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           >
                             {item.shortTitle}
                           </div>
-                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                          <div style={{ fontSize: "9.5px", color: "#94A3B8" }}>
                             {item.subtitle}
                           </div>
                         </div>
@@ -627,7 +738,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
                     {isExpanded && (
                       <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        {item.isLocked && <Lock size={12} color="#E11D48" />}
+                        {item.isLocked && <Lock size={12} color="#FB7185" />}
                         <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
                       </div>
                     )}
@@ -642,7 +753,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <button
                   type="button"
                   title="Inspect Ingested Artifact Tree (T1/T2/T3 Tiers)"
-                  className="hover:bg-slate-100 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
+                  className="hover:bg-slate-800/60 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -650,16 +761,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     gap: "8px",
                     padding: isExpanded ? "6px 8px" : "8px 0",
                     borderRadius: "8px",
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
-                    color: "#334155",
+                    border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "#F8FAFC",
                     fontSize: "11px",
                     fontWeight: 600,
                     cursor: "pointer",
                     width: "100%",
                   }}
                 >
-                  <FolderTree size={14} color="#64748B" />
+                  <FolderTree size={14} color="#94A3B8" />
                   {isExpanded && <span>Artifact Tree (5)</span>}
                 </button>
               </Popover.Trigger>
@@ -670,17 +781,18 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="center"
                   sideOffset={8}
                   style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "10px",
                     padding: "10px 12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.70)",
                     width: "280px",
                     zIndex: 9999,
                     fontFamily: "var(--font-sans)",
+                    color: "#F8FAFC",
                   }}
                 >
-                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#09090B", marginBottom: "6px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#FFFFFF", marginBottom: "6px" }}>
                     Ingested Artifact Tree (T1–T3 Tiers)
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -693,14 +805,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           justifyContent: "space-between",
                           padding: "3px 5px",
                           borderRadius: "4px",
-                          background: "#F8FAFC",
-                          border: "1px solid #E2E8F0",
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.06)",
                           fontSize: "10.5px",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-                          <FileText size={11} color="#64748B" />
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <FileText size={11} color="#94A3B8" />
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#F8FAFC", overflow: "hidden", textOverflow: "ellipsis" }}>
                             {f.name}
                           </span>
                         </div>
@@ -710,8 +822,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                             fontWeight: 700,
                             padding: "0.5px 4px",
                             borderRadius: "3px",
-                            background: f.status === "emerald" ? "#ECFDF5" : f.status === "rose" ? "#FFF1F2" : "#FFFBEB",
-                            color: f.status === "emerald" ? "#047857" : f.status === "rose" ? "#BE123C" : "#92400E",
+                            background: f.status === "emerald" ? "rgba(16, 185, 129, 0.15)" : f.status === "rose" ? "rgba(244, 63, 94, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                            color: f.status === "emerald" ? "#34D399" : f.status === "rose" ? "#FB7185" : "#FBBF24",
+                            border: `1px solid ${f.status === "emerald" ? "rgba(16, 185, 129, 0.30)" : f.status === "rose" ? "rgba(244, 63, 94, 0.30)" : "rgba(245, 158, 11, 0.30)"}`,
                           }}
                         >
                           {f.tier}
@@ -719,14 +832,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       </div>
                     ))}
                   </div>
-                  <Popover.Arrow style={{ fill: "#FFFFFF" }} />
+                  <Popover.Arrow style={{ fill: "#132238" }} />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
           </div>
 
           {/* Bottom Sidebar: Z3 Solver Telemetry, IO Avatar, and Collapse Toggle */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid #F1F5F9", paddingTop: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "8px" }}>
             {/* Z3 Status Dot & Tooltip */}
             <div
               title="Z3 SMT Solver: ONLINE 3.8 ms · CAS SHA-256 Chain INTACT"
@@ -735,19 +848,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 alignItems: "center",
                 justifyContent: isExpanded ? "space-between" : "center",
                 padding: "4px",
-                background: "#F8FAFC",
+                background: "rgba(255, 255, 255, 0.04)",
                 borderRadius: "6px",
-                border: "1px solid #E2E8F0",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 fontSize: "10px",
                 cursor: "help",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10B981", flexShrink: 0 }} />
-                {isExpanded && <span style={{ fontWeight: 700, color: "#09090B" }}>Z3 SMT</span>}
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981", flexShrink: 0 }} />
+                {isExpanded && <span style={{ fontWeight: 700, color: "#FFFFFF" }}>Z3 SMT</span>}
               </div>
               {isExpanded && (
-                <span style={{ fontFamily: "var(--font-mono)", color: "#047857", fontWeight: 700, fontSize: "9px" }}>
+                <span style={{ fontFamily: "var(--font-mono)", color: "#34D399", fontWeight: 700, fontSize: "9px" }}>
                   3.8ms
                 </span>
               )}
@@ -770,7 +883,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   width: "26px",
                   height: "26px",
                   borderRadius: "50%",
-                  background: "#4338CA",
+                  background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                   color: "#FFFFFF",
                   fontSize: "10px",
                   fontWeight: 800,
@@ -778,16 +891,17 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  boxShadow: "0 0 8px rgba(6, 182, 212, 0.3)",
                 }}
               >
                 VS
               </div>
               {isExpanded && (
                 <div style={{ minWidth: 0, overflow: "hidden" }}>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis" }}>
                     Insp. Vikram Sharma
                   </div>
-                  <div style={{ fontSize: "9px", color: "#64748B" }}>Investigating Officer</div>
+                  <div style={{ fontSize: "9px", color: "#94A3B8" }}>Investigating Officer</div>
                 </div>
               )}
             </div>
@@ -797,7 +911,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={toggleSidebar}
               title={`Toggle Sidebar Rail (Ctrl+B) — Currently ${sidebarCollapsed ? "Collapsed (56px)" : "Expanded (232px)"}`}
-              className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-800/50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -805,9 +919,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 gap: "6px",
                 padding: "5px",
                 borderRadius: "6px",
-                border: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-                color: "#64748B",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "rgba(255, 255, 255, 0.04)",
+                color: "#94A3B8",
                 cursor: "pointer",
                 fontSize: "10px",
                 fontWeight: 600,
@@ -827,46 +941,73 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       <div
         style={{
           flex: 1,
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
+          background: "var(--glass-tint-level-1, rgba(15, 27, 46, 0.75))",
+          border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
           borderRadius: "12px",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.45)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           minWidth: 0,
           minHeight: 0,
           height: "100%",
         }}
       >
-        {/* TOP COMMAND HEADER (STRICT 44PX SINGLE-LINE, ZERO WRAPPING) */}
+        {/* TOP COMMAND HEADER (RESPONSIVE TOUCH-SCROLL ON MOBILE) */}
         <header
           style={{
             height: "44px",
             minHeight: "44px",
             maxHeight: "44px",
-            background: "#FFFFFF",
-            borderBottom: "1px solid #E2E8F0",
-            padding: "0 12px",
+            background: "var(--glass-tint-level-2, rgba(19, 34, 56, 0.85))",
+            borderBottom: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
+            padding: "0 10px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "10px",
+            gap: "8px",
             flexShrink: 0,
             boxSizing: "border-box",
             whiteSpace: "nowrap",
             zIndex: 20,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollbarWidth: "none",
           }}
         >
-          {/* Left: Top-Level Mode Switcher + Breadcrumb / Active Case Switcher */}
+          {/* Left: Mobile Drawer Trigger + Top-Level Mode Switcher + Breadcrumb / Active Case Switcher */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flexShrink: 1 }}>
+            {isMobile && activePage === "workbench" && (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="lg:hidden"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  background: "#F8FAFC",
+                  border: "1px solid #CBD5E1",
+                  color: "#0F172A",
+                  cursor: "pointer",
+                }}
+                title="Open Navigation Menu"
+              >
+                <FolderTree size={14} color="#4F46E5" />
+              </button>
+            )}
             {/* Top-Level Mode Switcher (Workspaces | Workbench) */}
             <div
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                background: "#F1F5F9",
-                border: "1px solid #CBD5E1",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: "7px",
                 padding: "2px",
                 gap: "2px",
@@ -885,10 +1026,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   borderRadius: "5px",
                   fontSize: "11px",
                   fontWeight: activePage === "workspaces" ? 800 : 600,
-                  background: activePage === "workspaces" ? "#FFFFFF" : "transparent",
-                  color: activePage === "workspaces" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "workspaces" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "workspaces" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  background: activePage === "workspaces" ? "rgba(6, 182, 212, 0.20)" : "transparent",
+                  color: activePage === "workspaces" ? "#22D3EE" : "#94A3B8",
+                  boxShadow: activePage === "workspaces" ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
+                  border: activePage === "workspaces" ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.12s ease",
                 }}
@@ -911,10 +1052,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   borderRadius: "5px",
                   fontSize: "11px",
                   fontWeight: activePage === "workbench" ? 800 : 600,
-                  background: activePage === "workbench" ? "#FFFFFF" : "transparent",
-                  color: activePage === "workbench" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "workbench" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "workbench" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  background: activePage === "workbench" ? "rgba(6, 182, 212, 0.20)" : "transparent",
+                  color: activePage === "workbench" ? "#22D3EE" : "#94A3B8",
+                  boxShadow: activePage === "workbench" ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
+                  border: activePage === "workbench" ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.12s ease",
                 }}
@@ -923,11 +1064,93 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               </button>
             </div>
 
+            {/* Phase 15 Adaptive Investigation Presentation Modes (Guided | Analyst | Review) */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "7px",
+                padding: "2px",
+                gap: "2px",
+                flexShrink: 0,
+              }}
+              role="radiogroup"
+              aria-label="Investigation Presentation Mode"
+            >
+              <button
+                type="button"
+                onClick={() => setInvestigationMode("guided")}
+                title="Guided Investigation: Step-by-step guidance for frontline officers & rapid response (Alt+M)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "guided" ? 800 : 600,
+                  background: investigationMode === "guided" ? "rgba(6, 182, 212, 0.22)" : "transparent",
+                  color: investigationMode === "guided" ? "#22D3EE" : "#94A3B8",
+                  border: investigationMode === "guided" ? "1px solid rgba(34, 211, 238, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>🧭 Guided</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInvestigationMode("analyst")}
+                title="Analyst Workbench: High-density multi-pane analytical workstation (Alt+M)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "analyst" ? 800 : 600,
+                  background: investigationMode === "analyst" ? "rgba(59, 130, 246, 0.22)" : "transparent",
+                  color: investigationMode === "analyst" ? "#60A5FA" : "#94A3B8",
+                  border: investigationMode === "analyst" ? "1px solid rgba(96, 165, 250, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>🔬 Analyst</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInvestigationMode("review")}
+                title="Forensic Review: Bitstream verification, SHA-256 CAS provenance, and BSA Section 63 admissibility (Alt+M)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 8px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "review" ? 800 : 600,
+                  background: investigationMode === "review" ? "rgba(16, 185, 129, 0.22)" : "transparent",
+                  color: investigationMode === "review" ? "#34D399" : "#94A3B8",
+                  border: investigationMode === "review" ? "1px solid rgba(52, 211, 153, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <span>⚖️ Review</span>
+              </button>
+            </div>
+
             {/* Contextual Breadcrumb based on activePage — rendered only on Workbench to prevent header collision */}
             {activePage === "workbench" && (
               <>
-                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700, background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
+                <span style={{ color: "rgba(255, 255, 255, 0.20)", flexShrink: 0 }}>/</span>
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#22D3EE", fontWeight: 700, background: "rgba(6, 182, 212, 0.16)", border: "1px solid rgba(34, 211, 238, 0.25)", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
                   {activeCase?.firNumber || "CASE"}
                 </span>
                 <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
@@ -1076,15 +1299,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="hover:bg-amber-100/80 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+                  className="hover:bg-amber-500/20 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
                   style={{
                     height: "28px",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    background: "#FFFBEB",
-                    border: "1px solid #FDE68A",
-                    color: "#92400E",
+                    background: "rgba(245, 158, 11, 0.15)",
+                    border: "1px solid rgba(245, 158, 11, 0.35)",
+                    color: "#FBBF24",
                     fontWeight: 700,
                     fontSize: "10.5px",
                     borderRadius: "6px",
@@ -1107,30 +1330,31 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   sideOffset={6}
                   style={{
                     width: "360px",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "10px",
-                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.75)",
                     padding: "12px",
                     zIndex: 100,
                     display: "flex",
                     flexDirection: "column",
                     gap: "8px",
+                    color: "#F8FAFC",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0", paddingBottom: "6px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <Zap size={13} color="#D97706" />
-                      <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F172A" }}>
+                      <Zap size={13} color="#F59E0B" />
+                      <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#FFFFFF" }}>
                         1930 Golden Hour Dispatch Checklist
                       </span>
                     </div>
-                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", padding: "1px 5px", borderRadius: "3px" }}>
+                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "rgba(245, 158, 11, 0.20)", color: "#FDE68A", border: "1px solid rgba(245, 158, 11, 0.35)", padding: "1px 5px", borderRadius: "3px" }}>
                       ⏱ SLA: 118m Remaining
                     </span>
                   </div>
 
-                  <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35 }}>
+                  <div style={{ fontSize: "9.5px", color: "#94A3B8", lineHeight: 1.35 }}>
                     5 pre-filled statutory requisitions generated under BNSS 2023 &amp; DoT mandates for immediate nodal transmission:
                   </div>
 
@@ -1143,14 +1367,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       { num: "4", title: "Airtel DoT 39.20 CGNAT Order", sub: "Dynamic IPDR translation for IP 103.21.144.92", status: "READY" },
                       { num: "5", title: "NPCI Switch Certificate Demand", sub: "Section 63(4) BSA certification for UPI 2.0 session", status: "READY" },
                     ].map((item) => (
-                      <div key={item.num} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "5px", padding: "4px 7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div key={item.num} style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "5px", padding: "4px 7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
+                          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#F8FAFC" }}>
                             {item.num}. {item.title}
                           </div>
-                          <div style={{ fontSize: "8px", color: "#64748B" }}>{item.sub}</div>
+                          <div style={{ fontSize: "8px", color: "#94A3B8" }}>{item.sub}</div>
                         </div>
-                        <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px" }}>
+                        <span style={{ fontSize: "7.5px", fontWeight: 800, background: "rgba(16, 185, 129, 0.15)", color: "#34D399", border: "1px solid rgba(16, 185, 129, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
                           {item.status}
                         </span>
                       </div>
@@ -1173,7 +1397,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "5px",
-                      background: "#D97706",
+                      background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
                       color: "#FFFFFF",
                       border: "none",
                       borderRadius: "6px",
@@ -1181,7 +1405,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       fontSize: "10.5px",
                       fontWeight: 700,
                       cursor: "pointer",
-                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
+                      boxShadow: "0 2px 8px rgba(217, 119, 6, 0.35)",
                     }}
                   >
                     <Copy size={11} />
@@ -1195,15 +1419,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setMutatorRibbonOpen((prev) => !prev)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-800/60 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 height: "28px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                background: activeMutationsCount > 0 ? "#FFF1F2" : "#F8FAFC",
-                border: activeMutationsCount > 0 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                color: activeMutationsCount > 0 ? "#BE123C" : "#334155",
+                background: activeMutationsCount > 0 ? "rgba(244, 63, 94, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                border: activeMutationsCount > 0 ? "1px solid rgba(244, 63, 94, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
+                color: activeMutationsCount > 0 ? "#FB7185" : "#F8FAFC",
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
@@ -1212,7 +1436,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 flexShrink: 0,
               }}
             >
-              <Zap size={11} color={activeMutationsCount > 0 ? "#E11D48" : "#64748B"} />
+              <Zap size={11} color={activeMutationsCount > 0 ? "#F43F5E" : "#94A3B8"} />
               <span>Mutator ({activeMutationsCount})</span>
               <ChevronDown size={11} />
             </button>
@@ -1222,16 +1446,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <button
                 type="button"
                 onClick={toggleBenchmarkLab}
-                className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                className="hover:bg-emerald-500/20 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                 title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
                 style={{
                   height: "28px",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  color: "#065F46",
+                  background: "rgba(16, 185, 129, 0.14)",
+                  border: "1px solid rgba(16, 185, 129, 0.30)",
+                  color: "#34D399",
                   fontWeight: 700,
                   fontSize: "11px",
                   borderRadius: "6px",
@@ -1241,15 +1465,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   flexShrink: 0,
                 }}
               >
-                <Zap size={11} color="#059669" />
+                <Zap size={11} color="#10B981" />
                 <span>Lab</span>
                 <span
                   style={{
                     fontSize: "9px",
                     padding: "1px 3px",
                     borderRadius: "3px",
-                    background: "#D1FAE5",
-                    color: "#047857",
+                    background: "rgba(16, 185, 129, 0.20)",
+                    color: "#A7F3D0",
                     fontFamily: "var(--font-mono)",
                   }}
                 >
@@ -1262,16 +1486,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setIntelligenceBriefOpen(true)}
-              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-cyan-500/20 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title="Open 7-Question Explainable Investigation Intelligence Brief"
               style={{
                 height: "28px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                color: "#4338CA",
+                background: "rgba(6, 182, 212, 0.14)",
+                border: "1px solid rgba(34, 211, 238, 0.30)",
+                color: "#22D3EE",
                 fontWeight: 700,
                 fontSize: "11px",
                 borderRadius: "6px",
@@ -1289,7 +1513,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-800/60 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title="Voice AI Assistant"
               style={{
                 height: "28px",
@@ -1327,9 +1551,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                background: intakeGate?.isHalted ? "#F1F5F9" : "#0F172A",
-                color: intakeGate?.isHalted ? "#94A3B8" : "#FFFFFF",
-                border: "1px solid transparent",
+                background: intakeGate?.isHalted ? "rgba(255, 255, 255, 0.05)" : "#0F1B2E",
+                color: intakeGate?.isHalted ? "#8C9EB0" : "#FFFFFF",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
@@ -1347,7 +1571,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={() => openEvidenceModal(activeCaseId)}
               title="Insert & Quarantine Forensic Evidence Exhibit (WebCrypto Hashing)"
-              className="hover:bg-indigo-700 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:brightness-110 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 height: "28px",
                 display: "inline-flex",
@@ -1371,23 +1595,106 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
         </header>
 
+        {/* PHASE 15 ADAPTIVE PRESENTATION MODE HUD */}
+        {investigationMode === "guided" && activePage === "workbench" && (
+          <div
+            style={{
+              background: "rgba(6, 182, 212, 0.10)",
+              borderBottom: "1px solid rgba(34, 211, 238, 0.25)",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: "#F8FAFC",
+              flexShrink: 0,
+              zIndex: 15,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "#06B6D4", color: "#060B14", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", letterSpacing: "0.04em" }}>
+                GUIDED WORKFLOW
+              </span>
+              <span style={{ fontWeight: 700, color: "#22D3EE" }}>
+                {getStageGuidanceTitle(activeRoute)}
+              </span>
+              <span style={{ color: "#8C9EB0" }}>·</span>
+              <span style={{ color: "#CBD5E1" }}>
+                {getStageGuidanceAction(activeRoute)}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "10px", color: "#94A3B8" }}>Press Alt+M to switch to Analyst view</span>
+            </div>
+          </div>
+        )}
+
+        {investigationMode === "review" && activePage === "workbench" && (
+          <div
+            style={{
+              background: "rgba(16, 185, 129, 0.10)",
+              borderBottom: "1px solid rgba(16, 185, 129, 0.25)",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: "#F8FAFC",
+              flexShrink: 0,
+              zIndex: 15,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "#10B981", color: "#060B14", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", letterSpacing: "0.04em" }}>
+                BSA § 63 REVIEW
+              </span>
+              <span style={{ fontWeight: 700, color: "#34D399" }}>
+                Immutable Evidence Chain Verified
+              </span>
+              <span style={{ color: "#8C9EB0" }}>·</span>
+              <span style={{ color: "#E2E8F0", fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+                SHA-256 CAS INTACT · Z3 SMT UNSAT PROVEN · NTP SKEW: +14s (COMPLIANT)
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button
+                type="button"
+                onClick={() => setTransformationAuditModalOpen(true)}
+                style={{
+                  background: "rgba(16, 185, 129, 0.18)",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  color: "#34D399",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                }}
+              >
+                📜 Lineage Audit Log
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mutator Ribbon Drawer */}
         {mutatorRibbonOpen && (
           <div
             style={{
-              background: "#F8FAFC",
-              borderBottom: "1px solid #E2E8F0",
+              background: "#132238",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
               padding: "10px 14px",
               display: "flex",
               flexDirection: "column",
               gap: "8px",
               fontSize: "11px",
               flexShrink: 0,
+              color: "#F8FAFC",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontWeight: 700, color: "#0F172A" }}>Live Judge Falsification Mutators:</span>
+                <span style={{ fontWeight: 700, color: "#FFFFFF" }}>Live Judge Falsification Mutators:</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1398,9 +1705,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   style={{
                     padding: "3px 8px",
                     borderRadius: "4px",
-                    border: mutations.alterBankRow14 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                    background: mutations.alterBankRow14 ? "#FFF1F2" : "#FFFFFF",
-                    color: mutations.alterBankRow14 ? "#BE123C" : "#334155",
+                    border: mutations.alterBankRow14 ? "1px solid rgba(244, 63, 94, 0.40)" : "1px solid rgba(255, 255, 255, 0.10)",
+                    background: mutations.alterBankRow14 ? "rgba(244, 63, 94, 0.20)" : "rgba(255, 255, 255, 0.05)",
+                    color: mutations.alterBankRow14 ? "#FB7185" : "#E2E8F0",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "inline-flex",
@@ -1408,7 +1715,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     gap: "4px",
                   }}
                 >
-                  <Zap size={11} color={mutations.alterBankRow14 ? "#E11D48" : "#64748B"} />
+                  <Zap size={11} color={mutations.alterBankRow14 ? "#F43F5E" : "#94A3B8"} />
                   <span>{mutations.alterBankRow14 ? "Row #14 Tampered (-₹2.00L)" : "Alter Bank Row #14"}</span>
                 </button>
 
@@ -1422,9 +1729,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   style={{
                     padding: "3px 8px",
                     borderRadius: "4px",
-                    border: mutations.forgeRrnTimestamp ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                    background: mutations.forgeRrnTimestamp ? "#FFF1F2" : "#FFFFFF",
-                    color: mutations.forgeRrnTimestamp ? "#BE123C" : "#334155",
+                    border: mutations.forgeRrnTimestamp ? "1px solid rgba(244, 63, 94, 0.40)" : "1px solid rgba(255, 255, 255, 0.10)",
+                    background: mutations.forgeRrnTimestamp ? "rgba(244, 63, 94, 0.20)" : "rgba(255, 255, 255, 0.05)",
+                    color: mutations.forgeRrnTimestamp ? "#FB7185" : "#E2E8F0",
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
@@ -1445,9 +1752,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   gap: "3px",
                   padding: "3px 8px",
                   borderRadius: "4px",
-                  border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#475569",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#CBD5E1",
                   cursor: "pointer",
                   fontSize: "10.5px",
                 }}
@@ -1458,16 +1765,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             </div>
 
             {/* Live Judge Mutation Audit Log (Session Receipts) */}
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
+            <div style={{ background: "#0B1220", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
                 <span>Live Judge Mutation Audit Trail (Session Receipts)</span>
-                <span style={{ color: "#059669" }}>Real-time Audit Log</span>
+                <span style={{ color: "#34D399" }}>Real-time Audit Log</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "2px", maxHeight: "72px", overflowY: "auto" }}>
                 {mutationReceipts.map((rcpt) => (
                   <div key={rcpt.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)" }}>
-                    <span style={{ color: "#94A3B8" }}>{rcpt.time}</span>
-                    <span style={{ color: rcpt.type === "tamper" ? "#BE123C" : "#047857", fontWeight: 600 }}>
+                    <span style={{ color: "#8C9EB0" }}>{rcpt.time}</span>
+                    <span style={{ color: rcpt.type === "tamper" ? "#FB7185" : "#34D399", fontWeight: 600 }}>
                       {rcpt.type === "tamper" ? "✗" : "✓"} {rcpt.text}
                     </span>
                   </div>
@@ -1561,8 +1868,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         {activeMutationsCount > 0 && (
           <div
             style={{
-              background: "#FFFBEB",
-              borderBottom: "1px solid #FCD34D",
+              background: "rgba(245, 158, 11, 0.16)",
+              borderBottom: "1px solid rgba(245, 158, 11, 0.35)",
               padding: "6px 14px",
               display: "flex",
               alignItems: "center",
@@ -1570,12 +1877,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               flexShrink: 0,
               fontSize: "11px",
               fontWeight: 700,
-              color: "#B45309",
+              color: "#FBBF24",
               zIndex: 15,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <AlertTriangle size={15} color="#D97706" />
+              <AlertTriangle size={15} color="#F59E0B" />
               <span>
                 ⚠️ SANDBOX STRESS-TEST MODE ACTIVE (Original Evidence Immutable · Signed Simulation Receipt Generated)
               </span>
@@ -1583,11 +1890,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 style={{
                   fontSize: "10px",
                   fontWeight: 800,
-                  color: "#92400E",
-                  background: "#FEF3C7",
+                  color: "#FDE68A",
+                  background: "rgba(245, 158, 11, 0.25)",
                   padding: "1px 6px",
                   borderRadius: "3px",
-                  border: "1px solid #FDE68A",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
                   fontFamily: "var(--font-mono)",
                 }}
               >
@@ -1598,15 +1905,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={resetAllMutations}
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #F59E0B",
-                color: "#B45309",
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(245, 158, 11, 0.50)",
+                color: "#FDE68A",
                 padding: "3px 10px",
                 borderRadius: "5px",
                 cursor: "pointer",
                 fontSize: "10.5px",
                 fontWeight: 700,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
             >
               Reset All Mutators
@@ -1621,15 +1928,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           activeRoute !== "entities" && (
             <div
               style={{
-                background: "#FFF1F2",
-                borderBottom: "1px solid #FECDD3",
+                background: "rgba(244, 63, 94, 0.16)",
+                borderBottom: "1px solid rgba(244, 63, 94, 0.35)",
                 padding: "8px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 flexShrink: 0,
                 fontSize: "11px",
-                color: "#BE123C",
+                color: "#FB7185",
                 zIndex: 15,
               }}
             >
@@ -1639,11 +1946,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     width: "22px",
                     height: "22px",
                     borderRadius: "4px",
-                    background: "#FFE4E6",
+                    background: "rgba(244, 63, 94, 0.25)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#E11D48",
+                    color: "#FB7185",
                     fontWeight: 900,
                     fontSize: "13px",
                   }}
@@ -1651,10 +1958,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   ⛔
                 </div>
                 <div>
-                  <span style={{ fontWeight: 800 }}>
+                  <span style={{ fontWeight: 800, color: "#FFFFFF" }}>
                     PIPELINE HALTED: Upstream Invariant Violation Detected
                   </span>
-                  <span style={{ marginLeft: "6px", color: "#9F1239" }}>
+                  <span style={{ marginLeft: "6px", color: "#FECDD3" }}>
                     — Cannot Generate Admissible §63(4) Output on Unreconciled or Tampered Telemetry. Downstream attribution & certificates locked until resolved in Screen 01.
                   </span>
                 </div>
@@ -1671,7 +1978,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   cursor: "pointer",
                   fontSize: "10.5px",
                   fontWeight: 800,
-                  boxShadow: "0 1px 3px rgba(225, 29, 72, 0.3)",
+                  boxShadow: "0 1px 3px rgba(225, 29, 72, 0.4)",
                 }}
               >
                 Resolve in Intake (Alt+1) →
@@ -1694,57 +2001,61 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          {(activePage === "workspaces" || activeRoute === "workspace") && <CaseWorkspaceScreen />}
-          {activePage === "benchmark" && <BenchmarkLabScreen />}
-          {activePage === "workbench" && activeRoute !== "workspace" && (
-            <>
-              {activeRoute === "intake" && <IntakeScreen />}
-              {activeRoute === "entities" && <EntityResolutionScreen />}
-              {activeRoute === "attribution" && <AttributionScreen />}
-              {activeRoute === "network" && <FraudNetworkScreen />}
-              {activeRoute === "taint-engine" && <TaintEngineScreen />}
-              {activeRoute === "court-proof" && <CourtProofScreen />}
-              {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
-              {activeRoute === "workstation" && <ForensicWorkstationScreen />}
-            </>
-          )}
+          <Suspense fallback={<ScreenSuspenseFallback />}>
+            {(activePage === "workspaces" || activeRoute === "workspace") && <CaseWorkspaceScreen />}
+            {activePage === "benchmark" && <BenchmarkLabScreen />}
+            {activePage === "workbench" && activeRoute !== "workspace" && (
+              <>
+                {activeRoute === "intake" && <IntakeScreen />}
+                {activeRoute === "entities" && <EntityResolutionScreen />}
+                {activeRoute === "attribution" && <AttributionScreen />}
+                {activeRoute === "network" && <FraudNetworkScreen />}
+                {activeRoute === "taint-engine" && <TaintEngineScreen />}
+                {activeRoute === "court-proof" && <CourtProofScreen />}
+                {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
+                {activeRoute === "workstation" && <ForensicWorkstationScreen />}
+              </>
+            )}
+          </Suspense>
         </div>
       </div>
 
-      {/* Live Cryptographic Evidence Intake & Case Modals */}
-      <EvidenceIntakeModal />
-      <NewCaseModal />
-      <BenchmarkLabDrawer />
-      <PublicDatasetBenchmarkModal />
+      {/* Live Cryptographic Evidence Intake & Case Modals (Lazy Loaded) */}
+      <Suspense fallback={null}>
+        <EvidenceIntakeModal />
+        <NewCaseModal />
+        <BenchmarkLabDrawer />
+        <PublicDatasetBenchmarkModal />
 
-      {/* Voice Assistant Modal */}
-      {voiceOpen && (
-        <SarvamVoiceModal
-          caseId={activeCaseId || "CASE-2026-001"}
-          isOpen={voiceOpen}
-          onClose={() => setVoiceOpen(false)}
+        {/* Voice Assistant Modal */}
+        {voiceOpen && (
+          <SarvamVoiceModal
+            caseId={activeCaseId || "CASE-2026-001"}
+            isOpen={voiceOpen}
+            onClose={() => setVoiceOpen(false)}
+          />
+        )}
+
+        {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
+        <RelationshipEvidenceSheet
+          edge={selectedEvidenceEdge}
+          isOpen={relationshipSheetOpen}
+          onClose={() => {
+            setRelationshipSheetOpen(false);
+            setSelectedEvidenceEdge(null);
+          }}
         />
-      )}
 
-      {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
-      <RelationshipEvidenceSheet
-        edge={selectedEvidenceEdge}
-        isOpen={relationshipSheetOpen}
-        onClose={() => {
-          setRelationshipSheetOpen(false);
-          setSelectedEvidenceEdge(null);
-        }}
-      />
+        <InvestigationIntelligenceBrief
+          isOpen={intelligenceBriefOpen}
+          onClose={() => setIntelligenceBriefOpen(false)}
+        />
 
-      <InvestigationIntelligenceBrief
-        isOpen={intelligenceBriefOpen}
-        onClose={() => setIntelligenceBriefOpen(false)}
-      />
-
-      <TransformationAuditLog
-        isOpen={transformationAuditModalOpen}
-        onClose={() => setTransformationAuditModalOpen(false)}
-      />
+        <TransformationAuditLog
+          isOpen={transformationAuditModalOpen}
+          onClose={() => setTransformationAuditModalOpen(false)}
+        />
+      </Suspense>
     </div>
   );
 };

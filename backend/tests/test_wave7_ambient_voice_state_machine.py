@@ -19,6 +19,9 @@ from app.services.voice.voice_gateway import VoiceGateway
 
 
 client = TestClient(app)
+from app.services.auth_service import AuthService
+token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+client.headers.update({"Authorization": f"Bearer {token}"})
 
 
 def test_01_canonical_14_ambient_states_exist():

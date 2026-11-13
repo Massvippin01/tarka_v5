@@ -715,14 +715,17 @@ def test_special_characters_query_safe(resolver: ContextReferenceResolver):
 
 from fastapi.testclient import TestClient
 from app.main import app
+from app.services.auth_service import AuthService
 
 api_client = TestClient(app)
+_auth_token = AuthService.get_instance().create_jwt_token("INVESTIGATOR_DELHI")
+auth_headers = {"Authorization": f"Bearer {_auth_token}"}
 
 
 def test_api_get_current_context():
     response = api_client.get(
         "/api/v1/context/current?case_id=CASE-2026-001",
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -734,7 +737,7 @@ def test_api_get_current_context():
 def test_api_get_current_context_unauthorized_case():
     response = api_client.get(
         "/api/v1/context/current?case_id=CASE-999-CLASSIFIED",
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 403
 
@@ -743,7 +746,7 @@ def test_api_resolve_reference():
     response = api_client.post(
         "/api/v1/context/resolve",
         json={"query": "Only vehicles", "case_id": "CASE-2026-001"},
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -754,7 +757,7 @@ def test_api_apply_correction():
     response = api_client.post(
         "/api/v1/context/correction",
         json={"target_id": "P002", "target_type": "ENTITY", "case_id": "CASE-2026-001"},
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -765,7 +768,7 @@ def test_api_reset_context():
     response = api_client.post(
         "/api/v1/context/reset",
         json={"new_case_id": "C102"},
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 200
     data = response.json()
@@ -776,7 +779,7 @@ def test_api_reset_context():
 def test_api_get_audit_history():
     response = api_client.get(
         "/api/v1/context/history?case_id=CASE-2026-001",
-        headers={"Authorization": "Bearer INVESTIGATOR_DELHI"},
+        headers=auth_headers,
     )
     assert response.status_code == 200
     events = response.json()

@@ -32,6 +32,7 @@ npm-debug.log*
 *.webm
 *.webp
 *.png
+!docs/**/*.png
 frontend/tmp/
 .pytest_cache/
 backups/
