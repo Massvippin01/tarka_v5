@@ -178,6 +178,14 @@ app.include_router(
     tags=["TARKA Digital Forensics"],
 )
 
+from app.api.mule_scoring_api import router as analyze_router
+
+app.include_router(
+    analyze_router,
+    prefix="/api/v1/analyze",
+    tags=["Mule Scoring Engine"],
+)
+
 from tarka.api.server import app as tarka_app
 
 app.mount("/api/v1/forensics/tarka", tarka_app)

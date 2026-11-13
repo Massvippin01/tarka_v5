@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
-import { CaseSyncBridge } from "../../services/caseSyncBridge";
+import { CaseSyncBridge, type CanonicalEntity } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import {
   KpiTile,
@@ -22,25 +22,6 @@ import {
 } from "../../components/tarka/kit";
 import { getBnss94EntityResolutionDirective } from "../../utils/statutoryDirectives";
 import { sha256HexSync } from "../../utils/sha256";
-
-interface CanonicalEntity {
-  id: string;
-  name: string;
-  role: string;
-  roleBadge: string;
-  roleColor: "rose" | "indigo" | "amber" | "emerald";
-  tokens: string[];
-  fraudScore: number;
-  isHardVeto?: boolean;
-  hardVetoReason?: string;
-  summary: string;
-  subScores: {
-    velocity: number;
-    deviceOverlap: number;
-    structuring: number;
-    kycDiscrepancy: number;
-  };
-}
 
 export const EntityResolutionScreen: React.FC = () => {
   const { activeCaseId, activeCase } = useTarkaGlobal();
@@ -144,6 +125,7 @@ export const EntityResolutionScreen: React.FC = () => {
 
   const [selectedTokenType, setSelectedTokenType] = useState<string>("ALL");
   const [isCopied, setIsCopied] = useState(false);
+  const [whyModalEntity, setWhyModalEntity] = useState<CanonicalEntity | null>(null);
 
   const rawTokenList = useMemo(() => {
     return dynamicData.tokens;
@@ -411,8 +393,46 @@ export const EntityResolutionScreen: React.FC = () => {
                         </span>
                       </div>
 
-                      <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "1px" }}>
-                        {entity.role} · Risk Score: <strong style={{ color: entity.fraudScore > 50 ? "#BE123C" : "#059669" }}>{entity.fraudScore}/100</strong>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                        <span style={{ fontSize: "8.5px", color: "#64748B" }}>{entity.role}</span>
+                        <span style={{ fontSize: "8.5px", color: "#94A3B8" }}>·</span>
+                        <span style={{ fontSize: "8.5px", color: "#334155", fontWeight: 600 }}>
+                          Lead Strength: <strong style={{ color: entity.fraudScore > 50 ? "#BE123C" : "#059669" }}>{entity.fraudScore}/100</strong>
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "7.5px",
+                            fontWeight: 800,
+                            padding: "1px 4px",
+                            borderRadius: "3px",
+                            background: entity.fraudScore >= 80 ? "#FFF1F2" : entity.fraudScore >= 50 ? "#FFFBEB" : "#ECFDF5",
+                            color: entity.fraudScore >= 80 ? "#BE123C" : entity.fraudScore >= 50 ? "#B45309" : "#047857",
+                            border: `1px solid ${entity.fraudScore >= 80 ? "#FECDD3" : entity.fraudScore >= 50 ? "#FDE68A" : "#A7F3D0"}`,
+                          }}
+                        >
+                          {entity.riskBand || (entity.fraudScore >= 80 ? "CRITICAL_MULE_LEAD" : entity.fraudScore >= 50 ? "HIGH_SUSPICION" : "LOW_RISK")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWhyModalEntity(entity);
+                          }}
+                          className="hover:border-indigo-400 hover:bg-indigo-100 enabled:active:scale-[0.96] transition-all"
+                          style={{
+                            fontSize: "7.5px",
+                            fontWeight: 800,
+                            padding: "1px 5px",
+                            borderRadius: "3px",
+                            background: "#EEF2FF",
+                            color: "#4338CA",
+                            border: "1px solid #C7D2FE",
+                            cursor: "pointer",
+                          }}
+                          title="View Feature Waterfall Contributions"
+                        >
+                          Why?
+                        </button>
                       </div>
 
                       {entity.isHardVeto && (
@@ -565,6 +585,57 @@ export const EntityResolutionScreen: React.FC = () => {
                 </div>
               </div>
 
+              {/* WHY? ATTRIBUTION WATERFALL */}
+              {selectedEntity.featureContributions && selectedEntity.featureContributions.length > 0 && (
+                <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase" }}>
+                      Why? Explainable Lead Breakdown
+                    </span>
+                    <span style={{ fontSize: "7.5px", fontWeight: 700, color: "#4F46E5", background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", border: "1px solid #C7D2FE" }}>
+                      Weighted Model
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "3px", maxHeight: "115px", overflowY: "auto" }}>
+                    {selectedEntity.featureContributions.map((fc, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: "8px",
+                          background: "#FFFFFF",
+                          border: "1px solid #E2E8F0",
+                          borderRadius: "4px",
+                          padding: "3px 6px",
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: "6px" }}>
+                          <span style={{ fontWeight: 700, color: "#1E293B" }}>{fc.feature}</span>
+                          <div style={{ fontSize: "7px", color: "#64748B", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                            {fc.evidence}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            padding: "1px 4px",
+                            borderRadius: "3px",
+                            background: fc.points > 0 ? "#FFF1F2" : "#ECFDF5",
+                            color: fc.points > 0 ? "#BE123C" : "#047857",
+                            border: `1px solid ${fc.points > 0 ? "#FECDD3" : "#A7F3D0"}`,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {fc.points > 0 ? `+${fc.points}` : fc.points} pts
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Resolved Alias Detection Card */}
               {(selectedEntity.id === "ENT-02" || selectedEntity.name.toLowerCase().includes("vikram")) && (
                 <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "5px", padding: "6px 8px" }}>
@@ -640,6 +711,149 @@ export const EntityResolutionScreen: React.FC = () => {
           </SectionCard>
         </div>
       </main>
+
+      {/* WHY? ATTRIBUTION WATERFALL MODAL */}
+      {whyModalEntity && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setWhyModalEntity(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              background: "#FFFFFF",
+              borderRadius: "10px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
+              border: "1px solid #E2E8F0",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div style={{ padding: "12px 16px", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A" }}>
+                  Why? Attribution Rationale: {whyModalEntity.name} ({whyModalEntity.id})
+                </div>
+                <div style={{ fontSize: "10px", color: "#64748B" }}>
+                  Investigative Lead Strength: <strong style={{ color: whyModalEntity.fraudScore > 50 ? "#BE123C" : "#059669" }}>{whyModalEntity.fraudScore}/100</strong> · {whyModalEntity.riskBand || "EVALUATED"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWhyModalEntity(null)}
+                style={{ background: "#F1F5F9", border: "1px solid #CBD5E1", borderRadius: "5px", padding: "4px 8px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "10px", maxHeight: "70vh", overflowY: "auto" }}>
+              <div style={{ fontSize: "10px", color: "#334155", background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "6px", padding: "8px 10px", lineHeight: 1.5 }}>
+                ⚖️ <strong>Epistemic Guardrail (Constitution Rule 5):</strong> AI computes lead strength from graph topology and transaction velocity. It is an evidentiary attribution priority, not a judicial verdict of guilt.
+              </div>
+
+              {/* Metrics Grid */}
+              {whyModalEntity.metrics && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", background: "#F8FAFC", padding: "10px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <div>
+                    <div style={{ fontSize: "8.5px", color: "#64748B", fontWeight: 700 }}>Pass-through Ratio</div>
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>
+                      {((whyModalEntity.metrics.passThroughRatio ?? 0) * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "8.5px", color: "#64748B", fontWeight: 700 }}>Median Dwell Time</div>
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: (whyModalEntity.metrics.medianDwellTimeSeconds ?? 999) < 300 ? "#BE123C" : "#0F172A" }}>
+                      {whyModalEntity.metrics.medianDwellTimeSeconds ?? "—"}s
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "8.5px", color: "#64748B", fontWeight: 700 }}>Fan-out Degree</div>
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>
+                      {whyModalEntity.metrics.fanOutDegree ?? 0} targets
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Waterfall List */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ fontSize: "10px", fontWeight: 800, color: "#475569", textTransform: "uppercase" }}>
+                  Feature Contribution Waterfall
+                </div>
+                {(whyModalEntity.featureContributions || []).map((fc, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: "#FFFFFF",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: "10px",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "10px", fontWeight: 800, color: "#0F172A" }}>{fc.feature}</div>
+                      <div style={{ fontSize: "9px", color: "#475569", marginTop: "2px" }}>{fc.evidence}</div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "9.5px",
+                        fontWeight: 800,
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        background: fc.points > 0 ? "#FFF1F2" : "#ECFDF5",
+                        color: fc.points > 0 ? "#BE123C" : "#047857",
+                        border: `1px solid ${fc.points > 0 ? "#FECDD3" : "#A7F3D0"}`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {fc.points > 0 ? `+${fc.points}` : fc.points} pts
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ padding: "10px 16px", background: "#F8FAFC", borderTop: "1px solid #E2E8F0", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setWhyModalEntity(null)}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: "5px",
+                  background: "#4F46E5",
+                  color: "#FFFFFF",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -921,3 +921,27 @@ async def get_case_bundle(
             "fileManifest": file_manifest,
         }
 
+
+@router.get("/{case_id}/mule-scores")
+async def get_case_mule_scores(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Returns explainable mule-account scores for the requested case ID,
+    including feature contributions (dwell time, pass-through, structuring, fan-out)
+    and risk bands.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    from app.services.mule_scoring_service import MuleScoringEngine
+
+    engine = MuleScoringEngine()
+    try:
+        return engine.score_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case fixture not found for '{case_id}'")
+    except Exception as err:
+        logger.error("Error scoring mule accounts for %s: %s", case_id, err)
+        raise HTTPException(status_code=500, detail=str(err))
+
+
