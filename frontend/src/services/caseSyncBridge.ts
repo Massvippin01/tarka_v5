@@ -7,7 +7,7 @@
  * Provides deterministic offline case packs for air-gapped forensic environments.
  */
 
-import axios from "axios";
+import apiClient from "../api/client";
 import type { CaseWorkspace } from "../context/TarkaGlobalContext";
 import {
   reconstruct5FileInvestigation,
@@ -148,7 +148,6 @@ export interface CaseAttributionProfile {
   smt2Script: string;
 }
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "";
 
 /**
  * Builds a deterministic, forensic case bundle for CASE-2026-002:
@@ -285,7 +284,7 @@ export class CaseSyncBridge {
    */
   public async getCaseBundle(caseId: string, caseMetadata?: CaseWorkspace): Promise<ReconstructedInvestigation> {
     try {
-      const res = await axios.get(`${API_BASE}/api/v1/cases/${caseId}/bundle`, {
+      const res = await apiClient.get(`/api/v1/cases/${caseId}/bundle`, {
         timeout: 2500,
       });
       if (res.data && res.data.nodes && res.data.nodes.length > 0) {
@@ -347,7 +346,7 @@ export class CaseSyncBridge {
     }
 
     try {
-      const res = await axios.get(`${API_BASE}/api/v1/forensics/cases/${caseId}/investigation-graph`, {
+      const res = await apiClient.get(`/api/v1/forensics/cases/${caseId}/investigation-graph`, {
         timeout: 1500,
       });
       if (res.data && res.data.nodes) {
@@ -385,7 +384,7 @@ export class CaseSyncBridge {
    */
   public async listCasesFromBackend(): Promise<CaseWorkspace[] | null> {
     try {
-      const res = await axios.get(`${API_BASE}/api/v1/cases`, { timeout: 2500 });
+      const res = await apiClient.get(`/api/v1/cases`, { timeout: 2500 });
       if (Array.isArray(res.data) && res.data.length > 0) {
         const mapped: CaseWorkspace[] = await Promise.all(
           res.data.map(async (c: any) => {
@@ -393,7 +392,7 @@ export class CaseSyncBridge {
             // Fetch artifacts for this case
             let artifacts = [];
             try {
-              const artRes = await axios.get(`${API_BASE}/api/v1/cases/${c.id}/artifacts`, { timeout: 1500 });
+              const artRes = await apiClient.get(`/api/v1/cases/${c.id}/artifacts`, { timeout: 1500 });
               if (Array.isArray(artRes.data)) {
                 artifacts = artRes.data;
               }
@@ -441,8 +440,8 @@ export class CaseSyncBridge {
    */
   public async ingestArtifactWithBackend(caseId: string, art: any): Promise<boolean> {
     try {
-      await axios.post(
-        `${API_BASE}/api/v1/cases/${caseId}/artifacts`,
+      await apiClient.post(
+        `/api/v1/cases/${caseId}/artifacts`,
         {
           id: art.id,
           filename: art.filename,
@@ -469,7 +468,7 @@ export class CaseSyncBridge {
    */
   public async registerCaseWithBackend(c: CaseWorkspace): Promise<boolean> {
     try {
-      await axios.post(`${API_BASE}/api/v1/cases`, {
+      await apiClient.post(`/api/v1/cases`, {
         case_id: c.caseId,
         title: c.title,
         fir_number: c.firNumber,

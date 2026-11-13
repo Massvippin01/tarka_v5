@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import json
+import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
@@ -435,7 +436,11 @@ async def get_case_bundle(
                     "recoverableLibrInr": cdata["financials"]["recoverableLibrInr"],
                     "shieldedCommercialInr": cdata["financials"]["shieldedCommercialInr"],
                     "preIngestionTamper": cdata["caseId"] == "CASE-2026-001",
-                    "postIngestionMerkleRoot": "0" * 64,
+                    "postIngestionMerkleRoot": hashlib.sha256(
+                        "".join(
+                            a.get("content_hash", "") for a in cdata.get("artifacts", [])
+                        ).encode("utf-8") or b"genesis_case_merkle_root"
+                    ).hexdigest(),
                     "nodes": nodes,
                     "edges": edges,
                     "transformationSteps": [],

@@ -389,6 +389,139 @@ async def seed_sql_database_async():
     logger.info("✓ SQL Database canonical cases & exhibits verification complete")
 
 
+def seed_canonical_fixtures_to_unified_store():
+    """
+    Loads the canonical case fixtures (data/fixtures/cases/*.json) into UnifiedStore
+    so that graph algorithms (PageRank, Degree Centrality, Communities, Shortest Path)
+    and investigation endpoints run on the exact same entities, accounts, and transactions
+    as the frontend UI.
+    """
+    from pathlib import Path
+    import json
+    from app.repositories.unified_store import UnifiedStore
+    from app.domain.person import Person
+    from app.domain.case import Case
+
+    store = UnifiedStore.get_instance()
+    fixtures_dir = Path("data/fixtures/cases")
+    if not fixtures_dir.exists():
+        fixtures_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases"
+
+    if not fixtures_dir.exists():
+        logger.warning("Canonical fixtures directory not found at %s", fixtures_dir)
+        return
+
+    for fixture_file in sorted(fixtures_dir.glob("CASE-*.json")):
+        try:
+            with open(fixture_file, "r", encoding="utf-8") as f:
+                cdata = json.load(f)
+
+            case_id = cdata.get("caseId")
+            if not case_id:
+                continue
+
+            case_obj = Case(
+                id=case_id,
+                case_number=case_id,
+                fir_number=cdata.get("firNumber", f"FIR #{case_id}"),
+                title=cdata.get("title", case_id),
+                description=cdata.get("summary", ""),
+                police_station=cdata.get("policeStation", ""),
+                crime_type=cdata.get("typology", "CYBER_FRAUD"),
+                priority=cdata.get("priority", "HIGH"),
+                investigation_status="OPEN",
+                lead_officer=cdata.get("investigator", {}).get("name", "Lead IO"),
+            )
+            store.save_case(case_obj)
+
+            account_node_map = {}
+
+            # Register accounts & persons
+            for a in cdata.get("accounts", []):
+                node_id = a["nodeId"]
+                holder_name = a["holderName"]
+                holder_type = a.get("holderType", "SUSPECT")
+                risk_score = a.get("riskScore", 0)
+
+                store.register_node(
+                    node_id=node_id,
+                    label="ACCOUNT",
+                    properties={
+                        "name": f"{a.get('bank', '')} ({a.get('accountMasked', '')})",
+                        "full_name": holder_name,
+                        "account_number": a.get("accountNumber", ""),
+                        "bank": a.get("bank", ""),
+                        "ifsc": a.get("ifsc", ""),
+                        "holder_type": holder_type,
+                        "mule_layer": a.get("muleLayer", "L0"),
+                        "risk_score": risk_score,
+                        "case_id": case_id,
+                    },
+                )
+                account_node_map[a.get("accountNumber", node_id)] = node_id
+                account_node_map[node_id] = node_id
+                account_node_map[holder_name] = node_id
+
+                person_id = f"P-{holder_name.replace(' ', '_').upper()}"
+                if person_id not in store.nodes:
+                    name_parts = holder_name.split()
+                    first_name = name_parts[0]
+                    last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+                    store.register_node(
+                        node_id=person_id,
+                        label="PERSON",
+                        properties={
+                            "name": holder_name,
+                            "full_name": holder_name,
+                            "holder_type": holder_type,
+                            "risk_score": risk_score,
+                            "case_id": case_id,
+                        },
+                    )
+                    store.save_person(
+                        Person(
+                            id=person_id,
+                            first_name=first_name,
+                            last_name=last_name,
+                            risk_level="HIGH" if risk_score > 70 else "MEDIUM" if risk_score > 40 else "LOW",
+                            threat_score=float(risk_score),
+                            evidence_reference=f"Case {case_id} Ledger",
+                        )
+                    )
+
+                store.register_relationship(
+                    source_id=person_id,
+                    target_id=node_id,
+                    rel_type="OWNS_ACCOUNT",
+                    confidence=1.0,
+                    reason=f"Account holder of record at {a.get('bank', '')}",
+                )
+
+            for tx in cdata.get("transactions", []):
+                from_acc = tx.get("fromAccount")
+                to_acc = tx.get("toAccount")
+                src_id = account_node_map.get(from_acc, account_node_map.get(tx.get("fromName")))
+                tgt_id = account_node_map.get(to_acc, account_node_map.get(tx.get("toName")))
+
+                if src_id and tgt_id:
+                    store.register_relationship(
+                        source_id=src_id,
+                        target_id=tgt_id,
+                        rel_type="FUND_TRANSFER",
+                        confidence=1.0,
+                        reason=f"{tx.get('paymentRail', 'UPI')} Transfer: {tx.get('particulars', '')}",
+                        supporting_observations=[
+                            f"RRN: {tx.get('rrn', 'N/A')}",
+                            f"Amount: ₹{tx.get('amount', 0):,}",
+                            f"Timestamp: {tx.get('timestampIst', '')}",
+                        ],
+                    )
+
+            logger.info("✓ Seeded canonical case fixture %s into UnifiedStore", case_id)
+        except Exception as err:
+            logger.error("Failed to seed canonical fixture %s: %s", fixture_file, err)
+
+
 def initialize_database():
     """Synchronous entry point called at application startup."""
     import asyncio
@@ -407,10 +540,11 @@ def initialize_database():
     except Exception as e:
         logger.error("Error initializing SQL database: %s", e)
 
-    # 2. Seed UnifiedStore with vertical slice golden scenario (in-memory backwards compatibility)
+    # 2. Seed UnifiedStore with vertical slice golden scenario and canonical case fixtures
     try:
         ScenarioGenerator.generate_golden_vertical_slice()
-        logger.info("✓ UnifiedStore seeded with Golden Vertical Slice scenario")
+        seed_canonical_fixtures_to_unified_store()
+        logger.info("✓ UnifiedStore seeded with Canonical Case fixtures and Golden Vertical Slice scenario")
     except Exception as e:
         logger.error(f"Error seeding UnifiedStore: {e}")
 

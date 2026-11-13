@@ -90,7 +90,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["*", "CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -298,11 +298,10 @@ class AuthService:
         Validates case-level access scope against user's assigned allowed cases.
         Unconditional cross-case bypasses for supervisory or auditor roles are strictly removed.
         Access outside assigned scope requires an explicit auditable override.
+        Unknown cases must be denied for every role.
         """
         if not user or not user.scope or not user.scope.allowed_cases:
             return False
-        if "*" in user.scope.allowed_cases or user.role == UserRoleEnum.SYSTEM_ADMINISTRATOR:
-            return True
         return case_id in user.scope.allowed_cases
 
     def has_permission(self, user: UserIdentity, permission: AccessPermissionEnum) -> bool:
