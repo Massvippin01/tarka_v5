@@ -18,6 +18,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Check,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useCaseStore } from '../../store/useCaseStore';
@@ -61,10 +62,12 @@ const RailItem: React.FC<RailItemProps> = ({
     aria-current={active ? 'page' : undefined}
     data-testid={testId}
     className={cn(
-      'relative group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-all duration-150 w-full cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
-      collapsed && 'justify-center px-0 py-2',
+      'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
+      collapsed
+        ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
+        : 'gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium w-full',
       active
-        ? 'bg-blue-50/80 dark:bg-blue-950/40 text-[var(--accent)] font-semibold border border-blue-200/70 dark:border-blue-800/50 shadow-2xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-full before:bg-[var(--accent)]'
+        ? 'bg-blue-50/90 dark:bg-blue-950/50 text-[var(--accent)] font-semibold border border-blue-200/80 dark:border-blue-800/60 shadow-xs'
         : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
     )}
   >
@@ -76,10 +79,10 @@ const RailItem: React.FC<RailItemProps> = ({
     >
       {icon}
     </span>
-    {!collapsed && <span className="truncate text-[13px] leading-tight">{label}</span>}
+    {!collapsed && <span className="truncate text-[13px] leading-tight flex-1">{label}</span>}
     {!collapsed && badge && <span className="ml-auto shrink-0">{badge}</span>}
     {!collapsed && active && !badge && (
-      <span className="ml-auto size-1.5 rounded-full bg-[var(--accent)] shrink-0" />
+      <span className="ml-auto size-1.5 rounded-full bg-[var(--accent)] shrink-0 animate-pulse" />
     )}
   </button>
 );
@@ -133,7 +136,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
   const financials = selectCaseActionFinancials(caseId);
-  const ghMins = matchedWorkspace?.goldenHourRemainingMins ?? financials.goldenHourRemainingMins ?? 0;
+  const ghMins = financials.goldenHourRemainingMins > 0
+    ? financials.goldenHourRemainingMins
+    : (matchedWorkspace?.goldenHourRemainingMins ?? 0);
   const isGoldenHourActive = ghMins > 0;
 
   const isCurrentView = (views: string[]) => views.includes(activeView);
@@ -192,55 +197,88 @@ export const V6Rail: React.FC<V6RailProps> = ({
   const currentStepIndex = steps.findIndex((s) => isCurrentView(s.views));
   const activeStepNumber = currentStepIndex >= 0 ? currentStepIndex + 1 : 1;
 
-  const officerName = `${profile.rank} ${profile.name}`;
-  const officerStation = `${station.stationName}, ${station.district}`;
+  // Clean, non-duplicative officer credentials
+  const displayOfficerName =
+    profile.name.startsWith(profile.rank) || profile.name.startsWith('Insp')
+      ? profile.name
+      : `${profile.rank} ${profile.name}`;
+  const displayOfficerStation = (station.stationName || 'Noida Cyber Crime PS').replace(/,\s*(UP|Uttar Pradesh)$/i, '');
 
-  const initials = (profile.name || 'R. K. Sharma')
+  const initials = (profile.name || 'Insp. Rajeshwar Rao')
+    .replace(/^Insp\.?\s+/i, '')
     .split(' ')
     .filter(Boolean)
     .map((w: string) => w[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'RR';
 
   return (
     <aside
-      className={cn('v6-rail', isCollapsed && 'items-center px-1.5')}
+      className={cn('v6-rail', isCollapsed ? 'items-center px-1.5' : 'px-2.5')}
       aria-label="Main navigation"
     >
       {/* Brand Header */}
-      <div className={cn('flex items-center gap-2 px-1 pt-1 pb-2.5', isCollapsed ? 'justify-center' : 'justify-between')}>
-        <div
-          className="flex items-center gap-2.5 cursor-pointer min-w-0 group"
-          onClick={() => setActiveView('workspace')}
-          title="TARKA · Cyber Fraud Intelligence Platform"
-        >
-          <div className="size-8 rounded-lg bg-[var(--accent)] flex items-center justify-center shrink-0 text-white shadow-2xs transition-transform group-hover:scale-102">
-            <Shield className="size-4.5 stroke-[2.2]" />
+      {isCollapsed ? (
+        <div className="flex flex-col items-center gap-1.5 pt-1 pb-2">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveView('workspace')}
+            onKeyDown={(e) => e.key === 'Enter' && setActiveView('workspace')}
+            title="TARKA · Cyber Fraud Intelligence Platform"
+            className="size-9 rounded-lg flex items-center justify-center text-white shadow-xs hover:scale-105 transition-transform cursor-pointer select-none"
+            style={{ backgroundColor: '#2563EB', color: '#ffffff' }}
+          >
+            <Shield className="size-5 stroke-[2.2] text-white" />
           </div>
-          {!isCollapsed && (
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="size-7 rounded-md text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-[var(--surface-2)] flex items-center justify-center transition-colors cursor-pointer"
+              title="Expand sidebar (260px)"
+              aria-label="Expand sidebar"
+            >
+              <PanelLeftOpen className="size-4" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-1 pt-1 pb-2">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer min-w-0 group"
+            onClick={() => setActiveView('workspace')}
+            title="TARKA · Cyber Fraud Intelligence Platform"
+          >
+            <div
+              className="size-8.5 rounded-lg flex items-center justify-center shrink-0 text-white shadow-xs transition-transform group-hover:scale-105"
+              style={{ backgroundColor: '#2563EB', color: '#ffffff' }}
+            >
+              <Shield className="size-4.5 stroke-[2.2] text-white" />
+            </div>
             <div className="min-w-0">
-              <div className="font-extrabold text-[14.5px] font-mono tracking-wider text-[var(--fg-1)] leading-none">
+              <div className="font-extrabold text-[15px] font-mono tracking-wider text-[var(--fg-1)] leading-none">
                 TARKA
               </div>
-              <div className="text-[12px] text-[var(--fg-3)] font-medium tracking-tight truncate mt-0.5">
+              <div className="text-[11.5px] text-[var(--fg-3)] font-medium tracking-tight truncate mt-1">
                 Cyber Intelligence
               </div>
             </div>
+          </div>
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="size-7 rounded-md text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-[var(--surface-2)] flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+              title="Collapse sidebar (64px)"
+              aria-label="Collapse sidebar"
+            >
+              <PanelLeftClose className="size-4" />
+            </button>
           )}
         </div>
-        {onToggleCollapse && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="size-7 rounded-md text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-[var(--surface-2)] flex items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
-            title={isCollapsed ? 'Expand sidebar (216px)' : 'Collapse sidebar (64px)'}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Top Hub Navigation */}
       <div className="space-y-0.5">
@@ -257,7 +295,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<FolderKanban className="size-4" />}
           label="All Cases"
           badge={
-            <span className="text-[12px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)] tabular-nums">
+            <span className="text-[11px] font-semibold text-[var(--fg-2)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--line)] tabular-nums">
               4
             </span>
           }
@@ -270,40 +308,73 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* Active Case Context Mini-Card */}
       {!isCollapsed && !isCaseUnknown && (
-        <div className="mx-0.5 my-1.5 p-2 rounded-lg bg-[var(--surface-2)]/60 border border-[var(--line)] shadow-2xs space-y-1">
-          <div className="flex items-center justify-between gap-1">
-            <span className="v6-mono text-[12px] font-bold text-[var(--accent)] bg-blue-50/90 dark:bg-blue-950/40 px-1.5 py-0.5 rounded border border-blue-200/60 leading-none">
+        <div
+          onClick={() => setActiveView('workspace')}
+          title={`Active Case: ${displayCaseId} · ${victimName} (Click to open workspace)`}
+          className="mx-0.5 my-2 p-2.5 rounded-xl bg-gradient-to-b from-[var(--surface-1)] to-[var(--surface-2)] border border-[var(--line)] shadow-2xs hover:border-[var(--line-2)] hover:shadow-xs transition-all cursor-pointer group space-y-1.5"
+        >
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="font-mono text-[12px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200/80 dark:border-blue-800/60 leading-none whitespace-nowrap">
               {displayCaseId}
             </span>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span
                 className={cn(
                   'size-1.5 rounded-full shrink-0',
                   isGoldenHourActive ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
                 )}
               />
-              <span className="text-[12px] font-medium text-[var(--fg-3)] tabular-nums leading-none">
+              <span
+                className={cn(
+                  'text-[11px] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded border',
+                  isGoldenHourActive
+                    ? 'text-amber-700 bg-amber-50 border-amber-200/80 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-800/60'
+                    : 'text-emerald-700 bg-emerald-50 border-emerald-200/80 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/60'
+                )}
+              >
                 {isGoldenHourActive ? `${ghMins}m golden` : 'Active'}
               </span>
             </div>
           </div>
-          <div className="text-[12px] font-semibold text-[var(--fg-1)] truncate leading-tight pt-0.5">
+          <div className="text-[13px] font-bold text-[var(--fg-1)] truncate leading-tight group-hover:text-[var(--accent)] transition-colors">
             {victimName}
           </div>
-          <div className="text-[12px] text-[var(--fg-3)] truncate flex items-center justify-between leading-tight">
-            <span className="truncate">{displayTypology}</span>
-            <span className="text-[var(--fg-3)] font-mono text-[12px] shrink-0 ml-1">{displayFir}</span>
+          <div className="text-[11.5px] text-[var(--fg-3)] flex items-center justify-between gap-1 leading-tight">
+            <span className="truncate text-[var(--fg-2)] font-medium">{displayTypology}</span>
+            <span className="text-[var(--fg-3)] font-mono text-[11px] shrink-0 bg-[var(--surface-1)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+              {displayFir}
+            </span>
           </div>
+        </div>
+      )}
+
+      {isCollapsed && !isCaseUnknown && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setActiveView('workspace')}
+          onKeyDown={(e) => e.key === 'Enter' && setActiveView('workspace')}
+          title={`Active Case: ${displayCaseId} · ${victimName} (${displayTypology}) · ${displayFir}`}
+          className="size-9 rounded-lg mx-auto my-1 flex items-center justify-center border border-blue-200/80 dark:border-blue-800/60 text-[var(--accent)] cursor-pointer hover:scale-105 transition-transform shadow-xs relative select-none"
+          style={{ backgroundColor: 'rgba(239, 246, 255, 0.9)' }}
+        >
+          <Briefcase className="size-4" />
+          <span
+            className={cn(
+              'absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-[var(--surface-1)]',
+              isGoldenHourActive ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
+            )}
+          />
         </div>
       )}
 
       {/* Investigation Stepper Group */}
       {!isCollapsed && (
-        <div className="flex items-center justify-between px-2 pt-2 pb-1">
-          <span className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
+        <div className="flex items-center justify-between px-2 pt-2.5 pb-1">
+          <span className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
             Investigation
           </span>
-          <span className="text-[12px] font-medium text-[var(--fg-3)] tabular-nums">
+          <span className="text-[11px] font-semibold text-[var(--accent)] bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/70 px-1.5 py-0.5 rounded-md tabular-nums">
             Stage {activeStepNumber}/6
           </span>
         </div>
@@ -323,20 +394,22 @@ export const V6Rail: React.FC<V6RailProps> = ({
               aria-label={`${s.num}. ${s.label}`}
               aria-current={isCurrent ? 'page' : undefined}
               className={cn(
-                'relative group flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[12.5px] font-medium transition-all duration-150 w-full cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
-                isCollapsed && 'justify-center px-0 py-2',
+                'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
+                isCollapsed
+                  ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
+                  : 'gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium w-full',
                 isCurrent
-                  ? 'bg-blue-50/80 dark:bg-blue-950/40 text-[var(--accent)] font-semibold border border-blue-200/70 dark:border-blue-800/50 shadow-2xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r-full before:bg-[var(--accent)]'
+                  ? 'bg-blue-50/90 dark:bg-blue-950/50 text-[var(--accent)] font-semibold border border-blue-200/80 dark:border-blue-800/60 shadow-xs'
                   : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
               )}
             >
               <span
                 className={cn(
-                  'size-5 rounded-md flex items-center justify-center text-[12px] font-bold shrink-0 transition-colors border',
+                  'size-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors border',
                   s.done && !isCurrent
-                    ? 'bg-emerald-50 text-emerald-600 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-700/50'
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60'
                     : isCurrent
-                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-2xs'
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-xs'
                     : 'bg-[var(--surface-2)] text-[var(--fg-3)] border-[var(--line)] group-hover:border-[var(--line-2)]'
                 )}
               >
@@ -346,14 +419,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
                   s.num
                 )}
               </span>
-              {!isCollapsed && <span className="truncate">{s.label}</span>}
+              {!isCollapsed && <span className="truncate flex-1">{s.label}</span>}
               {!isCollapsed && isCurrent && (
-                <span className="size-1.5 rounded-full bg-[var(--accent)] ml-auto shrink-0" />
-              )}
-              {!isCollapsed && !isCurrent && s.done && (
-                <span className="text-[12px] font-semibold text-emerald-600/80 ml-auto tabular-nums">
-                  ✓
-                </span>
+                <span className="size-1.5 rounded-full bg-[var(--accent)] ml-auto shrink-0 animate-pulse" />
               )}
             </button>
           );
@@ -362,12 +430,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* Forensic Lab Navigation */}
       {!isCollapsed && (
-        <div className="flex items-center justify-between px-2 pt-2.5 pb-1">
-          <span className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
+        <div className="flex items-center justify-between px-2 pt-3 pb-1">
+          <span className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
             Forensic Lab
-          </span>
-          <span className="text-[12px] font-mono text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)]">
-            ZKP/PSI
           </span>
         </div>
       )}
@@ -378,7 +443,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Scale className="size-4" />}
           label="Court Dossier"
           badge={
-            <span className="text-[12px] font-medium text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
               §63
             </span>
           }
@@ -392,7 +457,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<ShieldCheck className="size-4" />}
           label="Privacy & ZKP"
           badge={
-            <span className="text-[12px] font-medium text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
               PSI
             </span>
           }
@@ -406,7 +471,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<FlaskConical className="size-4" />}
           label="Workstation"
           badge={
-            <span className="text-[12px] font-medium text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
               Loom
             </span>
           }
@@ -420,7 +485,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Zap className="size-4" />}
           label="Benchmarks"
           badge={
-            <span className="text-[12px] font-mono font-medium text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)] tabular-nums">
+            <span className="text-[11px] font-mono font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)] tabular-nums">
               10k/s
             </span>
           }
@@ -433,8 +498,8 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* System Group */}
       {!isCollapsed && (
-        <div className="flex items-center justify-between px-2 pt-2.5 pb-1">
-          <span className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
+        <div className="flex items-center justify-between px-2 pt-3 pb-1">
+          <span className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
             System
           </span>
         </div>
@@ -455,7 +520,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Activity className="size-4" />}
           label="Health & Diagnostics"
           badge={
-            <span className="flex items-center gap-1 text-[12px] text-emerald-600 font-medium tabular-nums">
+            <span className="flex items-center gap-1.5 text-[11.5px] text-emerald-600 font-semibold tabular-nums ml-auto shrink-0">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               100%
             </span>
@@ -477,16 +542,18 @@ export const V6Rail: React.FC<V6RailProps> = ({
         <button
           type="button"
           onClick={onOpenDemoUser}
-          title={`${officerName} · ${officerStation} (Click to switch persona)`}
-          aria-label={`Officer profile: ${officerName}, ${officerStation}`}
+          title={`${displayOfficerName} · ${displayOfficerStation} (Click to switch persona)`}
+          aria-label={`Officer profile: ${displayOfficerName}, ${displayOfficerStation}`}
           data-testid="sidebar-io-avatar"
           className={cn(
-            'group flex items-center gap-2.5 p-2 rounded-lg border border-[var(--line)] bg-[var(--surface-2)]/30 hover:bg-[var(--surface-2)] hover:border-[var(--line-2)] transition-all duration-150 cursor-pointer w-full text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] select-none',
-            isCollapsed && 'justify-center p-1.5'
+            'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
+            isCollapsed
+              ? 'justify-center p-1'
+              : 'gap-2.5 p-2 rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/40 hover:bg-[var(--surface-2)] hover:border-[var(--line-2)] shadow-2xs w-full text-left'
           )}
         >
           {/* Avatar with credential ring and online badge */}
-          <div className="relative size-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-[var(--line)] flex items-center justify-center font-bold text-[12px] text-[var(--fg-1)] shrink-0 shadow-2xs">
+          <div className="relative size-8.5 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-[var(--line)] flex items-center justify-center font-bold text-[12px] text-[var(--fg-1)] shrink-0 shadow-2xs">
             {initials}
             <span
               className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-[var(--surface-1)]"
@@ -497,16 +564,16 @@ export const V6Rail: React.FC<V6RailProps> = ({
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-[12.5px] text-[var(--fg-1)] truncate leading-tight group-hover:text-[var(--accent)] transition-colors">
-                {officerName || 'Insp. Rajeshwar Rao'}
+                {displayOfficerName}
               </div>
-              <div className="text-[12px] text-[var(--fg-3)] truncate mt-0.5 leading-tight">
-                {officerStation || 'Noida Cyber Crime PS, UP'}
+              <div className="text-[11.5px] text-[var(--fg-3)] truncate mt-0.5 leading-tight">
+                {displayOfficerStation}
               </div>
             </div>
           )}
 
           {!isCollapsed && (
-            <UserCheck className="size-3.5 text-[var(--fg-3)] group-hover:text-[var(--accent)] shrink-0 transition-colors" />
+            <UserCheck className="size-4 text-[var(--fg-3)] group-hover:text-[var(--accent)] shrink-0 transition-colors ml-0.5" />
           )}
         </button>
       </div>

@@ -306,7 +306,7 @@ export const V6AppShell: React.FC = () => {
     <div
       className="v6-app"
       data-case-id={effectiveCaseId}
-      style={{ '--v6-rail-width': railCollapsed ? '64px' : '216px' } as React.CSSProperties}
+      style={{ '--v6-rail-width': railCollapsed ? '64px' : '260px' } as React.CSSProperties}
     >
       {/* Sidebar Rail */}
       <V6Rail
