@@ -114,6 +114,30 @@
   - Replaced all 79 sub-12px inline styles in `EvidenceNetworkGraph.tsx` (`7.5px`–`11px`) with `12px` minimum.
   - Total text nodes `< 11.9px` across entire presentation layer: **0**.
 
+## Privacy & Cryptography Workbench UI/UX Hardening (`view=privacy`)
+- **Target URL**: `http://localhost:5173/?case=CASE-2026-004&view=privacy`
+- **Root Causes Fixed**:
+  1. **Double Outer Height & Viewport Overflow**: Replaced hardcoded `height: calc(100dvh - 52px)` and `overflow: hidden` in `PrivacyCryptoWorkbench.tsx` with a responsive, natural layout (`space-y-4`).
+  2. **Legacy CSS Utility Hijack**: In `frontend/src/styles/liquid-glass.css`, removed the legacy compatibility bridge classes (`.flex`, `.flex-col`, `.border`, `.bg-slate-*`) that used `!important`, allowing Tailwind v4 responsive classes (`md:flex-row`, etc.) to operate correctly.
+  3. **Light-Theme Cohesion**: Replaced dark legacy `#0F1B2E` `KpiTile` and `StoryBanner` components with native `v6-card`s featuring zinc borders (`#e7e7ea`), white surfaces (`#ffffff`), and subtle shadows (`shadow-2xs`).
+  4. **Dynamic Case ZKP Calibration**: Resolved the false "FAIL CLOSED" error on `CASE-2026-004` (booked loss ₹1,80,000) by scaling the private transaction batch to fit within the case's actual booked loss, making `SAT VERIFIED` the authentic baseline state, with intentional fail-closed responses only when adversarial attack toggles are engaged.
+  5. **Causal SMT Contradiction Logic**: Fixed the conflict calculation in Tab 4 where identical amounts (e.g. ₹1,80,000 claimed vs ₹1,80,000 booked in Case 4) were erroneously flagged as an SMT contradiction. It now correctly identifies and displays `CLM-03: Ledger-Claim Reconciliation | Formal SMT Invariant` with `RECONCILED (INVARIANT MET)`.
+  6. **Sub-12px Typography Elimination**: Audited and upgraded all text nodes, badges, and hash chips across all 4 tabs to $\ge 12\text{px}$ floor (0 violations found across all tabs).
+- **Screenshots Verified**:
+  - `privacy_tab1_psi.png`: Tripartite private set intersection across AXIS, YES, and PUNJAB bank vaults with target mule highlighting and discrete log security notice.
+  - `privacy_tab2_zkp.png`: Air-gapped prover space with private witness toggle and independent auditor verifier space with SAT verification outcome (0.42 ms latency).
+  - `privacy_tab3_pbft.png`: 4-node consensus simulation under honest, silent, and Byzantine fault modes with 2f+1 quorum guarantee.
+  - `privacy_tab4_claims.png`: 3-state causal claim DAG under baseline and ablated challenger conditions.
+  - `privacy_1366_tab1.png`: Clean 1366×768 responsive layout with zero cutoffs or misalignments.
+- **Verification Results**:
+  - `npx tsc -b`: 0 errors.
+  - `npx vitest run`: 140/140 passed across 23 test files (834ms).
+  - `playwright test e2e/v6-styled.spec.ts`: 11/11 passed (31.7s).
+  - `playwright test e2e/v6-density.spec.ts`: 9/9 passed (46.7s).
+  - `playwright test e2e/case-sync.spec.ts`: 2/2 passed (37.0s).
+  - `npm run build`: Production build cleanly completed in 1.41s across 3,085 modules.
+
+
 
 
 
