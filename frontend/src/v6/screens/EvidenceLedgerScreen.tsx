@@ -47,6 +47,8 @@ export const EvidenceLedgerScreen: React.FC = () => {
   const caseId = activeCaseId || 'CASE-2026-001';
   const canonicalCase = useMemo(() => getCanonicalCase(caseId), [caseId]);
 
+  const fallbackInvestigation = useMemo(() => reconstruct5FileInvestigation(), []);
+
   const investigation = useMemo(() => {
     if (reconstructedInvestigation && reconstructedInvestigation.caseId === caseId) {
       return reconstructedInvestigation;
@@ -54,8 +56,8 @@ export const EvidenceLedgerScreen: React.FC = () => {
     if (caseId && CANONICAL_CASES[caseId]) {
       return buildCaseBundleFromFixture(CANONICAL_CASES[caseId]);
     }
-    return reconstructedInvestigation || reconstruct5FileInvestigation();
-  }, [reconstructedInvestigation, caseId]);
+    return reconstructedInvestigation || fallbackInvestigation;
+  }, [reconstructedInvestigation, caseId, fallbackInvestigation]);
 
   const isRow14Tampered = !!mutations.alterBankRow14;
   const isForgedRrn = !!mutations.forgeRrnTimestamp;

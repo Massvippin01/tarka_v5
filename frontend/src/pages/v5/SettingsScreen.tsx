@@ -183,8 +183,17 @@ export const SettingsScreen: React.FC = () => {
 
   const isAdmin = profile.role === "ADMIN";
 
+  interface NavItem {
+    id: SettingsSection;
+    label: string;
+    shortTitle: string;
+    subtitle: string;
+    icon: any;
+    badge?: string;
+  }
+
   // Navigation Items configuration
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       id: "profile" as SettingsSection,
       label: t("settings.profile_role"),

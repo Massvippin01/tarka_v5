@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Lock,
   Unlock,
@@ -43,28 +43,50 @@ export const GateRail: React.FC<GateRailProps> = ({
   const [breakMenuOpen, setBreakMenuOpen] = useState(false);
 
   // Pure mathematical verdict evaluation
-  const verdictResult: GateVerdictResult = deriveGateVerdict({
-    i1_ledgerConservation: isRow14Valid,
-    i2_rrnClockSync: isRrnValid,
-    i3_cbsSwitchMatch: !isReceiptConflicted || isRow14Valid,
-    i4_pdfRevisionIntegrity: !isPdfAppended,
-    i5_cgnatMerklePrivacy: isMerkleCompliant,
-  });
+  const verdictResult: GateVerdictResult = useMemo(
+    () =>
+      deriveGateVerdict({
+        i1_ledgerConservation: isRow14Valid,
+        i2_rrnClockSync: isRrnValid,
+        i3_cbsSwitchMatch: !isReceiptConflicted || isRow14Valid,
+        i4_pdfRevisionIntegrity: !isPdfAppended,
+        i5_cgnatMerklePrivacy: isMerkleCompliant,
+      }),
+    [isRow14Valid, isRrnValid, isReceiptConflicted, isPdfAppended, isMerkleCompliant]
+  );
 
   const { verdict, isHalted, totalLatencyMs, invariants } = verdictResult;
 
   // Sync state with global shell context
   useEffect(() => {
-    setIntakeGate({
-      isHalted,
-      invariants: invariants.map((inv) => ({
-        id: inv.id,
-        name: inv.name,
-        status: inv.passed ? "PASS" : inv.severity === "BLOCKING" ? "FAIL" : "WARN",
-        expectedVsObserved: `${inv.expected} -> ${inv.observed}`,
-        executionTimeMs: inv.latencyMs,
-      })),
-      totalMs: totalLatencyMs,
+    setIntakeGate((prev) => {
+      // Guard against infinite re-render loops if gate verdict hasn't changed
+      if (
+        prev &&
+        prev.isHalted === isHalted &&
+        prev.totalMs === totalLatencyMs &&
+        prev.invariants.length === invariants.length &&
+        prev.invariants.every((inv, idx) => {
+          const next = invariants[idx];
+          return (
+            inv.id === next?.id &&
+            inv.status === (next?.passed ? "PASS" : next?.severity === "BLOCKING" ? "FAIL" : "WARN")
+          );
+        })
+      ) {
+        return prev;
+      }
+      return {
+        isHalted,
+        invariants: invariants.map((inv) => ({
+          id: inv.id,
+          name: inv.name,
+          status: inv.passed ? "PASS" : inv.severity === "BLOCKING" ? "FAIL" : "WARN",
+          expectedVsObserved: `${inv.expected} -> ${inv.observed}`,
+          executionTimeMs: inv.latencyMs,
+        })),
+        totalMs: totalLatencyMs,
+      };
     });
   }, [isHalted, totalLatencyMs, invariants, setIntakeGate]);
 

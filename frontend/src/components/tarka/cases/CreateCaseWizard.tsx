@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -20,7 +21,6 @@ import {
   TYPOLOGY_OPTIONS,
 } from "../../../types/caseLifecycle";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
-import { useCaseStore } from "../../../store/useCaseStore";
 import { queryClient } from "../../../queryClient";
 import { formatInr } from "../../../utils/formatters";
 
@@ -36,7 +36,7 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stagedFiles, setStagedFiles] = useState<Array<{ name: string; size: number }>>([]);
 
-  const { createNewCaseWorkspace } = useTarkaGlobal();
+  const { createNewCaseWorkspace, selectCaseWorkspace } = useTarkaGlobal();
 
   const {
     register,
@@ -44,6 +44,7 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
     control,
     setValue,
     watch,
+    trigger,
     formState: { errors },
     reset,
   } = useForm<CaseWizardFormValues>({
@@ -126,11 +127,24 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
     setValue("claimedLossInr", 4250000);
     setValue("utrOrRrn", "SBI-RTGS-990182410");
     setValue("priority", "CRITICAL_GOLDEN_HOUR");
+    setValue("leadInvestigator", "Insp. R. K. Sharma (IO-409)");
+    setValue("policeStation", "Noida Cyber Crime PS, UP");
     toast.info("Emergency Golden-Hour parameters auto-populated");
   };
 
-  const handleNextStep = () => {
-    if (currentStep < 4) {
+  const handleNextStep = async () => {
+    let isValid = false;
+    if (currentStep === 1) {
+      isValid = await trigger(["firNumber", "ncrpAckNo", "complainantName", "title", "typology"]);
+    } else if (currentStep === 2) {
+      isValid = await trigger(["victimBank", "victimAccount", "bookedLossInr"]);
+    } else if (currentStep === 3) {
+      isValid = await trigger(["leadInvestigator", "policeStation", "priority"]);
+    } else {
+      isValid = true;
+    }
+
+    if (isValid && currentStep < 4) {
       setCurrentStep((prev) => (prev + 1) as any);
     }
   };
@@ -151,6 +165,8 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
   };
 
   const onFinalSubmit = async (data: CaseWizardFormValues) => {
+    // Guard against premature form submission when stepping through wizard
+    if (currentStep < 4) return;
     setIsSubmitting(true);
     try {
       const newId = createNewCaseWorkspace({
@@ -179,9 +195,8 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
         description: `FIR: ${data.firNumber} | Loss: ${formatInr(data.bookedLossInr)}`,
       });
 
-      // Switch to new case on Intake view
-      useCaseStore.getState().setActiveCaseId(newId);
-      useCaseStore.getState().setActiveView("intake");
+      // Transition seamlessly to newly initialized workspace on Evidence view
+      selectCaseWorkspace(newId, "intake");
       onClose();
     } catch (err: any) {
       toast.error(err.message || "Failed to initialize case");
@@ -192,101 +207,45 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
-  return (
+  const modalNode = (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(15, 23, 42, 0.70)",
-        backdropFilter: "blur(6px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-      }}
+      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
         data-testid="create-case-wizard-modal"
-        style={{
-          width: "740px",
-          maxWidth: "96vw",
-          maxHeight: "92vh",
-          background: "#FFFFFF",
-          borderRadius: "12px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0,0,0,0.08)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
+        className="w-full max-w-[720px] max-h-[min(88vh,680px)] my-auto flex flex-col overflow-hidden rounded-xl bg-white border border-[var(--line)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div
-          style={{
-            padding: "16px 20px",
-            background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
-            color: "#FFFFFF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                background: "rgba(34, 211, 238, 0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid rgba(34, 211, 238, 0.3)",
-              }}
-            >
-              <Shield size={18} color="#22D3EE" />
+        {/* Modal Header */}
+        <div className="shrink-0 p-4 sm:px-5 sm:py-3.5 border-b border-[var(--line)] bg-white flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-200 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <Shield size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: "15px", fontWeight: 700, margin: 0 }}>Register New Cyber Fraud Case</h2>
-              <p style={{ fontSize: "11px", color: "#94A3B8", margin: "2px 0 0 0" }}>
-                NCRP 1930 & CCTNS Statutory Registration Protocol (BNS / BSA Compliant)
+              <h2 className="text-[15px] font-bold text-[var(--fg-1)] m-0 leading-tight">
+                Register New Cyber Fraud Case
+              </h2>
+              <p className="text-[12px] text-[var(--muted)] m-0 mt-0.5 leading-tight">
+                NCRP 1930 & CCTNS Statutory Registration Protocol · BNSS 2023 / BSA Compliant
               </p>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleQuickEmergencyTemplate}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "11px",
-                fontWeight: 600,
-                padding: "4px 8px",
-                borderRadius: "6px",
-                background: "rgba(245, 158, 11, 0.15)",
-                border: "1px solid rgba(245, 158, 11, 0.35)",
-                color: "#FCD34D",
-                cursor: "pointer",
-              }}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer"
             >
-              <Sparkles size={12} />
+              <Sparkles size={13} className="text-amber-600" />
               <span>Fill Demo Case</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#94A3B8",
-                cursor: "pointer",
-                padding: "4px",
-                borderRadius: "4px",
-              }}
+              className="p-1 rounded-md text-[var(--muted)] hover:text-[var(--fg-1)] hover:bg-[#f4f4f5] transition-colors border-none bg-transparent cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -294,17 +253,7 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
         </div>
 
         {/* Multi-Step Stepper Strip */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            background: "#F8FAFC",
-            borderBottom: "1px solid #E2E8F0",
-            padding: "10px 20px",
-            gap: "12px",
-            fontSize: "12px",
-          }}
-        >
+        <div className="shrink-0 px-5 py-2.5 bg-[#fafafa] border-b border-[var(--line)] flex items-center gap-4 text-[12.5px] overflow-x-auto">
           {[
             { step: 1, label: "1. Complaint", icon: FileText },
             { step: 2, label: "2. Financials", icon: CreditCard },
@@ -317,156 +266,124 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
             return (
               <div
                 key={item.step}
-                onClick={() => setCurrentStep(item.step as any)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  cursor: "pointer",
-                  color: isCurrent ? "#0284C7" : isDone ? "#059669" : "#64748B",
-                  fontWeight: isCurrent ? 700 : 500,
+                onClick={async () => {
+                  if (item.step < currentStep) {
+                    setCurrentStep(item.step as any);
+                  } else if (item.step === currentStep + 1) {
+                    handleNextStep();
+                  }
                 }}
+                className={`flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+                  isCurrent
+                    ? "text-[var(--accent)] font-bold"
+                    : isDone
+                    ? "text-emerald-700 font-medium"
+                    : "text-[var(--muted)] font-normal"
+                }`}
               >
                 {isDone ? (
-                  <CheckCircle2 size={14} color="#059669" />
+                  <CheckCircle2 size={15} className="text-emerald-600" />
                 ) : (
-                  <Icon size={14} color={isCurrent ? "#0284C7" : "#94A3B8"} />
+                  <Icon size={15} className={isCurrent ? "text-[var(--accent)]" : "text-[var(--muted)]"} />
                 )}
                 <span>{item.label}</span>
-                {item.step < 4 && <span style={{ color: "#CBD5E1", marginLeft: "8px" }}>›</span>}
+                {item.step < 4 && <span className="text-[var(--line-strong)] ml-2">›</span>}
               </div>
             );
           })}
         </div>
 
         {/* Wizard Step Body */}
-        <form onSubmit={handleSubmit(onFinalSubmit)} style={{ display: "flex", flexDirection: "column", flex: 1, overflowY: "auto" }}>
-          <div style={{ padding: "20px", flex: 1, overflowY: "auto" }}>
+        <form onSubmit={handleSubmit(onFinalSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto min-h-0 p-5 space-y-4">
             {/* STEP 1: COMPLAINT */}
             {currentStep === 1 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div className="space-y-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       FIR Number *
                     </label>
                     <input
                       {...register("firNumber")}
                       placeholder="e.g. FIR #149/2026"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.firNumber ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.firNumber ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
                     {errors.firNumber && (
-                      <span style={{ fontSize: "10px", color: "#EF4444" }}>{errors.firNumber.message}</span>
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.firNumber.message}</span>
                     )}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       NCRP Acknowledgement No. *
                     </label>
                     <input
                       {...register("ncrpAckNo")}
                       placeholder="e.g. 1930-ACK-2311098412"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.ncrpAckNo ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.ncrpAckNo ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
                     {errors.ncrpAckNo && (
-                      <span style={{ fontSize: "10px", color: "#EF4444" }}>{errors.ncrpAckNo.message}</span>
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.ncrpAckNo.message}</span>
                     )}
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Complainant Name *
                     </label>
                     <input
                       {...register("complainantName")}
                       placeholder="e.g. Sunil Kumar"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.complainantName ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.complainantName ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
                     {errors.complainantName && (
-                      <span style={{ fontSize: "10px", color: "#EF4444" }}>{errors.complainantName.message}</span>
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.complainantName.message}</span>
                     )}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Contact Mobile Number
                     </label>
                     <input
                       {...register("contactPhone")}
                       placeholder="e.g. 9811234567"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.contactPhone ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                     />
-                    {errors.contactPhone && (
-                      <span style={{ fontSize: "10px", color: "#EF4444" }}>{errors.contactPhone.message}</span>
-                    )}
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                     Case Title *
                   </label>
                   <input
                     {...register("title")}
                     placeholder="e.g. Fake CBI Digital Arrest & Multi-Layer Money Laundering"
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: errors.title ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                      fontSize: "12px",
-                      boxSizing: "border-box",
-                    }}
+                    className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                      errors.title ? "border-red-500" : "border-[var(--line)]"
+                    }`}
                   />
                   {errors.title && (
-                    <span style={{ fontSize: "10px", color: "#EF4444" }}>{errors.title.message}</span>
+                    <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.title.message}</span>
                   )}
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Typology / Crime Classification *
                     </label>
                     <select
                       {...register("typology")}
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                     >
                       {TYPOLOGY_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -476,41 +393,26 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Incident Date & Time
                     </label>
                     <input
                       type="datetime-local"
                       {...register("incidentDateTime")}
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                     Complaint Narrative (Typology auto-suggests from keywords)
                   </label>
                   <textarea
                     {...register("description")}
                     rows={3}
                     placeholder="Brief description of the extortion or scam narrative..."
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #CBD5E1",
-                      fontSize: "12px",
-                      boxSizing: "border-box",
-                      resize: "vertical",
-                    }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border resize-y"
                   />
                 </div>
               </div>
@@ -518,47 +420,43 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
 
             {/* STEP 2: FINANCIALS */}
             {currentStep === 2 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div className="space-y-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Victim Bank *
                     </label>
                     <input
                       {...register("victimBank")}
                       placeholder="e.g. State Bank of India"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.victimBank ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.victimBank ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
+                    {errors.victimBank && (
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.victimBank.message}</span>
+                    )}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Victim Account No / UPI VPA *
                     </label>
                     <input
                       {...register("victimAccount")}
                       placeholder="e.g. 981100234190 or user@okhdfcbank"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.victimAccount ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.victimAccount ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
+                    {errors.victimAccount && (
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.victimAccount.message}</span>
+                    )}
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Booked Loss Amount (₹ INR) *
                     </label>
                     <Controller
@@ -570,23 +468,21 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
                           value={field.value}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                           placeholder="e.g. 500000"
-                          style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            borderRadius: "6px",
-                            border: errors.bookedLossInr ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                            fontSize: "12px",
-                            boxSizing: "border-box",
-                          }}
+                          className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                            errors.bookedLossInr ? "border-red-500" : "border-[var(--line)]"
+                          }`}
                         />
                       )}
                     />
-                    <span style={{ fontSize: "11px", color: "#64748B", marginTop: "2px", display: "block" }}>
+                    <span className="text-[12px] text-[var(--muted)] mt-1 block">
                       Formatted: {formatInr(watch("bookedLossInr") || 0)}
                     </span>
+                    {errors.bookedLossInr && (
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.bookedLossInr.message}</span>
+                    )}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Claimed Loss in Complaint (₹ INR)
                     </label>
                     <Controller
@@ -598,94 +494,70 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
                           value={field.value}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                           placeholder="e.g. 500000"
-                          style={{
-                            width: "100%",
-                            padding: "8px 10px",
-                            borderRadius: "6px",
-                            border: "1px solid #CBD5E1",
-                            fontSize: "12px",
-                            boxSizing: "border-box",
-                          }}
+                          className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                         />
                       )}
                     />
+                    <span className="text-[12px] text-[var(--muted)] mt-1 block">
+                      Formatted: {formatInr(watch("claimedLossInr") || 0)}
+                    </span>
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                     Initial Transfer UTR / RRN (Optional)
                   </label>
                   <input
                     {...register("utrOrRrn")}
                     placeholder="e.g. UTR-2026-SBI-0012938"
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #CBD5E1",
-                      fontSize: "12px",
-                      boxSizing: "border-box",
-                    }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
+                  <span className="text-[12px] text-[var(--muted)] mt-1 block">
+                    NPCI reference key used to anchor switch transaction timeline
+                  </span>
                 </div>
               </div>
             )}
 
             {/* STEP 3: ASSIGNMENT & PRIORITY */}
             {currentStep === 3 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div className="space-y-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Assigned Investigating Officer (IO) *
                     </label>
                     <input
                       {...register("leadInvestigator")}
                       placeholder="e.g. Insp. R. K. Sharma (IO-409)"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: errors.leadInvestigator ? "1px solid #EF4444" : "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className={`w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border ${
+                        errors.leadInvestigator ? "border-red-500" : "border-[var(--line)]"
+                      }`}
                     />
+                    {errors.leadInvestigator && (
+                      <span className="text-[12px] text-red-600 mt-1 block font-medium">{errors.leadInvestigator.message}</span>
+                    )}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                    <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
                       Jurisdiction / Police Station
                     </label>
                     <input
                       {...register("policeStation")}
                       placeholder="e.g. Noida Cyber Crime PS, UP"
-                      style={{
-                        width: "100%",
-                        padding: "8px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid #CBD5E1",
-                        fontSize: "12px",
-                        boxSizing: "border-box",
-                      }}
+                      className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
-                    Investigation Priority
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Investigation Priority & SLA Triage
                   </label>
                   <select
                     {...register("priority")}
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: "6px",
-                      border: "1px solid #CBD5E1",
-                      fontSize: "12px",
-                      boxSizing: "border-box",
-                    }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   >
                     <option value="CRITICAL_GOLDEN_HOUR">CRITICAL (Golden-Hour Active - Immediate Freeze)</option>
                     <option value="HIGH_SYNDICATE">HIGH (Syndicate Overlap / Inter-State Network)</option>
@@ -698,68 +570,43 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
 
             {/* STEP 4: EVIDENCE ATTACHMENT */}
             {currentStep === 4 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div className="space-y-3.5">
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
-                  style={{
-                    border: "2px dashed #94A3B8",
-                    borderRadius: "10px",
-                    padding: "24px",
-                    textAlign: "center",
-                    background: "#F8FAFC",
-                    cursor: "pointer",
-                  }}
+                  className="border-2 border-dashed border-[var(--line-strong)] rounded-xl p-6 text-center bg-[#fafafa] hover:bg-blue-50/20 transition-colors cursor-pointer"
                 >
-                  <UploadCloud size={32} color="#0284C7" style={{ margin: "0 auto 8px auto" }} />
-                  <p style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A", margin: "0 0 4px 0" }}>
+                  <UploadCloud size={32} className="text-[var(--accent)] mx-auto mb-2" />
+                  <p className="text-[13px] font-bold text-[var(--fg-1)] m-0 mb-1">
                     Drag & Drop Evidence Artifacts (Bank Statement, Telco IPDR, WhatsApp Export)
                   </p>
-                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0 }}>
+                  <p className="text-[12px] text-[var(--muted)] m-0">
                     BSA §63(4) cryptographic hash seals and BIP-39 custodial stamps are applied automatically.
                   </p>
                 </div>
 
                 {stagedFiles.length > 0 && (
                   <div>
-                    <h4 style={{ fontSize: "11px", fontWeight: 700, color: "#334155", margin: "0 0 6px 0" }}>
+                    <h4 className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider m-0 mb-1.5">
                       Staged Artifacts ({stagedFiles.length}):
                     </h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <div className="space-y-1">
                       {stagedFiles.map((f, i) => (
                         <div
                           key={i}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "6px 10px",
-                            background: "#F1F5F9",
-                            borderRadius: "6px",
-                            fontSize: "11px",
-                          }}
+                          className="flex items-center justify-between px-3 py-2 bg-[#f4f4f5] rounded-lg text-[12.5px]"
                         >
-                          <span style={{ fontWeight: 600, color: "#0F172A" }}>{f.name}</span>
-                          <span style={{ color: "#64748B" }}>{(f.size / 1024).toFixed(1)} KB</span>
+                          <span className="font-semibold text-[var(--fg-1)]">{f.name}</span>
+                          <span className="text-[var(--muted)] font-mono">{(f.size / 1024).toFixed(1)} KB</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    background: "#ECFDF5",
-                    border: "1px solid #A7F3D0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <CheckCircle2 size={16} color="#059669" />
-                  <span style={{ fontSize: "11px", color: "#065F46" }}>
+                <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-2.5">
+                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                  <span className="text-[12px] text-emerald-800 font-medium leading-relaxed">
                     Case is ready to initialize. On submission, the pipeline will activate and redirect to the Evidence Workbench.
                   </span>
                 </div>
@@ -768,96 +615,43 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
           </div>
 
           {/* Stepper Footer Controls */}
-          <div
-            style={{
-              padding: "14px 20px",
-              background: "#F8FAFC",
-              borderTop: "1px solid #E2E8F0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <div className="shrink-0 px-5 py-3 bg-[#fafafa] border-t border-[var(--line)] flex items-center justify-between">
             <div>
               {currentStep > 1 && (
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    padding: "6px 14px",
-                    borderRadius: "6px",
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    color: "#475569",
-                    cursor: "pointer",
-                  }}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold px-3.5 py-1.5 rounded-lg border border-[var(--line)] bg-white hover:bg-[#f4f4f5] text-[var(--fg-1)] transition-colors cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Back</span>
                 </button>
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  padding: "6px 14px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: "transparent",
-                  color: "#64748B",
-                  cursor: "pointer",
-                }}
+                className="text-[12.5px] font-semibold px-3.5 py-1.5 rounded-lg border-none bg-transparent hover:bg-black/[0.03] text-[var(--muted)] hover:text-[var(--fg-1)] transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               {currentStep < 4 ? (
                 <button
+                  key="btn-wizard-next"
                   type="button"
                   onClick={handleNextStep}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    padding: "7px 16px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "#0284C7",
-                    color: "#FFFFFF",
-                    cursor: "pointer",
-                  }}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-bold px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-blue-700 text-white transition-colors cursor-pointer shadow-xs border-none"
                 >
                   <span>Next Step</span>
                   <ArrowRight size={14} />
                 </button>
               ) : (
                 <button
+                  key="btn-wizard-submit"
                   type="submit"
                   disabled={isSubmitting}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    padding: "7px 18px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "#059669",
-                    color: "#FFFFFF",
-                    cursor: isSubmitting ? "not-allowed" : "pointer",
-                    boxShadow: "0 2px 4px rgba(5, 150, 105, 0.25)",
-                  }}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-bold px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-xs border-none disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <CheckCircle2 size={14} />
                   <span>{isSubmitting ? "Registering..." : "Launch Investigation"}</span>
@@ -869,4 +663,6 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalNode, document.body) : modalNode;
 };
