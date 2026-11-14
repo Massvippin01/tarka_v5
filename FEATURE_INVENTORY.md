@@ -52,3 +52,4 @@ This document provides the authoritative inventory of all legacy capabilities, s
 - **Alt + B**: Open Forensic Benchmark & Calibration Lab
 - **Alt + D**: Open Public Dataset Benchmark Modal
 - **Esc**: Close any active drawer, sheet, or modal
+

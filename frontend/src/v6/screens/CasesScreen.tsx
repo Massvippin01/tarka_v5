@@ -328,8 +328,9 @@ export const CasesScreen: React.FC = () => {
         }
       />
 
-      {/* Filter and Search Bar Card */}
-      <Card>
+      <div className="grid grid-cols-1 gap-4">
+        {/* Filter and Search Bar Card */}
+        <Card>
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Status Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
@@ -386,6 +387,7 @@ export const CasesScreen: React.FC = () => {
           }
         />
       </Card>
+      </div>
 
       {/* Create Case Wizard Modal */}
       <CreateCaseWizard

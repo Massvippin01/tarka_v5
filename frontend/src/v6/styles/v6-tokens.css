@@ -1,3 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface: var(--surface-1);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-fg-1: var(--fg-1);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-risk: var(--risk);
+  --color-risk-bg: var(--risk-bg);
+  --color-safe: var(--safe);
+  --color-safe-bg: var(--safe-bg);
+  --color-urgent: var(--urgent);
+  --color-urgent-bg: var(--urgent-bg);
+  --color-flow: var(--flow);
+  --color-flow-2: var(--flow-2);
+  --color-flow-bg: var(--flow-bg);
+  --color-frozen: var(--frozen);
+  --color-frozen-bg: var(--frozen-bg);
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+}
+
 /* =====================================================================
    TARKA V6 DESIGN SYSTEM TOKENS & ATOMIC STYLES
    Visual target: frontend/public/design/tarka-reference.html
