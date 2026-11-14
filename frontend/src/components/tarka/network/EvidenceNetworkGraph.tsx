@@ -35,6 +35,7 @@ import { sha256HexSync, canonicalJson } from "../../../utils/sha256";
 import { useQuery } from "@tanstack/react-query";
 import type { CaseActionsResponse } from "../../../types/actions";
 import { selectCaseActionFinancials } from "../../../selectors/actionSelectors";
+import { useCaseStore } from "../../../store/useCaseStore";
 
 export type EdgeFilterType = "all" | "cashflow" | "tether" | "ja4" | "caf" | "c2";
 
@@ -43,6 +44,7 @@ interface EvidenceNetworkGraphProps {
   onToggleHotspot: () => void;
   edgeFilter: EdgeFilterType;
   onEdgeFilterChange: (filter: EdgeFilterType) => void;
+  caseId?: string;
 }
 
 interface EvidenceSheetData {
@@ -394,6 +396,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   onToggleHotspot,
   edgeFilter,
   onEdgeFilterChange,
+  caseId: propCaseId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -407,7 +410,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [selectedSheet, setSelectedSheet] = useState<EvidenceSheetData | null>(null);
 
   const { setSelectedEvidenceEdge, reconstructedInvestigation } = useTarkaUiStore();
-  const { activeCaseId } = useTarkaGlobal();
+  const { activeCaseId: globalCaseId } = useTarkaGlobal();
+  const storeCaseId = useCaseStore((s) => s.activeCaseId);
+  const activeCaseId = propCaseId || storeCaseId || globalCaseId || "CASE-2026-001";
 
   const investigation = useMemo(() => {
     if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
@@ -751,7 +756,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: "9px",
+                      fontSize: "12px",
                       fontWeight: 800,
                       background: "#EEF2FF",
                       border: "1px solid #C7D2FE",
@@ -764,7 +769,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     {activeCaseId || "CASE-2026-001"}
                   </span>
                 </div>
-                <div style={{ fontSize: "9.5px", color: "#64748B" }}>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>
                   Evidence Network & Chronological Fund Flow Visualization (DoT Clause 39.20 · BSA §63)
                 </div>
               </div>
@@ -884,7 +889,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       type="button"
                       onClick={() => handleJumpToStep(st.step)}
                       style={{
-                        fontSize: "10px",
+                        fontSize: "12px",
                         fontWeight: isCurrent ? 800 : 600,
                         padding: "3px 7px",
                         borderRadius: "4px",
@@ -917,7 +922,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={() => setPlaybackSpeed(spd)}
                     style={{
-                      fontSize: "9.5px",
+                      fontSize: "12px",
                       fontWeight: playbackSpeed === spd ? 800 : 500,
                       padding: "2px 5px",
                       borderRadius: "3px",
@@ -953,7 +958,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       type="button"
                       onClick={() => onEdgeFilterChange(tab.id)}
                       style={{
-                        fontSize: "9.5px",
+                        fontSize: "12px",
                         fontWeight: isActive ? 800 : 600,
                         padding: "3px 6px",
                         borderRadius: "4px",
@@ -998,7 +1003,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 </button>
                 <span
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     fontFamily: "var(--font-mono)",
                     color: "#334155",
@@ -1027,7 +1032,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={handleResetZoom}
                     style={{
-                      fontSize: "9px",
+                      fontSize: "12px",
                       color: "#4F46E5",
                       background: "transparent",
                       border: "none",
@@ -1053,7 +1058,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "5px",
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   padding: "5px 10px",
                   borderRadius: "5px",
@@ -1080,7 +1085,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               borderRadius: "6px",
               padding: "6px 14px",
               gap: "12px",
-              fontSize: "11px",
+              fontSize: "12px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1089,7 +1094,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   background: "#0F172A",
                   color: "#FFFFFF",
@@ -1108,7 +1113,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               {currentStepData.amount !== "—" && (
                 <span
                   style={{
-                    fontSize: "10.5px",
+                    fontSize: "12px",
                     fontWeight: 900,
                     background: "#ECFDF5",
                     color: "#047857",
@@ -1124,10 +1129,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ color: "#475569", fontSize: "10.5px" }}>{currentStepData.headline}</span>
+              <span style={{ color: "#475569", fontSize: "12px" }}>{currentStepData.headline}</span>
               <span
                 style={{
-                  fontSize: "9px",
+                  fontSize: "12px",
                   color: "#475569",
                   background: "#FFFFFF",
                   border: "1px solid #E2E8F0",
@@ -1164,7 +1169,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         >
           {/* Left: Filter Buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#64748B", marginRight: "4px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "#64748B", marginRight: "4px" }}>
               VIEW LAYER:
             </span>
             {(
@@ -1186,7 +1191,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   onClick={() => onEdgeFilterChange(tab.id)}
                   className="hover:border-indigo-300 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: isActive ? 800 : 600,
                     padding: isCash ? "3px 9px" : "3px 7px",
                     borderRadius: "5px",
@@ -1219,7 +1224,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
             <div style={{ width: "1px", height: "16px", background: "#E2E8F0", margin: "0 4px" }} />
 
-            <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", marginRight: "2px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "#64748B", marginRight: "2px" }}>
               HOP:
             </span>
             {(
@@ -1237,7 +1242,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   type="button"
                   onClick={() => setSelectedLayer(layerTab.id)}
                   style={{
-                    fontSize: "9.5px",
+                    fontSize: "12px",
                     fontWeight: isActive ? 800 : 600,
                     padding: "3px 7px",
                     borderRadius: "4px",
@@ -1264,7 +1269,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "3px 8px",
                 borderRadius: "5px",
@@ -1292,7 +1297,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={() => setViewMode("graph")}
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: viewMode === "graph" ? 800 : 500,
                   padding: "2px 7px",
                   borderRadius: "4px",
@@ -1309,7 +1314,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={() => setViewMode("matrix")}
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: viewMode === "matrix" ? 800 : 500,
                   padding: "2px 7px",
                   borderRadius: "4px",
@@ -1326,7 +1331,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={() => setViewMode("table")}
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: viewMode === "table" ? 800 : 500,
                   padding: "2px 7px",
                   borderRadius: "4px",
@@ -1370,7 +1375,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               </button>
               <span
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "12px",
                   fontWeight: 700,
                   fontFamily: "var(--font-mono)",
                   color: "#334155",
@@ -1401,7 +1406,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   onClick={handleResetZoom}
                   title="Reset Zoom to 100%"
                   style={{
-                    fontSize: "9px",
+                    fontSize: "12px",
                     color: "#2563EB",
                     background: "transparent",
                     border: "none",
@@ -1425,7 +1430,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "3px 8px",
                 borderRadius: "5px",
@@ -1452,7 +1457,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 800,
                 padding: "3px 9px",
                 borderRadius: "5px",
@@ -1492,7 +1497,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "9px",
+                fontSize: "12px",
                 fontWeight: 800,
                 padding: "2px 6px",
                 borderRadius: "4px",
@@ -1512,7 +1517,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10.5px",
+                fontSize: "12px",
                 fontWeight: 800,
                 padding: "4px 9px",
                 borderRadius: "5px",
@@ -1529,7 +1534,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: "#0F172A",
                 display: "inline-flex",
@@ -1545,7 +1550,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             {currentStepData.amount !== "—" && (
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   background: "#ECFDF5",
                   color: "#047857",
@@ -1561,20 +1566,20 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
           {/* Center: Live Mule Balance Badges */}
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#64748B" }}>Mules:</span>
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>Mules:</span>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
               Vikram: <b>{currentStepData.muleBalances["acc-vikram"]?.balance}</b>
             </span>
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
               Rohit: <b>{currentStepData.muleBalances["acc-rohit"]?.balance}</b>
             </span>
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
               Sameer: <b>{currentStepData.muleBalances["acc-sameer"]?.balance}</b>
             </span>
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
               Paytm: <b>{currentStepData.muleBalances["acc-sink"]?.balance}</b>
             </span>
-            <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FEE2E2", color: "#B91C1C", border: "1px solid #FECDD3", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FEE2E2", color: "#B91C1C", border: "1px solid #FECDD3", borderRadius: "3px" }}>
               ATM: <b>{currentStepData.muleBalances["node-atm"]?.balance}</b>
             </span>
           </div>
@@ -1589,7 +1594,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10.5px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "4px 9px",
                 borderRadius: "5px",
@@ -1613,7 +1618,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                fontSize: "10.5px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "4px 10px",
                 borderRadius: "5px",
@@ -1659,7 +1664,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "5px",
-                  fontSize: "10.5px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   padding: "4px 10px",
                   borderRadius: "5px",
@@ -1748,7 +1753,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={() => setPlaybackSpeed(spd)}
                     style={{
-                      fontSize: "9px",
+                      fontSize: "12px",
                       fontWeight: playbackSpeed === spd ? 800 : 600,
                       padding: "3px 6px",
                       border: "none",
@@ -1780,7 +1785,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={() => handleJumpToStep(st.idx)}
                     style={{
-                      fontSize: "9.5px",
+                      fontSize: "12px",
                       fontWeight: isCur ? 800 : 600,
                       padding: "3px 7px",
                       borderRadius: "4px",
@@ -1820,7 +1825,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "3px",
-                    fontSize: "9.5px",
+                    fontSize: "12px",
                     fontWeight: 800,
                     background: "#0F172A",
                     color: "#FFFFFF",
@@ -1834,7 +1839,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   <span style={{ opacity: 0.75 }}>({currentStepData.timeLabel})</span>
                 </span>
 
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "#1E293B" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#1E293B" }}>
                   {currentStepData.title}
                 </span>
               </div>
@@ -1843,7 +1848,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 {currentStepData.amount !== "—" && (
                   <span
                     style={{
-                      fontSize: "10.5px",
+                      fontSize: "12px",
                       fontWeight: 900,
                       background: "#ECFDF5",
                       color: "#047857",
@@ -1864,7 +1869,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 {replayStep === 5 && (
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 800,
                       background: "#EEF2FF",
                       color: "#4338CA",
@@ -1884,14 +1889,14 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             </div>
 
             {/* Banner Body: Narrative Text & Statutory Citation */}
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", fontSize: "10px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", fontSize: "12px" }}>
               <p style={{ margin: 0, color: "#334155", lineHeight: 1.35, flex: 1 }}>
                 {currentStepData.narrative}
               </p>
               <span
                 style={{
                   flexShrink: 0,
-                  fontSize: "9px",
+                  fontSize: "12px",
                   fontFamily: "var(--font-mono)",
                   fontWeight: 700,
                   color: "#64748B",
@@ -2186,7 +2191,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       >
                         <span
                           style={{
-                            fontSize: "8.5px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             letterSpacing: "0.06em",
                             color: "#E11D48",
@@ -2209,7 +2214,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: "8px",
+                            fontSize: "12px",
                             fontWeight: 700,
                             background: isHotspotActive ? "#FFF1F2" : "#ECFDF5",
                             color: isHotspotActive ? "#E11D48" : "#047857",
@@ -2328,7 +2333,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     >
                       <div
                         style={{
-                          fontSize: "10.5px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           color: "#0F172A",
                           textShadow: "0 0 3px #FFFFFF, 0 0 6px #FFFFFF",
@@ -2339,7 +2344,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: "9.5px",
+                          fontSize: "12px",
                           fontWeight: 800,
                           color: hub.color,
                           fontFamily: "var(--font-mono)",
@@ -2426,7 +2431,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "10.5px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             color: "#991B1B",
                             lineHeight: 1.25,
@@ -2440,7 +2445,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "8.5px",
+                            fontSize: "12px",
                             color: "#64748B",
                             fontFamily: "var(--font-mono)",
                             lineHeight: 1.25,
@@ -2460,7 +2465,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "8.5px",
+                        fontSize: "12px",
                         borderTop: "1px solid #FEE2E2",
                         paddingTop: "2px",
                       }}
@@ -2552,7 +2557,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "10.5px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             color: "#991B1B",
                             lineHeight: 1.25,
@@ -2566,7 +2571,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "8.5px",
+                            fontSize: "12px",
                             color: "#64748B",
                             fontFamily: "var(--font-mono)",
                             lineHeight: 1.25,
@@ -2586,7 +2591,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "8.5px",
+                        fontSize: "12px",
                         borderTop: "1px solid #FEE2E2",
                         paddingTop: "2px",
                       }}
@@ -2713,7 +2718,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "11px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             color: "#0F172A",
                             lineHeight: 1.25,
@@ -2727,7 +2732,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         <div
                           title={node.tooltip || `${node.label} · ${node.sublabel}`}
                           style={{
-                            fontSize: "8.5px",
+                            fontSize: "12px",
                             color: "#64748B",
                             fontFamily: "var(--font-mono)",
                             lineHeight: 1.25,
@@ -2743,7 +2748,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           {node.muleScore !== undefined && (
                             <span
                               style={{
-                                fontSize: "7.5px",
+                                fontSize: "12px",
                                 fontWeight: 800,
                                 background: node.riskBand === "CRITICAL" ? "#FEE2E2" : node.riskBand === "ELEVATED" ? "#FEF3C7" : node.riskBand === "MERCHANT" ? "#ECFDF5" : "#E0E7FF",
                                 color: node.riskBand === "CRITICAL" ? "#991B1B" : node.riskBand === "ELEVATED" ? "#B45309" : node.riskBand === "MERCHANT" ? "#047857" : "#3730A3",
@@ -2757,7 +2762,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           {node.crossCaseLinked && (
                             <span
                               style={{
-                                fontSize: "7.5px",
+                                fontSize: "12px",
                                 fontWeight: 800,
                                 background: "#EEF2FF",
                                 color: "#4338CA",
@@ -2780,7 +2785,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "8.5px",
+                        fontSize: "12px",
                         borderTop: "1px solid #F1F5F9",
                         paddingTop: "2px",
                         gap: "4px",
@@ -2842,7 +2847,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             <h3 style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", margin: "0 0 4px 0" }}>
               Multi-Source Evidence Correlation & Money Trail Matrix
             </h3>
-            <p style={{ fontSize: "11px", color: "#64748B", margin: 0 }}>
+            <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
               Shows cross-session intersection of physical hardware, network IPDR, CAF vectors, and UPI cash flows tying 4 accounts to 1 cluster.
             </p>
           </div>
@@ -2851,7 +2856,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             style={{
               width: "100%",
               borderCollapse: "collapse",
-              fontSize: "11px",
+              fontSize: "12px",
               textAlign: "left",
             }}
           >
@@ -2973,7 +2978,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     {row.sink}
                   </td>
                   <td style={{ padding: "8px 10px", fontWeight: 800, color: row.color }}>{row.strength}</td>
-                  <td style={{ padding: "8px 10px", color: "#475569", fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+                  <td style={{ padding: "8px 10px", color: "#475569", fontFamily: "var(--font-mono)", fontSize: "12px" }}>
                     {row.basis}
                   </td>
                 </tr>
@@ -2996,7 +3001,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             background: "#FFFFFF",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
             <thead>
               <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
                 <th style={{ padding: "8px 10px", textAlign: "left" }}>Node ID</th>
@@ -3017,14 +3022,14 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     </td>
                     <td style={{ padding: "8px 10px", fontWeight: 700, color: "#0F172A" }}>{node.label}</td>
                     <td style={{ padding: "8px 10px", color: "#64748B", textTransform: "capitalize" }}>{node.category}</td>
-                    <td style={{ padding: "8px 10px", fontFamily: "var(--font-mono)", fontSize: "10px" }}>{node.sublabel}</td>
+                    <td style={{ padding: "8px 10px", fontFamily: "var(--font-mono)", fontSize: "12px" }}>{node.sublabel}</td>
                     <td style={{ padding: "8px 10px", fontFamily: "var(--font-mono)", fontWeight: 700, color: "#047857" }}>
                       {bal ? bal.balance : "—"}
                     </td>
                     <td style={{ padding: "8px 10px" }}>
                       <span
                         style={{
-                          fontSize: "9.5px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           color: "#059669",
                           background: "#ECFDF5",
@@ -3074,7 +3079,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             }}
           >
             <div>
-              <span style={{ fontSize: "9px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>
                 {selectedSheet.category}
               </span>
               <h4 style={{ fontSize: "12.5px", fontWeight: 800, color: "#0F172A", margin: "2px 0 0 0" }}>
@@ -3098,17 +3103,17 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
           <div style={{ flex: 1, padding: "12px 14px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
             <div>
-              <label style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>SOURCE SYSTEM</label>
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#0F172A", marginTop: "2px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>SOURCE SYSTEM</label>
+              <div style={{ fontSize: "12px", fontWeight: 600, color: "#0F172A", marginTop: "2px" }}>
                 {selectedSheet.source}
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>EVIDENCE SHA-256 HASH</label>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>EVIDENCE SHA-256 HASH</label>
               <div
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "12px",
                   fontFamily: "var(--font-mono)",
                   color: "#334155",
                   background: "#F1F5F9",
@@ -3123,27 +3128,27 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             </div>
 
             <div>
-              <label style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>STATUTORY ADMISSIBILITY</label>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#059669", marginTop: "2px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>STATUTORY ADMISSIBILITY</label>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#059669", marginTop: "2px" }}>
                 {selectedSheet.statutoryBasis}
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>CORRELATION DETAILS</label>
-              <div style={{ fontSize: "11px", color: "#334155", lineHeight: 1.4, marginTop: "2px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>CORRELATION DETAILS</label>
+              <div style={{ fontSize: "12px", color: "#334155", lineHeight: 1.4, marginTop: "2px" }}>
                 {selectedSheet.details}
               </div>
             </div>
 
             <div>
-              <label style={{ fontSize: "9px", fontWeight: 700, color: "#64748B" }}>CORRELATED ENTITIES</label>
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>CORRELATED ENTITIES</label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px" }}>
                 {selectedSheet.linkedEntities.map((ent, i) => (
                   <span
                     key={i}
                     style={{
-                      fontSize: "9px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       background: "#EEF2FF",
                       color: "#4338CA",
@@ -3172,7 +3177,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 border: "1px solid #C7D2FE",
                 background: "#4F46E5",
                 color: "#FFFFFF",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 700,
                 cursor: "pointer",
                 display: "inline-flex",

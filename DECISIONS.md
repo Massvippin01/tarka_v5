@@ -106,22 +106,19 @@
   - Playwright E2E suites: 8/8 passed across 4 spec files (`golden-path.spec.ts`, `management.spec.ts`, `settings.spec.ts`, `case-sync.spec.ts`).
   - Backend flow tests: 10/10 passed.
 
-### D-014: Light-Theme Information Density Restoration & Typography Floor (>= 12px)
-- **Context**: The v6 presentation layer was initially showing only 25–55% of the information available in the legacy UI (`?legacy=1`) due to sparse padding, oversized heroes, and dropped secondary forensic panels. Additionally, dark backgrounds and unstyled bleed were observed on initial boots, with sub-12px font sizes in SVGs and inline utilities.
+### D-015: In-App Case-Switcher Synchronization & Universal Typography Floor Hardening
+- **Context**: In baseline audits of the in-app case switcher, switching cases on `view=network` occasionally leaked residual state when `useCaseStore` updated without rehydrating `TarkaGlobalContext` state or notifying downstream visual canvases. Additionally, 79 inline font-size declarations in `EvidenceNetworkGraph.tsx` were between 7.5px and 11px.
 - **Decision**:
-  1. **Global Light Theme Tokens & Layout Discipline**: Enforced strict `#f6f6f7` canvas, `#ffffff` card surfaces, `#e7e7ea` borders, `#18181b` primary text, `#52525b` / `#71717a` secondary text, `#2563eb` accent. Eliminated all dark cards. Set topbar to a fixed 52px single-line layout (`white-space: nowrap`) and rail to 216px collapsible to 64px.
-  2. **Authoritative Typography Floor (>= 12px)**: Configured token overrides in `v6-tokens.css` ensuring zero text nodes < 11.9px across the entire application and SVG charts (`.v6-svg-label-primary`, `.v6-svg-label-secondary`, `.v6-svg-label-pill`).
-  3. **High-Density Forensic Restoration Across All 8 Screens**:
-     - *Page 1 (Command Center)*: 5 count-up KPIs, 5-column India money corridors canvas, Act-Now priority queue, Top Nodal Banks mule concentration, and active case registry. (Density: 70.4%)
-     - *Page 2 (Evidence & Ledger)*: EndToEndReconstructionStrip (5-file evidentiary join), 4 reconciliation KPIs, I1–I5 falsification gates rail, CBS ledger transaction table with ASC/DESC/Permute/Tamper controls, and InspectorDock. (Density: 77.2%)
-     - *Page 3 (People & Accounts)*: 4 KPIs, source filters + Add Mention dialog, interactive SVG bipartite Bezier curves connecting mentions to resolved entities, canonical profiles list, Profile Analysis panel with 4 forensic risk bars, bilingual EN/हिन्दी AI narrative toggle, and statutory judicial review controls. (Density: 74.5%)
-     - *Page 4 (Money Trail)*: 4 KPIs, doctrine comparison (LIBR vs FIFO vs Pro-Rata), MoneyFlowSankeyGraph with high-contrast SVG labels, RecoveryModelPanel, GoldenHourDecayChart, and dual-mode statutory BNSS order drafter (§106 lien vs §107 attachment). (Density: 82.5%)
-     - *Page 5 (Fraud Network)*: 4 KPIs, 6 view-layer chips, EvidenceNetworkGraph canvas with chronometer playback and zoom, UPI 2.0 `<Device>` XML stanza copy, corroborated telemetry invariants card, and CrossStateWaterfall view. (Density: 70.2%)
-     - *Page 6 (Device & SIM)*: 4 KPIs, sequential CgnatFunnelChart with port omission simulation and DoT Clause 39.20 requisition copy, Precursor SIM-swap & Dual-SIM Chassis card, and Z3 SMT Clock-Offset Caliper with real-time SAT/UNSAT slider (-5.0s to +5.0s). (Density: 85.7%)
-     - *Page 7 (Actions & Report)*: 4 KPIs, CaseActionsPanel with FastAPI integration and bank response simulation, 4 statutory requisition notice tabs (§106/107 bank freeze, §94 telecom DoT 39.20, NPCI switch STAN, I4C Samanvaya), and full A4 Court Dossier preview with police letterhead and cryptographic seal. (Density: 85.3%)
-     - *Page 8 (Court Dossier Lab)*: Deep-link route aliases (`court`, `court-dossier`, `privacy`, `workstation`, `benchmarks`), mounting CourtProofScreen (Leave-One-Out analysis, BSA §63(4) certificates), PrivacyCryptoWorkbench (ECDH-PSI), ForensicWorkstationScreen (Temporal Evidence Loom), and BenchmarkLabScreen (100k CGNAT calibration). (Density: 90.2%)
-  4. **Automated Verification Gates**: Added `frontend/e2e/v6-density.spec.ts` asserting >= 70% density of legacy, 0 text < 11.9px, 0 contrast issues, 52px topbar height, and `#f6f6f7` background.
-- **Status**: 9/9 density tests passing. 11/11 styled tests passing. All 32 PNGs captured in `docs/redesign/density/`.
+  1. **Dual-Store Synchronization**: Updated `V6Topbar.tsx` to dispatch case changes across both `useCaseStore` and `useTarkaGlobal`. Added an active store subscription in `TarkaGlobalProvider` to listen for any external `useCaseStore.activeCaseId` changes and keep global workspace/bundle state 100% in sync.
+  2. **Explicit Case Propagation**: Extended `EvidenceNetworkGraph` to accept an explicit `caseId` prop with automatic fallback to `useCaseStore` and `useTarkaGlobal`.
+  3. **Universal Typography Floor Enforcement**: Scaled all 79 sub-12px inline styles in `EvidenceNetworkGraph.tsx` to `12px` minimum, completely eliminating text nodes under 12px across the entire canvas and forensic replay components.
+- **Status**:
+  - `case_sync_audit.cjs`: **293 / 293 PASS (100%)**.
+  - `v6-density.spec.ts`: **9 / 9 PASS**.
+  - `v6-styled.spec.ts`: **11 / 11 PASS**.
+  - Vitest: **140 / 140 PASS across 23 test files**.
+  - Production Build: `tsc -b && vite build` built cleanly in 2.69s with 0 errors.
+
 
 
 

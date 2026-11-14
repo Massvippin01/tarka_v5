@@ -606,6 +606,20 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => window.removeEventListener("popstate", handleUrlChange);
   }, [activeCaseId, activeRoute]);
 
+  // Synchronize state with useCaseStore updates across all modules and shells
+  useEffect(() => {
+    const unsub = useCaseStore.subscribe((state) => {
+      if (state.activeCaseId && state.activeCaseId !== activeCaseId) {
+        setActiveCaseIdState(state.activeCaseId);
+        setEvidenceModalTargetCaseId(state.activeCaseId);
+      }
+      if (state.activeView && state.activeView !== (activeRoute as string)) {
+        setActiveRouteState(state.activeView as TarkaRoute);
+      }
+    });
+    return () => unsub();
+  }, [activeCaseId, activeRoute]);
+
   // Initial Sync from Backend Database
   useEffect(() => {
     let mounted = true;

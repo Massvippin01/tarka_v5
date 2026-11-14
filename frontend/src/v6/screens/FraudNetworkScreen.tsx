@@ -309,6 +309,7 @@ export const FraudNetworkScreen: React.FC = () => {
               onToggleHotspot={() => toggleMutation('triggerHotspotCollision')}
               edgeFilter={edgeFilter}
               onEdgeFilterChange={setEdgeFilter}
+              caseId={caseId}
             />
           </div>
 

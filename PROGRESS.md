@@ -98,10 +98,22 @@
 - **Frontend Typecheck**: `cd frontend && npx tsc -b`
 - **Frontend Unit Tests**: `cd frontend && npx vitest run`
 - **Backend Tests**: `$env:ENABLE_DEMO_AUTH="false"; backend\.venv312\Scripts\python.exe -m pytest backend/tests -q --ignore=backend/tests/test_sarvam_live_smoke.py`
-- **Case-Sync Audit**: `node frontend/e2e/case_sync_audit.cjs`
+- **Case-Sync Audit**: `node frontend/e2e/case_sync_audit.cjs` (293/293 PASS - 100%)
 - **V6 Quality Gate Scan**: `node frontend/e2e/v6_quality_gate_scan.cjs`
-- **V6 Styled Layout Gate**: `cd frontend && npx playwright test e2e/v6-styled.spec.ts`
-- **Full E2E Specs**: `cd frontend && npx playwright test e2e/golden-path.spec.ts e2e/settings.spec.ts e2e/management.spec.ts e2e/case-sync.spec.ts --workers=1`
+- **V6 Styled Layout Gate**: `cd frontend && npx playwright test e2e/v6-styled.spec.ts` (11/11 PASS)
+- **V6 Density & Contrast Gate**: `cd frontend && npx playwright test e2e/v6-density.spec.ts` (9/9 PASS)
+- **Full E2E Specs**: `cd frontend && npx playwright test e2e/golden-path.spec.ts e2e/settings.spec.ts e2e/management.spec.ts e2e/case-sync.spec.ts --workers=1` (8/8 PASS)
+
+## V6 Case-Sync & Typography Floor Hardening
+- **In-App Case Switcher & Store Synchronization**:
+  - `V6Topbar.tsx`: Case switcher triggers both `useCaseStore.setActiveCaseId` and `useTarkaGlobal.setActiveCaseId`.
+  - `TarkaGlobalContext.tsx`: Added store subscription listener on `useCaseStore` to automatically synchronize global context state, case workspaces, and investigation bundle rehydration.
+  - `EvidenceNetworkGraph.tsx`: Wired explicit `caseId` prop support and `useCaseStore` fallback; zero data bleed across cases.
+  - `case_sync_audit.cjs`: **293 / 293 PASS (100%)**.
+- **Typography Floor Enforcement**:
+  - Replaced all 79 sub-12px inline styles in `EvidenceNetworkGraph.tsx` (`7.5px`–`11px`) with `12px` minimum.
+  - Total text nodes `< 11.9px` across entire presentation layer: **0**.
+
 
 
 

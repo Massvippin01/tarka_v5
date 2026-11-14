@@ -30,7 +30,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   onOpenAuditTrail,
 }) => {
   const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
-  const { caseWorkspaces, activeCase } = useTarkaGlobal();
+  const { caseWorkspaces, activeCase, setActiveCaseId: setTarkaGlobalCaseId } = useTarkaGlobal();
   const { toggleAskTarka, setIntelligenceBriefOpen } = useTarkaUiStore();
 
   const caseId = activeCaseId || 'CASE-2026-001';
@@ -107,7 +107,10 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
         activeCase={activeCase}
         activeCaseId={caseId}
         caseWorkspaces={caseWorkspaces}
-        onSelectCase={(id) => setActiveCaseId(id)}
+        onSelectCase={(id) => {
+          setActiveCaseId(id);
+          setTarkaGlobalCaseId(id);
+        }}
         onOpenNewCase={onOpenNewCase || (() => {})}
         trigger={casePillTrigger}
       />
