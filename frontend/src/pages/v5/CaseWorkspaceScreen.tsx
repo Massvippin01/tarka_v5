@@ -11,6 +11,7 @@ import {
   Database,
   X,
   Zap,
+  LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
@@ -29,6 +30,16 @@ import { CrossCaseComparatorDrawer } from "../../components/tarka/workspace/Cros
 import { CreateCaseWizard } from "../../components/tarka/cases/CreateCaseWizard";
 import { EditCaseSheet } from "../../components/tarka/cases/EditCaseSheet";
 import { LinkCaseModal } from "../../components/tarka/cases/LinkCaseModal";
+import { IndiaSyndicateMap } from "../../components/tarka/dashboard/IndiaSyndicateMap";
+import { ActNowQueueCard } from "../../components/tarka/dashboard/ActNowQueueCard";
+import { TypologyChartCard } from "../../components/tarka/dashboard/TypologyChartCard";
+import { TopBanksCard } from "../../components/tarka/dashboard/TopBanksCard";
+import {
+  selectIndiaMuleFlows,
+  selectActNowQueue,
+  selectTypologyDistribution,
+  selectTopBanksByMules,
+} from "../../selectors/dashboardSelectors";
 
 export const CaseWorkspaceScreen: React.FC = () => {
   const {
@@ -41,14 +52,25 @@ export const CaseWorkspaceScreen: React.FC = () => {
   const { setActivePage, setReconstructedInvestigation } = useTarkaUiStore();
   const { setActiveCaseId } = useCaseWorkbenchStore();
 
-  // SaaS Workspace View Mode: table (default) | board | timeline | bulk
-  const [viewMode, setViewMode] = useState<"table" | "board" | "timeline" | "bulk">("table");
+  const getInitialViewMode = (): "dashboard" | "table" | "board" | "timeline" | "bulk" => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get("view");
+      if (v === "cases") return "table";
+      if (v === "dashboard" || v === "workspace") return "dashboard";
+    }
+    return "dashboard";
+  };
+
+  // SaaS Workspace View Mode: dashboard (default) | table | board | timeline | bulk
+  const [viewMode, setViewMode] = useState<"dashboard" | "table" | "board" | "timeline" | "bulk">(getInitialViewMode);
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<
     "ALL" | "GOLDEN_HOUR" | "SYNDICATE" | "ACTION_PENDING" | "COURT_READY" | "CLOSED" | "ARCHIVED"
   >("ALL");
+  const [selectedTypology, setSelectedTypology] = useState<string | null>(null);
 
   // Wizard & Sheet states
   const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
@@ -112,9 +134,20 @@ export const CaseWorkspaceScreen: React.FC = () => {
         return statusKey === "ARCHIVED";
       }
 
+      if (selectedTypology) {
+        const typ = ((c as any).crimeType || (c as any).crime_type || (c as any).typology || "").replace(/_/g, " ").toLowerCase();
+        if (!typ.includes(selectedTypology.toLowerCase())) return false;
+      }
+
       return true;
     });
-  }, [caseWorkspaces, searchQuery, filterMode]);
+  }, [caseWorkspaces, searchQuery, filterMode, selectedTypology]);
+
+  // Derived Dashboard Command Center Intelligence
+  const muleArcs = useMemo(() => selectIndiaMuleFlows(caseWorkspaces), [caseWorkspaces]);
+  const actNowQueue = useMemo(() => selectActNowQueue(filteredCases), [filteredCases]);
+  const typologyData = useMemo(() => selectTypologyDistribution(caseWorkspaces), [caseWorkspaces]);
+  const topBanksData = useMemo(() => selectTopBanksByMules(caseWorkspaces), [caseWorkspaces]);
 
   // Navigate to dedicated case workbench
   const handleSelectCase = async (caseId: string, stage?: ActiveRoute) => {
@@ -356,7 +389,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
         {/* Right: SaaS View Mode Switcher & Primary Action Buttons */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          {/* View Mode Switcher: Table | Board | Timeline | Bulk */}
+          {/* View Mode Switcher: Dashboard | Table | Board | Timeline | Bulk */}
           <div
             style={{
               display: "inline-flex",
@@ -368,6 +401,29 @@ export const CaseWorkspaceScreen: React.FC = () => {
           >
             <button
               type="button"
+              data-testid="view-mode-dashboard"
+              onClick={() => setViewMode("dashboard")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+                fontSize: "10.5px",
+                fontWeight: viewMode === "dashboard" ? 800 : 500,
+                padding: "3px 8px",
+                borderRadius: "4px",
+                border: "none",
+                background: viewMode === "dashboard" ? "#FFFFFF" : "transparent",
+                color: viewMode === "dashboard" ? "#0F172A" : "#64748B",
+                boxShadow: viewMode === "dashboard" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                cursor: "pointer",
+              }}
+            >
+              <LayoutDashboard size={11} />
+              <span>Dashboard</span>
+            </button>
+            <button
+              type="button"
+              data-testid="view-mode-table"
               onClick={() => setViewMode("table")}
               style={{
                 display: "inline-flex",
@@ -549,10 +605,139 @@ export const CaseWorkspaceScreen: React.FC = () => {
       </div>
 
       {/* EXECUTIVE SAAS 5-METRIC KPI BANNER */}
-      <SaaSMetricBanner cases={caseWorkspaces} />
+      <SaaSMetricBanner
+        cases={filteredCases}
+        activeFilter={filterMode}
+        onFilterChange={(newFilter) => setFilterMode(newFilter)}
+      />
 
       {/* ACTIVE WORKSPACE VIEW */}
       <div style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {viewMode === "dashboard" && (
+          <div
+            data-testid="command-center-dashboard"
+            style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+              overflowY: "auto",
+              padding: "14px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              background: "#F8FAFC",
+            }}
+          >
+            {/* Top Command Grid: India Syndicate Map + Act Now Queue + Breakdown */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.15fr 1fr",
+                gap: "14px",
+                minHeight: "410px",
+              }}
+            >
+              {/* Left Column: India Syndicate Map */}
+              <div style={{ height: "410px" }}>
+                <IndiaSyndicateMap
+                  arcs={muleArcs}
+                  onSelectCase={(cid) => handleSelectCase(cid, "network")}
+                />
+              </div>
+
+              {/* Right Column: Act-Now Queue & Secondary Intelligence Cards */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  height: "410px",
+                }}
+              >
+                <div style={{ height: "205px" }}>
+                  <ActNowQueueCard
+                    items={actNowQueue}
+                    onNavigateToCase={(cid, route) => handleSelectCase(cid, route)}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "12px",
+                    flex: 1,
+                    minHeight: 0,
+                  }}
+                >
+                  <TypologyChartCard
+                    typologies={typologyData}
+                    selectedTypology={selectedTypology}
+                    onSelectTypology={(typ) => setSelectedTypology(typ)}
+                  />
+                  <TopBanksCard banks={topBanksData} />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom: Filtered Case Table */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: "10px",
+                border: "1px solid #E2E8F0",
+                overflow: "hidden",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+              }}
+            >
+              <div
+                style={{
+                  padding: "10px 14px",
+                  background: "#F8FAFC",
+                  borderBottom: "1px solid #E2E8F0",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A" }}>
+                    Active Case Inquiries & Enforcement Registry
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      padding: "1px 6px",
+                      borderRadius: "10px",
+                      background: "#E0E7FF",
+                      color: "#3730A3",
+                    }}
+                  >
+                    {filteredCases.length} Matching
+                  </span>
+                </div>
+                {selectedTypology && (
+                  <span style={{ fontSize: "11px", color: "#4F46E5", fontWeight: 700 }}>
+                    Filtered by Typology: {selectedTypology}
+                  </span>
+                )}
+              </div>
+              <CaseTableView
+                cases={filteredCases}
+                activeCaseId={activeCaseId}
+                onSelectCase={handleSelectCase}
+                onOpenCompare={handleOpenCompare}
+                onEditCase={(caseItem) => setEditingCase(caseItem)}
+                onLinkCase={(caseItem) => setLinkingCase(caseItem)}
+                onArchiveCase={handleArchiveCase}
+                onDeleteDraft={handleDeleteDraft}
+                onBulkAssign={handleBulkAssign}
+                onBulkArchive={handleBulkArchive}
+              />
+            </div>
+          </div>
+        )}
+
         {viewMode === "table" && (
           <CaseTableView
             cases={filteredCases}

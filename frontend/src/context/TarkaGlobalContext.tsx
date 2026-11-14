@@ -55,8 +55,12 @@ export interface CaseWorkspace {
   bookedLossInr: number;
   recoverableInr: number;
   commercialShieldedInr: number;
+  frozenAmountInr?: number;
   goldenHourRemainingMins: number; // 0 if expired/escalated, 1-180 if active
   priority: "CRITICAL_GOLDEN_HOUR" | "HIGH_SYNDICATE" | "COURT_FILING_READY";
+  status?: string;
+  incidentDate?: string;
+  created_at?: string;
   currentStage: Exclude<ActiveRoute, "workspace">;
   gatesPassed: number;          // out of 5
   gatesHalted: boolean;
@@ -208,7 +212,7 @@ function createIngestedArtifact(
 }
 
 // 4 Pre-Populated Forensic Case Workspaces
-const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = [
+export const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = [
   {
     caseId: "CASE-2026-001",
     firNumber: "FIR #149/2026",
@@ -500,7 +504,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
       if (view === "benchmark" || view === "benchmarks") return "benchmarks";
-      if (view === "workspace" || view === "workspaces" || path.includes("workspace")) return "workspace";
+      if (view === "workspace" || view === "workspaces" || view === "cases" || view === "dashboard" || path.includes("workspace")) return "workspace";
       if (view === "attribution" || path.includes("attribution")) return "attribution";
       if (view === "entities" || view === "entity" || path.includes("entities")) return "entities";
       if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
@@ -545,7 +549,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         if (v === "benchmark" || v === "benchmarks") {
           setActiveRouteState("benchmarks");
           useTarkaUiStore.getState().setActivePage("benchmark");
-        } else if (v === "workspace" || v === "workspaces") {
+        } else if (v === "workspace" || v === "workspaces" || v === "cases" || v === "dashboard") {
           setActiveRouteState("workspace");
           useTarkaUiStore.getState().setActivePage("workspaces");
         } else {
