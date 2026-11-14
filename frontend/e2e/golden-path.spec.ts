@@ -111,10 +111,31 @@ test.describe('TARKA Golden Path Acceptance Suite (Prompt F-9)', () => {
     await page.screenshot({ path: path.join(screenshotsDir, 'f9_08_report_actions_1366.png'), fullPage: false });
 
     // -------------------------------------------------------------
-    // Step 9: Case Closure Transition
+    // Step 9: Case Closure Transition (on transient test case)
     // -------------------------------------------------------------
+    const transUid = Math.floor(Math.random() * 89999 + 10000);
+    const transRes = await request.post('http://localhost:8000/api/v1/cases', {
+      headers: AUTH_HEADERS,
+      data: {
+        case_number: `T${transUid}`,
+        title: 'Golden Path Transient Test Case',
+        fir_number: `FIR #${transUid}/2026`,
+        crime_type: 'DIGITAL_ARREST',
+        typology: 'DIGITAL_ARREST',
+        priority: 'P1_CRITICAL',
+        status: 'COURT_READY',
+        police_station: 'Cyber Crime PS, New Delhi',
+        description: 'Transient case for closure and archival verification',
+        booked_loss_inr: 380000,
+        claimed_loss_inr: 380000,
+      },
+    });
+    expect(transRes.ok()).toBe(true);
+    const transCase = await transRes.json();
+    const transCaseId = transCase.id;
+
     // Perform status transition to CLOSED via backend
-    await request.post('http://localhost:8000/api/v1/cases/CASE-2026-001/status', {
+    await request.post(`http://localhost:8000/api/v1/cases/${transCaseId}/status`, {
       headers: AUTH_HEADERS,
       data: {
         status: 'CLOSED',
@@ -122,28 +143,23 @@ test.describe('TARKA Golden Path Acceptance Suite (Prompt F-9)', () => {
         closure_checklist: { chargesheet_filed: true, recovered_inr: 380000 },
       },
     });
-    await page.reload();
+    await page.goto(`http://localhost:5173/?case=${transCaseId}&view=intake`);
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
     await page.screenshot({ path: path.join(screenshotsDir, 'f9_09_case_closed_1366.png'), fullPage: false });
 
     // -------------------------------------------------------------
-    // Step 10: Archive Case (Read-Only Enforcement)
+    // Step 10: Archive Case (Read-Only Enforcement on transient case)
     // -------------------------------------------------------------
-    const resArch = await request.post('http://localhost:8000/api/v1/cases/CASE-2026-001/archive', {
+    const resArch = await request.post(`http://localhost:8000/api/v1/cases/${transCaseId}/archive`, {
       headers: AUTH_HEADERS,
     });
     expect(resArch.ok()).toBe(true);
 
-    await page.goto('http://localhost:5173/?case=CASE-2026-001&view=intake');
+    await page.goto(`http://localhost:5173/?case=${transCaseId}&view=intake`);
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
     await expect(page.getByTestId('archived-case-banner')).toBeVisible();
     await page.screenshot({ path: path.join(screenshotsDir, 'f9_10_case_archived_1366.png'), fullPage: false });
-
-    // Restore CASE-2026-001 back to active status for future runs
-    await request.post('http://localhost:8000/api/v1/system/reset-demo', {
-      headers: AUTH_HEADERS,
-    });
   });
 });
