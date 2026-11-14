@@ -62,7 +62,7 @@ const RailItem: React.FC<RailItemProps> = ({
     aria-current={active ? 'page' : undefined}
     data-testid={testId}
     className={cn(
-      'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+      'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 overflow-hidden',
       collapsed
         ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
         : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
@@ -72,7 +72,7 @@ const RailItem: React.FC<RailItemProps> = ({
     )}
   >
     {!collapsed && active && (
-      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3.5px] rounded-r-full bg-[#2563EB]" />
+      <span className="absolute left-1.5 top-2 bottom-2 w-[3px] rounded-full bg-[#2563EB]" />
     )}
     <span
       className={cn(
@@ -314,37 +314,35 @@ export const V6Rail: React.FC<V6RailProps> = ({
         <div
           onClick={() => setActiveView('workspace')}
           title={`Active Case: ${displayCaseId} · ${victimName} (Click to open workspace)`}
-          className="mx-0.5 my-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group space-y-1.5"
+          className="mx-0.5 my-2 p-3 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group space-y-2"
         >
           <div className="flex items-center justify-between gap-1.5">
-            <span className="font-mono text-[12px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 leading-none whitespace-nowrap shadow-2xs">
+            <span className="font-mono text-[11.5px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 leading-none whitespace-nowrap shadow-2xs">
               {displayCaseId}
             </span>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 text-[11px] font-bold tabular-nums leading-none px-2 py-0.5 rounded-md border shadow-2xs',
+                isGoldenHourActive
+                  ? 'text-amber-800 bg-amber-50 border-amber-300'
+                  : 'text-emerald-800 bg-emerald-50 border-emerald-300'
+              )}
+            >
               <span
                 className={cn(
                   'size-1.5 rounded-full shrink-0',
                   isGoldenHourActive ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
                 )}
               />
-              <span
-                className={cn(
-                  'text-[11px] font-bold tabular-nums leading-none px-2 py-0.5 rounded-md border shadow-2xs',
-                  isGoldenHourActive
-                    ? 'text-amber-800 bg-amber-50 border-amber-300'
-                    : 'text-emerald-800 bg-emerald-50 border-emerald-300'
-                )}
-              >
-                {isGoldenHourActive ? `${ghMins}m golden` : 'Active'}
-              </span>
-            </div>
+              {isGoldenHourActive ? `${ghMins}m golden` : 'Active'}
+            </span>
           </div>
           <div className="text-[13px] font-bold text-slate-900 truncate leading-tight group-hover:text-blue-600 transition-colors">
             {victimName}
           </div>
-          <div className="text-[11.5px] text-slate-500 flex items-center justify-between gap-1 leading-tight">
+          <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px] text-slate-500">
             <span className="truncate text-slate-600 font-medium">{displayTypology}</span>
-            <span className="text-slate-600 font-mono text-[11px] font-medium shrink-0 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-200">
+            <span className="text-slate-500 font-mono text-[11px] font-medium shrink-0">
               {displayFir}
             </span>
           </div>
@@ -396,7 +394,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
               aria-label={`${s.num}. ${s.label}`}
               aria-current={isCurrent ? 'page' : undefined}
               className={cn(
-                'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 overflow-hidden',
                 isCollapsed
                   ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
                   : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
@@ -406,7 +404,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
               )}
             >
               {!isCollapsed && isCurrent && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3.5px] rounded-r-full bg-[#2563EB]" />
+                <span className="absolute left-1.5 top-2 bottom-2 w-[3px] rounded-full bg-[#2563EB]" />
               )}
               <span
                 className={cn(

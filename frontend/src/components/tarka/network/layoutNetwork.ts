@@ -154,7 +154,7 @@ export function layoutDataDrivenInvestigation(
       } else if (nodesAtHop.length === 1) {
         cy = yRowC;
       } else {
-        const stepY = nodesAtHop.length >= 3 ? 124 : 138;
+        const stepY = nodesAtHop.length >= 3 ? 152 : 142;
         const totalSpan = (nodesAtHop.length - 1) * stepY;
         const startY = yRowC - Math.round(totalSpan / 2);
         cy = startY + idx * stepY;
