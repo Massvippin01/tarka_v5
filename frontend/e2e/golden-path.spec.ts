@@ -92,9 +92,15 @@ test.describe('TARKA Golden Path Acceptance Suite (Prompt F-9)', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1500);
 
+    const sendBtn = page.getByRole('button', { name: /send freeze requests/i });
+    if (await sendBtn.isVisible()) {
+      await sendBtn.click();
+      await page.waitForTimeout(500);
+    }
+
     // Click "Simulate Bank Response" if visible
     const simBtn = page.getByRole('button', { name: /simulate bank response/i });
-    if (await simBtn.isVisible()) {
+    if (await simBtn.isVisible() && await simBtn.isEnabled()) {
       await simBtn.click();
       await page.waitForTimeout(1000);
     }

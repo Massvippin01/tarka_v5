@@ -27,6 +27,10 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
   const { profile, station } = useSettingsStore();
 
+  const isCaseUnknown =
+    Boolean(activeCaseId) &&
+    !['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(activeCaseId!);
+
   const canonicalCase = getCanonicalCase(activeCaseId || 'CASE-2026-001');
 
   const isCurrentView = (views: string[]) => views.includes(activeView);
@@ -146,7 +150,7 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
 
       {/* Active Case Stepper Group */}
       <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        Investigation · {canonicalCase.firNumber}
+        Investigation · {isCaseUnknown ? activeCaseId : canonicalCase.firNumber}
       </div>
 
       {steps.map((s) => {

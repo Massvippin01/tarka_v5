@@ -59,25 +59,38 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const ghText = ghMins <= 0 ? 'Expired' : `${ghHours > 0 ? `${ghHours}h ` : ''}${ghMinsRemainder}m`;
   const ghPercent = Math.max(0, Math.min(100, (ghMins / 180) * 100));
 
+  const isCaseUnknown =
+    Boolean(activeCaseId) &&
+    !['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(activeCaseId!) &&
+    !caseWorkspaces.some((c) => c.caseId === activeCaseId);
+
   const casePillTrigger = (
     <button
       type="button"
       className="flex items-center gap-3 p-1.5 pr-3 rounded-xl border border-[var(--line)] bg-[var(--surface-1)] hover:border-[var(--line-2)] transition-colors cursor-pointer text-left"
-      aria-label="Switch active case"
+      aria-label={`Switch case · ${isCaseUnknown ? activeCaseId : `${canonicalCase.caseId} · ${canonicalCase.firNumber}`}`}
     >
       <div className="w-9 h-9 rounded-lg bg-[var(--risk-bg)] text-[var(--risk)] flex items-center justify-center flex-none">
         <AlertTriangle className="w-4 h-4" />
       </div>
       <div>
         <div className="font-bold text-sm text-[var(--fg-1)] leading-tight">
-          {canonicalCase.complainant.name} · {canonicalCase.title || canonicalCase.typology}
+          {isCaseUnknown
+            ? `Case Not Found (${activeCaseId})`
+            : `${canonicalCase.complainant.name} · ${canonicalCase.title || canonicalCase.typology}`}
         </div>
         <div className="text-xs text-[var(--fg-3)] flex items-center gap-1.5 mt-0.5">
-          <span className="v6-mono font-semibold text-[var(--fg-2)]">{canonicalCase.caseId}</span>
+          <span className="v6-mono font-semibold text-[var(--fg-2)]">
+            {isCaseUnknown ? activeCaseId : canonicalCase.caseId}
+          </span>
           <span>·</span>
-          <span>{canonicalCase.firNumber}</span>
-          <span>·</span>
-          <span>{canonicalCase.policeStation.split(',')[0]}</span>
+          <span>{isCaseUnknown ? 'Unregistered' : canonicalCase.firNumber}</span>
+          {!isCaseUnknown && (
+            <>
+              <span>·</span>
+              <span>{canonicalCase.policeStation.split(',')[0]}</span>
+            </>
+          )}
         </div>
       </div>
       <ChevronDown className="w-4 h-4 text-[var(--fg-3)] ml-1 flex-none" />
