@@ -306,15 +306,16 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
     }));
 
     const w = Math.max(740, dimensions.width);
-    const h = Math.max(220, dimensions.height - 44);
+    // Enforce compact, readable Sankey height (always small: 220-240px) regardless of container stretching
+    const h = Math.max(220, Math.min(240, dimensions.height - 44));
 
-    // extent [[56, 36], [W - 240, H - 36]] ensures dedicated right gutter for sinks and room for Sunil on left
+    // extent [[56, 30], [W - 240, H - 30]] ensures dedicated right gutter for sinks and room for Sunil on left
     const sankeyGenerator = d3Sankey<any, any>()
       .nodeWidth(14)
-      .nodePadding(36)
+      .nodePadding(28)
       .extent([
-        [56, 36],
-        [w - 240, h - 36],
+        [56, 30],
+        [w - 240, h - 30],
       ])
       .nodeAlign(sankeyJustify)
       .iterations(64);
@@ -477,7 +478,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
             <svg
               width="100%"
               height="100%"
-              viewBox={`0 0 ${Math.max(740, dimensions.width)} ${Math.max(220, dimensions.height - 44)}`}
+              viewBox={`0 0 ${Math.max(740, dimensions.width)} ${Math.max(220, Math.min(240, dimensions.height - 44))}`}
               preserveAspectRatio="xMidYMid meet"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >

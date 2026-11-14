@@ -371,8 +371,8 @@ export const MoneyTrailScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Interactive D3 Sankey Graph */}
-            <div className="flex-1 min-h-[380px] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden p-2">
+            {/* Interactive D3 Sankey Graph (fixed compact height so it is always small and never blows up) */}
+            <div className="h-[284px] max-h-[284px] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden p-1 shadow-2xs">
               <MoneyFlowSankeyGraph
                 freezeBudgetK={freezeBudgetK}
                 onFreezeBudgetKChange={setFreezeBudgetK}
@@ -447,7 +447,7 @@ export const MoneyTrailScreen: React.FC = () => {
           {/* Right 5 Columns: Recovery Model Panel & Decay Chart */}
           <div className="lg:col-span-5 flex flex-col space-y-3">
             {/* Recovery Model Panel */}
-            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs">
+            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs max-h-[350px] overflow-y-auto">
               <RecoveryModelPanel
                 isInjectClean={isInjectClean}
                 freezeBudgetK={freezeBudgetK}
