@@ -503,6 +503,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const path = window.location.pathname.toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
+      if (view === "settings" || path.includes("settings")) return "settings";
+      if (view === "health" || path.includes("health")) return "health";
       if (view === "benchmark" || view === "benchmarks") return "benchmarks";
       if (view === "workspace" || view === "workspaces" || view === "cases" || view === "dashboard" || path.includes("workspace")) return "workspace";
       if (view === "attribution" || path.includes("attribution")) return "attribution";
@@ -562,7 +564,10 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
           else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
           else if (v === "workstation") setActiveRouteState("workstation");
-          else if (v === "report") setActiveRouteState("report");
+          else if (v === "report" || v === "actions") setActiveRouteState("report");
+          else if (v === "settings") setActiveRouteState("settings");
+          else if (v === "health") setActiveRouteState("health");
+          else setActiveRouteState(v as any);
         }
       }
     };

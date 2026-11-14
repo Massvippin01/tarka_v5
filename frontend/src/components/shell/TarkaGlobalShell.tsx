@@ -263,7 +263,7 @@ export const TarkaGlobalShell: React.FC = () => {
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       mounted = false;
@@ -592,8 +592,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       activePage === "benchmark"
         ? item.id === "benchmarks"
         : activePage === "workspaces"
-        ? item.id === "workspace"
-        : activeRoute === item.id;
+          ? item.id === "workspace"
+          : activeRoute === item.id;
     const IconComp = item.icon;
     return (
       <button
@@ -1159,8 +1159,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     settingsProfile.role === "ADMIN"
                       ? "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)"
                       : settingsProfile.role === "SUPERVISOR"
-                      ? "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)"
-                      : "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+                        ? "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)"
+                        : "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                   color: "#FFFFFF",
                   fontSize: "10px",
                   fontWeight: 800,
@@ -1172,8 +1172,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     settingsProfile.role === "ADMIN"
                       ? "0 0 8px rgba(239, 68, 68, 0.4)"
                       : settingsProfile.role === "SUPERVISOR"
-                      ? "0 0 8px rgba(59, 130, 246, 0.4)"
-                      : "0 0 8px rgba(6, 182, 212, 0.3)",
+                        ? "0 0 8px rgba(59, 130, 246, 0.4)"
+                        : "0 0 8px rgba(6, 182, 212, 0.3)",
                 }}
               >
                 {userInitials}
@@ -1486,8 +1486,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               {activePage === "benchmark"
                 ? "Synthetic & Public Dataset Forensic Benchmark"
                 : activePage === "workspaces" || activeRoute === "workspace"
-                ? "Multi-Case Command Hub"
-                : currentNav.shortTitle || currentNav.title}
+                  ? "Multi-Case Command Hub"
+                  : currentNav.shortTitle || currentNav.title}
             </span>
             <span className="hidden xl:inline-flex flex-shrink-0">
               <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
@@ -2602,10 +2602,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               ) : activePage === "workspaces" || activeRoute === "workspace" ? (
                 <CaseWorkspaceScreen />
               ) : !Boolean(
-                  !activeCaseId ||
-                  CANONICAL_CASES[activeCaseId] ||
-                  caseWorkspaces.some((c) => c.caseId === activeCaseId || (c as any).id === activeCaseId)
-                ) ? (
+                !activeCaseId ||
+                CANONICAL_CASES[activeCaseId] ||
+                caseWorkspaces.some((c) => c.caseId === activeCaseId || (c as any).id === activeCaseId)
+              ) ? (
                 <CaseNotFoundScreen caseId={activeCaseId} />
               ) : activeRoute === "intake" ? (
                 <IntakeScreen />

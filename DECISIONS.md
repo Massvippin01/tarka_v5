@@ -50,4 +50,14 @@
 - **Decision**: Built `HealthDiagnosticsScreen` with 6 live subsystem probes (FastAPI REST Gateway, SQLite Transactional Authority, NetworkX/UnifiedStore Projections, Ollama SLM, SSE Pipeline Streamer, SHA-256 Hash Chain), canonical benchmark fixtures integrity table, and supervisor-authorized demo reset. Built `ViewNotFoundScreen` for unknown route views. Added persistent amber offline alert banner with connection re-probe. Built `DemoUserModal` supporting 1-click persona switching and JWT token storage. Enhanced FastAPI middleware with `X-Request-ID` and structured exception handlers preserving `detail` backward-compatibility.
 - **Status**: Verified in `test_robustness_flow.py` (3 passed), `healthDiagnostics.test.ts` (3 passed), all 23 vitest test files (140 passed), Appendix B audit `case_sync_audit.cjs` (293/293 passed), and Playwright screenshots `docs/progress/f8/*.png`.
 
+### D-010: End-to-End Acceptance Testing Gates & Golden Path CI (F-9)
+- **Context**: Must verify that the full end-to-end investigative flow (`Sign In → Dashboard → Ingest → Investigate → Act → Report → Close → Archive`) functions reliably with zero test failures across all 4 Playwright specifications.
+- **Decision**: Built and verified 4 core Playwright end-to-end specifications:
+  1. `frontend/e2e/golden-path.spec.ts`: Executes complete 10-step investigative lifecycle at standard 1366×768 presentation viewport, capturing sequential progress screenshots (`docs/progress/f9/f9_01` through `f9_10`).
+  2. `frontend/e2e/management.spec.ts`: Validates case creation, step-by-step lifecycle state transitions, 409 conflict guards for illegal state jumps, draft deletion vs active case protection, and in-app switcher case searching.
+  3. `frontend/e2e/settings.spec.ts`: Validates theme switching, bilingual EN/हिन्दी localization, station letterhead, and diagnostic probes.
+  4. `frontend/e2e/case-sync.spec.ts` & `case_sync_audit.cjs` (Appendix B): Validates 293/293 cross-case and cross-screen isolation checks with 0 leaked names, 0 undefined, and 0 NaN.
+- **Status**: All 4 Playwright specs passing cleanly. 140/140 vitest tests passing in 23 files. 13/13 backend flow pytest tests passing.
+
+
 
