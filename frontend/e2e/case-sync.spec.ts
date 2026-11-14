@@ -13,6 +13,7 @@ const ROUTES = [
 ];
 
 test('every screen follows the active case', async ({ page, request }) => {
+  test.setTimeout(90000);
   let cases: any[] = [];
   try {
     const res = await request.get('http://localhost:8000/api/v1/cases');

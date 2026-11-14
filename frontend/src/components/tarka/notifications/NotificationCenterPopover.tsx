@@ -119,28 +119,20 @@ export const NotificationCenterPopover: React.FC<NotificationCenterPopoverProps>
           }}
           title="Operational Notifications & Alerts"
         >
-          <Bell size={13} color={unreadCount > 0 ? "#4F46E5" : "#64748B"} />
+          <Bell size={15} color={unreadCount > 0 ? "var(--flow)" : "var(--fg-3)"} />
           {unreadCount > 0 && (
             <span
               style={{
                 position: "absolute",
-                top: "-3px",
-                right: "-3px",
-                width: "14px",
-                height: "14px",
+                top: "3px",
+                right: "3px",
+                width: "7px",
+                height: "7px",
                 borderRadius: "50%",
-                background: "#EF4444",
-                color: "#FFFFFF",
-                fontSize: "8.5px",
-                fontWeight: 900,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 0 0 1.5px #FFFFFF",
+                background: "var(--risk)",
+                boxShadow: "0 0 8px var(--risk)",
               }}
-            >
-              {unreadCount}
-            </span>
+            />
           )}
         </button>
       </Popover.Trigger>

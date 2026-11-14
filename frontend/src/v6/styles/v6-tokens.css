@@ -71,6 +71,41 @@
 }
 
 /* =====================================================================
+   Strict 12px Font Floor
+   Never allow any typography element to render below 12px
+   ===================================================================== */
+.v6-app [class*="text-[10"],
+.v6-app [class*="text-[11"],
+.v6-app [class*="text-[9"],
+.v6-app [class*="text-[8"],
+.v6-app [class*="text-2xs"],
+.v6-app [class*="text-3xs"] {
+  font-size: 12px !important;
+}
+
+.v6-app [style*="font-size: 11"],
+.v6-app [style*="font-size:11"],
+.v6-app [style*="font-size: 10"],
+.v6-app [style*="font-size:10"],
+.v6-app [style*="font-size: 9"],
+.v6-app [style*="font-size:9"],
+.v6-app [style*="font-size: 8"],
+.v6-app [style*="font-size:8"],
+.v6-app [style*="font-size: 7"],
+.v6-app [style*="font-size:7"] {
+  font-size: 12px !important;
+}
+
+.v6-app text[font-size="11"],
+.v6-app text[font-size="11.5"],
+.v6-app text[font-size="10"],
+.v6-app text[font-size="10.5"],
+.v6-app text[font-size="9"],
+.v6-app text[font-size="8"] {
+  font-size: 12px !important;
+}
+
+/* =====================================================================
    V6 Layout & Shell Foundations
    ===================================================================== */
 .v6-app {

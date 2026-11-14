@@ -290,7 +290,7 @@ export const FraudNetworkScreen: React.FC = () => {
                       x={mx}
                       y={(fromN.y + toN.y) / 2 - 8}
                       textAnchor="middle"
-                      fontSize={11.5}
+                      fontSize={12}
                       fontWeight={600}
                       fill="#a9b4c7"
                       fontFamily="var(--font)"
@@ -383,7 +383,7 @@ export const FraudNetworkScreen: React.FC = () => {
                     x={n.x}
                     y={n.y + r + 33}
                     textAnchor="middle"
-                    fontSize={11.5}
+                    fontSize={12}
                     fill="#a9b4c7"
                     fontFamily="var(--font)"
                   >

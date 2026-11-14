@@ -392,7 +392,7 @@ export const MoneyTrailScreen: React.FC = () => {
                       <text
                         x={tx}
                         y={cy + 13}
-                        fontSize={11.5}
+                        fontSize={12}
                         fill="#a9b4c7"
                         fontFamily="var(--font)"
                       >
@@ -421,7 +421,7 @@ export const MoneyTrailScreen: React.FC = () => {
                             x={svgWidth - 36}
                             y={cy + 4}
                             textAnchor="middle"
-                            fontSize={11.5}
+                            fontSize={12}
                             fontWeight={700}
                             fill="#7dd3fc"
                             fontFamily="var(--font)"

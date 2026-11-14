@@ -384,7 +384,7 @@ export const CommandCenterScreen: React.FC = () => {
                       x={x}
                       y={y + 4}
                       textAnchor="middle"
-                      fontSize={11}
+                      fontSize={12}
                       fontWeight={700}
                       fill="#eef2f8"
                       fontFamily="var(--font)"

@@ -71,6 +71,13 @@ export interface TarkaUiState {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
 
+  // Ask TARKA AI Copilot & Voice Modal
+  askTarkaOpen: boolean;
+  setAskTarkaOpen: (open: boolean) => void;
+  toggleAskTarka: () => void;
+  voiceModalOpen: boolean;
+  setVoiceModalOpen: (open: boolean) => void;
+
   // Benchmark Lab Drawer
   benchmarkLabOpen: boolean;
   setBenchmarkLabOpen: (open: boolean) => void;
@@ -225,6 +232,12 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
 
     commandPaletteOpen: false,
     setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+
+    askTarkaOpen: false,
+    setAskTarkaOpen: (open) => set({ askTarkaOpen: open }),
+    toggleAskTarka: () => set((state) => ({ askTarkaOpen: !state.askTarkaOpen })),
+    voiceModalOpen: false,
+    setVoiceModalOpen: (open) => set({ voiceModalOpen: open }),
 
     benchmarkLabOpen: false,
     setBenchmarkLabOpen: (open) => set({ benchmarkLabOpen: open }),

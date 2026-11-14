@@ -158,10 +158,10 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
               display: "inline-flex",
               alignItems: "center",
               gap: "4px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
-              padding: "3px 8px",
-              borderRadius: "5px",
+              padding: "4px 9px",
+              borderRadius: "6px",
               background: statusMeta.bg,
               color: statusMeta.text,
               border: `1px solid ${statusMeta.border}`,
@@ -178,10 +178,10 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
               display: "inline-flex",
               alignItems: "center",
               gap: "3px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
-              padding: "3px 8px",
-              borderRadius: "5px",
+              padding: "4px 9px",
+              borderRadius: "6px",
               background: "#0284C7",
               color: "#FFFFFF",
               border: "none",
@@ -201,10 +201,10 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
             display: "inline-flex",
             alignItems: "center",
             gap: "5px",
-            fontSize: "11px",
+            fontSize: "12px",
             fontWeight: 700,
-            padding: "3px 8px",
-            borderRadius: "5px",
+            padding: "4px 9px",
+            borderRadius: "6px",
             background: statusMeta.bg,
             color: statusMeta.text,
             border: `1px solid ${statusMeta.border}`,
@@ -221,7 +221,7 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
             }}
           />
           <span>{statusMeta.label}</span>
-          <ChevronDown size={11} color={statusMeta.text} />
+          <ChevronDown size={12} color={statusMeta.text} />
         </button>
       )}
 
@@ -240,20 +240,21 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
               left: 0,
               marginTop: "4px",
               zIndex: 1000,
-              background: "#FFFFFF",
+              background: "var(--surface-1)",
               borderRadius: "8px",
-              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)",
+              boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px var(--line)",
               minWidth: "180px",
               padding: "4px",
+              border: "1px solid var(--line-2)",
             }}
           >
             <div
               style={{
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
-                color: "#64748B",
-                padding: "4px 8px",
-                borderBottom: "1px solid #F1F5F9",
+                color: "var(--fg-3)",
+                padding: "6px 8px",
+                borderBottom: "1px solid var(--line)",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -261,7 +262,7 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
               Allowed Transitions
             </div>
             {validNextStates.length === 0 ? (
-              <div style={{ padding: "8px", fontSize: "11px", color: "#94A3B8" }}>
+              <div style={{ padding: "8px", fontSize: "12px", color: "var(--fg-3)" }}>
                 No valid next states
               </div>
             ) : (
@@ -282,12 +283,12 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
                       borderRadius: "5px",
                       border: "none",
                       background: "transparent",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 600,
-                      color: "#1E293B",
+                      color: "var(--fg-1)",
                       cursor: "pointer",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#F1F5F9")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <span

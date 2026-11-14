@@ -12,3 +12,4 @@ export * from './ProgressRing';
 export * from './ScoreWaterfall';
 export * from './Skeleton';
 export * from './useCountUp';
+export * from './AskTarkaDrawer';

@@ -52,13 +52,80 @@ const ViewNotFoundScreen = lazy(() =>
   }))
 );
 
+// Parity Overlays, Drawers & Modals (lazy-loaded)
+const AskTarkaDrawer = lazy(() =>
+  import('../ui/AskTarkaDrawer').then((m) => ({ default: m.AskTarkaDrawer }))
+);
+const SarvamVoiceModal = lazy(() =>
+  import('../../components/tarka/SarvamVoiceModal').then((m) => ({ default: m.SarvamVoiceModal }))
+);
+const EvidenceIntakeModal = lazy(() =>
+  import('../../components/tarka/workspace/EvidenceIntakeModal').then((m) => ({
+    default: m.EvidenceIntakeModal,
+  }))
+);
+const NewCaseModal = lazy(() =>
+  import('../../components/tarka/workspace/NewCaseModal').then((m) => ({
+    default: m.NewCaseModal,
+  }))
+);
+const BenchmarkLabDrawer = lazy(() =>
+  import('../../components/tarka/benchmark/BenchmarkLabDrawer').then((m) => ({
+    default: m.BenchmarkLabDrawer,
+  }))
+);
+const PublicDatasetBenchmarkModal = lazy(() =>
+  import('../../components/tarka/benchmark/PublicDatasetBenchmarkModal').then((m) => ({
+    default: m.PublicDatasetBenchmarkModal,
+  }))
+);
+const InvestigationIntelligenceBrief = lazy(() =>
+  import('../../components/tarka/investigation/InvestigationIntelligenceBrief').then((m) => ({
+    default: m.InvestigationIntelligenceBrief,
+  }))
+);
+const JudgeModeWalkthrough = lazy(() =>
+  import('../../components/tarka/demo/JudgeModeWalkthrough').then((m) => ({
+    default: m.JudgeModeWalkthrough,
+  }))
+);
+const CaseAuditTrailDrawer = lazy(() =>
+  import('../../components/tarka/audit/CaseAuditTrailDrawer').then((m) => ({
+    default: m.CaseAuditTrailDrawer,
+  }))
+);
+const RelationshipEvidenceSheet = lazy(() =>
+  import('../../components/tarka/investigation/RelationshipEvidenceSheet').then((m) => ({
+    default: m.RelationshipEvidenceSheet,
+  }))
+);
+const TransformationAuditLog = lazy(() =>
+  import('../../components/tarka/investigation/TransformationAuditLog').then((m) => ({
+    default: m.TransformationAuditLog,
+  }))
+);
+
 export const V6AppShell: React.FC = () => {
   const { syncFromUrl } = useUrlSync();
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
-  const { activeCase, caseWorkspaces } = useTarkaGlobal();
-  const { setCommandPaletteOpen } = useTarkaUiStore();
+  const { activeCase, caseWorkspaces, openNewCaseModal } = useTarkaGlobal();
+  const {
+    setCommandPaletteOpen,
+    toggleAskTarka,
+    voiceModalOpen,
+    setVoiceModalOpen,
+    intelligenceBriefOpen,
+    setIntelligenceBriefOpen,
+    relationshipSheetOpen,
+    setRelationshipSheetOpen,
+    selectedEvidenceEdge,
+    transformationAuditModalOpen,
+    setTransformationAuditModalOpen,
+  } = useTarkaUiStore();
 
   const [isDemoUserOpen, setIsDemoUserOpen] = useState(false);
+  const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
+  const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
 
   // Sync with browser URL changes
   useEffect(() => {
@@ -66,7 +133,7 @@ export const V6AppShell: React.FC = () => {
     return () => window.removeEventListener('popstate', syncFromUrl);
   }, [syncFromUrl]);
 
-  // Global Keyboard Shortcuts (1-6, Cmd/Ctrl-K, F, Esc)
+  // Global Keyboard Shortcuts (1-6, Cmd/Ctrl-K, F, A, V, Esc)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an input or textarea
@@ -84,6 +151,20 @@ export const V6AppShell: React.FC = () => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCommandPaletteOpen(true);
+        return;
+      }
+
+      // 'a' or 'A': Ask TARKA AI Copilot
+      if (e.key.toLowerCase() === 'a' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        toggleAskTarka();
+        return;
+      }
+
+      // 'v' or 'V': Multimodal Voice Interrogation
+      if (e.key.toLowerCase() === 'v' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setVoiceModalOpen(true);
         return;
       }
 
@@ -114,20 +195,37 @@ export const V6AppShell: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveView]);
+  }, [setActiveView, setCommandPaletteOpen, toggleAskTarka, setVoiceModalOpen]);
 
   // Case validity validation
   const effectiveCaseId = activeCaseId || 'CASE-2026-001';
+  const knownViews = [
+    'workspace',
+    'dash',
+    'cases',
+    'settings',
+    'health',
+    'lab',
+    'court-proof',
+    'privacy-crypto',
+    'workstation',
+    'benchmarks',
+    'benchmark',
+  ];
+
   const isCaseUnknown =
     activeCaseId &&
     !['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(activeCaseId) &&
     !caseWorkspaces.some((c) => c.caseId === activeCaseId);
 
-  const isCaseArchived = activeCase && (activeCase as any).status === 'ARCHIVED';
+  const isCaseArchived =
+    activeCase &&
+    (activeCase as any).status === 'ARCHIVED' &&
+    (activeCase as any).caseId === effectiveCaseId;
 
   // Screen router
   const renderScreen = () => {
-    if (isCaseUnknown && !['workspace', 'dash', 'cases', 'settings', 'health', 'lab'].includes(activeView)) {
+    if (isCaseUnknown && !knownViews.includes(activeView)) {
       return <CaseNotFoundScreen caseId={activeCaseId!} />;
     }
 
@@ -155,6 +253,15 @@ export const V6AppShell: React.FC = () => {
         return <ActionsReportScreen initialTab="actions" />;
       case 'report':
         return <ActionsReportScreen initialTab="report" />;
+      case 'court-proof':
+        return <LabScreen initialTab="court-proof" />;
+      case 'privacy-crypto':
+        return <LabScreen initialTab="privacy-crypto" />;
+      case 'workstation':
+        return <LabScreen initialTab="workstation" />;
+      case 'benchmarks':
+      case 'benchmark':
+        return <LabScreen initialTab="benchmarks" />;
       case 'lab':
         return <LabScreen />;
       case 'settings':
@@ -176,7 +283,11 @@ export const V6AppShell: React.FC = () => {
         {/* Topbar */}
         <V6Topbar
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          onOpenNewCase={() => setActiveView('cases')}
+          onOpenNewCase={() => openNewCaseModal()}
+          onOpenAuditTrail={(targetCaseId) => {
+            setAuditDrawerCaseId(targetCaseId || activeCaseId);
+            setIsAuditDrawerOpen(true);
+          }}
         />
 
         {/* Read-Only Archived Banner if case is ARCHIVED */}
@@ -221,8 +332,77 @@ export const V6AppShell: React.FC = () => {
         onClose={() => setIsDemoUserOpen(false)}
       />
 
-      {/* Command Palette / Ask TARKA */}
+      {/* Command Palette */}
       <TarkaCommandPalette />
+
+      {/* Ask TARKA Copilot Slide-Over */}
+      <Suspense fallback={null}>
+        <AskTarkaDrawer />
+      </Suspense>
+
+      {/* Multimodal Voice Modal (Sarvam STT/TTS) */}
+      <Suspense fallback={null}>
+        <SarvamVoiceModal
+          caseId={effectiveCaseId}
+          isOpen={voiceModalOpen}
+          onClose={() => setVoiceModalOpen(false)}
+        />
+      </Suspense>
+
+      {/* Cryptographic Evidence Intake Modal */}
+      <Suspense fallback={null}>
+        <EvidenceIntakeModal />
+      </Suspense>
+
+      {/* New Case Registration Modal */}
+      <Suspense fallback={null}>
+        <NewCaseModal />
+      </Suspense>
+
+      {/* Benchmark Lab Drawer & Public Datasets Modal */}
+      <Suspense fallback={null}>
+        <BenchmarkLabDrawer />
+        <PublicDatasetBenchmarkModal />
+      </Suspense>
+
+      {/* 7-Question Statutory Investigation Intelligence Brief */}
+      <Suspense fallback={null}>
+        <InvestigationIntelligenceBrief
+          isOpen={intelligenceBriefOpen}
+          onClose={() => setIntelligenceBriefOpen(false)}
+        />
+      </Suspense>
+
+      {/* Guided Judge Demo Walkthrough (Offline Capable) */}
+      <Suspense fallback={null}>
+        <JudgeModeWalkthrough />
+      </Suspense>
+
+      {/* Case Audit Trail Drawer (BSA §63 Chain of Custody) */}
+      <Suspense fallback={null}>
+        <CaseAuditTrailDrawer
+          caseId={auditDrawerCaseId || effectiveCaseId}
+          isOpen={isAuditDrawerOpen}
+          onClose={() => setIsAuditDrawerOpen(false)}
+        />
+      </Suspense>
+
+      {/* Relationship Evidence Deep-Dive Sheet */}
+      <Suspense fallback={null}>
+        <RelationshipEvidenceSheet
+          edge={selectedEvidenceEdge}
+          isOpen={relationshipSheetOpen}
+          onClose={() => setRelationshipSheetOpen(false)}
+        />
+      </Suspense>
+
+      {/* Transformation & Merkle Root Audit Modal */}
+      <Suspense fallback={null}>
+        <TransformationAuditLog
+          isOpen={transformationAuditModalOpen}
+          onClose={() => setTransformationAuditModalOpen(false)}
+        />
+      </Suspense>
 
       {/* Dev Fingerprint Overlay */}
       <CaseFingerprintDevOverlay />

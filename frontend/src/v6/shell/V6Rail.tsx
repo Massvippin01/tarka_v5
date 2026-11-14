@@ -10,12 +10,15 @@ import {
   Smartphone,
   Scale,
   FlaskConical,
+  ShieldCheck,
+  Zap,
   Settings,
   Activity,
   UserCheck,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useCaseStore } from '../../store/useCaseStore';
+import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { getCanonicalCase } from '../../fixtures/cases';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
@@ -26,12 +29,23 @@ interface V6RailProps {
 export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
   const { profile, station } = useSettingsStore();
+  const { caseWorkspaces } = useTarkaGlobal();
 
+  const isCanonical = ['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(activeCaseId || '');
+  const matchedWorkspace = caseWorkspaces.find((c) => c.caseId === activeCaseId);
   const isCaseUnknown =
     Boolean(activeCaseId) &&
-    !['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(activeCaseId!);
+    !isCanonical &&
+    !matchedWorkspace;
 
   const canonicalCase = getCanonicalCase(activeCaseId || 'CASE-2026-001');
+  const displayFir = isCaseUnknown
+    ? activeCaseId
+    : matchedWorkspace
+    ? matchedWorkspace.firNumber
+    : isCanonical
+    ? canonicalCase.firNumber
+    : (activeCaseId || 'Active Case');
 
   const isCurrentView = (views: string[]) => views.includes(activeView);
 
@@ -150,7 +164,7 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
 
       {/* Active Case Stepper Group */}
       <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        Investigation · {isCaseUnknown ? activeCaseId : canonicalCase.firNumber}
+        Investigation · {displayFir}
       </div>
 
       {steps.map((s) => {
@@ -186,22 +200,68 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
 
       {/* Lab & System Navigation */}
       <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        Lab & System
+        Forensic Lab
       </div>
 
       <button
         type="button"
-        onClick={() => setActiveView('lab')}
+        onClick={() => setActiveView('court-proof')}
         className={clsx(
           'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
-          isCurrentView(['lab'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold'
-            : 'text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+          isCurrentView(['court-proof', 'lab'])
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+        )}
+      >
+        <Scale className="w-4 h-4 flex-none opacity-90" />
+        <span className="truncate">Court Dossier</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setActiveView('privacy-crypto')}
+        className={clsx(
+          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          isCurrentView(['privacy-crypto'])
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+        )}
+      >
+        <ShieldCheck className="w-4 h-4 flex-none opacity-90" />
+        <span className="truncate">Privacy & ZKP</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setActiveView('workstation')}
+        className={clsx(
+          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          isCurrentView(['workstation'])
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
         <FlaskConical className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Court · Privacy · Lab</span>
+        <span className="truncate">Workstation</span>
       </button>
+
+      <button
+        type="button"
+        onClick={() => setActiveView('benchmarks')}
+        className={clsx(
+          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          isCurrentView(['benchmarks', 'benchmark'])
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+        )}
+      >
+        <Zap className="w-4 h-4 flex-none opacity-90" />
+        <span className="truncate">Benchmarks</span>
+      </button>
+
+      <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
+        System
+      </div>
 
       <button
         type="button"
@@ -209,8 +269,8 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
         className={clsx(
           'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
           isCurrentView(['settings'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold'
-            : 'text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
         <Settings className="w-4 h-4 flex-none opacity-90" />
@@ -223,8 +283,8 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
         className={clsx(
           'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
           isCurrentView(['health'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold'
-            : 'text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
         <Activity className="w-4 h-4 flex-none opacity-90" />

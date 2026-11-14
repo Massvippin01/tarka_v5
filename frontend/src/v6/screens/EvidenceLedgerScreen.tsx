@@ -24,7 +24,10 @@ interface LedgerRowItem {
 export const EvidenceLedgerScreen: React.FC = () => {
   const { activeCaseId, setActiveView } = useCaseStore();
   const caseId = activeCaseId || 'CASE-2026-001';
+  const isCanonical = ['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(caseId);
   const canonical = getCanonicalCase(caseId);
+  const complainantName = isCanonical ? canonical.complainant.name : `Complainant (${caseId})`;
+  const complainantBank = isCanonical ? canonical.complainant.bank.split(' ')[0] : 'Bank';
 
   const [scanningIndex, setScanningIndex] = useState<number | null>(null);
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set([0, 1, 2, 3, 4, 5]));
@@ -118,7 +121,7 @@ export const EvidenceLedgerScreen: React.FC = () => {
         }
       >
         Bank ledger proves <b>{formatInr(bookedLoss, { showPaise: false })}</b> left{' '}
-        {canonical.complainant.name}'s {canonical.complainant.bank.split(' ')[0]} account in 2 transfers.{' '}
+        {complainantName}'s {complainantBank} account in 2 transfers.{' '}
         {caseId === 'CASE-2026-001' ? (
           <>
             The receipt he was shown is <b>forged</b>.
