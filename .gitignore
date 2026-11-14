@@ -47,3 +47,13 @@ backend/data/cases/*
 !backend/data/cases/upi_payment_discrepancy/
 backend/data/cases/upi_payment_discrepancy/**
 backend/data/staging/
+
+# Test artifacts & scratch
+test-results/
+frontend/test-results/
+playwright-report/
+frontend/playwright-report/
+scratch/
+frontend/scratch/
+*.sqlite
+*.sqlite3

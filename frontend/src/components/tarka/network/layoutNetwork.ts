@@ -80,11 +80,11 @@ export function layoutDataDrivenInvestigation(
   investigation: ReconstructedInvestigation,
   muleScores?: Record<string, any>
 ): NetworkLayoutResult {
-  const width = Math.max(1040, W);
-  const height = Math.max(650, H);
+  const width = Math.max(1160, W);
+  const height = Math.max(780, H);
 
-  const yRowA = Math.round(0.10 * height);
-  const yRowB = Math.round(0.28 * height);
+  const yRowA = Math.round(0.12 * height);
+  const yRowB = Math.round(0.32 * height);
   const yRowC = Math.round(0.68 * height);
 
   // 1. Identify victim(s)
@@ -145,8 +145,8 @@ export function layoutDataDrivenInvestigation(
       const amountReceived = inEdges.reduce((sum, e) => sum + (e.amount || 0), 0);
 
       const sizeScale = maxTxAmount > 0 ? Math.min(1, amountReceived / maxTxAmount) : 0;
-      const w = Math.round(168 + sizeScale * 24);
-      const hNode = Math.round(62 + sizeScale * 12);
+      const w = Math.round(204 + sizeScale * 20);
+      const hNode = 92;
 
       let cy = yRowC;
       if (h === 0) {
@@ -154,7 +154,7 @@ export function layoutDataDrivenInvestigation(
       } else if (nodesAtHop.length === 1) {
         cy = yRowC;
       } else {
-        const stepY = nodesAtHop.length >= 3 ? 74 : 88;
+        const stepY = nodesAtHop.length >= 3 ? 124 : 138;
         const totalSpan = (nodesAtHop.length - 1) * stepY;
         const startY = yRowC - Math.round(totalSpan / 2);
         cy = startY + idx * stepY;
@@ -525,11 +525,11 @@ export function layoutDataDrivenInvestigation(
   // 8. Community Hulls
   const communityHulls: CommunityHullLayout[] = [];
   if (muleAccounts.length >= 2) {
-    const minX = Math.min(...muleAccounts.map((m) => m.x)) - 16;
-    const maxX = Math.max(...muleAccounts.map((m) => m.x + m.w)) + 16;
-    const minY = Math.min(...muleAccounts.map((m) => m.y)) - 18;
-    const maxY = Math.max(...muleAccounts.map((m) => m.y + m.h + (m.category === "sink" ? 28 : 16))) + 14;
-    const r = 10;
+    const minX = Math.min(...muleAccounts.map((m) => m.x)) - 24;
+    const maxX = Math.max(...muleAccounts.map((m) => m.x + m.w)) + 24;
+    const minY = Math.min(...muleAccounts.map((m) => m.y)) - 24;
+    const maxY = Math.max(...muleAccounts.map((m) => m.y + m.h + (m.category === "sink" ? 30 : 18))) + 28;
+    const r = 12;
     const hullPath = `M ${minX + r},${minY} H ${maxX - r} Q ${maxX},${minY} ${maxX},${minY + r} V ${maxY - r} Q ${maxX},${maxY} ${maxX - r},${maxY} H ${minX + r} Q ${minX},${maxY} ${minX},${maxY - r} V ${minY + r} Q ${minX},${minY} ${minX + r},${minY} Z`;
 
     communityHulls.push({
@@ -537,8 +537,8 @@ export function layoutDataDrivenInvestigation(
       name: "Syndicate Mule Cluster (BSSID & JA4 Anchor)",
       path: hullPath,
       color: "#6366F1",
-      labelX: minX + 14,
-      labelY: maxY - 12,
+      labelX: minX + 16,
+      labelY: maxY - 14,
     });
   }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Radio,
   Smartphone,
@@ -12,6 +13,8 @@ import {
   RotateCcw,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   X,
   IndianRupee,
   Clock,
@@ -484,6 +487,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
   // Fullscreen, Minimized & Zoom States
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isFullscreenHudMinimized, setIsFullscreenHudMinimized] = useState<boolean>(false);
+  const [showNarrativeStrip, setShowNarrativeStrip] = useState<boolean>(true);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
 
@@ -505,17 +510,6 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const handleZoomIn = () => setZoomLevel((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10));
   const handleZoomOut = () => setZoomLevel((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
   const handleResetZoom = () => setZoomLevel(1);
-
-  // Esc key exits fullscreen
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isFullscreen) {
-        setIsFullscreen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFullscreen]);
 
   // Lock body scroll in fullscreen mode
   useEffect(() => {
@@ -647,6 +641,32 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     setReplayStep(s);
   };
 
+  // Fullscreen keyboard navigation & shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      } else if (isFullscreen && (e.key === " " || e.code === "Space")) {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+        e.preventDefault();
+        handleTogglePlay();
+      } else if (isFullscreen && e.key === "ArrowRight") {
+        e.preventDefault();
+        handleStepForward();
+      } else if (isFullscreen && e.key === "ArrowLeft") {
+        e.preventDefault();
+        handleStepBack();
+      } else if (isFullscreen && (e.key === "m" || e.key === "M")) {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+        setIsFullscreenHudMinimized((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen, isPlaying, replayStep]);
+
   // Run geometry linter on canvas
   useEffect(() => {
     if (canvasRef.current) {
@@ -741,7 +761,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     });
   }, [layout.edges, isPlaying, replayStep, currentStepData]);
 
-  return (
+  const content = (
     <div
       ref={containerRef}
       className="hero-canvas-container"
@@ -763,9 +783,124 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       }}
     >
       {/* =========================================================================
-          FULLSCREEN REPLAY COMMAND HEADER (CRISP WHITE SAAS THEME)
+          FULLSCREEN REPLAY COMMAND HEADER (CRISP SAAS THEME WITH MINIMIZE OPTION)
           ========================================================================= */}
-      {isFullscreen && (
+      {isFullscreen && isFullscreenHudMinimized && (
+        <div
+          data-testid="fullscreen-replay-mini-hud"
+          style={{
+            position: "absolute",
+            top: 14,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 100001,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "rgba(255, 255, 255, 0.96)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid #CBD5E1",
+            boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
+            borderRadius: "9999px",
+            padding: "5px 14px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleTogglePlay}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              fontSize: "11.5px",
+              fontWeight: 800,
+              padding: "4px 10px",
+              borderRadius: "9999px",
+              border: "none",
+              background: isPlaying ? "#DC2626" : "#059669",
+              color: "#FFFFFF",
+              cursor: "pointer",
+            }}
+          >
+            {isPlaying ? <Pause size={12} fill="white" /> : <Play size={12} fill="white" />}
+            <span>{isPlaying ? "Pause" : "Play"}</span>
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+            <button
+              type="button"
+              onClick={handleStepBack}
+              disabled={replayStep <= 0}
+              title="Previous Step"
+              style={{ border: "none", background: "transparent", cursor: "pointer", padding: "2px", color: "#64748B" }}
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <span style={{ fontSize: "11.5px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>
+              Step {replayStep}/5
+            </span>
+            <button
+              type="button"
+              onClick={handleStepForward}
+              disabled={replayStep >= 5}
+              title="Next Step"
+              style={{ border: "none", background: "transparent", cursor: "pointer", padding: "2px", color: "#64748B" }}
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
+
+          <span style={{ width: "1px", height: "16px", background: "#E2E8F0" }} />
+
+          <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#334155", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {currentStepData.title}
+          </span>
+
+          <span style={{ width: "1px", height: "16px", background: "#E2E8F0" }} />
+
+          <button
+            type="button"
+            onClick={() => setIsFullscreenHudMinimized(false)}
+            data-testid="expand-fullscreen-hud-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+              color: "#4F46E5",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronDown size={14} />
+            <span>Expand HUD</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(false)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
+              fontSize: "11.5px",
+              fontWeight: 700,
+              color: "#64748B",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              marginLeft: "4px",
+            }}
+          >
+            <Minimize2 size={13} />
+            <span>Exit (Esc)</span>
+          </button>
+        </div>
+      )}
+
+      {isFullscreen && !isFullscreenHudMinimized && (
         <div
           data-testid="fullscreen-replay-header"
           style={{
@@ -814,7 +949,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: "12px",
+                      fontSize: "11px",
                       fontWeight: 800,
                       background: "#EEF2FF",
                       border: "1px solid #C7D2FE",
@@ -827,7 +962,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     {activeCaseId || "CASE-2026-001"}
                   </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "#64748B" }}>
+                <div style={{ fontSize: "11.5px", color: "#64748B" }}>
                   Evidence Network & Chronological Fund Flow Visualization (DoT Clause 39.20 · BSA §63)
                 </div>
               </div>
@@ -850,7 +985,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={handleStepBack}
                 disabled={replayStep <= 0}
-                title="Previous Replay Step"
+                title="Previous Replay Step (Left Arrow)"
                 style={{
                   background: "transparent",
                   border: "none",
@@ -869,6 +1004,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={handleTogglePlay}
                 data-testid="fullscreen-play-btn"
+                title="Play or Pause Replay (Spacebar)"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -898,7 +1034,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 type="button"
                 onClick={handleStepForward}
                 disabled={replayStep >= 5}
-                title="Next Replay Step"
+                title="Next Replay Step (Right Arrow)"
                 style={{
                   background: "transparent",
                   border: "none",
@@ -947,7 +1083,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       type="button"
                       onClick={() => handleJumpToStep(st.step)}
                       style={{
-                        fontSize: "12px",
+                        fontSize: "11.5px",
                         fontWeight: isCurrent ? 800 : 600,
                         padding: "3px 7px",
                         borderRadius: "4px",
@@ -955,6 +1091,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         background: isCurrent ? "#4F46E5" : "#FFFFFF",
                         color: isCurrent ? "#FFFFFF" : "#475569",
                         cursor: "pointer",
+                        boxShadow: isCurrent ? "0 1px 3px rgba(79, 70, 229, 0.3)" : "none",
                       }}
                     >
                       {st.label}
@@ -980,7 +1117,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={() => setPlaybackSpeed(spd)}
                     style={{
-                      fontSize: "12px",
+                      fontSize: "11px",
                       fontWeight: playbackSpeed === spd ? 800 : 500,
                       padding: "2px 5px",
                       borderRadius: "3px",
@@ -996,7 +1133,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               </div>
             </div>
 
-            {/* Right: Layer Filters, Zoom Controls & Exit Fullscreen Button */}
+            {/* Right: Layer Filters, Zoom Controls, Minimize HUD & Exit Fullscreen Button */}
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               {/* Edge Filter Pills */}
               <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
@@ -1016,7 +1153,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       type="button"
                       onClick={() => onEdgeFilterChange(tab.id)}
                       style={{
-                        fontSize: "12px",
+                        fontSize: "11px",
                         fontWeight: isActive ? 800 : 600,
                         padding: "3px 6px",
                         borderRadius: "4px",
@@ -1061,7 +1198,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 </button>
                 <span
                   style={{
-                    fontSize: "12px",
+                    fontSize: "11.5px",
                     fontWeight: 700,
                     fontFamily: "var(--font-mono)",
                     color: "#334155",
@@ -1090,7 +1227,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     type="button"
                     onClick={handleResetZoom}
                     style={{
-                      fontSize: "12px",
+                      fontSize: "11px",
                       color: "#4F46E5",
                       background: "transparent",
                       border: "none",
@@ -1104,7 +1241,31 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 )}
               </div>
 
-              {/* EXIT FULLSCREEN / MINIMIZE BUTTON */}
+              {/* MINIMIZE HUD BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreenHudMinimized(true)}
+                title="Minimize Header to floating pill for maximum canvas space (Press M)"
+                data-testid="minimize-fullscreen-hud-btn"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11.5px",
+                  fontWeight: 700,
+                  padding: "5px 9px",
+                  borderRadius: "5px",
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: "#475569",
+                  cursor: "pointer",
+                }}
+              >
+                <ChevronUp size={13} />
+                <span>Minimize HUD</span>
+              </button>
+
+              {/* EXIT FULLSCREEN BUTTON */}
               <button
                 type="button"
                 onClick={() => {
@@ -1115,8 +1276,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "5px",
-                  fontSize: "12px",
+                  gap: "4px",
+                  fontSize: "11.5px",
                   fontWeight: 800,
                   padding: "5px 10px",
                   borderRadius: "5px",
@@ -1127,82 +1288,98 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 }}
               >
                 <Minimize2 size={13} />
-                <span>Exit Fullscreen (Esc)</span>
+                <span>Exit (Esc)</span>
               </button>
             </div>
           </div>
 
           {/* Fullscreen Narrative HUD Strip */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              background: "#F8FAFC",
-              border: "1px solid #E2E8F0",
-              borderRadius: "6px",
-              padding: "6px 14px",
-              gap: "12px",
-              fontSize: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  background: "#0F172A",
-                  color: "#FFFFFF",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                <Clock size={11} />
-                <span>{currentStepData.clockTime}</span>
-                <span style={{ opacity: 0.8 }}>({currentStepData.timeLabel})</span>
-              </span>
-
-              <span style={{ fontWeight: 800, color: "#0F172A" }}>{currentStepData.title}</span>
-
-              {currentStepData.amount !== "—" && (
+          {showNarrativeStrip && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "#F8FAFC",
+                border: "1px solid #E2E8F0",
+                borderRadius: "6px",
+                padding: "6px 14px",
+                gap: "12px",
+                fontSize: "12px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span
                   style={{
-                    fontSize: "12px",
-                    fontWeight: 900,
-                    background: "#ECFDF5",
-                    color: "#047857",
-                    border: "1px solid #A7F3D0",
-                    padding: "1px 7px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "11.5px",
+                    fontWeight: 800,
+                    background: "#0F172A",
+                    color: "#FFFFFF",
+                    padding: "2px 6px",
                     borderRadius: "4px",
                     fontFamily: "var(--font-mono)",
                   }}
                 >
-                  Flow: {currentStepData.amount}
+                  <Clock size={11} />
+                  <span>{currentStepData.clockTime}</span>
+                  <span style={{ opacity: 0.8 }}>({currentStepData.timeLabel})</span>
                 </span>
-              )}
-            </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ color: "#475569", fontSize: "12px" }}>{currentStepData.headline}</span>
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#475569",
-                  background: "#FFFFFF",
-                  border: "1px solid #E2E8F0",
-                  padding: "2px 6px",
-                  borderRadius: "3px",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                {currentStepData.statutory}
-              </span>
+                <span style={{ fontWeight: 800, color: "#0F172A" }}>{currentStepData.title}</span>
+
+                {currentStepData.amount !== "—" && (
+                  <span
+                    style={{
+                      fontSize: "11.5px",
+                      fontWeight: 900,
+                      background: "#ECFDF5",
+                      color: "#047857",
+                      border: "1px solid #A7F3D0",
+                      padding: "1px 7px",
+                      borderRadius: "4px",
+                      fontFamily: "var(--font-mono)",
+                    }}
+                  >
+                    Flow: {currentStepData.amount}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ color: "#475569", fontSize: "11.5px" }}>{currentStepData.headline}</span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "#475569",
+                    background: "#FFFFFF",
+                    border: "1px solid #E2E8F0",
+                    padding: "2px 6px",
+                    borderRadius: "3px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {currentStepData.statutory}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowNarrativeStrip(false)}
+                  title="Hide Step Details Strip"
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    color: "#94A3B8",
+                    cursor: "pointer",
+                    padding: "2px",
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -2540,12 +2717,13 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         borderTop: "1px solid #FEE2E2",
                         paddingTop: "2px",
+                        gap: "4px",
                       }}
                     >
-                      <span style={{ fontWeight: 800, color: "#DC2626" }}>
+                      <span style={{ fontWeight: 800, color: "#DC2626", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
                       </span>
                       <span
@@ -2555,6 +2733,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           padding: "0.5px 3.5px",
                           borderRadius: "2px",
                           fontWeight: 700,
+                          fontSize: "10.5px",
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}
                       >
                         Loss: {investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Loss Recorded"}
@@ -2672,12 +2853,13 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         borderTop: "1px solid #FEE2E2",
                         paddingTop: "2px",
+                        gap: "4px",
                       }}
                     >
-                      <span style={{ fontWeight: 800, color: "#DC2626" }}>
+                      <span style={{ fontWeight: 800, color: "#DC2626", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {balanceInfo ? balanceInfo.balance : (node.amountReceivedInr ? `Cash: ₹${(node.amountReceivedInr / 1000).toFixed(0)}K` : "Cash Out")}
                       </span>
                       <span
@@ -2687,6 +2869,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           padding: "0.5px 3.5px",
                           borderRadius: "2px",
                           fontWeight: 700,
+                          fontSize: "10.5px",
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}
                       >
                         ATM Cashout
@@ -2866,7 +3051,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        fontSize: "12px",
+                        fontSize: "11px",
                         borderTop: "1px solid #F1F5F9",
                         paddingTop: "2px",
                         gap: "4px",
@@ -2884,6 +3069,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
+                          fontSize: "11px",
                         }}
                       >
                         Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
@@ -2899,6 +3085,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "2px",
+                          fontSize: "10.5px",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {isNodeFrozen ? "🔒 §107 Frozen" : "§107 Frozen"}
@@ -3275,4 +3463,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       )}
     </div>
   );
+
+  if (isFullscreen && typeof document !== "undefined") {
+    return createPortal(content, document.body);
+  }
+
+  return content;
 };
