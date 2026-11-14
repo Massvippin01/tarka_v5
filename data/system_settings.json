@@ -1,19 +1,19 @@
 {
   "station": {
-    "station_name": "Special Cell Cyber Command, New Delhi",
-    "district": "New Delhi",
-    "state": "Delhi NCT",
-    "letterhead_title": "DELHI POLICE SPECIAL CELL",
-    "letterhead_subtitle": "CYBER CRIME UNIT, MANDIR MARG, NEW DELHI",
-    "default_io_name": "ACP Anil Roy",
-    "default_io_badge": "DL-CC-1092",
+    "station_name": "Noida Cyber Crime PS, UP",
+    "district": "Gautam Buddha Nagar",
+    "state": "Uttar Pradesh",
+    "letterhead_title": "CYBER CRIME POLICE STATION",
+    "letterhead_subtitle": "COMMISSIONERATE GAUTAM BUDDHA NAGAR, UTTAR PRADESH",
+    "default_io_name": "Insp. Rajeshwar Rao",
+    "default_io_badge": "UP-CY-4091",
     "show_national_emblem": true
   },
   "scoring_weights": {
-    "velocity": 0.4,
-    "fan_out": 0.3,
-    "structuring": 0.15,
-    "account_tenure": 0.15
+    "velocity": 0.35,
+    "fan_out": 0.25,
+    "structuring": 0.2,
+    "account_tenure": 0.2
   },
   "investigation_defaults": {
     "golden_hour_sla_mins": 180,
@@ -26,5 +26,5 @@
     "default_model": "llama3.2:latest",
     "enable_voice_narration": false
   },
-  "updated_at": "2026-11-14T08:47:06.092934+00:00"
+  "updated_at": "2026-11-14T14:50:01.769793+00:00"
 }

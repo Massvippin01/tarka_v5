@@ -179,3 +179,66 @@
   - `npx playwright test e2e/v6-density.spec.ts`: 9/9 passed (45.4s).
   - `npx playwright test e2e/case-sync.spec.ts`: 2/2 passed (36.3s).
   - `npm run build`: Production build cleanly completed in 1.27s across 3,085 modules.
+
+## Settings & Administration UI Complete Overhaul (Prompt F-5 & F-9)
+- **Target URL**: `http://localhost:5173/?case=CASE-2026-001&view=settings`
+- **Key Enhancements Across All 8 Sections & Modals**:
+  1. **Header & Operational Context Card**:
+     - Built a clean, light `v6-card` header replacing the dated fixed header.
+     - Added platform kicker `SENTINELX FORENSIC PLATFORM`, active operational role pill (`Frontline Investigator` / `Supervisory Officer` / `System Administrator` with semantic color tinting), and explanatory subtitle.
+     - Integrated a fast inline language toggle (`English | हिन्दी`) and a live `REST Gateway Connected` status dot.
+     - Save Changes button with spinner and Check icon, calling `PUT /api/v1/system/settings` with toast feedback and query cache invalidation.
+  2. **Navigation Rail Architecture**:
+     - Expanded rail width to `w-[286px]` to permanently eliminate `...` ellipsis truncation across all 8 configuration categories.
+     - Designed two-tier items: primary title (`text-[13px] font-bold`) + secondary description (`text-[12px] font-normal text-[var(--muted)]`), paired with crisp Lucide icon badge squares (`w-8 h-8 rounded-lg`).
+     - Active item highlighted with `bg-blue-50/60 border-[var(--accent)]/30 text-[var(--accent)] shadow-2xs`.
+  3. **Section 1: Officer Profile & Role (`profile`)**:
+     - 3 interactive role selection cards: `Frontline Investigator` (IO directives), `Supervisory Officer` (supervisory oversight & case closure), `System Administrator` (scoring weights & database control).
+     - Modernized 6-field credentials form (Officer Name, Rank, Badge No, Police Station, Email, Phone) with 12px uppercase labels and focus rings.
+  4. **Section 2: Station & Letterhead (`station`)**:
+     - Complete station configuration: Station Name, District, State / UT, Letterhead Title, Subtitle, National Emblem toggle.
+     - Designed an authentic formal A4 Police Letterhead Preview box with Ashoka crest / shield glyph, centered bold uppercase titles, district metadata line, reference notice, and statutory legal footer under §§ 94, 106, 107 BNSS with Section 63(4) BSA certificate note.
+  5. **Section 3: Display & Language (`appearance`)**:
+     - Interface Language switcher (`English (EN)` vs `हिन्दी (HI)`).
+     - Visual Theme selector with live preview swatches (`Paper Light`, `Command Dark`, `High Contrast`).
+     - Layout Density cards (`High Density (v6 Default)` vs `Comfortable Density`).
+     - Reduce UI Animations accessibility toggle.
+  6. **Section 4: Statutory Investigation Thresholds (`investigation`)**:
+     - Golden Hour SLA Limit slider (30 to 720 mins) with live hour breakdown indicator.
+     - Mule Alert Risk Score Threshold slider (10 to 95) with red threshold indicator.
+     - High-Value Transaction Threshold input with ₹ INR Lakh conversion helper.
+     - Timezone & Canonical Reference Frame (`IST UTC+05:30 · ₹ INR (Lakh/Crore)`) locked to judicial standard.
+  7. **Section 5: AI Engine & Mule Scoring (`ai`)**:
+     - Local Ollama Runtime Health Card with status dot, model name (`llama3.2:latest`), endpoint URL, latency badge (`~380 ms`), and `Test Ping` button.
+     - Ambient Voice AI Narration toggle with speaker icon.
+     - Mule scoring weights sliders for Drain Velocity (35%), Fan-out (25%), Structuring (20%), and Account Tenure (20%) with Admin edit-lock notice and `Reset to Default` action.
+  8. **Section 6: Data Architecture & Demo (`data`)**:
+     - Data Ingestion & Storage Architecture summary tiles for Transactional Authority (`data/sentinelx_production.db`) and Forensic Graph Projection (`SQLite In-Memory / Neo4j`).
+     - Single-click actions for Export Case (JSON) bundle, Launch Judge Mode, and Toggle Presenter Mode.
+     - Restyled Danger Zone for Canonical Demo Benchmarks reset.
+  9. **Section 7: Urgency Alerts (`notifications`)**:
+     - 4 real-time alert trigger cards: Golden Hour SLA Urgency (< 30 min), Evidence Ingestion Complete, Bank Freeze Directives Acknowledged (§107 Lien), and Cross-FIR Syndicate Match.
+  10. **Section 8: Keyboard Shortcuts (`shortcuts`)**:
+      - Cleanly formatted shortcuts table with 3D bevel styled `<kbd>` key chips for rapid frontline operations (`Cmd/Ctrl + K`, `Cmd/Ctrl + Shift + A`, `Cmd/Ctrl + Shift + R`, `Cmd/Ctrl + B`, `Alt + 1..6`, `Esc`).
+  11. **Confirmation Modal**:
+      - Restyled Reset Demo Data dialog with backdrop blur, alert icon, clear warning summary, Cancel button, and red confirmation button.
+- **Screenshots Verified**:
+  - `settings_section_profile.png`: Header with role badge & quick language switcher; 286px navigation rail with untruncated titles; 3 role selection cards with checkmark; 6-field credentials form.
+  - `settings_section_station.png`: Station configuration form with live formal A4 letterhead preview box, crest insignia, and statutory citations.
+  - `settings_section_appearance.png`: Language cards (EN / HI), theme preview cards (Paper Light, Command Dark, High Contrast), density cards, and reduce motion toggle.
+  - `settings_section_investigation.png`: 4 grid tiles with Golden Hour slider (180 min / 3 hrs), Mule Alert threshold slider (75/100), High-Value INR input (₹1.00 Lakh), and IST standard reference frame.
+  - `settings_section_ai.png`: Ollama health card (`llama3.2:latest`, active status, test ping), ambient voice narration toggle, and 4 mule scoring algorithm weight sliders.
+  - `settings_section_data.png`: Transactional SQLite and Neo4j graph architecture cards, export JSON action, Judge mode launch, and danger zone demo reset card.
+  - `settings_section_notifications.png`: 4 real-time compliance alert trigger cards with active checkboxes.
+  - `settings_section_shortcuts.png`: 6 frontline operational keyboard hotkeys with realistic `<kbd>` chips.
+  - `settings_section_reset_modal.png`: High-contrast modal dialog with warning glyph, cancel button, and red reset action.
+- **Verification Results**:
+  - `Typography Floor`: **0 sub-12px elements** across all 8 sections and modals (verified by `test_settings_all_tabs.cjs`).
+  - `npx tsc -b`: 0 errors.
+  - `npx vitest run`: 140/140 passed across 23 test files (836ms).
+  - `playwright test e2e/settings.spec.ts`: 2/2 passed (11.5s).
+  - `playwright test e2e/v6-styled.spec.ts`: 11/11 passed (34.3s).
+  - `playwright test e2e/v6-density.spec.ts`: 9/9 passed (44.4s).
+  - `playwright test e2e/case-sync.spec.ts`: 2/2 passed (40.0s).
+  - `npm run build`: Production build cleanly completed in 1.25s across 3,085 modules (`dist/assets/SettingsScreen-DneQNMWN.js 47.81 kB`).
+
