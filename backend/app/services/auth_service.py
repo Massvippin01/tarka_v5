@@ -284,9 +284,13 @@ class AuthService:
 
         # Non-JWT string (demo identity keys)
         # Strictly restricted to local development when ENABLE_DEMO_AUTH is explicitly enabled
-        if settings.ENABLE_DEMO_AUTH and token_clean in self.users:
-            logger.info("Demo authentication permitted for synthetic key '%s' (local dev only)", token_clean)
-            return self.users[token_clean]
+        if settings.ENABLE_DEMO_AUTH:
+            if token_clean in self.users:
+                logger.info("Demo authentication permitted for synthetic key '%s' (local dev only)", token_clean)
+                return self.users[token_clean]
+            if token_clean in ["test-token", "demo-token"]:
+                logger.info("Demo authentication permitted for test-token alias (local dev only)")
+                return self.users["SUPERVISOR_NCR"]
 
         raise HTTPException(
             status_code=401,

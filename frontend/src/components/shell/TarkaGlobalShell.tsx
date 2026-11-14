@@ -81,6 +81,8 @@ const InvestigationIntelligenceBrief = lazy(() => import("../tarka/investigation
 const TransformationAuditLog = lazy(() => import("../tarka/investigation/TransformationAuditLog").then((m) => ({ default: m.TransformationAuditLog })));
 import { UpgradedCaseSwitcher } from "./UpgradedCaseSwitcher";
 import { CaseStatusControl } from "../tarka/cases/CaseStatusControl";
+import { NotificationCenterPopover } from "../tarka/notifications/NotificationCenterPopover";
+import { CaseAuditTrailDrawer } from "../tarka/audit/CaseAuditTrailDrawer";
 
 // Polished Obsidian Glass Suspense Fallback
 const ScreenSuspenseFallback: React.FC = () => (
@@ -210,6 +212,8 @@ export const TarkaGlobalShell: React.FC = () => {
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
+  const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState<boolean>(false);
+  const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
 
   const currentBundle = useMemo(() => {
     const canonical = activeCaseId ? getCanonicalCase(activeCaseId) : null;
@@ -1534,6 +1538,32 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     <span>₹{headerActionFinancials.frozenAmountInr.toLocaleString("en-IN")} Frozen ({headerActionFinancials.recoveryPercentage}%)</span>
                   </span>
                 )}
+                <button
+                  type="button"
+                  data-testid="header-activity-button"
+                  onClick={() => {
+                    setAuditDrawerCaseId(activeCaseId);
+                    setIsAuditDrawerOpen(true);
+                  }}
+                  className="hidden md:inline-flex flex-shrink-0"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    color: "#4F46E5",
+                    background: "#EEF2FF",
+                    border: "1px solid #C7D2FE",
+                    padding: "2px 7px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                  title="Open Case Activity & Forensic Audit Log (SHA-256 Chained)"
+                >
+                  <Clock size={11} color="#4F46E5" />
+                  <span>Activity</span>
+                </button>
                 {pipelineState.status === "PROCESSING" && (
                   <span
                     data-testid="pipeline-processing-badge"
@@ -1707,6 +1737,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <Plus size={12} />
               <span>+ Evidence</span>
             </button>
+
+            {/* Notification Center Popover */}
+            <NotificationCenterPopover
+              onNavigateToCase={(cid, route) => selectCaseWorkspace(cid, route)}
+              onOpenAuditTrail={() => {
+                setAuditDrawerCaseId(activeCaseId);
+                setIsAuditDrawerOpen(true);
+              }}
+            />
 
             {/* ⋯ More Popover (rarely used controls: Mutator, Lab, Compact, Lien clock, 1930 SLA) */}
             <Popover.Root open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
@@ -1941,6 +1980,35 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     </span>
                     <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#38BDF8", background: "rgba(2, 132, 199, 0.15)", padding: "1px 4px", borderRadius: "3px" }}>
                       ?view=settings
+                    </span>
+                  </button>
+
+                  {/* Forensic Audit Ledger Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuditDrawerCaseId(activeCaseId);
+                      setIsAuditDrawerOpen(true);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(99, 102, 241, 0.14)",
+                      border: "1px solid rgba(99, 102, 241, 0.30)",
+                      color: "#818CF8",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700 }}>
+                      <ShieldCheck size={12} color="#818CF8" />
+                      <span>Case Audit Ledger (SHA-256)</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px" }}>
+                      Immutable
                     </span>
                   </button>
                 </Popover.Content>
@@ -2489,6 +2557,13 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
       {/* Global What Changed Banner */}
       <WhatChangedBanner data={globalWhatChanged} onClose={() => setGlobalWhatChanged(null)} />
+
+      {/* Case & Station Forensic Audit Trail Drawer (BSA §63) */}
+      <CaseAuditTrailDrawer
+        caseId={auditDrawerCaseId}
+        isOpen={isAuditDrawerOpen}
+        onClose={() => setIsAuditDrawerOpen(false)}
+      />
     </div>
   );
 };

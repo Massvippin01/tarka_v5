@@ -12,6 +12,7 @@ import {
   X,
   Zap,
   LayoutDashboard,
+  Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
@@ -34,6 +35,7 @@ import { IndiaSyndicateMap } from "../../components/tarka/dashboard/IndiaSyndica
 import { ActNowQueueCard } from "../../components/tarka/dashboard/ActNowQueueCard";
 import { TypologyChartCard } from "../../components/tarka/dashboard/TypologyChartCard";
 import { TopBanksCard } from "../../components/tarka/dashboard/TopBanksCard";
+import { CaseAuditTrailDrawer } from "../../components/tarka/audit/CaseAuditTrailDrawer";
 import {
   selectIndiaMuleFlows,
   selectActNowQueue,
@@ -79,6 +81,7 @@ export const CaseWorkspaceScreen: React.FC = () => {
 
   // Bulk Ingestion & Comparator Drawer states
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isActivityFeedOpen, setIsActivityFeedOpen] = useState(false);
   const [comparatorState, setComparatorState] = useState<{
     isOpen: boolean;
     caseA: CaseWorkspace | null;
@@ -601,6 +604,30 @@ export const CaseWorkspaceScreen: React.FC = () => {
             <Database size={11} color="#4F46E5" />
             <span>Benchmarks</span>
           </button>
+
+          {/* Action: Activity Feed */}
+          <button
+            type="button"
+            data-testid="workspace-activity-feed-button"
+            onClick={() => setIsActivityFeedOpen(true)}
+            title="Open Station-Wide Forensic Audit Ledger & Activity Feed"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 9px",
+              borderRadius: "6px",
+              border: "1px solid #E2E8F0",
+              background: "#F8FAFC",
+              color: "#334155",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            <Activity size={11} color="#64748B" />
+            <span>Activity Feed</span>
+          </button>
         </div>
       </div>
 
@@ -811,6 +838,12 @@ export const CaseWorkspaceScreen: React.FC = () => {
           setComparatorState((prev) => ({ ...prev, isOpen: false }));
           handleSelectCase(caseId);
         }}
+      />
+
+      <CaseAuditTrailDrawer
+        caseId={null}
+        isOpen={isActivityFeedOpen}
+        onClose={() => setIsActivityFeedOpen(false)}
       />
     </div>
   );

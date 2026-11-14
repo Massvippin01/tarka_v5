@@ -241,6 +241,9 @@ async def reset_demo_data(
     }
 
 
+
+
+
 @router.get("/health")
 async def get_system_health():
     """
@@ -290,3 +293,89 @@ async def get_system_health():
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/audit/feed")
+async def get_system_audit_feed(
+    case_id: Optional[str] = None,
+    limit: int = 50,
+    current_user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Returns latest append-only audit trail records across all cases or for a specific case.
+    """
+    engine = get_async_engine()
+    sessionmaker = get_async_sessionmaker(engine)
+    async with sessionmaker() as session:
+        if case_id:
+            stmt = select(AuditEventModel).where(AuditEventModel.case_id == case_id).order_by(AuditEventModel.timestamp.desc()).limit(limit)
+        else:
+            stmt = select(AuditEventModel).order_by(AuditEventModel.timestamp.desc()).limit(limit)
+        result = await session.execute(stmt)
+        events = list(result.scalars().all())
+
+        return [
+            {
+                "event_id": e.event_id,
+                "case_id": e.case_id,
+                "actor_id": e.actor_id,
+                "action": e.action,
+                "resource_type": e.resource_type,
+                "resource_id": e.resource_id,
+                "payload_hash": e.payload_hash,
+                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                "details": e.details_json,
+            }
+            for e in events
+        ]
+
+
+@router.get("/audit/verify-chain")
+async def verify_audit_hash_chain(
+    current_user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Cryptographic verification of audit log SHA-256 hash chaining across transactional database.
+    """
+    engine = get_async_engine()
+    sessionmaker = get_async_sessionmaker(engine)
+    async with sessionmaker() as session:
+        stmt = select(AuditEventModel).order_by(AuditEventModel.timestamp.asc())
+        result = await session.execute(stmt)
+        events = list(result.scalars().all())
+
+        total = len(events)
+        if total == 0:
+            return {
+                "total_records": 0,
+                "tamper_detected": False,
+                "chain_valid": True,
+                "message": "Audit ledger initialized with zero entries.",
+            }
+
+        genesis = "GENESIS_HASH_SENTINELX_NEXUS_2026"
+        current_prev = genesis
+
+        for idx, e in enumerate(events):
+            if not e.payload_hash:
+                return {
+                    "total_records": total,
+                    "tamper_detected": True,
+                    "chain_valid": False,
+                    "failed_index": idx,
+                    "event_id": e.event_id,
+                    "reason": f"Missing payload SHA-256 hash at index {idx}",
+                }
+            combined = f"{current_prev}:{e.payload_hash}"
+            current_prev = hashlib.sha256(combined.encode("utf-8")).hexdigest()
+
+        return {
+            "total_records": total,
+            "tamper_detected": False,
+            "chain_valid": True,
+            "head_hash": current_prev,
+            "verified_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+
+

@@ -43,3 +43,4 @@ const fs = require('fs');
   await browser.close();
   console.log('F6 Screenshots captured successfully.');
 })();
+

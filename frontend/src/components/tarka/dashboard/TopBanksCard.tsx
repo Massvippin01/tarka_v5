@@ -144,3 +144,4 @@ export const TopBanksCard: React.FC<TopBanksCardProps> = ({ banks }) => {
     </div>
   );
 };
+

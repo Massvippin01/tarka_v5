@@ -345,3 +345,8 @@ class PostgresAuditRepository:
         stmt = select(AuditEventModel).where(AuditEventModel.case_id == case_id).order_by(AuditEventModel.timestamp.asc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_all_events(self, limit: int = 100) -> List[AuditEventModel]:
+        stmt = select(AuditEventModel).order_by(AuditEventModel.timestamp.desc()).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

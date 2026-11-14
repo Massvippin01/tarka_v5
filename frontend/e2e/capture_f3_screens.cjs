@@ -47,3 +47,4 @@ const path = require('path');
   await browser.close();
   console.log('All F-3 screenshots captured successfully.');
 })();
+

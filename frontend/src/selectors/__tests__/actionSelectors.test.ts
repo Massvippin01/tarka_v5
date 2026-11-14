@@ -113,3 +113,4 @@ describe("selectCaseActionFinancials pure selector", () => {
     expect(fin.goldenHourRemainingMins).toBe(0);
   });
 });
+

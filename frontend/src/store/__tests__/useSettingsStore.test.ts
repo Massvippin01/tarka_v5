@@ -76,3 +76,4 @@ describe("Settings Store & Permissions (Prompt F-5)", () => {
     expect(DICTIONARY.hi["metric.frozen"]).toBe("फ्रीज की गई राशि (§107)");
   });
 });
+

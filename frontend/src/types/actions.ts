@@ -65,3 +65,4 @@ export interface CaseActionsResponse {
   notices: StatutoryNoticeRecord[];
   summary: CaseActionsSummary;
 }
+
