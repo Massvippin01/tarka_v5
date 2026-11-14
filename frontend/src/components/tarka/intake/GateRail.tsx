@@ -158,9 +158,8 @@ export const GateRail: React.FC<GateRailProps> = ({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            border: `1px solid ${
-              isHalted ? "#FECDD3" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#FDE68A" : "#A7F3D0"
-            }`,
+            border: `1px solid ${isHalted ? "#FECDD3" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#FDE68A" : "#A7F3D0"
+              }`,
           }}
         >
           {isHalted ? (
@@ -183,9 +182,8 @@ export const GateRail: React.FC<GateRailProps> = ({
                 borderRadius: "3px",
                 background: isHalted ? "#FFF1F2" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#FEF3C7" : "#ECFDF5",
                 color: isHalted ? "#BE123C" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#92400E" : "#047857",
-                border: `1px solid ${
-                  isHalted ? "#FECDD3" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#FDE68A" : "#A7F3D0"
-                }`,
+                border: `1px solid ${isHalted ? "#FECDD3" : verdict === "UNLOCKED_WITH_QUARANTINE" ? "#FDE68A" : "#A7F3D0"
+                  }`,
                 whiteSpace: "nowrap",
               }}
             >

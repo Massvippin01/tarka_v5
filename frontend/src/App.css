@@ -30,8 +30,6 @@ select {
 
 button {
   cursor: pointer;
-  background: none;
-  border: none;
 }
 
 .sentinel-app {

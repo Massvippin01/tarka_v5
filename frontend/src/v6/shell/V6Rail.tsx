@@ -62,19 +62,22 @@ const RailItem: React.FC<RailItemProps> = ({
     aria-current={active ? 'page' : undefined}
     data-testid={testId}
     className={cn(
-      'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
+      'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
       collapsed
         ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
-        : 'gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium w-full',
+        : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
       active
-        ? 'bg-blue-50/90 dark:bg-blue-950/50 text-[var(--accent)] font-semibold border border-blue-200/80 dark:border-blue-800/60 shadow-xs'
+        ? 'bg-blue-100/90 dark:bg-blue-950/70 text-blue-900 dark:text-blue-100 font-bold border border-blue-300 dark:border-blue-700 shadow-xs'
         : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
     )}
   >
+    {!collapsed && active && (
+      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3.5px] rounded-r-full bg-[#2563EB]" />
+    )}
     <span
       className={cn(
         'flex items-center justify-center size-4 shrink-0 transition-colors',
-        active ? 'text-[var(--accent)]' : 'text-[var(--fg-3)] group-hover:text-[var(--fg-1)]'
+        active ? 'text-[#2563EB] font-bold' : 'text-[var(--fg-3)] group-hover:text-[var(--fg-1)]'
       )}
     >
       {icon}
@@ -82,7 +85,7 @@ const RailItem: React.FC<RailItemProps> = ({
     {!collapsed && <span className="truncate text-[13px] leading-tight flex-1">{label}</span>}
     {!collapsed && badge && <span className="ml-auto shrink-0">{badge}</span>}
     {!collapsed && active && !badge && (
-      <span className="ml-auto size-1.5 rounded-full bg-[var(--accent)] shrink-0 animate-pulse" />
+      <span className="ml-auto size-2 rounded-full bg-[#2563EB] shrink-0" />
     )}
   </button>
 );
@@ -394,34 +397,37 @@ export const V6Rail: React.FC<V6RailProps> = ({
               aria-label={`${s.num}. ${s.label}`}
               aria-current={isCurrent ? 'page' : undefined}
               className={cn(
-                'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
+                'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                 isCollapsed
                   ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
-                  : 'gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium w-full',
+                  : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
                 isCurrent
-                  ? 'bg-blue-50/90 dark:bg-blue-950/50 text-[var(--accent)] font-semibold border border-blue-200/80 dark:border-blue-800/60 shadow-xs'
+                  ? 'bg-blue-100/90 dark:bg-blue-950/70 text-blue-900 dark:text-blue-100 font-bold border border-blue-300 dark:border-blue-700 shadow-xs'
                   : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
               )}
             >
+              {!isCollapsed && isCurrent && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3.5px] rounded-r-full bg-[#2563EB]" />
+              )}
               <span
                 className={cn(
-                  'size-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors border',
+                  'size-5.5 rounded-full flex items-center justify-center text-[11.5px] font-bold shrink-0 transition-colors border',
                   s.done && !isCurrent
                     ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60'
                     : isCurrent
-                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-xs'
+                    ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
                     : 'bg-[var(--surface-2)] text-[var(--fg-3)] border-[var(--line)] group-hover:border-[var(--line-2)]'
                 )}
               >
                 {s.done && !isCurrent ? (
-                  <Check className="size-3 stroke-[2.5]" />
+                  <Check className="size-3.5 stroke-[2.5]" />
                 ) : (
                   s.num
                 )}
               </span>
-              {!isCollapsed && <span className="truncate flex-1">{s.label}</span>}
+              {!isCollapsed && <span className="truncate flex-1 font-semibold">{s.label}</span>}
               {!isCollapsed && isCurrent && (
-                <span className="size-1.5 rounded-full bg-[var(--accent)] ml-auto shrink-0 animate-pulse" />
+                <span className="size-2 rounded-full bg-[#2563EB] ml-auto shrink-0 shadow-[0_0_6px_rgba(37,99,235,0.6)] animate-pulse" />
               )}
             </button>
           );

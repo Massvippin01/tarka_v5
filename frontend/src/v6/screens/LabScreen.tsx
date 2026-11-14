@@ -102,19 +102,19 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-white text-[var(--fg-1)] border border-[var(--line)] shadow-2xs font-semibold'
-                  : 'text-[var(--fg-3)] hover:text-[var(--fg-2)] hover:bg-[var(--surface-1)]'
+                  ? 'bg-blue-50/90 text-blue-900 border-2 border-blue-400 dark:bg-blue-950/60 dark:text-blue-100 dark:border-blue-500 shadow-xs font-bold'
+                  : 'text-[var(--fg-3)] hover:text-[var(--fg-2)] hover:bg-[var(--surface-1)] border border-transparent'
               }`}
             >
-              <span className={isActive ? 'text-[var(--accent)]' : 'text-[var(--fg-3)]'}>
+              <span className={isActive ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-[var(--fg-3)]'}>
                 {tab.icon}
               </span>
-              <span>{tab.label}</span>
+              <span className={isActive ? 'text-blue-900 dark:text-blue-100 font-bold' : ''}>{tab.label}</span>
               {tab.badge && (
                 <span
-                  className={`text-[12px] px-1.5 py-0.5 rounded-md font-mono ${
+                  className={`text-[12px] px-2 py-0.5 rounded-md font-mono font-semibold ${
                     isActive
-                      ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-700'
                       : 'bg-[var(--surface-3)] text-[var(--fg-3)]'
                   }`}
                 >
