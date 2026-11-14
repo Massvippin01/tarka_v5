@@ -11,13 +11,13 @@ import {
   Eye,
   EyeOff,
   Layers,
+  AlertTriangle,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { CaseSyncBridge } from "../../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../../fixtures/cases";
-import { StoryBanner, KpiTile } from "../kit";
 import { sha256HexSync } from "../../../utils/sha256";
 
 export const PrivacyCryptoWorkbench: React.FC = () => {
@@ -70,25 +70,42 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   // ============================================================================
   // TAB 2: ZERO-KNOWLEDGE PROOF (ZKP) STATE
   // ============================================================================
-  const caseBookedLoss = investigation.bookedLossInr || 500000;
+  const caseBookedLoss = currentCase?.bookedLossInr || investigation.bookedLossInr || 180000;
+  const caseClaimedLoss = currentCase?.claimedLossInr || investigation.claimedLossInr || caseBookedLoss;
+
   const [zkpThreshold, setZkpThreshold] = useState<number>(caseBookedLoss);
   useEffect(() => {
     setZkpThreshold(caseBookedLoss);
   }, [caseBookedLoss]);
+
   const [zkpTamperProof, setZkpTamperProof] = useState<boolean>(false);
   const [zkpTamperThreshold, setZkpTamperThreshold] = useState<boolean>(false);
   const [showPrivateWitness, setShowPrivateWitness] = useState<boolean>(false);
 
-  const privateTransactions = [
-    { id: "TX-01", amount: 50000, recipient: "ACC-MULE-01", salt: "s_9f81a" },
-    { id: "TX-02", amount: 75000, recipient: "ACC-MULE-02", salt: "s_3b12c" },
-    { id: "TX-03", amount: 25000, recipient: "ACC-MULE-03", salt: "s_7e44d" },
-    { id: "TX-04", amount: 100000, recipient: "ACC-MULE-04", salt: "s_1a09f" },
-    { id: "TX-05", amount: 100000, recipient: "ACC-MULE-05", salt: "s_88e2b" },
-  ];
-  const totalBatchAmount = privateTransactions.reduce((acc, t) => acc + t.amount, 0); // 350,000
+  // Derive realistic transactions scaled to case loss so default state is valid SAT
+  const privateTransactions = useMemo(() => {
+    const base = caseBookedLoss;
+    const t1 = Math.round(base * 0.15);
+    const t2 = Math.round(base * 0.20);
+    const t3 = Math.round(base * 0.10);
+    const t4 = Math.round(base * 0.22);
+    const t5 = Math.round(base * 0.18);
+    return [
+      { id: "TX-01", amount: t1, recipient: "ACC-MULE-01", salt: "s_9f81a" },
+      { id: "TX-02", amount: t2, recipient: "ACC-MULE-02", salt: "s_3b12c" },
+      { id: "TX-03", amount: t3, recipient: "ACC-MULE-03", salt: "s_7e44d" },
+      { id: "TX-04", amount: t4, recipient: "ACC-MULE-04", salt: "s_1a09f" },
+      { id: "TX-05", amount: t5, recipient: "ACC-MULE-05", salt: "s_88e2b" },
+    ];
+  }, [caseBookedLoss]);
 
-  const effectiveThreshold = zkpTamperThreshold ? 200000 : zkpThreshold;
+  const totalBatchAmount = useMemo(
+    () => privateTransactions.reduce((acc, t) => acc + t.amount, 0),
+    [privateTransactions]
+  );
+
+  const tamperThresholdVal = Math.round(caseBookedLoss * 0.5);
+  const effectiveThreshold = zkpTamperThreshold ? tamperThresholdVal : zkpThreshold;
   const isZkpValid = totalBatchAmount <= effectiveThreshold && !zkpTamperProof;
 
   // ============================================================================
@@ -127,123 +144,171 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
   // TAB 4: COUNTERFACTUAL EVIDENCE EXCLUSION STATE
   // ============================================================================
   const [excludeScreenshot, setExcludeScreenshot] = useState<boolean>(false);
+  const hasAmountDiscrepancy = caseClaimedLoss !== caseBookedLoss;
 
   return (
     <div
       data-case-id={activeCaseId || ""}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100dvh - 52px)",
-        maxHeight: "calc(100dvh - 52px)",
-        padding: "8px 16px 12px 16px",
-        gap: "8px",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        background: "#F8FAFC",
-        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
-      }}
+      data-testid="privacy-crypto-workbench"
+      className="space-y-4"
     >
-      {/* 1. STORY BANNER */}
-      <StoryBanner
-        screenId="privacy-crypto"
-        takeaway={`Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus for ${currentCase?.firNumber || investigation.firNumber} across ${consortium.banksInvolved.join(", ")} consortium without exposing innocent civilian banking data.`}
-        evidenceChips={[
-          { tier: "T1", label: "SECP256k1 Curve", hash: sha256HexSync("SECP256k1 Curve") },
-          { tier: "T1", label: "Circom ZKP Key", hash: sha256HexSync("Circom ZKP Key") },
-          { tier: "T1", label: "Consortium PBFT", hash: sha256HexSync("Consortium PBFT") },
-        ]}
-      />
+      {/* 1. FORENSIC CRYPTOGRAPHY & FORMAL VERIFICATION BANNER */}
+      <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-start md:items-center gap-2.5 min-w-0">
+          <div className="size-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0 border border-[var(--accent)]/20">
+            <ShieldCheck className="size-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[12px] font-semibold text-[var(--accent)] uppercase tracking-wide">
+                Consortium Privacy Engine
+              </span>
+              <span className="text-[12px] text-[var(--fg-3)]">·</span>
+              <span className="text-[12px] font-medium text-[var(--fg-2)] font-mono">
+                {currentCase?.firNumber || investigation.firNumber}
+              </span>
+              <span className="text-[12px] text-[var(--fg-3)]">·</span>
+              <span className="text-[12px] font-medium text-[var(--fg-3)]">
+                {consortium.banksInvolved.join(", ")} Inter-Bank Cluster
+              </span>
+            </div>
+            <p className="text-[13px] text-[var(--fg-1)] mt-0.5 leading-snug line-clamp-2">
+              Multi-Party ECDH-PSI, Groth16 ZK-SNARK verifiers, and 4-Node PBFT consensus for{" "}
+              <strong>{currentCase?.firNumber || investigation.firNumber}</strong> across{" "}
+              <strong>{consortium.banksInvolved.join(", ")}</strong> consortium without exposing innocent civilian banking data.
+            </p>
+          </div>
+        </div>
 
-      {/* 2. KPI ROW (4 TILES) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "8px",
-        }}
-      >
-        <KpiTile
-          title="ECDH-PSI PRIVACY"
-          value="100%"
-          suffix=" Zero-Leak"
-          icon={KeyRound}
-          iconColor="#4F46E5"
-          iconBg="#EEF2FF"
-          statusBadge={{ text: "SECP256k1", variant: "emerald" }}
-          subtitle="Non-matching records mathematically protected"
-        />
-        <KpiTile
-          title="CIRCOM ZKP BOUND"
-          value="≤ ₹5.00L"
-          icon={Lock}
-          iconColor="#0D9488"
-          iconBg="#F0FDFA"
-          statusBadge={{ text: isZkpValid ? "SAT VERIFIED" : "FAIL CLOSED", variant: isZkpValid ? "emerald" : "rose" }}
-          subtitle="Zero-knowledge private transaction sum proof"
-        />
-        <KpiTile
-          title="PBFT QUORUM"
-          value="3 / 4"
-          suffix=" Nodes"
-          icon={Network}
-          iconColor="#9333EA"
-          iconBg="#FAF5FF"
-          statusBadge={{ text: "2f + 1 MET", variant: "emerald" }}
-          subtitle="Tolerates 1 Byzantine forged/crashing node"
-        />
-        <KpiTile
-          title="CLAIM DAG STATES"
-          value="5"
-          suffix=" States"
-          icon={Layers}
-          iconColor="#EA580C"
-          iconBg="#FFF7ED"
-          statusBadge={{ text: excludeScreenshot ? "CHALLENGER" : "BASELINE", variant: "indigo" }}
-          subtitle="Acyclic causal derivation and ablation proof"
-        />
+        {/* Evidence Hash Chips */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono text-[var(--fg-2)]" title="SECP256k1 Curve Integrity Hash">
+            <span className="text-[12px] font-bold text-emerald-600">T1</span>
+            <span>SECP256k1 Curve</span>
+            <span className="text-[12px] text-[var(--fg-3)]">({sha256HexSync("SECP256k1 Curve").slice(0, 6)}…)</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono text-[var(--fg-2)]" title="Circom ZKP Key Hash">
+            <span className="text-[12px] font-bold text-emerald-600">T1</span>
+            <span>Circom ZKP Key</span>
+            <span className="text-[12px] text-[var(--fg-3)]">({sha256HexSync("Circom ZKP Key").slice(0, 6)}…)</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono text-[var(--fg-2)]" title="Consortium PBFT Consensus State Hash">
+            <span className="text-[12px] font-bold text-emerald-600">T1</span>
+            <span>Consortium PBFT</span>
+            <span className="text-[12px] text-[var(--fg-3)]">({sha256HexSync("Consortium PBFT").slice(0, 6)}…)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 4 KPI TILES (BENTO ROW) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* KPI 1 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              ECDH-PSI Privacy
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+              SECP256k1
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>100%</span>
+            <span className="text-[13px] font-semibold text-emerald-600">Zero-Leak</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Non-matching civilian records mathematically shielded
+          </div>
+        </div>
+
+        {/* KPI 2 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Circom ZKP Bound
+            </span>
+            <span
+              className={`text-[12px] font-semibold px-2 py-0.5 rounded-md border font-mono ${
+                isZkpValid
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-red-50 text-red-700 border-red-200"
+              }`}
+            >
+              {isZkpValid ? "SAT VERIFIED" : "FAIL CLOSED"}
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums">
+            ≤ ₹{(effectiveThreshold / 100000).toFixed(2)}L
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Zero-knowledge private transaction sum proof (BN254)
+          </div>
+        </div>
+
+        {/* KPI 3 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              PBFT Quorum
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+              2f + 1 MET
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>3 / 4</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Nodes</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Tolerates 1 Byzantine forged or crashing node
+          </div>
+        </div>
+
+        {/* KPI 4 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Causal Claim DAG
+            </span>
+            <span
+              className={`text-[12px] font-semibold px-2 py-0.5 rounded-md border font-mono ${
+                excludeScreenshot
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-blue-50 text-blue-700 border-blue-200"
+              }`}
+            >
+              {excludeScreenshot ? "CHALLENGER" : "BASELINE"}
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>3</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Causal Claims</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Acyclic formal derivation and counterfactual ablation
+          </div>
+        </div>
       </div>
 
       {/* 3. WORKBENCH SUB-HEADER & NAVIGATION TABS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "#FFFFFF",
-          padding: "6px 12px",
-          borderRadius: "8px",
-          border: "1px solid #E2E8F0",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <ShieldCheck size={18} color="#4F46E5" />
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
-            Cryptographic & Formal Verification Workstreams
+      <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-2.5 shadow-2xs flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 shrink-0">
+          <ShieldCheck className="size-4 text-[var(--accent)] shrink-0" />
+          <span className="text-[13px] font-bold text-[var(--fg-1)]">
+            Cryptographic & Formal Verification
           </span>
-          <span
-            style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              padding: "2px 6px",
-              borderRadius: "4px",
-              background: "#ECFDF5",
-              color: "#059669",
-              border: "1px solid #A7F3D0",
-            }}
-          >
-            SUTRAM 2026 MEMBER B
+          <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+            SUTRAM 2026
           </span>
         </div>
 
         {/* Tab Buttons */}
-        <div style={{ display: "flex", gap: "4px", background: "#F1F5F9", padding: "3px", borderRadius: "6px" }}>
+        <div className="flex items-center gap-1 bg-[var(--surface-1)] p-1 rounded-lg border border-[var(--line)] shrink-0">
           {[
-            { id: "psi", label: "1. Private Set Intersection", icon: KeyRound },
-            { id: "zkp", label: "2. Zero-Knowledge Proofs", icon: Lock },
+            { id: "psi", label: "1. Private Intersection (PSI)", icon: KeyRound },
+            { id: "zkp", label: "2. Zero-Knowledge (ZKP)", icon: Lock },
             { id: "pbft", label: "3. PBFT Consensus", icon: Network },
-            { id: "claims", label: "4. Claim DAG & Counterfactual", icon: Layers },
+            { id: "claims", label: "4. Causal Claim DAG", icon: Layers },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -252,23 +317,13 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as any)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "5px 12px",
-                  borderRadius: "5px",
-                  border: isActive ? "1px solid #CBD5E1" : "1px solid transparent",
-                  background: isActive ? "#FFFFFF" : "transparent",
-                  color: isActive ? "#4F46E5" : "#64748B",
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: "11px",
-                  cursor: "pointer",
-                  boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
-                  transition: "all 0.12s ease",
-                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? "bg-white text-[var(--accent)] shadow-2xs border border-[var(--line)] font-bold"
+                    : "text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-white/60"
+                }`}
               >
-                <Icon size={13} color={isActive ? "#4F46E5" : "#64748B"} />
+                <Icon className={`size-3.5 ${isActive ? "text-[var(--accent)]" : "text-[var(--fg-3)]"}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -277,50 +332,23 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
       </div>
 
       {/* 4. TAB CONTENT CONTAINER */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-          paddingRight: "2px",
-        }}
-      >
+      <div className="space-y-4">
         {/* ==================================================================== */}
         {/* TAB 1: PRIVATE SET INTERSECTION (ECDH-PSI)                           */}
         {/* ==================================================================== */}
         {activeTab === "psi" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="space-y-3" data-testid="tab-psi-content">
             {/* Controls Bar */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#FFFFFF",
-                padding: "8px 14px",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div>
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>
+                  <label className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wide block mb-1">
                     Correlation Identifier Type
-                  </span>
+                  </label>
                   <select
                     value={psiIdType}
                     onChange={(e) => setPsiIdType(e.target.value as any)}
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      padding: "4px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid #CBD5E1",
-                      background: "#F8FAFC",
-                      color: "#0F172A",
-                    }}
+                    className="text-[12px] font-semibold px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface-1)] text-[var(--fg-1)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] cursor-pointer"
                   >
                     <option value="MSISDN">Mobile Phone Number (Indian E.164 +91)</option>
                     <option value="PAN">Permanent Account Number (PAN)</option>
@@ -328,22 +356,22 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                   </select>
                 </div>
 
-                <div style={{ width: "1px", height: "28px", background: "#E2E8F0" }} />
+                <div className="hidden sm:block w-[1px] h-8 bg-[var(--line)]" />
 
                 <div>
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "2px" }}>
+                  <span className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wide block mb-1">
                     Participating Inter-Bank Nodes
                   </span>
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#EFF6FF", color: "#1D4ED8", border: "1px solid #BFDBFE" }}>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[12px] font-semibold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
                       {bankA} Bank (Bank A)
                     </span>
-                    <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
-                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A" }}>
+                    <span className="text-[12px] font-bold text-[var(--fg-3)]">+</span>
+                    <span className="text-[12px] font-semibold px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
                       {bankB} Bank (Bank B)
                     </span>
-                    <span style={{ color: "#94A3B8", fontWeight: 700 }}>+</span>
-                    <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "4px", background: "#FAF5FF", color: "#7E22CE", border: "1px solid #E9D5FF" }}>
+                    <span className="text-[12px] font-bold text-[var(--fg-3)]">+</span>
+                    <span className="text-[12px] font-semibold px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200">
                       {bankC} Bank (Node C)
                     </span>
                   </div>
@@ -354,29 +382,16 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 type="button"
                 onClick={handleRunPsi}
                 disabled={psiRunning}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: psiRunning ? "#94A3B8" : "#4F46E5",
-                  color: "#FFFFFF",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  cursor: psiRunning ? "wait" : "pointer",
-                  boxShadow: "0 1px 3px rgba(79,70,229,0.3)",
-                }}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white text-[12px] font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 shrink-0"
               >
                 {psiRunning ? (
                   <>
-                    <RotateCcw size={14} className="animate-spin" />
+                    <RotateCcw className="size-3.5 animate-spin" />
                     <span>Blinding SECP256k1 Points...</span>
                   </>
                 ) : (
                   <>
-                    <Play size={14} />
+                    <Play className="size-3.5" />
                     <span>Execute Tripartite ECDH-PSI</span>
                   </>
                 )}
@@ -384,207 +399,183 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
             </div>
 
             {/* 3 Bank Vault Cards Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Vault 1: Bank A */}
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #BFDBFE",
-                  padding: "10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#1D4ED8" }}>INST_{bankA} ({currentCase?.complainantName || "Complainant"} Bank)</span>
-                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#EFF6FF", color: "#1D4ED8", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankAData[psiIdType]?.length || 0} Records
-                  </span>
+              <div className="v6-card bg-white border border-blue-200 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                    <span className="text-[12px] font-bold text-blue-700">
+                      INST_{bankA} ({currentCase?.complainantName || "Complainant"} Bank)
+                    </span>
+                    <span className="text-[12px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+                      {bankAData[psiIdType]?.length || 0} Records
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    {bankAData[psiIdType]?.map((item, idx) => {
+                      const isMule =
+                        item === consortium.suspectMsisdn ||
+                        item === consortium.suspectPan ||
+                        item === consortium.suspectVpa ||
+                        item.includes("9876543210");
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[12px] font-mono ${
+                            isMule
+                              ? "bg-red-50/70 border-red-200 text-red-900"
+                              : "bg-slate-50 border-slate-200 text-[var(--fg-1)]"
+                          }`}
+                        >
+                          <span className={isMule ? "font-bold text-red-700" : "font-medium"}>{item}</span>
+                          <span
+                            className={`text-[12px] font-semibold px-2 py-0.5 rounded-md ${
+                              isMule
+                                ? "bg-red-100 text-red-800 border border-red-200"
+                                : "bg-slate-200/70 text-slate-700"
+                            }`}
+                          >
+                            {isMule ? "Target Mule" : "Confidential"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankAData[psiIdType]?.map((item, idx) => {
-                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "6px 8px",
-                          borderRadius: "6px",
-                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                          background: isMule ? "#FFF1F2" : "#F8FAFC",
-                          fontSize: "11px",
-                          fontFamily: "var(--font-mono, monospace)",
-                        }}
-                      >
-                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
-                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
-                          {isMule ? "Target Mule" : "Confidential"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_{bankA} = 0x8f2a...c4e1</code> (Kept air-gapped)
+                <div className="text-[12px] text-[var(--fg-3)] italic border-t border-[var(--line)] pt-2 mt-1">
+                  Private Key: <code className="font-mono text-[var(--fg-2)]">k_{bankA} = 0x8f2a...c4e1</code> (Air-gapped)
                 </div>
               </div>
 
               {/* Vault 2: Bank B */}
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #FDE68A",
-                  padding: "10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#B45309" }}>INST_{bankB} (Layer-1 Mule Bank)</span>
-                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#FFFBEB", color: "#B45309", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankBData[psiIdType]?.length || 0} Records
-                  </span>
+              <div className="v6-card bg-white border border-amber-200 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                    <span className="text-[12px] font-bold text-amber-700">
+                      INST_{bankB} (Layer-1 Mule Bank)
+                    </span>
+                    <span className="text-[12px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+                      {bankBData[psiIdType]?.length || 0} Records
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    {bankBData[psiIdType]?.map((item, idx) => {
+                      const isMule =
+                        item === consortium.suspectMsisdn ||
+                        item === consortium.suspectPan ||
+                        item === consortium.suspectVpa ||
+                        item.includes("9876543210");
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[12px] font-mono ${
+                            isMule
+                              ? "bg-red-50/70 border-red-200 text-red-900"
+                              : "bg-slate-50 border-slate-200 text-[var(--fg-1)]"
+                          }`}
+                        >
+                          <span className={isMule ? "font-bold text-red-700" : "font-medium"}>{item}</span>
+                          <span
+                            className={`text-[12px] font-semibold px-2 py-0.5 rounded-md ${
+                              isMule
+                                ? "bg-red-100 text-red-800 border border-red-200"
+                                : "bg-slate-200/70 text-slate-700"
+                            }`}
+                          >
+                            {isMule ? "Target Mule" : "Confidential"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankBData[psiIdType]?.map((item, idx) => {
-                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "6px 8px",
-                          borderRadius: "6px",
-                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                          background: isMule ? "#FFF1F2" : "#F8FAFC",
-                          fontSize: "11px",
-                          fontFamily: "var(--font-mono, monospace)",
-                        }}
-                      >
-                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
-                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
-                          {isMule ? "Target Mule" : "Confidential"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_{bankB} = 0x3d7b...9a12</code> (Kept air-gapped)
+                <div className="text-[12px] text-[var(--fg-3)] italic border-t border-[var(--line)] pt-2 mt-1">
+                  Private Key: <code className="font-mono text-[var(--fg-2)]">k_{bankB} = 0x3d7b...9a12</code> (Air-gapped)
                 </div>
               </div>
 
               {/* Vault 3: Bank C */}
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  borderRadius: "8px",
-                  border: "1px solid #E9D5FF",
-                  padding: "10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#7E22CE" }}>INST_{bankC} (Beneficiary Node)</span>
-                  <span style={{ fontSize: "10px", fontWeight: 700, background: "#FAF5FF", color: "#7E22CE", padding: "1px 6px", borderRadius: "4px" }}>
-                    {bankCData[psiIdType]?.length || 0} Records
-                  </span>
+              <div className="v6-card bg-white border border-purple-200 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                    <span className="text-[12px] font-bold text-purple-700">
+                      INST_{bankC} (Beneficiary Node)
+                    </span>
+                    <span className="text-[12px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono">
+                      {bankCData[psiIdType]?.length || 0} Records
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    {bankCData[psiIdType]?.map((item, idx) => {
+                      const isMule =
+                        item === consortium.suspectMsisdn ||
+                        item === consortium.suspectPan ||
+                        item === consortium.suspectVpa ||
+                        item.includes("9876543210");
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[12px] font-mono ${
+                            isMule
+                              ? "bg-red-50/70 border-red-200 text-red-900"
+                              : "bg-slate-50 border-slate-200 text-[var(--fg-1)]"
+                          }`}
+                        >
+                          <span className={isMule ? "font-bold text-red-700" : "font-medium"}>{item}</span>
+                          <span
+                            className={`text-[12px] font-semibold px-2 py-0.5 rounded-md ${
+                              isMule
+                                ? "bg-red-100 text-red-800 border border-red-200"
+                                : "bg-slate-200/70 text-slate-700"
+                            }`}
+                          >
+                            {isMule ? "Target Mule" : "Confidential"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {bankCData[psiIdType]?.map((item, idx) => {
-                    const isMule = item === consortium.suspectMsisdn || item === consortium.suspectPan || item === consortium.suspectVpa || item.includes("9876543210");
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "6px 8px",
-                          borderRadius: "6px",
-                          border: isMule ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                          background: isMule ? "#FFF1F2" : "#F8FAFC",
-                          fontSize: "11px",
-                          fontFamily: "var(--font-mono, monospace)",
-                        }}
-                      >
-                        <span style={{ fontWeight: isMule ? 700 : 500, color: isMule ? "#BE123C" : "#334155" }}>{item}</span>
-                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: isMule ? "#FFE4E6" : "#E2E8F0", color: isMule ? "#9F1239" : "#64748B" }}>
-                          {isMule ? "Target Mule" : "Confidential"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ fontSize: "10px", color: "#64748B", fontStyle: "italic", marginTop: "auto" }}>
-                  Private Key: <code style={{ color: "#475569" }}>k_{bankC} = 0x11c0...4f88</code> (Kept air-gapped)
+                <div className="text-[12px] text-[var(--fg-3)] italic border-t border-[var(--line)] pt-2 mt-1">
+                  Private Key: <code className="font-mono text-[var(--fg-2)]">k_{bankC} = 0x11c0...4f88</code> (Air-gapped)
                 </div>
               </div>
             </div>
 
             {/* Discovered Match Output Banner */}
             {psiCompleted && (
-              <div
-                style={{
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  borderRadius: "8px",
-                  padding: "12px 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <CheckCircle2 size={18} color="#059669" />
-                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#065F46" }}>
+              <div className="v6-card bg-emerald-50/80 border border-emerald-200 rounded-xl p-4 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                    <span className="text-[13px] font-bold text-emerald-950">
                       Tripartite Intersection Result: 1 Inter-Bank Mule Discovered
                     </span>
                   </div>
-                  <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "4px", background: "#D1FAE5", color: "#065F46" }}>
+                  <span className="text-[12px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 font-mono">
                     Zero Non-Matching Accounts Exposed
                   </span>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    background: "#FFFFFF",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #D1FAE5",
-                    fontSize: "12px",
-                    fontFamily: "var(--font-mono, monospace)",
-                  }}
-                >
-                  <div>
-                    <span style={{ color: "#64748B", marginRight: "8px" }}>Discovered Permitted Match:</span>
-                    <span style={{ fontWeight: 800, color: "#BE123C", fontSize: "13px" }}>
-                      {psiIdType === "MSISDN" ? consortium.suspectMsisdn : psiIdType === "PAN" ? consortium.suspectPan : consortium.suspectVpa}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white px-3.5 py-2.5 rounded-lg border border-emerald-200 text-[12px] font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--fg-3)]">Discovered Permitted Match:</span>
+                    <span className="text-[13px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                      {psiIdType === "MSISDN"
+                        ? consortium.suspectMsisdn
+                        : psiIdType === "PAN"
+                        ? consortium.suspectPan
+                        : consortium.suspectVpa}
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#64748B" }}>
-                    Curve Point Digest: <code style={{ fontWeight: 700, color: "#4F46E5" }}>0279be667ef9dcbb...a06295</code>
+                  <div className="text-[12px] text-[var(--fg-2)]">
+                    Curve Point Digest: <code className="font-bold text-[var(--accent)]">0279be667ef9dcbb...a06295</code>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#047857" }}>
-                  <span>Discrete logarithm problem on SECP256k1 prevents dictionary recovery of unblinded inputs.</span>
-                  <span style={{ fontWeight: 700 }}>Audit Reference: #PSI-AUDIT-9941</span>
+                <div className="flex items-center justify-between text-[12px] text-emerald-800 flex-wrap gap-2 pt-0.5">
+                  <span>Discrete logarithm problem on SECP256k1 curve prevents dictionary recovery of unblinded inputs.</span>
+                  <span className="font-bold font-mono">Audit Reference: #PSI-AUDIT-9941</span>
                 </div>
               </div>
             )}
@@ -595,273 +586,197 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 2: ZERO-KNOWLEDGE PROOFS (ZKP)                                   */}
         {/* ==================================================================== */}
         {activeTab === "zkp" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3" data-testid="tab-zkp-content">
             {/* Left Column: Prover Space */}
-            <div
-              style={{
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-                padding: "14px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <KeyRound size={16} color="#4F46E5" />
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
-                    Bank Air-Gapped Prover Space (Private)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPrivateWitness(!showPrivateWitness)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "transparent",
-                    border: "none",
-                    color: "#4F46E5",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {showPrivateWitness ? <EyeOff size={13} /> : <Eye size={13} />}
-                  <span>{showPrivateWitness ? "Hide Witness" : "Inspect Witness"}</span>
-                </button>
-              </div>
-
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B" }}>
-                PRIVATE TRANSACTION BATCH (5 ITEMS):
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                {privateTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      background: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
-                      fontSize: "11px",
-                      fontFamily: "var(--font-mono, monospace)",
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 700, color: "#334155", marginRight: "8px" }}>{tx.id}</span>
-                      <span style={{ color: "#64748B" }}>→ {tx.recipient}</span>
-                    </div>
-                    <span style={{ fontWeight: 700, color: "#0F172A" }}>
-                      {showPrivateWitness ? `₹${tx.amount.toLocaleString()}` : "••••••••"}
+            <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="size-4 text-[var(--accent)]" />
+                    <span className="text-[12px] font-bold text-[var(--fg-1)] uppercase tracking-wide">
+                      Bank Air-Gapped Prover Space (Private)
                     </span>
                   </div>
-                ))}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivateWitness(!showPrivateWitness)}
+                    className="flex items-center gap-1.5 text-[12px] font-semibold text-[var(--accent)] hover:underline cursor-pointer"
+                  >
+                    {showPrivateWitness ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                    <span>{showPrivateWitness ? "Hide Witness" : "Inspect Witness"}</span>
+                  </button>
+                </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  background: "#EEF2FF",
-                  border: "1px solid #C7D2FE",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                }}
-              >
-                <span style={{ color: "#4338CA" }}>Calculated Private Sum:</span>
-                <span style={{ color: "#3730A3", fontFamily: "var(--font-mono, monospace)", fontSize: "13px" }}>
-                  {showPrivateWitness ? `₹${totalBatchAmount.toLocaleString()}` : "HIDDEN (PASSIVE WITNESS)"}
-                </span>
+                <div className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wide">
+                  Private Transaction Batch ({privateTransactions.length} Items):
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  {privateTransactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[var(--fg-1)]">{tx.id}</span>
+                        <span className="text-[var(--fg-3)]">→ {tx.recipient}</span>
+                      </div>
+                      <span className="font-bold text-[var(--fg-1)]">
+                        {showPrivateWitness ? `₹${tx.amount.toLocaleString()}` : "••••••••"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-50/70 border border-blue-200 text-[12px]">
+                  <span className="font-bold text-blue-900">Calculated Private Batch Sum:</span>
+                  <span className="font-bold text-blue-950 font-mono text-[13px]">
+                    {showPrivateWitness ? `₹${totalBatchAmount.toLocaleString()}` : "HIDDEN (PASSIVE WITNESS)"}
+                  </span>
+                </div>
               </div>
 
               {/* Circuit Info Box */}
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  borderRadius: "6px",
-                  border: "1px solid #E2E8F0",
-                  padding: "8px 12px",
-                  fontSize: "11px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                  color: "#64748B",
-                  marginTop: "auto",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Circom Circuit:</span>
-                  <code style={{ color: "#4F46E5", fontWeight: 700 }}>transaction_threshold.circom</code>
+              <div className="bg-[var(--surface-1)] rounded-lg border border-[var(--line)] p-3 text-[12px] space-y-1 text-[var(--fg-2)] font-mono">
+                <div className="flex justify-between">
+                  <span className="text-[var(--fg-3)]">Circom Circuit:</span>
+                  <code className="text-[var(--accent)] font-bold">transaction_threshold.circom</code>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>R1CS Constraints:</span>
-                  <span style={{ fontFamily: "var(--font-mono, monospace)" }}>132 linear constraints</span>
+                <div className="flex justify-between">
+                  <span className="text-[var(--fg-3)]">R1CS Constraints:</span>
+                  <span>132 linear constraints</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Proving System:</span>
-                  <span style={{ fontFamily: "var(--font-mono, monospace)" }}>Groth16 / BN254</span>
+                <div className="flex justify-between">
+                  <span className="text-[var(--fg-3)]">Proving System:</span>
+                  <span>Groth16 / BN254</span>
                 </div>
               </div>
             </div>
 
             {/* Right Column: Verifier Space */}
-            <div
-              style={{
-                background: "#FFFFFF",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-                padding: "14px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <ShieldCheck size={16} color="#059669" />
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", textTransform: "uppercase" }}>
-                    Independent Auditor Verifier Space (Public)
+            <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-4 shadow-2xs flex flex-col justify-between gap-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="size-4 text-emerald-600" />
+                    <span className="text-[12px] font-bold text-[var(--fg-1)] uppercase tracking-wide">
+                      Independent Auditor Verifier Space (Public)
+                    </span>
+                  </div>
+                  <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-[var(--surface-2)] text-[var(--fg-2)] font-mono">
+                    Public Inputs Only
                   </span>
                 </div>
-                <span style={{ fontSize: "10px", fontWeight: 700, background: "#F1F5F9", color: "#64748B", padding: "2px 6px", borderRadius: "4px" }}>
-                  Public Inputs Only
-                </span>
-              </div>
 
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "4px" }}>
-                  PUBLIC REGULATORY THRESHOLD (IN RUPEES)
-                </label>
-                <input
-                  type="number"
-                  value={zkpThreshold}
-                  onChange={(e) => setZkpThreshold(Number(e.target.value))}
-                  style={{
-                    width: "100%",
-                    padding: "6px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid #CBD5E1",
-                    background: "#F8FAFC",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono, monospace)",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  background: "#F8FAFC",
-                  borderRadius: "6px",
-                  border: "1px solid #E2E8F0",
-                  padding: "8px 12px",
-                  fontSize: "11px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                  color: "#64748B",
-                  fontFamily: "var(--font-mono, monospace)",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Expected Merkle Root:</span>
-                  <span style={{ fontWeight: 700, color: "#0F172A" }}>0x4a9b...7e11</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Batch Size:</span>
-                  <span>5 transactions</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Proof Elements (πA, πB, πC):</span>
-                  <span style={{ color: "#059669", fontWeight: 700 }}>3 group points (256 bytes)</span>
-                </div>
-              </div>
-
-              {/* Adversarial Attack Simulator */}
-              <div
-                style={{
-                  background: "#FFFBEB",
-                  borderRadius: "6px",
-                  border: "1px solid #FDE68A",
-                  padding: "10px 12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                }}
-              >
-                <span style={{ fontSize: "10px", fontWeight: 800, color: "#B45309", textTransform: "uppercase" }}>
-                  Adversarial Attack Simulator (Judge Testing)
-                </span>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#78350F", cursor: "pointer" }}>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wide">
+                      Public Regulatory Threshold (₹ INR)
+                    </label>
+                    <span className="text-[12px] font-medium text-[var(--fg-3)]">
+                      Case booked loss: ₹{caseBookedLoss.toLocaleString()}
+                    </span>
+                  </div>
                   <input
-                    type="checkbox"
-                    checked={zkpTamperProof}
-                    onChange={(e) => setZkpTamperProof(e.target.checked)}
+                    type="number"
+                    value={zkpThreshold}
+                    onChange={(e) => setZkpThreshold(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--surface-1)] text-[var(--fg-1)] font-mono text-[13px] font-bold focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
                   />
-                  <span>Inject Forged πA Group Point (Tampered Proof Element)</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", color: "#78350F", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={zkpTamperThreshold}
-                    onChange={(e) => setZkpTamperThreshold(e.target.checked)}
-                  />
-                  <span>Tamper Public Threshold to ₹2,00,000 (Violate Bound)</span>
-                </label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setZkpThreshold(caseBookedLoss)}
+                      className="text-[12px] text-[var(--accent)] hover:underline cursor-pointer"
+                    >
+                      Reset to Booked Loss (₹{caseBookedLoss.toLocaleString()})
+                    </button>
+                    <span className="text-[12px] text-[var(--fg-3)]">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setZkpThreshold(500000)}
+                      className="text-[12px] text-[var(--fg-3)] hover:text-[var(--fg-1)] cursor-pointer"
+                    >
+                      Set ₹5,00,000 Cap
+                    </button>
+                  </div>
+                </div>
+
+                {/* Public Verification Meta */}
+                <div className="bg-[var(--surface-1)] rounded-lg border border-[var(--line)] p-3 text-[12px] space-y-1 text-[var(--fg-2)] font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-[var(--fg-3)]">Expected Merkle Root:</span>
+                    <span className="font-bold text-[var(--fg-1)]">0x4a9b...7e11</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--fg-3)]">Batch Size:</span>
+                    <span>5 transactions</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--fg-3)]">Proof Elements (πA, πB, πC):</span>
+                    <span className="text-emerald-700 font-bold">3 group points (256 bytes)</span>
+                  </div>
+                </div>
+
+                {/* Adversarial Attack Simulator */}
+                <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="size-3.5 text-amber-700" />
+                    <span className="text-[12px] font-bold text-amber-900 uppercase tracking-wide">
+                      Adversarial Attack Simulator (Judge Testing)
+                    </span>
+                  </div>
+                  <label className="flex items-center gap-2 text-[12px] text-amber-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={zkpTamperProof}
+                      onChange={(e) => setZkpTamperProof(e.target.checked)}
+                      className="rounded border-amber-300 text-[var(--accent)] focus:ring-0 cursor-pointer"
+                    />
+                    <span>Inject Forged πA Group Point (Tampered Proof Element)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-[12px] text-amber-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={zkpTamperThreshold}
+                      onChange={(e) => setZkpTamperThreshold(e.target.checked)}
+                      className="rounded border-amber-300 text-[var(--accent)] focus:ring-0 cursor-pointer"
+                    />
+                    <span>
+                      Tamper Public Threshold to ₹{tamperThresholdVal.toLocaleString()} (Violate Bound)
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {/* Verification Outcome */}
               <div
-                style={{
-                  background: isZkpValid ? "#ECFDF5" : "#FFF1F2",
-                  border: isZkpValid ? "1px solid #A7F3D0" : "1px solid #FECDD3",
-                  borderRadius: "8px",
-                  padding: "10px 14px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: "auto",
-                }}
+                className={`rounded-xl p-3.5 border flex items-center justify-between gap-3 ${
+                  isZkpValid
+                    ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
+                    : "bg-red-50/80 border-red-200 text-red-950"
+                }`}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  {isZkpValid ? <CheckCircle2 size={20} color="#059669" /> : <XCircle size={20} color="#BE123C" />}
+                <div className="flex items-start gap-2.5">
+                  {isZkpValid ? (
+                    <CheckCircle2 className="size-4 text-emerald-600 mt-0.5 shrink-0" />
+                  ) : (
+                    <XCircle className="size-4 text-red-600 mt-0.5 shrink-0" />
+                  )}
                   <div>
-                    <div style={{ fontSize: "12px", fontWeight: 800, color: isZkpValid ? "#065F46" : "#9F1239" }}>
+                    <div className="text-[12px] font-bold">
                       {isZkpValid ? "ZKP VERIFICATION: ACCEPTED" : "ZKP VERIFICATION: REJECTED (FAIL CLOSED)"}
                     </div>
-                    <div style={{ fontSize: "10px", color: isZkpValid ? "#047857" : "#BE123C", opacity: 0.9 }}>
+                    <div className="text-[12px] mt-0.5 opacity-90">
                       {isZkpValid
                         ? `Mathematically proven: Batch sum ≤ ₹${zkpThreshold.toLocaleString()} without revealing private amounts.`
                         : zkpTamperProof
                         ? "Cryptographic rejection: Malformed or forged group element πA."
-                        : "Public inputs hash mismatch: Constraint sum > threshold."}
+                        : `Public inputs hash mismatch: Constraint sum > threshold (₹${totalBatchAmount.toLocaleString()} > ₹${effectiveThreshold.toLocaleString()}).`}
                     </div>
                   </div>
                 </div>
-                <span
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-mono, monospace)",
-                    background: "#FFFFFF",
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    border: "1px solid #E2E8F0",
-                    color: "#334155",
-                  }}
-                >
+                <span className="text-[12px] font-bold font-mono bg-white px-2.5 py-1 rounded-md border border-[var(--line)] text-[var(--fg-2)] shrink-0">
                   {isZkpValid ? "0.42 ms" : "0.08 ms"}
                 </span>
               </div>
@@ -873,69 +788,44 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 3: 4-NODE PBFT CONSENSUS EXPERIMENT                             */}
         {/* ==================================================================== */}
         {activeTab === "pbft" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="space-y-3" data-testid="tab-pbft-content">
             {/* Controls Bar */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#FFFFFF",
-                padding: "8px 14px",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-              }}
-            >
+            <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>
+                <span className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wide block mb-1.5">
                   Byzantine Node 3 Fault Behavior
                 </span>
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setPbftFaultMode("HONEST")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: pbftFaultMode === "HONEST" ? 700 : 500,
-                      background: pbftFaultMode === "HONEST" ? "#ECFDF5" : "#F8FAFC",
-                      color: pbftFaultMode === "HONEST" ? "#065F46" : "#64748B",
-                      border: pbftFaultMode === "HONEST" ? "1px solid #A7F3D0" : "1px solid #CBD5E1",
-                      cursor: "pointer",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-all cursor-pointer ${
+                      pbftFaultMode === "HONEST"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                        : "bg-[var(--surface-1)] text-[var(--fg-2)] border-[var(--line)] hover:bg-white"
+                    }`}
                   >
                     1. All 4 Nodes Honest
                   </button>
                   <button
                     type="button"
                     onClick={() => setPbftFaultMode("SILENT")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: pbftFaultMode === "SILENT" ? 700 : 500,
-                      background: pbftFaultMode === "SILENT" ? "#FFFBEB" : "#F8FAFC",
-                      color: pbftFaultMode === "SILENT" ? "#B45309" : "#64748B",
-                      border: pbftFaultMode === "SILENT" ? "1px solid #FDE68A" : "1px solid #CBD5E1",
-                      cursor: "pointer",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-all cursor-pointer ${
+                      pbftFaultMode === "SILENT"
+                        ? "bg-amber-50 text-amber-800 border-amber-300"
+                        : "bg-[var(--surface-1)] text-[var(--fg-2)] border-[var(--line)] hover:bg-white"
+                    }`}
                   >
                     2. Node 3 Crashed / Silent
                   </button>
                   <button
                     type="button"
                     onClick={() => setPbftFaultMode("CONFLICTING")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: pbftFaultMode === "CONFLICTING" ? 700 : 500,
-                      background: pbftFaultMode === "CONFLICTING" ? "#FFF1F2" : "#F8FAFC",
-                      color: pbftFaultMode === "CONFLICTING" ? "#9F1239" : "#64748B",
-                      border: pbftFaultMode === "CONFLICTING" ? "1px solid #FECDD3" : "1px solid #CBD5E1",
-                      cursor: "pointer",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-all cursor-pointer ${
+                      pbftFaultMode === "CONFLICTING"
+                        ? "bg-red-50 text-red-800 border-red-300"
+                        : "bg-[var(--surface-1)] text-[var(--fg-2)] border-[var(--line)] hover:bg-white"
+                    }`}
                   >
                     3. Node 3 Active Byzantine Forgery
                   </button>
@@ -946,29 +836,16 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
                 type="button"
                 onClick={handleRunPbft}
                 disabled={pbftRunning}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 16px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: pbftRunning ? "#94A3B8" : "#9333EA",
-                  color: "#FFFFFF",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  cursor: pbftRunning ? "wait" : "pointer",
-                  boxShadow: "0 1px 3px rgba(147,51,234,0.3)",
-                }}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white text-[12px] font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 shrink-0"
               >
                 {pbftRunning ? (
                   <>
-                    <RotateCcw size={14} className="animate-spin" />
+                    <RotateCcw className="size-3.5 animate-spin" />
                     <span>Exchanging 3-Phase Votes...</span>
                   </>
                 ) : (
                   <>
-                    <Play size={14} />
+                    <Play className="size-3.5" />
                     <span>Simulate Consensus Round #{pbftRound}</span>
                   </>
                 )}
@@ -976,76 +853,78 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
             </div>
 
             {/* 4 Validator Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {pbftNodes.map((node) => {
                 const isByz = node.role === "Byzantine";
                 return (
                   <div
                     key={node.id}
-                    style={{
-                      background: isByz ? "#FFF1F2" : "#FFFFFF",
-                      borderRadius: "8px",
-                      border: isByz ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                      padding: "12px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
+                    className={`v6-card border rounded-xl p-3.5 shadow-2xs flex flex-col justify-between gap-3 ${
+                      isByz
+                        ? "bg-red-50/50 border-red-200"
+                        : "bg-white border-[var(--line)]"
+                    }`}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>{node.name}</span>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          padding: "1px 6px",
-                          borderRadius: "4px",
-                          background: node.role === "Leader" ? "#EEF2FF" : isByz ? "#FFE4E6" : "#F1F5F9",
-                          color: node.role === "Leader" ? "#4338CA" : isByz ? "#9F1239" : "#475569",
-                        }}
-                      >
-                        {node.role}
-                      </span>
-                    </div>
+                    <div>
+                      <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+                        <span className="text-[12px] font-bold text-[var(--fg-1)] truncate">
+                          {node.name}
+                        </span>
+                        <span
+                          className={`text-[12px] font-semibold px-2 py-0.5 rounded-md font-mono ${
+                            node.role === "Leader"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : isByz
+                              ? "bg-red-100 text-red-800 border border-red-200"
+                              : "bg-[var(--surface-2)] text-[var(--fg-2)]"
+                          }`}
+                        >
+                          {node.role}
+                        </span>
+                      </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11px", color: "#64748B" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Pre-Prepare:</span>
-                        <span style={{ fontWeight: 700, color: "#059669" }}>Verified</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Prepare Vote:</span>
-                        <span style={{ fontWeight: 700, color: isByz && pbftFaultMode !== "HONEST" ? "#DC2626" : "#059669" }}>
-                          {isByz && pbftFaultMode === "CONFLICTING"
-                            ? "Forged Digest"
-                            : isByz && pbftFaultMode === "SILENT"
-                            ? "Dropped"
-                            : "Quorum Met (2/2)"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Commit Vote:</span>
-                        <span style={{ fontWeight: 700, color: isByz && pbftFaultMode !== "HONEST" ? "#DC2626" : "#059669" }}>
-                          {isByz && pbftFaultMode === "CONFLICTING"
-                            ? "Rejected"
-                            : isByz && pbftFaultMode === "SILENT"
-                            ? "No Response"
-                            : "Quorum Met (3/3)"}
-                        </span>
+                      <div className="flex flex-col gap-1.5 mt-2.5 text-[12px] text-[var(--fg-2)] font-mono">
+                        <div className="flex justify-between">
+                          <span className="text-[var(--fg-3)]">Pre-Prepare:</span>
+                          <span className="font-bold text-emerald-700">Verified</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--fg-3)]">Prepare Vote:</span>
+                          <span
+                            className={`font-bold ${
+                              isByz && pbftFaultMode !== "HONEST" ? "text-red-700" : "text-emerald-700"
+                            }`}
+                          >
+                            {isByz && pbftFaultMode === "CONFLICTING"
+                              ? "Forged Digest"
+                              : isByz && pbftFaultMode === "SILENT"
+                              ? "Dropped"
+                              : "Quorum Met (2/2)"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--fg-3)]">Commit Vote:</span>
+                          <span
+                            className={`font-bold ${
+                              isByz && pbftFaultMode !== "HONEST" ? "text-red-700" : "text-emerald-700"
+                            }`}
+                          >
+                            {isByz && pbftFaultMode === "CONFLICTING"
+                              ? "Rejected"
+                              : isByz && pbftFaultMode === "SILENT"
+                              ? "No Response"
+                              : "Quorum Met (3/3)"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     <div
-                      style={{
-                        textAlign: "center",
-                        fontSize: "11px",
-                        fontWeight: 800,
-                        padding: "4px",
-                        borderRadius: "5px",
-                        marginTop: "auto",
-                        background: node.status === "COMMITTED" ? "#D1FAE5" : "#FFE4E6",
-                        color: node.status === "COMMITTED" ? "#065F46" : "#9F1239",
-                      }}
+                      className={`text-center text-[12px] font-bold py-1.5 px-2 rounded-lg font-mono border ${
+                        node.status === "COMMITTED"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-red-100 text-red-800 border-red-200"
+                      }`}
                     >
                       {node.status}
                     </div>
@@ -1055,31 +934,21 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
             </div>
 
             {/* Quorum Summary */}
-            <div
-              style={{
-                background: "#ECFDF5",
-                border: "1px solid #A7F3D0",
-                borderRadius: "8px",
-                padding: "10px 16px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <CheckCircle2 size={18} color="#059669" />
+            <div className="v6-card bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                 <div>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#065F46", display: "block" }}>
+                  <span className="text-[12px] font-bold text-emerald-950 block">
                     PBFT Consensus Guaranteed: Quorum 3/4 Committed (2f + 1 Met)
                   </span>
-                  <span style={{ fontSize: "10px", color: "#047857" }}>
-                    Even under active adversarial forgery by Node 3, honest nodes 0, 1, and 2 reach strict distributed agreement.
+                  <span className="text-[12px] text-emerald-800">
+                    Even under active adversarial forgery by Node 3, honest nodes reach strict distributed agreement.
                   </span>
                 </div>
               </div>
-              <div style={{ textAlign: "right", fontSize: "11px", fontFamily: "var(--font-mono, monospace)" }}>
-                <span style={{ color: "#64748B", display: "block" }}>Round Latency:</span>
-                <span style={{ fontWeight: 800, color: "#0F172A" }}>0.90 ms (32 messages)</span>
+              <div className="text-right text-[12px] font-mono shrink-0">
+                <span className="text-[var(--fg-3)] block">Round Latency:</span>
+                <span className="font-bold text-[var(--fg-1)]">0.90 ms (32 messages)</span>
               </div>
             </div>
           </div>
@@ -1089,161 +958,133 @@ export const PrivacyCryptoWorkbench: React.FC = () => {
         {/* TAB 4: CLAIM COMPILER & COUNTERFACTUAL ARENA                          */}
         {/* ==================================================================== */}
         {activeTab === "claims" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div className="space-y-3" data-testid="tab-claims-content">
             {/* Counterfactual Exclusion Toggle */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#FFFFFF",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "1px solid #E2E8F0",
-              }}
-            >
+            <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", display: "block" }}>
-                  COUNTERFACTUAL EVIDENCE CHALLENGE (DEFENSE EXCLUSION)
+                <span className="text-[12px] font-bold text-[var(--fg-1)] uppercase tracking-wide block">
+                  Counterfactual Evidence Challenge (Defense Objection Simulator)
                 </span>
-                <span style={{ fontSize: "11px", color: "#64748B" }}>
-                  Simulate legal defense objection: exclude unverified WhatsApp receipt screenshot (ART-SCREENSHOT)
+                <span className="text-[12px] text-[var(--fg-3)]">
+                  Simulate legal defense objection: exclude unverified smartphone gallery receipt (ART-SCREENSHOT)
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setExcludeScreenshot(!excludeScreenshot)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 14px",
-                  borderRadius: "6px",
-                  border: excludeScreenshot ? "none" : "1px solid #CBD5E1",
-                  background: excludeScreenshot ? "#DC2626" : "#F8FAFC",
-                  color: excludeScreenshot ? "#FFFFFF" : "#0F172A",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: excludeScreenshot ? "0 1px 3px rgba(220,38,38,0.3)" : "none",
-                }}
+                className={`flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all cursor-pointer shrink-0 border ${
+                  excludeScreenshot
+                    ? "bg-red-600 hover:bg-red-700 text-white border-red-700 shadow-2xs"
+                    : "bg-[var(--surface-1)] hover:bg-white text-[var(--fg-1)] border-[var(--line)]"
+                }`}
               >
                 <span>{excludeScreenshot ? "Artifact Excluded (Challenger Run)" : "Exclude Screenshot Artifact"}</span>
               </button>
             </div>
 
             {/* Claim DAG List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="space-y-2.5">
               {/* Claim 1 */}
               <div
-                style={{
-                  background: excludeScreenshot ? "#F8FAFC" : "#FFFFFF",
-                  border: excludeScreenshot ? "1px solid #E2E8F0" : "1px solid #CBD5E1",
-                  borderRadius: "8px",
-                  padding: "12px 14px",
-                  opacity: excludeScreenshot ? 0.65 : 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                }}
+                className={`v6-card border rounded-xl p-3.5 shadow-2xs transition-all ${
+                  excludeScreenshot
+                    ? "bg-slate-50/70 border-slate-200 opacity-60"
+                    : "bg-white border-[var(--line)]"
+                }`}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-01: Disputed ₹{(currentCase?.claimedLossInr || 15000).toLocaleString()} Transfer Claim</span>
-                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-SCREENSHOT (Tier-3)</span>
+                <div className="flex items-center justify-between gap-2 flex-wrap text-[12px]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[var(--fg-1)]">
+                      CLM-01: Disputed ₹{caseClaimedLoss.toLocaleString()} Transfer Claim
+                    </span>
+                    <span className="text-[var(--fg-3)]">| Source: ART-SCREENSHOT (Tier-3)</span>
                   </div>
                   <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: excludeScreenshot ? "#F1F5F9" : "#ECFDF5",
-                      color: excludeScreenshot ? "#64748B" : "#047857",
-                      border: excludeScreenshot ? "1px solid #E2E8F0" : "1px solid #A7F3D0",
-                    }}
+                    className={`font-semibold px-2 py-0.5 rounded-md font-mono text-[12px] border ${
+                      excludeScreenshot
+                        ? "bg-slate-100 text-slate-600 border-slate-200"
+                        : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    }`}
                   >
                     {excludeScreenshot ? "UNSUPPORTED (DISSOLVED)" : "SUPPORTED"}
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
+                <p className="text-[12px] text-[var(--fg-2)] mt-1 mb-0 leading-relaxed">
                   {excludeScreenshot
                     ? "Finding deactivated: Primary supporting artifact was excluded from evidence scope."
-                    : `Complainant asserts transfer of ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} based on unverified smartphone gallery screenshot.`}
+                    : `Complainant asserts transfer of ₹${caseClaimedLoss.toLocaleString()} based on unverified smartphone gallery screenshot.`}
                 </p>
               </div>
 
               {/* Claim 2 */}
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #E2E8F0",
-                  borderRadius: "8px",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-02: Core Finacle Bank Debit ₹{(currentCase?.bookedLossInr || 2500).toLocaleString()}</span>
-                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Source: ART-FINACLE-LOG (Tier-1 Authority)</span>
+              <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2 flex-wrap text-[12px]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[var(--fg-1)]">
+                      CLM-02: Core Finacle Bank Debit ₹{caseBookedLoss.toLocaleString()}
+                    </span>
+                    <span className="text-[var(--fg-3)]">| Source: ART-FINACLE-LOG (Tier-1 Authority)</span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: "#ECFDF5",
-                      color: "#047857",
-                      border: "1px solid #A7F3D0",
-                    }}
-                  >
+                  <span className="font-semibold px-2 py-0.5 rounded-md font-mono text-[12px] bg-emerald-50 text-emerald-800 border border-emerald-200">
                     SUPPORTED (SURVIVES)
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: "#64748B" }}>
-                  Core banking switch confirms actual debit of ₹{(currentCase?.bookedLossInr || 2500).toLocaleString()}. Unaffected by screenshot exclusion.
+                <p className="text-[12px] text-[var(--fg-2)] mt-1 mb-0 leading-relaxed">
+                  Core banking switch confirms actual debit of ₹{caseBookedLoss.toLocaleString()}. Unaffected by screenshot exclusion under §63 BSA.
                 </p>
               </div>
 
               {/* Claim 3 */}
               <div
-                style={{
-                  background: excludeScreenshot ? "#ECFDF5" : "#FFF1F2",
-                  border: excludeScreenshot ? "1px solid #A7F3D0" : "1px solid #FECDD3",
-                  borderRadius: "8px",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                }}
+                className={`v6-card border rounded-xl p-3.5 shadow-2xs ${
+                  hasAmountDiscrepancy
+                    ? excludeScreenshot
+                      ? "bg-emerald-50/70 border-emerald-200"
+                      : "bg-red-50/70 border-red-200"
+                    : "bg-emerald-50/70 border-emerald-200"
+                }`}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontWeight: 800, color: "#0F172A" }}>CLM-03: Amount Discrepancy Conflict</span>
-                    <span style={{ fontSize: "11px", color: "#64748B" }}>| Z3 SMT Formal Contradiction</span>
+                <div className="flex items-center justify-between gap-2 flex-wrap text-[12px]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[var(--fg-1)]">
+                      {hasAmountDiscrepancy
+                        ? "CLM-03: Amount Discrepancy Conflict"
+                        : "CLM-03: Ledger-Claim Reconciliation"}
+                    </span>
+                    <span className="text-[var(--fg-3)]">
+                      | {hasAmountDiscrepancy ? "Z3 SMT Formal Contradiction" : "Formal SMT Invariant"}
+                    </span>
                   </div>
                   <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      background: excludeScreenshot ? "#D1FAE5" : "#FFE4E6",
-                      color: excludeScreenshot ? "#065F46" : "#9F1239",
-                      border: excludeScreenshot ? "1px solid #A7F3D0" : "1px solid #FECDD3",
-                    }}
+                    className={`font-semibold px-2 py-0.5 rounded-md font-mono text-[12px] border ${
+                      hasAmountDiscrepancy
+                        ? excludeScreenshot
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                          : "bg-red-100 text-red-800 border-red-200"
+                        : "bg-emerald-100 text-emerald-800 border-emerald-200"
+                    }`}
                   >
-                    {excludeScreenshot ? "CONTRADICTION DISSOLVED" : "CONTRADICTED"}
+                    {hasAmountDiscrepancy
+                      ? excludeScreenshot
+                        ? "CONTRADICTION DISSOLVED"
+                        : "CONTRADICTED"
+                      : excludeScreenshot
+                      ? "INDEPENDENTLY VERIFIED"
+                      : "RECONCILED (INVARIANT MET)"}
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: excludeScreenshot ? "#047857" : "#BE123C" }}>
-                  {excludeScreenshot
-                    ? `Contradiction resolved: Upon excluding the disputed screenshot, the conflict between ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} and ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()} evaporates, leaving the authentic ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()} debit.`
-                    : `Mathematical SMT conflict: Screenshot asserts ₹${(currentCase?.claimedLossInr || 15000).toLocaleString()} while Finacle switch asserts ₹${(currentCase?.bookedLossInr || 2500).toLocaleString()}.`}
+                <p
+                  className={`text-[12px] mt-1 mb-0 leading-relaxed ${
+                    hasAmountDiscrepancy && !excludeScreenshot ? "text-red-900" : "text-emerald-900"
+                  }`}
+                >
+                  {hasAmountDiscrepancy
+                    ? excludeScreenshot
+                      ? `Contradiction resolved: Upon excluding the disputed screenshot, the conflict between ₹${caseClaimedLoss.toLocaleString()} and ₹${caseBookedLoss.toLocaleString()} evaporates, leaving the authentic ₹${caseBookedLoss.toLocaleString()} debit.`
+                      : `Mathematical SMT conflict: Screenshot asserts ₹${caseClaimedLoss.toLocaleString()} while Finacle switch asserts ₹${caseBookedLoss.toLocaleString()}.`
+                    : excludeScreenshot
+                    ? `Bank core debit of ₹${caseBookedLoss.toLocaleString()} stands on its own statutory authority (§63 BSA), independent of screenshot corroboration.`
+                    : `Formal SMT invariant verified: Disputed claim ₹${caseClaimedLoss.toLocaleString()} perfectly matches core banking debit ₹${caseBookedLoss.toLocaleString()}.`}
                 </p>
               </div>
             </div>

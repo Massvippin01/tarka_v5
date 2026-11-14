@@ -102,11 +102,11 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-[var(--surface-2)] text-[var(--fg-1)] border border-[var(--line-2)] shadow-[0_4px_16px_rgba(0,0,0,0.4)]'
+                  ? 'bg-white text-[var(--fg-1)] border border-[var(--line)] shadow-2xs font-semibold'
                   : 'text-[var(--fg-3)] hover:text-[var(--fg-2)] hover:bg-[var(--surface-1)]'
               }`}
             >
-              <span className={isActive ? 'text-[var(--flow-2)]' : 'text-[var(--fg-3)]'}>
+              <span className={isActive ? 'text-[var(--accent)]' : 'text-[var(--fg-3)]'}>
                 {tab.icon}
               </span>
               <span>{tab.label}</span>
@@ -114,7 +114,7 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
                 <span
                   className={`text-[12px] px-1.5 py-0.5 rounded-md font-mono ${
                     isActive
-                      ? 'bg-[var(--flow-bg)] text-[var(--flow-2)] border border-cyan-500/20'
+                      ? 'bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/20'
                       : 'bg-[var(--surface-3)] text-[var(--fg-3)]'
                   }`}
                 >
