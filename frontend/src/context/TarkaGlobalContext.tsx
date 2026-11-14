@@ -499,27 +499,26 @@ export function syncTarkaUrl(caseId: string, view: string) {
 
 export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getInitialRoute = (): TarkaRoute => {
+    let initialR: TarkaRoute = "workspace";
     if (typeof window !== "undefined") {
       const path = window.location.pathname.toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const view = params.get("view") || params.get("screen");
-      if (view === "settings" || path.includes("settings")) return "settings";
-      if (view === "health" || path.includes("health")) return "health";
-      if (view === "benchmark" || view === "benchmarks") return "benchmarks";
-      if (view === "workspace" || view === "workspaces" || view === "cases" || view === "dashboard" || path.includes("workspace")) return "workspace";
-      if (view === "attribution" || view === "device" || path.includes("attribution")) return "attribution";
-      if (view === "entities" || view === "entity" || view === "people" || path.includes("entities")) return "entities";
-      if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
-      if (view === "taint-engine" || view === "taint" || view === "money" || path.includes("taint")) return "taint-engine";
-      if (view === "court-proof" || view === "court" || path.includes("court")) return "court-proof";
-      if (view === "privacy-crypto" || view === "privacy" || path.includes("privacy")) return "privacy-crypto";
-      if (view === "workstation" || view === "tarka" || path.includes("workstation")) return "workstation";
-      if (view === "workflow" || path.includes("workflow")) return "workflow";
-      if (view === "report" || view === "actions" || path.includes("report")) return "report";
-      if (view === "intake" || view === "evidence" || path.includes("intake")) return "intake";
-    }
-    const initialR = getInitialRoute();
-    if (typeof window !== "undefined") {
+      if (view === "settings" || path.includes("settings")) initialR = "settings";
+      else if (view === "health" || path.includes("health")) initialR = "health";
+      else if (view === "benchmark" || view === "benchmarks") initialR = "benchmarks";
+      else if (view === "workspace" || view === "workspaces" || view === "cases" || view === "dashboard" || path.includes("workspace")) initialR = "workspace";
+      else if (view === "attribution" || view === "device" || path.includes("attribution")) initialR = "attribution";
+      else if (view === "entities" || view === "entity" || view === "people" || path.includes("entities")) initialR = "entities";
+      else if (view === "network" || view === "fraud-network" || path.includes("network")) initialR = "network";
+      else if (view === "taint-engine" || view === "taint" || view === "money" || path.includes("taint")) initialR = "taint-engine";
+      else if (view === "court-proof" || view === "court" || view === "lab" || path.includes("court")) initialR = "court-proof";
+      else if (view === "privacy-crypto" || view === "privacy" || path.includes("privacy")) initialR = "privacy-crypto";
+      else if (view === "workstation" || view === "tarka" || path.includes("workstation")) initialR = "workstation";
+      else if (view === "workflow" || path.includes("workflow")) initialR = "workflow";
+      else if (view === "report" || view === "actions" || path.includes("report")) initialR = "report";
+      else if (view === "intake" || view === "evidence" || path.includes("intake")) initialR = "intake";
+
       if (initialR === "workspace") useTarkaUiStore.getState().setActivePage("workspaces");
       else if (initialR === "benchmarks") useTarkaUiStore.getState().setActivePage("benchmark");
       else useTarkaUiStore.getState().setActivePage("workbench");
@@ -567,7 +566,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           else if (v === "attribution" || v === "device") setActiveRouteState("attribution");
           else if (v === "entities" || v === "entity" || v === "people") setActiveRouteState("entities");
           else if (v === "taint-engine" || v === "taint" || v === "money") setActiveRouteState("taint-engine");
-          else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
+          else if (v === "court-proof" || v === "court" || v === "lab") setActiveRouteState("court-proof");
           else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
           else if (v === "workstation") setActiveRouteState("workstation");
           else if (v === "report" || v === "actions") setActiveRouteState("report");
