@@ -35,11 +35,14 @@ import {
   Search,
   Archive,
   Settings,
+  Activity,
+  User,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
 import { useTarkaGlobal, type TarkaRoute, syncTarkaUrl } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
+import { useCaseStore } from "../../store/useCaseStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
 import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
@@ -68,7 +71,10 @@ const BenchmarkLabScreen = lazy(() => import("../../pages/v5/BenchmarkLabScreen"
 const ForensicWorkstationScreen = lazy(() => import("../../pages/v5/ForensicWorkstationScreen").then((m) => ({ default: m.ForensicWorkstationScreen })));
 const ReportScreen = lazy(() => import("../../pages/v5/ReportScreen").then((m) => ({ default: m.ReportScreen })));
 const SettingsScreen = lazy(() => import("../../pages/v5/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
+const HealthDiagnosticsScreen = lazy(() => import("../../pages/v5/HealthDiagnosticsScreen").then((m) => ({ default: m.HealthDiagnosticsScreen })));
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { ViewNotFoundScreen } from "../tarka/feedback/ViewNotFoundScreen";
+import { DemoUserModal } from "../tarka/auth/DemoUserModal";
 
 // Lazy-loaded modal dialogs and drawers
 const EvidenceIntakeModal = lazy(() => import("../tarka/workspace/EvidenceIntakeModal").then((m) => ({ default: m.EvidenceIntakeModal })));
@@ -325,6 +331,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
   // Backend connection status probe for zero-error offline resilience
   const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
+  const [isDemoUserModalOpen, setIsDemoUserModalOpen] = useState<boolean>(false);
   useEffect(() => {
     let isMounted = true;
     const probe = async () => {
@@ -1130,11 +1137,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             {/* IO Avatar (Tooltip: name + role) */}
             <div
               data-testid="sidebar-io-avatar"
-              onClick={() => {
-                setActivePage("workbench");
-                setActiveRoute("settings");
-              }}
-              title={`${settingsProfile.name} · ${settingsProfile.rank} (${settingsProfile.role}) — Click to configure`}
+              onClick={() => setIsDemoUserModalOpen(true)}
+              title={`${settingsProfile.name} · ${settingsProfile.rank} (${settingsProfile.role}) — Click to switch operational persona`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -2011,6 +2015,68 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       Immutable
                     </span>
                   </button>
+
+                  {/* System Health Diagnostics */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePage("workbench");
+                      setActiveRoute("health" as any);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("view", "health");
+                      window.history.pushState({}, "", url.toString());
+                      useCaseStore.getState().setActiveView("health" as any);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activeRoute === "health" ? "rgba(16, 185, 129, 0.20)" : "rgba(255, 255, 255, 0.04)",
+                      border: activeRoute === "health" ? "1px solid rgba(16, 185, 129, 0.40)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activeRoute === "health" ? "#34D399" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Activity size={12} color="#10B981" />
+                      <span>System Health &amp; Diagnostics</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                      ?view=health
+                    </span>
+                  </button>
+
+                  {/* Switch Demo Persona */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDemoUserModalOpen(true);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      color: "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <User size={12} color="#94A3B8" />
+                      <span>Switch Operational Persona</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#60A5FA" }}>
+                      {settingsProfile.role}
+                    </span>
+                  </button>
+
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
@@ -2307,6 +2373,62 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
         )}
 
+        {/* PERSISTENT OFFLINE MODE BANNER WITH RETRY (Prompt F-8) */}
+        {!isBackendOnline && (
+          <div
+            data-testid="offline-alert-banner"
+            style={{
+              background: "rgba(245, 158, 11, 0.18)",
+              borderBottom: "1px solid rgba(245, 158, 11, 0.45)",
+              padding: "7px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#FDE68A",
+              zIndex: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <AlertTriangle size={15} color="#F59E0B" />
+              <span>
+                <strong>Offline Mode Active:</strong> TARKA backend server is unreachable. Operating deterministically with verified local fixtures. Real-time pipeline updates paused.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await forensicsApi.getHealth();
+                  setIsBackendOnline(true);
+                  toast.success("Backend connection re-established.");
+                } catch {
+                  setIsBackendOnline(false);
+                  toast.error("Backend still unreachable.");
+                }
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                background: "rgba(245, 158, 11, 0.25)",
+                border: "1px solid rgba(245, 158, 11, 0.5)",
+                color: "#FDE68A",
+                padding: "3px 10px",
+                borderRadius: "5px",
+                fontSize: "11px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              <RotateCcw size={12} />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        )}
+
         {/* 1. PERSISTENT SANDBOX STRESS-TEST MODE WARNING BANNER */}
         {activeMutationsCount > 0 && (
           <div
@@ -2475,6 +2597,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <BenchmarkLabScreen />
               ) : activeRoute === "settings" ? (
                 <SettingsScreen />
+              ) : activeRoute === "health" ? (
+                <HealthDiagnosticsScreen />
               ) : activePage === "workspaces" || activeRoute === "workspace" ? (
                 <CaseWorkspaceScreen />
               ) : !Boolean(
@@ -2483,23 +2607,37 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   caseWorkspaces.some((c) => c.caseId === activeCaseId || (c as any).id === activeCaseId)
                 ) ? (
                 <CaseNotFoundScreen caseId={activeCaseId} />
+              ) : activeRoute === "intake" ? (
+                <IntakeScreen />
+              ) : activeRoute === "entities" ? (
+                <EntityResolutionScreen />
+              ) : activeRoute === "attribution" ? (
+                <AttributionScreen />
+              ) : activeRoute === "network" ? (
+                <FraudNetworkScreen />
+              ) : activeRoute === "taint-engine" ? (
+                <TaintEngineScreen />
+              ) : activeRoute === "court-proof" ? (
+                <CourtProofScreen />
+              ) : activeRoute === "privacy-crypto" ? (
+                <PrivacyCryptoWorkbench />
+              ) : activeRoute === "workstation" ? (
+                <ForensicWorkstationScreen />
+              ) : activeRoute === "report" || activeRoute === "actions" ? (
+                <ReportScreen />
               ) : (
-                <>
-                  {activeRoute === "intake" && <IntakeScreen />}
-                  {activeRoute === "entities" && <EntityResolutionScreen />}
-                  {activeRoute === "attribution" && <AttributionScreen />}
-                  {activeRoute === "network" && <FraudNetworkScreen />}
-                  {activeRoute === "taint-engine" && <TaintEngineScreen />}
-                  {activeRoute === "court-proof" && <CourtProofScreen />}
-                  {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
-                  {activeRoute === "workstation" && <ForensicWorkstationScreen />}
-                  {(activeRoute === "report" || activeRoute === "actions") && <ReportScreen />}
-                </>
+                <ViewNotFoundScreen view={activeRoute} />
               )}
             </Suspense>
           </ErrorBoundary>
         </div>
       </div>
+
+      {/* Demo Persona Switching Modal (Prompt F-8) */}
+      <DemoUserModal
+        isOpen={isDemoUserModalOpen}
+        onClose={() => setIsDemoUserModalOpen(false)}
+      />
 
       {/* Live Cryptographic Evidence Intake & Case Modals (Lazy Loaded) */}
       <Suspense fallback={null}>

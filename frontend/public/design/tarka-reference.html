@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TARKA Reference Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   TARKA REFERENCE DESIGN — the visual target for the React rebuild.
+   Tokens below are the contract. Every value in the app must come from them.
+   ===================================================================== */
+:root{
+  --bg:#060a13; --bg-grad:radial-gradient(1200px 600px at 70% -10%,rgba(56,97,251,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(16,185,129,.06),transparent 60%);
+  --surface-1:#0c1220; --surface-2:#111a2c; --surface-3:#17223a; --hover:#1b2742;
+  --line:rgba(148,163,184,.12); --line-2:rgba(148,163,184,.22);
+  --fg-1:#eef2f8; --fg-2:#a9b4c7; --fg-3:#7d8aa3;
+  --risk:#f43f5e; --risk-bg:rgba(244,63,94,.12);
+  --safe:#10b981; --safe-bg:rgba(16,185,129,.12);
+  --urgent:#f59e0b; --urgent-bg:rgba(245,158,11,.12);
+  --flow:#6366f1; --flow-2:#22d3ee; --flow-bg:rgba(99,102,241,.14);
+  --frozen:#7dd3fc; --frozen-bg:rgba(125,211,252,.12);
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --font:'Inter',system-ui,-apple-system,Segoe UI,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --t-fast:160ms; --t-med:320ms; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);background-image:var(--bg-grad);color:var(--fg-1);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.mono{font-family:var(--mono);font-feature-settings:"tnum"}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- App layout ---------- */
+.app{display:grid;grid-template-columns:232px 1fr;height:100vh}
+.rail{background:rgba(8,12,22,.85);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;gap:4px;backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.brand-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--flow),var(--flow-2));display:grid;place-items:center;box-shadow:0 0 24px rgba(99,102,241,.45)}
+.brand-name{font-weight:800;letter-spacing:.12em;font-size:15px}
+.brand-sub{font-size:11px;color:var(--fg-3);letter-spacing:.02em}
+.nav-group{font-size:11px;font-weight:600;color:var(--fg-3);letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 6px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-sm);color:var(--fg-2);font-weight:500;font-size:13.5px;position:relative;transition:background var(--t-fast),color var(--t-fast);width:100%;text-align:left}
+.nav:hover{background:var(--hover);color:var(--fg-1)}
+.nav.active{background:var(--flow-bg);color:var(--fg-1)}
+.nav.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(var(--flow),var(--flow-2))}
+.nav svg{width:18px;height:18px;flex:none;opacity:.9}
+.step{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;border:1.5px solid var(--line-2);color:var(--fg-3);flex:none}
+.step.done{background:var(--safe);border-color:var(--safe);color:#04130d}
+.step.now{border-color:var(--flow-2);color:var(--flow-2);box-shadow:0 0 0 4px rgba(34,211,238,.12)}
+.rail-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid var(--line)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-3);display:grid;place-items:center;font-weight:700;font-size:12px}
+
+.main{display:flex;flex-direction:column;min-width:0;height:100vh}
+.topbar{height:64px;flex:none;display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(6,10,19,.7);backdrop-filter:blur(12px)}
+.case-pill{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-1);transition:border-color var(--t-fast)}
+.case-pill:hover{border-color:var(--line-2)}
+.case-ico{width:36px;height:36px;border-radius:9px;background:var(--risk-bg);display:grid;place-items:center;color:var(--risk)}
+.case-title{font-weight:700;font-size:14px}
+.case-meta{font-size:12px;color:var(--fg-3)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.chip.risk{background:var(--risk-bg);color:#fda4af}.chip.safe{background:var(--safe-bg);color:#6ee7b7}
+.chip.urgent{background:var(--urgent-bg);color:#fcd34d}.chip.flow{background:var(--flow-bg);color:#c7d2fe}
+.chip.frozen{background:var(--frozen-bg);color:var(--frozen)}.chip.muted{background:var(--surface-3);color:var(--fg-2)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.dot.live{animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.spacer{flex:1}
+.gh{display:flex;align-items:center;gap:10px}
+.gh-ring{width:40px;height:40px;transform:rotate(-90deg)}
+.gh-label{font-size:11px;color:var(--fg-3);line-height:1.2}.gh-val{font-weight:700;font-size:14px;color:#fcd34d}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13px;border:1px solid var(--line);background:var(--surface-1);transition:transform var(--t-fast),background var(--t-fast),border-color var(--t-fast)}
+.btn:hover{background:var(--hover);border-color:var(--line-2)}.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(135deg,var(--flow),#4f46e5);border-color:transparent;box-shadow:0 6px 20px -6px rgba(99,102,241,.7)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.safe{background:var(--safe);color:#04130d;border-color:transparent}
+.btn.ice{background:var(--frozen);color:#04202e;border-color:transparent}
+.btn svg{width:16px;height:16px}
+
+.view{flex:1;overflow:auto;padding:24px 28px 40px}
+.screen{display:none;animation:enter var(--t-med) var(--ease)}
+.screen.on{display:block}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:16px}
+.page-kicker{font-size:12px;font-weight:600;color:var(--flow-2);letter-spacing:.06em;text-transform:uppercase}
+.page-title{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.page-q{color:var(--fg-2);font-size:14px}
+
+/* Finding strip: ONE line, never a tall banner */
+.finding{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:var(--r-md);background:linear-gradient(90deg,rgba(16,185,129,.12),rgba(16,185,129,.02) 60%);border:1px solid rgba(16,185,129,.25);margin-bottom:18px}
+.finding.warn{background:linear-gradient(90deg,rgba(244,63,94,.12),rgba(244,63,94,.02) 60%);border-color:rgba(244,63,94,.28)}
+.finding-ico{width:32px;height:32px;border-radius:9px;background:var(--safe-bg);display:grid;place-items:center;color:var(--safe);flex:none}
+.finding.warn .finding-ico{background:var(--risk-bg);color:var(--risk)}
+.finding-text{font-size:14.5px;font-weight:500;flex:1}.finding-text b{font-weight:700}
+.finding-key{font-family:var(--mono);font-weight:700;font-size:18px}
+
+/* Cards & grid */
+.grid{display:grid;gap:16px}
+.card{background:linear-gradient(180deg,var(--surface-1),rgba(12,18,32,.85));border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;position:relative;min-width:0}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.card-t{font-weight:700;font-size:15px}.card-s{font-size:12.5px;color:var(--fg-3)}
+.kpi .k-label{font-size:12.5px;color:var(--fg-2);font-weight:500;display:flex;align-items:center;gap:8px}
+.kpi .k-val{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.kpi .k-foot{font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:8px}
+.k-ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center}
+.why{font-size:12px;font-weight:600;color:var(--flow-2);padding:2px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.3);transition:background var(--t-fast)}
+.why:hover{background:rgba(34,211,238,.1)}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:12px;font-weight:600;color:var(--fg-3);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.row{transition:background var(--t-fast)}tr.row:hover{background:var(--hover)}
+td.amt{font-family:var(--mono);text-align:right;white-space:nowrap}
+.r{text-align:right}
+.tick{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--fg-3);transition:all var(--t-med) var(--ease)}
+.tick.ok{background:var(--safe-bg);color:var(--safe)}.tick.bad{background:var(--risk-bg);color:var(--risk)}
+tr.suspect td{background:rgba(244,63,94,.06)}
+tr.scanning td{background:rgba(34,211,238,.06)}
+
+/* Inspector */
+.inspector{position:fixed;top:64px;right:0;bottom:0;width:420px;background:rgba(10,15,27,.97);border-left:1px solid var(--line-2);transform:translateX(100%);transition:transform var(--t-med) var(--ease);z-index:20;display:flex;flex-direction:column;backdrop-filter:blur(16px)}
+.inspector.open{transform:none;box-shadow:-30px 0 60px rgba(0,0,0,.45)}
+.insp-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px}
+.insp-b{padding:18px 20px;overflow:auto;flex:1}
+.wf-row{display:grid;grid-template-columns:1fr 120px 44px;align-items:center;gap:10px;padding:7px 0;font-size:13px}
+.wf-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--risk),#fb7185);transform-origin:left;animation:grow .7s var(--ease) both}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.narr{margin-top:16px;padding:14px;border-radius:var(--r-md);background:var(--surface-2);font-size:13.5px;color:var(--fg-2)}
+.narr .lang{display:flex;gap:6px;margin-bottom:8px}
+
+/* Gauge */
+.gauge-track{height:8px;border-radius:4px;background:var(--surface-3);overflow:hidden}
+.gauge-fill{height:100%;border-radius:4px;transition:width .9s var(--ease)}
+
+/* Sankey + network */
+svg text{font-family:var(--font)}
+.flow-link{fill:none;stroke-opacity:.35;transition:stroke var(--t-med),stroke-opacity var(--t-med)}
+.flow-link:hover{stroke-opacity:.6}
+.frozen-link{stroke:var(--frozen)!important;stroke-opacity:.55!important}
+.particle{fill:#fde68a;filter:drop-shadow(0 0 4px #fbbf24)}
+.node-card rect.bg{fill:var(--surface-2);stroke:var(--line-2);transition:stroke var(--t-fast)}
+.node-card:hover rect.bg,.node-card.sel rect.bg{stroke:var(--flow-2)}
+.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.1s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.replay{display:flex;align-items:center;gap:14px;margin-top:12px;padding:10px 14px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line)}
+.rp-steps{display:flex;gap:6px;flex:1}
+.rp-step{flex:1;font-size:12px;font-weight:600;color:var(--fg-3);padding:6px 4px;border-top:3px solid var(--surface-3);transition:all var(--t-med)}
+.rp-step.on{color:var(--fg-1);border-color:var(--flow-2)}
+
+/* Mentions -> identities */
+.res{display:grid;grid-template-columns:300px 1fr;gap:72px;position:relative}
+.src-h{font-size:12px;font-weight:600;color:var(--fg-3);margin:12px 0 6px;letter-spacing:.04em;text-transform:uppercase}
+.mention{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:8px;font-size:13px;opacity:0;transform:translateX(-12px);animation:slidein .45s var(--ease) forwards}
+@keyframes slidein{to{opacity:1;transform:none}}
+.mention .mono{font-size:12.5px;color:var(--fg-2)}
+.ident{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:12px;cursor:pointer;transition:border-color var(--t-fast),transform var(--t-fast);opacity:0;animation:pop .5s var(--ease) forwards}
+.ident:hover{border-color:var(--flow-2);transform:translateY(-1px)}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.ini{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;flex:none}
+.links-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
+
+/* Claim vs proof */
+.vs{display:grid;grid-template-columns:1fr 120px 1fr;gap:0;align-items:stretch}
+.vs-card{padding:20px;border-radius:var(--r-lg);border:1.5px dashed rgba(244,63,94,.45);background:rgba(244,63,94,.04)}
+.vs-card.t1{border:1.5px solid rgba(16,185,129,.45);background:rgba(16,185,129,.04)}
+.vs-mid{display:grid;place-items:center;text-align:center}
+.vs-amt{font-family:var(--mono);font-size:30px;font-weight:700;margin:8px 0}
+.pipeline{display:flex;gap:10px}
+.pipe{flex:1;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;transition:all var(--t-med) var(--ease)}
+.pipe .pipe-s{font-size:12px;color:var(--fg-3);margin-top:2px}
+.pipe.ok{border-color:rgba(16,185,129,.4)}.pipe.warn{border-color:rgba(245,158,11,.5)}
+
+/* Actions */
+.act-row{display:grid;grid-template-columns:28px 1.6fr 1fr 140px 150px;gap:14px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:10px;transition:border-color var(--t-med),background var(--t-med)}
+.act-row.frozen{border-color:rgba(125,211,252,.45);background:rgba(125,211,252,.05)}
+.check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center}
+.check.on{background:var(--flow);border-color:var(--flow)}
+.paper{background:#f8f7f3;color:#1f2937;border-radius:12px;padding:28px 32px;position:relative;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+.paper h4{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6b7280}
+.seal{position:absolute;right:26px;top:22px;width:96px;height:96px;border-radius:50%;border:3px solid #b91c1c;color:#b91c1c;display:grid;place-items:center;text-align:center;font-weight:800;font-size:10px;letter-spacing:.06em;transform:rotate(-12deg) scale(0);opacity:0}
+.seal.stamp{animation:stamp .5s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes stamp{to{transform:rotate(-12deg) scale(1);opacity:.85}}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--surface-3);border:1px solid var(--line-2);padding:12px 18px;border-radius:12px;font-weight:500;transition:all var(--t-med) var(--ease);z-index:50;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--fg-3)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:1400px){.app{grid-template-columns:208px 1fr}.view{padding:20px 22px 32px}.page-title{font-size:23px}.kpi .k-val{font-size:26px}.inspector{width:380px}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}.particle{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===== Rail ===== -->
+  <aside class="rail" aria-label="Main navigation">
+    <div class="brand">
+      <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div><div class="brand-name">TARKA</div><div class="brand-sub">Cyber Fraud Intelligence</div></div>
+    </div>
+    <button class="nav" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Command Center</button>
+    <button class="nav" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>All Cases <span class="spacer"></span><span class="chip muted">4</span></button>
+    <div class="nav-group">Investigation · FIR #149/2026</div>
+    <button class="nav" data-go="evidence"><span class="step done" data-step="evidence">✓</span>Evidence &amp; Ledger</button>
+    <button class="nav" data-go="people"><span class="step done" data-step="people">✓</span>People &amp; Accounts</button>
+    <button class="nav" data-go="money"><span class="step now" data-step="money">3</span>Money Trail</button>
+    <button class="nav" data-go="network"><span class="step" data-step="network">4</span>Fraud Network</button>
+    <button class="nav" data-go="actions"><span class="step" data-step="actions">5</span>Actions &amp; Report</button>
+    <div class="nav-group">Lab</div>
+    <button class="nav" style="color:var(--fg-3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v6L4 18a2 2 0 002 3h12a2 2 0 002-3l-5-9V3M8 3h8"/></svg>Court · Privacy · Benchmarks</button>
+    <div class="rail-foot"><div class="avatar">RS</div><div><div style="font-weight:600;font-size:13px">Insp. R. K. Sharma</div><div style="font-size:11.5px;color:var(--fg-3)">Cyber Crime PS, Noida</div></div></div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="case-pill" aria-label="Switch case">
+        <div class="case-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>
+        <div style="text-align:left"><div class="case-title">Sunil Kumar · Digital Arrest Extortion</div><div class="case-meta"><span class="mono">CASE-2026-001</span> · FIR #149/2026 · Noida, UP</div></div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <span class="chip urgent"><span class="dot live"></span>Investigating</span>
+      <div class="spacer"></div>
+      <div class="gh" title="Golden hour: time left to request freezes">
+        <svg class="gh-ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--surface-3)" stroke-width="4"/><circle id="ghArc" cx="20" cy="20" r="16" fill="none" stroke="var(--urgent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="0"/></svg>
+        <div><div class="gh-label">Golden hour left</div><div class="gh-val num" id="ghVal">1h 58m</div></div>
+      </div>
+      <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM19 11a7 7 0 01-14 0M12 18v3"/></svg>Ask TARKA</button>
+      <button class="btn primary" data-go="actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>Freeze accounts</button>
+    </header>
+
+    <main class="view" id="view">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="screen" id="s-dash" aria-label="Command center">
+        <div class="page-head"><div><div class="page-kicker">Command Center</div><div class="page-title">Good morning, Inspector</div><div class="page-q">4 active cases · 3 inside the golden hour · last sync just now</div></div></div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--urgent-bg);color:var(--urgent)">⏱</span>Cases in golden hour</div><div class="k-val" data-count="3">0</div><div class="k-foot"><span class="chip urgent">Next: 42 min</span></div></div>
+          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--risk-bg);color:var(--risk)">₹</span>Reported loss</div><div class="k-val" data-count="2270000" data-inr>₹0</div><div class="k-foot">across 4 FIRs</div></div>
+          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--frozen-bg);color:var(--frozen)">❄</span>Frozen / recoverable</div><div class="k-val" data-count="1080000" data-inr>₹0</div><div class="k-foot"><div class="gauge-track" style="flex:1"><div class="gauge-fill" style="width:48%;background:var(--frozen)"></div></div>48%</div></div>
+          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--flow-bg);color:#a5b4fc">◎</span>Mule accounts found</div><div class="k-val" data-count="11">0</div><div class="k-foot">5 linked across FIRs</div></div>
+        </div>
+        <div class="grid" style="grid-template-columns:1.25fr 1fr">
+          <div class="card">
+            <div class="card-h"><div><div class="card-t">Act now</div><div class="card-s">Highest recoverable amount × least time left</div></div></div>
+            <div id="queue"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div><div class="card-t">Money corridors</div><div class="card-s">Where victims' money is flowing (state → state)</div></div></div>
+            <svg id="corridors" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-h"><div class="card-t">Active cases</div><span class="spacer"></span><button class="btn">+ New case</button></div>
+          <table><thead><tr><th>Case</th><th>Victim · typology</th><th>Status</th><th class="r">Loss</th><th>Recovered</th><th>Golden hour</th><th>IO</th></tr></thead><tbody id="caseRows"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ================= EVIDENCE ================= -->
+      <section class="screen" id="s-evidence" aria-label="Evidence and ledger">
+        <div class="page-head"><div><div class="page-kicker">Step 1 · Evidence &amp; Ledger</div><div class="page-title">Did the money really leave?</div></div><span class="spacer"></span><button class="btn">+ Add evidence</button></div>
+        <div class="finding"><div class="finding-ico">✓</div><div class="finding-text">Bank ledger proves <b>₹5,00,000</b> left Sunil Kumar's SBI account in 2 transfers. The receipt he was shown is <b>forged</b>.</div><button class="btn safe" data-go="people">Who received it? →</button></div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="vs">
+            <div class="vs-card"><span class="chip risk">T3 · Unverified claim</span><div class="vs-amt" style="color:#fda4af">₹15,000</div><div style="color:var(--fg-2);font-size:13.5px">Payment receipt PDF shown to the victim</div><div style="font-size:12.5px;color:var(--fg-3);margin-top:6px">Edited after creation (+14.2 KB appended)</div></div>
+            <div class="vs-mid"><div><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="var(--risk)" stroke-width="3" class="draw" style="--len:176"/><path d="M20 28h24M20 36h24M38 18L26 46" stroke="var(--risk)" stroke-width="3" stroke-linecap="round" class="draw" style="--len:60"/></svg><div class="mono" style="color:#fda4af;font-weight:700;margin-top:6px">Δ ₹4,85,000</div></div></div>
+            <div class="vs-card t1"><span class="chip safe">T1 · Verified bank record</span><div class="vs-amt" style="color:#6ee7b7">₹5,00,000</div><div style="color:var(--fg-2);font-size:13.5px">SBI core banking ledger · 2 UPI debits</div><div style="font-size:12.5px;color:var(--fg-3);margin-top:6px">Every balance reconciles · SHA-256 sealed</div></div>
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:1.6fr 1fr">
+          <div class="card">
+            <div class="card-h"><div><div class="card-t">SBI ledger · A/C ••9101</div><div class="card-s">Each row checked: previous balance + credit − debit = balance</div></div><span class="spacer"></span><button class="btn" id="rerunCheck">Re-run check</button></div>
+            <table><thead><tr><th>Time</th><th>Transaction</th><th class="r">Debit</th><th class="r">Credit</th><th class="r">Balance</th><th></th></tr></thead><tbody id="ledger"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="card-t">Integrity checks</div></div>
+            <div class="pipeline" style="flex-direction:column" id="checks"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PEOPLE ================= -->
+      <section class="screen" id="s-people" aria-label="People and accounts">
+        <div class="page-head"><div><div class="page-kicker">Step 2 · People &amp; Accounts</div><div class="page-title">Who is who?</div></div></div>
+        <div class="finding warn"><div class="finding-ico">!</div><div class="finding-text"><b>12 mentions</b> from 4 sources resolved to <b>6 identities</b>: 4 suspected mule accounts, 1 merchant protected.</div><button class="btn primary" data-go="money">Follow the money →</button></div>
+        <div class="card">
+          <div class="card-h"><div><div class="card-t">Identity resolution</div><div class="card-s">Click an identity to see why it was linked and scored</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--risk)"></i>Suspect</span><span><i style="background:var(--safe)"></i>Protected</span><span><i style="background:var(--flow)"></i>Victim</span></div></div>
+          <div class="res" id="res"><svg class="links-svg" id="resLinks"></svg><div id="mentions"></div><div id="idents"></div></div>
+        </div>
+      </section>
+
+      <!-- ================= MONEY TRAIL ================= -->
+      <section class="screen" id="s-money" aria-label="Money trail">
+        <div class="page-head"><div><div class="page-kicker">Step 3 · Money Trail</div><div class="page-title">Where did the money go?</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--flow)"></i>Moving</span><span><i style="background:var(--frozen)"></i>Frozen</span><span><i style="background:var(--safe)"></i>Protected merchant</span><span><i style="background:var(--risk)"></i>Cashed out</span></div></div>
+        <div class="finding"><div class="finding-ico">₹</div><div class="finding-text"><b class="num" id="recovText">₹3,80,000</b> of ₹5,00,000 can still be stopped in <b>4 places</b>. Freeze before the golden hour ends.</div><button class="btn primary" data-go="actions">Freeze now →</button></div>
+        <div class="grid" style="grid-template-columns:1fr 320px">
+          <div class="card"><svg id="sankey" viewBox="0 0 1000 440" width="100%" style="display:block"></svg></div>
+          <div class="grid" style="align-content:start">
+            <div class="card kpi"><div class="k-label">Recoverable now</div><div class="k-val" style="color:var(--frozen)" id="recovKpi">₹3,80,000</div><div class="gauge-track"><div class="gauge-fill" id="recovBar" style="width:76%;background:var(--frozen)"></div></div><div class="k-foot" style="margin-top:8px">76% of the loss · ₹1,20,000 already cashed out</div></div>
+            <div class="card"><div class="card-t" style="margin-bottom:10px">How we traced it</div><div style="font-size:13.5px;color:var(--fg-2)">Money is followed using the <b style="color:var(--fg-1)">lowest-balance rule</b>: an account can't pass on more stolen money than it held. Clean money already in an account is never frozen.</div><button class="why" style="margin-top:12px" data-why="method">Compare methods</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= NETWORK ================= -->
+      <section class="screen" id="s-network" aria-label="Fraud network">
+        <div class="page-head"><div><div class="page-kicker">Step 4 · Fraud Network</div><div class="page-title">Who is connected?</div></div></div>
+        <div class="finding warn"><div class="finding-ico">◎</div><div class="finding-text">One handset and one Wi-Fi hotspot control <b>3 mule accounts</b> across 3 banks. Same device seen in <b>2 other FIRs</b>.</div><button class="btn" id="playBtn">▶ Replay the theft</button></div>
+        <div class="card" style="padding:12px"><svg id="net" viewBox="0 0 1100 470" width="100%" style="display:block"></svg>
+          <div class="replay"><button class="btn" id="playBtn2" style="height:32px">▶ Play</button><div class="rp-steps" id="rpSteps"></div><span class="mono" style="color:var(--fg-3);font-size:12.5px" id="rpClock">09:15 IST</span></div>
+        </div>
+      </section>
+
+      <!-- ================= ACTIONS ================= -->
+      <section class="screen" id="s-actions" aria-label="Actions and report">
+        <div class="page-head"><div><div class="page-kicker">Step 5 · Actions &amp; Report</div><div class="page-title">Stop the money. Build the case.</div></div></div>
+        <div class="grid" style="grid-template-columns:1.35fr 1fr">
+          <div class="card">
+            <div class="card-h"><div><div class="card-t">Freeze requests</div><div class="card-s">Ranked by amount you can still recover</div></div><span class="spacer"></span><div style="text-align:right"><div class="card-s">Frozen so far</div><div class="mono" style="font-size:22px;font-weight:700;color:var(--frozen)" id="frozenTotal">₹0</div></div></div>
+            <div id="actRows"></div>
+            <div style="display:flex;gap:10px;margin-top:6px"><button class="btn primary" id="sendBtn">Send freeze requests (BNSS §106)</button><button class="btn" id="simBtn" disabled style="opacity:.5">Simulate bank response</button></div>
+          </div>
+          <div class="card" style="background:transparent;border:0;padding:0">
+            <div class="paper">
+              <div class="seal" id="seal">SEALED<br>SHA-256<br>a91f…3c07</div>
+              <h4>Cyber Crime Police Station · Noida, Uttar Pradesh</h4>
+              <div style="font-size:20px;font-weight:800;margin:6px 0 2px">Investigation Report</div>
+              <div style="font-size:13px;color:#4b5563">FIR #149/2026 · Digital arrest extortion · Victim: Sunil Kumar</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0">
+                <div><div style="font-size:11px;color:#6b7280">LOSS</div><div style="font-weight:800;font-size:18px">₹5,00,000</div></div>
+                <div><div style="font-size:11px;color:#6b7280">FROZEN</div><div style="font-weight:800;font-size:18px;color:#0369a1" id="repFrozen">₹0</div></div>
+                <div><div style="font-size:11px;color:#6b7280">MULES</div><div style="font-weight:800;font-size:18px">4</div></div>
+              </div>
+              <div style="font-size:13px;line-height:1.6;color:#374151">On 22 Sep 2026 the victim was coerced by callers posing as CBI officers into two UPI transfers totalling ₹5,00,000. Funds moved through 4 accounts within 7 minutes. A single handset (IMEI ••4564) controls 3 of them.</div>
+              <div style="display:flex;gap:8px;margin-top:18px"><button class="btn" style="background:#111827;color:#fff;border:0" id="genBtn">Generate &amp; seal report</button><button class="btn" style="background:#e5e7eb;color:#111827;border:0">Download PDF</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Inspector -->
+<aside class="inspector" id="insp" aria-label="Details">
+  <div class="insp-h"><div style="flex:1" id="inspHead"></div><button class="btn" id="inspClose" style="height:32px;padding:0 10px" aria-label="Close">✕</button></div>
+  <div class="insp-b" id="inspBody"></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== DATA (Case 001, internally consistent) ===================== */
+const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const CASES = [
+  {id:'CASE-2026-001',victim:'Sunil Kumar',typ:'Digital arrest',status:['urgent','Investigating'],loss:500000,rec:380000,gh:118,io:'Insp. R. K. Sharma'},
+  {id:'CASE-2026-002',victim:'Dr. Meera Nair',typ:'SIM swap · APK',status:['flow','Action pending'],loss:340000,rec:180000,gh:42,io:'SI K. V. Reddy'},
+  {id:'CASE-2026-003',victim:'Ramesh Singhal',typ:'Investment scam',status:['frozen','Partially frozen'],loss:1250000,rec:600000,gh:null,io:'ACP A. Deshmukh'},
+  {id:'CASE-2026-004',victim:'Pooja Hegde',typ:'Task fraud',status:['urgent','Investigating'],loss:180000,rec:50000,gh:85,io:'Insp. M. Gowda'},
+];
+const LEDGER = [
+  {t:'09:15',d:'Opening balance',dr:0,cr:0,b:529140},
+  {t:'09:42',d:'UPI · Retail store',dr:3450,cr:0,b:525690},
+  {t:'09:55',d:'NEFT · Salary credit',dr:0,cr:125000,b:650690},
+  {t:'10:00',d:'UPI · vikramshah@okaxis',dr:285000,cr:0,b:365690,s:1},
+  {t:'10:14',d:'UPI · Municipal utilities',dr:4200,cr:0,b:361490},
+  {t:'10:28',d:'UPI · vikramshah@okaxis',dr:215000,cr:0,b:146490,s:1},
+];
+const IDENTS = [
+  {id:'V',name:'Sunil Kumar',role:'Victim',kind:'victim',acct:'SBI ••9101',score:null},
+  {id:'M1',name:'Vikram Shah',role:'Layer-1 mule',kind:'risk',acct:'Axis ••0291',score:94,
+    why:[['Money left 112 s after arriving',28],['₹5,00,000 split into 3 transfers in 7 min',18],['Same phone IMEI as HDFC ••1992',16],['99% passed through within 24 h',15],['Account only 41 days old',9]],
+    hi:'Vikram Shah के Axis Bank ••0291 खाते में पैसा आने के 112 सेकंड बाद ही आगे भेज दिया गया।'},
+  {id:'M2',name:'Rohit Verma',role:'Layer-2 mule',kind:'risk',acct:'HDFC ••1992',score:88,why:[['Shares handset with Vikram Shah',22],['Pass-through to merchant + hold',20],['Received ₹3,00,000 in one hop',18],['New VPA created same day',12]],hi:''},
+  {id:'M3',name:'Sameer Khan',role:'Layer-2 mule',kind:'risk',acct:'ICICI ••8129',score:84,why:[['ATM cash-out 18 min after credit',26],['Same Wi-Fi hotspot as Vikram Shah',18],['Received ₹1,55,000 in one hop',16]],hi:''},
+  {id:'M4',name:'Deepak Meena',role:'Sink account',kind:'risk',acct:'PNB ••4471',score:61,why:[['Received ₹45,000 from Layer-1',20],['No device overlap found',-6]],hi:''},
+  {id:'P',name:'Apex Electronics',role:'Verified merchant',kind:'safe',acct:'ICICI ••5241 · GSTIN',score:12,why:[['68-month business history',-30],['Active GSTIN & invoices',-25],['Normal POS sale pattern',-10]],hi:''},
+];
+const MENTIONS = [
+  ['Bank statement',[['Victim A/c','SBI ••9101','V'],['Beneficiary VPA','vikramshah@okaxis','M1'],['Account','Axis ••0291','M1']]],
+  ['WhatsApp chat',[['Payment VPA','vikram.pay@okaxis','M1'],['Phone','+91 98711 23941','M1']]],
+  ['Complaint (NCRP)',[['Complainant','Sunil Kumar','V'],['Caller ID','+91 98711 23941','M1']]],
+  ['Bank / CDR',[['Account','HDFC ••1992','M2'],['Account','ICICI ••8129','M3'],['Account','PNB ••4471','M4'],['Merchant','Apex Electronics','P'],['IMEI','8674 9206 ••4564','M2']]],
+];
+/* Money flows (sum to ₹5,00,000) */
+const SK_NODES = [
+  {id:'V',label:'Sunil Kumar',sub:'SBI ••9101 · victim',col:0},
+  {id:'M1',label:'Vikram Shah',sub:'Axis ••0291',col:1},
+  {id:'M2',label:'Rohit Verma',sub:'HDFC ••1992',col:2},
+  {id:'M3',label:'Sameer Khan',sub:'ICICI ••8129',col:2},
+  {id:'M4',label:'Deepak Meena',sub:'PNB ••4471',col:2},
+  {id:'APX',label:'Apex Electronics',sub:'merchant · lien',col:3,kind:'safe'},
+  {id:'H2',label:'Held · HDFC ••1992',sub:'can freeze',col:3,kind:'frz'},
+  {id:'ATM',label:'ATM Noida Sec 18',sub:'cashed out',col:3,kind:'risk'},
+  {id:'H3',label:'Held · ICICI ••8129',sub:'can freeze',col:3,kind:'frz'},
+  {id:'H4',label:'Held · PNB ••4471',sub:'can freeze',col:3,kind:'frz'},
+];
+const SK_LINKS = [
+  ['V','M1',500000],['M1','M2',300000],['M1','M3',155000],['M1','M4',45000],
+  ['M2','APX',180000],['M2','H2',120000],['M3','ATM',120000],['M3','H3',35000],['M4','H4',45000],
+];
+
+/* ===================== Helpers ===================== */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const SVGNS='http://www.w3.org/2000/svg';
+const el = (tag, attrs={}, parent) => { const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); parent&&parent.appendChild(e); return e; };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(node, to, isInr, ms=1100){ if(reduce){node.textContent=isInr?inr(to):to.toLocaleString('en-IN');return;}
+  const t0=performance.now(); const step=t=>{const p=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-p,3), v=to*e; node.textContent=isInr?inr(v):Math.round(v).toLocaleString('en-IN'); if(p<1) requestAnimationFrame(step);}; requestAnimationFrame(step);}
+function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ===================== Navigation ===================== */
+const built = {};
+function go(name){
+  $$('.screen').forEach(s=>s.classList.toggle('on', s.id==='s-'+name));
+  $$('.nav').forEach(n=>n.classList.toggle('active', n.dataset.go===name));
+  $('#view').scrollTop=0; closeInsp();
+  ({dash:buildDash,evidence:buildEvidence,people:buildPeople,money:buildMoney,network:buildNetwork,actions:buildActions})[name]();
+  history.replaceState(null,'','#'+name);
+}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);} const w=e.target.closest('[data-why]'); if(w) openWhy(w.dataset.why);});
+
+/* ===================== Golden hour ring ===================== */
+let ghSec=118*60; const ghTotal=180*60;
+function tickGH(){ ghSec=Math.max(0,ghSec-1); const m=Math.floor(ghSec/60), h=Math.floor(m/60); $('#ghVal').textContent=`${h}h ${String(m%60).padStart(2,'0')}m`; $('#ghArc').setAttribute('stroke-dashoffset', (100.5*(1-ghSec/ghTotal)).toFixed(1)); if(ghSec<15*60) $('#ghArc').setAttribute('stroke','var(--risk)'); }
+setInterval(tickGH,1000); tickGH();
+
+/* ===================== Dashboard ===================== */
+function buildDash(){
+  $$('#s-dash [data-count]').forEach(n=>countUp(n, +n.dataset.count, n.hasAttribute('data-inr')));
+  if(built.dash) return; built.dash=1;
+  $('#queue').innerHTML = [
+    ['CASE-2026-002','Dr. Meera Nair','Freeze 2 accounts · ₹1,80,000 recoverable','42 min','risk'],
+    ['CASE-2026-004','Pooja Hegde','Send §94 notice to Jio for the caller SIM','85 min','urgent'],
+    ['CASE-2026-001','Sunil Kumar','Freeze 4 accounts · ₹3,80,000 recoverable','1h 58m','urgent'],
+  ].map(([id,v,a,t,c],i)=>`<div class="act-row" style="grid-template-columns:1fr auto auto;animation:slidein .4s ${i*90}ms var(--ease) both;opacity:0"><div><div style="font-weight:600">${a}</div><div class="card-s"><span class="mono">${id}</span> · ${v}</div></div><span class="chip ${c}"><span class="dot"></span>${t}</span><button class="btn primary" style="height:32px" data-go="${id==='CASE-2026-001'?'actions':'dash'}">Act</button></div>`).join('');
+  $('#caseRows').innerHTML = CASES.map(c=>`<tr class="row" style="cursor:pointer" data-go="evidence"><td class="mono">${c.id}</td><td><div style="font-weight:600">${c.victim}</div><div class="card-s">${c.typ}</div></td><td><span class="chip ${c.status[0]}">${c.status[1]}</span></td><td class="amt">${inr(c.loss)}</td><td style="min-width:150px"><div style="display:flex;align-items:center;gap:8px"><div class="gauge-track" style="flex:1"><div class="gauge-fill" style="width:${Math.round(c.rec/c.loss*100)}%;background:var(--frozen)"></div></div><span class="mono" style="font-size:12.5px;color:var(--fg-2)">${Math.round(c.rec/c.loss*100)}%</span></div></td><td>${c.gh?`<span class="chip ${c.gh<60?'risk':'urgent'}">${c.gh} min</span>`:'<span class="chip muted">Closed</span>'}</td><td style="color:var(--fg-2)">${c.io}</td></tr>`).join('');
+  // corridors: abstract state nodes + animated arcs (real build: ECharts India map)
+  const svg=$('#corridors'); const st={UP:[110,150],DL:[160,70],MH:[150,250],KA:[300,262],GJ:[60,230],WB:[420,140],TG:[300,190]};
+  const arcs=[['UP','MH',380],['UP','KA',155],['UP','DL',120],['MH','GJ',90],['TG','WB',140],['DL','KA',60]];
+  arcs.forEach(([a,b,v],i)=>{const [x1,y1]=st[a],[x2,y2]=st[b]; const mx=(x1+x2)/2, my=Math.min(y1,y2)-60; const d=`M${x1},${y1} Q${mx},${my} ${x2},${y2}`;
+    const p=el('path',{d,fill:'none',stroke:'url(#cg)','stroke-width':Math.max(1.5,v/60),'stroke-linecap':'round',class:'draw',style:`--len:500;animation-delay:${i*120}ms`},svg);
+    if(!reduce){const c=el('circle',{r:3.5,class:'particle'},svg); const am=el('animateMotion',{dur:(2.4+i*.3)+'s',repeatCount:'indefinite',path:d},c);} });
+  const defs=el('defs',{},svg); const g=el('linearGradient',{id:'cg'},defs); el('stop',{offset:'0','stop-color':'#6366f1'},g); el('stop',{offset:'1','stop-color':'#22d3ee'},g);
+  Object.entries(st).forEach(([k,[x,y]])=>{el('circle',{cx:x,cy:y,r:16,fill:'rgba(99,102,241,.12)',stroke:'rgba(148,163,184,.35)'},svg); const t=el('text',{x,y:y+4,'text-anchor':'middle','font-size':11,'font-weight':700,fill:'#eef2f8'},svg); t.textContent=k;});
+}
+
+/* ===================== Evidence ===================== */
+function buildEvidence(){
+  const tb=$('#ledger');
+  tb.innerHTML=LEDGER.map((r,i)=>`<tr class="row ${r.s?'suspect':''}" id="lr${i}"><td class="mono" style="color:var(--fg-3)">${r.t}</td><td><div style="font-weight:${r.s?600:500}">${r.d}</div>${r.s?'<span class="chip risk" style="margin-top:4px">To suspect account</span>':''}</td><td class="amt" style="color:${r.dr?'#fda4af':'var(--fg-3)'}">${r.dr?'−'+inr(r.dr):'—'}</td><td class="amt" style="color:${r.cr?'#6ee7b7':'var(--fg-3)'}">${r.cr?'+'+inr(r.cr):'—'}</td><td class="amt">${inr(r.b)}</td><td><span class="tick" id="tk${i}">·</span></td></tr>`).join('');
+  runCheck();
+  const checks=[['Balances add up','6 of 6 rows reconcile','ok'],['Transaction IDs valid','RRN format + date match NPCI','ok'],['Settled by NPCI','Switch timestamps within ±3 min','ok'],['Receipt PDF untouched','14.2 KB appended after signing','warn'],['Evidence sealed','SHA-256 recorded at intake','ok']];
+  const box=$('#checks'); box.innerHTML=checks.map((c,i)=>`<div class="pipe" id="pc${i}"><div style="display:flex;align-items:center;gap:10px"><span class="tick" id="pt${i}">·</span><div><div style="font-weight:600">${c[0]}</div><div class="pipe-s">${c[1]}</div></div></div></div>`).join('');
+  checks.forEach((c,i)=>setTimeout(()=>{const t=$('#pt'+i); t.className='tick '+(c[2]==='ok'?'ok':'bad'); t.textContent=c[2]==='ok'?'✓':'!'; $('#pc'+i).classList.add(c[2]);}, reduce?0:500+i*260));
+}
+function runCheck(){ LEDGER.forEach((r,i)=>setTimeout(()=>{ const row=$('#lr'+i); $$('#ledger tr').forEach(x=>x.classList.remove('scanning')); row.classList.add('scanning'); const ok = i===0 || LEDGER[i-1].b + r.cr - r.dr === r.b; const t=$('#tk'+i); t.className='tick '+(ok?'ok':'bad'); t.textContent=ok?'✓':'✗'; if(i===LEDGER.length-1) setTimeout(()=>row.classList.remove('scanning'),300); }, reduce?0:200+i*220)); }
+document.addEventListener('click',e=>{ if(e.target.id==='rerunCheck'){ $$('#ledger .tick').forEach(t=>{t.className='tick';t.textContent='·'}); runCheck(); }});
+
+/* ===================== People ===================== */
+function buildPeople(){
+  const colors={victim:['var(--flow-bg)','#c7d2fe'],risk:['var(--risk-bg)','#fda4af'],safe:['var(--safe-bg)','#6ee7b7']};
+  let k=0;
+  $('#mentions').innerHTML = MENTIONS.map(([src,items])=>`<div class="src-h">${src}</div>`+items.map(([lab,val,to])=>`<div class="mention" data-to="${to}" style="animation-delay:${(k++)*60}ms"><div style="flex:1"><div style="font-size:12px;color:var(--fg-3)">${lab}</div><div class="mono">${val}</div></div></div>`).join('')).join('');
+  $('#idents').innerHTML = IDENTS.map((p,i)=>`<div class="ident" data-id="${p.id}" style="animation-delay:${400+i*90}ms"><div class="ini" style="background:${colors[p.kind][0]};color:${colors[p.kind][1]}">${p.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${p.name} ${p.id==='M1'?'<span class="chip flow" style="margin-left:6px">2 VPAs merged</span>':''}</div><div class="card-s">${p.role} · ${p.acct}</div></div>${p.score!==null?`<div style="width:150px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-3)"><span>Lead strength</span><b style="color:${p.kind==='safe'?'#6ee7b7':'#fda4af'}">${p.score}</b></div><div class="gauge-track" style="margin-top:4px"><div class="gauge-fill" style="width:0;background:${p.kind==='safe'?'var(--safe)':'var(--risk)'}" data-w="${p.score}"></div></div></div><button class="why" data-person="${p.id}">Why?</button>`:'<span class="chip flow">Victim</span>'}</div>`).join('');
+  setTimeout(()=>$$('#idents .gauge-fill').forEach(g=>g.style.width=g.dataset.w+'%'),reduce?0:700);
+  setTimeout(drawResLinks, reduce?0:900);
+}
+function drawResLinks(){
+  const svg=$('#resLinks'); svg.innerHTML=''; const box=$('#res').getBoundingClientRect();
+  $$('#mentions .mention').forEach((m,i)=>{ const t=$(`#idents .ident[data-id="${m.dataset.to}"]`); if(!t) return; const a=m.getBoundingClientRect(), b=t.getBoundingClientRect();
+    const x1=a.right-box.left, y1=a.top+a.height/2-box.top, x2=b.left-box.left, y2=b.top+b.height/2-box.top, mx=(x1+x2)/2;
+    const kind=IDENTS.find(p=>p.id===m.dataset.to).kind; const col={victim:'#818cf8',risk:'#fb7185',safe:'#34d399'}[kind];
+    el('path',{d:`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,fill:'none',stroke:col,'stroke-opacity':.55,'stroke-width':1.6,class:'draw',style:`--len:400;animation-delay:${i*50}ms`},svg); });
+}
+addEventListener('resize',()=>{ if($('#s-people').classList.contains('on')) drawResLinks(); });
+document.addEventListener('click',e=>{ const w=e.target.closest('[data-person]'); if(w){e.stopPropagation(); openPerson(w.dataset.person);} else { const c=e.target.closest('.ident'); if(c && c.dataset.id!=='V') openPerson(c.dataset.id);} });
+
+/* ===================== Inspector ===================== */
+function openPerson(id){ const p=IDENTS.find(x=>x.id===id); const max=Math.max(...p.why.map(w=>Math.abs(w[1])));
+  $('#inspHead').innerHTML=`<div class="card-s">${p.role}</div><div style="font-size:19px;font-weight:800">${p.name}</div><div class="mono card-s">${p.acct}</div>`;
+  $('#inspBody').innerHTML=`<div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:40px;font-weight:800;color:${p.kind==='safe'?'#6ee7b7':'#fda4af'}">${p.score}</div><div class="card-s">lead strength / 100<br>an investigative lead, not a finding of guilt</div></div>
+  <div class="card-t" style="margin:18px 0 6px">Why this score</div>${p.why.map(([t,v],i)=>`<div class="wf-row"><div>${t}</div><div style="background:var(--surface-3);border-radius:5px;height:10px"><div class="wf-bar" style="width:${Math.abs(v)/max*100}%;animation-delay:${i*80}ms;${v<0?'background:linear-gradient(90deg,var(--safe),#34d399)':''}"></div></div><div class="mono r" style="color:${v<0?'#6ee7b7':'#fda4af'}">${v>0?'+':''}${v}</div></div>`).join('')}
+  <div class="narr"><div class="lang"><span class="chip flow">English</span><span class="chip muted">हिंदी</span><span class="spacer"></span><span class="card-s">local AI · llama3.1:8b</span></div>${id==='M1'?'Money reached Vikram Shah\'s Axis account and left again within two minutes, split into three transfers. The same phone also operates an HDFC account in this case, which is typical of a mule controller.<div style="margin-top:8px;color:var(--fg-3)">'+p.hi+'</div>':'Narrative generated from the reasons above. No other reasons are added.'}</div>
+  <div class="card-t" style="margin:18px 0 8px">Evidence</div><div style="display:flex;flex-wrap:wrap;gap:6px"><span class="chip safe">T1 · SBI ledger</span><span class="chip safe">T1 · Axis statement</span><span class="chip muted">T2 · NPCI switch log</span><span class="chip risk">T3 · WhatsApp chat</span></div>`;
+  $('#insp').classList.add('open'); }
+function openWhy(k){ $('#inspHead').innerHTML='<div style="font-size:19px;font-weight:800">Tracing methods compared</div>';
+  $('#inspBody').innerHTML=[['Lowest-balance rule (used)',380000,'Courts accept; protects clean money'],['First in, first out',290000,'Over-freezes the merchant'],['Proportional split',335000,'Spreads loss across all holders']].map(([n,v,s],i)=>`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between"><b>${n}</b><span class="mono">${inr(v)}</span></div><div class="gauge-track" style="margin:6px 0"><div class="gauge-fill" style="width:${v/5000}%;background:${i?'var(--fg-3)':'var(--frozen)'}"></div></div><div class="card-s">${s}</div></div>`).join('');
+  $('#insp').classList.add('open'); }
+function closeInsp(){ $('#insp').classList.remove('open'); }
+$('#inspClose').onclick=closeInsp; addEventListener('keydown',e=>{ if(e.key==='Escape') closeInsp(); });
+
+/* ===================== Sankey (generic mini layout) ===================== */
+const FROZEN=new Set();
+function buildMoney(){
+  const svg=$('#sankey'); svg.innerHTML=''; const W=1000,H=440, k=0.00068, gap=22, nodeW=12, cols=[30,300,560,800];
+  const nodes=SK_NODES.map(n=>({...n})); const by=Object.fromEntries(nodes.map(n=>[n.id,n]));
+  nodes.forEach(n=>{ n.in=SK_LINKS.filter(l=>l[1]===n.id).reduce((a,l)=>a+l[2],0); n.out=SK_LINKS.filter(l=>l[0]===n.id).reduce((a,l)=>a+l[2],0); n.v=Math.max(n.in,n.out); n.h=n.v*k; n.x=cols[n.col]; });
+  [0,1,2,3].forEach(c=>{ const col=nodes.filter(n=>n.col===c); const tot=col.reduce((a,n)=>a+n.h,0)+gap*(col.length-1); let y=(H-tot)/2; col.forEach(n=>{n.y=y; y+=n.h+gap; n.oy=n.y; n.iy=n.y;}); });
+  const defs=el('defs',{},svg); const lg=el('linearGradient',{id:'lg'},defs); el('stop',{offset:0,'stop-color':'#6366f1'},lg); el('stop',{offset:1,'stop-color':'#22d3ee'},lg);
+  const linkG=el('g',{},svg), partG=el('g',{},svg), nodeG=el('g',{},svg);
+  SK_LINKS.forEach(([s,t,v],i)=>{ const a=by[s], b=by[t], w=v*k; const y1=a.oy+w/2, y2=b.iy+w/2; a.oy+=w; b.iy+=w; const x1=a.x+nodeW, x2=b.x, mx=(x1+x2)/2;
+    const d=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    const kind=b.kind; const stroke = kind==='safe'?'#10b981':kind==='risk'?'#f43f5e':'url(#lg)';
+    const p=el('path',{d,class:'flow-link'+(FROZEN.has(t)?' frozen-link':''),stroke,'stroke-width':Math.max(2,w),id:'lk'+i},linkG);
+    p.style.strokeDasharray='2000'; p.style.strokeDashoffset='2000'; p.animate([{strokeDashoffset:2000},{strokeDashoffset:0}],{duration:reduce?1:1200,delay:reduce?0:i*90,fill:'forwards',easing:'cubic-bezier(.2,.8,.2,1)'});
+    const ttl=el('title',{},p); ttl.textContent=`${a.label} → ${b.label}: ${inr(v)}`;
+    if(!reduce && !FROZEN.has(t)){ const n=Math.max(1,Math.round(v/60000)); for(let j=0;j<n;j++){ const c=el('circle',{r:3,class:'particle',opacity:0},partG); el('animateMotion',{dur:'2.6s',begin:(1.2+j*2.6/n+i*.1)+'s',repeatCount:'indefinite',path:d},c); el('set',{attributeName:'opacity',to:1,begin:(1.2+j*2.6/n+i*.1)+'s'},c);} }
+  });
+  nodes.forEach(n=>{ const g=el('g',{},nodeG); const col = n.kind==='safe'?'#10b981':n.kind==='risk'?'#f43f5e':n.kind==='frz'?(FROZEN.has(n.id)?'#7dd3fc':'#94a3b8'):'#818cf8';
+    el('rect',{x:n.x,y:n.y,width:nodeW,height:Math.max(3,n.h),rx:4,fill:col},g);
+    const right=n.col===3; const tx=right?n.x+nodeW+10:n.x+nodeW+10; const anchor='start';
+    const t=el('text',{x:tx,y:n.y+n.h/2-4,'font-size':13.5,'font-weight':700,fill:'#eef2f8','text-anchor':anchor},g); t.textContent=n.label;
+    const s=el('text',{x:tx,y:n.y+n.h/2+13,'font-size':12,fill:'#a9b4c7','text-anchor':anchor},g); s.textContent=`${inr(n.v)} · ${FROZEN.has(n.id)?'frozen ❄':n.sub}`;
+    if(n.kind==='frz' && !FROZEN.has(n.id)){ const b=el('g',{style:'cursor:pointer'},g); const bx=n.x+nodeW+150, by2=n.y+n.h/2-12; el('rect',{x:bx,y:by2,width:66,height:24,rx:7,fill:'rgba(125,211,252,.14)',stroke:'rgba(125,211,252,.5)'},b); const bt=el('text',{x:bx+33,y:by2+16,'text-anchor':'middle','font-size':12,'font-weight':700,fill:'#7dd3fc'},b); bt.textContent='Freeze'; b.addEventListener('click',()=>freeze(n.id,n.v,n.label)); }
+  });
+  updateRecov(false);
+}
+function freeze(id,v,label){ FROZEN.add(id); toast(`❄ ${label.replace('Held · ','')} frozen · ${inr(v)} secured`); buildMoney(); updateRecov(true); }
+function updateRecov(anim){ const fr=[...FROZEN].reduce((a,id)=>a+SK_LINKS.filter(l=>l[1]===id).reduce((x,l)=>x+l[2],0),0); const left=380000-fr; const k=$('#recovKpi'); if(anim) countUp(k,left,true,700); else k.textContent=inr(left); $('#recovText').textContent=inr(left); $('#recovBar').style.width=(left/5000)+'%'; }
+
+/* ===================== Network ===================== */
+const NET_N = [
+  {id:'V',label:'Sunil Kumar',sub:'Victim · SBI',x:90,y:235,kind:'victim'},
+  {id:'M1',label:'Vikram Shah',sub:'L1 · Axis · 94',x:340,y:235,kind:'risk',r:30},
+  {id:'M2',label:'Rohit Verma',sub:'L2 · HDFC · 88',x:620,y:110,kind:'risk',r:24},
+  {id:'M3',label:'Sameer Khan',sub:'L2 · ICICI · 84',x:620,y:250,kind:'risk',r:20},
+  {id:'M4',label:'Deepak Meena',sub:'Sink · PNB · 61',x:620,y:385,kind:'risk',r:14},
+  {id:'APX',label:'Apex Electronics',sub:'Merchant · protected',x:930,y:70,kind:'safe'},
+  {id:'ATM',label:'ATM Sec 18',sub:'Cash-out',x:930,y:250,kind:'cash'},
+  {id:'DEV',label:'Handset ••4564',sub:'shared by 3 accounts',x:470,y:420,kind:'dev'},
+  {id:'WIFI',label:'Wi-Fi hotspot',sub:'BSSID 74:0A:38',x:470,y:55,kind:'dev'},
+];
+const NET_E = [
+  ['V','M1',500000,0],['M1','M2',300000,1],['M1','M3',155000,1],['M1','M4',45000,1],['M2','APX',180000,2],['M3','ATM',120000,3],
+  ['DEV','M1',0,4,1],['DEV','M2',0,4,1],['DEV','M4',0,4,1],['WIFI','M1',0,4,1],['WIFI','M3',0,4,1],
+];
+const STEPS=['Victim coerced','UPI transfers','Fan-out to mules','Merchant & ATM','Shared device found'];
+let netStep=4, playing=false;
+function buildNetwork(){
+  const svg=$('#net'); svg.innerHTML=''; const N=Object.fromEntries(NET_N.map(n=>[n.id,n]));
+  const defs=el('defs',{},svg); const lg=el('linearGradient',{id:'ng'},defs); el('stop',{offset:0,'stop-color':'#6366f1'},lg); el('stop',{offset:1,'stop-color':'#22d3ee'},lg);
+  const eg=el('g',{},svg), pg=el('g',{},svg), ng=el('g',{},svg);
+  NET_E.forEach(([a,b,v,st,dev],i)=>{ if(st>netStep) return; const A=N[a],B=N[b]; const mx=(A.x+B.x)/2; const d=dev?`M${A.x},${A.y} L${B.x},${B.y}`:`M${A.x},${A.y} C${mx},${A.y} ${mx},${B.y} ${B.x},${B.y}`;
+    const col=dev?'#a78bfa':B.kind==='safe'?'#10b981':B.kind==='cash'?'#f43f5e':'url(#ng)';
+    const p=el('path',{d,fill:'none',stroke:col,'stroke-width':dev?1.5:Math.max(2,v/26000),'stroke-opacity':dev?.7:.45,'stroke-dasharray':dev?'5 6':'none'},eg);
+    if(st===netStep && !dev && !reduce){ p.style.strokeDasharray='1200'; p.animate([{strokeDashoffset:1200},{strokeDashoffset:0}],{duration:900,fill:'forwards'}); }
+    if(!dev&&!reduce){ for(let j=0;j<3;j++){ const c=el('circle',{r:3.2,class:'particle'},pg); el('animateMotion',{dur:'2.2s',begin:(j*.73)+'s',repeatCount:'indefinite',path:d},c);} }
+    if(v){ const t=el('text',{x:mx,y:(A.y+B.y)/2-8,'text-anchor':'middle','font-size':12,'font-weight':600,fill:'#a9b4c7'},eg); t.textContent=inr(v);} });
+  NET_N.forEach(n=>{ const visible = n.kind==='dev'? netStep>=4 : !(['APX','ATM'].includes(n.id) && netStep<3) && !(['M2','M3','M4'].includes(n.id) && netStep<2) && !(n.id==='M1'&&netStep<1); if(!visible) return;
+    const g=el('g',{class:'node-card',style:'cursor:pointer'},ng); const col={victim:'#818cf8',risk:'#f43f5e',safe:'#10b981',cash:'#fb923c',dev:'#a78bfa'}[n.kind]; const r=n.r||18;
+    el('circle',{cx:n.x,cy:n.y,r:r+8,fill:col,opacity:.12},g); el('circle',{cx:n.x,cy:n.y,r,fill:'#111a2c',stroke:col,'stroke-width':2.5},g);
+    const ic=el('text',{x:n.x,y:n.y+5,'text-anchor':'middle','font-size':14,fill:col,'font-weight':800},g); ic.textContent={victim:'V',risk:'₹',safe:'✓',cash:'⎙',dev:'📱'}[n.kind]==='📱'?'⌁':{victim:'V',risk:'₹',safe:'✓',cash:'$'}[n.kind]||'⌁';
+    const t=el('text',{x:n.x,y:n.y+r+20,'text-anchor':'middle','font-size':13.5,'font-weight':700,fill:'#eef2f8'},g); t.textContent=n.label;
+    const s=el('text',{x:n.x,y:n.y+r+36,'text-anchor':'middle','font-size':12,fill:'#a9b4c7'},g); s.textContent=n.sub;
+    if(IDENTS.find(p=>p.id===n.id && p.score!==null)) g.addEventListener('click',()=>openPerson(n.id)); });
+  $('#rpSteps').innerHTML=STEPS.map((s,i)=>`<div class="rp-step ${i<=netStep?'on':''}">${s}</div>`).join('');
+  $('#rpClock').textContent=['09:40 IST','10:00 IST','10:07 IST','10:28 IST','10:35 IST'][netStep];
+}
+function play(){ if(playing) return; playing=true; netStep=0; buildNetwork(); const t=setInterval(()=>{ netStep++; buildNetwork(); if(netStep>=4){clearInterval(t); playing=false; toast('Replay done: one handset links 3 mule accounts');} },1300); }
+document.addEventListener('click',e=>{ if(e.target.id==='playBtn'||e.target.id==='playBtn2') play(); });
+
+/* ===================== Actions ===================== */
+const ACTS=[['H2','Rohit Verma','HDFC Bank ••1992',120000],['H4','Deepak Meena','PNB ••4471',45000],['H3','Sameer Khan','ICICI Bank ••8129',35000],['APX','Apex Electronics','Lien on merchant (not freeze)',180000]];
+const actState={}; ACTS.forEach(a=>actState[a[0]]=FROZEN.has(a[0])?'FROZEN':'READY');
+function buildActions(){
+  ACTS.forEach(a=>{ if(FROZEN.has(a[0])) actState[a[0]]='FROZEN'; });
+  $('#actRows').innerHTML=ACTS.map(([id,n,acct,v],i)=>{ const s=actState[id]; const chip={READY:['muted','Ready to send'],REQUESTED:['urgent','Requested · awaiting bank'],FROZEN:['frozen','Frozen ❄']}[s];
+    return `<div class="act-row ${s==='FROZEN'?'frozen':''}" style="animation:slidein .4s ${i*80}ms var(--ease) both;opacity:0"><span class="check ${s!=='FROZEN'?'on':''}">${s!=='FROZEN'?'✓':''}</span><div><div style="font-weight:700">${n}</div><div class="card-s">${acct}</div></div><div class="mono" style="font-weight:700">${inr(v)}</div><span class="chip ${chip[0]}">${chip[1]}</span><button class="why" data-person="${{H2:'M2',H3:'M3',H4:'M4',APX:'P'}[id]}">Why this account?</button></div>`;}).join('');
+  const fr=ACTS.filter(a=>actState[a[0]]==='FROZEN').reduce((s,a)=>s+a[3],0); $('#frozenTotal').textContent=inr(fr); $('#repFrozen').textContent=inr(fr);
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='sendBtn'){ ACTS.forEach(a=>{ if(actState[a[0]]==='READY') actState[a[0]]='REQUESTED'; }); buildActions(); toast('4 requests sent to bank nodal officers'); const s=$('#simBtn'); s.disabled=false; s.style.opacity=1; }
+  if(e.target.id==='simBtn'){ let i=0; ACTS.forEach(a=>{ if(actState[a[0]]==='REQUESTED'){ setTimeout(()=>{ actState[a[0]]='FROZEN'; FROZEN.add(a[0]); buildActions(); const fr=ACTS.filter(x=>actState[x[0]]==='FROZEN').reduce((s,x)=>s+x[3],0); countUp($('#frozenTotal'),fr,true,500); toast(`❄ ${a[1]} · ${inr(a[3])} frozen`); }, (i++)*700); } }); }
+  if(e.target.id==='genBtn'){ const s=$('#seal'); s.classList.remove('stamp'); void s.offsetWidth; s.classList.add('stamp'); toast('Report generated and sealed'); }
+});
+
+/* ===================== Boot ===================== */
+go((location.hash||'#dash').slice(1));
+</script>
+</body>
+</html>

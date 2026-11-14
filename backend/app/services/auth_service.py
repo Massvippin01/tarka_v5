@@ -46,7 +46,7 @@ class AuthService:
                 organization="Delhi Police Special Cell",
                 unit="Cyber Financial Crime Unit",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "C102", "C114", "upi_payment_discrepancy"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Delhi NCR / Special Cell"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -133,7 +133,7 @@ class AuthService:
                 organization="SentinelX Infrastructure Team",
                 unit="Platform Operations",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),

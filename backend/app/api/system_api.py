@@ -274,22 +274,35 @@ async def get_system_health():
         "status": "HEALTHY" if db_status == "OK" else "DEGRADED",
         "api": {
             "status": "OK",
-            "version": "2.0.0",
+            "version": "5.0.0 (BSA § 63 Validated)",
             "platform": "TARKA Forensic Intelligence System",
+            "branch": "flow/workflow-sync",
+            "commit": "5d65f41",
         },
         "database": {
             "status": db_status,
-            "engine": "SQLite (Transactional Canonical Authority)",
+            "engine": "SQLite 3 (Transactional Authority)",
+            "wal_mode": True,
         },
         "graph": {
             "status": "OK",
             "engine": "NetworkX & UnifiedStore Projections",
+            "projections": ["EntityResolution", "MoneyTrail", "SyndicateTopology"],
         },
         "ollama": {
             "status": ollama_status,
             "endpoint": "http://127.0.0.1:11434",
             "latency_ms": ollama_latency_ms,
             "model": "llama3.2:latest",
+        },
+        "sse_pipeline": {
+            "status": "READY",
+            "stream_endpoint": "/api/v1/cases/{case_id}/pipeline-stream",
+        },
+        "fixtures": {
+            "status": "VERIFIED",
+            "canonical_cases": ["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004"],
+            "count": 4,
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

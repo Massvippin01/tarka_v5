@@ -16,7 +16,7 @@ export type ActiveRoute =
   | "privacy-crypto"
   | "report";
 
-export type TarkaRoute = ActiveRoute | "workstation" | "workflow" | "benchmarks" | "actions" | "settings";
+export type TarkaRoute = ActiveRoute | "workstation" | "workflow" | "benchmarks" | "actions" | "settings" | "health";
 
 export type ArtifactVectorType =
   | "CBS_LEDGER"
