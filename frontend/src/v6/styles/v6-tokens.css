@@ -71,8 +71,9 @@
   --font: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
   --display: 'Inter', system-ui, -apple-system, sans-serif;
-  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
   --t-fast: 160ms;
   --t-med: 320ms;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -410,6 +411,11 @@
   position: relative;
   min-width: 0;
   box-shadow: var(--shadow);
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.v6-card:hover {
+  border-color: var(--line-2);
 }
 
 .v6-card-h {
@@ -436,6 +442,11 @@
    ===================================================================== */
 .v6-kpi {
   padding: 12px 14px;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.v6-kpi:hover {
+  border-color: var(--line-2);
 }
 
 .v6-kpi .k-label {

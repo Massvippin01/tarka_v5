@@ -384,7 +384,7 @@ export const ActionsReportScreen: React.FC<ActionsReportScreenProps> = ({ initia
             <div className="text-right space-y-1">
               <div className="font-bold text-black">{issuingOfficer}</div>
               <div className="text-zinc-600">Investigating Officer</div>
-              <div className="text-zinc-500 font-mono text-[11px]">Digital Seal: [BSA-63-4-VERIFIED]</div>
+              <div className="text-zinc-500 font-mono text-[12px]">Digital Seal: [BSA-63-4-VERIFIED]</div>
             </div>
           </div>
         </div>

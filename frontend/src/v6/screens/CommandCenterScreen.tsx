@@ -292,7 +292,7 @@ export const CommandCenterScreen: React.FC = () => {
         </div>
 
         {/* Filter mode quick chips if table or dashboard */}
-        <div className="flex items-center gap-1 text-[11px] overflow-x-auto">
+        <div className="flex items-center gap-1 text-[12px] overflow-x-auto">
           {(['ALL', 'GOLDEN_HOUR', 'SYNDICATE', 'ACTION_PENDING', 'COURT_READY'] as const).map((mode) => (
             <button
               key={mode}
@@ -377,7 +377,7 @@ export const CommandCenterScreen: React.FC = () => {
                   title="National Cyber-Fraud Corridors"
                   subtitle="Live interstate victim drain & syndicate transit routing (MHA Samanvaya)"
                   action={
-                    <span className="text-[11px] font-semibold text-[var(--accent)] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    <span className="text-[12px] font-semibold text-[var(--accent)] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                       Live Enclave
                     </span>
                   }
@@ -427,7 +427,7 @@ export const CommandCenterScreen: React.FC = () => {
                           x={x}
                           y={y + 12}
                           textAnchor="middle"
-                          fontSize="10"
+                          fontSize="12"
                           fontWeight="700"
                           fill="#52525b"
                           fontFamily="var(--font)"
@@ -439,7 +439,7 @@ export const CommandCenterScreen: React.FC = () => {
                   </svg>
 
                   {/* Corridor Legend Overlay */}
-                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[11px] bg-white/95 px-2.5 py-1.5 rounded border border-[var(--line)] shadow-xs">
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[12px] bg-white/95 px-2.5 py-1.5 rounded border border-[var(--line)] shadow-xs">
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1 font-medium text-[var(--fg-2)]">
                         <span className="w-2 h-2 rounded-full bg-[#2563eb] inline-block" />
@@ -481,7 +481,7 @@ export const CommandCenterScreen: React.FC = () => {
                             height={5}
                           />
                         </div>
-                        <span className="text-[11px] text-[var(--fg-3)] font-medium">
+                        <span className="text-[12px] text-[var(--fg-3)] font-medium">
                           {typ.count} {typ.count === 1 ? 'case' : 'cases'}
                         </span>
                       </div>
@@ -509,7 +509,7 @@ export const CommandCenterScreen: React.FC = () => {
                         <div className="font-semibold text-xs text-[var(--fg-1)] truncate">
                           {item.urgentActionTitle}
                         </div>
-                        <div className="text-[11.5px] text-[var(--fg-3)] flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[12px] text-[var(--fg-3)] flex items-center gap-1.5 mt-0.5">
                           <span className="v6-mono font-semibold text-[var(--accent)]">{item.caseId}</span>
                           <span>·</span>
                           <span className="truncate">{item.complainantName}</span>
@@ -552,7 +552,7 @@ export const CommandCenterScreen: React.FC = () => {
                       <div className="flex items-center gap-2 min-w-0">
                         <Building className="w-3.5 h-3.5 text-[var(--fg-3)] shrink-0" />
                         <span className="font-semibold text-[var(--fg-1)] truncate">{b.bankName}</span>
-                        <span className="text-[11px] text-[var(--fg-3)]">
+                        <span className="text-[12px] text-[var(--fg-3)]">
                           ({b.muleAccountCount} {b.muleAccountCount === 1 ? 'mule' : 'mules'})
                         </span>
                       </div>
@@ -560,7 +560,7 @@ export const CommandCenterScreen: React.FC = () => {
                         <span className="v6-mono font-semibold text-[var(--fg-1)]">
                           {formatInr(b.totalTraffickedInr, { showPaise: false })}
                         </span>
-                        <span className="text-[11px] font-bold text-[var(--safe)] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                        <span className="text-[12px] font-bold text-[var(--safe)] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                           {Math.round(b.frozenRatio * 100)}% frozen
                         </span>
                       </div>
@@ -579,17 +579,17 @@ export const CommandCenterScreen: React.FC = () => {
                   <div className="flex items-center gap-2 py-1 border-b border-[var(--line)]">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe)] shrink-0" />
                     <span className="truncate">Auto-drafted §106 BNSS notice for PNB ••4471</span>
-                    <span className="ml-auto text-[10.5px] text-[var(--fg-3)] shrink-0">2m ago</span>
+                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">2m ago</span>
                   </div>
                   <div className="flex items-center gap-2 py-1 border-b border-[var(--line)]">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe)] shrink-0" />
                     <span className="truncate">SHA-256 Merkle leaf sealed for CDR 9871123941</span>
-                    <span className="ml-auto text-[10.5px] text-[var(--fg-3)] shrink-0">6m ago</span>
+                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">6m ago</span>
                   </div>
                   <div className="flex items-center gap-2 py-1">
                     <Activity className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
                     <span className="truncate">Samanvaya cluster match: Gurugram FIR #89/2026</span>
-                    <span className="ml-auto text-[10.5px] text-[var(--fg-3)] shrink-0">12m ago</span>
+                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">12m ago</span>
                   </div>
                 </div>
               </Card>

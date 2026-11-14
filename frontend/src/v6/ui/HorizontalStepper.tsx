@@ -50,15 +50,15 @@ export const HorizontalStepper: React.FC = () => {
             >
               <span
                 className={clsx(
-                  'w-4 h-4 rounded-full flex items-center justify-center text-[10.5px] font-bold border transition-all',
+                  'w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold border transition-all flex-none',
                   isCurrent
-                    ? 'border-[var(--accent)] text-white bg-[var(--accent)]'
+                    ? 'border-[var(--accent)] text-white bg-[var(--accent)] shadow-xs'
                     : isDone
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
                     : 'border-[var(--line-2)] text-[var(--fg-3)] bg-[var(--surface-2)]'
                 )}
               >
-                {isDone ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : step.stepNum}
+                {isDone ? <Check className="w-3 h-3 stroke-[2.5]" /> : step.stepNum}
               </span>
               <span>{step.label}</span>
             </button>

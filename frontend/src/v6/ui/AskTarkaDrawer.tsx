@@ -54,7 +54,7 @@ export const AskTarkaDrawer: React.FC = () => {
                   BSA §63
                 </Chip>
               </div>
-              <p className="text-[11px] text-[var(--fg-3)]">
+              <p className="text-[12px] text-[var(--fg-3)]">
                 Grounded Forensic AI Copilot · {caseId}
               </p>
             </div>
@@ -89,7 +89,7 @@ export const AskTarkaDrawer: React.FC = () => {
         </div>
 
         {/* Security & Provenance Banner */}
-        <div className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent border-b border-[var(--line)] text-[11px] text-[var(--fg-2)]">
+        <div className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent border-b border-[var(--line)] text-[12px] text-[var(--fg-2)]">
           <Shield className="w-3.5 h-3.5 text-[var(--safe)] flex-none" />
           <span>Local offline inference · Evidence strictly DATA_ONLY · Zero prompt injection</span>
         </div>

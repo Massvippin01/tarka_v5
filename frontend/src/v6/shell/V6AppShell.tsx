@@ -105,6 +105,8 @@ const TransformationAuditLog = lazy(() =>
   }))
 );
 
+import { HorizontalStepper } from '../ui/HorizontalStepper';
+
 export const V6AppShell: React.FC = () => {
   const { syncFromUrl } = useUrlSync();
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
@@ -340,6 +342,7 @@ export const V6AppShell: React.FC = () => {
 
         {/* View container */}
         <main className="v6-view" id="v6-view" data-case-id={effectiveCaseId}>
+          <HorizontalStepper />
           <ErrorBoundary>
             <Suspense
               fallback={

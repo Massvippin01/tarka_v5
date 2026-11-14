@@ -131,7 +131,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
       >
         <Search className="w-3.5 h-3.5 shrink-0" />
         <span className="hidden lg:inline font-medium">Search or jump...</span>
-        <kbd className="v6-mono text-[10px] bg-[var(--surface-2)] px-1 py-0.2 rounded border border-[var(--line)] text-[var(--fg-3)]">
+        <kbd className="v6-mono text-[12px] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)] text-[var(--fg-3)]">
           ⌘K
         </kbd>
       </button>
@@ -150,7 +150,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
           color={ghMins < 45 ? 'var(--risk)' : 'var(--urgent)'}
         />
         <div className="flex items-center gap-1.5 leading-none">
-          <span className="text-[11px] text-[var(--fg-3)] font-medium hidden sm:inline">Golden hour</span>
+          <span className="text-[12px] text-[var(--fg-3)] font-medium hidden sm:inline">Golden hour</span>
           <span
             className="text-xs font-bold v6-mono"
             style={{ color: ghMins < 45 ? 'var(--risk)' : 'var(--urgent)' }}

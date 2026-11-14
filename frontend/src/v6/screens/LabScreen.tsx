@@ -112,7 +112,7 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
               <span>{tab.label}</span>
               {tab.badge && (
                 <span
-                  className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono ${
+                  className={`text-[12px] px-1.5 py-0.5 rounded-md font-mono ${
                     isActive
                       ? 'bg-[var(--flow-bg)] text-[var(--flow-2)] border border-cyan-500/20'
                       : 'bg-[var(--surface-3)] text-[var(--fg-3)]'

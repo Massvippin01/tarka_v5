@@ -143,7 +143,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
               <div className="font-extrabold text-[14px] tracking-wider text-[var(--fg-1)] leading-none">
                 TARKA
               </div>
-              <div className="text-[10.5px] text-[var(--fg-3)] tracking-tight truncate mt-0.5">
+              <div className="text-[12px] text-[var(--fg-3)] tracking-tight truncate mt-0.5">
                 Cyber Intelligence
               </div>
             </div>
@@ -193,12 +193,12 @@ export const V6Rail: React.FC<V6RailProps> = ({
       >
         <FolderKanban className="w-4 h-4 flex-none text-[var(--fg-3)]" />
         {!isCollapsed && <span>All Cases</span>}
-        {!isCollapsed && <span className="ml-auto text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.2 rounded border border-[var(--line)]">4</span>}
+        {!isCollapsed && <span className="ml-auto text-[12px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)]">4</span>}
       </button>
 
       {/* Active Case Stepper Group */}
       {!isCollapsed && (
-        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+        <div className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
           Case · {displayFir}
         </div>
       )}
@@ -222,7 +222,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           >
             <span
               className={clsx(
-                'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-none border',
+                'w-4 h-4 rounded-full flex items-center justify-center text-[12px] font-bold flex-none border',
                 s.done && !isCurrent
                   ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
                   : isCurrent
@@ -239,7 +239,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* Lab & System Navigation */}
       {!isCollapsed && (
-        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+        <div className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
           Forensic Lab
         </div>
       )}
@@ -310,7 +310,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
       </button>
 
       {!isCollapsed && (
-        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+        <div className="text-[12px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
           System
         </div>
       )}
@@ -366,7 +366,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
             <div className="font-semibold text-xs text-[var(--fg-1)] truncate">
               {officerName || 'Insp. R. K. Sharma'}
             </div>
-            <div className="text-[10.5px] text-[var(--fg-3)] truncate">
+            <div className="text-[12px] text-[var(--fg-3)] truncate">
               {officerStation || 'Cyber PS, Noida'}
             </div>
           </div>
