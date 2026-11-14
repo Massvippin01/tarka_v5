@@ -242,3 +242,28 @@
   - `playwright test e2e/case-sync.spec.ts`: 2/2 passed (40.0s).
   - `npm run build`: Production build cleanly completed in 1.25s across 3,085 modules (`dist/assets/SettingsScreen-DneQNMWN.js 47.81 kB`).
 
+
+## Wave 6: AI Mode (Ask TARKA Copilot) & Operational Modals Quality Pass
+
+### AI Mode UI Enhancement (ForensicAssistantPanel.tsx & AskTarkaDrawer.tsx)
+- **Visual Design Rebuild**:
+  - Replaced legacy pitch-black dark backgrounds with the unified v6 Light Professional executive design system (#f6f6f7 canvas, #ffffff surfaces, #e7e7ea borders, #18181b text).
+  - Modernized Assistant cards with white elevation card styling, blue Sparkles badge, model pill (llama3.1:8b / sutram-forensic-slm-rules-v1), and crisp formatted typography.
+  - Redesigned User message bubble in vibrant blue (#2563eb) with white high-contrast text and tabular numeric timestamps.
+  - Redesigned Verified Citations section with T1/T3 trust badges, mono artifact hashes, and click-to-inspect interaction.
+  - Redesigned Statutory Admissibility Notice callout in amber with Section 63 BSA legal grounding.
+  - Suppressed raw chunky grey browser scrollbar on the Quick Inquiries ribbon (scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]).
+  - Raised all typography to enforce the >= 12px floor across normal text and 11.5px / 12px for badges and timestamps.
+- **Verification**:
+  - 
+px tsc -b: 0 errors.
+  - 
+px vitest run: 140/140 passed across 23 test files.
+  - 
+px playwright test e2e/case-sync.spec.ts: 2/2 passed.
+  - 
+pm run build: Production build cleanly completed in 1.31s across 3,085 modules.
+  - Visual Playwright screenshots captured:
+    - erified_ai_mode_drawer_welcome.png
+    - erified_ai_mode_drawer_full_dialog.png
+    - erified_ai_mode_drawer_input_active.png
