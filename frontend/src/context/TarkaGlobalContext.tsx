@@ -700,9 +700,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setActiveCaseIdState(caseId);
     setEvidenceModalTargetCaseId(caseId);
     useCaseStore.getState().setActiveCaseId(caseId);
-    const currentPage = useTarkaUiStore.getState().activePage;
-    const view = currentPage === "benchmark" ? "benchmarks" : activeRoute;
-    syncTarkaUrl(caseId, view);
+    const currentView = useCaseStore.getState().activeView || activeRoute || "workspace";
+    syncTarkaUrl(caseId, currentView);
   }, [activeRoute]);
 
   // Multi-Case Action: Select Workspace and Transition to Stage
