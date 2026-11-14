@@ -20,12 +20,22 @@ body,
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: var(--bg, #f6f6f7);
-  color: var(--fg-1, #18181b);
+  background-color: #f6f6f7 !important;
+  color: #18181b !important;
   font-family: var(--font, 'Inter', system-ui, sans-serif);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+  --bento-canvas: #f6f6f7;
+  --surface-canvas: #f6f6f7;
+  --reui-frame-bg: #ffffff;
+  --background: #f6f6f7;
+  --reui-text-primary: #18181b;
+  --reui-text-secondary: #52525b;
+  --reui-text-muted: #71717a;
 }
 
 button,

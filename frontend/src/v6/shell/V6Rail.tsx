@@ -15,6 +15,8 @@ import {
   Settings,
   Activity,
   UserCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useCaseStore } from '../../store/useCaseStore';
@@ -23,10 +25,16 @@ import { getCanonicalCase } from '../../fixtures/cases';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 interface V6RailProps {
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   onOpenDemoUser?: () => void;
 }
 
-export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
+export const V6Rail: React.FC<V6RailProps> = ({
+  isCollapsed = false,
+  onToggleCollapse,
+  onOpenDemoUser,
+}) => {
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
   const { profile, station } = useSettingsStore();
   const { caseWorkspaces } = useTarkaGlobal();
@@ -89,7 +97,7 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
     {
       num: 5,
       id: 'device',
-      views: ['device', 'handset-sim'],
+      views: ['device', 'handset-sim', 'attribution'],
       label: 'Device & SIM',
       icon: <Smartphone className="w-4 h-4" />,
       done: false,
@@ -116,56 +124,85 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
     .toUpperCase();
 
   return (
-    <aside className="v6-rail" aria-label="Main navigation">
+    <aside
+      className={clsx('v6-rail', isCollapsed && 'items-center px-1.5')}
+      aria-label="Main navigation"
+    >
       {/* Brand header */}
-      <div className="flex items-center gap-2.5 px-2 pt-1 pb-4 cursor-pointer" onClick={() => setActiveView('workspace')}>
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--flow)] to-[var(--flow-2)] flex items-center justify-center shadow-[0_0_24px_rgba(99,102,241,0.45)] flex-none">
-          <Shield className="w-4 h-4 text-white" />
-        </div>
-        <div>
-          <div className="font-extrabold text-[15px] tracking-wider text-[var(--fg-1)]">
-            TARKA
+      <div className={clsx('flex items-center gap-2 px-1 pt-1 pb-3', isCollapsed ? 'justify-center' : 'justify-between')}>
+        <div
+          className="flex items-center gap-2 cursor-pointer min-w-0"
+          onClick={() => setActiveView('workspace')}
+          title="TARKA · Cyber Fraud Intelligence"
+        >
+          <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center flex-none text-white shadow-sm">
+            <Shield className="w-4 h-4" />
           </div>
-          <div className="text-[11px] text-[var(--fg-3)] tracking-tight">
-            Cyber Fraud Intelligence
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0">
+              <div className="font-extrabold text-[14px] tracking-wider text-[var(--fg-1)] leading-none">
+                TARKA
+              </div>
+              <div className="text-[10.5px] text-[var(--fg-3)] tracking-tight truncate mt-0.5">
+                Cyber Intelligence
+              </div>
+            </div>
+          )}
         </div>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="p-1 rounded text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+            title={isCollapsed ? 'Expand sidebar (216px)' : 'Collapse sidebar (64px)'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {/* Top Hub Navigation */}
       <button
         type="button"
         onClick={() => setActiveView('workspace')}
+        title="Command Center"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-[13.5px] font-medium transition-colors w-full',
-          isCurrentView(['dash', 'workspace'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[13px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
+          isCurrentView(['dash', 'workspace', 'dashboard'])
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <LayoutDashboard className="w-4 h-4 flex-none opacity-90" />
-        <span>Command Center</span>
+        <LayoutDashboard className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span>Command Center</span>}
       </button>
 
       <button
         type="button"
         onClick={() => setActiveView('cases')}
+        title="All Cases"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-[13.5px] font-medium transition-colors w-full',
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[13px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
           isCurrentView(['cases'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <FolderKanban className="w-4 h-4 flex-none opacity-90" />
-        <span>All Cases</span>
-        <span className="ml-auto v6-chip muted text-[11px] px-1.5 py-0.5">4</span>
+        <FolderKanban className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span>All Cases</span>}
+        {!isCollapsed && <span className="ml-auto text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)] px-1.5 py-0.2 rounded border border-[var(--line)]">4</span>}
       </button>
 
       {/* Active Case Stepper Group */}
-      <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        Investigation · {displayFir}
-      </div>
+      {!isCollapsed && (
+        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+          Case · {displayFir}
+        </div>
+      )}
+      {isCollapsed && <div className="w-6 h-px bg-[var(--line)] my-1" />}
 
       {steps.map((s) => {
         const isCurrent = isCurrentView(s.views);
@@ -174,141 +211,167 @@ export const V6Rail: React.FC<V6RailProps> = ({ onOpenDemoUser }) => {
             key={s.id}
             type="button"
             onClick={() => navStep(s.views[0])}
+            title={`${s.num}. ${s.label}`}
             className={clsx(
-              'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+              'flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+              isCollapsed && 'justify-center px-0',
               isCurrent
-                ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+                ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
                 : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
             )}
           >
             <span
               className={clsx(
-                'w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold flex-none border',
+                'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-none border',
                 s.done && !isCurrent
-                  ? 'bg-[var(--safe)] border-[var(--safe)] text-[#04130d]'
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
                   : isCurrent
-                  ? 'border-[var(--flow-2)] text-[var(--flow-2)] shadow-[0_0_0_3px_rgba(34,211,238,0.12)]'
+                  ? 'border-[var(--accent)] text-[var(--accent)] bg-blue-50'
                   : 'border-[var(--line-2)] text-[var(--fg-3)]'
               )}
             >
               {s.done && !isCurrent ? '✓' : s.num}
             </span>
-            <span className="truncate">{s.label}</span>
+            {!isCollapsed && <span className="truncate">{s.label}</span>}
           </button>
         );
       })}
 
       {/* Lab & System Navigation */}
-      <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        Forensic Lab
-      </div>
+      {!isCollapsed && (
+        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+          Forensic Lab
+        </div>
+      )}
+      {isCollapsed && <div className="w-6 h-px bg-[var(--line)] my-1" />}
 
       <button
         type="button"
-        onClick={() => setActiveView('court-proof')}
+        onClick={() => setActiveView('court')}
+        title="Court Dossier"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
-          isCurrentView(['court-proof', 'lab'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
+          isCurrentView(['court', 'court-proof', 'court-dossier', 'lab'])
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <Scale className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Court Dossier</span>
+        <Scale className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Court Dossier</span>}
       </button>
 
       <button
         type="button"
-        onClick={() => setActiveView('privacy-crypto')}
+        onClick={() => setActiveView('privacy')}
+        title="Privacy & ZKP"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
-          isCurrentView(['privacy-crypto'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
+          isCurrentView(['privacy', 'privacy-crypto'])
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <ShieldCheck className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Privacy & ZKP</span>
+        <ShieldCheck className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Privacy & ZKP</span>}
       </button>
 
       <button
         type="button"
         onClick={() => setActiveView('workstation')}
+        title="Workstation"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
           isCurrentView(['workstation'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <FlaskConical className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Workstation</span>
+        <FlaskConical className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Workstation</span>}
       </button>
 
       <button
         type="button"
         onClick={() => setActiveView('benchmarks')}
+        title="Benchmarks"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
           isCurrentView(['benchmarks', 'benchmark'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <Zap className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Benchmarks</span>
+        <Zap className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Benchmarks</span>}
       </button>
 
-      <div className="text-[11px] font-semibold text-[var(--fg-3)] uppercase tracking-wider px-2.5 pt-3 pb-1.5">
-        System
-      </div>
+      {!isCollapsed && (
+        <div className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider px-2 pt-2.5 pb-1">
+          System
+        </div>
+      )}
+      {isCollapsed && <div className="w-6 h-px bg-[var(--line)] my-1" />}
 
       <button
         type="button"
         onClick={() => setActiveView('settings')}
+        title="Settings & Station"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
           isCurrentView(['settings'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <Settings className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Settings & Station</span>
+        <Settings className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Settings & Station</span>}
       </button>
 
       <button
         type="button"
         onClick={() => setActiveView('health')}
+        title="Health & Diagnostics"
         className={clsx(
-          'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left text-[13px] font-medium transition-colors w-full',
+          'flex items-center gap-2.5 px-2 py-1.5 rounded-md text-left text-[12.5px] font-medium transition-colors w-full cursor-pointer',
+          isCollapsed && 'justify-center px-0',
           isCurrentView(['health'])
-            ? 'bg-[var(--flow-bg)] text-[var(--fg-1)] font-semibold relative before:content-[""] before:absolute before:-left-3 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-gradient-to-b before:from-[var(--flow)] before:to-[var(--flow-2)]'
+            ? 'bg-[var(--surface-2)] text-[var(--accent)] font-semibold'
             : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
         )}
       >
-        <Activity className="w-4 h-4 flex-none opacity-90" />
-        <span className="truncate">Health & Diagnostics</span>
+        <Activity className="w-4 h-4 flex-none text-[var(--fg-3)]" />
+        {!isCollapsed && <span className="truncate">Health & Diagnostics</span>}
       </button>
 
       {/* Rail Footer with IO Persona */}
       <div
-        className="mt-auto flex items-center gap-2.5 p-2 rounded-lg border-t border-[var(--line)] cursor-pointer hover:bg-[var(--hover)] transition-colors"
+        className={clsx(
+          'mt-auto flex items-center gap-2 p-1.5 rounded-md border-t border-[var(--line)] cursor-pointer hover:bg-[var(--hover)] transition-colors',
+          isCollapsed && 'justify-center'
+        )}
         onClick={onOpenDemoUser}
+        title={`${officerName} · ${officerStation}`}
         data-testid="sidebar-io-avatar"
       >
-        <div className="w-8 h-8 rounded-full bg-[var(--surface-3)] flex items-center justify-center font-bold text-xs text-[var(--fg-1)] flex-none">
+        <div className="w-7 h-7 rounded-full bg-[var(--surface-2)] border border-[var(--line)] flex items-center justify-center font-bold text-xs text-[var(--fg-1)] flex-none">
           {initials}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="font-semibold text-xs text-[var(--fg-1)] truncate">
-            {officerName || 'Insp. R. K. Sharma'}
+        {!isCollapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-xs text-[var(--fg-1)] truncate">
+              {officerName || 'Insp. R. K. Sharma'}
+            </div>
+            <div className="text-[10.5px] text-[var(--fg-3)] truncate">
+              {officerStation || 'Cyber PS, Noida'}
+            </div>
           </div>
-          <div className="text-[11px] text-[var(--fg-3)] truncate">
-            {officerStation || 'Cyber Crime PS, Noida'}
-          </div>
-        </div>
-        <UserCheck className="w-3.5 h-3.5 text-[var(--fg-3)] flex-none" />
+        )}
+        {!isCollapsed && <UserCheck className="w-3.5 h-3.5 text-[var(--fg-3)] flex-none" />}
       </div>
     </aside>
   );

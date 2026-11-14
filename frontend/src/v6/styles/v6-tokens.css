@@ -177,17 +177,18 @@
    ===================================================================== */
 .v6-app {
   display: grid;
-  grid-template-columns: 232px 1fr;
+  grid-template-columns: var(--v6-rail-width, 216px) 1fr;
   height: 100vh;
   width: 100vw;
   background: var(--bg);
   background-image: var(--bg-grad);
   color: var(--fg-1);
   font-family: var(--font);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  transition: grid-template-columns 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .v6-rail {
@@ -195,9 +196,13 @@
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  padding: 16px 12px;
-  gap: 4px;
+  padding: 12px 8px;
+  gap: 2px;
   user-select: none;
+  width: var(--v6-rail-width, 216px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .v6-main {
@@ -210,22 +215,25 @@
 }
 
 .v6-topbar {
-  height: 64px;
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
   flex: none;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 24px;
+  gap: 10px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
   background: var(--surface-1);
   z-index: 10;
+  white-space: nowrap;
 }
 
 .v6-view {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px 28px 40px;
+  padding: 16px 20px 32px;
 }
 
 /* =====================================================================
@@ -398,7 +406,7 @@
   background: var(--surface-1);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: 16px 18px;
+  padding: 12px 14px;
   position: relative;
   min-width: 0;
   box-shadow: var(--shadow);
@@ -409,12 +417,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .v6-card-t {
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: 13.5px;
   color: var(--fg-1);
 }
 
@@ -426,20 +434,24 @@
 /* =====================================================================
    KPI Cards
    ===================================================================== */
+.v6-kpi {
+  padding: 12px 14px;
+}
+
 .v6-kpi .k-label {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--fg-2);
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .v6-kpi .k-val {
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 6px 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 4px 0 2px;
   font-variant-numeric: tabular-nums;
   color: var(--fg-1);
 }
@@ -449,13 +461,13 @@
   color: var(--fg-3);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .v6-k-ico {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
   flex: none;
@@ -464,49 +476,50 @@
 .v6-why {
   font-size: 12px;
   font-weight: 600;
-  color: var(--flow-2);
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: var(--accent);
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(37, 99, 235, 0.3);
   background: transparent;
   cursor: pointer;
   transition: background var(--t-fast);
 }
 
 .v6-why:hover {
-  background: rgba(34, 211, 238, 0.1);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 /* =====================================================================
-   Finding Strip (Strictly ONE line, height <= 64px)
+   Finding Strip (Strictly ONE line, height <= 48px)
    ===================================================================== */
 .v6-finding {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-height: 52px;
-  max-height: 64px;
-  padding: 10px 16px;
-  border-radius: var(--r-md);
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.02) 60%);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  margin-bottom: 18px;
+  gap: 10px;
+  min-height: 40px;
+  max-height: 48px;
+  height: 44px;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  margin-bottom: 12px;
 }
 
 .v6-finding.warn {
-  background: linear-gradient(90deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.02) 60%);
-  border-color: rgba(244, 63, 94, 0.28);
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.25);
 }
 
 .v6-finding.urgent {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.02) 60%);
-  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.25);
 }
 
 .v6-finding-ico {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   background: var(--safe-bg);
   display: grid;
   place-items: center;
@@ -525,7 +538,7 @@
 }
 
 .v6-finding-text {
-  font-size: 14.5px;
+  font-size: 13px;
   font-weight: 500;
   flex: 1;
   white-space: nowrap;
@@ -535,7 +548,7 @@
 }
 
 .v6-finding-text b {
-  font-weight: 700;
+  font-weight: 650;
 }
 
 /* =====================================================================
@@ -543,23 +556,49 @@
    ===================================================================== */
 .v6-inspector {
   position: fixed;
-  top: 64px;
+  top: 52px;
   right: 0;
   bottom: 0;
   width: 420px;
-  background: rgba(10, 15, 27, 0.97);
-  border-left: 1px solid var(--line-2);
+  background: #ffffff;
+  color: var(--fg-1);
+  border-left: 1px solid var(--line);
   transform: translateX(100%);
   transition: transform var(--t-med) var(--ease);
   z-index: 50;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(16px);
 }
 
 .v6-inspector.open {
   transform: translateX(0);
-  box-shadow: -30px 0 60px rgba(0, 0, 0, 0.55);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.08);
+}
+
+/* =====================================================================
+   Light-theme SVG & Canvas Text Contrast Pills
+   No white/near-white text on light backgrounds
+   ===================================================================== */
+.v6-svg-label-pill {
+  fill: #ffffff;
+  stroke: #e4e4e7;
+  stroke-width: 1px;
+  rx: 6px;
+}
+
+.v6-svg-label-primary {
+  fill: #18181b;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font);
+}
+
+.v6-svg-label-secondary {
+  fill: #71717a;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font);
+}
 }
 
 .v6-insp-h {

@@ -27,7 +27,7 @@ export const HorizontalStepper: React.FC = () => {
 
   return (
     <nav
-      className="flex items-center gap-1.5 p-2 px-3.5 rounded-xl bg-[var(--surface-1)] border border-[var(--line)] mb-4 overflow-x-auto select-none"
+      className="flex items-center gap-1 h-10 px-2.5 rounded-lg bg-[var(--surface-1)] border border-[var(--line)] mb-3 overflow-x-auto select-none"
       aria-label="Investigation Stage Progress"
     >
       {STEPS.map((step, idx) => {
@@ -40,9 +40,9 @@ export const HorizontalStepper: React.FC = () => {
               type="button"
               onClick={() => setActiveView(step.views[0])}
               className={clsx(
-                'flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer',
+                'flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded transition-colors whitespace-nowrap cursor-pointer',
                 isCurrent
-                  ? 'text-[var(--cyan-bright)] font-bold'
+                  ? 'text-[var(--accent)] font-bold bg-[var(--surface-2)]'
                   : isDone
                   ? 'text-[var(--fg-2)] hover:text-[var(--fg-1)]'
                   : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]'
@@ -50,21 +50,21 @@ export const HorizontalStepper: React.FC = () => {
             >
               <span
                 className={clsx(
-                  'w-5 h-5 rounded-full flex items-center justify-center text-[10.5px] font-bold border transition-all',
+                  'w-4 h-4 rounded-full flex items-center justify-center text-[10.5px] font-bold border transition-all',
                   isCurrent
-                    ? 'border-[var(--cyan-bright)] text-[var(--cyan-bright)] bg-cyan-950/40 shadow-[0_0_8px_rgba(34,211,238,0.4)]'
+                    ? 'border-[var(--accent)] text-white bg-[var(--accent)]'
                     : isDone
-                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
                     : 'border-[var(--line-2)] text-[var(--fg-3)] bg-[var(--surface-2)]'
                 )}
               >
-                {isDone ? <Check className="w-3 h-3 stroke-[3]" /> : step.stepNum}
+                {isDone ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : step.stepNum}
               </span>
               <span>{step.label}</span>
             </button>
 
             {idx < STEPS.length - 1 && (
-              <ChevronRight className="w-3.5 h-3.5 text-[var(--fg-3)] opacity-40 flex-none" />
+              <ChevronRight className="w-3 h-3 text-[var(--fg-3)] opacity-40 flex-none" />
             )}
           </React.Fragment>
         );

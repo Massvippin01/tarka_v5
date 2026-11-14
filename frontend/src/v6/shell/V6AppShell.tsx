@@ -202,16 +202,38 @@ export const V6AppShell: React.FC = () => {
   const knownViews = [
     'workspace',
     'dash',
+    'dashboard',
     'cases',
     'settings',
     'health',
     'lab',
+    'court',
+    'court-dossier',
     'court-proof',
+    'privacy',
     'privacy-crypto',
     'workstation',
     'benchmarks',
     'benchmark',
   ];
+
+  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tarka_v6_rail_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleRail = () => {
+    setRailCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('tarka_v6_rail_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const isCaseUnknown =
     activeCaseId &&
@@ -232,6 +254,7 @@ export const V6AppShell: React.FC = () => {
     switch (activeView) {
       case 'workspace':
       case 'dash':
+      case 'dashboard':
         return <CommandCenterScreen />;
       case 'cases':
         return <CasesScreen />;
@@ -248,13 +271,17 @@ export const V6AppShell: React.FC = () => {
         return <FraudNetworkScreen />;
       case 'device':
       case 'handset-sim':
+      case 'attribution':
         return <DeviceSimScreen />;
       case 'actions':
         return <ActionsReportScreen initialTab="actions" />;
       case 'report':
         return <ActionsReportScreen initialTab="report" />;
+      case 'court':
+      case 'court-dossier':
       case 'court-proof':
         return <LabScreen initialTab="court-proof" />;
+      case 'privacy':
       case 'privacy-crypto':
         return <LabScreen initialTab="privacy-crypto" />;
       case 'workstation':
@@ -274,9 +301,17 @@ export const V6AppShell: React.FC = () => {
   };
 
   return (
-    <div className="v6-app" data-case-id={effectiveCaseId}>
+    <div
+      className="v6-app"
+      data-case-id={effectiveCaseId}
+      style={{ '--v6-rail-width': railCollapsed ? '64px' : '216px' } as React.CSSProperties}
+    >
       {/* Sidebar Rail */}
-      <V6Rail onOpenDemoUser={() => setIsDemoUserOpen(true)} />
+      <V6Rail
+        isCollapsed={railCollapsed}
+        onToggleCollapse={toggleRail}
+        onOpenDemoUser={() => setIsDemoUserOpen(true)}
+      />
 
       {/* Main Content Area */}
       <div className="v6-main">
