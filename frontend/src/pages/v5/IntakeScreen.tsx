@@ -26,6 +26,8 @@ import { getCanonicalCase, CANONICAL_CASES, buildCaseBundleFromFixture } from ".
 import { formatInr } from "../../utils/formatters";
 import { sha256HexSync } from "../../utils/sha256";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { EvidenceFileManager } from "../../components/tarka/intake/EvidenceFileManager";
+import { WhatChangedBanner, type WhatChangedData } from "../../components/tarka/common/WhatChangedBanner";
 
 export const IntakeScreen: React.FC = () => {
   // Dev overflow detection
@@ -52,6 +54,8 @@ export const IntakeScreen: React.FC = () => {
   const [sortPolarity, setSortPolarity] = useState<"ASC" | "DESC">("ASC");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [permuteActive, setPermuteActive] = useState<boolean>(false);
+  const [activeSubView, setActiveSubView] = useState<"ledger" | "files">("ledger");
+  const [whatChanged, setWhatChanged] = useState<WhatChangedData | null>(null);
 
   const canonicalCase = useMemo(() => {
     return getCanonicalCase(activeCaseId || "CASE-2026-001");
@@ -306,9 +310,57 @@ export const IntakeScreen: React.FC = () => {
         evidenceTag="Finacle CBS SHA-256 Verified"
       />
 
-{/* =========================================================================
-          ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)
-          ========================================================================= */}
+      {/* Sub-View Switcher: Core CBS Ledger vs Evidence Files Manager */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexShrink: 0 }}>
+        <div style={{ display: "inline-flex", padding: "2px", background: "#E2E8F0", borderRadius: "6px" }}>
+          <button
+            type="button"
+            data-testid="tab-intake-ledger"
+            onClick={() => setActiveSubView("ledger")}
+            style={{
+              padding: "4px 12px",
+              borderRadius: "4px",
+              border: "none",
+              background: activeSubView === "ledger" ? "#FFFFFF" : "transparent",
+              color: activeSubView === "ledger" ? "#0F172A" : "#64748B",
+              fontWeight: activeSubView === "ledger" ? 800 : 600,
+              fontSize: "11px",
+              cursor: "pointer",
+              boxShadow: activeSubView === "ledger" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+            }}
+          >
+            Core CBS Ledger & Double-Entry Invariants
+          </button>
+          <button
+            type="button"
+            data-testid="tab-intake-files"
+            onClick={() => setActiveSubView("files")}
+            style={{
+              padding: "4px 12px",
+              borderRadius: "4px",
+              border: "none",
+              background: activeSubView === "files" ? "#FFFFFF" : "transparent",
+              color: activeSubView === "files" ? "#0F172A" : "#64748B",
+              fontWeight: activeSubView === "files" ? 800 : 600,
+              fontSize: "11px",
+              cursor: "pointer",
+              boxShadow: activeSubView === "files" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+            }}
+          >
+            Files: Evidence Exhibit Vault
+          </button>
+        </div>
+      </div>
+
+      {activeSubView === "files" ? (
+        <div style={{ flex: "1 1 0%", minHeight: 0, overflow: "hidden", background: "#FFFFFF", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
+          <EvidenceFileManager caseId={activeCaseId || "CASE-2026-001"} onWhatChanged={(d) => setWhatChanged(d)} />
+        </div>
+      ) : (
+        <>
+          {/* =========================================================================
+              ROW 1: TOP 4 KPI CARDS (80PX STANDARD / 64PX COMPACT)
+              ========================================================================= */}
       <section
         aria-label="Key Forensic Metrics"
         style={{
@@ -531,6 +583,11 @@ export const IntakeScreen: React.FC = () => {
           </Panel>
         </Group>
       </main>
+        </>
+      )}
+
+      {/* What Changed Highlight Banner */}
+      <WhatChangedBanner data={whatChanged} onClose={() => setWhatChanged(null)} />
     </div>
   );
 };

@@ -25,6 +25,7 @@ import { reconstruct5FileInvestigation } from "../../utils/investigationReconstr
 import { buildCase002Bundle, buildCase003Bundle } from "../../services/caseSyncBridge";
 import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { RequirementEmptyState } from "../../components/tarka/common/RequirementEmptyState";
 
 export const FraudNetworkScreen: React.FC = () => {
   const { mutations, toggleMutation, activeCaseId, setActiveRoute } = useTarkaGlobal();
@@ -95,6 +96,25 @@ Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84)
     toast.success("UPI 2.0 <Device> XML stanza copied!");
     setTimeout(() => setIsXmlCopied(false), 2000);
   };
+
+  if (!investigation || !investigation.nodes || investigation.nodes.length < 2) {
+    return (
+      <div
+        className={`tarka-fraud-network-root ${isCompact ? "tarka-density-compact" : ""}`}
+        data-case-id={activeCaseId || ""}
+        style={{ padding: "20px" }}
+      >
+        <RequirementEmptyState
+          title="Fraud Network Syndicate Graph Evidence Required"
+          screenName="Step 04: Fraud Network"
+          requiredEvidenceText="Account transaction flows, UPI switch hops, or device telemetry"
+          onUploadClick={() => setActiveRoute("intake")}
+          actionButtonLabel="Upload Evidence in Vault"
+          onActionClick={handleCopyXml}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -401,7 +421,26 @@ Total Syndicate Transaction Exposure: ₹${(investigation.bookedLossInr * 20.84)
                   {investigation.edges.slice(2).map((e) => {
                     const isInsuff = e.matchClassification === "INSUFFICIENT_EVIDENCE";
                     const isApex = e.targetNodeId === "M3A-APEX";
-                    return (
+                    if (!investigation || !investigation.nodes || investigation.nodes.length < 2) {
+    return (
+      <div
+        className={`tarka-fraud-network-root ${isCompact ? "tarka-density-compact" : ""}`}
+        data-case-id={activeCaseId || ""}
+        style={{ padding: "20px" }}
+      >
+        <RequirementEmptyState
+          title="Fraud Network Syndicate Graph Evidence Required"
+          screenName="Step 04: Fraud Network"
+          requiredEvidenceText="Account transaction flows, UPI switch hops, or device telemetry"
+          onUploadClick={() => setActiveRoute("intake")}
+          actionButtonLabel="Upload Evidence in Vault"
+          onActionClick={handleCopyXml}
+        />
+      </div>
+    );
+  }
+
+  return (
                       <button
                         key={e.id}
                         type="button"

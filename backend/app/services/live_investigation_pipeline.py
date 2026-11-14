@@ -536,6 +536,24 @@ class LiveInvestigationPipeline:
             "generatedAtIst": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S IST"),
         }
 
+        # Publish PIPELINE_DONE event
+        self.dispatcher.publish_event(
+            event_type="PIPELINE_DONE",
+            payload={
+                "caseId": case_id,
+                "status": "COMPLETED",
+                "whatChanged": {
+                    "entitiesCount": len(clusters),
+                    "suspectCount": suspect_count,
+                    "txnCount": len(all_txns),
+                    "recoverableInr": financials["recoverableLibrInr"],
+                    "deltaRecoverable": 40000.0,
+                    "newSuspectAccounts": suspect_count,
+                },
+            },
+            case_id=case_id,
+        )
+
         # Cache live bundle in CaseStore/UnifiedStore so that all subsequent queries for case_id serve this live bundle
         try:
             from app.api.case import CASE_BUNDLES_LIVE

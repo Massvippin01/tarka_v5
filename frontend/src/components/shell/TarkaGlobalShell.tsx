@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import {
   Shield,
   FileText,
@@ -47,6 +47,9 @@ import { ErrorBoundary } from "../common/ErrorBoundary";
 import { CANONICAL_CASES } from "../../fixtures/cases";
 import { CaseNotFoundScreen } from "../../pages/v5/CaseNotFoundScreen";
 import { CaseFingerprintDevOverlay } from "../common/CaseFingerprintDevOverlay";
+import { deriveInvestigationProgress } from "../../utils/investigationProgress";
+import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
+import { WhatChangedBanner, type WhatChangedData } from "../tarka/common/WhatChangedBanner";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -184,15 +187,57 @@ export const TarkaGlobalShell: React.FC = () => {
     setIntelligenceBriefOpen,
     transformationAuditModalOpen,
     setTransformationAuditModalOpen,
+    reconstructedInvestigation,
   } = useTarkaUiStore();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
+  const [pipelineState, setPipelineState] = useState<{
+    status: string;
+    stage?: string;
+    progress?: number;
+    failedStep?: string;
+  }>({ status: "COMPLETED", progress: 100 });
+  const [globalWhatChanged, setGlobalWhatChanged] = useState<WhatChangedData | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
+
+  const currentBundle = useMemo(() => {
+    const canonical = activeCaseId ? getCanonicalCase(activeCaseId) : null;
+    if (canonical) {
+      return buildCaseBundleFromFixture(canonical);
+    }
+    return reconstructedInvestigation;
+  }, [activeCaseId, reconstructedInvestigation]);
+
+  const investigationProgress = useMemo(() => {
+    return deriveInvestigationProgress(currentBundle, activeCase);
+  }, [currentBundle, activeCase]);
+
+  // Sync Pipeline Status & SSE from Backend
+  useEffect(() => {
+    let mounted = true;
+    fetch(`/api/v1/cases/${activeCaseId}/pipeline-status`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data) {
+          setPipelineState({
+            status: data.status,
+            stage: data.currentStage,
+            progress: data.progress,
+            failedStep: data.failedStep,
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeCaseId]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -354,6 +399,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "01 Evidence & Ledger — Did the money really leave? (Alt+1)",
       icon: FileSpreadsheet,
       isLocked: false,
+      isComplete: investigationProgress.steps[0]?.isComplete,
     },
     {
       id: "entities" as TarkaRoute,
@@ -366,6 +412,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "02 People & Accounts — Who is who? (Alt+2)",
       icon: Users,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[1]?.isComplete,
     },
     {
       id: "taint-engine" as TarkaRoute,
@@ -378,6 +425,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "03 Money Trail — Where did it go? (Alt+3)",
       icon: GitMerge,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[2]?.isComplete,
     },
     {
       id: "network" as TarkaRoute,
@@ -390,6 +438,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "04 Fraud Network — Who is connected? (Alt+4)",
       icon: Network,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[3]?.isComplete,
     },
     {
       id: "attribution" as TarkaRoute,
@@ -402,6 +451,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "05 Device & SIM Attribution — Which phone/SIM did it? (Alt+5)",
       icon: Crosshair,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[4]?.isComplete,
     },
     {
       id: "report" as TarkaRoute,
@@ -414,6 +464,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       tooltip: "06 Report & Actions — Freeze orders & court certificate (Alt+6)",
       icon: Scale,
       isLocked: false,
+      isComplete: investigationProgress.steps[5]?.isComplete,
     },
   ];
 
@@ -599,6 +650,22 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         {isExpanded && (
           <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
             {item.isLocked && <Lock size={12} color="#FB7185" />}
+            {(item as any).isComplete && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  color: "#10B981",
+                  background: "rgba(16, 185, 129, 0.15)",
+                  padding: "1px 4px",
+                  borderRadius: "3px",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                }}
+                title="Investigation gate satisfied from verified data"
+              >
+                ✓
+              </span>
+            )}
             <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
           </div>
         )}
@@ -1334,13 +1401,55 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
             </span>
             {activePage !== "benchmark" && activePage !== "workspaces" && activeRoute !== "workspace" && (
-              <span className="flex-shrink-0">
-                <CaseStatusControl
-                  caseId={activeCaseId}
-                  currentStatus={(activeCase as any)?.status || "INVESTIGATING"}
-                  isArchived={(activeCase as any)?.status === "ARCHIVED"}
-                />
-              </span>
+              <>
+                <span className="flex-shrink-0">
+                  <CaseStatusControl
+                    caseId={activeCaseId}
+                    currentStatus={(activeCase as any)?.status || "INVESTIGATING"}
+                    isArchived={(activeCase as any)?.status === "ARCHIVED"}
+                  />
+                </span>
+                <span
+                  data-testid="investigation-progress-badge"
+                  className="hidden md:inline-flex flex-shrink-0"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    color: "#059669",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    padding: "2px 7px",
+                    borderRadius: "4px",
+                  }}
+                  title={`Investigation Progress: ${investigationProgress.completedStepsCount} of ${investigationProgress.totalStepsCount} gates satisfied`}
+                >
+                  <span>✓ {investigationProgress.percentComplete}% Complete</span>
+                </span>
+                {pipelineState.status === "PROCESSING" && (
+                  <span
+                    data-testid="pipeline-processing-badge"
+                    className="flex-shrink-0"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      fontSize: "10.5px",
+                      fontWeight: 800,
+                      color: "#4F46E5",
+                      background: "#EEF2FF",
+                      border: "1px solid #C7D2FE",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} className="animate-pulse" />
+                    <span>Pipeline: {pipelineState.stage || "Processing"} ({pipelineState.progress || 40}%)</span>
+                  </span>
+                )}
+              </>
             )}
             {!isBackendOnline ? (
               <span
@@ -2240,6 +2349,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
       {/* Case Fingerprint Dev Overlay (Ctrl+Shift+D) */}
       <CaseFingerprintDevOverlay />
+
+      {/* Global What Changed Banner */}
+      <WhatChangedBanner data={globalWhatChanged} onClose={() => setGlobalWhatChanged(null)} />
     </div>
   );
 };

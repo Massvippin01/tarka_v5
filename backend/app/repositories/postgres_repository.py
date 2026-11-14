@@ -162,6 +162,16 @@ class PostgresEvidenceRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def delete_artifact(self, artifact_id: str) -> bool:
+        stmt = select(EvidenceArtifactModel).where(EvidenceArtifactModel.artifact_id == artifact_id)
+        result = await self.session.execute(stmt)
+        art = result.scalar_one_or_none()
+        if art:
+            await self.session.delete(art)
+            await self.session.flush()
+            return True
+        return False
+
     # --- Observations ---
     async def save_observation(self, obs: EvidenceObservationModel) -> EvidenceObservationModel:
         self.session.add(obs)

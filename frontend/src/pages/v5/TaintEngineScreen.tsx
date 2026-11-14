@@ -37,6 +37,7 @@ import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDec
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { RequirementEmptyState } from "../../components/tarka/common/RequirementEmptyState";
 
 type TaintRule = "LIBR" | "FIFO" | "PRO_RATA";
 type TaintWorkspaceMode = "dag" | "orders";
@@ -136,6 +137,23 @@ export const TaintEngineScreen: React.FC = () => {
   const handlePrintOrder = () => {
     window.print();
   };
+
+  if (!investigation || !investigation.edges || investigation.edges.length === 0) {
+    return (
+      <div
+        data-case-id={activeCaseId || ""}
+        className="p-8 max-w-4xl mx-auto flex flex-col justify-center min-h-[500px]"
+      >
+        <RequirementEmptyState
+          title="Transaction Trail Evidence Required"
+          screenName="Step 03: Money Trail & LIBR Lien"
+          requiredEvidenceText="Bank CBS statements or UPI switch RRN ledgers"
+          onUploadClick={() => setActiveRoute("intake")}
+          actionButtonLabel="Upload CBS Statement in Evidence Vault"
+        />
+      </div>
+    );
+  }
 
   return (
     <div

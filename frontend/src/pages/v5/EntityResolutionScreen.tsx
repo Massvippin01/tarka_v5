@@ -33,6 +33,7 @@ import {
 import { getBnss94EntityResolutionDirective } from "../../utils/statutoryDirectives";
 import { sha256HexSync } from "../../utils/sha256";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { RequirementEmptyState } from "../../components/tarka/common/RequirementEmptyState";
 
 export interface CandidateMergeLink {
   id: string;
@@ -323,8 +324,8 @@ export const EntityResolutionScreen: React.FC = () => {
       sourceType: newMentionSource.toLowerCase().includes("whatsapp")
         ? "whatsapp"
         : newMentionSource.toLowerCase().includes("cdr")
-        ? "cdr"
-        : "cbs",
+          ? "cdr"
+          : "cbs",
       label: newMentionName.trim(),
       value: formattedPhone || "No Phone Disclosed",
       targetEntityId: targetId,
@@ -345,10 +346,10 @@ export const EntityResolutionScreen: React.FC = () => {
       matchScore: isVikramMatch ? 95 : 78,
       matchEvidence: isVikramMatch
         ? [
-            "Indic transliteration equivalence: 'VIKRAM SHA' ≈ 'Vikram Shah'",
-            `Phone Exact Match: ${formattedPhone} (normalized to 9871123941)`,
-            "UPI Alias match: common handle root 'vikram'",
-          ]
+          "Indic transliteration equivalence: 'VIKRAM SHA' ≈ 'Vikram Shah'",
+          `Phone Exact Match: ${formattedPhone} (normalized to 9871123941)`,
+          "UPI Alias match: common handle root 'vikram'",
+        ]
         : ["Cross-account device fingerprint co-occurrence"],
       decision: "PROPOSED",
     };
@@ -369,8 +370,7 @@ export const EntityResolutionScreen: React.FC = () => {
     ]);
 
     toast.success(
-      `✨ Added mention "${newMentionName}, ${newMentionPhone}" — resolved to ${
-        isVikramMatch ? "Vikram Shah (ENT-02)" : "Rohit Verma (ENT-03)"
+      `✨ Added mention "${newMentionName}, ${newMentionPhone}" — resolved to ${isVikramMatch ? "Vikram Shah (ENT-02)" : "Rohit Verma (ENT-03)"
       } with ${isVikramMatch ? "95%" : "78%"} confidence!`
     );
   };
@@ -390,12 +390,12 @@ export const EntityResolutionScreen: React.FC = () => {
       prev.map((l) =>
         l.id === linkId
           ? {
-              ...l,
-              decision,
-              auditEventId: auditId,
-              sha256Proof: `0x${hash}`,
-              timestamp: new Date().toISOString(),
-            }
+            ...l,
+            decision,
+            auditEventId: auditId,
+            sha256Proof: `0x${hash}`,
+            timestamp: new Date().toISOString(),
+          }
           : l
       )
     );
@@ -428,6 +428,24 @@ export const EntityResolutionScreen: React.FC = () => {
   const activeEntityLinks = candidateLinks.filter(
     (l) => l.targetEntityId === selectedEntityId
   );
+
+  if (canonicalEntities.length === 0 && rawTokenList.length === 0) {
+    return (
+      <div
+        className={`tarka-entity-resolution-root ${isCompact ? "tarka-density-compact" : ""}`}
+        data-case-id={activeCaseId || ""}
+        style={{ padding: "20px" }}
+      >
+        <RequirementEmptyState
+          title="Entity Mentions & Profiles Required"
+          screenName="Step 02: People & Accounts"
+          requiredEvidenceText="Bank statements, UPI VPAs, phone numbers, or APK decompilation logs"
+          onUploadClick={() => setActiveRoute("intake")}
+          actionButtonLabel="Upload Evidence in Vault"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1113,10 +1131,10 @@ export const EntityResolutionScreen: React.FC = () => {
                           border: link.decision === "ACCEPTED"
                             ? "1px solid #10B981"
                             : link.decision === "REJECTED"
-                            ? "1px solid #F43F5E"
-                            : link.decision === "SPLIT"
-                            ? "1px solid #F59E0B"
-                            : "1px solid #E2E8F0",
+                              ? "1px solid #F43F5E"
+                              : link.decision === "SPLIT"
+                                ? "1px solid #F59E0B"
+                                : "1px solid #E2E8F0",
                           borderRadius: "5px",
                           padding: "6px 8px",
                           display: "flex",

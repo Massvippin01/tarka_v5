@@ -1,5 +1,6 @@
 import { CgnatFunnelChart } from "../../components/tarka/attribution/CgnatFunnelChart";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { RequirementEmptyState } from "../../components/tarka/common/RequirementEmptyState";
 import React, { useState, useMemo } from "react";
 import {
   Radio,
@@ -108,6 +109,25 @@ export const AttributionScreen: React.FC = () => {
     setTimeout(() => setIsImeiCopied(false), 2000);
   };
 
+
+  if (!investigation || !investigation.nodes || investigation.nodes.length === 0) {
+    return (
+      <div
+        className={`tarka-attribution-root ${isCompact ? "tarka-density-compact" : ""}`}
+        data-case-id={activeCaseId || ""}
+        style={{ padding: "20px" }}
+      >
+        <RequirementEmptyState
+          title="Device & SIM Telemetry Evidence Required"
+          screenName="Step 05: Device & SIM Attribution"
+          requiredEvidenceText="Bharti Airtel / Telco CGNAT IPDR logs (CSV or text) with source port allocation"
+          onUploadClick={() => setActiveRoute("intake")}
+          actionButtonLabel="Upload CGNAT Log in Evidence Vault"
+          onActionClick={handleCopyDotDirective}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

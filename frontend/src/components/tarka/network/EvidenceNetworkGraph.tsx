@@ -1630,263 +1630,263 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           }}
         >
           {/* Row 1: Player Controls & Discrete Step Pills */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-          {/* Play/Pause & Step Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <button
-              type="button"
-              onClick={handleTogglePlay}
-              className="hover:opacity-90 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                fontSize: "10.5px",
-                fontWeight: 800,
-                padding: "4px 10px",
-                borderRadius: "5px",
-                border: "none",
-                background: isPlaying ? "#DC2626" : "#059669",
-                color: "#FFFFFF",
-                cursor: "pointer",
-                boxShadow: isPlaying ? "0 1px 3px rgba(220,38,38,0.3)" : "0 1px 3px rgba(5,150,105,0.3)",
-              }}
-            >
-              {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-              <span>{isPlaying ? "Pause" : "Play Trail"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleStepBack}
-              disabled={replayStep <= 0}
-              title="Step backward"
-              style={{
-                padding: "4px 6px",
-                borderRadius: "5px",
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: replayStep <= 0 ? "#94A3B8" : "#334155",
-                cursor: replayStep <= 0 ? "not-allowed" : "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              <ChevronLeft size={13} />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleStepForward}
-              disabled={replayStep >= 5}
-              title="Step forward"
-              style={{
-                padding: "4px 6px",
-                borderRadius: "5px",
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: replayStep >= 5 ? "#94A3B8" : "#334155",
-                cursor: replayStep >= 5 ? "not-allowed" : "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              <ChevronRight size={13} />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResetReplay}
-              title="Reset to Step 0"
-              style={{
-                padding: "4px 6px",
-                borderRadius: "5px",
-                border: "1px solid #CBD5E1",
-                background: "#FFFFFF",
-                color: "#475569",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-              }}
-            >
-              <RotateCcw size={12} />
-            </button>
-
-            {/* Speed Selector */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                borderRadius: "4px",
-                border: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-                overflow: "hidden",
-                marginLeft: "4px",
-              }}
-            >
-              {([0.5, 1, 2] as const).map((spd) => (
-                <button
-                  key={spd}
-                  type="button"
-                  onClick={() => setPlaybackSpeed(spd)}
-                  style={{
-                    fontSize: "9px",
-                    fontWeight: playbackSpeed === spd ? 800 : 600,
-                    padding: "3px 6px",
-                    border: "none",
-                    background: playbackSpeed === spd ? "#EEF2FF" : "transparent",
-                    color: playbackSpeed === spd ? "#4338CA" : "#64748B",
-                    cursor: "pointer",
-                  }}
-                >
-                  {spd}x
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 6 Step Navigation Pills */}
-          <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap" }}>
-            {[
-              { idx: 0, label: "0: SIM SWAP" },
-              { idx: 1, label: `1: INFLOW ${investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "FUNDS"}` },
-              { idx: 2, label: "2: AP BIND" },
-              { idx: 3, label: "3: FAN-OUT" },
-              { idx: 4, label: "4: CASHOUT" },
-              { idx: 5, label: "5: FREEZE (76%)" },
-            ].map((st) => {
-              const isCur = replayStep === st.idx;
-              return (
-                <button
-                  key={st.idx}
-                  type="button"
-                  onClick={() => handleJumpToStep(st.idx)}
-                  style={{
-                    fontSize: "9.5px",
-                    fontWeight: isCur ? 800 : 600,
-                    padding: "3px 7px",
-                    borderRadius: "4px",
-                    border: isCur ? "1.5px solid #4F46E5" : "1px solid #E2E8F0",
-                    background: isCur ? "#4F46E5" : "#FFFFFF",
-                    color: isCur ? "#FFFFFF" : "#475569",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {st.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Row 2: Forensic Narrative HUD Banner */}
-        <div
-          style={{
-            background: "#FFFFFF",
-            border: "1px solid #CBD5E1",
-            borderRadius: "6px",
-            padding: "6px 10px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-            boxShadow: "0 1px 3px rgba(15,23,42,0.04)",
-          }}
-        >
-          {/* Banner Header: Time + Title + Amount Badge */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+            {/* Play/Pause & Step Buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <button
+                type="button"
+                onClick={handleTogglePlay}
+                className="hover:opacity-90 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "3px",
-                  fontSize: "9.5px",
+                  gap: "5px",
+                  fontSize: "10.5px",
                   fontWeight: 800,
-                  background: "#0F172A",
+                  padding: "4px 10px",
+                  borderRadius: "5px",
+                  border: "none",
+                  background: isPlaying ? "#DC2626" : "#059669",
                   color: "#FFFFFF",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  fontFamily: "var(--font-mono)",
+                  cursor: "pointer",
+                  boxShadow: isPlaying ? "0 1px 3px rgba(220,38,38,0.3)" : "0 1px 3px rgba(5,150,105,0.3)",
                 }}
               >
-                <Clock size={10} />
-                <span>{currentStepData.clockTime}</span>
-                <span style={{ opacity: 0.75 }}>({currentStepData.timeLabel})</span>
-              </span>
+                {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                <span>{isPlaying ? "Pause" : "Play Trail"}</span>
+              </button>
 
-              <span style={{ fontSize: "11px", fontWeight: 800, color: "#1E293B" }}>
-                {currentStepData.title}
-              </span>
+              <button
+                type="button"
+                onClick={handleStepBack}
+                disabled={replayStep <= 0}
+                title="Step backward"
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: replayStep <= 0 ? "#94A3B8" : "#334155",
+                  cursor: replayStep <= 0 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <ChevronLeft size={13} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStepForward}
+                disabled={replayStep >= 5}
+                title="Step forward"
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: replayStep >= 5 ? "#94A3B8" : "#334155",
+                  cursor: replayStep >= 5 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <ChevronRight size={13} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetReplay}
+                title="Reset to Step 0"
+                style={{
+                  padding: "4px 6px",
+                  borderRadius: "5px",
+                  border: "1px solid #CBD5E1",
+                  background: "#FFFFFF",
+                  color: "#475569",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <RotateCcw size={12} />
+              </button>
+
+              {/* Speed Selector */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  borderRadius: "4px",
+                  border: "1px solid #E2E8F0",
+                  background: "#FFFFFF",
+                  overflow: "hidden",
+                  marginLeft: "4px",
+                }}
+              >
+                {([0.5, 1, 2] as const).map((spd) => (
+                  <button
+                    key={spd}
+                    type="button"
+                    onClick={() => setPlaybackSpeed(spd)}
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: playbackSpeed === spd ? 800 : 600,
+                      padding: "3px 6px",
+                      border: "none",
+                      background: playbackSpeed === spd ? "#EEF2FF" : "transparent",
+                      color: playbackSpeed === spd ? "#4338CA" : "#64748B",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {spd}x
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              {currentStepData.amount !== "—" && (
+            {/* 6 Step Navigation Pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap" }}>
+              {[
+                { idx: 0, label: "0: SIM SWAP" },
+                { idx: 1, label: `1: INFLOW ${investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "FUNDS"}` },
+                { idx: 2, label: "2: AP BIND" },
+                { idx: 3, label: "3: FAN-OUT" },
+                { idx: 4, label: "4: CASHOUT" },
+                { idx: 5, label: "5: FREEZE (76%)" },
+              ].map((st) => {
+                const isCur = replayStep === st.idx;
+                return (
+                  <button
+                    key={st.idx}
+                    type="button"
+                    onClick={() => handleJumpToStep(st.idx)}
+                    style={{
+                      fontSize: "9.5px",
+                      fontWeight: isCur ? 800 : 600,
+                      padding: "3px 7px",
+                      borderRadius: "4px",
+                      border: isCur ? "1.5px solid #4F46E5" : "1px solid #E2E8F0",
+                      background: isCur ? "#4F46E5" : "#FFFFFF",
+                      color: isCur ? "#FFFFFF" : "#475569",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 2: Forensic Narrative HUD Banner */}
+          <div
+            style={{
+              background: "#FFFFFF",
+              border: "1px solid #CBD5E1",
+              borderRadius: "6px",
+              padding: "6px 10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+              boxShadow: "0 1px 3px rgba(15,23,42,0.04)",
+            }}
+          >
+            {/* Banner Header: Time + Title + Amount Badge */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span
                   style={{
-                    fontSize: "10.5px",
-                    fontWeight: 900,
-                    background: "#ECFDF5",
-                    color: "#047857",
-                    border: "1px solid #A7F3D0",
-                    padding: "2px 7px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    fontSize: "9.5px",
+                    fontWeight: 800,
+                    background: "#0F172A",
+                    color: "#FFFFFF",
+                    padding: "2px 6px",
                     borderRadius: "4px",
                     fontFamily: "var(--font-mono)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "2px",
                   }}
                 >
-                  <span>Flow:</span>
-                  <span>{currentStepData.amount}</span>
+                  <Clock size={10} />
+                  <span>{currentStepData.clockTime}</span>
+                  <span style={{ opacity: 0.75 }}>({currentStepData.timeLabel})</span>
                 </span>
-              )}
 
-              {replayStep === 5 && (
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    background: "#EEF2FF",
-                    color: "#4338CA",
-                    border: "1px solid #C7D2FE",
-                    padding: "2px 7px",
-                    borderRadius: "4px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <ShieldCheck size={11} />
-                  <span>76% SECURED UNDER LIBR</span>
+                <span style={{ fontSize: "11px", fontWeight: 800, color: "#1E293B" }}>
+                  {currentStepData.title}
                 </span>
-              )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {currentStepData.amount !== "—" && (
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      fontWeight: 900,
+                      background: "#ECFDF5",
+                      color: "#047857",
+                      border: "1px solid #A7F3D0",
+                      padding: "2px 7px",
+                      borderRadius: "4px",
+                      fontFamily: "var(--font-mono)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "2px",
+                    }}
+                  >
+                    <span>Flow:</span>
+                    <span>{currentStepData.amount}</span>
+                  </span>
+                )}
+
+                {replayStep === 5 && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      background: "#EEF2FF",
+                      color: "#4338CA",
+                      border: "1px solid #C7D2FE",
+                      padding: "2px 7px",
+                      borderRadius: "4px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <ShieldCheck size={11} />
+                    <span>76% SECURED UNDER LIBR</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Banner Body: Narrative Text & Statutory Citation */}
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", fontSize: "10px" }}>
+              <p style={{ margin: 0, color: "#334155", lineHeight: 1.35, flex: 1 }}>
+                {currentStepData.narrative}
+              </p>
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontSize: "9px",
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  color: "#64748B",
+                  background: "#F1F5F9",
+                  padding: "2px 5px",
+                  borderRadius: "3px",
+                }}
+              >
+                {currentStepData.statutory}
+              </span>
             </div>
           </div>
-
-          {/* Banner Body: Narrative Text & Statutory Citation */}
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px", fontSize: "10px" }}>
-            <p style={{ margin: 0, color: "#334155", lineHeight: 1.35, flex: 1 }}>
-              {currentStepData.narrative}
-            </p>
-            <span
-              style={{
-                flexShrink: 0,
-                fontSize: "9px",
-                fontFamily: "var(--font-mono)",
-                fontWeight: 700,
-                color: "#64748B",
-                background: "#F1F5F9",
-                padding: "2px 5px",
-                borderRadius: "3px",
-              }}
-            >
-              {currentStepData.statutory}
-            </span>
-          </div>
         </div>
-      </div>
       )}
 
       {/* =========================================================================
@@ -1923,877 +1923,877 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             }}
           >
             {/* Background Grid Pattern & SVG Edges */}
-          <svg
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-            }}
-          >
-            <defs>
-              <pattern id="net-grid" width="32" height="32" patternUnits="userSpaceOnUse">
-                <circle cx="16" cy="16" r="0.75" fill="#CBD5E1" />
-              </pattern>
+            <svg
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+              }}
+            >
+              <defs>
+                <pattern id="net-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <circle cx="16" cy="16" r="0.75" fill="#CBD5E1" />
+                </pattern>
 
-              {/* Arrow Markers for vertical bezier endpoints */}
-              <marker
-                id="arrow-blue"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7" />
-              </marker>
-              <marker
-                id="arrow-rose"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#BE123C" />
-              </marker>
-              <marker
-                id="arrow-violet"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#8B5CF6" />
-              </marker>
-              <marker
-                id="arrow-emerald"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
-              </marker>
-              <marker
-                id="arrow-amber"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
-              </marker>
-            </defs>
-
-            <rect width="100%" height="100%" fill="url(#net-grid)" />
-
-            {/* Community Detection Bounding Hulls (Prompt 11) */}
-            {layout.communityHulls?.map((hull) => (
-              <g key={hull.id} className="community-hull">
-                <path
-                  d={hull.path}
-                  fill="rgba(99, 102, 241, 0.04)"
-                  stroke={hull.color || "#6366F1"}
-                  strokeWidth={1.5}
-                  strokeDasharray="6 4"
-                />
-                <text
-                  x={hull.labelX ?? 100}
-                  y={hull.labelY ?? 100}
-                  fill={hull.color || "#4F46E5"}
-                  fontSize="10"
-                  fontWeight="800"
-                  letterSpacing="0.05em"
+                {/* Arrow Markers for vertical bezier endpoints */}
+                <marker
+                  id="arrow-blue"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
                 >
-                  {hull.name.toUpperCase()}
-                </text>
-              </g>
-            ))}
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7" />
+                </marker>
+                <marker
+                  id="arrow-rose"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#BE123C" />
+                </marker>
+                <marker
+                  id="arrow-violet"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#8B5CF6" />
+                </marker>
+                <marker
+                  id="arrow-emerald"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+                </marker>
+                <marker
+                  id="arrow-amber"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
+                </marker>
+              </defs>
 
-            {/* Render Edges: Halo Layer First, then Color Path */}
-            {layout.edges.map((edge) => (
-              <path
-                key={`halo-${edge.id}`}
-                d={edge.haloPath}
-                fill="none"
-                stroke="#FFFFFF"
-                strokeWidth={edge.type === "cash" ? 7 : 5.5}
-                strokeLinecap="round"
-                opacity={getEdgeOpacity(edge) > 0 ? 0.95 : 0}
-                style={{ transition: "opacity 0.2s ease" }}
-              />
-            ))}
+              <rect width="100%" height="100%" fill="url(#net-grid)" />
 
-            {layout.edges.map((edge) => {
-              const isCashEdge = edge.type === "cash";
-              return (
-                <path
-                  key={edge.id}
-                  className="network-edge"
-                  d={edge.path}
-                  fill="none"
-                  stroke={edge.color}
-                  strokeWidth={edge.strokeWidth || (isCashEdge ? 3.0 : 2.25)}
-                  strokeDasharray={edge.dashed ? "5,4" : undefined}
-                  markerEnd={`url(#${edge.arrowhead})`}
-                  opacity={getEdgeOpacity(edge)}
-                  style={{
-                    pointerEvents: "auto",
-                    transition: "opacity 0.2s ease, stroke-width 0.15s ease",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    const matched =
-                      edge.targetId.includes("rohit") ? investigation.edges[2] :
-                      edge.targetId.includes("sameer") ? investigation.edges[3] :
-                      edge.targetId.includes("sink") ? investigation.edges[5] :
-                      investigation.edges[0];
-                    setSelectedEvidenceEdge(matched);
-                    openEvidenceSheet({
-                      title: isCashEdge
-                        ? `Cash Flow: ${edge.sourceId} → ${edge.targetId} (${edge.amount || "₹"})`
-                        : `Link: ${edge.sourceId} → ${edge.targetId}`,
-                      category: isCashEdge ? "Financial Money Trail" : edge.type.toUpperCase(),
-                      source: isCashEdge ? "Core Banking Ledger & NPCI Telemetry" : "Network Correlation Engine",
-                      sha256: sha256HexSync(canonicalJson({ src: edge.sourceId, tgt: edge.targetId, amt: edge.amount, ts: edge.timestamp })),
-                      statutoryBasis: isCashEdge ? "BNSS §106/§107 & BSA §63(4)" : "BSA §63(4) Electronic Record Admissibility",
-                      details: isCashEdge
-                        ? `Transaction flow ${edge.amount} recorded at ${edge.timestamp}. Provenance verified via CBS transaction logs and Clayton's Case LIBR principle.`
-                        : `Deterministic evidence link correlating network session telemetry under type [${edge.type}].`,
-                      linkedEntities: [edge.sourceId, edge.targetId],
-                    });
-                  }}
-                />
-              );
-            })}
-
-            {/* ===================================================================
-                ANIMATED SVG CURRENCY FLOW PARTICLES (₹) GLIDING ON CASH PATHS
-                =================================================================== */}
-            {activeCashEdges.map((edge) => {
-              const dur = playbackSpeed === 2 ? "1.2s" : playbackSpeed === 0.5 ? "3.2s" : "2.0s";
-              return (
-                <g key={`particle-${edge.id}`}>
-                  {/* Glowing Pulse Dot */}
-                  <circle r="7" fill={edge.color}>
-                    <animateMotion path={edge.path} dur={dur} repeatCount="indefinite" />
-                  </circle>
-                  {/* Rupee Character Particle */}
+              {/* Community Detection Bounding Hulls (Prompt 11) */}
+              {layout.communityHulls?.map((hull) => (
+                <g key={hull.id} className="community-hull">
+                  <path
+                    d={hull.path}
+                    fill="rgba(99, 102, 241, 0.04)"
+                    stroke={hull.color || "#6366F1"}
+                    strokeWidth={1.5}
+                    strokeDasharray="6 4"
+                  />
                   <text
-                    fill="#FFFFFF"
-                    fontSize="8.5"
-                    fontWeight="900"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    pointerEvents="none"
+                    x={hull.labelX ?? 100}
+                    y={hull.labelY ?? 100}
+                    fill={hull.color || "#4F46E5"}
+                    fontSize="10"
+                    fontWeight="800"
+                    letterSpacing="0.05em"
                   >
-                    ₹
-                    <animateMotion path={edge.path} dur={dur} repeatCount="indefinite" />
+                    {hull.name.toUpperCase()}
                   </text>
                 </g>
-              );
-            })}
-          </svg>
+              ))}
 
-          {/* =====================================================================
+              {/* Render Edges: Halo Layer First, then Color Path */}
+              {layout.edges.map((edge) => (
+                <path
+                  key={`halo-${edge.id}`}
+                  d={edge.haloPath}
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth={edge.type === "cash" ? 7 : 5.5}
+                  strokeLinecap="round"
+                  opacity={getEdgeOpacity(edge) > 0 ? 0.95 : 0}
+                  style={{ transition: "opacity 0.2s ease" }}
+                />
+              ))}
+
+              {layout.edges.map((edge) => {
+                const isCashEdge = edge.type === "cash";
+                return (
+                  <path
+                    key={edge.id}
+                    className="network-edge"
+                    d={edge.path}
+                    fill="none"
+                    stroke={edge.color}
+                    strokeWidth={edge.strokeWidth || (isCashEdge ? 3.0 : 2.25)}
+                    strokeDasharray={edge.dashed ? "5,4" : undefined}
+                    markerEnd={`url(#${edge.arrowhead})`}
+                    opacity={getEdgeOpacity(edge)}
+                    style={{
+                      pointerEvents: "auto",
+                      transition: "opacity 0.2s ease, stroke-width 0.15s ease",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      const matched =
+                        edge.targetId.includes("rohit") ? investigation.edges[2] :
+                          edge.targetId.includes("sameer") ? investigation.edges[3] :
+                            edge.targetId.includes("sink") ? investigation.edges[5] :
+                              investigation.edges[0];
+                      setSelectedEvidenceEdge(matched);
+                      openEvidenceSheet({
+                        title: isCashEdge
+                          ? `Cash Flow: ${edge.sourceId} → ${edge.targetId} (${edge.amount || "₹"})`
+                          : `Link: ${edge.sourceId} → ${edge.targetId}`,
+                        category: isCashEdge ? "Financial Money Trail" : edge.type.toUpperCase(),
+                        source: isCashEdge ? "Core Banking Ledger & NPCI Telemetry" : "Network Correlation Engine",
+                        sha256: sha256HexSync(canonicalJson({ src: edge.sourceId, tgt: edge.targetId, amt: edge.amount, ts: edge.timestamp })),
+                        statutoryBasis: isCashEdge ? "BNSS §106/§107 & BSA §63(4)" : "BSA §63(4) Electronic Record Admissibility",
+                        details: isCashEdge
+                          ? `Transaction flow ${edge.amount} recorded at ${edge.timestamp}. Provenance verified via CBS transaction logs and Clayton's Case LIBR principle.`
+                          : `Deterministic evidence link correlating network session telemetry under type [${edge.type}].`,
+                        linkedEntities: [edge.sourceId, edge.targetId],
+                      });
+                    }}
+                  />
+                );
+              })}
+
+              {/* ===================================================================
+                ANIMATED SVG CURRENCY FLOW PARTICLES (₹) GLIDING ON CASH PATHS
+                =================================================================== */}
+              {activeCashEdges.map((edge) => {
+                const dur = playbackSpeed === 2 ? "1.2s" : playbackSpeed === 0.5 ? "3.2s" : "2.0s";
+                return (
+                  <g key={`particle-${edge.id}`}>
+                    {/* Glowing Pulse Dot */}
+                    <circle r="7" fill={edge.color}>
+                      <animateMotion path={edge.path} dur={dur} repeatCount="indefinite" />
+                    </circle>
+                    {/* Rupee Character Particle */}
+                    <text
+                      fill="#FFFFFF"
+                      fontSize="8.5"
+                      fontWeight="900"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      pointerEvents="none"
+                    >
+                      ₹
+                      <animateMotion path={edge.path} dur={dur} repeatCount="indefinite" />
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* =====================================================================
               ROW A: CONTROLLER DEVICE CLUSTER (HERO) & SATELLITES
               ===================================================================== */}
-          {layout.nodes
-            .filter((n) => n.category === "controller" || n.category === "hero")
-            .map((node) => {
-              const isHero = node.category === "hero";
-              const opacity = getNodeOpacity(node.id);
+            {layout.nodes
+              .filter((n) => n.category === "controller" || n.category === "hero")
+              .map((node) => {
+                const isHero = node.category === "hero";
+                const opacity = getNodeOpacity(node.id);
 
-              return (
-                <div
-                  key={node.id}
-                  className="node-card"
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() =>
-                    openEvidenceSheet({
-                      title: node.label,
-                      category: isHero ? "Controller Device Cluster" : "Network Ingress",
-                      source: isHero ? "Airtel PGW & Samsung TAC 86749206" : "Rohini Sector 4 BTS",
-                      sha256: "89c20491823091ffeed891241aa44591aefc48201",
-                      statutoryBasis: "BSA §63 & DoT License Clause 39.20",
-                      details: node.sublabel,
-                      linkedEntities: ["Vikram Shah (L1)", "Rohit Verma (L2A)", "Sameer Khan (L2B)", "Paytm Sink #1109"],
-                    })
-                  }
-                  style={{
-                    position: "absolute",
-                    left: node.x,
-                    top: node.y,
-                    width: node.w,
-                    height: node.h,
-                    borderRadius: "8px",
-                    background: "#FFFFFF",
-                    border: isHero ? "1.5px solid #F43F5E" : "1px solid #CBD5E1",
-                    boxShadow: isHero
-                      ? "0 0 16px -2px rgba(244, 63, 94, 0.35), 0 4px 12px rgba(15, 23, 42, 0.08)"
-                      : "0 1px 3px rgba(15, 23, 42, 0.06)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    padding: isHero ? "8px 12px" : "6px 10px",
-                    boxSizing: "border-box",
-                    cursor: "pointer",
-                    opacity,
-                    transition: "opacity 0.2s ease, transform 0.15s ease",
-                    zIndex: isHero ? 5 : 4,
-                  }}
-                >
-                  {/* Top Badge for Hero */}
-                  {isHero && (
+                return (
+                  <div
+                    key={node.id}
+                    className="node-card"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() =>
+                      openEvidenceSheet({
+                        title: node.label,
+                        category: isHero ? "Controller Device Cluster" : "Network Ingress",
+                        source: isHero ? "Airtel PGW & Samsung TAC 86749206" : "Rohini Sector 4 BTS",
+                        sha256: "89c20491823091ffeed891241aa44591aefc48201",
+                        statutoryBasis: "BSA §63 & DoT License Clause 39.20",
+                        details: node.sublabel,
+                        linkedEntities: ["Vikram Shah (L1)", "Rohit Verma (L2A)", "Sameer Khan (L2B)", "Paytm Sink #1109"],
+                      })
+                    }
+                    style={{
+                      position: "absolute",
+                      left: node.x,
+                      top: node.y,
+                      width: node.w,
+                      height: node.h,
+                      borderRadius: "8px",
+                      background: "#FFFFFF",
+                      border: isHero ? "1.5px solid #F43F5E" : "1px solid #CBD5E1",
+                      boxShadow: isHero
+                        ? "0 0 16px -2px rgba(244, 63, 94, 0.35), 0 4px 12px rgba(15, 23, 42, 0.08)"
+                        : "0 1px 3px rgba(15, 23, 42, 0.06)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      padding: isHero ? "8px 12px" : "6px 10px",
+                      boxSizing: "border-box",
+                      cursor: "pointer",
+                      opacity,
+                      transition: "opacity 0.2s ease, transform 0.15s ease",
+                      zIndex: isHero ? 5 : 4,
+                    }}
+                  >
+                    {/* Top Badge for Hero */}
+                    {isHero && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "8.5px",
+                            fontWeight: 800,
+                            letterSpacing: "0.06em",
+                            color: "#E11D48",
+                            textTransform: "uppercase",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: "#E11D48",
+                              animation: "pulse 1.5s infinite",
+                            }}
+                          />
+                          Controller Device Cluster
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "8px",
+                            fontWeight: 700,
+                            background: isHotspotActive ? "#FFF1F2" : "#ECFDF5",
+                            color: isHotspotActive ? "#E11D48" : "#047857",
+                            padding: "1px 4px",
+                            borderRadius: "3px",
+                            border: isHotspotActive ? "1px solid #FECDD3" : "1px solid #A7F3D0",
+                          }}
+                        >
+                          {isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}
+                        </span>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      {node.id === "node-tower" && <Radio size={14} color="#0284C7" />}
+                      {isHero && <Smartphone size={15} color="#E11D48" />}
+                      {node.id === "node-c2" && <Server size={14} color="#BE123C" />}
+
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: isHero ? "12px" : "11px",
+                            fontWeight: 800,
+                            color: "#0F172A",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {node.label}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: isHero ? "9.5px" : "9px",
+                            color: "#64748B",
+                            fontFamily: "var(--font-mono)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {node.sublabel}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+            {/* =====================================================================
+              ROW B: THREE EVIDENCE HUBS (56px CIRCLES)
+              ===================================================================== */}
+            {layout.nodes
+              .filter((n) => n.category === "hub")
+              .map((hub) => {
+                const opacity = getNodeOpacity(hub.id);
+
+                return (
+                  <div
+                    key={hub.id}
+                    className="evidence-hub"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredNodeId(hub.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() =>
+                      openEvidenceSheet({
+                        title: hub.label,
+                        category: "Corroborative Evidence Hub",
+                        source:
+                          hub.id === "hub-tether"
+                            ? "Airtel BSSID Telemetry"
+                            : hub.id === "hub-ja4"
+                              ? "JA4 TLS Fingerprint"
+                              : "Mewat CAF Retailer Logs",
+                        sha256: "339109bbcf12498214aa88231908812c3f19a03b",
+                        statutoryBasis: "BSA §63 Admissibility Protocol",
+                        details: `Coverage: ${hub.strength} accounts correlated under this evidence vector.`,
+                        linkedEntities:
+                          hub.id === "hub-caf" ? ["Sameer Khan (L2B)", "Paytm Sink #1109"] : ["All 4 Mule Accounts"],
+                      })
+                    }
+                    style={{
+                      position: "absolute",
+                      left: hub.x,
+                      top: hub.y,
+                      width: hub.w,
+                      height: hub.h,
+                      borderRadius: "50%",
+                      background: "#FFFFFF",
+                      border: `2px solid ${hub.color}`,
+                      boxShadow: `0 0 12px -2px ${hub.color}40, 0 2px 6px rgba(15,23,42,0.06)`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      opacity,
+                      transition: "opacity 0.2s ease, transform 0.15s ease",
+                      zIndex: 4,
+                    }}
+                  >
+                    {hub.id === "hub-tether" && <Wifi size={22} color={hub.color} />}
+                    {hub.id === "hub-ja4" && <Cpu size={22} color={hub.color} />}
+                    {hub.id === "hub-caf" && <Building size={22} color={hub.color} />}
+
+                    {/* Two-Line Caption BELOW Hub */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: hub.h + 4,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 140,
+                        textAlign: "center",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "10.5px",
+                          fontWeight: 700,
+                          color: "#0F172A",
+                          textShadow: "0 0 3px #FFFFFF, 0 0 6px #FFFFFF",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {hub.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "9.5px",
+                          fontWeight: 800,
+                          color: hub.color,
+                          fontFamily: "var(--font-mono)",
+                          textShadow: "0 0 3px #FFFFFF, 0 0 6px #FFFFFF",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {hub.strength} Match
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+            {/* =====================================================================
+              ROW B SATELLITE: VICTIM NODE (Sunil Kumar)
+              ===================================================================== */}
+            {layout.nodes
+              .filter((n) => n.category === "victim")
+              .map((node) => {
+                const opacity = getNodeOpacity(node.id);
+                const balanceInfo = currentStepData.muleBalances[node.id];
+
+                return (
+                  <div
+                    key={node.id}
+                    className="node-card"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() => {
+                      const vName = canonicalCase?.complainant?.name || node.label || "Victim";
+                      const vBank = canonicalCase?.complainant?.bank || (node as any).bank || "Bank";
+                      const fir = canonicalCase?.firNumber || "FIR";
+                      const lossStr = canonicalCase ? formatInr(canonicalCase.financials.bookedLossInr) : "Booked Loss";
+                      const l1Mule = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE")?.holderName || "L1 Mule";
+                      openEvidenceSheet({
+                        title: `Victim ${vName} (${vBank} Account)`,
+                        category: "Crime Inception / Complainant",
+                        source: `${canonicalCase?.ncrpAckNo || "NCRP 1930 Helpline"} & ${vBank} Core Banking`,
+                        sha256: "01c77f0a8c29341098bca44019488a09b3019f",
+                        statutoryBasis: `FIR #${fir} U/S 66D IT Act & 318(4) BNS`,
+                        details: `Victim reported unauthorized debits following cyber-extortion fraud. Initial booked loss ${lossStr}.`,
+                        linkedEntities: [l1Mule],
+                      });
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: node.x,
+                      top: node.y,
+                      width: node.w,
+                      height: node.h,
+                      borderRadius: "6px",
+                      background: "#FFFFFF",
+                      border: "1.5px solid #EF4444",
+                      boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      padding: "5px 8px",
+                      boxSizing: "border-box",
+                      cursor: "pointer",
+                      opacity,
+                      transition: "opacity 0.2s ease, transform 0.15s ease",
+                      zIndex: 4,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <div
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          borderRadius: "50%",
+                          background: "#FEE2E2",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <User size={12} color="#DC2626" />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "10.5px",
+                            fontWeight: 800,
+                            color: "#991B1B",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine1 || node.label}
+                        </div>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "8.5px",
+                            color: "#64748B",
+                            fontFamily: "var(--font-mono)",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine2 || node.sublabel}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Replay Balance Tag */}
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        marginBottom: "4px",
+                        fontSize: "8.5px",
+                        borderTop: "1px solid #FEE2E2",
+                        paddingTop: "2px",
                       }}
                     >
-                      <span
-                        style={{
-                          fontSize: "8.5px",
-                          fontWeight: 800,
-                          letterSpacing: "0.06em",
-                          color: "#E11D48",
-                          textTransform: "uppercase",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: "6px",
-                            height: "6px",
-                            borderRadius: "50%",
-                            background: "#E11D48",
-                            animation: "pulse 1.5s infinite",
-                          }}
-                        />
-                        Controller Device Cluster
+                      <span style={{ fontWeight: 800, color: "#DC2626" }}>
+                        Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
                       </span>
                       <span
                         style={{
-                          fontSize: "8px",
-                          fontWeight: 700,
-                          background: isHotspotActive ? "#FFF1F2" : "#ECFDF5",
-                          color: isHotspotActive ? "#E11D48" : "#047857",
-                          padding: "1px 4px",
-                          borderRadius: "3px",
-                          border: isHotspotActive ? "1px solid #FECDD3" : "1px solid #A7F3D0",
-                        }}
-                      >
-                        {isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}
-                      </span>
-                    </div>
-                  )}
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {node.id === "node-tower" && <Radio size={14} color="#0284C7" />}
-                    {isHero && <Smartphone size={15} color="#E11D48" />}
-                    {node.id === "node-c2" && <Server size={14} color="#BE123C" />}
-
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          fontSize: isHero ? "12px" : "11px",
-                          fontWeight: 800,
-                          color: "#0F172A",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {node.label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: isHero ? "9.5px" : "9px",
-                          color: "#64748B",
-                          fontFamily: "var(--font-mono)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {node.sublabel}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* =====================================================================
-              ROW B: THREE EVIDENCE HUBS (56px CIRCLES)
-              ===================================================================== */}
-          {layout.nodes
-            .filter((n) => n.category === "hub")
-            .map((hub) => {
-              const opacity = getNodeOpacity(hub.id);
-
-              return (
-                <div
-                  key={hub.id}
-                  className="evidence-hub"
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredNodeId(hub.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() =>
-                    openEvidenceSheet({
-                      title: hub.label,
-                      category: "Corroborative Evidence Hub",
-                      source:
-                        hub.id === "hub-tether"
-                          ? "Airtel BSSID Telemetry"
-                          : hub.id === "hub-ja4"
-                          ? "JA4 TLS Fingerprint"
-                          : "Mewat CAF Retailer Logs",
-                      sha256: "339109bbcf12498214aa88231908812c3f19a03b",
-                      statutoryBasis: "BSA §63 Admissibility Protocol",
-                      details: `Coverage: ${hub.strength} accounts correlated under this evidence vector.`,
-                      linkedEntities:
-                        hub.id === "hub-caf" ? ["Sameer Khan (L2B)", "Paytm Sink #1109"] : ["All 4 Mule Accounts"],
-                    })
-                  }
-                  style={{
-                    position: "absolute",
-                    left: hub.x,
-                    top: hub.y,
-                    width: hub.w,
-                    height: hub.h,
-                    borderRadius: "50%",
-                    background: "#FFFFFF",
-                    border: `2px solid ${hub.color}`,
-                    boxShadow: `0 0 12px -2px ${hub.color}40, 0 2px 6px rgba(15,23,42,0.06)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    opacity,
-                    transition: "opacity 0.2s ease, transform 0.15s ease",
-                    zIndex: 4,
-                  }}
-                >
-                  {hub.id === "hub-tether" && <Wifi size={22} color={hub.color} />}
-                  {hub.id === "hub-ja4" && <Cpu size={22} color={hub.color} />}
-                  {hub.id === "hub-caf" && <Building size={22} color={hub.color} />}
-
-                  {/* Two-Line Caption BELOW Hub */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: hub.h + 4,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: 140,
-                      textAlign: "center",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "10.5px",
-                        fontWeight: 700,
-                        color: "#0F172A",
-                        textShadow: "0 0 3px #FFFFFF, 0 0 6px #FFFFFF",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {hub.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "9.5px",
-                        fontWeight: 800,
-                        color: hub.color,
-                        fontFamily: "var(--font-mono)",
-                        textShadow: "0 0 3px #FFFFFF, 0 0 6px #FFFFFF",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {hub.strength} Match
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* =====================================================================
-              ROW B SATELLITE: VICTIM NODE (Sunil Kumar)
-              ===================================================================== */}
-          {layout.nodes
-            .filter((n) => n.category === "victim")
-            .map((node) => {
-              const opacity = getNodeOpacity(node.id);
-              const balanceInfo = currentStepData.muleBalances[node.id];
-
-              return (
-                <div
-                  key={node.id}
-                  className="node-card"
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() => {
-                    const vName = canonicalCase?.complainant?.name || node.label || "Victim";
-                    const vBank = canonicalCase?.complainant?.bank || (node as any).bank || "Bank";
-                    const fir = canonicalCase?.firNumber || "FIR";
-                    const lossStr = canonicalCase ? formatInr(canonicalCase.financials.bookedLossInr) : "Booked Loss";
-                    const l1Mule = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE")?.holderName || "L1 Mule";
-                    openEvidenceSheet({
-                      title: `Victim ${vName} (${vBank} Account)`,
-                      category: "Crime Inception / Complainant",
-                      source: `${canonicalCase?.ncrpAckNo || "NCRP 1930 Helpline"} & ${vBank} Core Banking`,
-                      sha256: "01c77f0a8c29341098bca44019488a09b3019f",
-                      statutoryBasis: `FIR #${fir} U/S 66D IT Act & 318(4) BNS`,
-                      details: `Victim reported unauthorized debits following cyber-extortion fraud. Initial booked loss ${lossStr}.`,
-                      linkedEntities: [l1Mule],
-                    });
-                  }}
-                  style={{
-                    position: "absolute",
-                    left: node.x,
-                    top: node.y,
-                    width: node.w,
-                    height: node.h,
-                    borderRadius: "6px",
-                    background: "#FFFFFF",
-                    border: "1.5px solid #EF4444",
-                    boxShadow: "0 2px 8px rgba(239, 68, 68, 0.15)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: "5px 8px",
-                    boxSizing: "border-box",
-                    cursor: "pointer",
-                    opacity,
-                    transition: "opacity 0.2s ease, transform 0.15s ease",
-                    zIndex: 4,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <div
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        background: "#FEE2E2",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <User size={12} color="#DC2626" />
-                    </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
-                        style={{
-                          fontSize: "10.5px",
-                          fontWeight: 800,
+                          background: "#FEE2E2",
                           color: "#991B1B",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
+                          padding: "0.5px 3.5px",
+                          borderRadius: "2px",
+                          fontWeight: 700,
                         }}
                       >
-                        {node.labelLine1 || node.label}
-                      </div>
-                      <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
-                        style={{
-                          fontSize: "8.5px",
-                          color: "#64748B",
-                          fontFamily: "var(--font-mono)",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {node.labelLine2 || node.sublabel}
-                      </div>
+                        Loss: {investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Loss Recorded"}
+                      </span>
                     </div>
                   </div>
+                );
+              })}
 
-                  {/* Dynamic Replay Balance Tag */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "8.5px",
-                      borderTop: "1px solid #FEE2E2",
-                      paddingTop: "2px",
-                    }}
-                  >
-                    <span style={{ fontWeight: 800, color: "#DC2626" }}>
-                      Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
-                    </span>
-                    <span
-                      style={{
-                        background: "#FEE2E2",
-                        color: "#991B1B",
-                        padding: "0.5px 3.5px",
-                        borderRadius: "2px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Loss: {investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Loss Recorded"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* =====================================================================
+            {/* =====================================================================
               ROW B SATELLITE: ATM CASHOUT SINK (Rohini Sec-4 ATM DL-049)
               ===================================================================== */}
-          {layout.nodes
-            .filter((n) => n.category === "sink" && n.id === "node-atm")
-            .map((node) => {
-              const opacity = getNodeOpacity(node.id);
-              const balanceInfo = currentStepData.muleBalances[node.id];
+            {layout.nodes
+              .filter((n) => n.category === "sink" && n.id === "node-atm")
+              .map((node) => {
+                const opacity = getNodeOpacity(node.id);
+                const balanceInfo = currentStepData.muleBalances[node.id];
 
-              return (
-                <div
-                  key={node.id}
-                  className="node-card"
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() =>
-                    openEvidenceSheet({
-                      title: "Rohini Sector 4 ATM DL-049 (Cashout Sink)",
-                      category: "Physical Cashout Location",
-                      source: "ATM Electronic Journal & Branch CCTV Video Log",
-                      sha256: "90da912041289cf00124801bfe491048",
-                      statutoryBasis: "BSA §63 & BNSS §106 CCTV Seizure",
-                      details:
-                        "Sameer Khan debit card withdrawal of ₹1,20,000 at 10:18:22 IST. Surveillance CCTV footage timestamp aligns with Airtel Tower DL-TWR-891 azimuth.",
-                      linkedEntities: ["Sameer Khan (L2B Mule)"],
-                    })
-                  }
-                  style={{
-                    position: "absolute",
-                    left: node.x,
-                    top: node.y,
-                    width: node.w,
-                    height: node.h,
-                    borderRadius: "6px",
-                    background: "#FFFFFF",
-                    border: "1.5px solid #DC2626",
-                    boxShadow: "0 2px 8px rgba(220, 38, 38, 0.15)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: "5px 8px",
-                    boxSizing: "border-box",
-                    cursor: "pointer",
-                    opacity,
-                    transition: "opacity 0.2s ease, transform 0.15s ease",
-                    zIndex: 4,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <div
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        background: "#FEE2E2",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Building size={12} color="#DC2626" />
-                    </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
-                        style={{
-                          fontSize: "10.5px",
-                          fontWeight: 800,
-                          color: "#991B1B",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {node.labelLine1 || node.label}
-                      </div>
-                      <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
-                        style={{
-                          fontSize: "8.5px",
-                          color: "#64748B",
-                          fontFamily: "var(--font-mono)",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {node.labelLine2 || node.sublabel}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dynamic Cashout Tag */}
+                return (
                   <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "8.5px",
-                      borderTop: "1px solid #FEE2E2",
-                      paddingTop: "2px",
-                    }}
-                  >
-                    <span style={{ fontWeight: 800, color: "#DC2626" }}>
-                      {balanceInfo ? balanceInfo.balance : "Cash: ₹1.20L"}
-                    </span>
-                    <span
-                      style={{
-                        background: "#FEE2E2",
-                        color: "#991B1B",
-                        padding: "0.5px 3.5px",
-                        borderRadius: "2px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      ATM Cashout
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* =====================================================================
-              ROW C: FOUR ACCOUNT CARDS (176x64) WITH DYNAMIC REPLAY BALANCES
-              ===================================================================== */}
-          {layout.nodes
-            .filter((n) => n.category === "account")
-            .map((node) => {
-              const opacity = getNodeOpacity(node.id);
-              const balanceInfo = currentStepData.muleBalances[node.id];
-
-              const getToneColor = (tone?: string) => {
-                if (tone === "emerald") return { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" };
-                if (tone === "amber") return { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" };
-                if (tone === "rose") return { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" };
-                if (tone === "indigo") return { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" };
-                return { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" };
-              };
-
-              const toneStyle = getToneColor(balanceInfo?.tone);
-
-              return (
-                <div
-                  key={node.id}
-                  className="node-card"
-                  tabIndex={0}
-                  onMouseEnter={() => setHoveredNodeId(node.id)}
-                  onMouseLeave={() => setHoveredNodeId(null)}
-                  onClick={() => {
-                    const matched =
-                      investigation.edges.find((e) => e.targetNodeId === node.id || e.sourceNodeId === node.id) ||
-                      investigation.edges[0];
-                    if (matched) setSelectedEvidenceEdge(matched);
-
-                    const scoreEntry =
-                      investigation.muleScores?.[node.id] ||
-                      investigation.muleScores?.[node.sublabel.split(" · A/C ")[1]] ||
-                      investigation.muleScores?.[node.label];
-                    const reasons = scoreEntry?.topReasons || [
-                      "Rapid post-credit fund drain within 180 seconds",
-                      "Shared device MAC / BSSID hotspot link with accomplice",
-                      "High velocity layering across multiple intermediary conduits",
-                    ];
-
-                    openEvidenceSheet({
-                      title: `Account Dossier: ${node.label}`,
-                      category: `Mule Account Analysis (${node.riskBand || "CRITICAL"})`,
-                      source: "Core Banking Ledger & Cyber Crime Freeze Engine",
-                      sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label, role: node.role, score: node.muleScore })),
-                      statutoryBasis: "BNSS §107 Provisional Seizure Order & BSA §63(4)",
-                      details: `${node.role || "Mule Account"} · ${node.sublabel}\nInvestigative Lead Strength: ${node.muleScore ?? 85}/100 (${node.riskBand || "CRITICAL"})\n\nFeature Contributions:\n${reasons.map((r: string) => `• ${r}`).join("\n")}${node.crossCaseLinked ? `\n\nCross-Case Correlation:\nAccount active in syndicated cyber-extortion FIR ${node.crossCaseId || "CASE-2026-003"}.` : ""}`,
-                      linkedEntities: ["Controller Device Cluster", "JA4 TLS Anchor", node.label],
-                    });
-                  }}
-                  style={{
-                    position: "absolute",
-                    left: node.x,
-                    top: node.y,
-                    width: node.w,
-                    height: node.h,
-                    borderRadius: "6px",
-                    background: "#FFFFFF",
-                    border: "1px solid #CBD5E1",
-                    boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: "5px 8px",
-                    boxSizing: "border-box",
-                    cursor: "pointer",
-                    opacity,
-                    transition: "opacity 0.2s ease, transform 0.15s ease",
-                    zIndex: 4,
-                  }}
-                >
-                  {/* Top Edge Port Markers */}
-                  <div
+                    key={node.id}
+                    className="node-card"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() =>
+                      openEvidenceSheet({
+                        title: "Rohini Sector 4 ATM DL-049 (Cashout Sink)",
+                        category: "Physical Cashout Location",
+                        source: "ATM Electronic Journal & Branch CCTV Video Log",
+                        sha256: "90da912041289cf00124801bfe491048",
+                        statutoryBasis: "BSA §63 & BNSS §106 CCTV Seizure",
+                        details:
+                          "Sameer Khan debit card withdrawal of ₹1,20,000 at 10:18:22 IST. Surveillance CCTV footage timestamp aligns with Airtel Tower DL-TWR-891 azimuth.",
+                        linkedEntities: ["Sameer Khan (L2B Mule)"],
+                      })
+                    }
                     style={{
                       position: "absolute",
-                      top: -3,
-                      left: 0,
-                      width: "100%",
+                      left: node.x,
+                      top: node.y,
+                      width: node.w,
+                      height: node.h,
+                      borderRadius: "6px",
+                      background: "#FFFFFF",
+                      border: "1.5px solid #DC2626",
+                      boxShadow: "0 2px 8px rgba(220, 38, 38, 0.15)",
                       display: "flex",
-                      justifyContent: "center",
-                      gap: "38px",
-                      pointerEvents: "none",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      padding: "5px 8px",
+                      boxSizing: "border-box",
+                      cursor: "pointer",
+                      opacity,
+                      transition: "opacity 0.2s ease, transform 0.15s ease",
+                      zIndex: 4,
                     }}
                   >
-                    <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#8B5CF6" }} />
-                    <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#10B981" }} />
-                    <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#F59E0B" }} />
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Shield size={13} color={node.color} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                       <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
                         style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: "#0F172A",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
+                          width: "20px",
+                          height: "20px",
+                          borderRadius: "50%",
+                          background: "#FEE2E2",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
                         }}
                       >
-                        {node.labelLine1 || node.label}
+                        <Building size={12} color="#DC2626" />
                       </div>
-                      <div
-                        title={node.tooltip || `${node.label} · ${node.sublabel}`}
-                        style={{
-                          fontSize: "8.5px",
-                          color: "#64748B",
-                          fontFamily: "var(--font-mono)",
-                          lineHeight: 1.25,
-                          wordBreak: "break-word",
-                          maxHeight: "2.5em",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {node.labelLine2 || node.sublabel}
-                      </div>
-                      {/* Mule Lead Score & Cross-FIR Badges */}
-                      <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap", marginTop: "2px" }}>
-                        {node.muleScore !== undefined && (
-                          <span
-                            style={{
-                              fontSize: "7.5px",
-                              fontWeight: 800,
-                              background: node.riskBand === "CRITICAL" ? "#FEE2E2" : node.riskBand === "ELEVATED" ? "#FEF3C7" : node.riskBand === "MERCHANT" ? "#ECFDF5" : "#E0E7FF",
-                              color: node.riskBand === "CRITICAL" ? "#991B1B" : node.riskBand === "ELEVATED" ? "#B45309" : node.riskBand === "MERCHANT" ? "#047857" : "#3730A3",
-                              padding: "0.5px 3.5px",
-                              borderRadius: "2px",
-                            }}
-                          >
-                            Score: {node.muleScore}/100
-                          </span>
-                        )}
-                        {node.crossCaseLinked && (
-                          <span
-                            style={{
-                              fontSize: "7.5px",
-                              fontWeight: 800,
-                              background: "#EEF2FF",
-                              color: "#4338CA",
-                              border: "1px solid #C7D2FE",
-                              padding: "0.5px 3px",
-                              borderRadius: "2px",
-                            }}
-                            title="Correlated suspect account linked across multiple FIRs"
-                          >
-                            🔗 CROSS-FIR
-                          </span>
-                        )}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "10.5px",
+                            fontWeight: 800,
+                            color: "#991B1B",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine1 || node.label}
+                        </div>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "8.5px",
+                            color: "#64748B",
+                            fontFamily: "var(--font-mono)",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine2 || node.sublabel}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Dynamic Balance Row (Where Cash Went) */}
+                    {/* Dynamic Cashout Tag */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "8.5px",
+                        borderTop: "1px solid #FEE2E2",
+                        paddingTop: "2px",
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, color: "#DC2626" }}>
+                        {balanceInfo ? balanceInfo.balance : "Cash: ₹1.20L"}
+                      </span>
+                      <span
+                        style={{
+                          background: "#FEE2E2",
+                          color: "#991B1B",
+                          padding: "0.5px 3.5px",
+                          borderRadius: "2px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        ATM Cashout
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+            {/* =====================================================================
+              ROW C: FOUR ACCOUNT CARDS (176x64) WITH DYNAMIC REPLAY BALANCES
+              ===================================================================== */}
+            {layout.nodes
+              .filter((n) => n.category === "account")
+              .map((node) => {
+                const opacity = getNodeOpacity(node.id);
+                const balanceInfo = currentStepData.muleBalances[node.id];
+
+                const getToneColor = (tone?: string) => {
+                  if (tone === "emerald") return { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" };
+                  if (tone === "amber") return { bg: "#FEF3C7", text: "#B45309", border: "#FDE68A" };
+                  if (tone === "rose") return { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" };
+                  if (tone === "indigo") return { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" };
+                  return { bg: "#F1F5F9", text: "#475569", border: "#E2E8F0" };
+                };
+
+                const toneStyle = getToneColor(balanceInfo?.tone);
+
+                return (
                   <div
+                    key={node.id}
+                    className="node-card"
+                    tabIndex={0}
+                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                    onMouseLeave={() => setHoveredNodeId(null)}
+                    onClick={() => {
+                      const matched =
+                        investigation.edges.find((e) => e.targetNodeId === node.id || e.sourceNodeId === node.id) ||
+                        investigation.edges[0];
+                      if (matched) setSelectedEvidenceEdge(matched);
+
+                      const scoreEntry =
+                        investigation.muleScores?.[node.id] ||
+                        investigation.muleScores?.[node.sublabel.split(" · A/C ")[1]] ||
+                        investigation.muleScores?.[node.label];
+                      const reasons = scoreEntry?.topReasons || [
+                        "Rapid post-credit fund drain within 180 seconds",
+                        "Shared device MAC / BSSID hotspot link with accomplice",
+                        "High velocity layering across multiple intermediary conduits",
+                      ];
+
+                      openEvidenceSheet({
+                        title: `Account Dossier: ${node.label}`,
+                        category: `Mule Account Analysis (${node.riskBand || "CRITICAL"})`,
+                        source: "Core Banking Ledger & Cyber Crime Freeze Engine",
+                        sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label, role: node.role, score: node.muleScore })),
+                        statutoryBasis: "BNSS §107 Provisional Seizure Order & BSA §63(4)",
+                        details: `${node.role || "Mule Account"} · ${node.sublabel}\nInvestigative Lead Strength: ${node.muleScore ?? 85}/100 (${node.riskBand || "CRITICAL"})\n\nFeature Contributions:\n${reasons.map((r: string) => `• ${r}`).join("\n")}${node.crossCaseLinked ? `\n\nCross-Case Correlation:\nAccount active in syndicated cyber-extortion FIR ${node.crossCaseId || "CASE-2026-003"}.` : ""}`,
+                        linkedEntities: ["Controller Device Cluster", "JA4 TLS Anchor", node.label],
+                      });
+                    }}
                     style={{
+                      position: "absolute",
+                      left: node.x,
+                      top: node.y,
+                      width: node.w,
+                      height: node.h,
+                      borderRadius: "6px",
+                      background: "#FFFFFF",
+                      border: "1px solid #CBD5E1",
+                      boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
                       display: "flex",
-                      alignItems: "center",
+                      flexDirection: "column",
                       justifyContent: "space-between",
-                      fontSize: "8.5px",
-                      borderTop: "1px solid #F1F5F9",
-                      paddingTop: "2px",
-                      gap: "4px",
+                      padding: "5px 8px",
+                      boxSizing: "border-box",
+                      cursor: "pointer",
+                      opacity,
+                      transition: "opacity 0.2s ease, transform 0.15s ease",
+                      zIndex: 4,
                     }}
                   >
-                    <span
+                    {/* Top Edge Port Markers */}
+                    <div
                       style={{
-                        fontFamily: "var(--font-mono)",
-                        fontWeight: 800,
-                        color: toneStyle.text,
-                        background: toneStyle.bg,
-                        padding: "1px 4px",
-                        borderRadius: "3px",
-                        border: `1px solid ${toneStyle.border}`,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        position: "absolute",
+                        top: -3,
+                        left: 0,
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: "38px",
+                        pointerEvents: "none",
                       }}
                     >
-                      Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
-                    </span>
-                    <span
+                      <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#8B5CF6" }} />
+                      <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#10B981" }} />
+                      <span style={{ width: "5px", height: "3px", borderRadius: "1px", background: "#F59E0B" }} />
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Shield size={13} color={node.color} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 800,
+                            color: "#0F172A",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine1 || node.label}
+                        </div>
+                        <div
+                          title={node.tooltip || `${node.label} · ${node.sublabel}`}
+                          style={{
+                            fontSize: "8.5px",
+                            color: "#64748B",
+                            fontFamily: "var(--font-mono)",
+                            lineHeight: 1.25,
+                            wordBreak: "break-word",
+                            maxHeight: "2.5em",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {node.labelLine2 || node.sublabel}
+                        </div>
+                        {/* Mule Lead Score & Cross-FIR Badges */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "3px", flexWrap: "wrap", marginTop: "2px" }}>
+                          {node.muleScore !== undefined && (
+                            <span
+                              style={{
+                                fontSize: "7.5px",
+                                fontWeight: 800,
+                                background: node.riskBand === "CRITICAL" ? "#FEE2E2" : node.riskBand === "ELEVATED" ? "#FEF3C7" : node.riskBand === "MERCHANT" ? "#ECFDF5" : "#E0E7FF",
+                                color: node.riskBand === "CRITICAL" ? "#991B1B" : node.riskBand === "ELEVATED" ? "#B45309" : node.riskBand === "MERCHANT" ? "#047857" : "#3730A3",
+                                padding: "0.5px 3.5px",
+                                borderRadius: "2px",
+                              }}
+                            >
+                              Score: {node.muleScore}/100
+                            </span>
+                          )}
+                          {node.crossCaseLinked && (
+                            <span
+                              style={{
+                                fontSize: "7.5px",
+                                fontWeight: 800,
+                                background: "#EEF2FF",
+                                color: "#4338CA",
+                                border: "1px solid #C7D2FE",
+                                padding: "0.5px 3px",
+                                borderRadius: "2px",
+                              }}
+                              title="Correlated suspect account linked across multiple FIRs"
+                            >
+                              🔗 CROSS-FIR
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Balance Row (Where Cash Went) */}
+                    <div
                       style={{
-                        flexShrink: 0,
-                        color: "#059669",
-                        fontWeight: 800,
-                        background: "#ECFDF5",
-                        padding: "0.5px 3.5px",
-                        borderRadius: "2px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "8.5px",
+                        borderTop: "1px solid #F1F5F9",
+                        paddingTop: "2px",
+                        gap: "4px",
                       }}
                     >
-                      §107 Frozen
-                    </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontWeight: 800,
+                          color: toneStyle.text,
+                          background: toneStyle.bg,
+                          padding: "1px 4px",
+                          borderRadius: "3px",
+                          border: `1px solid ${toneStyle.border}`,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Bal: {balanceInfo ? balanceInfo.balance : "₹0"}
+                      </span>
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          color: "#059669",
+                          fontWeight: 800,
+                          background: "#ECFDF5",
+                          padding: "0.5px 3.5px",
+                          borderRadius: "2px",
+                        }}
+                      >
+                        §107 Frozen
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
