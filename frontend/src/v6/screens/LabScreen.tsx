@@ -36,8 +36,8 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
   const { activeView, setActiveView } = useCaseStore();
 
   const getActiveTabFromView = (view: string): LabTab => {
-    if (view === 'court-proof') return 'court-proof';
-    if (view === 'privacy-crypto') return 'privacy-crypto';
+    if (view === 'court-proof' || view === 'court' || view === 'court-dossier') return 'court-proof';
+    if (view === 'privacy-crypto' || view === 'privacy') return 'privacy-crypto';
     if (view === 'workstation') return 'workstation';
     if (view === 'benchmarks' || view === 'benchmark') return 'benchmarks';
     return initialTab || 'court-proof';
@@ -46,7 +46,7 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState<LabTab>(() => getActiveTabFromView(activeView));
 
   useEffect(() => {
-    if (['court-proof', 'privacy-crypto', 'workstation', 'benchmarks', 'benchmark'].includes(activeView)) {
+    if (['court-proof', 'court', 'court-dossier', 'privacy-crypto', 'privacy', 'workstation', 'benchmarks', 'benchmark'].includes(activeView)) {
       setActiveTab(getActiveTabFromView(activeView));
     }
   }, [activeView]);
