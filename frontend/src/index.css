@@ -11,6 +11,7 @@
 @import './styles/tokens.css';
 @import './styles/liquid-glass.css';
 @import './styles/bento-executive.css';
+@import './v6/styles/v6-tokens.css';
 
 html,
 body,
