@@ -67,5 +67,28 @@
   3. Created `capture_reference.cjs` and recorded full suites of 1440×900 and 1366×768 reference screenshots covering all screens and micro-interactions into `docs/redesign/reference/`.
 - **Status**: Canonical cases pristine; golden path passing; reference screenshots verified.
 
+### D-012: V6 Complete Presentation Layer Rebuild & Quality Gates
+- **Context**: TARKA needed a complete redesign under `frontend/src/v6/` adhering strictly to the contract defined in `frontend/public/design/tarka-reference.html`, with world-class SaaS polish (Linear/Stripe/Vercel/Palantir quality bar), 0 inline hardcoded styles, token compliance, dynamic real case computation, and full test suite verification.
+- **Decision**:
+  1. **Design System & Primitives (`frontend/src/v6/ui/`)**: Rebuilt custom token architecture in `v6-tokens.css` with dark palette, glowing accents, and light Paper report mode. Created modular primitives: `Button`, `Card`, `Chip`, `DataTable`, `EmptyState`, `FindingStrip`, `Gauge`, `Inspector`, `KpiCard`, `PageHead`, `ProgressRing`, `ScoreWaterfall`, `Skeleton`, `useCountUp`.
+  2. **Shell & IA (`frontend/src/v6/shell/`)**: Built `V6Rail`, `V6Topbar`, and `V6AppShell`. Integrated global hotkeys (1-6 for steps, Cmd/Ctrl+K for palette, F for actions, Esc for overlays), full case URL sync, and responsive breakpoints at 1366×768 and 1440×900.
+  3. **Screens Rebuild (`frontend/src/v6/screens/`)**:
+     - `CommandCenterScreen`: 4 count-up KPIs, interactive India Money Corridors canvas map with Bezier flows and particles, Act-Now urgency queue.
+     - `CasesScreen`: Status tabs, instant search, full data table, Create Case Wizard, and slide-over Edit Case Sheet.
+     - `EvidenceLedgerScreen`: Claim vs Proof 3-column hero card, animated row-by-row scanning with verification checkmarks, real-time conservation reconciliation, and SHA-256 chain validation.
+     - `PeopleAccountsScreen`: 4-source mentions list, dynamic SVG connecting Bezier curves, resolved identity cards, 420px slide-over inspector with score waterfall and bilingual AI narrative.
+     - `MoneyTrailScreen`: Multi-hop responsive Sankey flow with travelling particles, 1-click freeze action, Recoverable Now KPI, and LIBR vs FIFO vs Proportional comparison inspector.
+     - `FraudNetworkScreen`: Graph topology with interactive multi-step playback replay, digital forensic chronometer, hardware terminal (DEV) and Wi-Fi hotspot (WIFI) inspector cards.
+     - `DeviceSimScreen`: Hardware terminal specifications, 4-tier telemetry correlation hierarchy, and SIM-swap CDR event timeline.
+     - `ActionsReportScreen`: Freeze requests ranked by recoverable amounts, simulated bank responses with toast queue, and admissible Paper report card with stamped SHA-256 seal.
+     - `SettingsScreen`, `HealthDiagnosticsScreen`, `LabScreen`: Seamlessly wrapped into the v6 design system and tested.
+  4. **Deliverable Review Gallery**: Built `docs/redesign/index.html` offering side-by-side reference-vs-implementation visual review with viewport switching (1440×900 vs 1366×768) and full-resolution lightbox inspection.
+- **Status**: All quality gates green:
+  - 140/140 vitest unit and integration tests passing.
+  - 1,209/1,209 backend flow tests passing.
+  - 293/293 Appendix B case-sync audit checks passing (0 leaks, 0 NaN, 0 undefined).
+  - 4/4 Playwright E2E suites passing (`golden-path.spec.ts`, `management.spec.ts`, `settings.spec.ts`, `case-sync.spec.ts`).
+
+
 
 
