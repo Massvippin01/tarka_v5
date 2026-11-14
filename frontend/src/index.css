@@ -20,9 +20,9 @@ body,
   height: 100vh;
   margin: 0;
   padding: 0;
-  background-color: var(--bento-canvas, #060B14);
-  color: var(--reui-text-primary, #F8FAFC);
-  font-family: var(--font-sans);
+  background-color: var(--bg, #f6f6f7);
+  color: var(--fg-1, #18181b);
+  font-family: var(--font, 'Inter', system-ui, sans-serif);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
