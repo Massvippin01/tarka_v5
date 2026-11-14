@@ -50,6 +50,9 @@ import { CaseFingerprintDevOverlay } from "../common/CaseFingerprintDevOverlay";
 import { deriveInvestigationProgress } from "../../utils/investigationProgress";
 import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { WhatChangedBanner, type WhatChangedData } from "../tarka/common/WhatChangedBanner";
+import { useQuery } from "@tanstack/react-query";
+import type { CaseActionsResponse } from "../../types/actions";
+import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
 
 // Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
 const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
@@ -216,6 +219,21 @@ export const TarkaGlobalShell: React.FC = () => {
   const investigationProgress = useMemo(() => {
     return deriveInvestigationProgress(currentBundle, activeCase);
   }, [currentBundle, activeCase]);
+
+  const { data: headerActionsData } = useQuery<CaseActionsResponse>({
+    queryKey: ["case", activeCaseId, "actions"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/actions`, {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      return res.ok ? res.json() : null;
+    },
+    staleTime: 5000,
+  });
+
+  const headerActionFinancials = useMemo(() => {
+    return selectCaseActionFinancials(activeCaseId, headerActionsData?.actions, headerActionsData?.summary);
+  }, [activeCaseId, headerActionsData]);
 
   // Sync Pipeline Status & SSE from Backend
   useEffect(() => {
@@ -1428,6 +1446,28 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 >
                   <span>✓ {investigationProgress.percentComplete}% Complete</span>
                 </span>
+                {headerActionFinancials.frozenAmountInr > 0 && (
+                  <span
+                    data-testid="header-recovered-badge"
+                    className="hidden lg:inline-flex flex-shrink-0"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "10.5px",
+                      fontWeight: 800,
+                      color: headerActionFinancials.isFullyFrozen ? "#065F46" : "#0284C7",
+                      background: headerActionFinancials.isFullyFrozen ? "#ECFDF5" : "#F0F9FF",
+                      border: headerActionFinancials.isFullyFrozen ? "1px solid #A7F3D0" : "1px solid #BAE6FD",
+                      padding: "2px 7px",
+                      borderRadius: "4px",
+                    }}
+                    title={`Recovered Lien: ₹${headerActionFinancials.frozenAmountInr.toLocaleString("en-IN")} of ₹${headerActionFinancials.recoverableLibrInr.toLocaleString("en-IN")} recoverable`}
+                  >
+                    <Lock size={11} />
+                    <span>₹{headerActionFinancials.frozenAmountInr.toLocaleString("en-IN")} Frozen ({headerActionFinancials.recoveryPercentage}%)</span>
+                  </span>
+                )}
                 {pipelineState.status === "PROCESSING" && (
                   <span
                     data-testid="pipeline-processing-badge"
@@ -2288,7 +2328,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   {activeRoute === "court-proof" && <CourtProofScreen />}
                   {activeRoute === "privacy-crypto" && <PrivacyCryptoWorkbench />}
                   {activeRoute === "workstation" && <ForensicWorkstationScreen />}
-                  {activeRoute === "report" && <ReportScreen />}
+                  {(activeRoute === "report" || activeRoute === "actions") && <ReportScreen />}
                 </>
               )}
             </Suspense>

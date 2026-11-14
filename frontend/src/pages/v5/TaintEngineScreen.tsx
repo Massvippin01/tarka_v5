@@ -38,6 +38,9 @@ import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPa
 import { EndToEndReconstructionStrip } from "../../components/tarka/investigation/EndToEndReconstructionStrip";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
 import { RequirementEmptyState } from "../../components/tarka/common/RequirementEmptyState";
+import { useQuery } from "@tanstack/react-query";
+import type { CaseActionsResponse } from "../../types/actions";
+import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
 
 type TaintRule = "LIBR" | "FIFO" | "PRO_RATA";
 type TaintWorkspaceMode = "dag" | "orders";
@@ -85,6 +88,21 @@ export const TaintEngineScreen: React.FC = () => {
   const recModel = useMemo(() => {
     return recoveryModel(isInjectClean, freezeBudgetK, activeCaseId || undefined);
   }, [isInjectClean, freezeBudgetK, activeCaseId]);
+
+  const { data: actionsData } = useQuery<CaseActionsResponse>({
+    queryKey: ["case", activeCaseId, "actions"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/actions`, {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      return res.ok ? res.json() : null;
+    },
+    staleTime: 5000,
+  });
+
+  const actionFinancials = useMemo(() => {
+    return selectCaseActionFinancials(activeCaseId || "", actionsData?.actions, actionsData?.summary);
+  }, [activeCaseId, actionsData]);
 
   // 7. Active BNSS Notice Selection (106 vs 107)
   const [selectedNoticeType, setSelectedNoticeType] = useState<"106" | "107">("106");
@@ -193,13 +211,21 @@ export const TaintEngineScreen: React.FC = () => {
 
       {/* Top Investigator Finding Card */}
       <ScreenFindingCard
-        finding="₹3,80,000 still recoverable across 3 mule accounts under Lowest Intermediate Balance Rule (LIBR)."
-        metric="₹3,80,000 Recoverable"
-        metricLabel="LIBR Min-Cut Active"
-        actionLabel="Inspect Fraud Network"
-        onAction={() => setActiveRoute("network")}
+        finding={
+          actionFinancials.frozenAmountInr > 0
+            ? `₹${actionFinancials.frozenAmountInr.toLocaleString("en-IN")} secured and frozen across suspect accounts under Section 106/107 BNSS (${actionFinancials.recoveryPercentage}% of loss).`
+            : "₹3,80,000 still recoverable across 3 mule accounts under Lowest Intermediate Balance Rule (LIBR)."
+        }
+        metric={
+          actionFinancials.frozenAmountInr > 0
+            ? `₹${actionFinancials.frozenAmountInr.toLocaleString("en-IN")} Frozen`
+            : "₹3,80,000 Recoverable"
+        }
+        metricLabel={actionFinancials.isFullyFrozen ? "100% Contained · Fully Frozen" : "LIBR Min-Cut Active"}
+        actionLabel={actionFinancials.frozenAmountInr > 0 ? "Inspect Action Directives" : "Take Enforcement Action"}
+        onAction={() => setActiveRoute("report")}
         status="verified"
-        evidenceTag="LIBR Proportional Debit Lien Engine"
+        evidenceTag={actionFinancials.frozenAmountInr > 0 ? "BNSS §106/§107 Invariant Hold Active" : "LIBR Proportional Debit Lien Engine"}
       />
 
       {/* =========================================================================
@@ -231,22 +257,31 @@ export const TaintEngineScreen: React.FC = () => {
         />
 
         <KpiTile
-          title="Recoverable"
+          title={actionFinancials.frozenAmountInr > 0 ? "Recovered / Frozen" : "Recoverable"}
           value={
-            activeDiscoveredCluster
+            actionFinancials.frozenAmountInr > 0
+              ? `₹${(actionFinancials.frozenAmountInr / 100000).toFixed(2)}L`
+              : activeDiscoveredCluster
               ? `₹${(activeDiscoveredCluster.librRecoverableLien / 100000).toFixed(2)}L`
               : `₹${(recModel.netRecoverableSum / 100000).toFixed(2)}L`
           }
-          icon={Scale}
-          iconColor="#059669"
-          iconBg="#ECFDF5"
-          statusBadge={{ text: "LIBR LIEN", variant: "emerald" }}
-          subtitle="LIBR doctrine"
+          icon={actionFinancials.frozenAmountInr > 0 ? Lock : Scale}
+          iconColor={actionFinancials.frozenAmountInr > 0 ? "#0284C7" : "#059669"}
+          iconBg={actionFinancials.frozenAmountInr > 0 ? "#F0F9FF" : "#ECFDF5"}
+          statusBadge={{
+            text: actionFinancials.frozenAmountInr > 0 ? "§107 FROZEN" : "LIBR LIEN",
+            variant: actionFinancials.frozenAmountInr > 0 ? "indigo" : "emerald",
+          }}
+          subtitle={
+            actionFinancials.frozenAmountInr > 0
+              ? `${actionFinancials.recoveryPercentage}% secured · ${actionFinancials.frozenAccountIds.size} frozen`
+              : "LIBR doctrine"
+          }
           microVisual="ring"
-          progressPct={recModel.recoveryPotentialPct}
+          progressPct={actionFinancials.frozenAmountInr > 0 ? actionFinancials.recoveryPercentage : recModel.recoveryPotentialPct}
           provenanceTooltip={
-            activeDiscoveredCluster
-              ? `Judicial Lowest Intermediate Balance Rule (LIBR) caps specific lien at ₹${activeDiscoveredCluster.librRecoverableLien.toLocaleString()} on merchant.`
+            actionFinancials.frozenAmountInr > 0
+              ? `₹${actionFinancials.frozenAmountInr.toLocaleString("en-IN")} secured across bank conduits under Section 106/107 BNSS.`
               : `Judicial Lowest Intermediate Balance Rule (LIBR) caps lien at ₹${(engineState.summary.librRecoverable / 100000).toFixed(2)}L after accounting for outward dissipation.`
           }
         />

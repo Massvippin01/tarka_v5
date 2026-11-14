@@ -32,6 +32,9 @@ import { buildCase002Bundle, buildCase003Bundle } from "../../../services/caseSy
 import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../../fixtures/cases";
 import { formatInr } from "../../../utils/formatters";
 import { sha256HexSync, canonicalJson } from "../../../utils/sha256";
+import { useQuery } from "@tanstack/react-query";
+import type { CaseActionsResponse } from "../../../types/actions";
+import { selectCaseActionFinancials } from "../../../selectors/actionSelectors";
 
 export type EdgeFilterType = "all" | "cashflow" | "tether" | "ja4" | "caf" | "c2";
 
@@ -426,6 +429,21 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+
+  const { data: networkActionsData } = useQuery<CaseActionsResponse>({
+    queryKey: ["case", activeCaseId, "actions"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/actions`, {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      return res.ok ? res.json() : null;
+    },
+    staleTime: 5000,
+  });
+
+  const networkActionFinancials = useMemo(() => {
+    return selectCaseActionFinancials(activeCaseId || "", networkActionsData?.actions, networkActionsData?.summary);
+  }, [activeCaseId, networkActionsData]);
 
   const handleZoomIn = () => setZoomLevel((z) => Math.min(1.6, Math.round((z + 0.1) * 10) / 10));
   const handleZoomOut = () => setZoomLevel((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10));
@@ -2610,6 +2628,12 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 };
 
                 const toneStyle = getToneColor(balanceInfo?.tone);
+                const isNodeFrozen = Boolean(
+                  networkActionFinancials.frozenAccountIds.has(node.id) ||
+                  Array.from(networkActionFinancials.frozenAccountIds).some(
+                    (fa) => (node.sublabel && node.sublabel.includes(fa)) || (node.tooltip && node.tooltip.includes(fa)) || (node.label && node.label.includes(fa))
+                  )
+                );
 
                 return (
                   <div
@@ -2651,9 +2675,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       width: node.w,
                       height: node.h,
                       borderRadius: "6px",
-                      background: "#FFFFFF",
-                      border: "1px solid #CBD5E1",
-                      boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+                      background: isNodeFrozen ? "#F0F9FF" : "#FFFFFF",
+                      border: isNodeFrozen ? "2px solid #0284C7" : "1px solid #CBD5E1",
+                      boxShadow: isNodeFrozen ? "0 0 0 2px rgba(2, 132, 199, 0.25)" : "0 1px 3px rgba(15,23,42,0.06)",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -2781,14 +2805,17 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       <span
                         style={{
                           flexShrink: 0,
-                          color: "#059669",
+                          color: isNodeFrozen ? "#0369A1" : "#059669",
                           fontWeight: 800,
-                          background: "#ECFDF5",
-                          padding: "0.5px 3.5px",
+                          background: isNodeFrozen ? "#E0F2FE" : "#ECFDF5",
+                          padding: "0.5px 4px",
                           borderRadius: "2px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "2px",
                         }}
                       >
-                        §107 Frozen
+                        {isNodeFrozen ? "🔒 §107 Frozen" : "§107 Frozen"}
                       </span>
                     </div>
                   </div>

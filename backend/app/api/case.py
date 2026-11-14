@@ -1929,5 +1929,578 @@ async def get_account_explanation(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# -------------------------------------------------------------------------
+# F-4 ACTION LOOP: FREEZE REQUESTS, NOTICES & RECOVERY TRACKING
+# -------------------------------------------------------------------------
+
+class FreezeActionRequest(BaseModel):
+    account_ids: List[str] = Field(..., description="List of account IDs to issue freeze orders for")
+    document_type: str = Field(default="BNSS_106_FREEZE")
+    officer_badge: Optional[str] = Field(default="IO-409")
+    notes: Optional[str] = Field(default=None)
+
+
+class SimulateBankResponseRequest(BaseModel):
+    account_ids: Optional[List[str]] = Field(default=None, description="Optional account IDs; defaults to all pending/requested")
+    simulate_status: str = Field(default="FROZEN", description="FROZEN or PARTIAL")
+    frozen_percentage: float = Field(default=1.0, description="Fraction of target amount frozen (1.0 = full)")
+
+
+class ActionUpdateRequest(BaseModel):
+    status: str = Field(..., description="Action status: NOT_REQUESTED, REQUESTED, ACKNOWLEDGED, FROZEN, PARTIAL, REJECTED, RELEASED")
+    frozen_amount: Optional[float] = Field(default=None)
+    reason: str = Field(..., description="Forensic audit reason for correcting action status")
+
+
+def get_case_action_candidates(case_id: str, case_meta: dict) -> List[Dict[str, Any]]:
+    if "actions" in case_meta and isinstance(case_meta["actions"], list) and len(case_meta["actions"]) > 0:
+        return case_meta["actions"]
+
+    target_slug = case_id if (case_id and case_id.startswith("CASE-")) else "CASE-2026-001"
+    fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{target_slug}.json"
+    if not fixture_file.exists():
+        fixture_file = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / "CASE-2026-001.json"
+
+    actions: List[Dict[str, Any]] = []
+    if fixture_file.exists():
+        try:
+            with open(fixture_file, "r", encoding="utf-8") as f:
+                cdata = json.load(f)
+                accounts = cdata.get("accounts", [])
+                for idx, acc in enumerate(accounts):
+                    ht = acc.get("holderType", "")
+                    if ht in ("LAYER_1_MULE", "LAYER_2_CONDUIT"):
+                        target_amt = 200000 if ht == "LAYER_1_MULE" else (120000 if idx == 2 else 80000)
+                        urgency = "CRITICAL_GOLDEN_HOUR" if ht == "LAYER_1_MULE" else ("CRITICAL_GOLDEN_HOUR" if idx == 2 else "ELEVATED")
+                        actions.append({
+                            "id": f"ACT-{case_id}-{acc.get('nodeId', f'ACC-{idx+1}')}",
+                            "caseId": case_id,
+                            "accountId": acc.get("nodeId", f"ACC-{idx+1}"),
+                            "accountMasked": f"{acc.get('bank', 'Bank')} {acc.get('accountMasked', '...0000')}",
+                            "accountHolder": acc.get("holderName", "Suspect Mule"),
+                            "bank": acc.get("bank", "Bank"),
+                            "ifsc": acc.get("ifsc", "BANK0001"),
+                            "layer": ht,
+                            "urgency": urgency,
+                            "status": "NOT_REQUESTED",
+                            "targetAmount": target_amt,
+                            "frozenAmount": 0,
+                            "referenceNo": f"POLICE/CYBER/2026/SEC106/FIR-{idx+1}",
+                            "requestedAt": None,
+                            "acknowledgedAt": None,
+                            "frozenAt": None,
+                            "documentType": "BNSS_106_FREEZE",
+                            "notes": f"LIBR debit lien mandate on {ht.lower().replace('_', ' ')}",
+                        })
+        except Exception as e:
+            logger.warning(f"Failed to load fixture for actions: {e}")
+
+    if not actions:
+        actions = [
+            {
+                "id": f"ACT-{case_id}-M1",
+                "caseId": case_id,
+                "accountId": "ACC-M1",
+                "accountMasked": "Axis Bank ...1904",
+                "accountHolder": "Primary Layer-1 Mule",
+                "bank": "Axis Bank",
+                "ifsc": "UTIB0000123",
+                "layer": "LAYER_1_MULE",
+                "urgency": "CRITICAL_GOLDEN_HOUR",
+                "status": "NOT_REQUESTED",
+                "targetAmount": 200000,
+                "frozenAmount": 0,
+                "referenceNo": "POLICE/CYBER/2026/SEC106/FIR-01",
+                "requestedAt": None,
+                "acknowledgedAt": None,
+                "frozenAt": None,
+                "documentType": "BNSS_106_FREEZE",
+                "notes": "LIBR debit lien mandate",
+            },
+            {
+                "id": f"ACT-{case_id}-M2A",
+                "caseId": case_id,
+                "accountId": "ACC-M2A",
+                "accountMasked": "ICICI Bank ...1944",
+                "accountHolder": "Secondary Layer-2 Conduit",
+                "bank": "ICICI Bank",
+                "ifsc": "ICIC0001048",
+                "layer": "LAYER_2_CONDUIT",
+                "urgency": "CRITICAL_GOLDEN_HOUR",
+                "status": "NOT_REQUESTED",
+                "targetAmount": 120000,
+                "frozenAmount": 0,
+                "referenceNo": "POLICE/CYBER/2026/SEC106/FIR-02",
+                "requestedAt": None,
+                "acknowledgedAt": None,
+                "frozenAt": None,
+                "documentType": "BNSS_106_FREEZE",
+                "notes": "Immediate debit freeze mandate",
+            },
+            {
+                "id": f"ACT-{case_id}-M2B",
+                "caseId": case_id,
+                "accountId": "ACC-M2B",
+                "accountMasked": "State Bank of India ...8241",
+                "accountHolder": "Tertiary Layer-2 Conduit",
+                "bank": "State Bank of India",
+                "ifsc": "SBIN0001928",
+                "layer": "LAYER_2_CONDUIT",
+                "urgency": "ELEVATED",
+                "status": "NOT_REQUESTED",
+                "targetAmount": 80000,
+                "frozenAmount": 0,
+                "referenceNo": "POLICE/CYBER/2026/SEC106/FIR-03",
+                "requestedAt": None,
+                "acknowledgedAt": None,
+                "frozenAt": None,
+                "documentType": "BNSS_106_FREEZE",
+                "notes": "Secondary conduit debit freeze",
+            },
+        ]
+    return actions
+
+
+def get_case_statutory_notices(case_id: str, case_meta: dict) -> List[Dict[str, Any]]:
+    if "statutory_notices" in case_meta and isinstance(case_meta["statutory_notices"], list) and len(case_meta["statutory_notices"]) > 0:
+        return case_meta["statutory_notices"]
+
+    short_id = case_id[-3:] if len(case_id) >= 3 else "001"
+    return [
+        {
+            "id": f"NOTICE-{case_id}-TELCO",
+            "caseId": case_id,
+            "noticeType": "BNSS_94_TELECOM",
+            "title": "§94 BNSS Production Order: Telco Subscriber & CGNAT Records",
+            "recipient": "Bharti Airtel Ltd / Nodal LEA Cell",
+            "subject": "Production of CAF, CDR, IPDR & Tower Azimuth Log under §94 BNSS",
+            "referenceNo": f"NOIDA/CYBER/SEC94/AIRTEL/2026/{short_id}",
+            "status": "DRAFT",
+            "sentAt": None,
+            "compliedAt": None,
+            "contentHash": hashlib.sha256(f"TELCO-{case_id}".encode()).hexdigest(),
+        },
+        {
+            "id": f"NOTICE-{case_id}-I4C",
+            "caseId": case_id,
+            "noticeType": "I4C_ESCALATION",
+            "title": "I4C National Threat Analytics Syndicate Escalation",
+            "recipient": "National Cybercrime Threat Analytics Unit (NCTAU), I4C, MHA",
+            "subject": "Inter-State Cross-Border Cybercrime Syndicate Escalation",
+            "referenceNo": f"I4C/ESCALATION/NCR/2026/{short_id}",
+            "status": "DRAFT",
+            "sentAt": None,
+            "compliedAt": None,
+            "contentHash": hashlib.sha256(f"I4C-{case_id}".encode()).hexdigest(),
+        },
+        {
+            "id": f"NOTICE-{case_id}-NPCI",
+            "caseId": case_id,
+            "noticeType": "BSA_63_NPCI",
+            "title": "§63(4) BSA 2023 Electronic Evidence Requisition",
+            "recipient": "National Payments Corporation of India (NPCI)",
+            "subject": "Certified Raw UPI 2.0 Switch XML Logs & TLS JA4 Fingerprints",
+            "referenceNo": f"NOIDA/CYBER/NPCI/UPI/2026/{short_id}",
+            "status": "DRAFT",
+            "sentAt": None,
+            "compliedAt": None,
+            "contentHash": hashlib.sha256(f"NPCI-{case_id}".encode()).hexdigest(),
+        },
+    ]
+
+
+@router.get("/{case_id}/actions")
+async def get_case_actions(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Returns ranked recommended actions, active freeze statuses, statutory notices,
+    and consolidated recovery summary for the case.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        meta = case.metadata_json or {}
+        actions = get_case_action_candidates(case.id, meta)
+        notices = get_case_statutory_notices(case.id, meta)
+
+        # Rank actions by recoverable amount * urgency weight
+        urgency_weights = {"CRITICAL_GOLDEN_HOUR": 3, "ELEVATED": 2, "STANDARD": 1}
+        ranked_actions = sorted(
+            actions,
+            key=lambda a: (a.get("targetAmount", 0) * urgency_weights.get(a.get("urgency", "STANDARD"), 1)),
+            reverse=True,
+        )
+
+        total_recoverable = sum(a.get("targetAmount", 0) for a in ranked_actions)
+        total_frozen = sum(a.get("frozenAmount", 0) for a in ranked_actions)
+        total_pending = max(0, total_recoverable - total_frozen)
+        frozen_count = sum(1 for a in ranked_actions if a.get("status") in ("FROZEN", "PARTIAL"))
+        is_fully_frozen = (total_frozen >= total_recoverable and total_recoverable > 0)
+        golden_hour_remaining = 0 if is_fully_frozen else meta.get("golden_hour_remaining_mins", 42)
+
+        return {
+            "caseId": case.id,
+            "actions": ranked_actions,
+            "notices": notices,
+            "summary": {
+                "totalRecoverable": total_recoverable,
+                "totalFrozen": total_frozen,
+                "totalPending": total_pending,
+                "frozenAccountsCount": frozen_count,
+                "totalAccountsCount": len(ranked_actions),
+                "goldenHourRemainingMins": golden_hour_remaining,
+                "isFullyFrozen": is_fully_frozen,
+                "caseStatus": case.status,
+            },
+        }
+
+
+@router.post("/{case_id}/actions/freeze")
+async def issue_freeze_orders(
+    case_id: str,
+    payload: FreezeActionRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Issues statutory freeze orders (§106/§107 BNSS) for selected suspect accounts.
+    Updates account action statuses to REQUESTED, updates case status, and records
+    an immutable SHA-256 audit entry.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        meta = dict(case.metadata_json or {})
+        actions = get_case_action_candidates(case.id, meta)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        affected_accounts: List[str] = []
+
+        for a in actions:
+            if a["accountId"] in payload.account_ids or a["id"] in payload.account_ids:
+                a["status"] = "REQUESTED"
+                a["requestedAt"] = now_iso
+                a["documentType"] = payload.document_type
+                if payload.notes:
+                    a["notes"] = payload.notes
+                bank_code = a.get("bank", "BANK")[:4].upper()
+                a["referenceNo"] = f"POLICE/BNSS106/{bank_code}/{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}"
+                affected_accounts.append(a["accountId"])
+
+        meta["actions"] = actions
+        if case.status in ("INTAKE", "INVESTIGATING", "OPEN"):
+            case.status = "ACTION_PENDING"
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {
+            "action": "FREEZE_DIRECTIVE_ISSUED",
+            "case_id": case.id,
+            "accounts": affected_accounts,
+            "document_type": payload.document_type,
+            "officer": payload.officer_badge or user.user_id,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-FREEZE-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="FREEZE_DIRECTIVE_ISSUED",
+            resource_type="CASE_ACTION",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        total_recoverable = sum(a.get("targetAmount", 0) for a in actions)
+        total_frozen = sum(a.get("frozenAmount", 0) for a in actions)
+        return {
+            "status": "SUCCESS",
+            "message": f"Statutory freeze orders dispatched for {len(affected_accounts)} accounts.",
+            "affectedAccounts": affected_accounts,
+            "actions": actions,
+            "summary": {
+                "totalRecoverable": total_recoverable,
+                "totalFrozen": total_frozen,
+                "totalPending": max(0, total_recoverable - total_frozen),
+                "isFullyFrozen": (total_frozen >= total_recoverable and total_recoverable > 0),
+                "caseStatus": case.status,
+            },
+        }
+
+
+@router.post("/{case_id}/actions/simulate-response")
+async def simulate_bank_response(
+    case_id: str,
+    payload: SimulateBankResponseRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Hackathon Demo Button: Simulates instantaneous bank confirmation of account freeze.
+    Converts requested accounts to FROZEN, updates recoverable/frozen amounts across all screens,
+    and stops the golden-hour timer if fully contained.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        meta = dict(case.metadata_json or {})
+        actions = get_case_action_candidates(case.id, meta)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        frozen_ids: List[str] = []
+
+        target_set = set(payload.account_ids) if payload.account_ids else None
+
+        for a in actions:
+            should_freeze = (target_set is None) or (a["accountId"] in target_set) or (a["id"] in target_set)
+            if should_freeze:
+                pct = max(0.1, min(1.0, payload.frozen_percentage))
+                target = a.get("targetAmount", 200000)
+                frozen_amt = round(target * pct)
+                a["status"] = "FROZEN" if pct >= 1.0 else "PARTIAL"
+                a["frozenAmount"] = frozen_amt
+                a["acknowledgedAt"] = now_iso
+                a["frozenAt"] = now_iso
+                bank_code = a.get("bank", "BANK")[:4].upper()
+                a["referenceNo"] = f"ACK-{bank_code}-LEA-{int(datetime.now(timezone.utc).timestamp()) % 100000:05d}"
+                frozen_ids.append(a["accountId"])
+
+        total_recoverable = sum(a.get("targetAmount", 0) for a in actions)
+        total_frozen = sum(a.get("frozenAmount", 0) for a in actions)
+        is_fully_frozen = (total_frozen >= total_recoverable and total_recoverable > 0)
+
+        meta["actions"] = actions
+        meta["frozen_amount_inr"] = total_frozen
+        meta["is_fully_frozen"] = is_fully_frozen
+
+        if is_fully_frozen:
+            case.status = "FROZEN"
+            meta["golden_hour_remaining_mins"] = 0
+        elif total_frozen > 0:
+            case.status = "PARTIALLY_RECOVERED"
+
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {
+            "action": "BANK_FREEZE_ACKNOWLEDGED",
+            "case_id": case.id,
+            "simulated": True,
+            "frozen_accounts": frozen_ids,
+            "total_frozen_inr": total_frozen,
+            "is_fully_frozen": is_fully_frozen,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-BANK-ACK-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="BANK_FREEZE_ACKNOWLEDGED",
+            resource_type="CASE_ACTION",
+            resource_id=case.id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        return {
+            "status": "SUCCESS",
+            "message": f"Bank response simulated: ₹{total_frozen:,.2f} secured across {len(frozen_ids)} accounts.",
+            "frozenAccounts": frozen_ids,
+            "actions": actions,
+            "summary": {
+                "totalRecoverable": total_recoverable,
+                "totalFrozen": total_frozen,
+                "totalPending": max(0, total_recoverable - total_frozen),
+                "goldenHourRemainingMins": 0 if is_fully_frozen else meta.get("golden_hour_remaining_mins", 42),
+                "isFullyFrozen": is_fully_frozen,
+                "caseStatus": case.status,
+            },
+        }
+
+
+@router.patch("/{case_id}/actions/{action_id}")
+async def correct_action_status(
+    case_id: str,
+    action_id: str,
+    payload: ActionUpdateRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Corrects or undos a mistaken action status with mandatory forensic justification.
+    Recalculates case totals and writes an append-only audit event.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        meta = dict(case.metadata_json or {})
+        actions = get_case_action_candidates(case.id, meta)
+        target_action = None
+
+        for a in actions:
+            if a["id"] == action_id or a["accountId"] == action_id:
+                target_action = a
+                break
+
+        if not target_action:
+            raise HTTPException(status_code=404, detail=f"Action '{action_id}' not found.")
+
+        before_status = target_action.get("status")
+        before_frozen = target_action.get("frozenAmount", 0)
+
+        target_action["status"] = payload.status
+        if payload.frozen_amount is not None:
+            target_action["frozenAmount"] = payload.frozen_amount
+        elif payload.status in ("NOT_REQUESTED", "REJECTED", "RELEASED"):
+            target_action["frozenAmount"] = 0
+        elif payload.status == "FROZEN":
+            target_action["frozenAmount"] = target_action.get("targetAmount", 0)
+
+        total_recoverable = sum(a.get("targetAmount", 0) for a in actions)
+        total_frozen = sum(a.get("frozenAmount", 0) for a in actions)
+        is_fully_frozen = (total_frozen >= total_recoverable and total_recoverable > 0)
+
+        meta["actions"] = actions
+        meta["frozen_amount_inr"] = total_frozen
+        meta["is_fully_frozen"] = is_fully_frozen
+
+        if is_fully_frozen:
+            case.status = "FROZEN"
+            meta["golden_hour_remaining_mins"] = 0
+        elif total_frozen > 0:
+            case.status = "PARTIALLY_RECOVERED"
+        else:
+            case.status = "INVESTIGATING"
+
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {
+            "action": "CORRECT_ACTION_STATUS",
+            "case_id": case.id,
+            "action_id": action_id,
+            "before_status": before_status,
+            "after_status": payload.status,
+            "before_frozen": before_frozen,
+            "after_frozen": target_action.get("frozenAmount", 0),
+            "reason": payload.reason,
+            "corrected_by": user.user_id,
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-CORR-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="CORRECT_ACTION_STATUS",
+            resource_type="CASE_ACTION",
+            resource_id=action_id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        return {
+            "status": "SUCCESS",
+            "message": f"Action status corrected to {payload.status}.",
+            "action": target_action,
+            "summary": {
+                "totalRecoverable": total_recoverable,
+                "totalFrozen": total_frozen,
+                "totalPending": max(0, total_recoverable - total_frozen),
+                "isFullyFrozen": is_fully_frozen,
+                "caseStatus": case.status,
+            },
+        }
+
+
+@router.post("/{case_id}/actions/notices/{notice_id}/dispatch")
+async def dispatch_statutory_notice(
+    case_id: str,
+    notice_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Dispatches a statutory production directive or inter-state escalation notice.
+    Updates notice status to SENT and records immutable audit event.
+    """
+    AuthService.get_instance().enforce_case_access(user, case_id)
+    async with UnitOfWork() as uow:
+        case = await uow.cases.get(case_id)
+        if not case:
+            case = await uow.cases.get_by_case_number(case_id)
+        if not case:
+            raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
+
+        meta = dict(case.metadata_json or {})
+        notices = get_case_statutory_notices(case.id, meta)
+        target_notice = None
+
+        for n in notices:
+            if n["id"] == notice_id or notice_id in n["id"]:
+                target_notice = n
+                break
+
+        if not target_notice:
+            raise HTTPException(status_code=404, detail=f"Notice '{notice_id}' not found.")
+
+        target_notice["status"] = "SENT"
+        target_notice["sentAt"] = datetime.now(timezone.utc).isoformat()
+        meta["statutory_notices"] = notices
+        case.metadata_json = meta
+        case.updated_at = datetime.now(timezone.utc)
+
+        audit_details = {
+            "action": "STATUTORY_NOTICE_DISPATCHED",
+            "case_id": case.id,
+            "notice_id": notice_id,
+            "notice_type": target_notice.get("noticeType"),
+            "recipient": target_notice.get("recipient"),
+            "reference_no": target_notice.get("referenceNo"),
+        }
+        payload_hash = hashlib.sha256(json.dumps(audit_details, sort_keys=True).encode("utf-8")).hexdigest()
+        audit_event = AuditEventModel(
+            event_id=f"AUD-{case.id}-NOTICE-{int(datetime.now(timezone.utc).timestamp()*1000)}",
+            case_id=case.id,
+            actor_id=user.user_id,
+            action="STATUTORY_NOTICE_DISPATCHED",
+            resource_type="STATUTORY_NOTICE",
+            resource_id=notice_id,
+            payload_hash=payload_hash,
+            details_json=audit_details,
+        )
+        await uow.audit.append_event(audit_event)
+        await uow.commit()
+
+        return {
+            "status": "SUCCESS",
+            "message": f"Statutory notice {target_notice.get('referenceNo')} successfully dispatched.",
+            "notice": target_notice,
+        }
+
+
+
 
 

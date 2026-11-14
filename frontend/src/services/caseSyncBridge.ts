@@ -381,18 +381,7 @@ export class CaseSyncBridge {
         };
       }
     } catch {
-      // Fall through to secondary endpoint or deterministic builders
-    }
-
-    try {
-      const res = await apiClient.get(`/api/v1/forensics/cases/${caseId}/investigation-graph`, {
-        timeout: 1500,
-      });
-      if (res.data && res.data.nodes) {
-        return res.data as ReconstructedInvestigation;
-      }
-    } catch {
-      // Fall through to deterministic offline mode
+      // Fall through to deterministic offline fixtures
     }
 
     if (caseId === "CASE-2026-001") {

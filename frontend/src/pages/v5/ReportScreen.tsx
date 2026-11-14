@@ -5,7 +5,9 @@ import {
   ArrowLeft,
   FileText,
   Copy,
+  Zap,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
@@ -13,6 +15,9 @@ import { formatInr } from "../../utils/formatters";
 import { sha256HexSync } from "../../utils/sha256";
 import type { ReconstructedInvestigation } from "../../utils/investigationReconstructor";
 import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCard";
+import { CaseActionsPanel } from "../../components/tarka/actions/CaseActionsPanel";
+import type { CaseActionsResponse } from "../../types/actions";
+import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
 
 export const ReportScreen: React.FC = () => {
   const { activeCaseId, setActiveRoute } = useTarkaGlobal();
@@ -37,13 +42,30 @@ export const ReportScreen: React.FC = () => {
     };
   }, [caseId]);
 
+  const [subTab, setSubTab] = useState<"actions" | "dossier">("actions");
+
+  const { data: actionsData } = useQuery<CaseActionsResponse>({
+    queryKey: ["case", caseId, "actions"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/cases/${caseId}/actions`, {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      return res.ok ? res.json() : null;
+    },
+    staleTime: 5000,
+  });
+
+  const actionFinancials = useMemo(() => {
+    return selectCaseActionFinancials(caseId, actionsData?.actions, actionsData?.summary);
+  }, [caseId, actionsData]);
+
   // Financial metrics (Computed directly from fixture & investigation)
-  const bookedLoss = fixture.financials.bookedLossInr;
-  const claimedLoss = fixture.financials.claimedLossInr;
-  const recoverableLien = fixture.financials.recoverableLibrInr;
-  const shieldedCommercial = fixture.financials.shieldedCommercialInr;
-  const unrecoverableCashout = fixture.financials.unrecoverableCashoutInr;
-  const goldenHourMins = fixture.financials.goldenHourRemainingMins;
+  const bookedLoss = actionFinancials.bookedLossInr;
+  const claimedLoss = actionFinancials.claimedLossInr;
+  const recoverableLien = actionFinancials.recoverableLibrInr;
+  const shieldedCommercial = actionFinancials.shieldedCommercialInr;
+  const unrecoverableCashout = actionFinancials.unrecoverableCashoutInr;
+  const goldenHourMins = actionFinancials.goldenHourRemainingMins;
 
   const { governmentHeader, issuingAuthority } = useMemo(() => {
     const ps = fixture.policeStation || "";
@@ -434,18 +456,83 @@ Investigating Officer, Cyber Crime PS Noida`,
         </div>
       </header>
 
-      {/* Top Investigator Finding Card (Screen Only) */}
-      <div className="no-print" style={{ maxWidth: "840px", margin: "16px auto 0", padding: "0 16px" }}>
-        <ScreenFindingCard
-          finding="Court dossier ready: 5 BNSS §106/§107 debit freeze orders and BSA §63(4) certificate auto-generated."
-          metric="5 Directives"
-          metricLabel="Ready for Judicial Service"
-          actionLabel="Download PDF & Freeze Notices"
-          onAction={handlePrintPdf}
-          status="verified"
-          evidenceTag="BNSS §106/§107 Statutory Orders"
-        />
+      {/* Sub-Tab Navigation Bar (Screen Only) */}
+      <div
+        className="no-print"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "0 20px",
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E2E8F0",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setSubTab("actions")}
+          data-testid="subtab-actions"
+          style={{
+            padding: "10px 16px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderBottom: subTab === "actions" ? "2.5px solid #0284C7" : "2.5px solid transparent",
+            color: subTab === "actions" ? "#0284C7" : "#64748B",
+            background: "none",
+            borderTop: "none",
+            borderLeft: "none",
+            borderRight: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <Zap size={14} />
+          <span>⚡ Recommended Actions &amp; Freeze Directives</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab("dossier")}
+          data-testid="subtab-dossier"
+          style={{
+            padding: "10px 16px",
+            fontSize: "12px",
+            fontWeight: 700,
+            borderBottom: subTab === "dossier" ? "2.5px solid #0284C7" : "2.5px solid transparent",
+            color: subTab === "dossier" ? "#0284C7" : "#64748B",
+            background: "none",
+            borderTop: "none",
+            borderLeft: "none",
+            borderRight: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <FileText size={14} />
+          <span>📜 Formal Investigation Report &amp; Court Dossier (BSA §63)</span>
+        </button>
       </div>
+
+      {subTab === "actions" ? (
+        <CaseActionsPanel caseId={caseId} onNavigateToReport={() => setSubTab("dossier")} />
+      ) : (
+        <>
+          {/* Top Investigator Finding Card (Screen Only) */}
+          <div className="no-print" style={{ maxWidth: "840px", margin: "16px auto 0", padding: "0 16px" }}>
+            <ScreenFindingCard
+              finding="Court dossier ready: 5 BNSS §106/§107 debit freeze orders and BSA §63(4) certificate auto-generated."
+              metric="5 Directives"
+              metricLabel="Ready for Judicial Service"
+              actionLabel="Download PDF & Freeze Notices"
+              onAction={handlePrintPdf}
+              status="verified"
+              evidenceTag="BNSS §106/§107 Statutory Orders"
+            />
+          </div>
 
       {/* =========================================================================
           A4 REPORT DOCUMENT CONTAINER (LIGHT THEME, PROFESSIONAL TYPOGRAPHY)
@@ -988,7 +1075,7 @@ Investigating Officer, Cyber Crime PS Noida`,
         </section>
 
         {/* =====================================================================
-            SECTION 6: ACTIONABLE INTELLIGENCE & AUTO-DRAFTED NOTICES
+            SECTION 6: STATUTORY ACTIONS TAKEN & BANK FREEZE COMPLIANCE LOG
             ===================================================================== */}
         <section className="report-section" style={{ marginBottom: "28px" }}>
           <div
@@ -1002,7 +1089,122 @@ Investigating Officer, Cyber Crime PS Noida`,
             }}
           >
             <h2 style={{ fontSize: "13px", fontWeight: 900, color: "#0F172A", textTransform: "uppercase", margin: 0 }}>
-              6. Actionable Statutory Intelligence Notices (BNSS §106/§107 &amp; §94)
+              6. Statutory Actions Taken &amp; Bank Freeze Compliance Log
+            </h2>
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 800,
+                color: actionFinancials.isFullyFrozen ? "#047857" : "#0284C7",
+                background: actionFinancials.isFullyFrozen ? "#ECFDF5" : "#F0F9FF",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                border: actionFinancials.isFullyFrozen ? "1px solid #A7F3D0" : "1px solid #BAE6FD",
+              }}
+            >
+              {actionFinancials.isFullyFrozen
+                ? "✓ 100% Contained · Fully Frozen"
+                : `₹${actionFinancials.frozenAmountInr.toLocaleString("en-IN")} Secured (${actionFinancials.recoveryPercentage}%)`}
+            </span>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10.5px" }}>
+            <thead>
+              <tr style={{ background: "#F1F5F9", borderBottom: "1.5px solid #CBD5E1", textAlign: "left" }}>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Target Account</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Beneficiary / Entity</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Layer</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Mandated Lien</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Secured Amount</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>Bank Compliance Status</th>
+                <th style={{ padding: "6px 8px", fontWeight: 800, color: "#334155" }}>LEA Reference No.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(actionsData?.actions && actionsData.actions.length > 0
+                ? actionsData.actions
+                : [
+                    {
+                      id: "ACT-01",
+                      bank: "Axis Bank",
+                      accountMasked: "...1904",
+                      accountHolder: "Vikram Shah",
+                      layer: "LAYER_1_MULE",
+                      targetAmount: 200000,
+                      frozenAmount: actionFinancials.frozenAmountInr > 0 ? 200000 : 0,
+                      status: actionFinancials.frozenAmountInr > 0 ? "FROZEN" : "NOT_REQUESTED",
+                      referenceNo: "POLICE/BNSS106/AXIS/2026/01",
+                    },
+                    {
+                      id: "ACT-02",
+                      bank: "ICICI Bank",
+                      accountMasked: "...1944",
+                      accountHolder: "Rohit Sharma",
+                      layer: "LAYER_2_CONDUIT",
+                      targetAmount: 120000,
+                      frozenAmount: actionFinancials.frozenAmountInr >= 320000 ? 120000 : 0,
+                      status: actionFinancials.frozenAmountInr >= 320000 ? "FROZEN" : "NOT_REQUESTED",
+                      referenceNo: "POLICE/BNSS106/ICIC/2026/02",
+                    },
+                    {
+                      id: "ACT-03",
+                      bank: "State Bank of India",
+                      accountMasked: "...8241",
+                      accountHolder: "Sameer Khan",
+                      layer: "LAYER_2_CONDUIT",
+                      targetAmount: 80000,
+                      frozenAmount: 0,
+                      status: "NOT_REQUESTED",
+                      referenceNo: "POLICE/BNSS106/SBIN/2026/03",
+                    },
+                  ]
+              ).map((act, idx) => (
+                <tr key={act.id} style={{ borderBottom: "1px solid #E2E8F0", background: idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC" }}>
+                  <td style={{ padding: "6px 8px", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                    {act.bank} ({act.accountMasked})
+                  </td>
+                  <td style={{ padding: "6px 8px", color: "#0F172A", fontWeight: 600 }}>{act.accountHolder}</td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px", background: act.layer === "LAYER_1_MULE" ? "#FEE2E2" : "#FEF3C7", color: act.layer === "LAYER_1_MULE" ? "#991B1B" : "#92400E" }}>
+                      {act.layer}
+                    </span>
+                  </td>
+                  <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
+                    {formatInr(act.targetAmount)}
+                  </td>
+                  <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", fontWeight: 800, color: act.frozenAmount > 0 ? "#059669" : "#64748B" }}>
+                    {act.frozenAmount > 0 ? formatInr(act.frozenAmount) : "₹0"}
+                  </td>
+                  <td style={{ padding: "6px 8px" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, padding: "2px 6px", borderRadius: "3px", background: act.status === "FROZEN" ? "#DCFCE7" : act.status === "PARTIAL" ? "#FEF3C7" : "#F1F5F9", color: act.status === "FROZEN" ? "#15803D" : act.status === "PARTIAL" ? "#B45309" : "#475569" }}>
+                      {act.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: "6px 8px", fontFamily: "var(--font-mono)", color: "#334155", fontSize: "10px" }}>
+                    {act.referenceNo}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {/* =====================================================================
+            SECTION 7: ACTIONABLE INTELLIGENCE & AUTO-DRAFTED NOTICES
+            ===================================================================== */}
+        <section className="report-section" style={{ marginBottom: "28px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderBottom: "1px solid #CBD5E1",
+              paddingBottom: "6px",
+              marginBottom: "12px",
+            }}
+          >
+            <h2 style={{ fontSize: "13px", fontWeight: 900, color: "#0F172A", textTransform: "uppercase", margin: 0 }}>
+              7. Actionable Statutory Intelligence Notices (BNSS §106/§107 &amp; §94)
             </h2>
             <span style={{ fontSize: "10px", color: "#64748B" }}>
               Auto-Drafted · Ready for Electronic Dispatch
@@ -1186,6 +1388,8 @@ Investigating Officer, Cyber Crime PS Noida`,
           </div>
         </section>
       </main>
+      </>
+      )}
     </div>
   );
 };

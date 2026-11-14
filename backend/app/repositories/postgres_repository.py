@@ -334,6 +334,8 @@ class PostgresAuditRepository:
         await self.session.flush()
         return event
 
+    record_event = append_event
+
     async def get_event(self, event_id: str) -> Optional[AuditEventModel]:
         stmt = select(AuditEventModel).where(AuditEventModel.event_id == event_id)
         result = await self.session.execute(stmt)
