@@ -1,476 +1,384 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  Play,
-  Pause,
-  AlertTriangle,
-  Sparkles,
+  ArrowRight,
+  Copy,
+  Check,
+  FileCode,
 } from 'lucide-react';
-import clsx from 'clsx';
 import { toast } from 'sonner';
-import { PageHead, FindingStrip, Card, Button, Inspector, ScoreWaterfall } from '../ui';
+import { PageHead, FindingStrip, Button } from '../ui';
 import { useCaseStore } from '../../store/useCaseStore';
-import { getCanonicalCase } from '../../fixtures/cases';
+import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
+import { useTarkaUiStore } from '../../store/useTarkaUiStore';
+import {
+  EvidenceNetworkGraph,
+  type EdgeFilterType,
+} from '../../components/tarka/network/EvidenceNetworkGraph';
+import { CrossStateWaterfall } from '../../components/tarka/network/CrossStateWaterfall';
+import { getCanonicalCase, CANONICAL_CASES, buildCaseBundleFromFixture } from '../../fixtures/cases';
+import { reconstruct5FileInvestigation } from '../../utils/investigationReconstructor';
 import { formatInr } from '../../utils/formatters';
 
-interface NetNode {
-  id: string;
-  label: string;
-  sub: string;
-  x: number;
-  y: number;
-  kind: 'victim' | 'risk' | 'safe' | 'cash' | 'dev';
-  r?: number;
-}
-
-interface NetEdge {
-  from: string;
-  to: string;
-  amount: number;
-  step: number;
-  isDevice?: boolean;
-}
+type NetworkViewMode = 'graph' | 'matrix' | 'waterfall';
 
 export const FraudNetworkScreen: React.FC = () => {
-  const { activeCaseId } = useCaseStore();
+  const { activeCaseId, setActiveView } = useCaseStore();
+  const { mutations, toggleMutation, setActiveRoute } = useTarkaGlobal();
+  const { activeDiscoveredCluster, reconstructedInvestigation } = useTarkaUiStore();
+
   const caseId = activeCaseId || 'CASE-2026-001';
-  const canonical = getCanonicalCase(caseId);
+  const canonicalCase = useMemo(() => getCanonicalCase(caseId), [caseId]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [svgWidth, setSvgWidth] = useState<number>(1000);
-
-  const [replayStep, setReplayStep] = useState<number>(4);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-
-  // Resize listener
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setSvgWidth(Math.max(760, containerRef.current.clientWidth - 32));
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
-
-  const STEPS = [
-    'Victim coerced',
-    'UPI transfers',
-    'Fan-out to mules',
-    'Merchant & ATM',
-    'Shared device found',
-  ];
-
-  const CLOCKS = ['09:40 IST', '10:00 IST', '10:07 IST', '10:28 IST', '10:35 IST'];
-
-  const rawNodes: NetNode[] = useMemo(() => {
-    return [
-      { id: 'V', label: canonical.complainant.name, sub: `Victim · ${canonical.complainant.bank.split(' ')[0]}`, x: 90, y: 235, kind: 'victim' },
-      { id: 'M1', label: 'Vikram Shah', sub: 'L1 · Axis · 94', x: 340, y: 235, kind: 'risk', r: 28 },
-      { id: 'M2', label: 'Rohit Verma', sub: 'L2 · HDFC · 88', x: 620, y: 110, kind: 'risk', r: 24 },
-      { id: 'M3', label: 'Sameer Khan', sub: 'L2 · ICICI · 84', x: 620, y: 250, kind: 'risk', r: 20 },
-      { id: 'M4', label: 'Deepak Meena', sub: 'Sink · PNB · 61', x: 620, y: 385, kind: 'risk', r: 16 },
-      { id: 'APX', label: 'Apex Electronics', sub: 'Merchant · protected', x: 930, y: 70, kind: 'safe' },
-      { id: 'ATM', label: 'ATM Sec 18', sub: 'Cash-out terminal', x: 930, y: 250, kind: 'cash' },
-      { id: 'DEV', label: 'Handset ••4564', sub: 'Shared by 3 mules', x: 470, y: 415, kind: 'dev' },
-      { id: 'WIFI', label: 'Wi-Fi Hotspot', sub: 'BSSID 74:DA:38', x: 470, y: 55, kind: 'dev' },
-    ];
-  }, [canonical]);
-
-  const rawEdges: NetEdge[] = useMemo(() => {
-    const loss = canonical.financials.bookedLossInr;
-    return [
-      { from: 'V', to: 'M1', amount: loss, step: 0 },
-      { from: 'M1', to: 'M2', amount: 300000, step: 1 },
-      { from: 'M1', to: 'M3', amount: 155000, step: 1 },
-      { from: 'M1', to: 'M4', amount: 45000, step: 1 },
-      { from: 'M2', to: 'APX', amount: 180000, step: 2 },
-      { from: 'M3', to: 'ATM', amount: 120000, step: 3 },
-      { from: 'DEV', to: 'M1', amount: 0, step: 4, isDevice: true },
-      { from: 'DEV', to: 'M2', amount: 0, step: 4, isDevice: true },
-      { from: 'DEV', to: 'M4', amount: 0, step: 4, isDevice: true },
-      { from: 'WIFI', to: 'M1', amount: 0, step: 4, isDevice: true },
-      { from: 'WIFI', to: 'M3', amount: 0, step: 4, isDevice: true },
-    ];
-  }, [canonical]);
-
-  // Scaled node map based on svgWidth
-  const nodeMap = useMemo<Record<string, NetNode>>(() => {
-    const W = svgWidth;
-    const map: Record<string, NetNode> = {};
-    rawNodes.forEach((n) => {
-      const scaledX = 30 + (n.x * (W - 60)) / 1100;
-      map[n.id] = { ...n, x: scaledX };
-    });
-    return map;
-  }, [rawNodes, svgWidth]);
-
-  // Replay animation loop
-  useEffect(() => {
-    let timer: any;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setReplayStep((prev) => {
-          if (prev >= 4) {
-            setIsPlaying(false);
-            toast.success('Replay complete: single hardware terminal links 3 mule accounts');
-            return 4;
-          }
-          return prev + 1;
-        });
-      }, 1400);
+  const investigation = useMemo(() => {
+    if (caseId && CANONICAL_CASES[caseId]) {
+      return buildCaseBundleFromFixture(CANONICAL_CASES[caseId]);
     }
-    return () => clearInterval(timer);
-  }, [isPlaying]);
+    return reconstructedInvestigation || reconstruct5FileInvestigation();
+  }, [caseId, reconstructedInvestigation]);
 
-  const handleStartPlay = () => {
-    setReplayStep(0);
-    setIsPlaying(true);
+  const [viewMode, setViewMode] = useState<NetworkViewMode>('graph');
+  const [edgeFilter, setEdgeFilter] = useState<EdgeFilterType>('all');
+  const [isCopiedI4c, setIsCopiedI4c] = useState(false);
+  const [isCopiedXml, setIsCopiedXml] = useState(false);
+
+  const ja4 = activeDiscoveredCluster?.convergedJa4 || 't13d1516h2_8daaf6';
+  const bssid = activeDiscoveredCluster?.bssidHotspot || '74:DA:38:A2:11:BC';
+
+  const isHotspotActive = activeDiscoveredCluster?.packetTtl === 63 || !!mutations.triggerHotspotCollision;
+
+  const handleCopyI4cReport = () => {
+    const mules = investigation.nodes.filter((n) => n.entityType !== 'VICTIM');
+    const muleList = mules
+      .map((m, idx) => `${idx + 1}. ${m.label} (${m.bank} ${m.accountMasked}) — ${m.details || m.entityType}`)
+      .join('\n');
+    const report = `=== I4C SAMANVAYA / PRATIBIMB INTER-STATE SYNDICATE LINK REPORT ===\nCase Ref: ${investigation.firNumber} ${investigation.policeStation}\nComplainant: ${investigation.complainantName} | Booked Loss: ${formatInr(investigation.bookedLossInr)}\nGenerated: 2026-09-22 10:30:00 IST | Classification: LAW ENFORCEMENT SENSITIVE\n\n[SYNDICATE INFRASTRUCTURE CLUSTER LINKAGE]\nPrimary Infrastructure Controller:\n• Accomplice Wi-Fi Hotspot BSSID: ${bssid}\n• Ingress Gateway: Airtel/Jio PGW | Decremented TTL: ${isHotspotActive ? '63 (Hop Count = 2)' : '64 (Direct)'}\n• Client TLS Anchor: JA4 = ${ja4}\n\n[CONTROLLED MULE ENTITIES (${mules.length} TARGETS)]\n${muleList}\n\n[INTER-STATE CORRELATION]\nBlind Index HMAC-SHA256 Match across multi-state FIRs\nTotal Syndicate Transaction Exposure: ₹10.42 Cr (Exceeds CBI Mandate ₹10.00 Cr)`;
+
+    navigator.clipboard.writeText(report);
+    setIsCopiedI4c(true);
+    toast.success('I4C Samanvaya Syndicate Link Report copied to clipboard');
+    setTimeout(() => setIsCopiedI4c(false), 2000);
   };
 
-  const handleTogglePlay = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-    } else {
-      if (replayStep >= 4) setReplayStep(0);
-      setIsPlaying(true);
-    }
+  const handleCopyXml = () => {
+    const victim = investigation.nodes.find((n) => n.entityType === 'VICTIM') || investigation.nodes[0];
+    const xml = `<Device account="${victim?.accountMasked || ''}" mobile="919871123941" geocode="28.5355,77.3910" location="${investigation.policeStation}" ip="103.21.144.92" app="com.bank.upi" capability="0001" bssid="${bssid}" tls_ja4="${ja4}" />`;
+    navigator.clipboard.writeText(xml);
+    setIsCopiedXml(true);
+    toast.success('UPI 2.0 <Device> XML stanza copied');
+    setTimeout(() => setIsCopiedXml(false), 2000);
   };
 
-  // Node details for Inspector
-  const inspectorDetails = useMemo(() => {
-    if (!selectedNodeId) return null;
-    if (selectedNodeId === 'DEV') {
-      return {
-        title: 'Handset Hardware Terminal ••4564',
-        subtitle: 'Physical Device Control Hub',
-        meta: 'IMEI: 867492061234564 · TAC: 867492',
-        score: 96,
-        scoreLabel: 'Syndicate hardware confidence',
-        why: [
-          { label: 'Installed Axis Bank mobile app for Vikram Shah', value: 34 },
-          { label: 'Installed HDFC mobile app for Rohit Verma', value: 28 },
-          { label: 'Installed PNB mobile app for Deepak Meena', value: 20 },
-          { label: 'Cross-referenced in 2 other FIRs (NCR)', value: 14 },
-        ],
-        narrative:
-          'Single physical Android handset operates 3 distinct beneficiary accounts across 3 commercial banks. This is a definitive forensic hallmark of a centralized cyber-fraud mule operation.',
-      };
-    }
-
-    if (selectedNodeId === 'WIFI') {
-      return {
-        title: 'Wi-Fi Hotspot BSSID 74:DA:38',
-        subtitle: 'Syndicate Network Gateway',
-        meta: 'MAC: 74:DA:38:A2:11:BC · ISP: Bharti Airtel',
-        score: 91,
-        scoreLabel: 'Network convergence confidence',
-        why: [
-          { label: 'Simultaneous IPDR sessions with Vikram Shah', value: 32 },
-          { label: 'Simultaneous IPDR sessions with Sameer Khan', value: 30 },
-          { label: 'Repeated CGNAT port assignments during fraud window', value: 18 },
-          { label: 'Common geofence coordinates in Noida Sec 62', value: 11 },
-        ],
-        narrative:
-          'Forensic IPDR and CGNAT session correlation establishes that both Vikram Shah and Sameer Khan authenticated their mobile banking sessions through this exact local hotspot.',
-      };
-    }
-
-    const node = rawNodes.find((n) => n.id === selectedNodeId);
-    if (!node) return null;
-
-    return {
-      title: node.label,
-      subtitle: node.sub,
-      meta: `Entity ID: ${node.id} · Case: ${caseId}`,
-      score: node.kind === 'safe' ? 12 : node.kind === 'victim' ? null : 88,
-      scoreLabel: 'Lead strength / 100',
-      why: [
-        { label: 'Transaction velocity anomaly detected', value: 26 },
-        { label: 'Rapid outbound structuring', value: 22 },
-        { label: 'Device telemetry convergence', value: 18 },
-      ],
-      narrative: `Forensic graph analysis places ${node.label} in direct transactional and hardware alignment with the primary extortion drain.`,
-    };
-  }, [selectedNodeId, rawNodes, caseId]);
+  const actorsLinkedCount = investigation.nodes.length;
 
   return (
-    <div className="v6-enter space-y-4" data-testid="v6-network-screen">
+    <div className="v6-enter space-y-3" data-testid="v6-network-screen">
       {/* Page Header */}
       <PageHead
         kicker="Step 4 · Fraud Network"
-        title="Who is connected?"
+        title="How were they connected?"
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyI4cReport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--fg-2)] bg-[var(--surface-1)] border border-[var(--line)] rounded-md hover:bg-[var(--hover)] hover:text-[var(--fg-1)] transition-colors shadow-xs"
+            >
+              {isCopiedI4c ? (
+                <Check className="w-3.5 h-3.5 text-[var(--safe)]" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-[var(--fg-3)]" />
+              )}
+              <span>Copy I4C Report</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyXml}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--fg-2)] bg-[var(--surface-1)] border border-[var(--line)] rounded-md hover:bg-[var(--hover)] hover:text-[var(--fg-1)] transition-colors shadow-xs"
+            >
+              {isCopiedXml ? (
+                <Check className="w-3.5 h-3.5 text-[var(--safe)]" />
+              ) : (
+                <FileCode className="w-3.5 h-3.5 text-[var(--accent)]" />
+              )}
+              <span>Copy &lt;Device&gt; XML</span>
+            </button>
+            <Button
+              variant="default"
+              size="md"
+              onClick={() => {
+                setActiveView('device');
+                setActiveRoute('attribution');
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                <span>Device & SIM</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </Button>
+          </div>
+        }
       />
 
       {/* Finding Strip */}
       <FindingStrip
-        variant="warn"
-        icon={<AlertTriangle className="w-4 h-4" />}
+        variant="urgent"
         action={
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleStartPlay}
-            icon={<Play className="w-3.5 h-3.5" />}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveView('device');
+              setActiveRoute('attribution');
+            }}
+            className="text-[12px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1"
           >
-            Replay the theft
-          </Button>
+            <span>Inspect Hardware & CGNAT Funnel</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         }
       >
-        One handset and one Wi-Fi hotspot control <b>3 mule accounts</b> across 3 banks. Same device seen in{' '}
-        <b>2 other FIRs</b>.
+        <span>
+          Cross-layer corroboration proves <strong>shared hardware terminal</strong> between Vikram Shah and Rohit Verma. Packet TTL=63 confirms local Wi-Fi accomplice tethering.
+        </span>
       </FindingStrip>
 
-      {/* Network Graph Card */}
-      <div ref={containerRef}>
-        <Card className="p-3">
-          <svg
-            viewBox={`0 0 ${svgWidth} 500`}
-            className="w-full h-[500px] overflow-visible select-none"
-          >
-          <defs>
-            <linearGradient id="v6NetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="100%" stopColor="#22d3ee" />
-            </linearGradient>
-          </defs>
-
-          {/* Edges */}
-          <g className="edges">
-            {rawEdges.map((e, idx) => {
-              if (e.step > replayStep) return null;
-              const fromN = nodeMap[e.from];
-              const toN = nodeMap[e.to];
-              if (!fromN || !toN) return null;
-
-              const isDevice = Boolean(e.isDevice);
-              const mx = (fromN.x + toN.x) / 2;
-              const d = isDevice
-                ? `M${fromN.x},${fromN.y} L${toN.x},${toN.y}`
-                : `M${fromN.x},${fromN.y} C${mx},${fromN.y} ${mx},${toN.y} ${toN.x},${toN.y}`;
-
-              const strokeColor = isDevice
-                ? '#a78bfa'
-                : toN.kind === 'safe'
-                ? '#10b981'
-                : toN.kind === 'cash'
-                ? '#f43f5e'
-                : 'url(#v6NetGrad)';
-
-              const strokeWidth = isDevice ? 1.5 : Math.max(2, e.amount / 26000);
-
-              return (
-                <g key={idx}>
-                  <path
-                    d={d}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    strokeOpacity={isDevice ? 0.75 : 0.5}
-                    strokeDasharray={isDevice ? '5 6' : 'none'}
-                    className="transition-all duration-300"
-                  />
-
-                  {/* Travelling particle on transaction edges */}
-                  {!isDevice && (
-                    <circle r={3.2} fill="#fde68a" className="drop-shadow-[0_0_4px_#fbbf24]">
-                      <animateMotion
-                        dur="2.2s"
-                        begin={`${idx * 0.2}s`}
-                        repeatCount="indefinite"
-                        path={d}
-                      />
-                    </circle>
-                  )}
-
-                  {/* Edge Amount Label */}
-                  {e.amount > 0 && (
-                    <text
-                      x={mx}
-                      y={(fromN.y + toN.y) / 2 - 8}
-                      textAnchor="middle"
-                      fontSize={12}
-                      fontWeight={600}
-                      fill="#a9b4c7"
-                      fontFamily="var(--font)"
-                    >
-                      {formatInr(e.amount, { showPaise: false })}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-          </g>
-
-          {/* Nodes */}
-          <g className="nodes">
-            {Object.values(nodeMap).map((n) => {
-              const visible =
-                n.kind === 'dev'
-                  ? replayStep >= 4
-                  : !(n.id === 'APX' && replayStep < 2) &&
-                    !(n.id === 'ATM' && replayStep < 3) &&
-                    !(['M2', 'M3', 'M4'].includes(n.id) && replayStep < 1) &&
-                    !(n.id === 'M1' && replayStep < 0);
-
-              if (!visible) return null;
-
-              const r = n.r || 18;
-              const colorMap = {
-                victim: '#818cf8',
-                risk: '#f43f5e',
-                safe: '#10b981',
-                cash: '#fb923c',
-                dev: '#a78bfa',
-              };
-              const col = colorMap[n.kind];
-              const isSelected = selectedNodeId === n.id;
-
-              return (
-                <g
-                  key={n.id}
-                  className="cursor-pointer group"
-                  onClick={() => setSelectedNodeId(n.id)}
-                >
-                  {/* Pulse ring on hover / select */}
-                  <circle
-                    cx={n.x}
-                    cy={n.y}
-                    r={r + 8}
-                    fill={col}
-                    opacity={isSelected ? 0.25 : 0.12}
-                    className="group-hover:opacity-30 transition-opacity"
-                  />
-
-                  {/* Main Node Circle */}
-                  <circle
-                    cx={n.x}
-                    cy={n.y}
-                    r={r}
-                    fill="#111a2c"
-                    stroke={col}
-                    strokeWidth={isSelected ? 3.5 : 2.5}
-                    className="transition-all"
-                  />
-
-                  {/* Node Symbol */}
-                  <text
-                    x={n.x}
-                    y={n.y + 5}
-                    textAnchor="middle"
-                    fontSize={13}
-                    fontWeight={800}
-                    fill={col}
-                    fontFamily="var(--font)"
-                  >
-                    {n.kind === 'dev' ? '⌁' : n.kind === 'safe' ? '✓' : n.kind === 'cash' ? '⌁' : n.kind === 'victim' ? 'V' : '₹'}
-                  </text>
-
-                  {/* Node Labels */}
-                  <text
-                    x={n.x}
-                    y={n.y + r + 18}
-                    textAnchor="middle"
-                    fontSize={13}
-                    fontWeight={700}
-                    fill="#eef2f8"
-                    fontFamily="var(--font)"
-                  >
-                    {n.label}
-                  </text>
-                  <text
-                    x={n.x}
-                    y={n.y + r + 33}
-                    textAnchor="middle"
-                    fontSize={12}
-                    fill="#a9b4c7"
-                    fontFamily="var(--font)"
-                  >
-                    {n.sub}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-
-        {/* Replay Controls Footer */}
-        <div className="flex items-center gap-4 mt-3 p-3 rounded-xl bg-[var(--surface-2)] border border-[var(--line)]">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleTogglePlay}
-            icon={isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          >
-            {isPlaying ? 'Pause' : 'Play'}
-          </Button>
-
-          {/* Stepper Timeline */}
-          <div className="flex gap-1.5 flex-1">
-            {STEPS.map((s, i) => (
-              <div
-                key={i}
-                onClick={() => setReplayStep(i)}
-                className={clsx(
-                  'flex-1 text-xs font-semibold px-2 py-1.5 border-t-2 cursor-pointer transition-all',
-                  i <= replayStep
-                    ? 'border-[var(--flow-2)] text-[var(--fg-1)]'
-                    : 'border-[var(--surface-3)] text-[var(--fg-3)] hover:text-[var(--fg-2)]'
-                )}
-              >
-                {s}
-              </div>
-            ))}
+      {/* 4 KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Actors linked</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-flow-bg)] text-[var(--flow)]">
+              MULTI-HOP
+            </span>
           </div>
-
-          {/* Digital Forensic Clock */}
-          <span className="v6-mono text-xs font-semibold text-[var(--fg-3)] px-2">
-            {CLOCKS[replayStep]}
-          </span>
+          <div className="text-[20px] font-bold text-[var(--fg-1)]">
+            {actorsLinkedCount} nodes connected
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            Mules, merchant lien & ATM cash-out
+          </div>
         </div>
-      </Card>
+
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Tethering proof</span>
+            <span
+              className={`text-[12px] font-semibold px-1.5 py-0.5 rounded ${
+                isHotspotActive
+                  ? 'bg-[var(--color-risk-bg)] text-[var(--risk)]'
+                  : 'bg-[var(--color-safe-bg)] text-[var(--safe)]'
+              }`}
+            >
+              {isHotspotActive ? 'TTL = 63 (HOTSPOT)' : 'TTL = 64 (DIRECT)'}
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)]">
+            {isHotspotActive ? 'Accomplice Tether' : 'Direct PGW'}
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate font-mono">
+            BSSID: {bssid}
+          </div>
+        </div>
+
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">TLS Client Fingerprint</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-device-bg)] text-[var(--device)]">
+              JA4 CONVERGED
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--device)] truncate font-mono">
+            {ja4.slice(0, 14)}
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            Common cipher suite on Axis & HDFC
+          </div>
+        </div>
+
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Inter-state syndicate</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-risk-bg)] text-[var(--risk)]">
+              &gt; ₹10 CR CBI
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--risk)]">
+            ₹10.42 Cr pool
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            14 FIRs across UP, MH, KA, GJ, DL
+          </div>
+        </div>
       </div>
 
-      {/* 420px Slide-Over Node Details Inspector */}
-      {inspectorDetails && (
-        <Inspector
-          isOpen={Boolean(inspectorDetails)}
-          onClose={() => setSelectedNodeId(null)}
-          title={inspectorDetails.title}
-          subtitle={inspectorDetails.subtitle}
-          meta={inspectorDetails.meta}
-        >
-          {inspectorDetails.score !== null && (
-            <div className="flex items-baseline gap-3 pb-4 border-b border-[var(--line)]">
-              <div className="text-4xl font-extrabold v6-mono text-[var(--risk)]">
-                {inspectorDetails.score}
-              </div>
-              <div className="text-xs text-[var(--fg-3)] leading-relaxed">
-                {inspectorDetails.scoreLabel}
-                <br />
-                evidentiary attribution lead
-              </div>
-            </div>
-          )}
+      {/* Layer Filter & Control Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-[var(--surface-1)] border border-[var(--line)] rounded-lg shadow-xs">
+        <div className="flex items-center gap-1">
+          <span className="text-[12px] font-semibold text-[var(--fg-3)] mr-1">Layer:</span>
+          {(
+            [
+              ['all', 'All Layers'],
+              ['cashflow', 'Banking Flow'],
+              ['tether', 'Wi-Fi Tether'],
+              ['ja4', 'TLS JA4'],
+              ['caf', 'CAF Identity'],
+              ['c2', 'C2 Infrastructure'],
+            ] as [EdgeFilterType, string][]
+          ).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setEdgeFilter(val)}
+              className={`px-2 py-0.5 text-[12px] font-semibold rounded transition-colors ${
+                edgeFilter === val
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'bg-[var(--surface-2)] text-[var(--fg-2)] hover:bg-[var(--hover)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <div className="py-4">
-            <div className="font-bold text-sm text-[var(--fg-1)] mb-3">
-              Forensic contributions
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => toggleMutation('triggerHotspotCollision')}
+            className={`px-2.5 py-1 text-[12px] font-semibold rounded border transition-colors ${
+              isHotspotActive
+                ? 'bg-[var(--color-risk-bg)] border-[var(--risk)] text-[var(--risk)]'
+                : 'bg-[var(--surface-2)] border-[var(--line)] text-[var(--fg-2)] hover:bg-[var(--hover)]'
+            }`}
+          >
+            {isHotspotActive ? '✓ Tethered (TTL=63)' : 'Simulate Hotspot (TTL=63)'}
+          </button>
+
+          <div className="inline-flex p-0.5 bg-[var(--surface-2)] border border-[var(--line)] rounded">
+            <button
+              type="button"
+              onClick={() => setViewMode('graph')}
+              className={`px-2.5 py-1 text-[12px] font-semibold rounded ${
+                viewMode === 'graph' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)]'
+              }`}
+            >
+              Graph
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('waterfall')}
+              className={`px-2.5 py-1 text-[12px] font-semibold rounded ${
+                viewMode === 'waterfall' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)]'
+              }`}
+            >
+              Inter-State Waterfall
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main View Area */}
+      {viewMode === 'waterfall' ? (
+        <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+            <div>
+              <h3 className="text-[14px] font-bold text-[var(--fg-1)]">
+                Inter-State Fraud Syndicate Exposure Waterfall
+              </h3>
+              <p className="text-[12px] text-[var(--fg-3)] mt-0.5">
+                Deterministic HMAC-SHA256 cross-referencing across NCRP state police databases confirms ₹10.42 Cr exposure.
+              </p>
             </div>
-            <ScoreWaterfall items={inspectorDetails.why} />
+            <button
+              type="button"
+              onClick={() => setViewMode('graph')}
+              className="text-[12px] font-semibold text-[var(--accent)] hover:underline"
+            >
+              ← Back to Graph
+            </button>
+          </div>
+          <div className="h-[440px]">
+            <CrossStateWaterfall height="100%" />
+          </div>
+        </div>
+      ) : (
+        /* 12-Column Layout: Left 8 Cols Graph Canvas, Right 4 Cols Telemetry & Provenance */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
+          {/* Left 8 Cols: Interactive Network Graph */}
+          <div className="lg:col-span-8 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs min-h-[540px]">
+            <EvidenceNetworkGraph
+              isHotspotActive={isHotspotActive}
+              onToggleHotspot={() => toggleMutation('triggerHotspotCollision')}
+              edgeFilter={edgeFilter}
+              onEdgeFilterChange={setEdgeFilter}
+            />
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--line)] space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--fg-1)]">
-              <Sparkles className="w-3.5 h-3.5 text-[var(--flow-2)]" />
-              <span>Attribution Synthesis</span>
+          {/* Right 4 Cols: UPI 2.0 XML Stanza & Corroboration Details */}
+          <div className="lg:col-span-4 flex flex-col space-y-3">
+            {/* UPI 2.0 <Device> XML Stanza */}
+            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b border-[var(--line)]">
+                <span className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider">
+                  UPI 2.0 &lt;Device&gt; XML Stanza
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyXml}
+                  className="text-[12px] text-[var(--accent)] font-semibold hover:underline flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Copy</span>
+                </button>
+              </div>
+
+              <div className="p-2.5 rounded bg-[var(--surface-2)] border border-[var(--line)] font-mono text-[12px] text-[var(--fg-1)] leading-relaxed whitespace-pre-wrap break-all">
+                {`<Device
+  account="${canonicalCase.complainant.accountMasked}"
+  mobile="919871123941"
+  geocode="28.5355,77.3910"
+  location="${investigation.policeStation}"
+  ip="103.21.144.92"
+  app="com.bank.upi"
+  capability="0001"
+  bssid="${bssid}"
+  tls_ja4="${ja4}"
+/>`}
+              </div>
+              <p className="text-[12px] text-[var(--fg-3)]">
+                Extracted directly from NPCI UPI switch message exhibit. BSSID matches the shared Wi-Fi tethering anchor.
+              </p>
             </div>
-            <div className="text-xs text-[var(--fg-2)] leading-relaxed">
-              {inspectorDetails.narrative}
+
+            {/* Corroborated Tethering Proof */}
+            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs space-y-2">
+              <span className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider block pb-1 border-b border-[var(--line)]">
+                Corroborated Telemetry Invariants
+              </span>
+
+              <div className="space-y-1.5 text-[12px]">
+                <div className="p-2 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                  <div className="font-semibold text-[var(--fg-1)]">1. Packet Hop Decrement</div>
+                  <div className="text-[var(--fg-2)] mt-0.5">
+                    TTL observed as 63 (default Linux/Android IP header is 64). Indicates intermediate routing hop via mobile hotspot.
+                  </div>
+                </div>
+
+                <div className="p-2 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                  <div className="font-semibold text-[var(--fg-1)]">2. TLS Client Hello (JA4)</div>
+                  <div className="text-[var(--fg-2)] mt-0.5">
+                    Identical JA4 fingerprint (<span className="font-mono text-[var(--device)]">{ja4}</span>) across both Axis & HDFC mule logins within 14 minutes.
+                  </div>
+                </div>
+
+                <div className="p-2 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                  <div className="font-semibold text-[var(--fg-1)]">3. Tower Geolocation Proximity</div>
+                  <div className="text-[var(--fg-2)] mt-0.5">
+                    Both SIMs attached to Airtel Cell ID 404-45-10291 (Sector 18 Noida) simultaneously during the victim drain.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </Inspector>
+        </div>
       )}
     </div>
   );
