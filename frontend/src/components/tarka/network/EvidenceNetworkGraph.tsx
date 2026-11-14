@@ -528,7 +528,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<0.5 | 1 | 2>(1);
 
-  const [containerWidth, setContainerWidth] = useState<number>(1040);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
 
   // Measure outer container using ResizeObserver to guarantee 100% in-page auto-fit
   useEffect(() => {
@@ -540,13 +540,13 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
           setContainerWidth(Math.floor(width));
           if (isFullscreen) {
             setDimensions({
-              width: Math.max(1100, Math.floor(width)),
-              height: Math.max(620, Math.floor(height) - 130),
+              width: Math.max(1160, Math.floor(width)),
+              height: Math.max(780, Math.floor(height) - 130),
             });
           } else {
             setDimensions({
-              width: 1040,
-              height: 650,
+              width: 1160,
+              height: 780,
             });
           }
         }
@@ -555,14 +555,6 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [viewMode, isFullscreen]);
-
-  // Dynamic in-page auto-fit scale: guarantees all 3 rows of nodes fit 100% inside container with zero scrollbars
-  const inPageFitScale = useMemo(() => {
-    if (isFullscreen) return zoomLevel;
-    if (!containerWidth || containerWidth >= 1040) return zoomLevel;
-    const autoScale = Math.min(1, Math.max(0.65, (containerWidth - 8) / 1040));
-    return Math.round(autoScale * zoomLevel * 100) / 100;
-  }, [isFullscreen, containerWidth, zoomLevel]);
 
   // Determine whether cashflow nodes/edges should be included
   const includeCashFlowNodes = edgeFilter === "cashflow" || edgeFilter === "all";
@@ -582,6 +574,36 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
       investigation?.muleScores
     );
   }, [dimensions.width, dimensions.height, isHotspotActive, edgeFilter, includeCashFlowNodes, investigation]);
+
+  // Dynamic shrink-to-fit scale: guarantees all 3 rows of nodes, all hops, and all boundaries
+  // shrink to fit the container perfectly without scrollbars or clipped text
+  const inPageFitScale = useMemo(() => {
+    const layoutW = layout.width || 1160;
+    const layoutH = layout.height || 780;
+
+    if (isFullscreen) {
+      if (typeof window === "undefined") return zoomLevel;
+      const availW = Math.max(600, window.innerWidth - 32);
+      const availH = Math.max(400, window.innerHeight - (isFullscreenHudMinimized ? 80 : 150));
+      const sW = availW / layoutW;
+      const sH = availH / layoutH;
+      const baseScale = Math.min(sW, sH);
+      return Math.round(baseScale * zoomLevel * 1000) / 1000;
+    }
+
+    // In-page: calculate exact ratio so the 1160px layout fits the available width with 12px margin
+    if (!containerWidth || containerWidth <= 0) return 0.68 * zoomLevel;
+    const availW = Math.max(280, containerWidth - 12);
+    const fitScale = availW / layoutW;
+
+    return Math.round(fitScale * zoomLevel * 1000) / 1000;
+  }, [isFullscreen, isFullscreenHudMinimized, containerWidth, layout.width, layout.height, zoomLevel]);
+
+  // Dynamic scaled height so container always fits all rows of nodes
+  const scaledCanvasHeight = useMemo(() => {
+    const layoutH = layout.height || 780;
+    return Math.ceil(layoutH * inPageFitScale) + 16;
+  }, [layout.height, inPageFitScale]);
 
   const caseId = activeCaseId || "CASE-2026-001";
   const canonicalCase = (activeCaseId && CANONICAL_CASES[activeCaseId]) ? CANONICAL_CASES[activeCaseId] : CANONICAL_CASES["CASE-2026-001"];
@@ -2154,9 +2176,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         <div
           ref={canvasRef}
           style={{
-            height: isFullscreen ? "calc(100vh - 130px)" : Math.round(655 * inPageFitScale),
-            minHeight: isFullscreen ? "calc(100vh - 130px)" : Math.round(655 * inPageFitScale),
-            maxHeight: isFullscreen ? undefined : Math.round(655 * inPageFitScale),
+            height: isFullscreen ? "calc(100vh - 130px)" : scaledCanvasHeight,
+            minHeight: isFullscreen ? "calc(100vh - 130px)" : scaledCanvasHeight,
+            maxHeight: isFullscreen ? undefined : scaledCanvasHeight,
             position: "relative",
             width: "100%",
             overflowX: isFullscreen ? "auto" : "hidden",
@@ -2174,10 +2196,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               height: layout.height,
               minHeight: layout.height,
               transform: `scale(${inPageFitScale})`,
-              transformOrigin: isFullscreen ? "center top" : "left top",
+              transformOrigin: "left top",
               transition: "transform 0.15s ease-out",
               position: "relative",
-              margin: isFullscreen ? "0 auto" : undefined,
+              marginLeft: Math.max(0, Math.floor((containerWidth - (layout.width * inPageFitScale)) / 2)),
             }}
           >
             {/* Background Grid Pattern & SVG Edges */}

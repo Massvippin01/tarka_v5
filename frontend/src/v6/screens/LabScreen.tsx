@@ -102,20 +102,20 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-blue-50/90 text-blue-900 border-2 border-blue-400 dark:bg-blue-950/60 dark:text-blue-100 dark:border-blue-500 shadow-xs font-bold'
-                  : 'text-[var(--fg-3)] hover:text-[var(--fg-2)] hover:bg-[var(--surface-1)] border border-transparent'
+                  ? 'bg-blue-50 text-blue-900 border-2 border-blue-500 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent'
               }`}
             >
-              <span className={isActive ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-[var(--fg-3)]'}>
+              <span className={isActive ? 'text-blue-600 font-bold' : 'text-slate-400'}>
                 {tab.icon}
               </span>
-              <span className={isActive ? 'text-blue-900 dark:text-blue-100 font-bold' : ''}>{tab.label}</span>
+              <span className={isActive ? 'text-blue-900 font-bold' : ''}>{tab.label}</span>
               {tab.badge && (
                 <span
                   className={`text-[12px] px-2 py-0.5 rounded-md font-mono font-semibold ${
                     isActive
-                      ? 'bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-700'
-                      : 'bg-[var(--surface-3)] text-[var(--fg-3)]'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
                   {tab.badge}

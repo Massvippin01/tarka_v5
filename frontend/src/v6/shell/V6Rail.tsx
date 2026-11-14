@@ -67,8 +67,8 @@ const RailItem: React.FC<RailItemProps> = ({
         ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
         : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
       active
-        ? 'bg-blue-100/90 dark:bg-blue-950/70 text-blue-900 dark:text-blue-100 font-bold border border-blue-300 dark:border-blue-700 shadow-xs'
-        : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
+        ? 'bg-blue-50 text-blue-800 font-bold border border-blue-200/90 shadow-2xs'
+        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
     )}
   >
     {!collapsed && active && (
@@ -298,7 +298,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<FolderKanban className="size-4" />}
           label="All Cases"
           badge={
-            <span className="text-[11px] font-semibold text-[var(--fg-2)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--line)] tabular-nums">
+            <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 tabular-nums">
               4
             </span>
           }
@@ -314,10 +314,10 @@ export const V6Rail: React.FC<V6RailProps> = ({
         <div
           onClick={() => setActiveView('workspace')}
           title={`Active Case: ${displayCaseId} · ${victimName} (Click to open workspace)`}
-          className="mx-0.5 my-2 p-2.5 rounded-xl bg-gradient-to-b from-[var(--surface-1)] to-[var(--surface-2)] border border-[var(--line)] shadow-2xs hover:border-[var(--line-2)] hover:shadow-xs transition-all cursor-pointer group space-y-1.5"
+          className="mx-0.5 my-2 p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group space-y-1.5"
         >
           <div className="flex items-center justify-between gap-1.5">
-            <span className="font-mono text-[12px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200/80 dark:border-blue-800/60 leading-none whitespace-nowrap">
+            <span className="font-mono text-[12px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 leading-none whitespace-nowrap shadow-2xs">
               {displayCaseId}
             </span>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -329,22 +329,22 @@ export const V6Rail: React.FC<V6RailProps> = ({
               />
               <span
                 className={cn(
-                  'text-[11px] font-semibold tabular-nums leading-none px-1.5 py-0.5 rounded border',
+                  'text-[11px] font-bold tabular-nums leading-none px-2 py-0.5 rounded-md border shadow-2xs',
                   isGoldenHourActive
-                    ? 'text-amber-700 bg-amber-50 border-amber-200/80 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-800/60'
-                    : 'text-emerald-700 bg-emerald-50 border-emerald-200/80 dark:text-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800/60'
+                    ? 'text-amber-800 bg-amber-50 border-amber-300'
+                    : 'text-emerald-800 bg-emerald-50 border-emerald-300'
                 )}
               >
                 {isGoldenHourActive ? `${ghMins}m golden` : 'Active'}
               </span>
             </div>
           </div>
-          <div className="text-[13px] font-bold text-[var(--fg-1)] truncate leading-tight group-hover:text-[var(--accent)] transition-colors">
+          <div className="text-[13px] font-bold text-slate-900 truncate leading-tight group-hover:text-blue-600 transition-colors">
             {victimName}
           </div>
-          <div className="text-[11.5px] text-[var(--fg-3)] flex items-center justify-between gap-1 leading-tight">
-            <span className="truncate text-[var(--fg-2)] font-medium">{displayTypology}</span>
-            <span className="text-[var(--fg-3)] font-mono text-[11px] shrink-0 bg-[var(--surface-1)] px-1.5 py-0.5 rounded border border-[var(--line)]">
+          <div className="text-[11.5px] text-slate-500 flex items-center justify-between gap-1 leading-tight">
+            <span className="truncate text-slate-600 font-medium">{displayTypology}</span>
+            <span className="text-slate-600 font-mono text-[11px] font-medium shrink-0 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-200">
               {displayFir}
             </span>
           </div>
@@ -358,13 +358,12 @@ export const V6Rail: React.FC<V6RailProps> = ({
           onClick={() => setActiveView('workspace')}
           onKeyDown={(e) => e.key === 'Enter' && setActiveView('workspace')}
           title={`Active Case: ${displayCaseId} · ${victimName} (${displayTypology}) · ${displayFir}`}
-          className="size-9 rounded-lg mx-auto my-1 flex items-center justify-center border border-blue-200/80 dark:border-blue-800/60 text-[var(--accent)] cursor-pointer hover:scale-105 transition-transform shadow-xs relative select-none"
-          style={{ backgroundColor: 'rgba(239, 246, 255, 0.9)' }}
+          className="size-9 rounded-lg mx-auto my-1 flex items-center justify-center border border-blue-200 text-blue-700 cursor-pointer hover:scale-105 transition-transform shadow-xs relative select-none bg-blue-50"
         >
           <Briefcase className="size-4" />
           <span
             className={cn(
-              'absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-[var(--surface-1)]',
+              'absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-white',
               isGoldenHourActive ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
             )}
           />
@@ -377,7 +376,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           <span className="text-[11px] font-bold text-[var(--fg-3)] uppercase tracking-wider">
             Investigation
           </span>
-          <span className="text-[11px] font-semibold text-[var(--accent)] bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/70 px-1.5 py-0.5 rounded-md tabular-nums">
+          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md tabular-nums">
             Stage {activeStepNumber}/6
           </span>
         </div>
@@ -402,8 +401,8 @@ export const V6Rail: React.FC<V6RailProps> = ({
                   ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
                   : 'gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-medium w-full',
                 isCurrent
-                  ? 'bg-blue-100/90 dark:bg-blue-950/70 text-blue-900 dark:text-blue-100 font-bold border border-blue-300 dark:border-blue-700 shadow-xs'
-                  : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)] border border-transparent'
+                  ? 'bg-blue-50 text-blue-900 font-bold border border-blue-200 shadow-2xs'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent'
               )}
             >
               {!isCollapsed && isCurrent && (
@@ -416,7 +415,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                     : isCurrent
                     ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
-                    : 'bg-[var(--surface-2)] text-[var(--fg-3)] border-[var(--line)] group-hover:border-[var(--line-2)]'
+                    : 'bg-slate-100 text-slate-500 border-slate-300 group-hover:border-slate-400 group-hover:bg-slate-200/70'
                 )}
               >
                 {s.done && !isCurrent ? (
@@ -449,7 +448,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Scale className="size-4" />}
           label="Court Dossier"
           badge={
-            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
               §63
             </span>
           }
@@ -463,7 +462,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<ShieldCheck className="size-4" />}
           label="Privacy & ZKP"
           badge={
-            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
               PSI
             </span>
           }
@@ -477,7 +476,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<FlaskConical className="size-4" />}
           label="Workstation"
           badge={
-            <span className="text-[11px] font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)]">
+            <span className="text-[11px] font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
               Loom
             </span>
           }
@@ -491,7 +490,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Zap className="size-4" />}
           label="Benchmarks"
           badge={
-            <span className="text-[11px] font-mono font-semibold text-[var(--fg-3)] bg-[var(--surface-2)]/90 px-1.5 py-0.5 rounded-md border border-[var(--line)] tabular-nums">
+            <span className="text-[11px] font-mono font-semibold text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 tabular-nums">
               10k/s
             </span>
           }
@@ -526,7 +525,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
           icon={<Activity className="size-4" />}
           label="Health & Diagnostics"
           badge={
-            <span className="flex items-center gap-1.5 text-[11.5px] text-emerald-600 font-semibold tabular-nums ml-auto shrink-0">
+            <span className="flex items-center gap-1.5 text-[11.5px] text-emerald-700 font-bold tabular-nums ml-auto shrink-0 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               100%
             </span>
@@ -555,14 +554,14 @@ export const V6Rail: React.FC<V6RailProps> = ({
             'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]',
             isCollapsed
               ? 'justify-center p-1'
-              : 'gap-2.5 p-2 rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/40 hover:bg-[var(--surface-2)] hover:border-[var(--line-2)] shadow-2xs w-full text-left'
+              : 'gap-2.5 p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-2xs w-full text-left'
           )}
         >
           {/* Avatar with credential ring and online badge */}
-          <div className="relative size-8.5 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-[var(--line)] flex items-center justify-center font-bold text-[12px] text-[var(--fg-1)] shrink-0 shadow-2xs">
+          <div className="relative size-8.5 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center font-bold text-[12px] text-white shrink-0 shadow-2xs">
             {initials}
             <span
-              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-[var(--surface-1)]"
+              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-500 border-2 border-white"
               title="Authenticated IO Session Active"
             />
           </div>

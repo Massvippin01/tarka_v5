@@ -40,9 +40,9 @@ export const HorizontalStepper: React.FC = () => {
               type="button"
               onClick={() => setActiveView(step.views[0])}
               className={clsx(
-                'flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded transition-colors whitespace-nowrap cursor-pointer',
+                'flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md transition-colors whitespace-nowrap cursor-pointer',
                 isCurrent
-                  ? 'text-[var(--accent)] font-bold bg-[var(--surface-2)]'
+                  ? 'text-blue-700 font-bold bg-blue-50 border border-blue-200 shadow-2xs'
                   : isDone
                   ? 'text-[var(--fg-2)] hover:text-[var(--fg-1)]'
                   : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]'
@@ -52,10 +52,10 @@ export const HorizontalStepper: React.FC = () => {
                 className={clsx(
                   'w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold border transition-all flex-none',
                   isCurrent
-                    ? 'border-[var(--accent)] text-white bg-[var(--accent)] shadow-xs'
+                    ? 'border-blue-600 text-white bg-blue-600 shadow-xs'
                     : isDone
                     ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                    : 'border-[var(--line-2)] text-[var(--fg-3)] bg-[var(--surface-2)]'
+                    : 'border-slate-300 text-slate-500 bg-slate-100'
                 )}
               >
                 {isDone ? <Check className="w-3 h-3 stroke-[3] text-white" /> : step.stepNum}
