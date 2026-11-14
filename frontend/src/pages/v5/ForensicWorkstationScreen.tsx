@@ -4,14 +4,13 @@ import {
   Layers,
   Disc,
   GitFork,
-  ShieldCheck,
   Activity,
+  Cpu,
 } from "lucide-react";
 import { useTarkaGlobal } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
-import { StoryBanner, KpiTile } from "../../components/tarka/kit";
 import { sha256HexSync } from "../../utils/sha256";
 import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../fixtures/cases";
 import { TemporalEvidenceLoom } from "../../components/tarka/TemporalEvidenceLoom";
@@ -19,10 +18,12 @@ import { ClaimDependencyLens } from "../../components/tarka/ClaimDependencyLens"
 import { InvestigationFlightRecorder } from "../../components/tarka/InvestigationFlightRecorder";
 import { ProvenanceDAGView } from "../../components/graphs/ProvenanceDAGView";
 
+type WorkstationTab = "loom" | "lens" | "recorder" | "provenance";
+
 export const ForensicWorkstationScreen: React.FC = () => {
   const { activeCaseId } = useTarkaGlobal();
   const { reconstructedInvestigation } = useTarkaUiStore();
-  const [activeTab, setActiveTab] = useState<"loom" | "lens" | "recorder" | "provenance">("loom");
+  const [activeTab, setActiveTab] = useState<WorkstationTab>("loom");
 
   const investigation = useMemo(() => {
     if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
@@ -62,135 +63,169 @@ export const ForensicWorkstationScreen: React.FC = () => {
     );
   }, [activeCaseId, investigation]);
 
+  const evidenceChips = [
+    {
+      tier: "T1",
+      label: `${investigation.complainantName?.split(" ")[0] || "Case"} NTP Stratum-2`,
+      hash: investigation.fileManifest[0]?.sha256 || sha256HexSync("NTP Stratum-2"),
+    },
+    {
+      tier: "T1",
+      label: "Z3 MUS Root",
+      hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("Z3 MUS Root"),
+    },
+    {
+      tier: "T1",
+      label: "Flight Recorder CAS",
+      hash: investigation.fileManifest[2]?.sha256 || sha256HexSync("Flight Recorder CAS"),
+    },
+  ];
+
   return (
     <div
       data-case-id={activeCaseId || ""}
+      className="space-y-4 max-w-full pb-8"
       style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100dvh - 52px)",
-        maxHeight: "calc(100dvh - 52px)",
-        padding: "8px 16px 12px 16px",
-        gap: "8px",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        background: "transparent",
         fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif)",
       }}
     >
-      {/* 1. STORY BANNER */}
-      <StoryBanner
-        screenId="workstation"
-        takeaway={`${investigation.firNumber || "FIR"} (${investigation.complainantName || "Victim"}): Deep forensic instrumentation across multi-track NTP alignment, Z3 SMT claim ablation, and cryptographically chained flight recorder.`}
-        evidenceChips={[
-          {
-            tier: "T1",
-            label: `${investigation.complainantName?.split(" ")[0] || "Case"} NTP Stratum-2`,
-            hash: investigation.fileManifest[0]?.sha256 || sha256HexSync("NTP Stratum-2"),
-          },
-          {
-            tier: "T1",
-            label: "Z3 MUS Root",
-            hash: investigation.fileManifest[1]?.sha256 || sha256HexSync("Z3 MUS Root"),
-          },
-          {
-            tier: "T1",
-            label: "Flight Recorder CAS",
-            hash: investigation.fileManifest[2]?.sha256 || sha256HexSync("Flight Recorder CAS"),
-          },
-        ]}
-      />
+      {/* 1. STATUTORY EVIDENCE BANNER */}
+      <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[var(--accent)] shrink-0 mt-0.5">
+            <Cpu className="size-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[13px] font-bold text-[var(--accent)] tracking-tight">
+                FORENSIC WORKSTATION & SMT PROOF ENGINES
+              </span>
+              <span className="text-[12px] font-mono text-[var(--fg-3)]">
+                · FIR #{investigation.firNumber || "149/2026"}
+              </span>
+              <span className="text-[12px] font-medium text-[var(--fg-2)]">
+                · {investigation.complainantName || "Sunil Kumar"}
+              </span>
+            </div>
+            <div className="text-[12px] text-[var(--fg-2)] mt-0.5 leading-snug">
+              Deep forensic instrumentation across multi-track NTP alignment, Z3 SMT claim ablation, and cryptographically chained flight recorder.
+            </div>
+          </div>
+        </div>
+
+        {/* Evidence Chips */}
+        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+          {evidenceChips.map((chip, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono text-[var(--fg-2)]"
+            >
+              <span className="text-emerald-700 font-bold">{chip.tier}</span>
+              <span className="text-[var(--fg-1)] font-medium">{chip.label}</span>
+              <span className="text-[var(--fg-3)] font-mono">({chip.hash.slice(0, 7)}…)</span>
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* 2. KPI ROW (4 TILES) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "8px",
-        }}
-      >
-        <KpiTile
-          title="MULTI-TRACK CHRONOLOGY"
-          value={String(chronologyEvents.length)}
-          suffix=" Events"
-          icon={Clock}
-          iconColor="#10B981"
-          iconBg="#ECFDF5"
-          statusBadge={{ text: "NTP ±180s SPEC", variant: "emerald" }}
-          subtitle="Cross-institution atomic clock synchronized"
-        />
-        <KpiTile
-          title="FORMAL SMT INVARIANTS"
-          value="Z3 SMT"
-          suffix=" Solver"
-          icon={ShieldCheck}
-          iconColor="#4F46E5"
-          iconBg="#EEF2FF"
-          statusBadge={{ text: "SAT / UNSAT PROVEN", variant: "indigo" }}
-          subtitle="Minimal Unsatisfiable Subsets (MUS) isolation"
-        />
-        <KpiTile
-          title="ABLATION RESILIENCE"
-          value="100%"
-          suffix=" Core Survival"
-          icon={Layers}
-          iconColor="#0D9488"
-          iconBg="#F0FDFA"
-          statusBadge={{ text: "LEAVE-ONE-OUT", variant: "emerald" }}
-          subtitle="Mathematical claim survival under exclusion"
-        />
-        <KpiTile
-          title="FLIGHT RECORDER LEDGER"
-          value={String(flightRecorderEntries.length)}
-          suffix=" Events"
-          icon={Disc}
-          iconColor="#9333EA"
-          iconBg="#FAF5FF"
-          statusBadge={{ text: "SHA-256 CHAINED", variant: "emerald" }}
-          subtitle="Immutable custody and forensic audit log"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* KPI 1 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Multi-Track Chronology
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+              NTP ±180s SPEC
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>{chronologyEvents.length}</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Events</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Cross-institution atomic clock synchronized
+          </div>
+        </div>
+
+        {/* KPI 2 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Formal SMT Invariants
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+              SAT / UNSAT PROVEN
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>Z3 SMT</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Solver</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Minimal Unsatisfiable Subsets (MUS) isolation
+          </div>
+        </div>
+
+        {/* KPI 3 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Ablation Resilience
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+              LEAVE-ONE-OUT
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>100%</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Core Survival</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Mathematical claim survival under exclusion
+          </div>
+        </div>
+
+        {/* KPI 4 */}
+        <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-[var(--fg-3)] uppercase tracking-wide">
+              Flight Recorder Ledger
+            </span>
+            <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-mono">
+              SHA-256 CHAINED
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)] tabular-nums flex items-baseline gap-1">
+            <span>{flightRecorderEntries.length}</span>
+            <span className="text-[13px] font-semibold text-[var(--fg-2)]">Events</span>
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1.5">
+            Immutable custody and forensic audit log
+          </div>
+        </div>
       </div>
 
       {/* 3. WORKBENCH SUB-HEADER & NAVIGATION TABS */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "var(--reui-card-bg, #0F1B2E)",
-          padding: "6px 12px",
-          borderRadius: "8px",
-          border: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
-          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.25)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Activity size={18} color="#06B6D4" />
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--reui-text-strong, #FFFFFF)" }}>
-            Signature Digital Forensics Instrumentation
+      <div className="v6-card bg-white border border-[var(--line)] rounded-xl p-2.5 shadow-2xs flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 shrink-0">
+          <Activity className="size-4 text-[var(--accent)] shrink-0" />
+          <span className="text-[13px] font-bold text-[var(--fg-1)]">
+            Digital Forensics Instrumentation
           </span>
-          <span
-            style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              padding: "2px 6px",
-              borderRadius: "4px",
-              background: "rgba(16, 185, 129, 0.15)",
-              color: "#34D399",
-              border: "1px solid rgba(16, 185, 129, 0.30)",
-            }}
-          >
-            ACTIVE CASE: {activeCaseId || "SELECT CASE"}
+          <span className="text-[12px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+            ACTIVE CASE: {activeCaseId || "CASE-2026-001"}
           </span>
         </div>
 
         {/* Tab Buttons */}
-        <div style={{ display: "flex", gap: "4px", background: "rgba(255, 255, 255, 0.04)", padding: "3px", borderRadius: "6px" }}>
+        <div className="flex items-center gap-1 bg-[var(--surface-1)] p-1 rounded-lg border border-[var(--line)] shrink-0 overflow-x-auto">
           {[
-            { id: "loom", label: "1. Temporal Evidence Loom", icon: Clock },
+            { id: "loom", label: "1. Temporal Loom", icon: Clock },
             { id: "lens", label: "2. Claim Dependency Lens", icon: Layers },
-            { id: "recorder", label: "3. Investigation Flight Recorder", icon: Disc },
-            { id: "provenance", label: "4. Provenance DAG Lineage", icon: GitFork },
+            { id: "recorder", label: "3. Flight Recorder", icon: Disc },
+            { id: "provenance", label: "4. Provenance DAG", icon: GitFork },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -198,24 +233,14 @@ export const ForensicWorkstationScreen: React.FC = () => {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "5px 12px",
-                  borderRadius: "5px",
-                  border: isActive ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
-                  background: isActive ? "rgba(6, 182, 212, 0.20)" : "transparent",
-                  color: isActive ? "#22D3EE" : "var(--reui-text-secondary, #94A3B8)",
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: "11px",
-                  cursor: "pointer",
-                  boxShadow: isActive ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
-                  transition: "all 0.12s ease",
-                }}
+                onClick={() => setActiveTab(tab.id as WorkstationTab)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? "bg-white text-[var(--accent)] shadow-2xs border border-[var(--line)] font-bold"
+                    : "text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-white/60"
+                }`}
               >
-                <Icon size={13} color={isActive ? "#22D3EE" : "#94A3B8"} />
+                <Icon className={`size-3.5 ${isActive ? "text-[var(--accent)]" : "text-[var(--fg-3)]"}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -224,16 +249,7 @@ export const ForensicWorkstationScreen: React.FC = () => {
       </div>
 
       {/* 4. ACTIVE TOOL SURFACE */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-          paddingRight: "2px",
-        }}
-      >
+      <div className="space-y-4">
         {activeTab === "loom" && (
           <TemporalEvidenceLoom
             caseId={activeCaseId || "CASE-2026-001"}

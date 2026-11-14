@@ -341,7 +341,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            fontSize: "11px",
+            fontSize: "12px",
             color: "#4F46E5",
             background: "#EEF2FF",
             padding: "6px 14px",
@@ -418,7 +418,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "4px",
@@ -435,7 +435,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "4px",
@@ -452,7 +452,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     padding: "2px 8px",
                     borderRadius: "4px",
@@ -475,7 +475,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
             </div>
 
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "10px", color: "#64748B", fontWeight: 600, textTransform: "uppercase" }}>
+              <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, textTransform: "uppercase" }}>
                 DAG Root Fingerprint
               </div>
               <div
@@ -506,7 +506,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                   {copiedHash === activeDag.fingerprint ? <Check size={12} /> : <Copy size={12} />}
                 </button>
               </div>
-              <div style={{ fontSize: "10.5px", color: "#059669", fontWeight: 600, marginTop: "2px" }}>
+              <div style={{ fontSize: "12px", color: "#059669", fontWeight: 600, marginTop: "2px" }}>
                 Topological Sort: <strong>Acyclic Verified</strong>
               </div>
             </div>
@@ -531,7 +531,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
       >
         {/* Stage Filter Pills & Operational Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+          <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
             Filter:
           </span>
           {["ALL", "ARTIFACT", "CANONICAL_FACT", "EVIDENCE_DNA", "FINDING"].map((type) => {
@@ -542,7 +542,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                 type="button"
                 onClick={() => setFilterType(type)}
                 style={{
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: isSelected ? 700 : 500,
                   padding: "4px 10px",
                   borderRadius: "5px",
@@ -572,7 +572,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
               }
             }}
             style={{
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               padding: "4px 10px",
               display: "inline-flex",
@@ -602,7 +602,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
             style={{
               paddingLeft: "30px",
               paddingRight: "10px",
-              fontSize: "11px",
+              fontSize: "12px",
               height: "30px",
               width: "100%",
               borderRadius: "5px",
@@ -650,8 +650,8 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                     boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
                   }}
                 >
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>{col.title}</div>
-                  <div style={{ fontSize: "10px", color: "#64748B", marginTop: "1px" }}>{col.subtitle}</div>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>{col.title}</div>
+                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "1px" }}>{col.subtitle}</div>
                 </div>
 
                 {/* Column Nodes */}
@@ -661,7 +661,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                       style={{
                         padding: "16px",
                         textAlign: "center",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "#94A3B8",
                         border: "1px dashed #CBD5E1",
                         borderRadius: "6px",
@@ -703,7 +703,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                             <span
                               style={{
-                                fontSize: "10px",
+                                fontSize: "12px",
                                 fontWeight: 700,
                                 color: st.idColor,
                                 fontFamily: "var(--font-mono, monospace)",
@@ -713,7 +713,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                             </span>
                             <span
                               style={{
-                                fontSize: "9px",
+                                fontSize: "12px",
                                 fontWeight: 700,
                                 padding: "1px 5px",
                                 borderRadius: "3px",
@@ -728,7 +728,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
 
                           <div
                             style={{
-                              fontSize: "11px",
+                              fontSize: "12px",
                               fontWeight: 600,
                               color: "#0F172A",
                               lineHeight: 1.35,
@@ -743,7 +743,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
-                              fontSize: "9.5px",
+                              fontSize: "12px",
                               color: "#64748B",
                               paddingTop: "4px",
                               borderTop: "1px solid rgba(0, 0, 0, 0.05)",
@@ -801,7 +801,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                 <span
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     padding: "2px 6px",
                     borderRadius: "4px",
@@ -818,7 +818,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                 </span>
                 <span
                   style={{
-                    fontSize: "9px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     padding: "1px 6px",
                     borderRadius: "3px",
@@ -840,7 +840,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                 type="button"
                 onClick={() => handleCopy(selectedNode.node_id)}
                 style={{
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   display: "inline-flex",
                   alignItems: "center",
@@ -873,11 +873,11 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
           >
             {/* Upstream Parents */}
             <div>
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: "6px" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: "6px" }}>
                 Upstream Ground Truth Sources ({connectedEdges.upstream.length})
               </div>
               {connectedEdges.upstream.length === 0 ? (
-                <div style={{ fontSize: "11px", color: "#64748B" }}>Root Origin: Seized as physical primary evidence.</div>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>Root Origin: Seized as physical primary evidence.</div>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {connectedEdges.upstream.map((srcId) => (
@@ -887,7 +887,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                       onClick={() => handleSelectNode(srcId)}
                       style={{
                         padding: "3px 8px",
-                        fontSize: "10px",
+                        fontSize: "12px",
                         fontWeight: 600,
                         background: "#EFF6FF",
                         border: "1px solid #BFDBFE",
@@ -910,11 +910,11 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
 
             {/* Downstream Children */}
             <div>
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: "6px" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: "6px" }}>
                 Downstream Dependent Findings ({connectedEdges.downstream.length})
               </div>
               {connectedEdges.downstream.length === 0 ? (
-                <div style={{ fontSize: "11px", color: "#64748B" }}>Terminal Node: Final court-admissible finding.</div>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>Terminal Node: Final court-admissible finding.</div>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {connectedEdges.downstream.map((tgtId) => (
@@ -924,7 +924,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
                       onClick={() => handleSelectNode(tgtId)}
                       style={{
                         padding: "3px 8px",
-                        fontSize: "10px",
+                        fontSize: "12px",
                         fontWeight: 600,
                         background: "#FFF1F2",
                         border: "1px solid #FECDD3",
@@ -955,7 +955,7 @@ export const ProvenanceDAGView: React.FC<ProvenanceDAGViewProps> = ({
               marginTop: "10px",
               paddingTop: "8px",
               borderTop: "1px solid #E2E8F0",
-              fontSize: "10.5px",
+              fontSize: "12px",
               color: "#64748B",
             }}
           >

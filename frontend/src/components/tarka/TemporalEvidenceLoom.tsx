@@ -194,7 +194,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
             </h3>
             <span
               style={{
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
@@ -209,7 +209,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
             {chronologyAnalysis.conflictCount > 0 && (
               <span
                 style={{
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: 700,
                   padding: "2px 8px",
                   borderRadius: "4px",
@@ -242,7 +242,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
             onClick={() => setTimezone((tz) => (tz === "IST" ? "UTC" : "IST"))}
             style={{
               padding: "5px 10px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               background: timezone === "IST" ? "#F0FDF4" : "#F8FAFC",
               color: timezone === "IST" ? "#166534" : "#334155",
@@ -264,7 +264,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
             onClick={() => setShowDriftOverlay(!showDriftOverlay)}
             style={{
               padding: "5px 10px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               background: showDriftOverlay ? "#EFF6FF" : "#F8FAFC",
               color: showDriftOverlay ? "#1D4ED8" : "#64748B",
@@ -299,7 +299,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   onClick={() => setSelectedTrack(t)}
                   style={{
                     padding: "4px 8px",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: isSelected ? 700 : 500,
                     border: isSelected ? "1px solid #CBD5E1" : "1px solid transparent",
                     borderRadius: "4px",
@@ -359,7 +359,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                     />
                     <span
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 700,
                         padding: "1px 6px",
                         borderRadius: "4px",
@@ -374,7 +374,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   </div>
                   <span
                     style={{
-                      fontSize: "10.5px",
+                      fontSize: "12px",
                       color: "#64748B",
                       fontFamily: "var(--font-mono, monospace)",
                     }}
@@ -388,7 +388,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   {trackEvts.length === 0 ? (
                     <div
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "#94A3B8",
                         fontStyle: "italic",
                         padding: "6px 4px",
@@ -454,7 +454,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                               </div>
                               <div
                                 style={{
-                                  fontSize: "10px",
+                                  fontSize: "12px",
                                   color: "#64748B",
                                   fontFamily: "var(--font-mono, monospace)",
                                   marginTop: "2px",
@@ -465,7 +465,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                               {hasConflict && (
                                 <div
                                   style={{
-                                    fontSize: "10px",
+                                    fontSize: "12px",
                                     color: "#DC2626",
                                     fontWeight: 700,
                                     marginTop: "3px",
@@ -482,7 +482,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                             <div style={{ textAlign: "right", fontFamily: "var(--font-mono, monospace)" }}>
                               <span
                                 style={{
-                                  fontSize: "10px",
+                                  fontSize: "12px",
                                   fontWeight: 700,
                                   padding: "2px 6px",
                                   borderRadius: "4px",
@@ -529,7 +529,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       padding: "2px 6px",
                       borderRadius: "3px",
@@ -543,7 +543,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: "11px",
+                      fontSize: "12px",
                       color: "#64748B",
                       fontFamily: "var(--font-mono, monospace)",
                     }}
@@ -567,7 +567,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
               >
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#475569",
                     marginBottom: "6px",
@@ -582,7 +582,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                     display: "flex",
                     flexDirection: "column",
                     gap: "5px",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontFamily: "var(--font-mono, monospace)",
                   }}
                 >
@@ -629,13 +629,13 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                       alignItems: "center",
                       gap: "6px",
                       color: "#DC2626",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 700,
                     }}
                   >
                     <AlertOctagon size={13} /> CAUSALITY / CHRONOLOGY CONFLICT DETECTED
                   </div>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#991B1B", lineHeight: 1.4 }}>
+                  <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#991B1B", lineHeight: 1.4 }}>
                     {conflictMap.get(activeEvent.id)}
                   </p>
                 </div>
@@ -657,13 +657,13 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                       alignItems: "center",
                       gap: "6px",
                       color: "#BE123C",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 700,
                     }}
                   >
                     <AlertOctagon size={13} /> TEMPORAL CONTRADICTION DETECTED
                   </div>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9F1239", lineHeight: 1.4 }}>
+                  <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#9F1239", lineHeight: 1.4 }}>
                     {activeEvent.contradictionNote}
                   </p>
                 </div>
@@ -673,7 +673,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#475569",
                     textTransform: "uppercase",
@@ -685,7 +685,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                 <div
                   style={{
                     fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     background: "#FFFFFF",
                     padding: "8px",
                     borderRadius: "5px",
@@ -745,7 +745,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
               <div>
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#475569",
                     marginBottom: "4px",
@@ -761,7 +761,7 @@ export const TemporalEvidenceLoom: React.FC<TemporalEvidenceLoomProps> = ({
                     flexDirection: "column",
                     gap: "4px",
                     fontFamily: "var(--font-mono, monospace)",
-                    fontSize: "10.5px",
+                    fontSize: "12px",
                     background: "#FFFFFF",
                     padding: "8px",
                     borderRadius: "5px",

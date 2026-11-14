@@ -248,7 +248,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
             </h3>
             <span
               style={{
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
@@ -281,7 +281,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
               }}
               style={{
                 padding: "5px 10px",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
                 background: "#F8FAFC",
                 color: "#475569",
@@ -301,7 +301,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
             disabled={isSimulating}
             style={{
               padding: "6px 14px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               background: isSimulating ? "#94A3B8" : "#4F46E5",
               color: "#FFFFFF",
@@ -328,7 +328,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: "#334155",
                 textTransform: "uppercase",
@@ -339,7 +339,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
             </span>
             <span
               style={{
-                fontSize: "10.5px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: excludedCount > 0 ? "#BE123C" : "#64748B",
                 fontFamily: "var(--font-mono, monospace)",
@@ -367,7 +367,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       padding: "1px 6px",
                       borderRadius: "4px",
                       background: art.isExcluded ? "#F1F5F9" : "#EEF2FF",
@@ -380,7 +380,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                   </span>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       padding: "1px 6px",
                       borderRadius: "4px",
@@ -405,7 +405,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                 </div>
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     color: "#64748B",
                     fontFamily: "var(--font-mono, monospace)",
                     marginTop: "4px",
@@ -423,7 +423,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: "#334155",
                 textTransform: "uppercase",
@@ -434,7 +434,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
             </span>
             <span
               style={{
-                fontSize: "10.5px",
+                fontSize: "12px",
                 fontWeight: 700,
                 color: flippedCount > 0 ? "#D97706" : "#64748B",
                 fontFamily: "var(--font-mono, monospace)",
@@ -467,7 +467,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span
                         style={{
-                          fontSize: "10.5px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           color: "#64748B",
                           fontFamily: "var(--font-mono, monospace)",
@@ -478,7 +478,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                       {claim.affectedByAblation && (
                         <span
                           style={{
-                            fontSize: "9px",
+                            fontSize: "12px",
                             padding: "1px 6px",
                             borderRadius: "3px",
                             background: "#FEF3C7",
@@ -497,7 +497,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span
                         style={{
-                          fontSize: "10px",
+                          fontSize: "12px",
                           color: "#64748B",
                           fontFamily: "var(--font-mono, monospace)",
                         }}
@@ -507,7 +507,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                       <ArrowRight size={10} color="#94A3B8" />
                       <span
                         style={{
-                          fontSize: "10px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           padding: "2px 7px",
                           borderRadius: "4px",
@@ -534,7 +534,7 @@ export const ClaimDependencyLens: React.FC<ClaimDependencyLensProps> = ({
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      fontSize: "10px",
+                      fontSize: "12px",
                       color: "#64748B",
                       fontFamily: "var(--font-mono, monospace)",
                       paddingTop: "6px",

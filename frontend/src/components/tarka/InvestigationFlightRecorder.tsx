@@ -188,7 +188,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
             </h3>
             <span
               style={{
-                fontSize: "10px",
+                fontSize: "12px",
                 fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "4px",
@@ -233,7 +233,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                 onClick={() => setFilterActor(f.id)}
                 style={{
                   padding: "4px 8px",
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: isSelected ? 700 : 500,
                   border: isSelected ? "1px solid #CBD5E1" : "1px solid transparent",
                   borderRadius: "4px",
@@ -283,7 +283,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
           >
             <SkipBack size={12} />
           </button>
-          <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "#334155" }}>
+          <span style={{ fontSize: "12px", fontFamily: "var(--font-mono, monospace)", color: "#334155" }}>
             Replay Horizon: <strong>{replayStep} / {entries.length} steps</strong>
           </span>
           <button
@@ -309,7 +309,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
           type="button"
           onClick={() => setReplayStep(entries.length)}
           style={{
-            fontSize: "11px",
+            fontSize: "12px",
             fontWeight: 600,
             background: "#FFFFFF",
             border: "1px solid #CBD5E1",
@@ -353,7 +353,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
               >
                 <div
                   style={{
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     fontFamily: "var(--font-mono, monospace)",
                     color: isSelected ? "#4F46E5" : "#64748B",
@@ -368,7 +368,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                     <span
                       style={{
-                        fontSize: "9px",
+                        fontSize: "12px",
                         fontWeight: 700,
                         padding: "1px 6px",
                         borderRadius: "3px",
@@ -383,7 +383,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                     >
                       {badge.icon} {badge.label}
                     </span>
-                    <span style={{ fontSize: "10px", color: "#64748B", fontFamily: "var(--font-mono, monospace)" }}>
+                    <span style={{ fontSize: "12px", color: "#64748B", fontFamily: "var(--font-mono, monospace)" }}>
                       {entry.timestamp}
                     </span>
                   </div>
@@ -391,7 +391,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                   <div style={{ fontSize: "12px", fontWeight: 600, color: isSelected ? "#4F46E5" : "#0F172A" }}>
                     {entry.action}
                   </div>
-                  <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#475569", lineHeight: "1.35" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#475569", lineHeight: "1.35" }}>
                     {entry.details}
                   </p>
                 </div>
@@ -418,7 +418,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       padding: "2px 6px",
                       borderRadius: "3px",
@@ -435,7 +435,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                       display: "flex",
                       alignItems: "center",
                       gap: "4px",
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       color: "#059669",
                     }}
@@ -446,7 +446,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                 <h4 style={{ margin: "8px 0 2px", fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>
                   {selectedEntry.action}
                 </h4>
-                <div style={{ fontSize: "11px", color: "#64748B" }}>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>
                   Actor: <strong style={{ color: "#0F172A" }}>{selectedEntry.actorId}</strong> ({selectedEntry.actorRole})
                 </div>
               </div>
@@ -462,7 +462,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
               >
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#475569",
                     marginBottom: "6px",
@@ -477,7 +477,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                     display: "flex",
                     flexDirection: "column",
                     gap: "8px",
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontFamily: "var(--font-mono, monospace)",
                     wordBreak: "break-all",
                   }}
@@ -539,7 +539,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
               >
                 <div
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
                     color: "#475569",
                     marginBottom: "4px",
@@ -549,7 +549,7 @@ export const InvestigationFlightRecorder: React.FC<InvestigationFlightRecorderPr
                 >
                   Statutory Reproducibility
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: "#64748B", lineHeight: "1.4" }}>
+                <p style={{ margin: 0, fontSize: "12px", color: "#64748B", lineHeight: "1.4" }}>
                   This action is recorded in the append-only ledger and signed in accordance with Bharatiya Sakshya Adhiniyam, 2023 evidentiary standards.
                 </p>
               </div>
