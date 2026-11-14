@@ -80,12 +80,12 @@ export function layoutDataDrivenInvestigation(
   investigation: ReconstructedInvestigation,
   muleScores?: Record<string, any>
 ): NetworkLayoutResult {
-  const width = Math.max(960, W);
-  const height = Math.max(520, H);
+  const width = Math.max(1040, W);
+  const height = Math.max(650, H);
 
-  const yRowA = Math.round(0.14 * height);
-  const yRowB = Math.round(0.50 * height);
-  const yRowC = Math.round(0.81 * height);
+  const yRowA = Math.round(0.10 * height);
+  const yRowB = Math.round(0.28 * height);
+  const yRowC = Math.round(0.68 * height);
 
   // 1. Identify victim(s)
   const victimNode =
@@ -138,15 +138,15 @@ export function layoutDataDrivenInvestigation(
 
   hops.forEach((h) => {
     const nodesAtHop = investigation.nodes.filter((n) => hopMap[n.id] === h);
-    const cx = Math.round(width * (0.09 + (h / Math.max(1, maxHop)) * 0.79));
+    const cx = Math.round(width * (0.11 + (h / Math.max(1, maxHop)) * 0.74));
 
     nodesAtHop.forEach((n, idx) => {
       const inEdges = investigation.edges.filter((e) => e.targetNodeId === n.id);
       const amountReceived = inEdges.reduce((sum, e) => sum + (e.amount || 0), 0);
 
       const sizeScale = maxTxAmount > 0 ? Math.min(1, amountReceived / maxTxAmount) : 0;
-      const w = Math.round(164 + sizeScale * 36);
-      const hNode = Math.round(64 + sizeScale * 16);
+      const w = Math.round(168 + sizeScale * 24);
+      const hNode = Math.round(62 + sizeScale * 12);
 
       let cy = yRowC;
       if (h === 0) {
@@ -154,7 +154,7 @@ export function layoutDataDrivenInvestigation(
       } else if (nodesAtHop.length === 1) {
         cy = yRowC;
       } else {
-        const stepY = 92;
+        const stepY = nodesAtHop.length >= 3 ? 74 : 88;
         const totalSpan = (nodesAtHop.length - 1) * stepY;
         const startY = yRowC - Math.round(totalSpan / 2);
         cy = startY + idx * stepY;
@@ -247,9 +247,9 @@ export function layoutDataDrivenInvestigation(
 
   // 4. Infrastructure Satellites in Row A
   const heroW = 280;
-  const heroH = 84;
-  const sideW = 144;
-  const sideH = 52;
+  const heroH = 78;
+  const sideW = 168;
+  const sideH = 54;
   const cxTower = Math.round(0.12 * width);
   const cxHero = Math.round(0.50 * width);
   const cxC2 = Math.round(0.88 * width);
@@ -334,16 +334,17 @@ export function layoutDataDrivenInvestigation(
   nodeMap["node-c2"] = c2Node;
 
   // 5. Hubs in Row B
-  const hubSize = 56;
-  const cxHubTether = Math.round(0.29 * width);
+  const hubSize = 52;
+  const cxHubTether = Math.round(0.30 * width);
   const cxHubJa4 = Math.round(0.50 * width);
-  const cxHubCaf = Math.round(0.71 * width);
+  const cxHubCaf = Math.round(0.69 * width);
 
   const hubTether: NetworkNodeLayout = {
     id: "hub-tether",
     label: "Wi-Fi Hotspot",
     sublabel: isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct",
     category: "hub",
+    strength: "BSSID",
     cx: cxHubTether,
     cy: yRowB,
     x: Math.round(cxHubTether - hubSize / 2),
@@ -363,6 +364,7 @@ export function layoutDataDrivenInvestigation(
     label: "JA4 TLS Fingerprint",
     sublabel: "t13d1516h2_8daaf6",
     category: "hub",
+    strength: "JA4",
     cx: cxHubJa4,
     cy: yRowB,
     x: Math.round(cxHubJa4 - hubSize / 2),
@@ -382,6 +384,7 @@ export function layoutDataDrivenInvestigation(
     label: "SIM CAF Identity",
     sublabel: "+91 98711 23941",
     category: "hub",
+    strength: "CAF",
     cx: cxHubCaf,
     cy: yRowB,
     x: Math.round(cxHubCaf - hubSize / 2),
@@ -409,9 +412,33 @@ export function layoutDataDrivenInvestigation(
     const tgt = nodeMap[e.targetNodeId] || layoutNodes.find((n) => n.id.includes(e.targetNodeId) || e.targetNodeId.includes(n.id));
 
     if (src && tgt) {
-      const p1 = src.ports.right;
-      const p2 = tgt.ports.left;
-      const dx = Math.max(30, Math.abs(p2.x - p1.x) * 0.45);
+      // Find all outgoing edges from this source for port offset
+      const allOutFromSrc = investigation.edges.filter(
+        (ed) => ed.sourceNodeId === e.sourceNodeId || (src.id && ed.sourceNodeId.includes(src.id))
+      );
+      let p1 = src.ports.right;
+      if (allOutFromSrc.length > 1) {
+        const outIdx = allOutFromSrc.findIndex(
+          (ed) => (ed.id || ed.targetNodeId) === (e.id || e.targetNodeId)
+        );
+        const offset = (outIdx - (allOutFromSrc.length - 1) / 2) * 16;
+        p1 = { x: src.x + src.w, y: Math.round(src.cy + offset) };
+      }
+
+      // Find all incoming edges to this target for port offset
+      const allInToTgt = investigation.edges.filter(
+        (ed) => ed.targetNodeId === e.targetNodeId || (tgt.id && ed.targetNodeId.includes(tgt.id))
+      );
+      let p2 = tgt.ports.left;
+      if (allInToTgt.length > 1) {
+        const inIdx = allInToTgt.findIndex(
+          (ed) => (ed.id || ed.sourceNodeId) === (e.id || e.sourceNodeId)
+        );
+        const offset = (inIdx - (allInToTgt.length - 1) / 2) * 14;
+        p2 = { x: tgt.x, y: Math.round(tgt.cy + offset) };
+      }
+
+      const dx = Math.max(36, Math.abs(p2.x - p1.x) * 0.45);
       const path = `M ${p1.x},${p1.y} C ${p1.x + dx},${p1.y} ${p2.x - dx},${p2.y} ${p2.x},${p2.y}`;
 
       const amtInr = e.amount || 0;
@@ -475,8 +502,10 @@ export function layoutDataDrivenInvestigation(
     }
   );
 
-  const muleAccounts = layoutNodes.filter((n) => n.category === "account");
+  const muleAccounts = layoutNodes.filter((n) => n.category === "account" || n.category === "sink");
   muleAccounts.forEach((mule) => {
+    // Only connect JA4 to actual account mules, not physical cashout ATM kiosks
+    if (mule.category === "sink") return;
     const p1 = hubJa4.ports.bottom[0];
     const p2 = mule.ports.top[1];
     const path = `M ${p1.x},${p1.y} C ${p1.x},${p1.y + 35} ${p2.x},${p2.y - 35} ${p2.x},${p2.y}`;
@@ -496,20 +525,20 @@ export function layoutDataDrivenInvestigation(
   // 8. Community Hulls
   const communityHulls: CommunityHullLayout[] = [];
   if (muleAccounts.length >= 2) {
-    const minX = Math.min(...muleAccounts.map((m) => m.x)) - 14;
-    const maxX = Math.max(...muleAccounts.map((m) => m.x + m.w)) + 14;
-    const minY = Math.min(...muleAccounts.map((m) => m.y)) - 12;
-    const maxY = Math.max(...muleAccounts.map((m) => m.y + m.h)) + 12;
+    const minX = Math.min(...muleAccounts.map((m) => m.x)) - 16;
+    const maxX = Math.max(...muleAccounts.map((m) => m.x + m.w)) + 16;
+    const minY = Math.min(...muleAccounts.map((m) => m.y)) - 18;
+    const maxY = Math.max(...muleAccounts.map((m) => m.y + m.h + (m.category === "sink" ? 28 : 16))) + 14;
     const r = 10;
     const hullPath = `M ${minX + r},${minY} H ${maxX - r} Q ${maxX},${minY} ${maxX},${minY + r} V ${maxY - r} Q ${maxX},${maxY} ${maxX - r},${maxY} H ${minX + r} Q ${minX},${maxY} ${minX},${maxY - r} V ${minY + r} Q ${minX},${minY} ${minX + r},${minY} Z`;
 
     communityHulls.push({
       id: "hull-syndicate-layering",
-      name: "Syndicate Controlled Mule Cluster (Shared BSSID & JA4 Anchor)",
+      name: "Syndicate Mule Cluster (BSSID & JA4 Anchor)",
       path: hullPath,
       color: "#6366F1",
-      labelX: minX + 16,
-      labelY: minY - 8,
+      labelX: minX + 14,
+      labelY: maxY - 12,
     });
   }
 

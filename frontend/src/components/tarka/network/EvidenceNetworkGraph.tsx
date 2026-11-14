@@ -230,18 +230,33 @@ export const CHRONOLOGICAL_REPLAY_STEPS: ReplayStepData[] = [
 ];
 
 export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayStepData[] {
-  if (caseId === "CASE-2026-001" || !canonicalCase) {
+  if (caseId === "CASE-2026-001" && !canonicalCase) {
     return CHRONOLOGICAL_REPLAY_STEPS;
   }
-  const victim = canonicalCase.complainant?.name || "Victim";
-  const lossFormatted = formatInr(canonicalCase.financials?.bookedLossInr || 500000);
-  const l1Mule = canonicalCase.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE")?.holderName || "Primary Mule";
-  const l2Mule = canonicalCase.accounts?.find((a: any) => a.holderType === "LAYER_2_CONDUIT")?.holderName || "Intermediary Mule";
-  const merchant = canonicalCase.accounts?.find((a: any) => a.holderType === "BONA_FIDE_MERCHANT")?.holderName || "Commercial Merchant";
-  const bank = canonicalCase.complainant?.bank || "Core Banking";
-  const acc = canonicalCase.complainant?.accountMasked || "A/c";
-  const station = canonicalCase.policeStation || "Cyber Crime Police Station";
-  const recoverable = formatInr(canonicalCase.financials?.recoverableLibrInr || Math.round((canonicalCase.financials?.bookedLossInr || 500000) * 0.75));
+  const victimAcc = canonicalCase?.accounts?.find((a: any) => a.holderType === "VICTIM");
+  const l1Acc = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE");
+  const l2Acc = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_2_CONDUIT");
+  const merchAcc = canonicalCase?.accounts?.find((a: any) => a.holderType === "BONA_FIDE_MERCHANT");
+  const sinkAcc = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_3_SINK");
+
+  const victimId = victimAcc?.nodeId || "node-victim";
+  const l1Id = l1Acc?.nodeId || "acc-vikram";
+  const l2Id = l2Acc?.nodeId || "acc-rohit";
+  const merchId = merchAcc?.nodeId || "acc-sink";
+  const sinkId = sinkAcc?.nodeId || "node-atm";
+
+  const victim = canonicalCase?.complainant?.name || "Victim";
+  const lossFormatted = formatInr(canonicalCase?.financials?.bookedLossInr || 500000);
+  const l1Mule = l1Acc?.holderName || "Primary Mule";
+  const l2Mule = l2Acc?.holderName || "Intermediary Mule";
+  const merchant = merchAcc?.holderName || "Commercial Merchant";
+  const bank = canonicalCase?.complainant?.bank || "Core Banking";
+  const acc = canonicalCase?.complainant?.accountMasked || "A/c";
+  const station = canonicalCase?.policeStation || "Cyber Crime Police Station";
+  const recoverable = formatInr(canonicalCase?.financials?.recoverableLibrInr || Math.round((canonicalCase?.financials?.bookedLossInr || 500000) * 0.75));
+  const frozenMuleInr = formatInr(canonicalCase?.financials?.frozenMuleBalanceInr || 60000);
+  const shieldedInr = formatInr(canonicalCase?.financials?.shieldedCommercialInr || 50000);
+  const cashoutInr = formatInr(canonicalCase?.financials?.unrecoverableCashoutInr || 70000);
 
   return [
     {
@@ -251,10 +266,10 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       clockTime: "09:44:00 IST",
       title: "PRE-ATTACK BTS REGISTRATION & RECONNAISSANCE",
       headline: `Pre-attack surveillance and account reconnaissance on victim ${victim}`,
-      narrative: `Attacker executes unauthorized credential and SIM reconnaissance targeting victim ${victim} (${canonicalCase.complainant?.phone || "+91-98711-23941"}). Attacker hijacks authentication channel before bank alert triggers.`,
+      narrative: `Attacker executes unauthorized credential and SIM reconnaissance targeting victim ${victim} (${canonicalCase?.complainant?.phone || "+91-98711-23941"}). Attacker hijacks authentication channel before bank alert triggers.`,
       amount: "—",
       statutory: "DoT License Clause 39.20 & Telco BTS Stratum-2",
-      activeNodeIds: ["node-tower", "node-victim"],
+      activeNodeIds: ["node-tower", "node-victim", victimId],
       activeEdgeIds: ["edge-tower-hero"],
       muleBalances: {
         "node-victim": { balance: lossFormatted, note: `Victim Balance (${bank} ${acc})`, tone: "slate" },
@@ -263,6 +278,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "₹0", note: "L2B Conduit Standby", tone: "slate" },
         "acc-sink": { balance: "₹0", note: "Escrow Sink Standby", tone: "slate" },
         "node-atm": { balance: "₹0", note: "ATM Terminal Standby", tone: "slate" },
+        [victimId]: { balance: lossFormatted, note: `Victim Balance (${bank} ${acc})`, tone: "slate" },
+        [l1Id]: { balance: "₹0", note: "L1 Primary Mule Standby", tone: "slate" },
+        [l2Id]: { balance: "₹0", note: "L2 Conduit Standby", tone: "slate" },
+        [merchId]: { balance: "₹0", note: "Escrow Standby", tone: "slate" },
+        [sinkId]: { balance: "₹0", note: "ATM Standby", tone: "slate" },
       },
     },
     {
@@ -275,8 +295,8 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       narrative: `Victim ${victim} (${bank} ${acc}) is fraudulently debited ${lossFormatted}. Funds credit instantly into L1 primary mule ${l1Mule}. NPCI Central Switch captures device telemetry.`,
       amount: lossFormatted,
       statutory: "BSA §63(4) Electronic Stanza & NPCI Central Switch T1",
-      activeNodeIds: ["node-victim", "acc-vikram"],
-      activeEdgeIds: ["edge-cash-victim-vikram"],
+      activeNodeIds: ["node-victim", "acc-vikram", victimId, l1Id],
+      activeEdgeIds: ["edge-cash-victim-vikram", `edge-cash-${victimId}-${l1Id}`, "E1"],
       muleBalances: {
         "node-victim": { balance: "₹0", change: `-${lossFormatted}`, note: "Debited via Core Banking", tone: "rose" },
         "acc-vikram": { balance: lossFormatted, change: `+${lossFormatted}`, note: `Credited in Full (${l1Mule})`, tone: "emerald" },
@@ -284,6 +304,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
         "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
         "node-atm": { balance: "₹0", note: "ATM Standby", tone: "slate" },
+        [victimId]: { balance: "₹0", change: `-${lossFormatted}`, note: "Debited via Core Banking", tone: "rose" },
+        [l1Id]: { balance: lossFormatted, change: `+${lossFormatted}`, note: `Credited in Full (${l1Mule})`, tone: "emerald" },
+        [l2Id]: { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
+        [merchId]: { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
+        [sinkId]: { balance: "₹0", note: "ATM Standby", tone: "slate" },
       },
     },
     {
@@ -296,7 +321,7 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       narrative: `Controller Device Cluster activates portable Wi-Fi AP. Packet Gateway confirms decremented TTL=63 (-1 hop). Identical client TLS fingerprint across banking sessions proves single physical operator.`,
       amount: "—",
       statutory: "ISO/IEC 27037 & DoT License Clause 39.20 (TTL=63 Corroboration)",
-      activeNodeIds: ["node-hero", "hub-tether", "hub-ja4", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink"],
+      activeNodeIds: ["node-hero", "hub-tether", "hub-ja4", "hub-caf", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink", victimId, l1Id, l2Id, merchId, sinkId],
       activeEdgeIds: [
         "edge-hero-tether",
         "edge-tether-vikram",
@@ -308,6 +333,9 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "edge-ja4-rohit",
         "edge-ja4-sameer",
         "edge-ja4-sink",
+        `edge-ja4-${l1Id}`,
+        `edge-ja4-${l2Id}`,
+        `edge-ja4-${merchId}`,
       ],
       muleBalances: {
         "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
@@ -316,6 +344,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
         "acc-sink": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
         "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
+        [victimId]: { balance: "₹0", note: "Debited", tone: "rose" },
+        [l1Id]: { balance: lossFormatted, note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "emerald" },
+        [l2Id]: { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
+        [merchId]: { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
+        [sinkId]: { balance: "₹0", note: "Standby", tone: "slate" },
       },
     },
     {
@@ -325,11 +358,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       clockTime: "10:09:45 IST",
       title: "RAPID LAYERING FAN-OUT (L1 → L2A & L2B)",
       headline: `${l1Mule} fans out ${lossFormatted} rapidly to intermediary accounts (${l2Mule})`,
-      narrative: `${l1Mule} disperses ${lossFormatted} across intermediary accounts including ${l2Mule}. Deliberate layering fan-out orchestrated to evade immediate single-account lien limits.`,
+      narrative: `${l1Mule} disperses ${lossFormatted} across intermediary accounts including ${l2Mule} and ${merchant}. Deliberate layering fan-out orchestrated to evade immediate single-account lien limits.`,
       amount: lossFormatted,
       statutory: "CBS Core Banking Ledgers & Switch Telemetry",
-      activeNodeIds: ["acc-vikram", "acc-rohit", "acc-sameer"],
-      activeEdgeIds: ["edge-cash-vikram-rohit", "edge-cash-vikram-sameer"],
+      activeNodeIds: ["acc-vikram", "acc-rohit", "acc-sameer", l1Id, l2Id, merchId],
+      activeEdgeIds: ["edge-cash-vikram-rohit", "edge-cash-vikram-sameer", "E2", "E3", `edge-cash-${l1Id}-${l2Id}`, `edge-cash-${l1Id}-${merchId}`],
       muleBalances: {
         "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
         "acc-vikram": { balance: "₹0", change: `-${lossFormatted}`, note: "Fully Dispersed to Layer 2 Mules", tone: "amber" },
@@ -337,6 +370,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "Secondary Hold", change: "+Layering", note: "Credited Intermediary", tone: "emerald" },
         "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
         "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
+        [victimId]: { balance: "₹0", note: "Debited", tone: "rose" },
+        [l1Id]: { balance: "₹0", change: `-${lossFormatted}`, note: "Dispersed to Layer 2 & Escrow", tone: "amber" },
+        [l2Id]: { balance: frozenMuleInr, change: "+Layering", note: `Credited ${l2Mule}`, tone: "emerald" },
+        [merchId]: { balance: shieldedInr, change: "+Escrow", note: `Credited ${merchant}`, tone: "indigo" },
+        [sinkId]: { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
       },
     },
     {
@@ -349,8 +387,8 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       narrative: `Mule accounts execute cash withdrawals and swipe transactions via ${merchant} POS terminals to conceal asset trail before cyber police intercept.`,
       amount: lossFormatted,
       statutory: "ATM Electronic Journal & CCTV Log · Merchant Escrow Ledger",
-      activeNodeIds: ["acc-sameer", "node-atm", "acc-rohit", "acc-sink"],
-      activeEdgeIds: ["edge-cash-sameer-atm", "edge-cash-rohit-sink"],
+      activeNodeIds: ["acc-sameer", "node-atm", "acc-rohit", "acc-sink", l1Id, l2Id, merchId, sinkId],
+      activeEdgeIds: ["edge-cash-sameer-atm", "edge-cash-rohit-sink", "E4", `edge-cash-${l1Id}-${sinkId}`, `edge-cash-${l2Id}-${sinkId}`],
       muleBalances: {
         "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
         "acc-vikram": { balance: "₹0", note: "Exhausted", tone: "slate" },
@@ -358,6 +396,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "Partial Hold", change: "-ATM", note: "Remaining in Account", tone: "amber" },
         "acc-sink": { balance: "Escrow Hold", change: "+Escrow", note: `Locked in ${merchant} Escrow`, tone: "indigo" },
         "node-atm": { balance: "Withdrawn", change: "Cash Out", note: "Physical Currency Dispensed", tone: "rose" },
+        [victimId]: { balance: "₹0", note: "Debited", tone: "rose" },
+        [l1Id]: { balance: "₹0", note: "Exhausted", tone: "slate" },
+        [l2Id]: { balance: frozenMuleInr, change: "-Cashout", note: "Remaining in Account", tone: "amber" },
+        [merchId]: { balance: shieldedInr, change: "+Escrow", note: `Locked in ${merchant} Escrow`, tone: "indigo" },
+        [sinkId]: { balance: cashoutInr, change: "Cash Out", note: "Physical Currency Dispensed", tone: "rose" },
       },
     },
     {
@@ -371,13 +414,17 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
       amount: `${recoverable} Secured (Restitution Ready)`,
       statutory: "BNSS §106/§107 & BSA §63 Electronic Admissibility Protocol",
       recoverySummary: `${recoverable} SECURED (RESTITUTION READY UNDER LIBR DOCTRINE)`,
-      activeNodeIds: ["node-victim", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink", "node-atm"],
+      activeNodeIds: ["node-victim", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink", "node-atm", victimId, l1Id, l2Id, merchId, sinkId],
       activeEdgeIds: [
         "edge-cash-victim-vikram",
         "edge-cash-vikram-rohit",
         "edge-cash-vikram-sameer",
         "edge-cash-sameer-atm",
         "edge-cash-rohit-sink",
+        "E1",
+        "E2",
+        "E3",
+        "E4",
       ],
       muleBalances: {
         "node-victim": { balance: recoverable, note: "Secured for Restitution", tone: "emerald" },
@@ -386,6 +433,11 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
         "acc-sameer": { balance: "Frozen", note: "BNSS §107 Debit Freeze", tone: "emerald" },
         "acc-sink": { balance: "Liened", note: "Merchant Escrow Lien Secured", tone: "emerald" },
         "node-atm": { balance: "Withdrawn", note: "CCTV Physical Evidence Seized", tone: "rose" },
+        [victimId]: { balance: recoverable, note: "Secured for Restitution", tone: "emerald" },
+        [l1Id]: { balance: "₹0 (Frozen)", note: "BNSS §107 Debit Freeze", tone: "slate" },
+        [l2Id]: { balance: `${frozenMuleInr} (Frozen)`, note: "BNSS §107 Debit Freeze", tone: "emerald" },
+        [merchId]: { balance: `${shieldedInr} (Shielded)`, note: "Excluded Commercial Escrow", tone: "emerald" },
+        [sinkId]: { balance: `${cashoutInr} (Withdrawn)`, note: "CCTV Physical Evidence Seized", tone: "rose" },
       },
     },
   ];
@@ -482,7 +534,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<0.5 | 1 | 2>(1);
 
-  const [containerWidth, setContainerWidth] = useState<number>(960);
+  const [containerWidth, setContainerWidth] = useState<number>(1040);
 
   // Measure outer container using ResizeObserver to guarantee 100% in-page auto-fit
   useEffect(() => {
@@ -499,8 +551,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             });
           } else {
             setDimensions({
-              width: 960,
-              height: 500,
+              width: 1040,
+              height: 650,
             });
           }
         }
@@ -513,8 +565,8 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   // Dynamic in-page auto-fit scale: guarantees all 3 rows of nodes fit 100% inside container with zero scrollbars
   const inPageFitScale = useMemo(() => {
     if (isFullscreen) return zoomLevel;
-    if (!containerWidth || containerWidth >= 960) return zoomLevel;
-    const autoScale = Math.min(1, Math.max(0.68, (containerWidth - 8) / 960));
+    if (!containerWidth || containerWidth >= 1040) return zoomLevel;
+    const autoScale = Math.min(1, Math.max(0.65, (containerWidth - 8) / 1040));
     return Math.round(autoScale * zoomLevel * 100) / 100;
   }, [isFullscreen, containerWidth, zoomLevel]);
 
@@ -649,7 +701,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
     // Step-based highlight during active replay
     if (isPlaying || replayStep < 5) {
-      const isActiveInStep = currentStepData.activeNodeIds.includes(nodeId);
+      const isActiveInStep = currentStepData.activeNodeIds.some(
+        (id) => nodeId === id || nodeId.includes(id) || id.includes(nodeId)
+      );
       return isActiveInStep ? 1 : 0.35;
     }
 
@@ -659,7 +713,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const getEdgeOpacity = (edge: NetworkEdgeLayout) => {
     // If playing or on a discrete replay step < 5
     if (isPlaying || replayStep < 5) {
-      const isEdgeActiveInStep = currentStepData.activeEdgeIds.includes(edge.id);
+      const isEdgeActiveInStep = currentStepData.activeEdgeIds.some(
+        (id) => edge.id.includes(id) || id.includes(edge.id)
+      );
       return isEdgeActiveInStep ? 1 : 0.08;
     }
 
@@ -677,7 +733,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
     return layout.edges.filter((e) => {
       if (e.type !== "cash") return false;
       if (isPlaying || replayStep < 5) {
-        return currentStepData.activeEdgeIds.includes(e.id);
+        return currentStepData.activeEdgeIds.some(
+          (id) => e.id.includes(id) || id.includes(e.id)
+        );
       }
       return true;
     });
@@ -1919,9 +1977,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         <div
           ref={canvasRef}
           style={{
-            height: isFullscreen ? "calc(100vh - 130px)" : Math.round(505 * inPageFitScale),
-            minHeight: isFullscreen ? "calc(100vh - 130px)" : Math.round(505 * inPageFitScale),
-            maxHeight: isFullscreen ? undefined : Math.round(505 * inPageFitScale),
+            height: isFullscreen ? "calc(100vh - 130px)" : Math.round(655 * inPageFitScale),
+            minHeight: isFullscreen ? "calc(100vh - 130px)" : Math.round(655 * inPageFitScale),
+            maxHeight: isFullscreen ? undefined : Math.round(655 * inPageFitScale),
             position: "relative",
             width: "100%",
             overflowX: isFullscreen ? "auto" : "hidden",
@@ -2022,27 +2080,44 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               <rect width="100%" height="100%" fill="url(#net-grid)" />
 
               {/* Community Detection Bounding Hulls (Prompt 11) */}
-              {layout.communityHulls?.map((hull) => (
-                <g key={hull.id} className="community-hull">
-                  <path
-                    d={hull.path}
-                    fill="rgba(99, 102, 241, 0.04)"
-                    stroke={hull.color || "#6366F1"}
-                    strokeWidth={1.5}
-                    strokeDasharray="6 4"
-                  />
-                  <text
-                    x={hull.labelX ?? 100}
-                    y={hull.labelY ?? 100}
-                    fill={hull.color || "#4F46E5"}
-                    fontSize="10"
-                    fontWeight="800"
-                    letterSpacing="0.05em"
-                  >
-                    {hull.name.toUpperCase()}
-                  </text>
-                </g>
-              ))}
+              {layout.communityHulls?.map((hull) => {
+                const labelText = hull.name.toUpperCase();
+                const badgeWidth = Math.min(380, labelText.length * 6.0 + 20);
+                const badgeX = hull.labelX ?? 100;
+                const badgeY = hull.labelY ?? 100;
+                return (
+                  <g key={hull.id} className="community-hull">
+                    <path
+                      d={hull.path}
+                      fill="rgba(99, 102, 241, 0.03)"
+                      stroke={hull.color || "#6366F1"}
+                      strokeWidth={1.5}
+                      strokeDasharray="6 4"
+                    />
+                    {/* High-contrast solid pill to guarantee zero text collision */}
+                    <rect
+                      x={badgeX - 6}
+                      y={badgeY - 11}
+                      width={badgeWidth}
+                      height={18}
+                      rx={4}
+                      fill="#FFFFFF"
+                      stroke="#C7D2FE"
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={badgeX}
+                      y={badgeY + 2}
+                      fill={hull.color || "#4338CA"}
+                      fontSize="10"
+                      fontWeight="700"
+                      letterSpacing="0.04em"
+                    >
+                      {labelText}
+                    </text>
+                  </g>
+                );
+              })}
 
               {/* Render Edges: Halo Layer First, then Color Path */}
               {layout.edges.map((edge) => (
@@ -2164,9 +2239,9 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       height: node.h,
                       borderRadius: "8px",
                       background: "#FFFFFF",
-                      border: isHero ? "1.5px solid #F43F5E" : "1px solid #CBD5E1",
+                      border: isHero ? "1.5px solid #E11D48" : "1px solid #CBD5E1",
                       boxShadow: isHero
-                        ? "0 0 16px -2px rgba(244, 63, 94, 0.35), 0 4px 12px rgba(15, 23, 42, 0.08)"
+                        ? "0 2px 10px rgba(225, 29, 72, 0.12), 0 1px 3px rgba(15, 23, 42, 0.06)"
                         : "0 1px 3px rgba(15, 23, 42, 0.06)",
                       display: "flex",
                       flexDirection: "column",
@@ -2236,7 +2311,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div
                           style={{
-                            fontSize: isHero ? "12px" : "11px",
+                            fontSize: isHero ? "12.5px" : "12px",
                             fontWeight: 800,
                             color: "#0F172A",
                             overflow: "hidden",
@@ -2248,7 +2323,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                         </div>
                         <div
                           style={{
-                            fontSize: isHero ? "9.5px" : "9px",
+                            fontSize: isHero ? "11.5px" : "11px",
                             color: "#64748B",
                             fontFamily: "var(--font-mono)",
                             overflow: "hidden",
@@ -2344,7 +2419,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: "12px",
+                          fontSize: "11.5px",
                           fontWeight: 800,
                           color: hub.color,
                           fontFamily: "var(--font-mono)",
@@ -2352,7 +2427,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {hub.strength} Match
+                        {hub.strength ? `${hub.strength} Match` : "Corroborated"}
                       </div>
                     </div>
                   </div>
@@ -2490,10 +2565,10 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               })}
 
             {/* =====================================================================
-              ROW B SATELLITE: ATM CASHOUT SINK (Rohini Sec-4 ATM DL-049)
+              ROW C: CASHOUT SINKS (ATM / PHYSICAL ESCROW)
               ===================================================================== */}
             {layout.nodes
-              .filter((n) => n.category === "sink" && n.id === "node-atm")
+              .filter((n) => n.category === "sink")
               .map((node) => {
                 const opacity = getNodeOpacity(node.id);
                 const balanceInfo = currentStepData.muleBalances[node.id];
@@ -2505,18 +2580,24 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     tabIndex={0}
                     onMouseEnter={() => setHoveredNodeId(node.id)}
                     onMouseLeave={() => setHoveredNodeId(null)}
-                    onClick={() =>
+                    onClick={() => {
+                      const matched =
+                        investigation.edges.find((e) => e.targetNodeId === node.id || e.sourceNodeId === node.id) ||
+                        investigation.edges[0];
+                      if (matched) setSelectedEvidenceEdge(matched);
+
                       openEvidenceSheet({
-                        title: "Rohini Sector 4 ATM DL-049 (Cashout Sink)",
+                        title: `${node.label} (Cashout Sink)`,
                         category: "Physical Cashout Location",
-                        source: "ATM Electronic Journal & Branch CCTV Video Log",
-                        sha256: "90da912041289cf00124801bfe491048",
+                        source: `${(node as any).bank || "ATM"} Electronic Journal & Branch CCTV Video Log`,
+                        sha256: sha256HexSync(canonicalJson({ id: node.id, label: node.label })),
                         statutoryBasis: "BSA §63 & BNSS §106 CCTV Seizure",
                         details:
-                          "Sameer Khan debit card withdrawal of ₹1,20,000 at 10:18:22 IST. Surveillance CCTV footage timestamp aligns with Airtel Tower DL-TWR-891 azimuth.",
-                        linkedEntities: ["Sameer Khan (L2B Mule)"],
-                      })
-                    }
+                          node.tooltip ||
+                          `${node.label} physical cash withdrawal point. Surveillance CCTV footage timestamp aligns with telco telemetry.`,
+                        linkedEntities: [node.label],
+                      });
+                    }}
                     style={{
                       position: "absolute",
                       left: node.x,
@@ -2597,7 +2678,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       }}
                     >
                       <span style={{ fontWeight: 800, color: "#DC2626" }}>
-                        {balanceInfo ? balanceInfo.balance : "Cash: ₹1.20L"}
+                        {balanceInfo ? balanceInfo.balance : (node.amountReceivedInr ? `Cash: ₹${(node.amountReceivedInr / 1000).toFixed(0)}K` : "Cash Out")}
                       </span>
                       <span
                         style={{
