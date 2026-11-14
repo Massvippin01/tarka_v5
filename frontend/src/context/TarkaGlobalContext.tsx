@@ -507,18 +507,24 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (view === "health" || path.includes("health")) return "health";
       if (view === "benchmark" || view === "benchmarks") return "benchmarks";
       if (view === "workspace" || view === "workspaces" || view === "cases" || view === "dashboard" || path.includes("workspace")) return "workspace";
-      if (view === "attribution" || path.includes("attribution")) return "attribution";
-      if (view === "entities" || view === "entity" || path.includes("entities")) return "entities";
+      if (view === "attribution" || view === "device" || path.includes("attribution")) return "attribution";
+      if (view === "entities" || view === "entity" || view === "people" || path.includes("entities")) return "entities";
       if (view === "network" || view === "fraud-network" || path.includes("network")) return "network";
-      if (view === "taint-engine" || view === "taint" || path.includes("taint")) return "taint-engine";
+      if (view === "taint-engine" || view === "taint" || view === "money" || path.includes("taint")) return "taint-engine";
       if (view === "court-proof" || view === "court" || path.includes("court")) return "court-proof";
       if (view === "privacy-crypto" || view === "privacy" || path.includes("privacy")) return "privacy-crypto";
       if (view === "workstation" || view === "tarka" || path.includes("workstation")) return "workstation";
       if (view === "workflow" || path.includes("workflow")) return "workflow";
-      if (view === "report" || path.includes("report")) return "report";
-      if (view === "intake" || path.includes("intake")) return "intake";
+      if (view === "report" || view === "actions" || path.includes("report")) return "report";
+      if (view === "intake" || view === "evidence" || path.includes("intake")) return "intake";
     }
-    return "workspace"; // Default to Screen 00 Workspace Hub
+    const initialR = getInitialRoute();
+    if (typeof window !== "undefined") {
+      if (initialR === "workspace") useTarkaUiStore.getState().setActivePage("workspaces");
+      else if (initialR === "benchmarks") useTarkaUiStore.getState().setActivePage("benchmark");
+      else useTarkaUiStore.getState().setActivePage("workbench");
+    }
+    return initialR;
   };
 
   const getInitialCaseId = (): string => {
@@ -557,10 +563,10 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         } else {
           useTarkaUiStore.getState().setActivePage("workbench");
           if (v === "network" || v === "fraud-network") setActiveRouteState("network");
-          else if (v === "intake") setActiveRouteState("intake");
-          else if (v === "attribution") setActiveRouteState("attribution");
-          else if (v === "entities" || v === "entity") setActiveRouteState("entities");
-          else if (v === "taint-engine" || v === "taint") setActiveRouteState("taint-engine");
+          else if (v === "intake" || v === "evidence") setActiveRouteState("intake");
+          else if (v === "attribution" || v === "device") setActiveRouteState("attribution");
+          else if (v === "entities" || v === "entity" || v === "people") setActiveRouteState("entities");
+          else if (v === "taint-engine" || v === "taint" || v === "money") setActiveRouteState("taint-engine");
           else if (v === "court-proof" || v === "court") setActiveRouteState("court-proof");
           else if (v === "privacy-crypto" || v === "privacy") setActiveRouteState("privacy-crypto");
           else if (v === "workstation") setActiveRouteState("workstation");

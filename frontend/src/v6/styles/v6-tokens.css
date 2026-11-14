@@ -832,3 +832,24 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* Ensure minimum typography floor (12px minimum everywhere, no sub-12px text) */
+.v6-app [style*="font-size: 8px"],
+.v6-app [style*="font-size: 9px"],
+.v6-app [style*="font-size: 10px"],
+.v6-app [style*="font-size: 11px"],
+.v6-app [style*="font-size:8px"],
+.v6-app [style*="font-size:9px"],
+.v6-app [style*="font-size:10px"],
+.v6-app [style*="font-size:11px"],
+.v6-app [style*="font-size: 9."],
+.v6-app [style*="font-size: 10."],
+.v6-app [style*="font-size: 11."],
+.v6-app .text-\[8px\],
+.v6-app .text-\[9px\],
+.v6-app .text-\[10px\],
+.v6-app .text-\[11px\],
+.v6-app .text-xs {
+  font-size: 12px !important;
+}
+
