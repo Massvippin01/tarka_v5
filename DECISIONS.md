@@ -59,5 +59,13 @@
   4. `frontend/e2e/case-sync.spec.ts` & `case_sync_audit.cjs` (Appendix B): Validates 293/293 cross-case and cross-screen isolation checks with 0 leaked names, 0 undefined, and 0 NaN.
 - **Status**: All 4 Playwright specs passing cleanly. 140/140 vitest tests passing in 23 files. 13/13 backend flow pytest tests passing.
 
+### D-011: V6 Redesign Step 0 Prep & Canonical Test Isolation
+- **Context**: Previous E2E test runs had archived `CASE-2026-001` in the database, causing the UI to show read-only archived banners. Automated tests should never mutate canonical cases. Also need captured reference screenshots of `tarka-reference.html`.
+- **Decision**:
+  1. Created branch `ui/v6`. Restored canonical demo database via `POST /api/v1/system/reset-demo`.
+  2. Isolated `frontend/e2e/golden-path.spec.ts` close and archive steps so they execute on a newly created transient test case rather than mutating `CASE-2026-001`.
+  3. Created `capture_reference.cjs` and recorded full suites of 1440×900 and 1366×768 reference screenshots covering all screens and micro-interactions into `docs/redesign/reference/`.
+- **Status**: Canonical cases pristine; golden path passing; reference screenshots verified.
+
 
 
