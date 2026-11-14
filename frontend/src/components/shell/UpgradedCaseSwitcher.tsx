@@ -17,6 +17,7 @@ interface UpgradedCaseSwitcherProps {
   caseWorkspaces: CaseWorkspace[];
   onSelectCase: (caseId: string) => void;
   onOpenNewCase: () => void;
+  trigger?: React.ReactNode;
 }
 
 export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
@@ -25,6 +26,7 @@ export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
   caseWorkspaces,
   onSelectCase,
   onOpenNewCase,
+  trigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,33 +91,37 @@ export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
-        <button
-          type="button"
-          data-testid="case-switcher-button"
-          title={`Active Case: ${activeCase?.firNumber || "CASE"} · ${activeCase?.title || ""}`}
-          className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-          style={{
-            height: "28px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            background: "rgba(6, 182, 212, 0.12)",
-            border: "1px solid rgba(34, 211, 238, 0.30)",
-            borderRadius: "6px",
-            padding: "0 8px",
-            color: "#22D3EE",
-            fontSize: "11px",
-            fontWeight: 700,
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          <Shield size={12} color="#22D3EE" />
-          <span style={{ fontFamily: "var(--font-mono)" }}>
-            {activeCase ? `${activeCase.caseId} · ${activeCase.firNumber}` : (activeCaseId || "SWITCH CASE")}
-          </span>
-          <ChevronDown size={11} color="#94A3B8" />
-        </button>
+        {trigger ? (
+          trigger
+        ) : (
+          <button
+            type="button"
+            data-testid="case-switcher-button"
+            title={`Active Case: ${activeCase?.firNumber || "CASE"} · ${activeCase?.title || ""}`}
+            className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+            style={{
+              height: "28px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "rgba(6, 182, 212, 0.12)",
+              border: "1px solid rgba(34, 211, 238, 0.30)",
+              borderRadius: "6px",
+              padding: "0 8px",
+              color: "#22D3EE",
+              fontSize: "11px",
+              fontWeight: 700,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <Shield size={12} color="#22D3EE" />
+            <span style={{ fontFamily: "var(--font-mono)" }}>
+              {activeCase ? `${activeCase.caseId} · ${activeCase.firNumber}` : (activeCaseId || "SWITCH CASE")}
+            </span>
+            <ChevronDown size={11} color="#94A3B8" />
+          </button>
+        )}
       </Popover.Trigger>
 
       <Popover.Portal>
