@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { TYPOLOGY_OPTIONS } from "../../../types/caseLifecycle";
 import { useTarkaGlobal, type CaseWorkspace } from "../../../context/TarkaGlobalContext";
 import { queryClient } from "../../../queryClient";
+import { useSettingsStore, hasPermission } from "../../../store/useSettingsStore";
 
 const editCaseSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -283,18 +284,28 @@ export const EditCaseSheet: React.FC<EditCaseSheetProps> = ({ caseData, isOpen, 
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
-                Lead Investigating Officer (IO) *
-              </label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#334155" }}>
+                  Lead Investigating Officer (IO) *
+                </label>
+                {!hasPermission(useSettingsStore.getState().profile.role, "reassign") && (
+                  <span style={{ fontSize: "10px", color: "#64748B" }}>
+                    (Supervisor/Admin required to reassign)
+                  </span>
+                )}
+              </div>
               <input
                 {...register("leadInvestigator")}
+                disabled={!hasPermission(useSettingsStore.getState().profile.role, "reassign")}
                 style={{
                   width: "100%",
                   padding: "8px 10px",
                   borderRadius: "6px",
                   border: errors.leadInvestigator ? "1px solid #EF4444" : "1px solid #CBD5E1",
+                  background: !hasPermission(useSettingsStore.getState().profile.role, "reassign") ? "#F1F5F9" : "#FFFFFF",
                   fontSize: "12px",
                   boxSizing: "border-box",
+                  cursor: !hasPermission(useSettingsStore.getState().profile.role, "reassign") ? "not-allowed" : "text",
                 }}
               />
             </div>

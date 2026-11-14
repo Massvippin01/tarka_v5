@@ -12,6 +12,7 @@ from app.api.normalization import router as normalization_router
 from app.api.person import router as person_router
 from app.api.relationships import router as relationship_router
 from app.api.resolution import router as resolution_router
+from app.api.system_api import router as system_router
 from app.core.config import settings
 from app.database.init_db import initialize_database
 
@@ -96,6 +97,12 @@ app.include_router(
     investigation_router,
     prefix="/api/v1/investigation",
     tags=["Investigation"],
+)
+
+app.include_router(
+    system_router,
+    prefix="/api/v1/system",
+    tags=["System"],
 )
 
 from app.api.intelligence import router as intelligence_router

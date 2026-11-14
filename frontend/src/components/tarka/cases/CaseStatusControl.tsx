@@ -14,6 +14,7 @@ import {
 } from "../../../types/caseLifecycle";
 import { useTarkaGlobal, type CaseWorkspace } from "../../../context/TarkaGlobalContext";
 import { queryClient } from "../../../queryClient";
+import { useSettingsStore, hasPermission } from "../../../store/useSettingsStore";
 
 interface CaseStatusControlProps {
   caseId: string;
@@ -49,6 +50,11 @@ export const CaseStatusControl: React.FC<CaseStatusControlProps> = ({
     }
 
     if (targetState === "ARCHIVED") {
+      const userRole = useSettingsStore.getState().profile.role;
+      if (!hasPermission(userRole, "archive")) {
+        toast.error("Permission Denied: Only a Supervisory Officer or Administrator can archive a case.");
+        return;
+      }
       const confirmArchive = window.confirm(
         `Are you sure you want to archive ${caseId}? It will become read-only until restored.`
       );

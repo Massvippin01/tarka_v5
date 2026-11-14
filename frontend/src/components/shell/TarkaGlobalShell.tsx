@@ -34,6 +34,7 @@ import {
   Microscope,
   Search,
   Archive,
+  Settings,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
@@ -66,6 +67,8 @@ const PrivacyCryptoWorkbench = lazy(() => import("../tarka/privacy/PrivacyCrypto
 const BenchmarkLabScreen = lazy(() => import("../../pages/v5/BenchmarkLabScreen").then((m) => ({ default: m.BenchmarkLabScreen })));
 const ForensicWorkstationScreen = lazy(() => import("../../pages/v5/ForensicWorkstationScreen").then((m) => ({ default: m.ForensicWorkstationScreen })));
 const ReportScreen = lazy(() => import("../../pages/v5/ReportScreen").then((m) => ({ default: m.ReportScreen })));
+const SettingsScreen = lazy(() => import("../../pages/v5/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
+import { useSettingsStore } from "../../store/useSettingsStore";
 
 // Lazy-loaded modal dialogs and drawers
 const EvidenceIntakeModal = lazy(() => import("../tarka/workspace/EvidenceIntakeModal").then((m) => ({ default: m.EvidenceIntakeModal })));
@@ -301,6 +304,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
     const time = new Date().toTimeString().split(" ")[0];
     setMutationReceipts((prev) => [{ id: `rcpt-${Date.now()}-${Math.random()}`, time, text, type }, ...prev.slice(0, 7)]);
   };
+
+  // User profile from persisted settings store
+  const settingsProfile = useSettingsStore((s) => s.profile);
+  const userInitials = useMemo(() => {
+    return (
+      settingsProfile.name
+        .split(" ")
+        .map((w) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "IO"
+    );
+  }, [settingsProfile.name]);
 
   // Backend connection status probe for zero-error offline resilience
   const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
@@ -1076,16 +1093,53 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               )}
             </div>
 
-            {/* IO Avatar (Tooltip: name + role) */}
-            <div
-              title="Insp. Vikram Sharma · Investigating Officer (IO)"
+            {/* Settings Link Button in Sidebar Rail */}
+            <button
+              type="button"
+              data-testid="sidebar-settings-link"
+              onClick={() => {
+                setActivePage("workbench");
+                setActiveRoute("settings");
+              }}
+              title="Settings & Administration (?view=settings)"
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: isExpanded ? "flex-start" : "center",
                 gap: "8px",
-                padding: "2px 4px",
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: activeRoute === "settings" ? "1px solid rgba(2, 132, 199, 0.45)" : "1px solid transparent",
+                background: activeRoute === "settings" ? "rgba(2, 132, 199, 0.20)" : "transparent",
+                color: activeRoute === "settings" ? "#38BDF8" : "#94A3B8",
                 cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: 600,
+                width: "100%",
+                transition: "all 0.12s ease",
+              }}
+            >
+              <Settings size={14} color={activeRoute === "settings" ? "#38BDF8" : "#94A3B8"} />
+              {isExpanded && <span>Settings</span>}
+            </button>
+
+            {/* IO Avatar (Tooltip: name + role) */}
+            <div
+              data-testid="sidebar-io-avatar"
+              onClick={() => {
+                setActivePage("workbench");
+                setActiveRoute("settings");
+              }}
+              title={`${settingsProfile.name} · ${settingsProfile.rank} (${settingsProfile.role}) — Click to configure`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: isExpanded ? "flex-start" : "center",
+                gap: "8px",
+                padding: "3px 4px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                background: activeRoute === "settings" ? "rgba(255, 255, 255, 0.08)" : "transparent",
               }}
             >
               <div
@@ -1093,7 +1147,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   width: "26px",
                   height: "26px",
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+                  background:
+                    settingsProfile.role === "ADMIN"
+                      ? "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)"
+                      : settingsProfile.role === "SUPERVISOR"
+                      ? "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)"
+                      : "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                   color: "#FFFFFF",
                   fontSize: "10px",
                   fontWeight: 800,
@@ -1101,17 +1160,24 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  boxShadow: "0 0 8px rgba(6, 182, 212, 0.3)",
+                  boxShadow:
+                    settingsProfile.role === "ADMIN"
+                      ? "0 0 8px rgba(239, 68, 68, 0.4)"
+                      : settingsProfile.role === "SUPERVISOR"
+                      ? "0 0 8px rgba(59, 130, 246, 0.4)"
+                      : "0 0 8px rgba(6, 182, 212, 0.3)",
                 }}
               >
-                VS
+                {userInitials}
               </div>
               {isExpanded && (
                 <div style={{ minWidth: 0, overflow: "hidden" }}>
                   <div style={{ fontSize: "11px", fontWeight: 700, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    Insp. Vikram Sharma
+                    {settingsProfile.name}
                   </div>
-                  <div style={{ fontSize: "9px", color: "#94A3B8" }}>Investigating Officer</div>
+                  <div style={{ fontSize: "9px", color: "#94A3B8" }}>
+                    {settingsProfile.rank} · {settingsProfile.role}
+                  </div>
                 </div>
               )}
             </div>
@@ -1848,6 +1914,35 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       118m Left (Copy Orders)
                     </span>
                   </button>
+
+                  {/* Settings & Administration Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePage("workbench");
+                      setActiveRoute("settings");
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activeRoute === "settings" ? "rgba(2, 132, 199, 0.20)" : "rgba(255, 255, 255, 0.04)",
+                      border: activeRoute === "settings" ? "1px solid rgba(2, 132, 199, 0.40)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activeRoute === "settings" ? "#38BDF8" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Settings size={12} color="#38BDF8" />
+                      <span>Settings &amp; Administration</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#38BDF8", background: "rgba(2, 132, 199, 0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                      ?view=settings
+                    </span>
+                  </button>
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
@@ -2310,6 +2405,8 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             <Suspense fallback={<ScreenSuspenseFallback />}>
               {activePage === "benchmark" ? (
                 <BenchmarkLabScreen />
+              ) : activeRoute === "settings" ? (
+                <SettingsScreen />
               ) : activePage === "workspaces" || activeRoute === "workspace" ? (
                 <CaseWorkspaceScreen />
               ) : !Boolean(

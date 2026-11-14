@@ -18,6 +18,7 @@ import { ScreenFindingCard } from "../../components/tarka/common/ScreenFindingCa
 import { CaseActionsPanel } from "../../components/tarka/actions/CaseActionsPanel";
 import type { CaseActionsResponse } from "../../types/actions";
 import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
+import { useSettingsStore } from "../../store/useSettingsStore";
 
 export const ReportScreen: React.FC = () => {
   const { activeCaseId, setActiveRoute } = useTarkaGlobal();
@@ -67,7 +68,16 @@ export const ReportScreen: React.FC = () => {
   const unrecoverableCashout = actionFinancials.unrecoverableCashoutInr;
   const goldenHourMins = actionFinancials.goldenHourRemainingMins;
 
+  const configuredStation = useSettingsStore((s) => s.station);
+  const configuredProfile = useSettingsStore((s) => s.profile);
+
   const { governmentHeader, issuingAuthority } = useMemo(() => {
+    if (configuredStation.letterheadTitle && configuredStation.stationName) {
+      return {
+        governmentHeader: `${configuredStation.letterheadTitle.toUpperCase()} · ${(configuredStation.state || "POLICE DEPARTMENT").toUpperCase()}`,
+        issuingAuthority: `Issued by ${configuredProfile.rank || "Investigating Officer"} ${configuredProfile.name || ""} (${configuredProfile.badgeNo || "IO"}), ${configuredStation.stationName}`,
+      };
+    }
     const ps = fixture.policeStation || "";
     if (ps.includes("UP") || ps.includes("Noida") || ps.includes("Uttar Pradesh") || ps.includes("Gautam Buddh Nagar")) {
       return {
@@ -103,7 +113,7 @@ export const ReportScreen: React.FC = () => {
       governmentHeader: "STATE POLICE DEPARTMENT · CYBER CRIME CELL",
       issuingAuthority: `Issued by Investigating Officer, ${ps || "Cyber Crime Police Station"}`,
     };
-  }, [fixture.policeStation]);
+  }, [configuredStation, configuredProfile, fixture.policeStation]);
 
   // Active Notice Tab State
   const [activeNoticeTab, setActiveNoticeTab] = useState<"freeze" | "telecom" | "npci" | "i4c">("freeze");
