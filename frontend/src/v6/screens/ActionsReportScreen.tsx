@@ -63,7 +63,7 @@ export const ActionsReportScreen: React.FC<ActionsReportScreenProps> = ({ initia
   const handleSimulateResponse = () => {
     let delay = 0;
     actions.forEach((a) => {
-      if (a.status === 'REQUESTED') {
+      if (a.status === 'REQUESTED' || a.status === 'READY') {
         setTimeout(() => {
           setActions((prev) =>
             prev.map((it) => (it.id === a.id ? { ...it, status: 'FROZEN' } : it))

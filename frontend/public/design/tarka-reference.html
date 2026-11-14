@@ -3,586 +3,574 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TARKA Reference Design</title>
+<title>TARKA Reference v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   TARKA REFERENCE DESIGN — the visual target for the React rebuild.
-   Tokens below are the contract. Every value in the app must come from them.
+   TARKA REFERENCE v2 — "Mission control for money trails"
+   Rich, dense, cinematic — but organised. Tokens below are the contract.
    ===================================================================== */
 :root{
-  --bg:#060a13; --bg-grad:radial-gradient(1200px 600px at 70% -10%,rgba(56,97,251,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(16,185,129,.06),transparent 60%);
-  --surface-1:#0c1220; --surface-2:#111a2c; --surface-3:#17223a; --hover:#1b2742;
-  --line:rgba(148,163,184,.12); --line-2:rgba(148,163,184,.22);
-  --fg-1:#eef2f8; --fg-2:#a9b4c7; --fg-3:#7d8aa3;
-  --risk:#f43f5e; --risk-bg:rgba(244,63,94,.12);
-  --safe:#10b981; --safe-bg:rgba(16,185,129,.12);
-  --urgent:#f59e0b; --urgent-bg:rgba(245,158,11,.12);
-  --flow:#6366f1; --flow-2:#22d3ee; --flow-bg:rgba(99,102,241,.14);
-  --frozen:#7dd3fc; --frozen-bg:rgba(125,211,252,.12);
-  --r-sm:8px; --r-md:12px; --r-lg:16px;
-  --font:'Inter',system-ui,-apple-system,Segoe UI,sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
-  --t-fast:160ms; --t-med:320ms; --ease:cubic-bezier(.2,.8,.2,1);
+  --bg:#05080f;
+  --glass:rgba(14,21,38,.62); --glass-2:rgba(20,30,52,.7); --glass-3:rgba(28,40,68,.75);
+  --solid-1:#0b1222; --solid-2:#111a2e; --solid-3:#18233b; --hover:rgba(99,102,241,.08);
+  --line:rgba(148,163,184,.10); --line-2:rgba(148,163,184,.2); --line-glow:rgba(129,140,248,.35);
+  --fg-1:#f1f5fb; --fg-2:#aab6cb; --fg-3:#7e8ba4;
+  --risk:#fb3a5d; --risk-2:#ff7a90; --risk-bg:rgba(251,58,93,.13);
+  --safe:#14d39a; --safe-2:#5eead4; --safe-bg:rgba(20,211,154,.12);
+  --urgent:#fbbf24; --urgent-bg:rgba(251,191,36,.13);
+  --flow:#7c83ff; --flow-2:#22d3ee; --flow-3:#c084fc; --flow-bg:rgba(124,131,255,.14);
+  --frozen:#8be3ff; --frozen-bg:rgba(139,227,255,.12);
+  --grad-flow:linear-gradient(135deg,#7c83ff 0%,#22d3ee 100%);
+  --grad-risk:linear-gradient(135deg,#fb3a5d,#ff8a5b);
+  --grad-safe:linear-gradient(135deg,#14d39a,#22d3ee);
+  --r-sm:8px; --r-md:12px; --r-lg:18px;
+  --font:'Inter',system-ui,sans-serif; --display:'Space Grotesk','Inter',sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.2,1.5,.4,1);
+  --shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 50px -24px rgba(0,0,0,.8);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:var(--font);background:var(--bg);background-image:var(--bg-grad);color:var(--fg-1);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--fg-1);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .mono{font-family:var(--mono);font-feature-settings:"tnum"}
-.num{font-variant-numeric:tabular-nums}
+.disp{font-family:var(--display)}
+/* ---------- Ambient background ---------- */
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ambient .blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:drift 26s ease-in-out infinite alternate}
+.ambient .b1{width:620px;height:620px;background:#3b3fd8;top:-300px;right:-160px;opacity:.14}
+.ambient .b2{width:520px;height:520px;background:#0e7490;bottom:-300px;left:120px;opacity:.10;animation-delay:-9s}
+.ambient .b3{display:none}
+@keyframes drift{to{transform:translate(-80px,60px) scale(1.12)}}
+.ambient .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.045) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse at 60% 20%,#000 30%,transparent 75%)}
+/* ---------- Layout ---------- */
+.app{position:relative;z-index:1;display:grid;grid-template-columns:240px 1fr;height:100vh}
+.rail{background:linear-gradient(180deg,rgba(9,14,26,.92),rgba(6,10,19,.92));border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;backdrop-filter:blur(18px)}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 16px}
+.brand-mark{width:36px;height:36px;border-radius:11px;background:var(--grad-flow);display:grid;place-items:center;box-shadow:0 0 0 1px rgba(255,255,255,.15) inset,0 8px 28px -6px rgba(124,131,255,.8);position:relative}
 
-/* ---------- App layout ---------- */
-.app{display:grid;grid-template-columns:232px 1fr;height:100vh}
-.rail{background:rgba(8,12,22,.85);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;gap:4px;backdrop-filter:blur(12px)}
-.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
-.brand-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--flow),var(--flow-2));display:grid;place-items:center;box-shadow:0 0 24px rgba(99,102,241,.45)}
-.brand-name{font-weight:800;letter-spacing:.12em;font-size:15px}
-.brand-sub{font-size:11px;color:var(--fg-3);letter-spacing:.02em}
-.nav-group{font-size:11px;font-weight:600;color:var(--fg-3);letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 6px}
-.nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-sm);color:var(--fg-2);font-weight:500;font-size:13.5px;position:relative;transition:background var(--t-fast),color var(--t-fast);width:100%;text-align:left}
+@keyframes halo{50%{inset:-7px;opacity:0}}
+.brand-name{font-family:var(--display);font-weight:700;letter-spacing:.16em;font-size:16px}
+.brand-sub{font-size:11.5px;color:var(--fg-3)}
+.nav-group{font-size:12px;font-weight:600;color:var(--fg-3);letter-spacing:.1em;text-transform:uppercase;padding:14px 10px 6px;display:flex;align-items:center;gap:8px}
+.nav-group::after{content:"";flex:1;height:1px;background:var(--line)}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:var(--fg-2);font-weight:500;font-size:13.5px;position:relative;transition:all .18s var(--ease);width:100%;text-align:left}
 .nav:hover{background:var(--hover);color:var(--fg-1)}
-.nav.active{background:var(--flow-bg);color:var(--fg-1)}
-.nav.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(var(--flow),var(--flow-2))}
-.nav svg{width:18px;height:18px;flex:none;opacity:.9}
-.step{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;border:1.5px solid var(--line-2);color:var(--fg-3);flex:none}
-.step.done{background:var(--safe);border-color:var(--safe);color:#04130d}
-.step.now{border-color:var(--flow-2);color:var(--flow-2);box-shadow:0 0 0 4px rgba(34,211,238,.12)}
-.rail-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid var(--line)}
-.avatar{width:32px;height:32px;border-radius:50%;background:var(--surface-3);display:grid;place-items:center;font-weight:700;font-size:12px}
-
+.nav.active{background:linear-gradient(90deg,rgba(124,131,255,.18),rgba(124,131,255,.04));color:#fff;box-shadow:0 0 0 1px rgba(124,131,255,.25) inset}
+.nav.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:3px;border-radius:0 3px 3px 0;background:var(--grad-flow);box-shadow:0 0 12px #7c83ff}
+.nav svg{width:17px;height:17px;flex:none}
+.nav .badge{margin-left:auto;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--solid-3);color:var(--fg-2)}
+.step{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--line-2);color:var(--fg-3);flex:none;background:var(--solid-1)}
+.step.done{background:var(--safe);border-color:var(--safe);color:#03140e}
+.step.now{border-color:var(--flow-2);color:var(--flow-2);box-shadow:0 0 0 4px rgba(34,211,238,.14),0 0 14px rgba(34,211,238,.5)}
+.rail-case{margin:6px 4px 2px;padding:10px;border-radius:12px;background:var(--glass);border:1px solid var(--line)}
+.rail-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 8px 2px;border-top:1px solid var(--line)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--grad-flow);display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff}
 .main{display:flex;flex-direction:column;min-width:0;height:100vh}
-.topbar{height:64px;flex:none;display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(6,10,19,.7);backdrop-filter:blur(12px)}
-.case-pill{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-1);transition:border-color var(--t-fast)}
-.case-pill:hover{border-color:var(--line-2)}
-.case-ico{width:36px;height:36px;border-radius:9px;background:var(--risk-bg);display:grid;place-items:center;color:var(--risk)}
-.case-title{font-weight:700;font-size:14px}
-.case-meta{font-size:12px;color:var(--fg-3)}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
-.chip.risk{background:var(--risk-bg);color:#fda4af}.chip.safe{background:var(--safe-bg);color:#6ee7b7}
-.chip.urgent{background:var(--urgent-bg);color:#fcd34d}.chip.flow{background:var(--flow-bg);color:#c7d2fe}
-.chip.frozen{background:var(--frozen-bg);color:var(--frozen)}.chip.muted{background:var(--surface-3);color:var(--fg-2)}
-.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.dot.live{animation:pulse 1.6s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.spacer{flex:1}
-.gh{display:flex;align-items:center;gap:10px}
-.gh-ring{width:40px;height:40px;transform:rotate(-90deg)}
-.gh-label{font-size:11px;color:var(--fg-3);line-height:1.2}.gh-val{font-weight:700;font-size:14px;color:#fcd34d}
-.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13px;border:1px solid var(--line);background:var(--surface-1);transition:transform var(--t-fast),background var(--t-fast),border-color var(--t-fast)}
-.btn:hover{background:var(--hover);border-color:var(--line-2)}.btn:active{transform:scale(.98)}
-.btn.primary{background:linear-gradient(135deg,var(--flow),#4f46e5);border-color:transparent;box-shadow:0 6px 20px -6px rgba(99,102,241,.7)}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn.safe{background:var(--safe);color:#04130d;border-color:transparent}
-.btn.ice{background:var(--frozen);color:#04202e;border-color:transparent}
+.topbar{height:62px;flex:none;display:flex;align-items:center;gap:14px;padding:0 22px;border-bottom:1px solid var(--line);background:rgba(5,8,15,.6);backdrop-filter:blur(18px)}
+.case-pill{display:flex;align-items:center;gap:11px;padding:5px 12px 5px 5px;border-radius:12px;border:1px solid var(--line-2);background:var(--glass)}
+.case-ico{width:34px;height:34px;border-radius:9px;background:var(--grad-risk);display:grid;place-items:center;color:#fff;box-shadow:0 6px 18px -6px rgba(251,58,93,.8)}
+.case-title{font-weight:700;font-size:13.5px}.case-meta{font-size:12px;color:var(--fg-3)}
+.ticker{flex:1;min-width:0;overflow:hidden;height:30px;border-radius:9px;background:rgba(14,21,38,.5);border:1px solid var(--line);display:flex;align-items:center;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker-in{display:flex;gap:34px;white-space:nowrap;animation:tick 40s linear infinite;font-size:12.5px;color:var(--fg-2);padding-left:20px}
+.ticker-in b{color:var(--fg-1);font-weight:600}
+@keyframes tick{to{transform:translateX(-50%)}}
+.gh{display:flex;align-items:center;gap:9px;padding:4px 12px 4px 4px;border-radius:12px;background:var(--urgent-bg);border:1px solid rgba(251,191,36,.25)}
+.gh-ring{width:36px;height:36px;transform:rotate(-90deg)}
+.gh-label{font-size:12px;color:#fcd98a;line-height:1.1}.gh-val{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--urgent)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13px;border:1px solid var(--line-2);background:var(--glass);transition:all .16s var(--ease);white-space:nowrap}
+.btn:hover{background:var(--glass-3);border-color:rgba(148,163,184,.35)}.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--grad-flow);border-color:transparent;color:#fff;box-shadow:0 8px 24px -8px rgba(124,131,255,.9),0 0 0 1px rgba(255,255,255,.12) inset}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.safe{background:var(--grad-safe);color:#02150f;border-color:transparent;box-shadow:0 8px 24px -10px rgba(20,211,154,.9)}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px;border-radius:8px}
 .btn svg{width:16px;height:16px}
+.icon-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line-2);background:var(--glass);position:relative}
+.icon-btn .pip{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--risk);box-shadow:0 0 8px var(--risk)}
+.view{flex:1;overflow:auto;padding:20px 24px 40px;scroll-behavior:smooth}
+.screen{display:none}.screen.on{display:block;animation:enter .45s var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* ---------- Page head + stepper ---------- */
+.ph{display:flex;align-items:flex-end;gap:18px;margin-bottom:14px}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:var(--grad-flow);-webkit-background-clip:text;background-clip:text;color:transparent}
+.title{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.sub{color:var(--fg-2);font-size:14px;margin-top:2px}
+.stepper{display:flex;align-items:center;gap:0;margin:0 0 16px;padding:10px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px)}
+.st{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--fg-3);white-space:nowrap;cursor:pointer}
+.st.done{color:var(--fg-2)}.st.now{color:#fff}
+.st-line{flex:1;height:2px;margin:0 10px;background:var(--line-2);border-radius:2px;position:relative;overflow:hidden;min-width:16px}
+.st-line.done::after{content:"";position:absolute;inset:0;background:var(--grad-safe);animation:fill .8s var(--ease) both}
+@keyframes fill{from{transform:translateX(-100%)}}
+/* ---------- Finding ---------- */
+.finding{position:relative;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 16px;border-radius:14px;margin-bottom:16px;background:linear-gradient(100deg,rgba(20,211,154,.14),rgba(34,211,238,.05) 45%,rgba(14,21,38,.5));border:1px solid rgba(20,211,154,.28);overflow:hidden}
+.finding.warn{background:linear-gradient(100deg,rgba(251,58,93,.16),rgba(255,138,91,.05) 45%,rgba(14,21,38,.5));border-color:rgba(251,58,93,.32)}
 
-.view{flex:1;overflow:auto;padding:24px 28px 40px}
-.screen{display:none;animation:enter var(--t-med) var(--ease)}
-.screen.on{display:block}
-@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.page-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:16px}
-.page-kicker{font-size:12px;font-weight:600;color:var(--flow-2);letter-spacing:.06em;text-transform:uppercase}
-.page-title{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
-.page-q{color:var(--fg-2);font-size:14px}
-
-/* Finding strip: ONE line, never a tall banner */
-.finding{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:var(--r-md);background:linear-gradient(90deg,rgba(16,185,129,.12),rgba(16,185,129,.02) 60%);border:1px solid rgba(16,185,129,.25);margin-bottom:18px}
-.finding.warn{background:linear-gradient(90deg,rgba(244,63,94,.12),rgba(244,63,94,.02) 60%);border-color:rgba(244,63,94,.28)}
-.finding-ico{width:32px;height:32px;border-radius:9px;background:var(--safe-bg);display:grid;place-items:center;color:var(--safe);flex:none}
-.finding.warn .finding-ico{background:var(--risk-bg);color:var(--risk)}
-.finding-text{font-size:14.5px;font-weight:500;flex:1}.finding-text b{font-weight:700}
-.finding-key{font-family:var(--mono);font-weight:700;font-size:18px}
-
-/* Cards & grid */
-.grid{display:grid;gap:16px}
-.card{background:linear-gradient(180deg,var(--surface-1),rgba(12,18,32,.85));border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;position:relative;min-width:0}
-.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.card-t{font-weight:700;font-size:15px}.card-s{font-size:12.5px;color:var(--fg-3)}
-.kpi .k-label{font-size:12.5px;color:var(--fg-2);font-weight:500;display:flex;align-items:center;gap:8px}
-.kpi .k-val{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
-.kpi .k-foot{font-size:12px;color:var(--fg-3);display:flex;align-items:center;gap:8px}
-.k-ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center}
-.why{font-size:12px;font-weight:600;color:var(--flow-2);padding:2px 8px;border-radius:6px;border:1px solid rgba(34,211,238,.3);transition:background var(--t-fast)}
-.why:hover{background:rgba(34,211,238,.1)}
-
-/* Table */
+@keyframes sheen{40%,100%{transform:translateX(100%)}}
+.f-ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--grad-safe);color:#02150f;flex:none;font-weight:800}
+.finding.warn .f-ico{background:var(--grad-risk);color:#fff}
+.f-text{flex:1;font-size:14.5px;font-weight:500}.f-text b{font-weight:700;color:#fff}
+.f-tag{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);margin-bottom:1px}
+/* ---------- Cards ---------- */
+.grid{display:grid;gap:14px}
+.card{position:relative;background:var(--glass);border-radius:var(--r-lg);padding:16px;min-width:0;backdrop-filter:blur(14px);box-shadow:var(--shadow);border:1px solid var(--line)}
+.card.glow{border-color:transparent;background:linear-gradient(var(--solid-1),var(--solid-1)) padding-box,linear-gradient(140deg,rgba(124,131,255,.32),rgba(148,163,184,.10) 45%,rgba(148,163,184,.10) 75%,rgba(124,131,255,.18)) border-box;border:1px solid transparent}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ct{font-weight:700;font-size:14.5px}.cs{font-size:12.5px;color:var(--fg-3)}
+.spacer{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+.chip.risk{background:var(--risk-bg);color:var(--risk-2);border-color:rgba(251,58,93,.25)}
+.chip.safe{background:var(--safe-bg);color:#6ff5c6;border-color:rgba(20,211,154,.25)}
+.chip.urgent{background:var(--urgent-bg);color:#fcd34d;border-color:rgba(251,191,36,.25)}
+.chip.flow{background:var(--flow-bg);color:#c7caff;border-color:rgba(124,131,255,.3)}
+.chip.frozen{background:var(--frozen-bg);color:var(--frozen);border-color:rgba(139,227,255,.3)}
+.chip.muted{background:var(--solid-3);color:var(--fg-2)}
+.chip.t1{background:var(--safe-bg);color:#6ff5c6;border:1px solid rgba(20,211,154,.4)}
+.chip.t2{background:transparent;color:#c7caff;border:1px solid rgba(124,131,255,.5)}
+.chip.t3{background:transparent;color:var(--risk-2);border:1px dashed rgba(251,58,93,.6)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.live{animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+/* KPI */
+.kpi{display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.k-top{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--fg-2);font-weight:500}
+.k-ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}.k-ico svg,.fi-ico svg{width:16px;height:16px}.f-ico svg{width:18px;height:18px}
+.k-val{font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:8px;line-height:1.1}
+.k-foot{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-3);margin-top:4px}
+.delta{font-weight:700;font-size:12px}
+.spark{position:absolute;right:12px;bottom:12px;width:110px;height:38px;opacity:.95}
+.grad-text{background:var(--grad-flow);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Tables */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{font-size:12px;font-weight:600;color:var(--fg-3);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
-td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr.row{transition:background var(--t-fast)}tr.row:hover{background:var(--hover)}
+th{font-size:12px;font-weight:600;color:var(--fg-3);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.02em}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.row{transition:background .15s}tr.row:hover{background:var(--hover)}
 td.amt{font-family:var(--mono);text-align:right;white-space:nowrap}
 .r{text-align:right}
-.tick{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--fg-3);transition:all var(--t-med) var(--ease)}
-.tick.ok{background:var(--safe-bg);color:var(--safe)}.tick.bad{background:var(--risk-bg);color:var(--risk)}
-tr.suspect td{background:rgba(244,63,94,.06)}
-tr.scanning td{background:rgba(34,211,238,.06)}
-
+.tick{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--solid-3);color:var(--fg-3);font-size:12px;font-weight:800;transition:all .3s var(--spring)}
+.tick.ok{background:var(--safe);color:#02150f;box-shadow:0 0 12px rgba(20,211,154,.6)}.tick.bad{background:var(--risk);color:#fff;box-shadow:0 0 12px rgba(251,58,93,.6)}
+tr.suspect td{background:linear-gradient(90deg,rgba(251,58,93,.10),rgba(251,58,93,.02))}
+tr.suspect td:first-child{box-shadow:inset 3px 0 0 var(--risk)}
+tr.scan td{background:rgba(34,211,238,.08)}
+/* Tabs */
+.tabs{display:flex;gap:4px;padding:4px;border-radius:11px;background:var(--solid-1);border:1px solid var(--line);margin-bottom:12px}
+.tab{flex:1;padding:6px 8px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--fg-3);transition:all .2s}
+.tab.on{background:var(--glass-3);color:#fff;box-shadow:0 0 0 1px var(--line-2) inset}
 /* Inspector */
-.inspector{position:fixed;top:64px;right:0;bottom:0;width:420px;background:rgba(10,15,27,.97);border-left:1px solid var(--line-2);transform:translateX(100%);transition:transform var(--t-med) var(--ease);z-index:20;display:flex;flex-direction:column;backdrop-filter:blur(16px)}
-.inspector.open{transform:none;box-shadow:-30px 0 60px rgba(0,0,0,.45)}
-.insp-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px}
+.insp{position:fixed;top:62px;right:0;bottom:0;width:430px;background:rgba(8,13,25,.96);border-left:1px solid var(--line-2);transform:translateX(102%);transition:transform .35s var(--ease);z-index:30;display:flex;flex-direction:column;backdrop-filter:blur(22px)}
+.insp.open{transform:none;box-shadow:-40px 0 80px rgba(0,0,0,.55)}
+.insp-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px}
 .insp-b{padding:18px 20px;overflow:auto;flex:1}
-.wf-row{display:grid;grid-template-columns:1fr 120px 44px;align-items:center;gap:10px;padding:7px 0;font-size:13px}
-.wf-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--risk),#fb7185);transform-origin:left;animation:grow .7s var(--ease) both}
-@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.narr{margin-top:16px;padding:14px;border-radius:var(--r-md);background:var(--surface-2);font-size:13.5px;color:var(--fg-2)}
-.narr .lang{display:flex;gap:6px;margin-bottom:8px}
-
-/* Gauge */
-.gauge-track{height:8px;border-radius:4px;background:var(--surface-3);overflow:hidden}
-.gauge-fill{height:100%;border-radius:4px;transition:width .9s var(--ease)}
-
-/* Sankey + network */
+.wf{display:grid;grid-template-columns:1fr 110px 40px;gap:10px;align-items:center;padding:6px 0;font-size:13px}
+.wf-bar{height:9px;border-radius:5px;background:var(--grad-risk);transform-origin:left;animation:grow .7s var(--ease) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.gt{height:8px;border-radius:4px;background:var(--solid-3);overflow:hidden}
+.gf{height:100%;border-radius:4px;transition:width 1s var(--ease)}
+/* Misc */
 svg text{font-family:var(--font)}
-.flow-link{fill:none;stroke-opacity:.35;transition:stroke var(--t-med),stroke-opacity var(--t-med)}
-.flow-link:hover{stroke-opacity:.6}
-.frozen-link{stroke:var(--frozen)!important;stroke-opacity:.55!important}
-.particle{fill:#fde68a;filter:drop-shadow(0 0 4px #fbbf24)}
-.node-card rect.bg{fill:var(--surface-2);stroke:var(--line-2);transition:stroke var(--t-fast)}
-.node-card:hover rect.bg,.node-card.sel rect.bg{stroke:var(--flow-2)}
-.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.1s var(--ease) forwards}
+.particle{fill:#ffe08a;filter:drop-shadow(0 0 5px #fbbf24)}
+.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.2s var(--ease) forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
-.replay{display:flex;align-items:center;gap:14px;margin-top:12px;padding:10px 14px;border-radius:var(--r-md);background:var(--surface-2);border:1px solid var(--line)}
-.rp-steps{display:flex;gap:6px;flex:1}
-.rp-step{flex:1;font-size:12px;font-weight:600;color:var(--fg-3);padding:6px 4px;border-top:3px solid var(--surface-3);transition:all var(--t-med)}
-.rp-step.on{color:var(--fg-1);border-color:var(--flow-2)}
-
-/* Mentions -> identities */
-.res{display:grid;grid-template-columns:300px 1fr;gap:72px;position:relative}
-.src-h{font-size:12px;font-weight:600;color:var(--fg-3);margin:12px 0 6px;letter-spacing:.04em;text-transform:uppercase}
-.mention{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:8px;font-size:13px;opacity:0;transform:translateX(-12px);animation:slidein .45s var(--ease) forwards}
-@keyframes slidein{to{opacity:1;transform:none}}
-.mention .mono{font-size:12.5px;color:var(--fg-2)}
-.ident{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:12px;cursor:pointer;transition:border-color var(--t-fast),transform var(--t-fast);opacity:0;animation:pop .5s var(--ease) forwards}
-.ident:hover{border-color:var(--flow-2);transform:translateY(-1px)}
-@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
-.ini{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;flex:none}
-.links-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
-
-/* Claim vs proof */
-.vs{display:grid;grid-template-columns:1fr 120px 1fr;gap:0;align-items:stretch}
-.vs-card{padding:20px;border-radius:var(--r-lg);border:1.5px dashed rgba(244,63,94,.45);background:rgba(244,63,94,.04)}
-.vs-card.t1{border:1.5px solid rgba(16,185,129,.45);background:rgba(16,185,129,.04)}
-.vs-mid{display:grid;place-items:center;text-align:center}
-.vs-amt{font-family:var(--mono);font-size:30px;font-weight:700;margin:8px 0}
-.pipeline{display:flex;gap:10px}
-.pipe{flex:1;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;transition:all var(--t-med) var(--ease)}
-.pipe .pipe-s{font-size:12px;color:var(--fg-3);margin-top:2px}
-.pipe.ok{border-color:rgba(16,185,129,.4)}.pipe.warn{border-color:rgba(245,158,11,.5)}
-
-/* Actions */
-.act-row{display:grid;grid-template-columns:28px 1.6fr 1fr 140px 150px;gap:14px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:10px;transition:border-color var(--t-med),background var(--t-med)}
-.act-row.frozen{border-color:rgba(125,211,252,.45);background:rgba(125,211,252,.05)}
-.check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center}
-.check.on{background:var(--flow);border-color:var(--flow)}
-.paper{background:#f8f7f3;color:#1f2937;border-radius:12px;padding:28px 32px;position:relative;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
-.paper h4{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6b7280}
-.seal{position:absolute;right:26px;bottom:20px;width:96px;height:96px;border-radius:50%;border:3px solid #b91c1c;color:#b91c1c;display:grid;place-items:center;text-align:center;font-weight:800;font-size:10px;letter-spacing:.06em;transform:rotate(-12deg) scale(0);opacity:0}
-.seal.stamp{animation:stamp .5s cubic-bezier(.2,1.6,.4,1) forwards}
-@keyframes stamp{to{transform:rotate(-12deg) scale(1);opacity:.85}}
-
-.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--surface-3);border:1px solid var(--line-2);padding:12px 18px;border-radius:12px;font-weight:500;transition:all var(--t-med) var(--ease);z-index:50;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,20px);opacity:0;background:var(--glass-3);border:1px solid var(--line-2);padding:12px 18px;border-radius:12px;font-weight:600;transition:all .3s var(--ease);z-index:60;backdrop-filter:blur(14px);box-shadow:0 20px 40px rgba(0,0,0,.5)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.legend{display:flex;gap:16px;font-size:12px;color:var(--fg-3)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--fg-3)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-@media (max-width:1400px){.app{grid-template-columns:208px 1fr}.view{padding:20px 22px 32px}.page-title{font-size:23px}.kpi .k-val{font-size:26px}.inspector{width:380px}}
+.feed-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;opacity:0;animation:slidein .45s var(--ease) forwards}
+.feed-item:last-child{border:0}
+@keyframes slidein{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.fi-ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:13px}
+.q-item{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:11px;border-radius:13px;background:var(--glass-2);border:1px solid var(--line);margin-bottom:9px;opacity:0;animation:slidein .45s var(--ease) forwards;transition:border-color .2s}
+.q-item:hover{border-color:var(--line-glow)}
+.digit{display:inline-grid;place-items:center;width:30px;height:38px;border-radius:8px;background:var(--solid-2);border:1px solid var(--line-2);font-family:var(--mono);font-weight:700;font-size:17px;opacity:0;animation:pop .35s var(--spring) forwards}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.digit-g{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.digit-l{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.kv{display:grid;grid-template-columns:130px 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;align-items:center}
+.kv:last-child{border:0}.kv .k{color:var(--fg-3)}
+.mention{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:10px;background:var(--glass-2);border:1px solid var(--line);margin-bottom:7px;font-size:13px;opacity:0;animation:slidein .4s var(--ease) forwards;transition:border-color .2s}
+.mention.hl{border-color:var(--line-glow);box-shadow:0 0 0 1px rgba(124,131,255,.3)}
+.ident{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--glass-2);border:1px solid var(--line);margin-bottom:10px;cursor:pointer;transition:all .2s var(--ease);opacity:0;animation:pop .5s var(--ease) forwards}
+.ident:hover{border-color:var(--line-glow);transform:translateY(-1px)}
+.ident.sel{border-color:rgba(124,131,255,.6);background:linear-gradient(90deg,rgba(124,131,255,.14),var(--glass-2));box-shadow:0 0 24px -8px rgba(124,131,255,.7)}
+.ini{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;flex:none;font-size:14px}
+.bubble{max-width:88%;padding:9px 12px;border-radius:12px;font-size:13px;margin-bottom:8px;line-height:1.45}
+.bubble.in{background:var(--solid-3);border-top-left-radius:3px}
+.bubble.out{background:#0f5132;margin-left:auto;border-top-right-radius:3px}
+.hlv{background:rgba(251,58,93,.25);color:#fff;padding:0 4px;border-radius:4px;font-family:var(--mono);font-size:12.5px}
+.act-row{display:grid;grid-template-columns:40px 1.4fr 1fr 150px 130px;gap:12px;align-items:center;padding:12px 14px;border-radius:13px;background:var(--glass-2);border:1px solid var(--line);margin-bottom:9px;transition:all .35s var(--ease)}
+.act-row.frozen{border-color:rgba(139,227,255,.45);background:linear-gradient(90deg,rgba(139,227,255,.12),var(--glass-2));box-shadow:0 0 30px -12px rgba(139,227,255,.7)}
+.paper{background:#f7f6f1;color:#1f2937;border-radius:14px;padding:26px 30px;position:relative;box-shadow:0 40px 80px -30px rgba(0,0,0,.8)}
+.paper h4{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280}
+.seal{position:absolute;right:26px;bottom:22px;width:100px;height:100px;border-radius:50%;border:3px double #b91c1c;color:#b91c1c;display:grid;place-items:center;text-align:center;font-weight:800;font-size:10px;letter-spacing:.06em;transform:rotate(-14deg) scale(0);opacity:0}
+.seal.stamp{animation:stamp .55s var(--spring) forwards}
+@keyframes stamp{to{transform:rotate(-14deg) scale(1);opacity:.88}}
+.tooltip{position:fixed;pointer-events:none;z-index:70;padding:9px 12px;border-radius:10px;background:rgba(8,13,25,.96);border:1px solid var(--line-2);font-size:12.5px;opacity:0;transition:opacity .15s;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.funnel-row{display:grid;grid-template-columns:210px 1fr 120px;gap:14px;align-items:center;margin-bottom:10px}
+.funnel-bar{height:34px;border-radius:9px;display:flex;align-items:center;padding:0 12px;font-family:var(--mono);font-weight:700;font-size:14px;color:#fff;transform-origin:left;animation:grow .9s var(--ease) both;box-shadow:0 8px 24px -12px currentColor}
+@media (max-width:1400px){.app{grid-template-columns:216px 1fr}.view{padding:16px 18px 32px}.title{font-size:24px}.k-val{font-size:26px}.spark{width:84px}.ticker{display:none}.insp{width:390px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}.particle{display:none}}
 </style>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
+<div class="ambient"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid"></div></div>
 <div class="app">
-  <!-- ===== Rail ===== -->
   <aside class="rail" aria-label="Main navigation">
-    <div class="brand">
-      <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
-      <div><div class="brand-name">TARKA</div><div class="brand-sub">Cyber Fraud Intelligence</div></div>
-    </div>
+    <div class="brand"><div class="brand-mark"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div><div><div class="brand-name">TARKA</div><div class="brand-sub">Cyber Fraud Intelligence</div></div></div>
     <button class="nav" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Command Center</button>
-    <button class="nav" data-go="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>All Cases <span class="spacer"></span><span class="chip muted">4</span></button>
-    <div class="nav-group">Investigation · FIR #149/2026</div>
-    <button class="nav" data-go="evidence"><span class="step done" data-step="evidence">✓</span>Evidence &amp; Ledger</button>
-    <button class="nav" data-go="people"><span class="step done" data-step="people">✓</span>People &amp; Accounts</button>
-    <button class="nav" data-go="money"><span class="step now" data-step="money">3</span>Money Trail</button>
-    <button class="nav" data-go="network"><span class="step" data-step="network">4</span>Fraud Network</button>
-    <button class="nav" data-go="actions"><span class="step" data-step="actions">5</span>Actions &amp; Report</button>
+    <button class="nav" data-go="dash" data-noactive><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>All Cases<span class="badge">4</span></button>
+    <div class="nav-group">Active case</div>
+    <div class="rail-case"><div style="display:flex;align-items:center;gap:8px"><span class="chip risk" style="padding:2px 7px">Digital arrest</span><span class="mono" style="font-size:12px;color:var(--fg-3)">FIR 149/26</span></div><div style="font-weight:700;margin-top:6px;font-size:13.5px">Sunil Kumar</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div class="gt" style="flex:1"><div class="gf" style="width:58%;background:var(--grad-flow)"></div></div><span style="font-size:12px;color:var(--fg-2)">3 / 6</span></div></div>
+    <button class="nav" data-go="evidence"><span class="step done">✓</span>Evidence &amp; Ledger</button>
+    <button class="nav" data-go="people"><span class="step done">✓</span>People &amp; Accounts</button>
+    <button class="nav" data-go="money"><span class="step now">3</span>Money Trail</button>
+    <button class="nav" data-go="network"><span class="step">4</span>Fraud Network</button>
+    <button class="nav" data-go="device"><span class="step">5</span>Device &amp; SIM</button>
+    <button class="nav" data-go="actions"><span class="step">6</span>Actions &amp; Report</button>
     <div class="nav-group">Lab</div>
-    <button class="nav" style="color:var(--fg-3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v6L4 18a2 2 0 002 3h12a2 2 0 002-3l-5-9V3M8 3h8"/></svg>Court · Privacy · Benchmarks</button>
-    <div class="rail-foot"><div class="avatar">RS</div><div><div style="font-weight:600;font-size:13px">Insp. R. K. Sharma</div><div style="font-size:11.5px;color:var(--fg-3)">Cyber Crime PS, Noida</div></div></div>
+    <button class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 4-9 4-9-4 9-4zM3 12l9 4 9-4M3 17l9 4 9-4"/></svg>Court Dossier</button>
+    <button class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>Privacy &amp; ZKP</button>
+    <div class="rail-foot"><div class="avatar">RS</div><div><div style="font-weight:600;font-size:13px">Insp. R. K. Sharma</div><div style="font-size:12px;color:var(--fg-3)">Cyber PS Noida · IO-409</div></div></div>
   </aside>
 
-  <!-- ===== Main ===== -->
   <div class="main">
     <header class="topbar">
-      <button class="case-pill" aria-label="Switch case">
-        <div class="case-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>
-        <div style="text-align:left"><div class="case-title">Sunil Kumar · Digital Arrest Extortion</div><div class="case-meta"><span class="mono">CASE-2026-001</span> · FIR #149/2026 · Noida, UP</div></div>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <span class="chip urgent"><span class="dot live"></span>Investigating</span>
-      <div class="spacer"></div>
-      <div class="gh" title="Golden hour: time left to request freezes">
-        <svg class="gh-ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="var(--surface-3)" stroke-width="4"/><circle id="ghArc" cx="20" cy="20" r="16" fill="none" stroke="var(--urgent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="0"/></svg>
-        <div><div class="gh-label">Golden hour left</div><div class="gh-val num" id="ghVal">1h 58m</div></div>
-      </div>
+      <button class="case-pill" aria-label="Switch case"><div class="case-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div><div style="text-align:left"><div class="case-title">CASE-2026-001 · Sunil Kumar</div><div class="case-meta">FIR #149/2026 · Noida, UP · ₹5,00,000</div></div><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="ticker"><div class="ticker-in" id="ticker"></div></div>
+      <div class="gh"><svg class="gh-ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="rgba(251,191,36,.18)" stroke-width="4"/><circle id="ghArc" cx="20" cy="20" r="16" fill="none" stroke="var(--urgent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="100.5"/></svg><div><div class="gh-label">Golden hour</div><div class="gh-val" id="ghVal">01:58:00</div></div></div>
+      <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg><span class="pip"></span></button>
       <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM19 11a7 7 0 01-14 0M12 18v3"/></svg>Ask TARKA</button>
-      <button class="btn primary" data-go="actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>Freeze accounts</button>
+      <button class="btn primary" data-go="actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Freeze accounts</button>
     </header>
 
     <main class="view" id="view">
-
-      <!-- ================= DASHBOARD ================= -->
-      <section class="screen" id="s-dash" aria-label="Command center">
-        <div class="page-head"><div><div class="page-kicker">Command Center</div><div class="page-title">Good morning, Inspector</div><div class="page-q">4 active cases · 3 inside the golden hour · last sync just now</div></div></div>
-        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
-          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--urgent-bg);color:var(--urgent)">⏱</span>Cases in golden hour</div><div class="k-val" data-count="3">0</div><div class="k-foot"><span class="chip urgent">Next: 42 min</span></div></div>
-          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--risk-bg);color:var(--risk)">₹</span>Reported loss</div><div class="k-val" data-count="2270000" data-inr>₹0</div><div class="k-foot">across 4 FIRs</div></div>
-          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--frozen-bg);color:var(--frozen)">❄</span>Frozen / recoverable</div><div class="k-val" data-count="1080000" data-inr>₹0</div><div class="k-foot"><div class="gauge-track" style="flex:1"><div class="gauge-fill" style="width:48%;background:var(--frozen)"></div></div>48%</div></div>
-          <div class="card kpi"><div class="k-label"><span class="k-ico" style="background:var(--flow-bg);color:#a5b4fc">◎</span>Mule accounts found</div><div class="k-val" data-count="11">0</div><div class="k-foot">5 linked across FIRs</div></div>
-        </div>
-        <div class="grid" style="grid-template-columns:1.25fr 1fr">
-          <div class="card">
-            <div class="card-h"><div><div class="card-t">Act now</div><div class="card-s">Highest recoverable amount × least time left</div></div></div>
-            <div id="queue"></div>
-          </div>
-          <div class="card">
-            <div class="card-h"><div><div class="card-t">Money corridors</div><div class="card-s">Where victims' money is flowing (state → state)</div></div></div>
-            <svg id="corridors" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
-          </div>
-        </div>
-        <div class="card" style="margin-top:16px">
-          <div class="card-h"><div class="card-t">Active cases</div><span class="spacer"></span><button class="btn">+ New case</button></div>
-          <table><thead><tr><th>Case</th><th>Victim · typology</th><th>Status</th><th class="r">Loss</th><th>Recovered</th><th>Golden hour</th><th>IO</th></tr></thead><tbody id="caseRows"></tbody></table>
-        </div>
-      </section>
-
-      <!-- ================= EVIDENCE ================= -->
-      <section class="screen" id="s-evidence" aria-label="Evidence and ledger">
-        <div class="page-head"><div><div class="page-kicker">Step 1 · Evidence &amp; Ledger</div><div class="page-title">Did the money really leave?</div></div><span class="spacer"></span><button class="btn">+ Add evidence</button></div>
-        <div class="finding"><div class="finding-ico">✓</div><div class="finding-text">Bank ledger proves <b>₹5,00,000</b> left Sunil Kumar's SBI account in 2 transfers. The receipt he was shown is <b>forged</b>.</div><button class="btn safe" data-go="people">Who received it? →</button></div>
-        <div class="card" style="margin-bottom:16px">
-          <div class="vs">
-            <div class="vs-card"><span class="chip risk">T3 · Unverified claim</span><div class="vs-amt" style="color:#fda4af">₹15,000</div><div style="color:var(--fg-2);font-size:13.5px">Payment receipt PDF shown to the victim</div><div style="font-size:12.5px;color:var(--fg-3);margin-top:6px">Edited after creation (+14.2 KB appended)</div></div>
-            <div class="vs-mid"><div><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="var(--risk)" stroke-width="3" class="draw" style="--len:176"/><path d="M20 28h24M20 36h24M38 18L26 46" stroke="var(--risk)" stroke-width="3" stroke-linecap="round" class="draw" style="--len:60"/></svg><div class="mono" style="color:#fda4af;font-weight:700;margin-top:6px">Δ ₹4,85,000</div></div></div>
-            <div class="vs-card t1"><span class="chip safe">T1 · Verified bank record</span><div class="vs-amt" style="color:#6ee7b7">₹5,00,000</div><div style="color:var(--fg-2);font-size:13.5px">SBI core banking ledger · 2 UPI debits</div><div style="font-size:12.5px;color:var(--fg-3);margin-top:6px">Every balance reconciles · SHA-256 sealed</div></div>
-          </div>
-        </div>
-        <div class="grid" style="grid-template-columns:1.6fr 1fr">
-          <div class="card">
-            <div class="card-h"><div><div class="card-t">SBI ledger · A/C ••9101</div><div class="card-s">Each row checked: previous balance + credit − debit = balance</div></div><span class="spacer"></span><button class="btn" id="rerunCheck">Re-run check</button></div>
-            <table><thead><tr><th>Time</th><th>Transaction</th><th class="r">Debit</th><th class="r">Credit</th><th class="r">Balance</th><th></th></tr></thead><tbody id="ledger"></tbody></table>
-          </div>
-          <div class="card">
-            <div class="card-h"><div class="card-t">Integrity checks</div></div>
-            <div class="pipeline" style="flex-direction:column" id="checks"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= PEOPLE ================= -->
-      <section class="screen" id="s-people" aria-label="People and accounts">
-        <div class="page-head"><div><div class="page-kicker">Step 2 · People &amp; Accounts</div><div class="page-title">Who is who?</div></div></div>
-        <div class="finding warn"><div class="finding-ico">!</div><div class="finding-text"><b>12 mentions</b> from 4 sources resolved to <b>6 identities</b>: 4 suspected mule accounts, 1 merchant protected.</div><button class="btn primary" data-go="money">Follow the money →</button></div>
-        <div class="card">
-          <div class="card-h"><div><div class="card-t">Identity resolution</div><div class="card-s">Click an identity to see why it was linked and scored</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--risk)"></i>Suspect</span><span><i style="background:var(--safe)"></i>Protected</span><span><i style="background:var(--flow)"></i>Victim</span></div></div>
-          <div class="res" id="res"><svg class="links-svg" id="resLinks"></svg><div id="mentions"></div><div id="idents"></div></div>
-        </div>
-      </section>
-
-      <!-- ================= MONEY TRAIL ================= -->
-      <section class="screen" id="s-money" aria-label="Money trail">
-        <div class="page-head"><div><div class="page-kicker">Step 3 · Money Trail</div><div class="page-title">Where did the money go?</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--flow)"></i>Moving</span><span><i style="background:var(--frozen)"></i>Frozen</span><span><i style="background:var(--safe)"></i>Protected merchant</span><span><i style="background:var(--risk)"></i>Cashed out</span></div></div>
-        <div class="finding"><div class="finding-ico">₹</div><div class="finding-text"><b class="num" id="recovText">₹3,80,000</b> of ₹5,00,000 can still be stopped in <b id="recovPlaces">4 places</b>. Freeze before the golden hour ends.</div><button class="btn primary" data-go="actions">Freeze now →</button></div>
-        <div class="grid" style="grid-template-columns:1fr 320px">
-          <div class="card"><svg id="sankey" viewBox="0 0 1000 440" width="100%" style="display:block"></svg></div>
-          <div class="grid" style="align-content:start">
-            <div class="card kpi"><div class="k-label">Recoverable now</div><div class="k-val" style="color:var(--frozen)" id="recovKpi">₹3,80,000</div><div class="gauge-track"><div class="gauge-fill" id="recovBar" style="width:76%;background:var(--frozen)"></div></div><div class="k-foot" style="margin-top:8px" id="recovFoot">76% of the loss · ₹1,20,000 already cashed out</div></div>
-            <div class="card"><div class="card-t" style="margin-bottom:10px">How we traced it</div><div style="font-size:13.5px;color:var(--fg-2)">Money is followed using the <b style="color:var(--fg-1)">lowest-balance rule</b>: an account can't pass on more stolen money than it held. Clean money already in an account is never frozen.</div><button class="why" style="margin-top:12px" data-why="method">Compare methods</button></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ================= NETWORK ================= -->
-      <section class="screen" id="s-network" aria-label="Fraud network">
-        <div class="page-head"><div><div class="page-kicker">Step 4 · Fraud Network</div><div class="page-title">Who is connected?</div></div></div>
-        <div class="finding warn"><div class="finding-ico">◎</div><div class="finding-text">One handset and one Wi-Fi hotspot control <b>3 mule accounts</b> across 3 banks. Same device seen in <b>2 other FIRs</b>.</div><button class="btn" id="playBtn">▶ Replay the theft</button></div>
-        <div class="card" style="padding:12px"><svg id="net" viewBox="0 0 1100 500" width="100%" style="display:block"></svg>
-          <div class="replay"><button class="btn" id="playBtn2" style="height:32px">▶ Play</button><div class="rp-steps" id="rpSteps"></div><span class="mono" style="color:var(--fg-3);font-size:12.5px" id="rpClock">09:15 IST</span></div>
-        </div>
-      </section>
-
-      <!-- ================= ACTIONS ================= -->
-      <section class="screen" id="s-actions" aria-label="Actions and report">
-        <div class="page-head"><div><div class="page-kicker">Step 5 · Actions &amp; Report</div><div class="page-title">Stop the money. Build the case.</div></div></div>
-        <div class="grid" style="grid-template-columns:1.35fr 1fr">
-          <div class="card">
-            <div class="card-h"><div><div class="card-t">Freeze requests</div><div class="card-s">Ranked by amount you can still recover</div></div><span class="spacer"></span><div style="text-align:right"><div class="card-s">Frozen so far</div><div class="mono" style="font-size:22px;font-weight:700;color:var(--frozen)" id="frozenTotal">₹0</div></div></div>
-            <div id="actRows"></div>
-            <div style="display:flex;gap:10px;margin-top:6px"><button class="btn primary" id="sendBtn">Send freeze requests (BNSS §106)</button><button class="btn" id="simBtn" disabled style="opacity:.5">Simulate bank response</button></div>
-          </div>
-          <div class="card" style="background:transparent;border:0;padding:0">
-            <div class="paper">
-              <div class="seal" id="seal">SEALED<br>SHA-256<br>a91f…3c07</div>
-              <h4>Cyber Crime Police Station · Noida, Uttar Pradesh</h4>
-              <div style="font-size:20px;font-weight:800;margin:6px 0 2px">Investigation Report</div>
-              <div style="font-size:13px;color:#4b5563">FIR #149/2026 · Digital arrest extortion · Victim: Sunil Kumar</div>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0">
-                <div><div style="font-size:11px;color:#6b7280">LOSS</div><div style="font-weight:800;font-size:18px">₹5,00,000</div></div>
-                <div><div style="font-size:11px;color:#6b7280">FROZEN</div><div style="font-weight:800;font-size:18px;color:#0369a1" id="repFrozen">₹0</div></div>
-                <div><div style="font-size:11px;color:#6b7280">MULES</div><div style="font-weight:800;font-size:18px">4</div></div>
-              </div>
-              <div style="font-size:13px;line-height:1.6;color:#374151">On 22 Sep 2026 the victim was coerced by callers posing as CBI officers into two UPI transfers totalling ₹5,00,000. Funds moved through 4 accounts within 7 minutes. A single handset (IMEI ••4564) controls 3 of them.</div>
-              <div style="display:flex;gap:8px;margin-top:18px"><button class="btn" style="background:#111827;color:#fff;border:0" id="genBtn">Generate &amp; seal report</button><button class="btn" style="background:#e5e7eb;color:#111827;border:0">Download PDF</button></div>
+      <!-- ======================= COMMAND CENTER ======================= -->
+      <section class="screen" id="s-dash">
+        <div class="ph"><div><div class="kicker">Command Center · Noida Cyber PS</div><div class="title">Good morning, Inspector Sharma</div><div class="sub">4 active cases · <b style="color:var(--urgent)">3 inside the golden hour</b> · ₹10.8 L recoverable right now</div></div><span class="spacer"></span><button class="btn">+ New case</button><button class="btn primary">Upload evidence</button></div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="kpis"></div>
+        <div class="grid" style="grid-template-columns:1.55fr 1fr;margin-bottom:14px">
+          <div class="card glow" style="padding:14px 16px">
+            <div class="card-h"><div><div class="ct">National money corridors</div><div class="cs">Live flow of victim money into mule accounts · last 24 h</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--risk)"></i>Victim origin</span><span><i style="background:var(--flow-2)"></i>Mule cluster</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 210px;gap:10px;align-items:center">
+              <svg id="india" viewBox="0 0 520 520" style="width:100%;max-height:430px;display:block"></svg>
+              <div id="corrList"></div>
             </div>
           </div>
+          <div class="grid" style="grid-template-rows:auto 1fr;gap:14px">
+            <div class="card"><div class="card-h"><div><div class="ct">Act now</div><div class="cs">Ranked by recoverable ₹ × time left</div></div><span class="spacer"></span><span class="chip urgent"><span class="dot live"></span>3 urgent</span></div><div id="queue"></div></div>
+            <div class="card"><div class="card-h"><div class="ct">Live activity</div><span class="spacer"></span><span class="chip safe"><span class="dot live"></span>Live</span></div><div id="feed"></div></div>
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr 1.3fr;margin-bottom:14px">
+          <div class="card"><div class="card-h"><div class="ct">Loss by typology</div></div><div style="display:flex;align-items:center;gap:16px"><svg id="donut" viewBox="0 0 160 160" width="150" height="150"></svg><div id="donutLegend" style="flex:1"></div></div></div>
+          <div class="card"><div class="card-h"><div class="ct">Mule accounts by bank</div></div><div id="bankBars"></div></div>
+          <div class="card"><div class="card-h"><div><div class="ct">Recovered vs lost · 14 days</div><div class="cs">Golden-hour freezes are working</div></div></div><svg id="trend" viewBox="0 0 520 170" style="width:100%;display:block"></svg></div>
+        </div>
+        <div class="card"><div class="card-h"><div class="ct">Active cases</div><span class="spacer"></span><div class="tabs" style="margin:0;width:300px"><button class="tab on">All 4</button><button class="tab">Urgent</button><button class="tab">Mine</button></div></div>
+          <table><thead><tr><th>Case</th><th>Victim · typology</th><th>Pipeline</th><th>Status</th><th class="r">Loss</th><th>Recovered</th><th>Golden hour</th><th>Trend</th></tr></thead><tbody id="caseRows"></tbody></table></div>
+      </section>
+
+      <!-- ======================= EVIDENCE ======================= -->
+      <section class="screen" id="s-evidence">
+        <div class="ph"><div><div class="kicker">Step 1 of 6 · Evidence &amp; Ledger</div><div class="title">Did the money really leave?</div></div><span class="spacer"></span><button class="btn">+ Add evidence</button><button class="btn">Evidence files (9)</button></div>
+        <div class="stepper" data-stepper="0"></div>
+        <div class="finding"><div class="f-ico"><i data-lucide="badge-check"></i></div><div class="f-text"><div class="f-tag">Investigator finding</div>Bank ledger proves <b>₹5,00,000</b> left Sunil Kumar's SBI account in 2 UPI transfers. The receipt he was shown is <b>forged</b> (edited after signing).</div><button class="btn safe" data-go="people">Who received it? →</button></div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="evKpis"></div>
+        <div class="card glow" style="margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:1fr 150px 1fr;align-items:stretch">
+            <div style="padding:18px;border-radius:14px;border:1.5px dashed rgba(251,58,93,.5);background:rgba(251,58,93,.05)"><span class="chip t3">T3 · Unverified claim</span><div class="disp" style="font-size:34px;font-weight:700;color:var(--risk-2);margin:10px 0 4px">₹15,000</div><div style="color:var(--fg-2)">Payment receipt PDF shown to the victim</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><span class="chip muted">Canva export</span><span class="chip risk">+14.2 KB appended</span><span class="chip risk">2 × %%EOF</span></div></div>
+            <div style="display:grid;place-items:center;text-align:center"><div><svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="rgba(251,58,93,.08)" stroke="var(--risk)" stroke-width="3" class="draw" style="--len:214"/><path d="M26 34h28M26 46h28M48 22L32 58" stroke="var(--risk)" stroke-width="3.5" stroke-linecap="round" class="draw" style="--len:60;animation-delay:.4s"/></svg><div class="mono" style="color:var(--risk-2);font-weight:700;font-size:15px;margin-top:4px">Δ ₹4,85,000</div><div class="cs">33× under-stated</div></div></div>
+            <div style="padding:18px;border-radius:14px;border:1.5px solid rgba(20,211,154,.5);background:rgba(20,211,154,.05)"><span class="chip t1">T1 · Verified bank record</span><div class="disp" style="font-size:34px;font-weight:700;color:#6ff5c6;margin:10px 0 4px">₹5,00,000</div><div style="color:var(--fg-2)">SBI core banking ledger · 2 UPI debits</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><span class="chip safe">6/6 balances reconcile</span><span class="chip safe">SHA-256 sealed</span><span class="chip flow">NPCI matched</span></div></div>
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:1.5fr 1fr;margin-bottom:14px">
+          <div class="card"><div class="card-h"><div><div class="ct">SBI core banking ledger · A/C ••9101</div><div class="cs">Each row checked: previous balance + credit − debit = balance</div></div><span class="spacer"></span><button class="btn sm" id="rerun">↻ Re-run check</button></div>
+            <table><thead><tr><th>Time</th><th>Transaction</th><th class="r">Debit</th><th class="r">Credit</th><th class="r">Balance</th><th></th></tr></thead><tbody id="ledger"></tbody></table>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--safe-bg);border:1px solid rgba(20,211,154,.25);font-size:13px"><span class="tick ok">✓</span><span><b>Balance conserved.</b> ₹5,29,140 + ₹1,25,000 − ₹5,07,650 = <span class="mono">₹1,46,490</span> (closing). Δ = ₹0</span></div>
+          </div>
+          <div class="card"><div class="tabs" id="dockTabs"><button class="tab on" data-dock="rrn">Transaction ID</button><button class="tab" data-dock="clock">Clock sync</button><button class="tab" data-dock="pdf">Receipt forensics</button></div><div id="dock"></div></div>
+        </div>
+        <div class="card"><div class="card-h"><div class="ct">Integrity gate</div><div class="cs">Evidence must pass before any attribution is computed</div></div><div id="gate" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px"></div></div>
+      </section>
+
+      <!-- ======================= PEOPLE ======================= -->
+      <section class="screen" id="s-people">
+        <div class="ph"><div><div class="kicker">Step 2 of 6 · People &amp; Accounts</div><div class="title">Who is who?</div></div></div>
+        <div class="stepper" data-stepper="1"></div>
+        <div class="finding warn"><div class="f-ico"><i data-lucide="triangle-alert"></i></div><div class="f-text"><div class="f-tag">Investigator finding</div><b>12 mentions</b> from 4 sources resolved to <b>6 identities</b>: 4 suspected mule accounts; 1 merchant protected by hard veto.</div><button class="btn primary" data-go="money">Follow the money →</button></div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="ppKpis"></div>
+        <div class="grid" style="grid-template-columns:1.5fr 1fr">
+          <div class="card"><div class="card-h"><div><div class="ct">Identity resolution</div><div class="cs">Hover a mention to trace it · click an identity to inspect</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--risk)"></i>Suspect</span><span><i style="background:var(--safe)"></i>Protected</span><span><i style="background:var(--flow)"></i>Victim</span></div></div>
+            <div id="res" style="display:grid;grid-template-columns:270px 1fr;gap:64px;position:relative"><svg id="resLinks" style="position:absolute;inset:0;pointer-events:none;overflow:visible;width:100%;height:100%"></svg><div id="mentions"></div><div id="idents"></div></div></div>
+          <div class="grid" style="align-content:start">
+            <div class="card glow" id="profile"></div>
+            <div class="card"><div class="card-h"><div class="ct">Social-engineering lure</div><span class="spacer"></span><span class="chip risk">WhatsApp · T3</span></div>
+              <div class="bubble in">This is <b>CBI Cyber Cell</b>. Your Aadhaar is linked to a money-laundering case. You are under <b>digital arrest</b>.</div>
+              <div class="bubble in">Transfer ₹2,85,000 to the RBI safe account <span class="hlv">vikram.pay@okaxis</span> immediately for verification.</div>
+              <div class="bubble out">Sir please don't arrest me. Sending now.</div>
+              <div class="cs" style="margin-top:4px">Extracted: 1 VPA → merged with <span class="mono">vikramshah@okaxis</span> (same PSP handle stem + same account)</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= MONEY ======================= -->
+      <section class="screen" id="s-money">
+        <div class="ph"><div><div class="kicker">Step 3 of 6 · Money Trail</div><div class="title">Where did the money go?</div></div><span class="spacer"></span><div class="legend"><span><i style="background:var(--flow)"></i>Moving</span><span><i style="background:var(--frozen)"></i>Frozen</span><span><i style="background:var(--safe)"></i>Protected</span><span><i style="background:var(--risk)"></i>Cashed out</span></div></div>
+        <div class="stepper" data-stepper="2"></div>
+        <div class="finding"><div class="f-ico"><i data-lucide="indian-rupee"></i></div><div class="f-text"><div class="f-tag">Investigator finding</div><b id="recovText">₹3,80,000</b> of ₹5,00,000 can still be stopped in <b id="recovPlaces">4 places</b>. Every minute lowers recovery; freeze before the golden hour ends.</div><button class="btn primary" data-go="actions">Freeze now →</button></div>
+        <div class="grid" style="grid-template-columns:1fr 330px;margin-bottom:14px">
+          <div class="card glow" style="padding:12px 14px"><div class="card-h" style="margin-bottom:4px"><div><div class="ct">Proportional money flow</div><div class="cs">Width = amount · click Freeze to secure held funds</div></div><span class="spacer"></span><div class="tabs" style="margin:0;width:260px"><button class="tab on">Flow</button><button class="tab">Timeline</button><button class="tab">Table</button></div></div><svg id="sankey" style="width:100%;display:block"></svg></div>
+          <div class="grid" style="align-content:start">
+            <div class="card" style="text-align:center"><div class="ct" style="text-align:left">Recoverable now</div><svg id="recRing" viewBox="0 0 200 200" width="190" height="190" style="margin:4px auto 0;display:block"></svg><div class="cs" id="recFoot">₹1,20,000 already cashed out at ATM</div></div>
+            <div class="card"><div class="card-h"><div><div class="ct">If you can freeze only…</div><div class="cs">Best accounts to freeze first</div></div></div><div style="display:flex;gap:6px;margin-bottom:12px" id="kSel"></div><div id="kOut"></div></div>
+          </div>
+        </div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="mtKpis"></div>
+        <div class="grid" style="grid-template-columns:1.4fr 1fr">
+          <div class="card"><div class="card-h"><div><div class="ct">Golden-hour recovery curve</div><div class="cs">Recoverable amount decays as mules cash out</div></div><span class="spacer"></span><span class="chip urgent" id="nowChip">Now · T+2h</span></div><svg id="decay" viewBox="0 0 640 200" style="width:100%;display:block"></svg></div>
+          <div class="card"><div class="card-h"><div><div class="ct">Tracing method</div><div class="cs">How much can lawfully be frozen</div></div></div><div id="methods"></div><div class="cs" style="margin-top:8px">TARKA uses the <b style="color:var(--fg-1)">lowest-balance rule</b>: clean money already in an account is never frozen.</div></div>
+        </div>
+      </section>
+
+      <!-- ======================= NETWORK ======================= -->
+      <section class="screen" id="s-network">
+        <div class="ph"><div><div class="kicker">Step 4 of 6 · Fraud Network</div><div class="title">Who is connected?</div></div><span class="spacer"></span><button class="btn" id="play1">▶ Replay the theft</button><button class="btn">⤢ Fullscreen</button></div>
+        <div class="stepper" data-stepper="3"></div>
+        <div class="finding warn"><div class="f-ico"><i data-lucide="network"></i></div><div class="f-text"><div class="f-tag">Investigator finding</div>One handset and one Wi-Fi hotspot control <b>3 mule accounts</b> across 3 banks. The same handset appears in <b>2 other FIRs</b> (Hyderabad, Pune).</div><button class="btn primary" data-go="device">Identify the handset →</button></div>
+        <div class="grid" style="grid-template-columns:1fr 340px;margin-bottom:14px">
+          <div class="card glow" style="padding:10px 12px;position:relative">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px" id="layers"></div>
+            <svg id="net" style="width:100%;display:block"></svg>
+            <svg id="minimap" viewBox="0 0 160 90" style="position:absolute;right:18px;bottom:74px;width:150px;height:84px;border-radius:10px;background:rgba(5,8,15,.75);border:1px solid var(--line-2)"></svg>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:6px;padding:9px 12px;border-radius:12px;background:var(--solid-1);border:1px solid var(--line)"><button class="btn sm" id="play2">▶ Play</button><div id="rpSteps" style="display:flex;gap:6px;flex:1"></div><span class="mono" style="color:var(--fg-2);font-size:12.5px" id="rpClock"></span></div>
+          </div>
+          <div class="grid" style="align-content:start">
+            <div class="card" id="nodeCard"></div>
+            <div class="card"><div class="card-h"><div class="ct">Device provenance</div><span class="spacer"></span><span class="chip t1">NPCI · T1</span></div>
+              <div class="kv"><span class="k">Handset IMEI</span><span class="mono">8674 9206 ••4564</span><span class="chip muted">TAC</span></div>
+              <div class="kv"><span class="k">Model</span><span>Poco X5 5G</span><span></span></div>
+              <div class="kv"><span class="k">Wi-Fi BSSID</span><span class="mono">74:0A:38:A2:11:8C</span><span class="chip muted">PSP</span></div>
+              <div class="kv"><span class="k">Geocode</span><span class="mono">28.5355, 77.3910</span><span class="chip muted">Tower</span></div>
+              <div class="kv"><span class="k">TLS fingerprint</span><span class="mono">t13d1516h2_8daaf6</span><span class="chip muted">PGW</span></div></div>
+            <div class="card"><div class="card-h"><div class="ct">Linked FIRs</div></div>
+              <div class="kv"><span class="k mono">FIR 88/2026</span><span>Hyderabad · SIM swap</span><span class="chip risk">Same IMEI</span></div>
+              <div class="kv"><span class="k mono">FIR 412/2026</span><span>Pune · Task fraud</span><span class="chip urgent">Same BSSID</span></div></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-h"><div><div class="ct">Correlation matrix</div><div class="cs">Which signals tie each account to the controller</div></div></div><div id="matrix"></div></div>
+      </section>
+
+      <!-- ======================= DEVICE ======================= -->
+      <section class="screen" id="s-device">
+        <div class="ph"><div><div class="kicker">Step 5 of 6 · Device &amp; SIM</div><div class="title">Which phone did it?</div></div></div>
+        <div class="stepper" data-stepper="4"></div>
+        <div class="finding"><div class="f-ico"><i data-lucide="badge-check"></i></div><div class="f-text"><div class="f-tag">Investigator finding</div>From <b>10,000</b> subscribers on the tower, timing, port and handset model isolate <b>1 handset</b>. Chance of an innocent match: <b>1 in 7.1 million</b>.</div><button class="btn primary" data-go="actions">Request subscriber records →</button></div>
+        <div class="grid" style="grid-template-columns:1.35fr 1fr;margin-bottom:14px">
+          <div class="card glow"><div class="card-h"><div><div class="ct">Candidate narrowing</div><div class="cs">Each filter is independent evidence</div></div></div><div id="funnel"></div>
+            <div style="margin-top:14px;padding:12px;border-radius:12px;background:var(--solid-1);border:1px solid var(--line);font-size:13px"><span class="cs">How the odds are computed</span><div class="mono" style="margin-top:6px;color:var(--fg-1)">P = (1/420) × (18/420 ⋯) × P(model) ≈ 1.4 × 10⁻⁷</div></div></div>
+          <div class="card"><div class="card-h"><div class="ct">The handset</div><span class="spacer"></span><span class="chip risk">Dual-SIM</span></div>
+            <svg viewBox="0 0 300 260" style="width:100%;display:block" id="phone"></svg></div>
+        </div>
+        <div class="card"><div class="card-h"><div><div class="ct">SIM-swap timeline</div><div class="cs">The victim's SIM was silenced before the theft</div></div></div><svg id="simtl" viewBox="0 0 1000 120" style="width:100%;display:block"></svg></div>
+      </section>
+
+      <!-- ======================= ACTIONS ======================= -->
+      <section class="screen" id="s-actions">
+        <div class="ph"><div><div class="kicker">Step 6 of 6 · Actions &amp; Report</div><div class="title">Stop the money. Build the case.</div></div></div>
+        <div class="stepper" data-stepper="5"></div>
+        <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px" id="acKpis"></div>
+        <div class="grid" style="grid-template-columns:1.3fr 1fr">
+          <div class="grid" style="align-content:start">
+            <div class="card glow"><div class="card-h"><div><div class="ct">Freeze requests · BNSS §106</div><div class="cs">Ranked by amount you can still recover</div></div><span class="spacer"></span><div style="text-align:right"><div class="cs">Frozen so far</div><div class="disp" style="font-size:24px;font-weight:700;color:var(--frozen)" id="frozenTotal">₹0</div></div></div>
+              <div id="actRows"></div><div style="display:flex;gap:10px;margin-top:4px"><button class="btn primary" id="sendBtn">Send 4 freeze requests</button><button class="btn" id="simBtn" disabled style="opacity:.45">Simulate bank response</button></div></div>
+            <div class="card"><div class="card-h"><div class="ct">Notices &amp; escalations</div></div>
+              <div class="kv"><span class="k">§94 BNSS</span><span>Jio · subscriber &amp; CAF for IMEI ••4564</span><span class="chip urgent">Draft</span></div>
+              <div class="kv"><span class="k">I4C</span><span>Cross-state syndicate escalation (3 FIRs)</span><span class="chip urgent">Draft</span></div>
+              <div class="kv"><span class="k">NPCI</span><span>VPA block: vikramshah@okaxis</span><span class="chip safe">Sent</span></div></div>
+          </div>
+          <div><div class="paper"><div class="seal" id="seal">SEALED<br>SHA-256<br>a91f…3c07</div>
+            <h4>Cyber Crime Police Station · Noida, Uttar Pradesh</h4><div style="font-family:var(--display);font-size:22px;font-weight:700;margin:6px 0 2px">Investigation Report</div><div style="font-size:13px;color:#4b5563">FIR #149/2026 · Digital arrest extortion · Victim: Sunil Kumar</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;padding:12px;border-radius:10px;background:#efede6"><div><div style="font-size:12px;color:#6b7280;font-weight:700">LOSS</div><div style="font-weight:800;font-size:18px">₹5,00,000</div></div><div><div style="font-size:12px;color:#6b7280;font-weight:700">FROZEN</div><div style="font-weight:800;font-size:18px;color:#0369a1" id="repFrozen">₹0</div></div><div><div style="font-size:12px;color:#6b7280;font-weight:700">MULE ACCOUNTS</div><div style="font-weight:800;font-size:18px">4</div></div></div>
+            <div style="font-size:13px;line-height:1.65;color:#374151">On 22 Sep 2026 the victim was coerced by callers posing as CBI officers into two UPI transfers totalling ₹5,00,000. Funds moved through 4 accounts in 7 minutes. One handset (IMEI ••4564) controls 3 of them and appears in 2 other FIRs.</div>
+            <div style="margin-top:12px;font-size:12.5px;color:#4b5563"><b>Attached:</b> 9 sealed exhibits · BSA §63(4) certificate · 4 freeze letters · 2 notices</div>
+            <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" style="background:#111827;color:#fff;border:0" id="genBtn">Generate &amp; seal</button><button class="btn" style="background:#e5e3dc;color:#111827;border:0">PDF</button><button class="btn" style="background:#e5e3dc;color:#111827;border:0">JSON</button></div></div></div>
         </div>
       </section>
     </main>
   </div>
 </div>
-
-<!-- Inspector -->
-<aside class="inspector" id="insp" aria-label="Details">
-  <div class="insp-h"><div style="flex:1" id="inspHead"></div><button class="btn" id="inspClose" style="height:32px;padding:0 10px" aria-label="Close">✕</button></div>
-  <div class="insp-b" id="inspBody"></div>
-</aside>
-<div class="toast" id="toast"></div>
+<aside class="insp" id="insp"><div class="insp-h"><div style="flex:1" id="inspHead"></div><button class="icon-btn" id="inspClose" aria-label="Close">✕</button></div><div class="insp-b" id="inspBody"></div></aside>
+<div class="toast" id="toast"></div><div class="tooltip" id="tip"></div>
 
 <script>
-/* ===================== DATA (Case 001, internally consistent) ===================== */
-const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
-const CASES = [
-  {id:'CASE-2026-001',victim:'Sunil Kumar',typ:'Digital arrest',status:['urgent','Investigating'],loss:500000,rec:380000,gh:118,io:'Insp. R. K. Sharma'},
-  {id:'CASE-2026-002',victim:'Dr. Meera Nair',typ:'SIM swap · APK',status:['flow','Action pending'],loss:340000,rec:180000,gh:42,io:'SI K. V. Reddy'},
-  {id:'CASE-2026-003',victim:'Ramesh Singhal',typ:'Investment scam',status:['frozen','Partially frozen'],loss:1250000,rec:600000,gh:null,io:'ACP A. Deshmukh'},
-  {id:'CASE-2026-004',victim:'Pooja Hegde',typ:'Task fraud',status:['urgent','Investigating'],loss:180000,rec:50000,gh:85,io:'Insp. M. Gowda'},
-];
-const LEDGER = [
-  {t:'09:15',d:'Opening balance',dr:0,cr:0,b:529140},
-  {t:'09:42',d:'UPI · Retail store',dr:3450,cr:0,b:525690},
-  {t:'09:55',d:'NEFT · Salary credit',dr:0,cr:125000,b:650690},
-  {t:'10:00',d:'UPI · vikramshah@okaxis',dr:285000,cr:0,b:365690,s:1},
-  {t:'10:14',d:'UPI · Municipal utilities',dr:4200,cr:0,b:361490},
-  {t:'10:28',d:'UPI · vikramshah@okaxis',dr:215000,cr:0,b:146490,s:1},
-];
-const IDENTS = [
-  {id:'V',name:'Sunil Kumar',role:'Victim',kind:'victim',acct:'SBI ••9101',score:null},
-  {id:'M1',name:'Vikram Shah',role:'Layer-1 mule',kind:'risk',acct:'Axis ••0291',score:94,
-    why:[['Money left 112 s after arriving',28],['₹5,00,000 split into 3 transfers in 7 min',18],['Same phone IMEI as HDFC ••1992',16],['99% passed through within 24 h',15],['Account only 41 days old',9]],
-    hi:'Vikram Shah के Axis Bank ••0291 खाते में पैसा आने के 112 सेकंड बाद ही आगे भेज दिया गया।'},
-  {id:'M2',name:'Rohit Verma',role:'Layer-2 mule',kind:'risk',acct:'HDFC ••1992',score:88,why:[['Shares handset with Vikram Shah',22],['Pass-through to merchant + hold',20],['Received ₹3,00,000 in one hop',18],['New VPA created same day',12]],hi:''},
-  {id:'M3',name:'Sameer Khan',role:'Layer-2 mule',kind:'risk',acct:'ICICI ••8129',score:84,why:[['ATM cash-out 18 min after credit',26],['Same Wi-Fi hotspot as Vikram Shah',18],['Received ₹1,55,000 in one hop',16]],hi:''},
-  {id:'M4',name:'Deepak Meena',role:'Sink account',kind:'risk',acct:'PNB ••4471',score:61,why:[['Received ₹45,000 from Layer-1',20],['No device overlap found',-6]],hi:''},
-  {id:'P',name:'Apex Electronics',role:'Verified merchant',kind:'safe',acct:'ICICI ••5241 · GSTIN',score:12,why:[['68-month business history',-30],['Active GSTIN & invoices',-25],['Normal POS sale pattern',-10]],hi:''},
-];
-const MENTIONS = [
-  ['Bank statement',[['Victim A/c','SBI ••9101','V'],['Beneficiary VPA','vikramshah@okaxis','M1'],['Account','Axis ••0291','M1']]],
-  ['WhatsApp chat',[['Payment VPA','vikram.pay@okaxis','M1'],['Phone','+91 98711 23941','M1']]],
-  ['Complaint (NCRP)',[['Complainant','Sunil Kumar','V'],['Caller ID','+91 98711 23941','M1']]],
-  ['Bank / CDR',[['Account','HDFC ••1992','M2'],['Account','ICICI ••8129','M3'],['Account','PNB ••4471','M4'],['Merchant','Apex Electronics','P'],['IMEI','8674 9206 ••4564','M2']]],
-];
-/* Money flows (sum to ₹5,00,000) */
-const SK_NODES = [
-  {id:'V',label:'Sunil Kumar',sub:'SBI ••9101',col:0},
-  {id:'M1',label:'Vikram Shah',sub:'Axis ••0291',col:1},
-  {id:'M2',label:'Rohit Verma',sub:'HDFC ••1992',col:2},
-  {id:'M3',label:'Sameer Khan',sub:'ICICI ••8129',col:2},
-  {id:'M4',label:'Deepak Meena',sub:'PNB ••4471',col:2},
-  {id:'APX',label:'Apex Electronics',sub:'merchant · lien',col:3,kind:'safe'},
-  {id:'H2',label:'Held · HDFC ••1992',sub:'can freeze',col:3,kind:'frz'},
-  {id:'ATM',label:'ATM Noida Sec 18',sub:'cashed out',col:3,kind:'risk'},
-  {id:'H3',label:'Held · ICICI ••8129',sub:'can freeze',col:3,kind:'frz'},
-  {id:'H4',label:'Held · PNB ••4471',sub:'can freeze',col:3,kind:'frz'},
-];
-const SK_LINKS = [
-  ['V','M1',500000],['M1','M2',300000],['M1','M3',155000],['M1','M4',45000],
-  ['M2','APX',180000],['M2','H2',120000],['M3','ATM',120000],['M3','H3',35000],['M4','H4',45000],
-];
+/* =================== helpers =================== */
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e;};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(n,to,fmt='inr',ms=1200){const f=v=>fmt==='inr'?inr(v):fmt==='pct'?Math.round(v)+'%':Math.round(v).toLocaleString('en-IN');if(reduce){n.textContent=f(to);return;}const t0=performance.now();const s=t=>{const p=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-p,3);n.textContent=f(to*e);if(p<1)requestAnimationFrame(s);};requestAnimationFrame(s);}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+function tip(e,html){const t=$('#tip');if(!html){t.style.opacity=0;return;}t.innerHTML=html;t.style.opacity=1;t.style.left=(e.clientX+14)+'px';t.style.top=(e.clientY+14)+'px';}
+function spark(svg,data,color){const w=110,h=38;svg.setAttribute('viewBox',`0 0 ${w} ${h}`);const mx=Math.max(...data),mn=Math.min(...data);const pts=data.map((v,i)=>[i*(w/(data.length-1)),h-4-(v-mn)/(mx-mn||1)*(h-8)]);const d='M'+pts.map(p=>p.join(',')).join(' L');const id='g'+Math.random().toString(36).slice(2,7);const df=el('defs',{},svg);const g=el('linearGradient',{id,x1:0,y1:0,x2:0,y2:1},df);el('stop',{offset:0,'stop-color':color,'stop-opacity':.35},g);el('stop',{offset:1,'stop-color':color,'stop-opacity':0},g);el('path',{d:d+` L${w},${h} L0,${h}Z`,fill:`url(#${id})`},svg);el('path',{d,fill:'none',stroke:color,'stroke-width':2,'stroke-linecap':'round',class:'draw',style:'--len:300'},svg);const l=pts[pts.length-1];el('circle',{cx:l[0],cy:l[1],r:3,fill:color},svg);}
+function kpiCards(host,items){$(host).innerHTML=items.map((k,i)=>`<div class="card kpi" style="animation:enter .5s ${i*70}ms var(--ease) both"><div class="k-top"><span class="k-ico" style="background:${k.bg};color:${k.c}"><i data-lucide="${k.i}"></i></span>${k.l}</div><div class="k-val" data-v="${k.v}" data-f="${k.f||'num'}" style="${k.vc?'color:'+k.vc:''}">0</div><div class="k-foot">${k.foot||''}</div>${k.spark?`<svg class="spark" data-spark="${k.spark}" data-c="${k.c}"></svg>`:''}</div>`).join('');$$(host+' .k-val').forEach(n=>countUp(n,+n.dataset.v,n.dataset.f));$$(host+' svg[data-spark]').forEach(s=>spark(s,s.dataset.spark.split(',').map(Number),s.dataset.c));}
+function ring(svg,frac,color,label,sub){svg.innerHTML='';const c=100,r=78,L=2*Math.PI*r;el('circle',{cx:c,cy:c,r,fill:'none',stroke:'rgba(148,163,184,.12)','stroke-width':14},svg);const id='rg'+Math.random().toString(36).slice(2,6);const df=el('defs',{},svg);const g=el('linearGradient',{id},df);el('stop',{offset:0,'stop-color':color[0]},g);el('stop',{offset:1,'stop-color':color[1]},g);const a=el('circle',{cx:c,cy:c,r,fill:'none',stroke:`url(#${id})`,'stroke-width':14,'stroke-linecap':'round','stroke-dasharray':L,'stroke-dashoffset':L,transform:`rotate(-90 ${c} ${c})`,style:'transition:stroke-dashoffset 1.2s var(--ease);filter:drop-shadow(0 0 8px '+color[0]+')'},svg);requestAnimationFrame(()=>requestAnimationFrame(()=>a.setAttribute('stroke-dashoffset',L*(1-frac))));const t=el('text',{x:c,y:c+4,'text-anchor':'middle','font-size':28,'font-weight':700,fill:'#f1f5fb','font-family':'Space Grotesk'},svg);t.textContent=label;const s=el('text',{x:c,y:c+26,'text-anchor':'middle','font-size':13,fill:'#aab6cb'},svg);s.textContent=sub;}
+function stepper(){const names=['Evidence','People','Money trail','Network','Device & SIM','Actions'],go=['evidence','people','money','network','device','actions'];$$('[data-stepper]').forEach(s=>{const cur=+s.dataset.stepper;s.innerHTML=names.map((n,i)=>`<div class="st ${i<cur?'done':i===cur?'now':''}" data-go="${go[i]}"><span class="step ${i<cur?'done':i===cur?'now':''}">${i<cur?'✓':i+1}</span>${n}</div>${i<5?`<div class="st-line ${i<cur?'done':''}"></div>`:''}`).join('');});}
 
-/* ===================== Helpers ===================== */
-const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const SVGNS='http://www.w3.org/2000/svg';
-const el = (tag, attrs={}, parent) => { const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); parent&&parent.appendChild(e); return e; };
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-function countUp(node, to, isInr, ms=1100){ if(reduce){node.textContent=isInr?inr(to):to.toLocaleString('en-IN');return;}
-  const t0=performance.now(); const step=t=>{const p=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-p,3), v=to*e; node.textContent=isInr?inr(v):Math.round(v).toLocaleString('en-IN'); if(p<1) requestAnimationFrame(step);}; requestAnimationFrame(step);}
-function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+/* =================== nav =================== */
+const built={};
+function go(n){$$('.screen').forEach(s=>s.classList.toggle('on',s.id==='s-'+n));$$('.nav').forEach(x=>x.classList.toggle('active',x.dataset.go===n&&!x.hasAttribute('data-noactive')));$('#view').scrollTop=0;closeInsp();({dash,evidence,people,money,network,device,actions})[n]();history.replaceState(null,'','#'+n);}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);});
+/* golden hour + ticker */
+let gh=118*60;setInterval(()=>{gh=Math.max(0,gh-1);const h=Math.floor(gh/3600),m=Math.floor(gh%3600/60),s=gh%60;$('#ghVal').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;$('#ghArc').setAttribute('stroke-dashoffset',(100.5*(1-gh/10800)).toFixed(1));},1000);
+const TICK=['<b>₹1,20,000</b> frozen · HDFC ••1992 · CASE-001','New evidence · Airtel IPDR · <b>CASE-002</b>','<b>Golden hour</b> · 42 min left · Dr. Meera Nair','Alias merged · vikram.pay@okaxis → <b>Vikram Shah</b>','I4C escalation drafted · <b>3 linked FIRs</b>','ATM cash-out detected · <b>₹1,20,000</b> · Noida Sec 18'];
+$('#ticker').innerHTML=[...TICK,...TICK].map(t=>`<span>${t}</span>`).join('');
 
-/* ===================== Navigation ===================== */
-const built = {};
-function go(name){
-  $$('.screen').forEach(s=>s.classList.toggle('on', s.id==='s-'+name));
-  $$('.nav').forEach(n=>n.classList.toggle('active', n.dataset.go===name));
-  $('#view').scrollTop=0; closeInsp();
-  ({dash:buildDash,evidence:buildEvidence,people:buildPeople,money:buildMoney,network:buildNetwork,actions:buildActions})[name]();
-  history.replaceState(null,'','#'+name);
-}
-document.addEventListener('click',e=>{const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);} const w=e.target.closest('[data-why]'); if(w) openWhy(w.dataset.why);});
-
-/* ===================== Golden hour ring ===================== */
-let ghSec=118*60; const ghTotal=180*60;
-function tickGH(){ ghSec=Math.max(0,ghSec-1); const m=Math.floor(ghSec/60), h=Math.floor(m/60); $('#ghVal').textContent=`${h}h ${String(m%60).padStart(2,'0')}m`; $('#ghArc').setAttribute('stroke-dashoffset', (100.5*(1-ghSec/ghTotal)).toFixed(1)); if(ghSec<15*60) $('#ghArc').setAttribute('stroke','var(--risk)'); }
-setInterval(tickGH,1000); tickGH();
-
-/* ===================== Dashboard ===================== */
-function buildDash(){
-  $$('#s-dash [data-count]').forEach(n=>countUp(n, +n.dataset.count, n.hasAttribute('data-inr')));
-  if(built.dash) return; built.dash=1;
-  $('#queue').innerHTML = [
-    ['CASE-2026-002','Dr. Meera Nair','Freeze 2 accounts · ₹1,80,000 recoverable','42 min','risk'],
-    ['CASE-2026-004','Pooja Hegde','Send §94 notice to Jio for the caller SIM','85 min','urgent'],
-    ['CASE-2026-001','Sunil Kumar','Freeze 4 accounts · ₹3,80,000 recoverable','1h 58m','urgent'],
-  ].map(([id,v,a,t,c],i)=>`<div class="act-row" style="grid-template-columns:1fr auto auto;animation:slidein .4s ${i*90}ms var(--ease) both;opacity:0"><div><div style="font-weight:600">${a}</div><div class="card-s"><span class="mono">${id}</span> · ${v}</div></div><span class="chip ${c}"><span class="dot"></span>${t}</span><button class="btn primary" style="height:32px" data-go="${id==='CASE-2026-001'?'actions':'dash'}">Act</button></div>`).join('');
-  $('#caseRows').innerHTML = CASES.map(c=>`<tr class="row" style="cursor:pointer" data-go="evidence"><td class="mono">${c.id}</td><td><div style="font-weight:600">${c.victim}</div><div class="card-s">${c.typ}</div></td><td><span class="chip ${c.status[0]}">${c.status[1]}</span></td><td class="amt">${inr(c.loss)}</td><td style="min-width:150px"><div style="display:flex;align-items:center;gap:8px"><div class="gauge-track" style="flex:1"><div class="gauge-fill" style="width:${Math.round(c.rec/c.loss*100)}%;background:var(--frozen)"></div></div><span class="mono" style="font-size:12.5px;color:var(--fg-2)">${Math.round(c.rec/c.loss*100)}%</span></div></td><td>${c.gh?`<span class="chip ${c.gh<60?'risk':'urgent'}">${c.gh} min</span>`:'<span class="chip muted">Closed</span>'}</td><td style="color:var(--fg-2)">${c.io}</td></tr>`).join('');
-  // corridors: abstract state nodes + animated arcs (real build: ECharts India map)
-  const svg=$('#corridors'); const st={UP:[110,150],DL:[160,70],MH:[150,250],KA:[300,262],GJ:[60,230],WB:[420,140],TG:[300,190]};
-  const arcs=[['UP','MH',380],['UP','KA',155],['UP','DL',120],['MH','GJ',90],['TG','WB',140],['DL','KA',60]];
-  arcs.forEach(([a,b,v],i)=>{const [x1,y1]=st[a],[x2,y2]=st[b]; const mx=(x1+x2)/2, my=Math.min(y1,y2)-60; const d=`M${x1},${y1} Q${mx},${my} ${x2},${y2}`;
-    const p=el('path',{d,fill:'none',stroke:'url(#cg)','stroke-width':Math.max(1.5,v/60),'stroke-linecap':'round',class:'draw',style:`--len:500;animation-delay:${i*120}ms`},svg);
-    if(!reduce){const c=el('circle',{r:3.5,class:'particle'},svg); const am=el('animateMotion',{dur:(2.4+i*.3)+'s',repeatCount:'indefinite',path:d},c);} });
-  const defs=el('defs',{},svg); const g=el('linearGradient',{id:'cg'},defs); el('stop',{offset:'0','stop-color':'#6366f1'},g); el('stop',{offset:'1','stop-color':'#22d3ee'},g);
-  Object.entries(st).forEach(([k,[x,y]])=>{el('circle',{cx:x,cy:y,r:16,fill:'rgba(99,102,241,.12)',stroke:'rgba(148,163,184,.35)'},svg); const t=el('text',{x,y:y+4,'text-anchor':'middle','font-size':11,'font-weight':700,fill:'#eef2f8'},svg); t.textContent=k;});
+/* =================== COMMAND CENTER =================== */
+const INDIA=[[68.2,23.7],[68.8,22.3],[70.1,20.9],[72.6,21.1],[72.8,19.0],[73.3,16.9],[74.1,14.8],[74.8,12.8],[75.9,11.1],[76.3,9.5],[77.5,8.1],[78.2,8.9],[79.2,10.3],[79.9,10.6],[79.8,12.0],[80.3,13.3],[80.1,15.9],[81.3,16.4],[82.3,16.6],[83.4,18.2],[84.8,19.3],[86.4,20.0],[86.9,20.9],[87.6,21.6],[88.6,21.6],[89.0,22.1],[88.8,24.3],[88.1,24.9],[88.4,26.3],[89.8,26.0],[90.6,25.2],[92.0,24.9],[92.3,23.7],[93.2,22.3],[94.2,23.6],[94.6,25.3],[95.3,26.6],[96.9,27.2],[97.3,28.2],[96.2,29.2],[94.6,29.3],[92.5,27.9],[91.6,27.8],[89.8,26.8],[88.9,27.3],[88.2,27.9],[86.1,27.4],[84.6,27.4],[83.3,27.4],[81.9,27.9],[80.6,28.8],[80.3,29.9],[81.0,30.2],[79.4,31.0],[78.8,31.9],[78.4,32.6],[79.4,33.1],[79.1,34.4],[77.9,35.4],[76.8,35.7],[75.5,36.6],[74.3,35.9],[73.9,34.7],[74.2,33.7],[74.7,32.8],[75.3,32.2],[74.6,31.1],[74.4,30.6],[73.4,29.9],[72.9,28.9],[71.0,27.9],[69.6,27.1],[70.2,25.9],[71.0,24.6],[69.4,24.3]];
+const CITY={Noida:[77.39,28.54],Hyderabad:[78.48,17.39],Mumbai:[72.88,19.08],Bengaluru:[77.59,12.97],Kolkata:[88.36,22.57],Jaipur:[75.79,26.91],Ahmedabad:[72.57,23.02],Patna:[85.14,25.59],Pune:[73.86,18.52],Jamtara:[86.8,23.96]};
+function inPoly(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function dash(){
+  kpiCards('#kpis',[
+    {l:'Cases inside golden hour',v:3,i:'timer',bg:'var(--urgent-bg)',c:'#fbbf24',foot:'<span class="chip urgent">Next deadline 42 min</span>',spark:'1,2,2,3,2,4,3,3'},
+    {l:'Reported loss · 4 FIRs',v:2270000,f:'inr',i:'indian-rupee',bg:'var(--risk-bg)',c:'#fb3a5d',foot:'<span class="delta" style="color:var(--risk-2)">▲ ₹3.4 L</span> since yesterday',spark:'8,9,9,12,14,15,19,22'},
+    {l:'Frozen / recoverable',v:1080000,f:'inr',i:'snowflake',bg:'var(--frozen-bg)',c:'#8be3ff',vc:'var(--frozen)',foot:'<span class="delta" style="color:var(--safe)">48%</span> of loss secured',spark:'1,2,3,3,5,6,8,10'},
+    {l:'Mule accounts identified',v:11,i:'network',bg:'var(--flow-bg)',c:'#7c83ff',foot:'5 linked across FIRs',spark:'2,3,3,5,6,8,9,11'}]);
+  if(built.dash)return;built.dash=1;
+  // dot-matrix India
+  const svg=$('#india');const lon0=67.5,lon1=98,lat0=6.5,lat1=37.5;const P=([lo,la])=>[(lo-lon0)/(lon1-lon0)*500+10,(lat1-la)/(lat1-lat0)*500+10];
+  const dots=el('g',{},svg);for(let la=lat0;la<=lat1;la+=.55)for(let lo=lon0;lo<=lon1;lo+=.55){if(inPoly(lo,la,INDIA)){const[x,y]=P([lo,la]);el('circle',{cx:x,cy:y,r:1.9,fill:'rgba(148,163,184,.32)'},dots);}}
+  const df=el('defs',{},svg);const lg=el('linearGradient',{id:'arc'},df);el('stop',{offset:0,'stop-color':'#fb3a5d'},lg);el('stop',{offset:1,'stop-color':'#22d3ee'},lg);
+  const fl=el('filter',{id:'glow'},df);el('feGaussianBlur',{stdDeviation:3,result:'b'},fl);const fm=el('feMerge',{},fl);el('feMergeNode',{in:'b'},fm);el('feMergeNode',{in:'SourceGraphic'},fm);
+  const ARCS=[['Noida','Mumbai',300000],['Noida','Bengaluru',155000],['Noida','Jamtara',45000],['Hyderabad','Kolkata',200000],['Hyderabad','Pune',140000],['Jaipur','Ahmedabad',90000],['Ahmedabad','Mumbai',600000],['Patna','Jamtara',60000]];
+  const ag=el('g',{},svg);ARCS.forEach(([a,b,v],i)=>{const[x1,y1]=P(CITY[a]),[x2,y2]=P(CITY[b]);const mx=(x1+x2)/2+(y2-y1)*.25,my=(y1+y2)/2-(x2-x1)*.25-30;const d=`M${x1},${y1} Q${mx},${my} ${x2},${y2}`;el('path',{d,fill:'none',stroke:'url(#arc)','stroke-width':Math.max(1.4,v/90000),'stroke-opacity':.85,'stroke-linecap':'round',class:'draw',style:`--len:700;animation-delay:${.3+i*.12}s`},ag);if(!reduce){for(let j=0;j<2;j++){const c=el('circle',{r:2.8,class:'particle'},ag);el('animateMotion',{dur:(2.2+i*.25)+'s',begin:(j*1.1)+'s',repeatCount:'indefinite',path:d},c);}}});
+  const vict=['Noida','Hyderabad','Jaipur','Patna'];Object.entries(CITY).forEach(([n,ll])=>{const[x,y]=P(ll);const v=vict.includes(n);const g=el('g',{style:'cursor:pointer'},svg);if(v){const p=el('circle',{cx:x,cy:y,r:6,fill:'none',stroke:'#fb3a5d','stroke-width':2},g);if(!reduce){el('animate',{attributeName:'r',from:6,to:22,dur:'2s',repeatCount:'indefinite'},p);el('animate',{attributeName:'opacity',from:.9,to:0,dur:'2s',repeatCount:'indefinite'},p);}}el('circle',{cx:x,cy:y,r:v?6:5,fill:v?'#fb3a5d':'#22d3ee',filter:'url(#glow)'},g);const t=el('text',{x:x+9,y:y+4,'font-size':12.5,'font-weight':600,fill:'#e2e8f0'},g);t.textContent=n;g.addEventListener('mousemove',e=>tip(e,`<b>${n}</b><br>${v?'Victim origin · '+({Noida:'FIR 149/26 · ₹5.0 L',Hyderabad:'FIR 88/26 · ₹3.4 L',Jaipur:'FIR 312/26 · ₹12.5 L',Patna:'FIR 405/26 · ₹1.8 L'})[n]:'Mule cluster · '+(ARCS.filter(a=>a[1]===n).length)+' inbound flows'}`));g.addEventListener('mouseleave',()=>tip(null));});
+  $('#corrList').innerHTML=[['Noida → Mumbai','₹3,00,000','risk'],['Ahmedabad → Mumbai','₹6,00,000','risk'],['Hyderabad → Kolkata','₹2,00,000','urgent'],['Noida → Bengaluru','₹1,55,000','urgent'],['Hyderabad → Pune','₹1,40,000','flow']].map((r,i)=>`<div class="feed-item" style="animation-delay:${.4+i*.08}s"><div style="flex:1"><div style="font-weight:600;font-size:13px">${r[0]}</div><div class="cs">${['3 accounts','2 accounts','2 accounts','1 account','1 account'][i]}</div></div><span class="mono" style="font-weight:700;color:${r[2]==='risk'?'var(--risk-2)':r[2]==='urgent'?'#fcd34d':'#c7caff'}">${r[1]}</span></div>`).join('');
+  $('#queue').innerHTML=[['CASE-2026-002','Dr. Meera Nair','Freeze 2 accounts · ₹1,80,000',42,'risk'],['CASE-2026-004','Pooja Hegde','§94 notice to Jio for caller SIM',85,'urgent'],['CASE-2026-001','Sunil Kumar','Freeze 4 accounts · ₹3,80,000',118,'urgent']].map(([id,v,a,m,c],i)=>{const L=2*Math.PI*16,f=m/180;return `<div class="q-item" style="animation-delay:${i*.09}s"><svg viewBox="0 0 40 40" width="44" height="44" style="transform:rotate(-90deg)"><circle cx="20" cy="20" r="16" fill="none" stroke="rgba(148,163,184,.15)" stroke-width="4"/><circle cx="20" cy="20" r="16" fill="none" stroke="${c==='risk'?'#fb3a5d':'#fbbf24'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${L}" stroke-dashoffset="${L*(1-f)}"/></svg><div><div style="font-weight:600;font-size:13.5px">${a}</div><div class="cs"><span class="mono">${id}</span> · ${v} · <b style="color:${c==='risk'?'var(--risk-2)':'#fcd34d'}">${m} min</b></div></div><button class="btn primary sm" data-go="${id==='CASE-2026-001'?'actions':'dash'}">Act</button></div>`;}).join('');
+  $('#feed').innerHTML=[['snowflake','var(--frozen-bg)','var(--frozen)','<b>₹1,20,000</b> frozen at HDFC ••1992','2 min ago'],['upload','var(--flow-bg)','#c7caff','Airtel IPDR ingested · <b>CASE-002</b>','9 min ago'],['flag','var(--risk-bg)','var(--risk-2)','ATM cash-out · <b>₹1,20,000</b> · Noida','14 min ago'],['git-merge','var(--safe-bg)','#6ff5c6','Alias merged · <b>Vikram Shah</b>','21 min ago']].map((f,i)=>`<div class="feed-item" style="animation-delay:${i*.08}s"><span class="fi-ico" style="background:${f[1]};color:${f[2]}"><i data-lucide="${f[0]}"></i></span><div style="flex:1">${f[3]}</div><span class="cs">${f[4]}</span></div>`).join('');
+  // donut
+  const D=[['Investment scam',1250000,'#7c83ff'],['Digital arrest',500000,'#fb3a5d'],['SIM swap / APK',340000,'#22d3ee'],['Task fraud',180000,'#fbbf24']];const tot=D.reduce((a,d)=>a+d[1],0);const ds=$('#donut');let a0=-Math.PI/2;D.forEach(([n,v,c],i)=>{const a1=a0+v/tot*Math.PI*2;const r=62,x0=80+r*Math.cos(a0),y0=80+r*Math.sin(a0),x1=80+r*Math.cos(a1),y1=80+r*Math.sin(a1);const p=el('path',{d:`M${x0},${y0} A${r},${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1},${y1}`,fill:'none',stroke:c,'stroke-width':20,'stroke-linecap':'butt',class:'draw',style:`--len:400;animation-delay:${i*.15}s`},ds);p.addEventListener('mousemove',e=>tip(e,`<b>${n}</b><br>${inr(v)}`));p.addEventListener('mouseleave',()=>tip(null));a0=a1;});const tt=el('text',{x:80,y:78,'text-anchor':'middle','font-size':20,'font-weight':700,fill:'#fff','font-family':'Space Grotesk'},ds);tt.textContent='₹22.7 L';const ts=el('text',{x:80,y:97,'text-anchor':'middle','font-size':12,fill:'#aab6cb'},ds);ts.textContent='total loss';
+  $('#donutLegend').innerHTML=D.map(d=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px"><i style="width:10px;height:10px;border-radius:3px;background:${d[2]}"></i><span style="flex:1;color:var(--fg-2)">${d[0]}</span><span class="mono" style="font-weight:600">${(d[1]/100000).toFixed(1)} L</span></div>`).join('');
+  $('#bankBars').innerHTML=[['Axis Bank',4],['HDFC Bank',3],['ICICI Bank',2],['PNB',1],['Kotak',1]].map(([b,n],i)=>`<div style="display:grid;grid-template-columns:90px 1fr 24px;gap:10px;align-items:center;margin-bottom:10px;font-size:13px"><span style="color:var(--fg-2)">${b}</span><div class="gt" style="height:12px"><div class="gf" style="width:0;background:var(--grad-flow)" data-w="${n/4*100}"></div></div><b class="mono">${n}</b></div>`).join('');setTimeout(()=>$$('#bankBars .gf').forEach(g=>g.style.width=g.dataset.w+'%'),200);
+  // trend
+  const tr=$('#trend'),rec=[1,1.5,1.4,2.2,2.6,3,3.1,4.2,4.6,5.5,6.8,7.4,9.1,10.8],lost=[3,4,5.5,6,6.8,8,9,10,11.5,12,13,13.8,14.5,15.1];const X=i=>20+i*(480/13),Y=v=>150-v*8.4;const mk=(arr,c,id)=>{const d='M'+arr.map((v,i)=>X(i)+','+Y(v)).join(' L');const dg=el('defs',{},tr);const g=el('linearGradient',{id,x1:0,y1:0,x2:0,y2:1},dg);el('stop',{offset:0,'stop-color':c,'stop-opacity':.35},g);el('stop',{offset:1,'stop-color':c,'stop-opacity':0},g);el('path',{d:d+` L${X(13)},150 L${X(0)},150Z`,fill:`url(#${id})`},tr);el('path',{d,fill:'none',stroke:c,'stroke-width':2.4,class:'draw',style:'--len:700'},tr);};[0,5,10,15].forEach(v=>{el('line',{x1:20,x2:500,y1:Y(v),y2:Y(v),stroke:'rgba(148,163,184,.1)'},tr);const t=el('text',{x:0,y:Y(v)+4,'font-size':12,fill:'#7e8ba4'},tr);t.textContent=v+'L';});mk(lost,'#fb3a5d','tl');mk(rec,'#14d39a','tr2');[['Lost',lost,'#fb3a5d'],['Recovered',rec,'#14d39a']].forEach(([n,a,c])=>{const t=el('text',{x:X(13)-4,y:Y(a[13])-8,'text-anchor':'end','font-size':12.5,'font-weight':700,fill:c},tr);t.textContent=n+' ₹'+a[13]+' L';});
+  const C=[['CASE-2026-001','Sunil Kumar','Digital arrest','urgent','Investigating',500000,380000,118,3],['CASE-2026-002','Dr. Meera Nair','SIM swap · APK','risk','Action pending',340000,180000,42,5],['CASE-2026-003','Ramesh Singhal','Investment scam','frozen','Partially frozen',1250000,600000,null,6],['CASE-2026-004','Pooja Hegde','Task fraud','urgent','Investigating',180000,50000,85,2]];
+  $('#caseRows').innerHTML=C.map(c=>`<tr class="row" data-go="evidence" style="cursor:pointer"><td class="mono" style="color:#c7caff">${c[0]}</td><td><div style="font-weight:600">${c[1]}</div><div class="cs">${c[2]}</div></td><td><div style="display:flex;gap:3px">${[0,1,2,3,4,5].map(i=>`<span style="width:14px;height:6px;border-radius:3px;background:${i<c[8]?'var(--safe)':'var(--solid-3)'}"></span>`).join('')}</div></td><td><span class="chip ${c[3]}">${c[4]}</span></td><td class="amt">${inr(c[5])}</td><td style="min-width:140px"><div style="display:flex;align-items:center;gap:8px"><div class="gt" style="flex:1"><div class="gf" style="width:${c[6]/c[5]*100}%;background:var(--frozen)"></div></div><span class="mono" style="font-size:12.5px">${Math.round(c[6]/c[5]*100)}%</span></div></td><td>${c[7]?`<span class="chip ${c[7]<60?'risk':'urgent'}"><span class="dot live"></span>${c[7]} min</span>`:'<span class="chip muted">—</span>'}</td><td><svg class="spark" style="position:static;width:90px;height:28px" data-s="${[3,4,4,6,5,7,8].map(v=>v+Math.random()*2).join(',')}"></svg></td></tr>`).join('');$$('#caseRows svg[data-s]').forEach(s=>spark(s,s.dataset.s.split(',').map(Number),'#22d3ee'));
 }
 
-/* ===================== Evidence ===================== */
-function buildEvidence(){
-  const tb=$('#ledger');
-  tb.innerHTML=LEDGER.map((r,i)=>`<tr class="row ${r.s?'suspect':''}" id="lr${i}"><td class="mono" style="color:var(--fg-3)">${r.t}</td><td><div style="font-weight:${r.s?600:500}">${r.d}</div>${r.s?'<span class="chip risk" style="margin-top:4px">To suspect account</span>':''}</td><td class="amt" style="color:${r.dr?'#fda4af':'var(--fg-3)'}">${r.dr?'−'+inr(r.dr):'—'}</td><td class="amt" style="color:${r.cr?'#6ee7b7':'var(--fg-3)'}">${r.cr?'+'+inr(r.cr):'—'}</td><td class="amt">${inr(r.b)}</td><td><span class="tick" id="tk${i}">·</span></td></tr>`).join('');
-  runCheck();
-  const checks=[['Balances add up','6 of 6 rows reconcile','ok'],['Transaction IDs valid','RRN format + date match NPCI','ok'],['Settled by NPCI','Switch timestamps within ±3 min','ok'],['Receipt PDF untouched','14.2 KB appended after signing','warn'],['Evidence sealed','SHA-256 recorded at intake','ok']];
-  const box=$('#checks'); box.innerHTML=checks.map((c,i)=>`<div class="pipe" id="pc${i}"><div style="display:flex;align-items:center;gap:10px"><span class="tick" id="pt${i}">·</span><div><div style="font-weight:600">${c[0]}</div><div class="pipe-s">${c[1]}</div></div></div></div>`).join('');
-  checks.forEach((c,i)=>setTimeout(()=>{const t=$('#pt'+i); t.className='tick '+(c[2]==='ok'?'ok':'bad'); t.textContent=c[2]==='ok'?'✓':'!'; $('#pc'+i).classList.add(c[2]);}, reduce?0:500+i*260));
+/* =================== EVIDENCE =================== */
+const LEDGER=[['09:15','Opening balance',0,0,529140],['09:42','UPI · Retail store',3450,0,525690],['09:55','NEFT · Salary credit',0,125000,650690],['10:00','UPI · vikramshah@okaxis',285000,0,365690,1],['10:14','UPI · Municipal utilities',4200,0,361490],['10:28','UPI · vikramshah@okaxis',215000,0,146490,1]];
+function evidence(){
+  kpiCards('#evKpis',[{l:'Ledger balances reconcile',v:6,i:'sigma',bg:'var(--safe-bg)',c:'#14d39a',foot:'of 6 rows · Δ ₹0'},{l:'Bank ↔ NPCI clock gap',v:14,i:'clock',bg:'var(--flow-bg)',c:'#7c83ff',foot:'seconds · limit ±180 s'},{l:'Receipt understated by',v:485000,f:'inr',i:'equal-not',bg:'var(--risk-bg)',c:'#fb3a5d',vc:'var(--risk-2)',foot:'receipt ₹15,000 vs ledger ₹5,00,000'},{l:'Evidence items sealed',v:9,i:'lock',bg:'var(--frozen-bg)',c:'#8be3ff',foot:'SHA-256 at intake · chain intact'}]);
+  $('#ledger').innerHTML=LEDGER.map((r,i)=>`<tr class="row ${r[5]?'suspect':''}" id="lr${i}"><td class="mono" style="color:var(--fg-3)">${r[0]}</td><td><div style="font-weight:${r[5]?700:500}">${r[1]}</div>${r[5]?'<span class="chip risk" style="margin-top:3px">→ suspect account · Axis ••0291</span>':''}</td><td class="amt" style="color:${r[2]?'var(--risk-2)':'var(--fg-3)'}">${r[2]?'−'+inr(r[2]):'—'}</td><td class="amt" style="color:${r[3]?'#6ff5c6':'var(--fg-3)'}">${r[3]?'+'+inr(r[3]):'—'}</td><td class="amt">${inr(r[4])}</td><td><span class="tick" id="tk${i}">·</span></td></tr>`).join('');scan();
+  dock('rrn');
+  const G=[['Balances add up','6/6 rows','ok'],['Transaction IDs valid','RRN ↔ date','ok'],['Settled by NPCI','Δ +14 s','ok'],['Receipt untouched','+14.2 KB','bad'],['Evidence sealed','9 hashes','ok']];
+  $('#gate').innerHTML=G.map((g,i)=>`<div style="padding:12px;border-radius:12px;background:var(--glass-2);border:1px solid var(--line);position:relative" id="g${i}"><div style="display:flex;align-items:center;gap:8px"><span class="tick" id="gt${i}">${i+1}</span><b style="font-size:13px">${g[0]}</b></div><div class="cs" style="margin-top:6px;padding-left:30px">${g[1]}</div></div>`).join('');
+  G.forEach((g,i)=>setTimeout(()=>{const t=$('#gt'+i);t.className='tick '+g[2];t.textContent=g[2]==='ok'?'✓':'!';$('#g'+i).style.borderColor=g[2]==='ok'?'rgba(20,211,154,.4)':'rgba(251,58,93,.55)';},reduce?0:600+i*280));
 }
-function runCheck(){ LEDGER.forEach((r,i)=>setTimeout(()=>{ const row=$('#lr'+i); $$('#ledger tr').forEach(x=>x.classList.remove('scanning')); row.classList.add('scanning'); const ok = i===0 || LEDGER[i-1].b + r.cr - r.dr === r.b; const t=$('#tk'+i); t.className='tick '+(ok?'ok':'bad'); t.textContent=ok?'✓':'✗'; if(i===LEDGER.length-1) setTimeout(()=>row.classList.remove('scanning'),300); }, reduce?0:200+i*220)); }
-document.addEventListener('click',e=>{ if(e.target.id==='rerunCheck'){ $$('#ledger .tick').forEach(t=>{t.className='tick';t.textContent='·'}); runCheck(); }});
-
-/* ===================== People ===================== */
-function buildPeople(){
-  const colors={victim:['var(--flow-bg)','#c7d2fe'],risk:['var(--risk-bg)','#fda4af'],safe:['var(--safe-bg)','#6ee7b7']};
-  let k=0;
-  $('#mentions').innerHTML = MENTIONS.map(([src,items])=>`<div class="src-h">${src}</div>`+items.map(([lab,val,to])=>`<div class="mention" data-to="${to}" style="animation-delay:${(k++)*60}ms"><div style="flex:1"><div style="font-size:12px;color:var(--fg-3)">${lab}</div><div class="mono">${val}</div></div></div>`).join('')).join('');
-  $('#idents').innerHTML = IDENTS.map((p,i)=>`<div class="ident" data-id="${p.id}" style="animation-delay:${400+i*90}ms"><div class="ini" style="background:${colors[p.kind][0]};color:${colors[p.kind][1]}">${p.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${p.name} ${p.id==='M1'?'<span class="chip flow" style="margin-left:6px">2 VPAs merged</span>':''}</div><div class="card-s">${p.role} · ${p.acct}</div></div>${p.score!==null?`<div style="width:150px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-3)"><span>Lead strength</span><b style="color:${p.kind==='safe'?'#6ee7b7':'#fda4af'}">${p.score}</b></div><div class="gauge-track" style="margin-top:4px"><div class="gauge-fill" style="width:0;background:${p.kind==='safe'?'var(--safe)':'var(--risk)'}" data-w="${p.score}"></div></div></div><button class="why" data-person="${p.id}">Why?</button>`:'<span class="chip flow">Victim</span>'}</div>`).join('');
-  setTimeout(()=>$$('#idents .gauge-fill').forEach(g=>g.style.width=g.dataset.w+'%'),reduce?0:700);
-  setTimeout(drawResLinks, reduce?0:900);
+function scan(){LEDGER.forEach((r,i)=>setTimeout(()=>{$$('#ledger tr').forEach(x=>x.classList.remove('scan'));$('#lr'+i).classList.add('scan');const ok=i===0||LEDGER[i-1][4]+r[3]-r[2]===r[4];const t=$('#tk'+i);t.className='tick '+(ok?'ok':'bad');t.textContent=ok?'✓':'✗';if(i===5)setTimeout(()=>$('#lr5').classList.remove('scan'),300);},reduce?0:200+i*230));}
+document.addEventListener('click',e=>{if(e.target.id==='rerun'){$$('#ledger .tick').forEach(t=>{t.className='tick';t.textContent='·'});scan();}const d=e.target.closest('[data-dock]');if(d){$$('#dockTabs .tab').forEach(t=>t.classList.toggle('on',t===d));dock(d.dataset.dock);}});
+function dock(k){const h=$('#dock');
+  if(k==='rrn'){const grp=[['Year','6','#7c83ff'],['Day of year','265','#22d3ee'],['Hour','10','#fbbf24'],['Switch trace no.','188410','#c084fc']];let n=0;h.innerHTML=`<div class="cs" style="margin-bottom:10px">RRN <span class="mono" style="color:var(--fg-1)">626510188410</span> decoded</div><div style="display:flex;gap:14px;flex-wrap:wrap">${grp.map(([l,v,c])=>`<div class="digit-g"><div style="display:flex;gap:4px">${[...v].map(d=>`<span class="digit" style="color:${c};border-color:${c}55;animation-delay:${(n++)*.05}s">${d}</span>`).join('')}</div><span class="digit-l" style="color:${c}">${l}</span></div>`).join('')}</div>
+  <div style="margin-top:16px"><div class="kv"><span class="k">Day 265</span><span>22 Sep 2026</span><span class="chip safe">Matches ledger</span></div><div class="kv"><span class="k">Hour 10</span><span>10:00–10:59 IST</span><span class="chip safe">In window</span></div><div class="kv"><span class="k">Switch route</span><span class="mono">NPCI-UPI-GW-MUM-02</span><span class="chip t2">T2</span></div><div class="kv"><span class="k">Trace collisions</span><span>0 in 24 h</span><span class="chip safe">Unique</span></div></div>`;}
+  if(k==='clock'){h.innerHTML=`<div class="cs">Bank (Finacle) vs NPCI switch clock</div><svg viewBox="0 0 400 120" style="width:100%;margin-top:8px"><defs><linearGradient id="band" x1="0" x2="1"><stop offset="0" stop-color="#fb3a5d" stop-opacity=".25"/><stop offset=".25" stop-color="#14d39a" stop-opacity=".25"/><stop offset=".75" stop-color="#14d39a" stop-opacity=".25"/><stop offset="1" stop-color="#fb3a5d" stop-opacity=".25"/></linearGradient></defs><rect x="20" y="40" width="360" height="28" rx="8" fill="url(#band)"/><rect x="65" y="40" width="270" height="28" rx="8" fill="none" stroke="#14d39a" stroke-dasharray="4 4"/><line x1="200" y1="30" x2="200" y2="78" stroke="rgba(148,163,184,.4)"/><g style="transform:translateX(10.5px);transition:transform 1s"><circle cx="200" cy="54" r="9" fill="#22d3ee" style="filter:drop-shadow(0 0 8px #22d3ee)"/></g><text x="20" y="98" font-size="12" fill="#7e8ba4">−240 s</text><text x="200" y="98" font-size="12" fill="#aab6cb" text-anchor="middle">0</text><text x="380" y="98" font-size="12" fill="#7e8ba4" text-anchor="end">+240 s</text><text x="210" y="24" font-size="13" font-weight="700" fill="#22d3ee" text-anchor="middle">Δ +14 s</text></svg><div class="kv"><span class="k">Allowed range</span><span>±180 s (NTP stratum-2)</span><span class="chip safe">Within</span></div><div class="kv"><span class="k">Meaning</span><span colspan="2">Bank and NPCI agree on when the money moved.</span><span></span></div>`;}
+  if(k==='pdf'){h.innerHTML=`<div class="cs" style="margin-bottom:10px">Byte map of <span class="mono" style="color:var(--fg-1)">payment_receipt.pdf</span></div><div style="display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line-2)"><div style="flex:78;background:rgba(124,131,255,.28);display:grid;place-items:center;font-size:12px;font-weight:600">Original · 52.1 KB</div><div style="width:3px;background:#fbbf24"></div><div style="flex:22;background:repeating-linear-gradient(45deg,rgba(251,58,93,.35) 0 6px,rgba(251,58,93,.15) 6px 12px);display:grid;place-items:center;font-size:12px;font-weight:700">+14.2 KB edit</div><div style="width:3px;background:#fbbf24"></div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#fcd34d;margin-top:4px"><span></span><span>%%EOF #1</span><span>%%EOF #2</span></div><div style="margin-top:12px"><div class="kv"><span class="k">Producer</span><span>Canva 1.84</span><span class="chip muted">metadata</span></div><div class="kv"><span class="k">Incremental save</span><span>Amount field rewritten</span><span class="chip risk">Tampered</span></div><div class="kv"><span class="k">Shown amount</span><span class="mono">₹15,000</span><span class="chip t3">T3</span></div></div>`;}
 }
-function drawResLinks(){
-  const svg=$('#resLinks'); svg.innerHTML=''; const box=$('#res').getBoundingClientRect();
-  $$('#mentions .mention').forEach((m,i)=>{ const t=$(`#idents .ident[data-id="${m.dataset.to}"]`); if(!t) return; const a=m.getBoundingClientRect(), b=t.getBoundingClientRect();
-    const x1=a.right-box.left, y1=a.top+a.height/2-box.top, x2=b.left-box.left, y2=b.top+b.height/2-box.top, mx=(x1+x2)/2;
-    const kind=IDENTS.find(p=>p.id===m.dataset.to).kind; const col={victim:'#818cf8',risk:'#fb7185',safe:'#34d399'}[kind];
-    el('path',{d:`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,fill:'none',stroke:col,'stroke-opacity':.55,'stroke-width':1.6,class:'draw',style:`--len:400;animation-delay:${i*50}ms`},svg); });
+
+/* =================== PEOPLE =================== */
+const ID=[{id:'V',n:'Sunil Kumar',r:'Victim',k:'victim',a:'SBI ••9101',s:null},{id:'M1',n:'Vikram Shah',r:'Layer-1 mule',k:'risk',a:'Axis ••0291',s:94,why:[['Money left 112 s after arriving',28],['₹5,00,000 split into 3 transfers in 7 min',18],['Same phone IMEI as HDFC ••1992',16],['99% passed through within 24 h',15],['Account only 41 days old',9]],radar:[.98,1,.94,.95,.8]},{id:'M2',n:'Rohit Verma',r:'Layer-2 mule',k:'risk',a:'HDFC ••1992',s:88,why:[['Shares handset with Vikram Shah',22],['Pass-through to merchant + hold',20],['₹3,00,000 in one hop',18],['VPA created same day',12]],radar:[.85,1,.7,.6,.7]},{id:'M3',n:'Sameer Khan',r:'Layer-2 mule',k:'risk',a:'ICICI ••8129',s:84,why:[['ATM cash-out 18 min after credit',26],['Same Wi-Fi hotspot as Vikram Shah',18],['₹1,55,000 in one hop',16]],radar:[.9,.7,.6,.5,.6]},{id:'M4',n:'Deepak Meena',r:'Sink account',k:'risk',a:'PNB ••4471',s:61,why:[['₹45,000 from Layer-1',20],['No device overlap',-6]],radar:[.5,.1,.3,.4,.5]},{id:'P',n:'Apex Electronics',r:'Verified merchant',k:'safe',a:'ICICI ••5241 · GSTIN',s:12,why:[['68-month business history',-30],['Active GSTIN & invoices',-25],['Normal POS sale pattern',-10]],radar:[.2,0,.1,.05,0]}];
+const MEN=[['Bank statement',[['Victim A/c','SBI ••9101','V'],['Beneficiary VPA','vikramshah@okaxis','M1'],['Account','Axis ••0291','M1']]],['WhatsApp chat',[['Payment VPA','vikram.pay@okaxis','M1'],['Caller','+91 98711 23941','M1']]],['NCRP complaint',[['Complainant','Sunil Kumar','V']]],['Bank / CDR',[['Account','HDFC ••1992','M2'],['Account','ICICI ••8129','M3'],['Account','PNB ••4471','M4'],['Merchant','Apex Electronics','P'],['IMEI','8674 9206 ••4564','M2']]]];
+const COL={victim:['var(--flow-bg)','#c7caff','#7c83ff'],risk:['var(--risk-bg)','var(--risk-2)','#fb3a5d'],safe:['var(--safe-bg)','#6ff5c6','#14d39a']};
+let selP='M1';
+function people(){
+  kpiCards('#ppKpis',[{l:'Raw mentions extracted',v:12,i:'hash',bg:'var(--flow-bg)',c:'#7c83ff',foot:'from 4 sources'},{l:'Resolved identities',v:6,i:'users',bg:'var(--safe-bg)',c:'#14d39a',foot:'2 aliases merged'},{l:'Suspected mule accounts',v:4,i:'flag',bg:'var(--risk-bg)',c:'#fb3a5d',vc:'var(--risk-2)',foot:'lead strength ≥ 60'},{l:'Protected by hard veto',v:1,i:'shield-check',bg:'var(--safe-bg)',c:'#14d39a',foot:'merchant with GSTIN'}]);
+  let k=0;$('#mentions').innerHTML=MEN.map(([s,it])=>`<div class="cs" style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:10px 0 6px">${s}</div>`+it.map(([l,v,t])=>`<div class="mention" data-to="${t}" style="animation-delay:${(k++)*.05}s"><div style="flex:1;min-width:0"><div class="cs">${l}</div><div class="mono" style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v}</div></div></div>`).join('')).join('');
+  $('#idents').innerHTML=ID.map((p,i)=>`<div class="ident ${p.id===selP?'sel':''}" data-id="${p.id}" style="animation-delay:${.35+i*.08}s"><div class="ini" style="background:${COL[p.k][0]};color:${COL[p.k][1]}">${p.n.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1;min-width:0"><div style="font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${p.n}${p.id==='M1'?'<span class="chip flow">2 VPAs merged</span>':''}${p.id==='P'?'<span class="chip safe">Veto</span>':''}</div><div class="cs">${p.r} · ${p.a}</div></div>${p.s!==null?`<div style="width:110px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-3)"><span>Lead</span><b style="color:${COL[p.k][1]}">${p.s}</b></div><div class="gt" style="margin-top:4px"><div class="gf" style="width:0;background:${p.k==='safe'?'var(--grad-safe)':'var(--grad-risk)'}" data-w="${p.s}"></div></div></div>`:'<span class="chip flow">Victim</span>'}</div>`).join('');
+  setTimeout(()=>$$('#idents .gf').forEach(g=>g.style.width=g.dataset.w+'%'),500);setTimeout(links,reduce?0:800);profile(selP);
 }
-addEventListener('resize',()=>{ if($('#s-people').classList.contains('on')) drawResLinks(); });
-document.addEventListener('click',e=>{ const w=e.target.closest('[data-person]'); if(w){e.stopPropagation(); openPerson(w.dataset.person);} else { const c=e.target.closest('.ident'); if(c && c.dataset.id!=='V') openPerson(c.dataset.id);} });
+function links(hl){const svg=$('#resLinks');svg.innerHTML='';const b=$('#res').getBoundingClientRect();$$('#mentions .mention').forEach((m,i)=>{const t=$(`#idents .ident[data-id="${m.dataset.to}"]`);if(!t)return;const a=m.getBoundingClientRect(),c=t.getBoundingClientRect();const x1=a.right-b.left,y1=a.top+a.height/2-b.top,x2=c.left-b.left,y2=c.top+c.height/2-b.top,mx=(x1+x2)/2;const p=ID.find(x=>x.id===m.dataset.to);const on=!hl||hl===m.dataset.to;el('path',{d:`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,fill:'none',stroke:COL[p.k][2],'stroke-opacity':on?.7:.08,'stroke-width':on&&hl?2.4:1.5,class:hl?'':'draw',style:`--len:400;animation-delay:${i*.04}s`},svg);el('circle',{cx:x2,cy:y2,r:3,fill:COL[p.k][2],opacity:on?1:.2},svg);});}
+addEventListener('resize',()=>{if($('#s-people').classList.contains('on'))links();});
+document.addEventListener('mouseover',e=>{const m=e.target.closest('.mention');if(m&&$('#s-people').classList.contains('on')){links(m.dataset.to);$$('.ident').forEach(x=>x.style.opacity=x.dataset.id===m.dataset.to?1:.45);}});
+document.addEventListener('mouseout',e=>{const m=e.target.closest('.mention');if(m){links();$$('.ident').forEach(x=>x.style.opacity=1);}});
+document.addEventListener('click',e=>{const c=e.target.closest('.ident');if(c&&c.dataset.id!=='V'){selP=c.dataset.id;$$('.ident').forEach(x=>x.classList.toggle('sel',x===c));profile(selP);}});
+function profile(id){const p=ID.find(x=>x.id===id);const max=Math.max(...p.why.map(w=>Math.abs(w[1])));const ax=['Velocity','Device overlap','Splitting','KYC gaps','New account'];const R=70,c=95;const pt=(i,v)=>[c+Math.sin(i/5*2*Math.PI)*R*v,c-Math.cos(i/5*2*Math.PI)*R*v];
+  const grid=[.33,.66,1].map(s=>`<polygon points="${ax.map((_,i)=>pt(i,s).join(',')).join(' ')}" fill="none" stroke="rgba(148,163,184,.15)"/>`).join('');const poly=`<polygon points="${p.radar.map((v,i)=>pt(i,Math.max(.05,v)).join(',')).join(' ')}" fill="${p.k==='safe'?'rgba(20,211,154,.25)':'rgba(251,58,93,.25)'}" stroke="${COL[p.k][2]}" stroke-width="2" style="transform-origin:${c}px ${c}px;animation:pop .6s var(--spring)"/>`;const labs=ax.map((a,i)=>{const[x,y]=pt(i,1.28);return `<text x="${x}" y="${y+4}" text-anchor="middle" font-size="12" fill="#aab6cb">${a}</text>`}).join('');
+  $('#profile').innerHTML=`<div style="display:flex;align-items:center;gap:12px"><div class="ini" style="background:${COL[p.k][0]};color:${COL[p.k][1]};width:46px;height:46px">${p.n.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1"><div style="font-weight:800;font-size:17px">${p.n}</div><div class="cs">${p.r} · <span class="mono">${p.a}</span></div></div><div style="text-align:right"><div class="disp" style="font-size:34px;font-weight:700;color:${COL[p.k][1]};line-height:1">${p.s}</div><div class="cs">lead strength</div></div></div>
+  <div style="display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:center;margin-top:8px"><svg viewBox="-20 -10 230 210" width="190">${grid}${poly}${labs}</svg><div>${p.why.map(([t,v],i)=>`<div class="wf" style="grid-template-columns:1fr 70px 34px"><span style="font-size:12.5px">${t}</span><div style="background:var(--solid-3);border-radius:5px;height:9px"><div class="wf-bar" style="width:${Math.abs(v)/max*100}%;animation-delay:${i*.08}s;${v<0?'background:var(--grad-safe)':''}"></div></div><b class="mono" style="font-size:12.5px;color:${v<0?'#6ff5c6':'var(--risk-2)'};text-align:right">${v>0?'+':''}${v}</b></div>`).join('')}</div></div>
+  <div style="margin-top:10px;padding:12px;border-radius:12px;background:var(--solid-1);border:1px solid var(--line);font-size:13px;color:var(--fg-2)"><div style="display:flex;gap:6px;margin-bottom:6px"><span class="chip flow">EN</span><span class="chip muted">हिं</span><span class="spacer"></span><span class="cs">local AI · llama3.1:8b</span></div>${id==='M1'?'Money reached this Axis account and left within two minutes, split three ways. The same phone also runs an HDFC account in this case: a classic mule-controller pattern.':'Narrative generated only from the reasons shown. Investigative lead, not a finding of guilt.'}</div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm safe">Accept</button><button class="btn sm">Split</button><button class="btn sm">Reject</button><span class="spacer"></span><div style="display:flex;gap:4px"><span class="chip t1">T1</span><span class="chip t2">T2</span><span class="chip t3">T3</span></div></div>`;}
 
-/* ===================== Inspector ===================== */
-function openPerson(id){ const p=IDENTS.find(x=>x.id===id); const max=Math.max(...p.why.map(w=>Math.abs(w[1])));
-  $('#inspHead').innerHTML=`<div class="card-s">${p.role}</div><div style="font-size:19px;font-weight:800">${p.name}</div><div class="mono card-s">${p.acct}</div>`;
-  $('#inspBody').innerHTML=`<div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:40px;font-weight:800;color:${p.kind==='safe'?'#6ee7b7':'#fda4af'}">${p.score}</div><div class="card-s">lead strength / 100<br>an investigative lead, not a finding of guilt</div></div>
-  <div class="card-t" style="margin:18px 0 6px">Why this score</div>${p.why.map(([t,v],i)=>`<div class="wf-row"><div>${t}</div><div style="background:var(--surface-3);border-radius:5px;height:10px"><div class="wf-bar" style="width:${Math.abs(v)/max*100}%;animation-delay:${i*80}ms;${v<0?'background:linear-gradient(90deg,var(--safe),#34d399)':''}"></div></div><div class="mono r" style="color:${v<0?'#6ee7b7':'#fda4af'}">${v>0?'+':''}${v}</div></div>`).join('')}
-  <div class="narr"><div class="lang"><span class="chip flow">English</span><span class="chip muted">हिंदी</span><span class="spacer"></span><span class="card-s">local AI · llama3.1:8b</span></div>${id==='M1'?'Money reached Vikram Shah\'s Axis account and left again within two minutes, split into three transfers. The same phone also operates an HDFC account in this case, which is typical of a mule controller.<div style="margin-top:8px;color:var(--fg-3)">'+p.hi+'</div>':'Narrative generated from the reasons above. No other reasons are added.'}</div>
-  <div class="card-t" style="margin:18px 0 8px">Evidence</div><div style="display:flex;flex-wrap:wrap;gap:6px"><span class="chip safe">T1 · SBI ledger</span><span class="chip safe">T1 · Axis statement</span><span class="chip muted">T2 · NPCI switch log</span><span class="chip risk">T3 · WhatsApp chat</span></div>`;
-  $('#insp').classList.add('open'); }
-function openWhy(k){ $('#inspHead').innerHTML='<div style="font-size:19px;font-weight:800">Tracing methods compared</div>';
-  $('#inspBody').innerHTML=[['Lowest-balance rule (used)',380000,'Courts accept; protects clean money'],['First in, first out',290000,'Over-freezes the merchant'],['Proportional split',335000,'Spreads loss across all holders']].map(([n,v,s],i)=>`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between"><b>${n}</b><span class="mono">${inr(v)}</span></div><div class="gauge-track" style="margin:6px 0"><div class="gauge-fill" style="width:${v/5000}%;background:${i?'var(--fg-3)':'var(--frozen)'}"></div></div><div class="card-s">${s}</div></div>`).join('');
-  $('#insp').classList.add('open'); }
-function closeInsp(){ $('#insp').classList.remove('open'); }
-$('#inspClose').onclick=closeInsp; addEventListener('keydown',e=>{ if(e.key==='Escape') closeInsp(); });
-
-/* ===================== Sankey (generic mini layout) ===================== */
-const FROZEN=new Set();
-function buildMoney(){
-  const svg=$('#sankey'); svg.innerHTML=''; const W=Math.max(640,Math.round(svg.parentElement.clientWidth-36)), H=440, k=0.00068, gap=24, nodeW=12;
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); const cols=[8, W*.26, W*.50, W-236];
-  const nodes=SK_NODES.map(n=>({...n})); const by=Object.fromEntries(nodes.map(n=>[n.id,n]));
-  nodes.forEach(n=>{ n.in=SK_LINKS.filter(l=>l[1]===n.id).reduce((a,l)=>a+l[2],0); n.out=SK_LINKS.filter(l=>l[0]===n.id).reduce((a,l)=>a+l[2],0); n.v=Math.max(n.in,n.out); n.h=n.v*k; n.x=cols[n.col]; });
-  [0,1,2,3].forEach(c=>{ const col=nodes.filter(n=>n.col===c); const tot=col.reduce((a,n)=>a+n.h,0)+gap*(col.length-1); let y=(H-tot)/2; col.forEach(n=>{n.y=y; y+=n.h+gap; n.oy=n.y; n.iy=n.y;}); });
-  const defs=el('defs',{},svg); const lg=el('linearGradient',{id:'lg'},defs); el('stop',{offset:0,'stop-color':'#6366f1'},lg); el('stop',{offset:1,'stop-color':'#22d3ee'},lg);
-  const linkG=el('g',{},svg), partG=el('g',{},svg), nodeG=el('g',{},svg);
-  SK_LINKS.forEach(([s,t,v],i)=>{ const a=by[s], b=by[t], w=v*k; const y1=a.oy+w/2, y2=b.iy+w/2; a.oy+=w; b.iy+=w; const x1=a.x+nodeW, x2=b.x, mx=(x1+x2)/2;
-    const d=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
-    const kind=b.kind; const stroke = kind==='safe'?'#10b981':kind==='risk'?'#f43f5e':'url(#lg)';
-    const p=el('path',{d,class:'flow-link'+(FROZEN.has(t)?' frozen-link':''),stroke,'stroke-width':Math.max(2,w),id:'lk'+i},linkG);
-    p.style.strokeDasharray='2000'; p.style.strokeDashoffset='2000'; p.animate([{strokeDashoffset:2000},{strokeDashoffset:0}],{duration:reduce?1:1200,delay:reduce?0:i*90,fill:'forwards',easing:'cubic-bezier(.2,.8,.2,1)'});
-    const ttl=el('title',{},p); ttl.textContent=`${a.label} → ${b.label}: ${inr(v)}`;
-    if(!reduce && !FROZEN.has(t)){ const n=Math.max(1,Math.round(v/60000)); for(let j=0;j<n;j++){ const c=el('circle',{r:3,class:'particle',opacity:0},partG); el('animateMotion',{dur:'2.6s',begin:(1.2+j*2.6/n+i*.1)+'s',repeatCount:'indefinite',path:d},c); el('set',{attributeName:'opacity',to:1,begin:(1.2+j*2.6/n+i*.1)+'s'},c);} }
-  });
-  nodes.forEach(n=>{ const g=el('g',{},nodeG); const col = n.kind==='safe'?'#10b981':n.kind==='risk'?'#f43f5e':n.kind==='frz'?(FROZEN.has(n.id)?'#7dd3fc':'#94a3b8'):'#818cf8';
-    el('rect',{x:n.x,y:n.y,width:nodeW,height:Math.max(3,n.h),rx:4,fill:col},g);
-    const tx=n.x+nodeW+10, cy=n.y+n.h/2; const last=n.col===3;
-    // label pill (keeps text readable on top of flows)
-    const lbl=`${n.label}`, sub=`${inr(n.v)} · ${FROZEN.has(n.id)?'frozen ❄':n.sub}`;
-    const pw=Math.max(lbl.length*7.6, sub.length*6.6)+16;
-    if(!last) el('rect',{x:tx-6,y:cy-21,width:pw,height:40,rx:8,fill:'rgba(6,10,19,.78)'},g);
-    const t=el('text',{x:tx,y:cy-4,'font-size':13.5,'font-weight':700,fill:'#eef2f8'},g); t.textContent=lbl;
-    const s=el('text',{x:tx,y:cy+13,'font-size':12,fill:'#a9b4c7'},g); s.textContent=sub;
-    if(n.kind==='frz' && !FROZEN.has(n.id)){ const b=el('g',{style:'cursor:pointer',role:'button','aria-label':'Freeze '+n.label},g); const bx=W-62, by2=cy-12; el('rect',{x:bx,y:by2,width:58,height:24,rx:7,fill:'rgba(125,211,252,.14)',stroke:'rgba(125,211,252,.5)'},b); const bt=el('text',{x:bx+29,y:by2+16,'text-anchor':'middle','font-size':12,'font-weight':700,fill:'#7dd3fc'},b); bt.textContent='Freeze'; b.addEventListener('click',()=>freeze(n.id,n.v,n.label)); }
-  });
-  updateRecov(false);
+/* =================== MONEY =================== */
+const SN=[['V','Sunil Kumar','SBI ••9101',0],['M1','Vikram Shah','Axis ••0291',1],['M2','Rohit Verma','HDFC ••1992',2],['M3','Sameer Khan','ICICI ••8129',2],['M4','Deepak Meena','PNB ••4471',2],['APX','Apex Electronics','merchant · lien',3,'safe'],['H2','Held · HDFC ••1992','can freeze',3,'frz'],['ATM','ATM Noida Sec 18','cashed out',3,'risk'],['H3','Held · ICICI ••8129','can freeze',3,'frz'],['H4','Held · PNB ••4471','can freeze',3,'frz']];
+const SL=[['V','M1',500000],['M1','M2',300000],['M1','M3',155000],['M1','M4',45000],['M2','APX',180000],['M2','H2',120000],['M3','ATM',120000],['M3','H3',35000],['M4','H4',45000]];
+const FROZEN=new Set();let K=2;
+function money(){
+  kpiCards('#mtKpis',[{l:'Victim loss',v:500000,f:'inr',i:'indian-rupee',bg:'var(--risk-bg)',c:'#fb3a5d',foot:'2 UPI transfers · 10:00–10:28'},{l:'Recoverable now',v:recov(),f:'inr',i:'snowflake',bg:'var(--frozen-bg)',c:'#8be3ff',vc:'var(--frozen)',foot:'4 holding points'},{l:'Already cashed out',v:120000,f:'inr',i:'banknote',bg:'var(--urgent-bg)',c:'#fbbf24',foot:'ATM · 18 min after credit'},{l:'Protected merchant funds',v:250000,f:'inr',i:'shield-check',bg:'var(--safe-bg)',c:'#14d39a',foot:'clean capital never frozen'}]);
+  sankey();ringRec();kSel();decay();
+  $('#methods').innerHTML=[['Lowest-balance rule',380000,'used · court-accepted',1],['First in, first out',290000,'over-freezes merchant',0],['Proportional split',335000,'spreads loss to all',0]].map(([n,v,s,u],i)=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px"><b style="${u?'':'color:var(--fg-2)'}">${n}</b><span class="mono">${inr(v)}</span></div><div class="gt" style="margin:5px 0"><div class="gf" style="width:0;background:${u?'var(--grad-flow)':'rgba(148,163,184,.4)'}" data-w="${v/5000}"></div></div><div class="cs">${s}</div></div>`).join('');setTimeout(()=>$$('#methods .gf').forEach(g=>g.style.width=g.dataset.w+'%'),200);
 }
-function freeze(id,v,label){ FROZEN.add(id); toast(`❄ ${label.replace('Held · ','')} frozen · ${inr(v)} secured`); buildMoney(); updateRecov(true); }
-function updateRecov(anim){ const fr=[...FROZEN].filter(id=>id!=='APX').reduce((a,id)=>a+SK_LINKS.filter(l=>l[1]===id).reduce((x,l)=>x+l[2],0),0); const left=380000-fr; const k=$('#recovKpi'); if(anim) countUp(k,left,true,700); else k.textContent=inr(left); $('#recovText').textContent=inr(left); const places=['APX','H2','H3','H4'].filter(id=>!FROZEN.has(id)).length; $('#recovPlaces').textContent=places+(places===1?' place':' places'); $('#recovBar').style.width=(left/5000)+'%'; $('#recovFoot').textContent=fr?`${inr(fr)} frozen · ${inr(left)} still at risk`:'76% of the loss · ₹1,20,000 already cashed out'; }
-addEventListener('resize',()=>{ if($('#s-money').classList.contains('on')) buildMoney(); if($('#s-network').classList.contains('on')) buildNetwork(); });
-
-/* ===================== Network ===================== */
-const NET_N = [
-  {id:'V',label:'Sunil Kumar',sub:'Victim · SBI',x:90,y:235,kind:'victim'},
-  {id:'M1',label:'Vikram Shah',sub:'L1 · Axis · 94',x:340,y:235,kind:'risk',r:30},
-  {id:'M2',label:'Rohit Verma',sub:'L2 · HDFC · 88',x:620,y:110,kind:'risk',r:24},
-  {id:'M3',label:'Sameer Khan',sub:'L2 · ICICI · 84',x:620,y:250,kind:'risk',r:20},
-  {id:'M4',label:'Deepak Meena',sub:'Sink · PNB · 61',x:620,y:385,kind:'risk',r:14},
-  {id:'APX',label:'Apex Electronics',sub:'Merchant · protected',x:930,y:70,kind:'safe'},
-  {id:'ATM',label:'ATM Sec 18',sub:'Cash-out',x:930,y:250,kind:'cash'},
-  {id:'DEV',label:'Handset ••4564',sub:'shared by 3 accounts',x:470,y:415,kind:'dev'},
-  {id:'WIFI',label:'Wi-Fi hotspot',sub:'BSSID 74:0A:38',x:470,y:55,kind:'dev'},
-];
-const NET_E = [
-  ['V','M1',500000,0],['M1','M2',300000,1],['M1','M3',155000,1],['M1','M4',45000,1],['M2','APX',180000,2],['M3','ATM',120000,3],
-  ['DEV','M1',0,4,1],['DEV','M2',0,4,1],['DEV','M4',0,4,1],['WIFI','M1',0,4,1],['WIFI','M3',0,4,1],
-];
-const STEPS=['Victim coerced','UPI transfers','Fan-out to mules','Merchant & ATM','Shared device found'];
-let netStep=4, playing=false;
-function buildNetwork(){
-  const svg=$('#net'); svg.innerHTML=''; const W=Math.max(760,Math.round(svg.parentElement.clientWidth-24)); svg.setAttribute('viewBox',`0 0 ${W} 500`);
-  const N=Object.fromEntries(NET_N.map(n=>[n.id,{...n,x:30+n.x*(W-60)/1100}]));
-  const defs=el('defs',{},svg); const lg=el('linearGradient',{id:'ng'},defs); el('stop',{offset:0,'stop-color':'#6366f1'},lg); el('stop',{offset:1,'stop-color':'#22d3ee'},lg);
-  const eg=el('g',{},svg), pg=el('g',{},svg), ng=el('g',{},svg);
-  NET_E.forEach(([a,b,v,st,dev],i)=>{ if(st>netStep) return; const A=N[a],B=N[b]; const mx=(A.x+B.x)/2; const d=dev?`M${A.x},${A.y} L${B.x},${B.y}`:`M${A.x},${A.y} C${mx},${A.y} ${mx},${B.y} ${B.x},${B.y}`;
-    const col=dev?'#a78bfa':B.kind==='safe'?'#10b981':B.kind==='cash'?'#f43f5e':'url(#ng)';
-    const p=el('path',{d,fill:'none',stroke:col,'stroke-width':dev?1.5:Math.max(2,v/26000),'stroke-opacity':dev?.7:.45,'stroke-dasharray':dev?'5 6':'none'},eg);
-    if(st===netStep && !dev && !reduce){ p.style.strokeDasharray='1200'; p.animate([{strokeDashoffset:1200},{strokeDashoffset:0}],{duration:900,fill:'forwards'}); }
-    if(!dev&&!reduce){ for(let j=0;j<3;j++){ const c=el('circle',{r:3.2,class:'particle'},pg); el('animateMotion',{dur:'2.2s',begin:(j*.73)+'s',repeatCount:'indefinite',path:d},c);} }
-    if(v){ const t=el('text',{x:mx,y:(A.y+B.y)/2-8,'text-anchor':'middle','font-size':12,'font-weight':600,fill:'#a9b4c7'},eg); t.textContent=inr(v);} });
-  Object.values(N).forEach(n=>{ const visible = n.kind==='dev'? netStep>=4 : !(['APX','ATM'].includes(n.id) && netStep<3) && !(['M2','M3','M4'].includes(n.id) && netStep<2) && !(n.id==='M1'&&netStep<1); if(!visible) return;
-    const g=el('g',{class:'node-card',style:'cursor:pointer'},ng); const col={victim:'#818cf8',risk:'#f43f5e',safe:'#10b981',cash:'#fb923c',dev:'#a78bfa'}[n.kind]; const r=n.r||18;
-    el('circle',{cx:n.x,cy:n.y,r:r+8,fill:col,opacity:.12},g); el('circle',{cx:n.x,cy:n.y,r,fill:'#111a2c',stroke:col,'stroke-width':2.5},g);
-    const ic=el('text',{x:n.x,y:n.y+5,'text-anchor':'middle','font-size':14,fill:col,'font-weight':800},g); ic.textContent={victim:'V',risk:'₹',safe:'✓',cash:'⎙',dev:'📱'}[n.kind]==='📱'?'⌁':{victim:'V',risk:'₹',safe:'✓',cash:'$'}[n.kind]||'⌁';
-    const t=el('text',{x:n.x,y:n.y+r+20,'text-anchor':'middle','font-size':13.5,'font-weight':700,fill:'#eef2f8'},g); t.textContent=n.label;
-    const s=el('text',{x:n.x,y:n.y+r+36,'text-anchor':'middle','font-size':12,fill:'#a9b4c7'},g); s.textContent=n.sub;
-    if(IDENTS.find(p=>p.id===n.id && p.score!==null)) g.addEventListener('click',()=>openPerson(n.id)); });
-  $('#rpSteps').innerHTML=STEPS.map((s,i)=>`<div class="rp-step ${i<=netStep?'on':''}">${s}</div>`).join('');
-  $('#rpClock').textContent=['09:40 IST','10:00 IST','10:07 IST','10:28 IST','10:35 IST'][netStep];
+const recov=()=>380000-[...FROZEN].filter(x=>x!=='APX').reduce((a,id)=>a+SL.filter(l=>l[1]===id).reduce((s,l)=>s+l[2],0),0);
+function sankey(){const svg=$('#sankey');svg.innerHTML='';const W=Math.max(620,svg.parentElement.clientWidth-30),H=430,k=.00066,gap=26,nw=12;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);const cols=[6,W*.25,W*.5,W-240];
+  const N=SN.map(([id,l,s,c,kd])=>({id,l,s,c,kd}));const B=Object.fromEntries(N.map(n=>[n.id,n]));N.forEach(n=>{n.v=Math.max(SL.filter(x=>x[1]===n.id).reduce((a,x)=>a+x[2],0),SL.filter(x=>x[0]===n.id).reduce((a,x)=>a+x[2],0));n.h=n.v*k;n.x=cols[n.c];});
+  [0,1,2,3].forEach(c=>{const cn=N.filter(n=>n.c===c);let y=(H-cn.reduce((a,n)=>a+n.h,0)-gap*(cn.length-1))/2;cn.forEach(n=>{n.y=y;n.oy=y;n.iy=y;y+=n.h+gap;});});
+  const df=el('defs',{},svg);[['lgF','#7c83ff','#22d3ee'],['lgS','#7c83ff','#14d39a'],['lgR','#7c83ff','#fb3a5d'],['lgZ','#7c83ff','#8be3ff']].forEach(([i,a,b])=>{const g=el('linearGradient',{id:i},df);el('stop',{offset:0,'stop-color':a},g);el('stop',{offset:1,'stop-color':b},g);});
+  const LG=el('g',{},svg),PG=el('g',{},svg),NG=el('g',{},svg);
+  SL.forEach(([s,t,v],i)=>{const a=B[s],b=B[t],w=v*k,y1=a.oy+w/2,y2=b.iy+w/2;a.oy+=w;b.iy+=w;const x1=a.x+nw,x2=b.x,mx=(x1+x2)/2;const d=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;const fz=FROZEN.has(t);const st=fz?'url(#lgZ)':b.kd==='safe'?'url(#lgS)':b.kd==='risk'?'url(#lgR)':'url(#lgF)';const p=el('path',{d,fill:'none',stroke:st,'stroke-width':Math.max(2,w),'stroke-opacity':fz?.75:.42},LG);p.style.transition='stroke-opacity .2s';p.addEventListener('mousemove',e=>{p.setAttribute('stroke-opacity',.75);tip(e,`<b>${a.l} → ${b.l.replace('Held · ','')}</b><br><span class="mono">${inr(v)}</span>`);});p.addEventListener('mouseleave',()=>{p.setAttribute('stroke-opacity',fz?.75:.42);tip(null);});if(!reduce){p.animate([{strokeDasharray:'0 3000'},{strokeDasharray:'3000 0'}],{duration:1300,delay:i*90,easing:'cubic-bezier(.2,.8,.2,1)'});}
+    if(!reduce&&!fz){const n=Math.max(1,Math.round(v/55000));for(let j=0;j<n;j++){const c=el('circle',{r:2.8,class:'particle',opacity:0},PG);const bg=(1.3+j*2.4/n+i*.08).toFixed(2)+'s';el('animateMotion',{dur:'2.4s',begin:bg,repeatCount:'indefinite',path:d},c);el('set',{attributeName:'opacity',to:1,begin:bg},c);}}});
+  N.forEach(n=>{const g=el('g',{},NG);const col=n.kd==='safe'?'#14d39a':n.kd==='risk'?'#fb3a5d':n.kd==='frz'?(FROZEN.has(n.id)?'#8be3ff':'#64748b'):'#7c83ff';el('rect',{x:n.x,y:n.y,width:nw,height:Math.max(4,n.h),rx:5,fill:col,style:`filter:drop-shadow(0 0 6px ${col})`},g);const tx=n.x+nw+10,cy=n.y+n.h/2,last=n.c===3;const sub=`${inr(n.v)} · ${FROZEN.has(n.id)?'frozen':n.s}`;if(!last)el('rect',{x:tx-6,y:cy-21,width:Math.max(n.l.length*7.8,sub.length*6.7)+16,height:41,rx:9,fill:'rgba(5,8,15,.82)',stroke:'rgba(148,163,184,.15)'},g);const t=el('text',{x:tx,y:cy-4,'font-size':13.5,'font-weight':700,fill:'#f1f5fb'},g);t.textContent=n.l;const s=el('text',{x:tx,y:cy+13,'font-size':12,fill:FROZEN.has(n.id)?'#8be3ff':'#aab6cb'},g);s.textContent=sub;
+    if((n.kd==='frz'||n.id==='APX')&&!FROZEN.has(n.id)){const b=el('g',{style:'cursor:pointer'},g);const bx=W-66,by=cy-13;el('rect',{x:bx,y:by,width:62,height:26,rx:8,fill:n.id==='APX'?'rgba(20,211,154,.14)':'rgba(139,227,255,.16)',stroke:n.id==='APX'?'rgba(20,211,154,.55)':'rgba(139,227,255,.6)'},b);const bt=el('text',{x:bx+31,y:by+17,'text-anchor':'middle','font-size':12,'font-weight':700,fill:n.id==='APX'?'#6ff5c6':'#8be3ff'},b);bt.textContent=n.id==='APX'?'Lien':'Freeze';b.addEventListener('click',()=>{FROZEN.add(n.id);toast(`${n.l.replace('Held · ','')} secured · ${inr(n.v)}`);sankey();ringRec(true);updRecov();});}});
 }
-function play(){ if(playing) return; playing=true; netStep=0; buildNetwork(); const t=setInterval(()=>{ netStep++; buildNetwork(); if(netStep>=4){clearInterval(t); playing=false; toast('Replay done: one handset links 3 mule accounts');} },1300); }
-document.addEventListener('click',e=>{ if(e.target.id==='playBtn'||e.target.id==='playBtn2') play(); });
+function updRecov(){const r=recov();$('#recovText').textContent=inr(r);const pl=['APX','H2','H3','H4'].filter(x=>!FROZEN.has(x)).length;$('#recovPlaces').textContent=pl+(pl===1?' place':' places');const kv=$$('#mtKpis .k-val')[1];if(kv)countUp(kv,r,'inr',700);}
+function ringRec(){const r=recov();ring($('#recRing'),r/500000,['#8be3ff','#7c83ff'],'₹'+(r/100000).toFixed(2)+' L',Math.round(r/5000)+'% of loss');}
+function kSel(){$('#kSel').innerHTML=[1,2,3,4].map(k=>`<button class="tab ${k===K?'on':''}" data-k="${k}" style="border:1px solid var(--line)">K = ${k}</button>`).join('');const order=[['HDFC ••1992',120000],['PNB ••4471',45000],['ICICI ••8129',35000],['Apex lien',180000]].sort((a,b)=>b[1]-a[1]);const pick=order.slice(0,K);$('#kOut').innerHTML=pick.map(([n,v])=>`<div class="kv" style="grid-template-columns:1fr auto"><span>${n}</span><b class="mono">${inr(v)}</b></div>`).join('')+`<div style="display:flex;justify-content:space-between;margin-top:8px;font-weight:700"><span>Secured</span><span class="mono" style="color:var(--frozen)">${inr(pick.reduce((a,p)=>a+p[1],0))}</span></div>`;}
+document.addEventListener('click',e=>{const k=e.target.closest('[data-k]');if(k){K=+k.dataset.k;kSel();}});
+function decay(){const s=$('#decay');s.innerHTML='';const pts=[[0,500],[.25,500],[.3,470],[1,430],[2,380],[2.5,340],[3,260],[6,170],[12,90],[24,40]];const X=h=>40+Math.sqrt(h/24)*580,Y=v=>170-v/500*150;[0,250,500].forEach(v=>{el('line',{x1:40,x2:620,y1:Y(v),y2:Y(v),stroke:'rgba(148,163,184,.1)'},s);const t=el('text',{x:0,y:Y(v)+4,'font-size':12,fill:'#7e8ba4'},s);t.textContent=v?'₹'+v/100+'L':'0';});const d='M'+pts.map(([h,v])=>X(h)+','+Y(v)).join(' L');const df=el('defs',{},s);const g=el('linearGradient',{id:'dg',x1:0,y1:0,x2:0,y2:1},df);el('stop',{offset:0,'stop-color':'#fbbf24','stop-opacity':.35},g);el('stop',{offset:1,'stop-color':'#fbbf24','stop-opacity':0},g);el('path',{d:d+` L${X(24)},170 L${X(0)},170Z`,fill:'url(#dg)'},s);el('path',{d,fill:'none',stroke:'#fbbf24','stroke-width':2.5,class:'draw',style:'--len:900'},s);[['T+0',0],['ATM',.3],['T+1h',1],['Now',2],['T+3h',3],['T+24h',24]].forEach(([l,h])=>{const t=el('text',{x:X(h),y:192,'text-anchor':'middle','font-size':12,fill:l==='Now'?'#fbbf24':'#7e8ba4','font-weight':l==='Now'?700:400},s);t.textContent=l;});const nx=X(2);el('line',{x1:nx,x2:nx,y1:10,y2:170,stroke:'#fbbf24','stroke-dasharray':'4 4'},s);const c=el('circle',{cx:nx,cy:Y(380),r:6,fill:'#fbbf24',style:'filter:drop-shadow(0 0 8px #fbbf24)'},s);if(!reduce){el('animate',{attributeName:'r',values:'5;8;5',dur:'1.6s',repeatCount:'indefinite'},c);}const t=el('text',{x:nx+10,y:Y(380)-10,'font-size':13,'font-weight':700,fill:'#fff'},s);t.textContent='₹3.80 L recoverable now';}
 
-/* ===================== Actions ===================== */
-const ACTS=[['H2','Rohit Verma','HDFC Bank ••1992',120000],['H4','Deepak Meena','PNB ••4471',45000],['H3','Sameer Khan','ICICI Bank ••8129',35000],['APX','Apex Electronics','Lien on merchant (not freeze)',180000]];
-const actState={}; ACTS.forEach(a=>actState[a[0]]=FROZEN.has(a[0])?'FROZEN':'READY');
-function buildActions(){
-  ACTS.forEach(a=>{ if(FROZEN.has(a[0])) actState[a[0]]='FROZEN'; });
-  $('#actRows').innerHTML=ACTS.map(([id,n,acct,v],i)=>{ const s=actState[id]; const chip={READY:['muted','Ready to send'],REQUESTED:['urgent','Requested · awaiting bank'],FROZEN:['frozen','Frozen ❄']}[s];
-    return `<div class="act-row ${s==='FROZEN'?'frozen':''}" style="animation:slidein .4s ${i*80}ms var(--ease) both;opacity:0"><span class="check ${s!=='FROZEN'?'on':''}">${s!=='FROZEN'?'✓':''}</span><div><div style="font-weight:700">${n}</div><div class="card-s">${acct}</div></div><div class="mono" style="font-weight:700">${inr(v)}</div><span class="chip ${chip[0]}">${chip[1]}</span><button class="why" data-person="${{H2:'M2',H3:'M3',H4:'M4',APX:'P'}[id]}">Why this account?</button></div>`;}).join('');
-  const fr=ACTS.filter(a=>actState[a[0]]==='FROZEN').reduce((s,a)=>s+a[3],0); $('#frozenTotal').textContent=inr(fr); $('#repFrozen').textContent=inr(fr);
-}
-document.addEventListener('click',e=>{
-  if(e.target.id==='sendBtn'){ ACTS.forEach(a=>{ if(actState[a[0]]==='READY') actState[a[0]]='REQUESTED'; }); buildActions(); toast('4 requests sent to bank nodal officers'); const s=$('#simBtn'); s.disabled=false; s.style.opacity=1; }
-  if(e.target.id==='simBtn'){ let i=0; ACTS.forEach(a=>{ if(actState[a[0]]==='REQUESTED'){ setTimeout(()=>{ actState[a[0]]='FROZEN'; FROZEN.add(a[0]); buildActions(); const fr=ACTS.filter(x=>actState[x[0]]==='FROZEN').reduce((s,x)=>s+x[3],0); countUp($('#frozenTotal'),fr,true,500); toast(`❄ ${a[1]} · ${inr(a[3])} frozen`); }, (i++)*700); } }); }
-  if(e.target.id==='genBtn'){ const s=$('#seal'); s.classList.remove('stamp'); void s.offsetWidth; s.classList.add('stamp'); toast('Report generated and sealed'); }
-});
+/* =================== NETWORK =================== */
+const NN=[['V','Sunil Kumar','Victim · SBI',.05,.5,'victim'],['M1','Vikram Shah','L1 · Axis · 94',.32,.5,'risk',30],['M2','Rohit Verma','L2 · HDFC · 88',.58,.2,'risk',24],['M3','Sameer Khan','L2 · ICICI · 84',.58,.52,'risk',20],['M4','Deepak Meena','Sink · PNB · 61',.58,.83,'risk',15],['APX','Apex Electronics','Merchant · protected',.9,.12,'safe'],['ATM','ATM Sec 18','Cash-out ₹1.2 L',.9,.52,'cash'],['DEV','Handset ••4564','controls 3 accounts',.44,.95,'dev'],['WIFI','Wi-Fi hotspot','BSSID 74:0A:38',.44,.06,'dev']];
+const NE=[['V','M1',500000,0],['M1','M2',300000,1],['M1','M3',155000,1],['M1','M4',45000,1],['M2','APX',180000,2],['M3','ATM',120000,2],['DEV','M1',0,3,1],['DEV','M2',0,3,1],['DEV','M4',0,3,1],['WIFI','M1',0,3,1],['WIFI','M3',0,3,1]];
+const STEPS=[['Victim coerced','10:00'],['Fan-out to mules','10:07'],['Merchant & ATM','10:28'],['Shared device found','10:35']];let nstep=3,playing=false,selN='M1';
+function network(){$('#layers').innerHTML=['All evidence','Money','Devices','Telecom','L1 mules','L2 mules','Cross-FIR'].map((l,i)=>`<button class="chip ${i===0?'flow':'muted'}" style="cursor:pointer">${l}</button>`).join('');drawNet();nodeCard(selN);matrix();}
+function drawNet(){const svg=$('#net');svg.innerHTML='';const W=Math.max(700,svg.parentElement.clientWidth-26),H=470;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);const N=Object.fromEntries(NN.map(([id,l,s,x,y,k,r])=>[id,{id,l,s,x:30+x*(W-80),y:30+y*(H-90),k,r:r||18}]));
+  const df=el('defs',{},svg);const g=el('linearGradient',{id:'ng'},df);el('stop',{offset:0,'stop-color':'#7c83ff'},g);el('stop',{offset:1,'stop-color':'#22d3ee'},g);const f=el('filter',{id:'ngl'},df);el('feGaussianBlur',{stdDeviation:4,result:'b'},f);const m=el('feMerge',{},f);el('feMergeNode',{in:'b'},m);el('feMergeNode',{in:'SourceGraphic'},m);
+  // hull around controller cluster
+  if(nstep>=3){const pts=['M1','M2','M3','M4','DEV','WIFI'].map(i=>N[i]);const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length,cy=pts.reduce((a,p)=>a+p.y,0)/pts.length;el('ellipse',{cx,cy,rx:(N.M2.x-N.M1.x)*1.05+40,ry:H*.47,fill:'rgba(192,132,252,.06)',stroke:'rgba(192,132,252,.35)','stroke-dasharray':'6 6',style:'animation:enter .8s var(--ease)'},svg);const t=el('text',{x:cx,y:22,'text-anchor':'middle','font-size':12.5,'font-weight':700,fill:'#d8b4fe','letter-spacing':'.08em'},svg);t.textContent='CONTROLLER CLUSTER · 1 HANDSET';}
+  const EG=el('g',{},svg),PG=el('g',{},svg),NG=el('g',{},svg);
+  NE.forEach(([a,b,v,st,dv])=>{if(st>nstep)return;const A=N[a],B=N[b],mx=(A.x+B.x)/2;const d=dv?`M${A.x},${A.y} L${B.x},${B.y}`:`M${A.x},${A.y} C${mx},${A.y} ${mx},${B.y} ${B.x},${B.y}`;const col=dv?'#c084fc':B.k==='safe'?'#14d39a':B.k==='cash'?'#fb3a5d':'url(#ng)';const p=el('path',{d,fill:'none',stroke:col,'stroke-width':dv?1.6:Math.max(2.5,v/24000),'stroke-opacity':dv?.75:.55,'stroke-dasharray':dv?'5 6':'none','stroke-linecap':'round'},EG);if(st===nstep&&!dv&&!reduce)p.animate([{strokeDasharray:'0 2000'},{strokeDasharray:'2000 0'}],{duration:900});
+    if(!dv&&!reduce)for(let j=0;j<3;j++){const c=el('circle',{r:3.2,class:'particle'},PG);el('animateMotion',{dur:'2s',begin:(j*.66)+'s',repeatCount:'indefinite',path:d},c);}
+    if(v){const tx=el('g',{},EG);const lx=mx,ly=(A.y+B.y)/2-10;el('rect',{x:lx-38,y:ly-13,width:76,height:20,rx:6,fill:'rgba(5,8,15,.85)',stroke:'rgba(148,163,184,.2)'},tx);const t=el('text',{x:lx,y:ly+1,'text-anchor':'middle','font-size':12,'font-weight':700,fill:'#e2e8f0','font-family':'JetBrains Mono'},tx);t.textContent=inr(v);}});
+  const vis={V:0,M1:0,M2:1,M3:1,M4:1,APX:2,ATM:2,DEV:3,WIFI:3};
+  Object.values(N).forEach(n=>{if(vis[n.id]>nstep)return;const col={victim:'#7c83ff',risk:'#fb3a5d',safe:'#14d39a',cash:'#fbbf24',dev:'#c084fc'}[n.k];const g=el('g',{style:'cursor:pointer;animation:pop .45s var(--spring)'},NG);if(n.id===selN){const r=el('circle',{cx:n.x,cy:n.y,r:n.r+12,fill:'none',stroke:col,'stroke-width':2,'stroke-opacity':.6},g);if(!reduce)el('animate',{attributeName:'r',values:`${n.r+8};${n.r+16};${n.r+8}`,dur:'2s',repeatCount:'indefinite'},r);}el('circle',{cx:n.x,cy:n.y,r:n.r+7,fill:col,opacity:.14},g);el('circle',{cx:n.x,cy:n.y,r:n.r,fill:'#0b1222',stroke:col,'stroke-width':2.5,filter:'url(#ngl)'},g);const isz=n.r>20?20:15;const fo=el('foreignObject',{x:n.x-isz/2,y:n.y-isz/2,width:isz,height:isz},g);fo.innerHTML=`<i data-lucide="${n.id==='WIFI'?'wifi':{victim:'user',risk:'landmark',safe:'store',cash:'banknote',dev:'smartphone'}[n.k]}" style="width:${isz}px;height:${isz}px;color:${col};display:block"></i>`;const t=el('text',{x:n.x,y:n.y+n.r+19,'text-anchor':'middle','font-size':13.5,'font-weight':700,fill:'#f1f5fb'},g);t.textContent=n.l;const s=el('text',{x:n.x,y:n.y+n.r+35,'text-anchor':'middle','font-size':12,fill:'#aab6cb'},g);s.textContent=n.s;g.addEventListener('click',()=>{selN=n.id;drawNet();nodeCard(n.id);});});
+  // minimap
+  const mm=$('#minimap');mm.innerHTML='';Object.values(N).forEach(n=>{if(vis[n.id]>nstep)return;el('circle',{cx:8+n.x/W*144,cy:6+n.y/H*78,r:n.r/7+1.5,fill:{victim:'#7c83ff',risk:'#fb3a5d',safe:'#14d39a',cash:'#fbbf24',dev:'#c084fc'}[n.k]},mm);});el('rect',{x:4,y:3,width:152,height:84,fill:'none',stroke:'rgba(34,211,238,.6)',rx:6},mm);
+  $('#rpSteps').innerHTML=STEPS.map((s,i)=>`<div style="flex:1;font-size:12.5px;font-weight:600;padding:5px 2px;border-top:3px solid ${i<=nstep?'#22d3ee':'var(--solid-3)'};color:${i<=nstep?'#fff':'var(--fg-3)'};transition:all .3s">${s[0]}<div class="mono cs">${s[1]}</div></div>`).join('');$('#rpClock').textContent=STEPS[nstep][1]+' IST';}
+function nodeCard(id){const p=ID.find(x=>x.id===id)||{n:NN.find(x=>x[0]===id)[1],r:NN.find(x=>x[0]===id)[2],a:'',s:null,k:'victim'};const ins={M1:[500000,500000],M2:[300000,180000],M3:[155000,120000],M4:[45000,0],V:[0,500000],APX:[180000,0]}[id]||[0,0];
+  $('#nodeCard').innerHTML=`<div class="card-h"><div class="ini" style="background:${(COL[p.k]||COL.victim)[0]};color:${(COL[p.k]||COL.victim)[1]}">${p.n.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div style="flex:1"><div style="font-weight:800">${p.n}</div><div class="cs">${p.r}${p.a?' · '+p.a:''}</div></div>${p.s!==null?`<div class="disp" style="font-size:28px;font-weight:700;color:${COL[p.k][1]}">${p.s}</div>`:''}</div><div class="grid" style="grid-template-columns:1fr 1fr;gap:8px"><div style="padding:10px;border-radius:10px;background:var(--solid-1)"><div class="cs">Money in</div><div class="mono" style="font-weight:700;color:#6ff5c6">${inr(ins[0])}</div></div><div style="padding:10px;border-radius:10px;background:var(--solid-1)"><div class="cs">Money out</div><div class="mono" style="font-weight:700;color:var(--risk-2)">${inr(ins[1])}</div></div></div>${p.why?`<div style="margin-top:10px">${p.why.slice(0,3).map(w=>`<div class="kv" style="grid-template-columns:1fr auto"><span style="font-size:12.5px">${w[0]}</span><b class="mono" style="color:${w[1]<0?'#6ff5c6':'var(--risk-2)'}">${w[1]>0?'+':''}${w[1]}</b></div>`).join('')}</div><button class="btn sm primary" style="margin-top:10px;width:100%;justify-content:center" data-go="actions">Draft freeze request</button>`:''}`;}
+function matrix(){const acc=['Vikram Shah','Rohit Verma','Sameer Khan','Deepak Meena','Apex Electronics'];const sig=['Same handset','Same Wi-Fi','Fast pass-through','Split transfers','New account','Cross-FIR'];const v=[[1,1,1,1,.8,1],[1,0,.8,.6,.7,.5],[0,1,.9,.4,.5,0],[1,0,.3,.2,.4,0],[0,0,.05,0,0,0]];$('#matrix').innerHTML=`<div style="display:grid;grid-template-columns:150px repeat(${sig.length},1fr);gap:4px;font-size:12.5px"><div></div>${sig.map(s=>`<div class="cs" style="text-align:center">${s}</div>`).join('')}${acc.map((a,i)=>`<div style="font-weight:600;padding:6px 0">${a}</div>${v[i].map((x,j)=>`<div style="height:30px;border-radius:7px;background:${i===4?`rgba(20,211,154,${.1+x*.6})`:`rgba(251,58,93,${.06+x*.62})`};display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;opacity:0;animation:pop .4s ${(i*6+j)*.02}s var(--ease) forwards">${x?Math.round(x*100):''}</div>`).join('')}`).join('')}</div>`;}
+function play(){if(playing)return;playing=true;nstep=0;drawNet();const t=setInterval(()=>{nstep++;drawNet();if(nstep>=3){clearInterval(t);playing=false;toast('Replay done · one handset controls 3 mule accounts');}},1400);}
+document.addEventListener('click',e=>{if(e.target.id==='play1'||e.target.id==='play2')play();});
+addEventListener('resize',()=>{if($('#s-money').classList.contains('on'))sankey();if($('#s-network').classList.contains('on'))drawNet();});
 
-/* ===================== Boot ===================== */
+/* =================== DEVICE =================== */
+function device(){const F=[['All subscribers on tower DL-TWR-891',10000,'#64748b','Tower records at 10:00'],['Same 200 ms port window',420,'#7c83ff','ISP NAT logs'],['Same TLS fingerprint',41,'#22d3ee','Gateway logs'],['Poco X5 5G handset',6,'#c084fc','Device type code'],['IMEI matches bank login',1,'#fb3a5d','NPCI device data']];
+  $('#funnel').innerHTML=F.map(([l,n,c,s],i)=>`<div class="funnel-row"><div><div style="font-weight:600;font-size:13px">${l}</div><div class="cs">${s}</div></div><div><div class="funnel-bar" style="width:${Math.max(8,Math.log10(n+1)/4*100)}%;background:linear-gradient(90deg,${c},${c}aa);color:${c};animation-delay:${i*.18}s"><span style="color:#fff" data-fn="${n}">0</span></div></div><div class="cs" style="text-align:right">${i?'−'+(100-n/F[i-1][1]*100).toFixed(1)+'%':'baseline'}</div></div>`).join('');$$('[data-fn]').forEach((n,i)=>setTimeout(()=>countUp(n,+n.dataset.fn,'num',900),i*180));
+  const s=$('#phone');s.innerHTML=`<defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e293b"/><stop offset="1" stop-color="#0b1222"/></linearGradient></defs><rect x="95" y="12" width="110" height="220" rx="20" fill="url(#ph)" stroke="#7c83ff" stroke-width="2" style="filter:drop-shadow(0 0 18px rgba(124,131,255,.5))"/><rect x="105" y="30" width="90" height="150" rx="8" fill="#05080f" stroke="rgba(148,163,184,.2)"/><circle cx="150" cy="205" r="9" fill="none" stroke="rgba(148,163,184,.4)"/><text x="150" y="98" text-anchor="middle" font-size="12" fill="#c7caff" font-weight="700">Poco X5 5G</text><text x="150" y="116" text-anchor="middle" font-size="12" fill="#aab6cb" font-family="JetBrains Mono">IMEI ••4564</text><rect x="12" y="60" width="72" height="44" rx="8" fill="rgba(251,58,93,.14)" stroke="#fb3a5d"/><text x="48" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#ff7a90">SIM 1</text><text x="48" y="95" text-anchor="middle" font-size="12" fill="#aab6cb">Victim's no.</text><rect x="216" y="60" width="72" height="44" rx="8" fill="rgba(124,131,255,.14)" stroke="#7c83ff"/><text x="252" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#c7caff">SIM 2</text><text x="252" y="95" text-anchor="middle" font-size="12" fill="#aab6cb">Mule login</text><path d="M84 82 H105 M195 82 H216" stroke="#22d3ee" stroke-width="2" stroke-dasharray="4 4"/><text x="150" y="252" text-anchor="middle" font-size="12.5" fill="#f1f5fb" font-weight="600">Swapped SIM + mule banking on one device</text>`;
+  const t=$('#simtl');t.innerHTML='';const ev=[['09:44','SIM swap at Airtel store',80,'#fbbf24'],['09:46','Victim\'s phone loses signal',300,'#fb3a5d'],['10:00','First transfer ₹2,85,000',560,'#fb3a5d'],['10:28','Second transfer ₹2,15,000',800,'#fb3a5d'],['10:35','Freeze window opens',950,'#14d39a']];el('line',{x1:40,x2:980,y1:50,y2:50,stroke:'rgba(148,163,184,.25)','stroke-width':2},t);const pr=el('line',{x1:40,x2:980,y1:50,y2:50,stroke:'url(#arc)','stroke-width':3,class:'draw',style:'--len:940'},t);const d=el('defs',{},t);const lg=el('linearGradient',{id:'arc'},d);el('stop',{offset:0,'stop-color':'#fbbf24'},lg);el('stop',{offset:1,'stop-color':'#fb3a5d'},lg);ev.forEach(([tm,l,x,c],i)=>{el('circle',{cx:x,cy:50,r:8,fill:'#05080f',stroke:c,'stroke-width':3,style:`opacity:0;animation:pop .4s ${.3+i*.2}s var(--spring) forwards`},t);const a=el('text',{x,y:28,'text-anchor':'middle','font-size':12.5,'font-weight':700,fill:c,'font-family':'JetBrains Mono'},t);a.textContent=tm;const b=el('text',{x,y:82,'text-anchor':'middle','font-size':12.5,fill:'#e2e8f0'},t);b.textContent=l;});}
+
+/* =================== ACTIONS =================== */
+const ACTS=[['H2','Rohit Verma','HDFC Bank ••1992',120000],['H4','Deepak Meena','PNB ••4471',45000],['H3','Sameer Khan','ICICI Bank ••8129',35000],['APX','Apex Electronics','Lien on merchant · not a freeze',180000]];const AS={};ACTS.forEach(a=>AS[a[0]]='READY');
+function actions(){ACTS.forEach(a=>{if(FROZEN.has(a[0]))AS[a[0]]='FROZEN';});const fr=ACTS.filter(a=>AS[a[0]]==='FROZEN').reduce((s,a)=>s+a[3],0);
+  kpiCards('#acKpis',[{l:'Freeze requests',v:4,i:'send',bg:'var(--flow-bg)',c:'#7c83ff',foot:'BNSS §106 · auto-drafted'},{l:'Amount secured',v:fr,f:'inr',i:'snowflake',bg:'var(--frozen-bg)',c:'#8be3ff',vc:'var(--frozen)',foot:'of ₹3,80,000 recoverable'},{l:'Notices pending',v:2,i:'scale',bg:'var(--urgent-bg)',c:'#fbbf24',foot:'§94 to Jio · I4C'},{l:'Report readiness',v:fr?100:80,f:'pct',i:'circle-check',bg:'var(--safe-bg)',c:'#14d39a',foot:'9 exhibits sealed'}]);rows();}
+function rows(){$('#actRows').innerHTML=ACTS.map(([id,n,a,v],i)=>{const s=AS[id];const c={READY:['muted','Ready'],REQUESTED:['urgent','Awaiting bank'],FROZEN:['frozen','Frozen']}[s];return `<div class="act-row ${s==='FROZEN'?'frozen':''}" style="animation:slidein .4s ${i*.07}s var(--ease) both"><span class="ini" style="width:34px;height:34px;font-size:12px;background:var(--risk-bg);color:var(--risk-2)">${n.split(' ').map(w=>w[0]).join('').slice(0,2)}</span><div><div style="font-weight:700">${n}</div><div class="cs">${a}</div></div><b class="mono">${inr(v)}</b><span class="chip ${c[0]}">${s==='REQUESTED'?'<span class="dot live"></span>':''}${c[1]}</span><button class="btn sm" data-go="people">Why?</button></div>`;}).join('');const fr=ACTS.filter(a=>AS[a[0]]==='FROZEN').reduce((s,a)=>s+a[3],0);$('#frozenTotal').textContent=inr(fr);$('#repFrozen').textContent=inr(fr);}
+document.addEventListener('click',e=>{if(e.target.id==='sendBtn'){ACTS.forEach(a=>{if(AS[a[0]]==='READY')AS[a[0]]='REQUESTED'});rows();toast('4 requests sent to bank nodal officers');const s=$('#simBtn');s.disabled=false;s.style.opacity=1;}
+  if(e.target.id==='simBtn'){let i=0;ACTS.forEach(a=>{if(AS[a[0]]==='REQUESTED'){setTimeout(()=>{AS[a[0]]='FROZEN';FROZEN.add(a[0]);rows();const fr=ACTS.filter(x=>AS[x[0]]==='FROZEN').reduce((s,x)=>s+x[3],0);countUp($('#frozenTotal'),fr,'inr',500);const kv=$$('#acKpis .k-val')[1];kv&&countUp(kv,fr,'inr',500);toast(`${a[1]} · ${inr(a[3])} frozen`);},(i++)*700);}});}
+  if(e.target.id==='genBtn'){const s=$('#seal');s.classList.remove('stamp');void s.offsetWidth;s.classList.add('stamp');toast('Report generated · sealed with SHA-256');}});
+
+/* =================== Inspector (kept for deep detail) =================== */
+function closeInsp(){$('#insp').classList.remove('open');}$('#inspClose').onclick=closeInsp;addEventListener('keydown',e=>{if(e.key==='Escape')closeInsp();});
+
+stepper();
+let _lu=0;new MutationObserver(()=>{if(_lu)return;_lu=requestAnimationFrame(()=>{_lu=0;if(window.lucide&&document.querySelector('i[data-lucide]'))lucide.createIcons({attrs:{'stroke-width':2}});});}).observe(document.body,{childList:true,subtree:true});
 go((location.hash||'#dash').slice(1));
 </script>
 </body>
