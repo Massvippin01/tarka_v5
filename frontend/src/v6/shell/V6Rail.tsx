@@ -413,14 +413,14 @@ export const V6Rail: React.FC<V6RailProps> = ({
                 className={cn(
                   'size-5.5 rounded-full flex items-center justify-center text-[11.5px] font-bold shrink-0 transition-colors border',
                   s.done && !isCurrent
-                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                     : isCurrent
                     ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
                     : 'bg-[var(--surface-2)] text-[var(--fg-3)] border-[var(--line)] group-hover:border-[var(--line-2)]'
                 )}
               >
                 {s.done && !isCurrent ? (
-                  <Check className="size-3.5 stroke-[2.5]" />
+                  <Check className="size-3.5 stroke-[3] text-white" />
                 ) : (
                   s.num
                 )}

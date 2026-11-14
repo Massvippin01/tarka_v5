@@ -54,11 +54,11 @@ export const HorizontalStepper: React.FC = () => {
                   isCurrent
                     ? 'border-[var(--accent)] text-white bg-[var(--accent)] shadow-xs'
                     : isDone
-                    ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
                     : 'border-[var(--line-2)] text-[var(--fg-3)] bg-[var(--surface-2)]'
                 )}
               >
-                {isDone ? <Check className="w-3 h-3 stroke-[2.5]" /> : step.stepNum}
+                {isDone ? <Check className="w-3 h-3 stroke-[3] text-white" /> : step.stepNum}
               </span>
               <span>{step.label}</span>
             </button>
