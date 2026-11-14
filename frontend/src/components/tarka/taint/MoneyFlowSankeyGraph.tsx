@@ -570,9 +570,9 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                         className="ribbon-label"
                         x={textX}
                         y={textY}
-                        fill="#0F172A"
-                        fontSize="9"
-                        fontWeight="800"
+                        fill="#18181b"
+                        fontSize="12"
+                        fontWeight="700"
                         textAnchor="middle"
                         dominantBaseline="central"
                         style={{
@@ -638,9 +638,9 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                         <text
                           x="0"
                           y="-2"
-                          fill="#0F172A"
-                          fontSize="9.5"
-                          fontWeight="800"
+                          fill="#18181b"
+                          fontSize="12.5"
+                          fontWeight="700"
                           textAnchor="middle"
                           style={{
                             paintOrder: "stroke",
@@ -649,7 +649,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                             pointerEvents: "none",
                           }}
                         >
-                          {node.name} · <tspan fill={color} fontWeight="800" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan>
+                          {node.name} · <tspan fill={color} fontWeight="700" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan>
                         </text>
                       </g>
                     )}
@@ -660,9 +660,9 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                         <text
                           x="0"
                           y="0"
-                          fill="#0F172A"
-                          fontSize="9.5"
-                          fontWeight="800"
+                          fill="#18181b"
+                          fontSize="12.5"
+                          fontWeight="700"
                           dominantBaseline="central"
                           style={{
                             paintOrder: "stroke",
@@ -671,7 +671,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                             pointerEvents: "none",
                           }}
                         >
-                          {node.name} · <tspan fill={color} fontWeight="800" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan> <tspan fontSize="8.5" fill="#64748B" fontWeight="600">({Math.round((node.balance / 500000) * 100)}% · {node.statute})</tspan>
+                          {node.name} · <tspan fill={color} fontWeight="700" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan> <tspan fontSize="12" fill="#52525b" fontWeight="600">({Math.round((node.balance / 500000) * 100)}% · {node.statute})</tspan>
                         </text>
                       </g>
                     )}

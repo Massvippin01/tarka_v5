@@ -1,573 +1,479 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ArrowRight,
-  Snowflake,
+  Copy,
+  Check,
+  Building,
+  Printer,
+  ArrowLeft,
 } from 'lucide-react';
-import clsx from 'clsx';
 import { toast } from 'sonner';
-import { PageHead, FindingStrip, Card, CardHeader, Button, Inspector } from '../ui';
+import { PageHead, FindingStrip, Button } from '../ui';
 import { useCaseStore } from '../../store/useCaseStore';
+import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { getCanonicalCase } from '../../fixtures/cases';
 import { formatInr } from '../../utils/formatters';
+import { generateBnssDrafts } from '../../utils/taintLienEngine';
+import { recoveryModel } from '../../utils/recoveryModel';
+import { MoneyFlowSankeyGraph } from '../../components/tarka/taint/MoneyFlowSankeyGraph';
+import { GoldenHourDecayChart } from '../../components/tarka/taint/GoldenHourDecayChart';
+import { RecoveryModelPanel } from '../../components/tarka/taint/RecoveryModelPanel';
 
-interface SankeyNode {
-  id: string;
-  label: string;
-  sub: string;
-  col: number;
-  kind?: 'safe' | 'risk' | 'frz' | 'victim';
-  inVal: number;
-  outVal: number;
-  val: number;
-  h: number;
-  x: number;
-  y: number;
-  oy: number;
-  iy: number;
-}
-
-interface SankeyLink {
-  from: string;
-  to: string;
-  amount: number;
-  d: string;
-  w: number;
-  color: string;
-  isFrozen: boolean;
-  fromNode: SankeyNode;
-  toNode: SankeyNode;
-}
+type TaintRule = 'LIBR' | 'FIFO' | 'PRO_RATA';
+type WorkspaceMode = 'dag' | 'orders';
 
 export const MoneyTrailScreen: React.FC = () => {
   const { activeCaseId, setActiveView } = useCaseStore();
+  const { mutations, toggleMutation, setActiveRoute } = useTarkaGlobal();
+
   const caseId = activeCaseId || 'CASE-2026-001';
-  const canonical = getCanonicalCase(caseId);
+  const canonicalCase = useMemo(() => getCanonicalCase(caseId), [caseId]);
 
-  const [frozenNodeIds, setFrozenNodeIds] = useState<Set<string>>(new Set());
-  const [isMethodsInspectorOpen, setIsMethodsInspectorOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [svgWidth, setSvgWidth] = useState<number>(880);
+  const [activeWorkspaceMode, setActiveWorkspaceMode] = useState<WorkspaceMode>('dag');
+  const [selectedRule, setSelectedRule] = useState<TaintRule>('LIBR');
+  const [freezeBudgetK, setFreezeBudgetK] = useState<number>(3);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNoticeType, setSelectedNoticeType] = useState<'106' | '107'>('106');
+  const [isCopiedOrder, setIsCopiedOrder] = useState<boolean>(false);
 
-  // Measure container width for responsive Sankey
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setSvgWidth(Math.max(640, containerRef.current.clientWidth - 40));
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
+  const isInjectClean = !!mutations.injectMerchantCleanDeposit;
 
-  // Canonical Nodes & Links
-  const baseNodes = useMemo(() => {
-    if (caseId === 'CASE-2026-001') {
-      return [
-        { id: 'V', label: 'Sunil Kumar', sub: 'SBI ••9101', col: 0, kind: 'victim' as const },
-        { id: 'M1', label: 'Vikram Shah', sub: 'Axis ••0291', col: 1, kind: 'risk' as const },
-        { id: 'M2', label: 'Rohit Verma', sub: 'HDFC ••1992', col: 2, kind: 'risk' as const },
-        { id: 'M3', label: 'Sameer Khan', sub: 'ICICI ••8129', col: 2, kind: 'risk' as const },
-        { id: 'M4', label: 'Deepak Meena', sub: 'PNB ••4471', col: 2, kind: 'risk' as const },
-        { id: 'APX', label: 'Apex Electronics', sub: 'merchant · lien', col: 3, kind: 'safe' as const },
-        { id: 'H2', label: 'Held · HDFC ••1992', sub: 'can freeze', col: 3, kind: 'frz' as const },
-        { id: 'ATM', label: 'ATM Noida Sec 18', sub: 'cashed out', col: 3, kind: 'risk' as const },
-        { id: 'H3', label: 'Held · ICICI ••8129', sub: 'can freeze', col: 3, kind: 'frz' as const },
-        { id: 'H4', label: 'Held · PNB ••4471', sub: 'can freeze', col: 3, kind: 'frz' as const },
-      ];
-    }
+  const recModel = useMemo(() => {
+    return recoveryModel(isInjectClean, freezeBudgetK, caseId);
+  }, [isInjectClean, freezeBudgetK, caseId]);
 
-    // Dynamic fallback for other cases
-    const vic = canonical.complainant;
-    return [
-      { id: 'V', label: vic.name, sub: `${vic.bank.split(' ')[0]} ••${vic.accountMasked.slice(-4)}`, col: 0, kind: 'victim' as const },
-      { id: 'M1', label: 'Primary Mule', sub: 'Layer-1 Conduit', col: 1, kind: 'risk' as const },
-      { id: 'M2', label: 'Secondary Mule A', sub: 'Layer-2 Conduit', col: 2, kind: 'risk' as const },
-      { id: 'M3', label: 'Secondary Mule B', sub: 'Layer-2 Conduit', col: 2, kind: 'risk' as const },
-      { id: 'H2', label: 'Held in Conduit A', sub: 'can freeze', col: 3, kind: 'frz' as const },
-      { id: 'ATM', label: 'Cash Out Terminal', sub: 'cashed out', col: 3, kind: 'risk' as const },
-      { id: 'H3', label: 'Held in Conduit B', sub: 'can freeze', col: 3, kind: 'frz' as const },
-    ];
-  }, [caseId, canonical]);
+  const bnssDrafts = useMemo(() => {
+    return generateBnssDrafts(
+      '003201509821',
+      'ICICI Bank Ltd',
+      180000,
+      `FIR #${canonicalCase.firNumber || '149/2026'}`
+    );
+  }, [canonicalCase]);
 
-  const baseLinks = useMemo<Array<[string, string, number]>>(() => {
-    if (caseId === 'CASE-2026-001') {
-      return [
-        ['V', 'M1', 500000],
-        ['M1', 'M2', 300000],
-        ['M1', 'M3', 155000],
-        ['M1', 'M4', 45000],
-        ['M2', 'APX', 180000],
-        ['M2', 'H2', 120000],
-        ['M3', 'ATM', 120000],
-        ['M3', 'H3', 35000],
-        ['M4', 'H4', 45000],
-      ];
-    }
+  const activeDraft = selectedNoticeType === '106' ? bnssDrafts.notice106 : bnssDrafts.application107;
 
-    const loss = canonical.financials.bookedLossInr;
-    return [
-      ['V', 'M1', loss],
-      ['M1', 'M2', Math.round(loss * 0.6)],
-      ['M1', 'M3', Math.round(loss * 0.4)],
-      ['M2', 'H2', Math.round(loss * 0.45)],
-      ['M2', 'ATM', Math.round(loss * 0.15)],
-      ['M3', 'H3', Math.round(loss * 0.4)],
-    ];
-  }, [caseId, canonical]);
-
-  // Compute Sankey Layout coordinates
-  const { nodes, links, totalFrozenAmount, recoverableRemaining, placesRemaining } = useMemo(() => {
-    const W = svgWidth;
-    const H = 450;
-    const k = 0.00064;
-    const gap = 24;
-    const nodeW = 12;
-    const cols = [8, W * 0.25, W * 0.50, W - 230];
-
-    // Initialize nodes
-    const nodeMap: Record<string, SankeyNode> = {};
-    baseNodes.forEach((n) => {
-      nodeMap[n.id] = {
-        ...n,
-        inVal: 0,
-        outVal: 0,
-        val: 0,
-        h: 0,
-        x: cols[n.col],
-        y: 0,
-        oy: 0,
-        iy: 0,
-      };
-    });
-
-    // Sum inflow/outflow
-    baseLinks.forEach(([from, to, amt]) => {
-      if (nodeMap[from]) nodeMap[from].outVal += amt;
-      if (nodeMap[to]) nodeMap[to].inVal += amt;
-    });
-
-    Object.values(nodeMap).forEach((n) => {
-      n.val = Math.max(n.inVal, n.outVal);
-      n.h = Math.max(4, n.val * k);
-    });
-
-    // Compute Y positions per column
-    [0, 1, 2, 3].forEach((c) => {
-      const colNodes = Object.values(nodeMap).filter((n) => n.col === c);
-      const totalH = colNodes.reduce((acc, n) => acc + n.h, 0) + gap * (colNodes.length - 1);
-      let y = Math.max(20, (H - totalH) / 2);
-
-      colNodes.forEach((n) => {
-        n.y = y;
-        n.oy = y;
-        n.iy = y;
-        y += n.h + gap;
-      });
-    });
-
-    // Compute Link Paths
-    const computedLinks: SankeyLink[] = baseLinks.map(([fromId, toId, amt]) => {
-      const a = nodeMap[fromId];
-      const b = nodeMap[toId];
-      const w = Math.max(2, amt * k);
-      const y1 = a.oy + w / 2;
-      const y2 = b.iy + w / 2;
-      a.oy += w;
-      b.iy += w;
-
-      const x1 = a.x + nodeW;
-      const x2 = b.x;
-      const mx = (x1 + x2) / 2;
-      const d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
-
-      const isFrozen = frozenNodeIds.has(toId);
-      const color = isFrozen
-        ? 'var(--frozen)'
-        : b.kind === 'safe'
-        ? '#10b981'
-        : b.kind === 'risk'
-        ? '#f43f5e'
-        : 'url(#v6MoneyFlowGrad)';
-
-      return {
-        from: fromId,
-        to: toId,
-        amount: amt,
-        d,
-        w,
-        color,
-        isFrozen,
-        fromNode: a,
-        toNode: b,
-      };
-    });
-
-    // Compute frozen total and remaining recoverable pool
-    const initialRecoverable = canonical.financials.recoverableLibrInr;
-    let frozenSum = 0;
-
-    baseLinks.forEach(([_, to, amt]) => {
-      if (frozenNodeIds.has(to) && to !== 'APX') {
-        frozenSum += amt;
-      }
-    });
-
-    const rem = Math.max(0, initialRecoverable - frozenSum);
-    const holdPlaces = baseNodes
-      .filter((n) => n.kind === 'frz' || n.id === 'APX')
-      .filter((n) => !frozenNodeIds.has(n.id)).length;
-
-    return {
-      nodes: Object.values(nodeMap),
-      links: computedLinks,
-      totalFrozenAmount: frozenSum,
-      recoverableRemaining: rem,
-      placesRemaining: holdPlaces,
-    };
-  }, [baseNodes, baseLinks, svgWidth, frozenNodeIds, canonical]);
-
-  // Handle freeze click on node
-  const handleFreezeNode = (id: string, amount: number, label: string) => {
-    setFrozenNodeIds((prev) => new Set([...prev, id]));
-    toast.success(`❄ ${label.replace('Held · ', '')} frozen · ${formatInr(amount, { showPaise: false })} secured`);
+  const handleCopyNotice = () => {
+    navigator.clipboard.writeText(activeDraft.draftText);
+    setIsCopiedOrder(true);
+    toast.success(`§ ${selectedNoticeType} BNSS Statutory Notice copied to clipboard`);
+    setTimeout(() => setIsCopiedOrder(false), 2000);
   };
 
-  const lossInr = canonical.financials.bookedLossInr;
-  const initialRecoverable = canonical.financials.recoverableLibrInr;
-  const recoveryPct = Math.round((recoverableRemaining / (lossInr || 1)) * 100);
-  const cashedOutInr = canonical.financials.unrecoverableCashoutInr || 120000;
+  const handlePrintOrder = () => {
+    window.print();
+  };
+
+  const victimLoss = canonicalCase.financials.bookedLossInr;
+  const recoverableAmount = recModel.netRecoverableSum;
+  const recoverablePct = Math.round((recoverableAmount / Math.max(victimLoss, 1)) * 100);
 
   return (
-    <div className="v6-enter space-y-4" data-testid="v6-money-screen">
-      {/* Page Header with Legend */}
+    <div className="v6-enter space-y-3" data-testid="v6-money-screen">
+      {/* Page Header */}
       <PageHead
         kicker="Step 3 · Money Trail"
-        title="Where did the money go?"
+        title="Where did the funds go?"
         actions={
-          <div className="flex items-center gap-4 text-xs text-[var(--fg-3)]">
-            <span className="flex items-center gap-1.5">
-              <i className="w-2.5 h-2.5 rounded-sm bg-gradient-to-r from-[var(--flow)] to-[var(--flow-2)] inline-block" /> Moving
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="w-2.5 h-2.5 rounded-sm bg-[var(--frozen)] inline-block" /> Frozen
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="w-2.5 h-2.5 rounded-sm bg-[var(--safe)] inline-block" /> Protected merchant
-            </span>
-            <span className="flex items-center gap-1.5">
-              <i className="w-2.5 h-2.5 rounded-sm bg-[var(--risk)] inline-block" /> Cashed out
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveWorkspaceMode((m) => (m === 'dag' ? 'orders' : 'dag'))}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--fg-2)] bg-[var(--surface-1)] border border-[var(--line)] rounded-md hover:bg-[var(--hover)] hover:text-[var(--fg-1)] transition-colors shadow-xs"
+            >
+              <Building className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>{activeWorkspaceMode === 'dag' ? 'Draft §106/§107 Orders' : 'Back to Flow Graph'}</span>
+            </button>
+            <Button
+              variant="default"
+              size="md"
+              onClick={() => {
+                setActiveView('network');
+                setActiveRoute('network');
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                <span>Fraud Network</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </Button>
           </div>
         }
       />
 
       {/* Finding Strip */}
       <FindingStrip
-        variant="safe"
-        icon={<Snowflake className="w-4 h-4" />}
+        variant="urgent"
         action={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setActiveView('actions')}
-            icon={<ArrowRight className="w-3.5 h-3.5" />}
-            iconPosition="right"
+          <button
+            type="button"
+            onClick={() => setActiveWorkspaceMode('orders')}
+            className="text-[12px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1"
           >
-            Freeze now
-          </Button>
+            <span>Execute §106 Freeze Orders</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         }
       >
-        <b className="v6-mono">{formatInr(recoverableRemaining, { showPaise: false })}</b> of{' '}
-        {formatInr(lossInr, { showPaise: false })} can still be stopped in{' '}
-        <b>{placesRemaining} {placesRemaining === 1 ? 'place' : 'places'}</b>. Freeze before the golden hour ends.
+        <span>
+          LIBR doctrine isolates <strong>{formatInr(recoverableAmount)} ({recoverablePct}%)</strong> in Layer-2 mule accounts & merchant lien, while protecting innocent commercial working capital.
+        </span>
       </FindingStrip>
 
-      {/* Main Grid: Sankey Diagram (8 cols) + Right KPI Sidebar (4 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Sankey Flow Card (8 cols) */}
-        <div className="lg:col-span-8" ref={containerRef}>
-          <Card className="p-4 overflow-hidden">
-            <svg
-              viewBox={`0 0 ${svgWidth} 450`}
-              className="w-full h-[450px] overflow-visible select-none"
-            >
-              <defs>
-                <linearGradient id="v6MoneyFlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#22d3ee" />
-                </linearGradient>
-              </defs>
-
-              {/* Connecting Flow Ribbons */}
-              <g className="flow-links">
-                {links.map((link, idx) => (
-                  <g key={idx}>
-                    <path
-                      d={link.d}
-                      fill="none"
-                      stroke={link.color}
-                      strokeWidth={link.w}
-                      strokeOpacity={link.isFrozen ? 0.65 : 0.38}
-                      className={clsx(
-                        'transition-all duration-300',
-                        link.isFrozen && 'stroke-[var(--frozen)] drop-shadow-[0_0_8px_rgba(125,211,252,0.4)]'
-                      )}
-                    >
-                      <title>{`${link.fromNode.label} → ${link.toNode.label}: ${formatInr(link.amount, { showPaise: false })}`}</title>
-                    </path>
-
-                    {/* Animated Travelling Particle if not frozen */}
-                    {!link.isFrozen && (
-                      <circle r={3} fill="#fde68a" className="drop-shadow-[0_0_4px_#fbbf24]">
-                        <animateMotion
-                          dur="2.6s"
-                          begin={`${idx * 0.15}s`}
-                          repeatCount="indefinite"
-                          path={link.d}
-                        />
-                      </circle>
-                    )}
-                  </g>
-                ))}
-              </g>
-
-              {/* Node Columns & Labels */}
-              <g className="nodes">
-                {nodes.map((n) => {
-                  const isNodeFrozen = frozenNodeIds.has(n.id);
-                  const nodeColor = n.kind === 'safe'
-                    ? '#10b981'
-                    : n.kind === 'risk'
-                    ? '#f43f5e'
-                    : n.kind === 'frz'
-                    ? isNodeFrozen
-                      ? 'var(--frozen)'
-                      : '#94a3b8'
-                    : '#818cf8';
-
-                  const tx = n.x + 12 + 10;
-                  const cy = n.y + n.h / 2;
-                  const isLastCol = n.col === 3;
-                  const displayAmount = formatInr(n.val, { showPaise: false });
-                  const subText = `${displayAmount} · ${isNodeFrozen ? 'frozen ❄' : n.sub}`;
-
-                  return (
-                    <g key={n.id}>
-                      {/* Vertical Node Bar */}
-                      <rect
-                        x={n.x}
-                        y={n.y}
-                        width={12}
-                        height={Math.max(4, n.h)}
-                        rx={4}
-                        fill={nodeColor}
-                        className={clsx(isNodeFrozen && 'shadow-[0_0_12px_var(--frozen)]')}
-                      />
-
-                      {/* Pill Background to ensure text readability */}
-                      {!isLastCol && (
-                        <rect
-                          x={tx - 6}
-                          y={cy - 20}
-                          width={Math.max(n.label.length * 8, subText.length * 6.5) + 16}
-                          height={38}
-                          rx={8}
-                          fill="rgba(6, 10, 19, 0.85)"
-                          stroke="rgba(148, 163, 184, 0.15)"
-                        />
-                      )}
-
-                      {/* Node Label & Sub */}
-                      <text
-                        x={tx}
-                        y={cy - 3}
-                        fontSize={13}
-                        fontWeight={700}
-                        fill="#eef2f8"
-                        fontFamily="var(--font)"
-                      >
-                        {n.label}
-                      </text>
-                      <text
-                        x={tx}
-                        y={cy + 13}
-                        fontSize={12}
-                        fill="#a9b4c7"
-                        fontFamily="var(--font)"
-                      >
-                        {subText}
-                      </text>
-
-                      {/* 1-Click Freeze Action on Held Nodes */}
-                      {n.kind === 'frz' && !isNodeFrozen && (
-                        <g
-                          className="cursor-pointer group"
-                          role="button"
-                          aria-label={`Freeze ${n.label}`}
-                          onClick={() => handleFreezeNode(n.id, n.val, n.label)}
-                        >
-                          <rect
-                            x={svgWidth - 68}
-                            y={cy - 12}
-                            width={64}
-                            height={24}
-                            rx={7}
-                            fill="rgba(125, 211, 252, 0.14)"
-                            stroke="rgba(125, 211, 252, 0.5)"
-                            className="group-hover:fill-cyan-500/30 group-hover:stroke-cyan-400 transition-colors"
-                          />
-                          <text
-                            x={svgWidth - 36}
-                            y={cy + 4}
-                            textAnchor="middle"
-                            fontSize={12}
-                            fontWeight={700}
-                            fill="#7dd3fc"
-                            fontFamily="var(--font)"
-                          >
-                            Freeze
-                          </text>
-                        </g>
-                      )}
-                    </g>
-                  );
-                })}
-              </g>
-            </svg>
-          </Card>
+      {/* 4 KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Victim booked loss</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-risk-bg)] text-[var(--risk)]">
+              CBS AUDIT
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--risk)]">
+            {formatInr(victimLoss)}
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            {canonicalCase.complainant.name} · {canonicalCase.complainant.bank}
+          </div>
         </div>
 
-        {/* Right Sidebar: Recoverable KPI & Method Card (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          {/* Recoverable Now KPI Card */}
-          <Card className="v6-kpi">
-            <div className="k-label">
-              <span className="v6-k-ico bg-[var(--frozen-bg)] text-[var(--frozen)]">
-                <Snowflake className="w-4 h-4" />
-              </span>
-              <span>Recoverable now</span>
-            </div>
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Recoverable pool</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-safe-bg)] text-[var(--safe)]">
+              {recoverablePct}% SECURED
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--safe)]">
+            {formatInr(recoverableAmount)}
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            Across 3 Layer-2 mule conduits & POS lien
+          </div>
+        </div>
 
-            <div className="k-val v6-mono text-[var(--frozen)]">
-              {formatInr(recoverableRemaining, { showPaise: false })}
-            </div>
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Min-cut freeze budget</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-flow-bg)] text-[var(--flow)]">
+              K = {freezeBudgetK} ACCOUNTS
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--fg-1)]">
+            K = {freezeBudgetK} optimal
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            Stops 100% of onward multi-hop dispersal
+          </div>
+        </div>
 
-            <div className="v6-gauge-track my-2">
-              <div
-                className="v6-gauge-fill"
-                style={{
-                  width: `${recoveryPct}%`,
-                  background: 'var(--frozen)',
-                }}
-              />
-            </div>
-
-            <div className="k-foot mt-2">
-              {totalFrozenAmount > 0 ? (
-                <span className="text-[var(--frozen)] font-semibold">
-                  {formatInr(totalFrozenAmount, { showPaise: false })} frozen ·{' '}
-                  {formatInr(recoverableRemaining, { showPaise: false })} still at risk
-                </span>
-              ) : (
-                <span>
-                  {recoveryPct}% of the loss · {formatInr(cashedOutInr, { showPaise: false })} already cashed out
-                </span>
-              )}
-            </div>
-          </Card>
-
-          {/* How We Traced It Card */}
-          <Card>
-            <CardHeader
-              title="How we traced it"
-              subtitle="Mathematical taint conservation rules"
-            />
-            <div className="text-xs text-[var(--fg-2)] leading-relaxed space-y-2">
-              <p>
-                Money is tracked across banking conduits using the{' '}
-                <b className="text-[var(--fg-1)]">Lowest Intermediate Balance Rule (LIBR)</b>: an account cannot pass on more stolen money than its available balance held at transfer timestamp.
-              </p>
-              <p>
-                Clean pre-existing balances and bona fide commercial receipts are excluded from statutory liens under BNSS §106.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="v6-why mt-4 w-full py-2 text-center"
-              data-why="method"
-              onClick={() => setIsMethodsInspectorOpen(true)}
-            >
-              Compare methods →
-            </button>
-          </Card>
+        <div className="v6-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-[var(--fg-3)]">Innocent shielded</span>
+            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-safe-bg)] text-[var(--safe)]">
+              LIBR DOCTRINE
+            </span>
+          </div>
+          <div className="text-[20px] font-bold text-[var(--safe)]">
+            {isInjectClean ? '₹4,50,000' : '₹2,50,000'}
+          </div>
+          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
+            Apex Traders clean turnover protected
+          </div>
         </div>
       </div>
 
-      {/* 420px Slide-Over Inspector for Tracing Methods Comparison */}
-      <Inspector
-        isOpen={isMethodsInspectorOpen}
-        onClose={() => setIsMethodsInspectorOpen(false)}
-        title="Tracing Methods Compared"
-        subtitle="Forensic Judicial Admissibility Standards"
-      >
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--line)] space-y-1">
-            <div className="flex justify-between items-center">
-              <b className="text-sm text-[var(--fg-1)]">Lowest-balance rule (used)</b>
-              <span className="v6-mono font-bold text-sm text-[var(--frozen)]">
-                {formatInr(initialRecoverable, { showPaise: false })}
+      {activeWorkspaceMode === 'orders' ? (
+        /* MODE 2: STATUTORY BNSS ORDERS DRAFTER */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
+          {/* Left 7 Columns: Statutory Notice Drafter */}
+          <div className="lg:col-span-7 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
+              <div>
+                <h3 className="text-[14px] font-bold text-[var(--fg-1)]">
+                  MHA 2026 SOP Statutory Order Drafter
+                </h3>
+                <p className="text-[12px] text-[var(--fg-3)] mt-0.5">
+                  Dual-track statutory notices for specific debit liens (§106) vs full mule account attachment (§107).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveWorkspaceMode('dag')}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-[var(--fg-2)] bg-[var(--surface-2)] border border-[var(--line)] rounded hover:bg-[var(--hover)]"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Flow</span>
+              </button>
+            </div>
+
+            {/* Notice Tabs */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedNoticeType('106')}
+                className={`p-2.5 rounded border text-left transition-all ${
+                  selectedNoticeType === '106'
+                    ? 'bg-[var(--color-flow-bg)] border-[var(--accent)] shadow-xs'
+                    : 'bg-[var(--surface-2)] border-[var(--line)] hover:bg-[var(--hover)]'
+                }`}
+              >
+                <div className="text-[12px] font-bold text-[var(--fg-1)]">
+                  § 106(1) BNSS Specific Lien Order
+                </div>
+                <div className="text-[12px] text-[var(--fg-3)] mt-0.5">
+                  Apex Electronics ICICI · ₹1,80,000 Specific Lien
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedNoticeType('107')}
+                className={`p-2.5 rounded border text-left transition-all ${
+                  selectedNoticeType === '107'
+                    ? 'bg-[var(--color-safe-bg)] border-[var(--safe)] shadow-xs'
+                    : 'bg-[var(--surface-2)] border-[var(--line)] hover:bg-[var(--hover)]'
+                }`}
+              >
+                <div className="text-[12px] font-bold text-[var(--fg-1)]">
+                  § 107 BNSS Provisional Seizure Application
+                </div>
+                <div className="text-[12px] text-[var(--fg-3)] mt-0.5">
+                  Vikram, Rohit & Sameer Mule Accounts
+                </div>
+              </button>
+            </div>
+
+            {/* Draft Content Box */}
+            <div className="flex-1 min-h-[360px] p-3 rounded bg-[var(--surface-2)] border border-[var(--line)] font-mono text-[12px] text-[var(--fg-1)] leading-relaxed whitespace-pre-wrap overflow-y-auto">
+              {activeDraft.draftText}
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between pt-2 border-t border-[var(--line)]">
+              <span className="text-[12px] text-[var(--fg-3)]">
+                Statutory Compliance Window: <strong>{activeDraft.statutoryDeadlineHours} Hours</strong> from receipt
               </span>
-            </div>
-            <div className="v6-gauge-track my-2">
-              <div
-                className="v6-gauge-fill"
-                style={{ width: `${(initialRecoverable / lossInr) * 100}%`, background: 'var(--frozen)' }}
-              />
-            </div>
-            <div className="text-xs text-[var(--fg-3)]">
-              Accepted in statutory courts (§106 BNSS); protects clean third-party commercial money.
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrintOrder}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[var(--fg-2)] bg-[var(--surface-1)] border border-[var(--line)] rounded hover:bg-[var(--hover)]"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Order</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyNotice}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded shadow-xs"
+                >
+                  {isCopiedOrder ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{isCopiedOrder ? 'Copied!' : 'Copy Order Draft'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--line)] space-y-1">
-            <div className="flex justify-between items-center">
-              <b className="text-sm text-[var(--fg-1)]">First-in, first-out (FIFO)</b>
-              <span className="v6-mono font-bold text-sm text-[var(--fg-2)]">
-                {formatInr(Math.round(lossInr * 0.58), { showPaise: false })}
-              </span>
+          {/* Right 5 Columns: MHA 2026 SOP Statutory Schedule */}
+          <div className="lg:col-span-5 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs">
+            <div className="pb-2 border-b border-[var(--line)]">
+              <h3 className="text-[14px] font-bold text-[var(--fg-1)]">
+                MHA 2026 Golden Hour SOP Schedule
+              </h3>
+              <p className="text-[12px] text-[var(--fg-3)] mt-0.5">
+                Statutory timelines binding Nodal Bank Officers under Sections 106 & 107 BNSS.
+              </p>
             </div>
-            <div className="v6-gauge-track my-2">
-              <div
-                className="v6-gauge-fill"
-                style={{ width: '58%', background: 'var(--fg-3)' }}
-              />
-            </div>
-            <div className="text-xs text-[var(--fg-3)]">
-              Over-freezes merchant accounts; frequently contested in high courts.
-            </div>
-          </div>
 
-          <div className="p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--line)] space-y-1">
-            <div className="flex justify-between items-center">
-              <b className="text-sm text-[var(--fg-1)]">Proportional split</b>
-              <span className="v6-mono font-bold text-sm text-[var(--fg-2)]">
-                {formatInr(Math.round(lossInr * 0.67), { showPaise: false })}
-              </span>
+            <div className="space-y-2.5 text-[12px]">
+              <div className="p-2.5 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                <div className="font-bold text-[var(--fg-1)]">T+0 to T+2 Hours · Golden Hour SLA</div>
+                <p className="text-[var(--fg-2)] mt-0.5">
+                  1930 NCRP Portal acknowledgment requires automatic provisional freeze flag dispatch across all registered NPCI switch banks.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                <div className="font-bold text-[var(--fg-1)]">T+2 to T+6 Hours · §106 Specific Lien Notice</div>
+                <p className="text-[var(--fg-2)] mt-0.5">
+                  Investigating Officer serves statutory notice to designated Nodal Bank Officer with SHA-256 evidence token.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded bg-[var(--surface-2)] border border-[var(--line)]">
+                <div className="font-bold text-[var(--fg-1)]">T+6 to T+24 Hours · Judicial Confirmation</div>
+                <p className="text-[var(--fg-2)] mt-0.5">
+                  Application to Chief Judicial Magistrate (CJM) for confirmation of provisional attachment under Section 107 BNSS.
+                </p>
+              </div>
             </div>
-            <div className="v6-gauge-track my-2">
-              <div
-                className="v6-gauge-fill"
-                style={{ width: '67%', background: 'var(--fg-3)' }}
-              />
-            </div>
-            <div className="text-xs text-[var(--fg-3)]">
-              Spreads fractional loss across all holders; complex to execute across bank nodal officers.
+
+            <div className="mt-auto pt-3 border-t border-[var(--line)]">
+              <GoldenHourDecayChart height={160} />
             </div>
           </div>
         </div>
-      </Inspector>
+      ) : (
+        /* MODE 1: INTERACTIVE SANKEY FLOW & RECOVERY ENGINE */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
+          {/* Left 7 Columns: Sankey Flow & Doctrine Comparison */}
+          <div className="lg:col-span-7 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs">
+            {/* Toolbar: Freeze Budget K, Clean Deposit Injection, Accounting Doctrine */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--line)]">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-semibold text-[var(--fg-3)]">Doctrine:</span>
+                  {(['LIBR', 'FIFO', 'PRO_RATA'] as TaintRule[]).map((rule) => (
+                    <button
+                      key={rule}
+                      type="button"
+                      onClick={() => setSelectedRule(rule)}
+                      className={`px-2 py-0.5 text-[12px] font-semibold rounded transition-colors ${
+                        selectedRule === rule
+                          ? 'bg-[var(--accent)] text-white'
+                          : 'bg-[var(--surface-2)] text-[var(--fg-2)] hover:bg-[var(--hover)]'
+                      }`}
+                    >
+                      {rule}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-semibold text-[var(--fg-3)]">Budget K:</span>
+                  <select
+                    value={freezeBudgetK}
+                    onChange={(e) => setFreezeBudgetK(Number(e.target.value))}
+                    className="px-2 py-0.5 text-[12px] font-semibold bg-[var(--surface-2)] border border-[var(--line)] rounded text-[var(--fg-1)]"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((k) => (
+                      <option key={k} value={k}>
+                        K = {k}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleMutation('injectMerchantCleanDeposit')}
+                  className={`px-2.5 py-1 text-[12px] font-semibold rounded border transition-colors ${
+                    isInjectClean
+                      ? 'bg-[var(--color-safe-bg)] border-[var(--safe)] text-[var(--safe)]'
+                      : 'bg-[var(--surface-2)] border-[var(--line)] text-[var(--fg-2)] hover:bg-[var(--hover)]'
+                  }`}
+                >
+                  {isInjectClean ? '✓ Clean Deposit Active' : '+ Inject Clean Deposit'}
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive D3 Sankey Graph */}
+            <div className="flex-1 min-h-[380px] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden p-2">
+              <MoneyFlowSankeyGraph
+                freezeBudgetK={freezeBudgetK}
+                onFreezeBudgetKChange={setFreezeBudgetK}
+                isInjectClean={isInjectClean}
+                onToggleInjectClean={() => toggleMutation('injectMerchantCleanDeposit')}
+                selectedRule={selectedRule}
+                selectedNodeId={selectedNodeId}
+                onSelectNode={setSelectedNodeId}
+                victimName={canonicalCase.complainant.name}
+                victimAccount={canonicalCase.complainant.accountMasked}
+                lossAmount={victimLoss}
+                primaryMuleName="Vikram Shah"
+                primaryMuleAccount="Axis ••0291"
+              />
+            </div>
+
+            {/* Accounting Doctrine Comparison Matrix */}
+            <div className="p-2.5 rounded bg-[var(--surface-2)] border border-[var(--line)] space-y-2">
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="font-bold text-[var(--fg-1)] uppercase tracking-wider">
+                  Accounting Doctrine Comparison
+                </span>
+                <span className="text-[var(--fg-3)]">Supreme Court & MHA Standard</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-[12px]">
+                <div
+                  className={`p-2 rounded border ${
+                    selectedRule === 'LIBR'
+                      ? 'bg-[var(--surface-1)] border-[var(--accent)] shadow-xs'
+                      : 'bg-[var(--surface-1)] border-[var(--line)]'
+                  }`}
+                >
+                  <div className="font-bold text-[var(--fg-1)]">LIBR (Lowest Intermediate)</div>
+                  <div className="text-[var(--safe)] font-semibold mt-0.5">₹3.80L Recoverable</div>
+                  <div className="text-[var(--fg-3)] text-[12px] mt-0.5">
+                    Shields ₹4.50L legitimate merchant capital under §106 specific lien.
+                  </div>
+                </div>
+
+                <div
+                  className={`p-2 rounded border ${
+                    selectedRule === 'FIFO'
+                      ? 'bg-[var(--surface-1)] border-[var(--accent)] shadow-xs'
+                      : 'bg-[var(--surface-1)] border-[var(--line)]'
+                  }`}
+                >
+                  <div className="font-bold text-[var(--fg-1)]">FIFO (First-In First-Out)</div>
+                  <div className="text-[var(--urgent)] font-semibold mt-0.5">₹2.20L Recoverable</div>
+                  <div className="text-[var(--fg-3)] text-[12px] mt-0.5">
+                    Prematurely writes off tainted funds against earliest debits.
+                  </div>
+                </div>
+
+                <div
+                  className={`p-2 rounded border ${
+                    selectedRule === 'PRO_RATA'
+                      ? 'bg-[var(--surface-1)] border-[var(--accent)] shadow-xs'
+                      : 'bg-[var(--surface-1)] border-[var(--line)]'
+                  }`}
+                >
+                  <div className="font-bold text-[var(--fg-1)]">Pro-Rata Pooling</div>
+                  <div className="text-[var(--risk)] font-semibold mt-0.5">₹1.85L Recoverable</div>
+                  <div className="text-[var(--fg-3)] text-[12px] mt-0.5">
+                    Dilutes victim recovery across unrelated commercial deposits.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right 5 Columns: Recovery Model Panel & Decay Chart */}
+          <div className="lg:col-span-5 flex flex-col space-y-3">
+            {/* Recovery Model Panel */}
+            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs">
+              <RecoveryModelPanel
+                isInjectClean={isInjectClean}
+                freezeBudgetK={freezeBudgetK}
+                selectedNodeId={selectedNodeId}
+                onCloseNodeDrawer={() => setSelectedNodeId(null)}
+                onOpenOrders={() => setActiveWorkspaceMode('orders')}
+                caseId={caseId}
+                victimName={canonicalCase.complainant.name}
+              />
+            </div>
+
+            {/* Golden Hour Decay Curve */}
+            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--line)] mb-2">
+                <span className="text-[12px] font-bold text-[var(--fg-1)] uppercase tracking-wider">
+                  Golden-Hour Recovery Curve
+                </span>
+                <span className="text-[12px] text-[var(--safe)] font-semibold">
+                  T+2.5h Lien Locked
+                </span>
+              </div>
+              <GoldenHourDecayChart height={175} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
