@@ -303,7 +303,10 @@ export const FraudNetworkScreen: React.FC = () => {
         /* 12-Column Layout: Left 8 Cols Graph Canvas, Right 4 Cols Telemetry & Provenance */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
           {/* Left 8 Cols: Interactive Network Graph */}
-          <div className="lg:col-span-8 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs min-h-[540px]">
+          <div
+            data-semantic-id="el-graph-node-mule-1"
+            className="lg:col-span-8 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs min-h-[540px] tarka-semantic-target tarka-interactive-card"
+          >
             <EvidenceNetworkGraph
               isHotspotActive={isHotspotActive}
               onToggleHotspot={() => toggleMutation('triggerHotspotCollision')}
@@ -316,7 +319,10 @@ export const FraudNetworkScreen: React.FC = () => {
           {/* Right 4 Cols: UPI 2.0 XML Stanza & Corroboration Details */}
           <div className="lg:col-span-4 flex flex-col space-y-3">
             {/* UPI 2.0 <Device> XML Stanza */}
-            <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs space-y-2">
+            <div
+              data-semantic-id="el-graph-node-hub"
+              className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs space-y-2 tarka-semantic-target tarka-interactive-card"
+            >
               <div className="flex items-center justify-between pb-1 border-b border-[var(--line)]">
                 <span className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider">
                   UPI 2.0 &lt;Device&gt; XML Stanza

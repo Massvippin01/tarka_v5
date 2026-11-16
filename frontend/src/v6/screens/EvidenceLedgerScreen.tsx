@@ -345,7 +345,10 @@ export const EvidenceLedgerScreen: React.FC = () => {
       </div>
 
       {activeSubView === 'files' ? (
-        <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 min-h-[500px]">
+        <div
+          data-semantic-id="el-exhibit-bank-statement"
+          className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 min-h-[500px] tarka-semantic-target tarka-interactive-card"
+        >
           <EvidenceFileManager caseId={caseId} />
         </div>
       ) : (
@@ -354,7 +357,8 @@ export const EvidenceLedgerScreen: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div
               onClick={() => toggleMutation('alterBankRow14')}
-              className="v6-card cursor-pointer hover:border-[var(--accent)] transition-all group"
+              data-semantic-id="el-ledger-metric-conservation"
+              className="v6-card tarka-semantic-target tarka-interactive-card cursor-pointer hover:border-[var(--accent)] transition-all group"
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[12px] font-medium text-[var(--fg-3)]">Ledger conservation</span>
@@ -518,7 +522,10 @@ export const EvidenceLedgerScreen: React.FC = () => {
             </div>
 
             {/* Right 5 Cols: Forensic Inspector Dock */}
-            <div className="lg:col-span-5 flex flex-col min-h-0 bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs">
+            <div
+              data-semantic-id="el-ledger-row-rrn-402918273645"
+              className="lg:col-span-5 flex flex-col min-h-0 bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs tarka-semantic-target tarka-interactive-card"
+            >
               <InspectorDock
                 rrnInput={rrnInput}
                 onRrnChange={(val) => setRrnInput(val)}

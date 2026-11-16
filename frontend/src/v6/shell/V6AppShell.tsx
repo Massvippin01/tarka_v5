@@ -116,6 +116,9 @@ const TransformationAuditLog = lazy(() =>
 );
 
 import { HorizontalStepper } from '../ui/HorizontalStepper';
+import { TarkaContextualGuideModal } from '../guide/TarkaContextualGuideModal';
+import { highlightController } from '../highlight/semanticRegistry';
+import { BookOpen } from 'lucide-react';
 
 export const V6AppShell: React.FC = () => {
   const { syncFromUrl } = useUrlSync();
@@ -140,6 +143,24 @@ export const V6AppShell: React.FC = () => {
   const [isDemoUserOpen, setIsDemoUserOpen] = useState(false);
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
   const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  // Subscribe to voice-directed semantic element highlights
+  useEffect(() => {
+    return highlightController.subscribe((elementId, tone) => {
+      document.querySelectorAll('[data-semantic-highlight]').forEach((el) => {
+        el.removeAttribute('data-semantic-highlight');
+      });
+      if (elementId) {
+        const target =
+          document.getElementById(elementId) ||
+          document.querySelector(`[data-semantic-id="${elementId}"]`);
+        if (target) {
+          target.setAttribute('data-semantic-highlight', tone);
+        }
+      }
+    });
+  }, []);
 
   // Sync with browser URL changes
   useEffect(() => {
@@ -204,12 +225,15 @@ export const V6AppShell: React.FC = () => {
       } else if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         setActiveView('actions');
+      } else if ((e.key === '?' || (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey)) && activeView !== 'home') {
+        e.preventDefault();
+        setIsGuideOpen((prev) => !prev);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveView, setCommandPaletteOpen, toggleAskTarka, setVoiceModalOpen]);
+  }, [setActiveView, setCommandPaletteOpen, toggleAskTarka, setVoiceModalOpen, activeView]);
 
   // Case validity validation
   const effectiveCaseId = activeCaseId || 'CASE-2026-001';
@@ -322,6 +346,17 @@ export const V6AppShell: React.FC = () => {
         return <ViewNotFoundScreen view={activeView} />;
     }
   };
+
+  // Pure Immersive Particle Intelligence Interface (NO sidebar, NO navbar, NO top menu, NO cards)
+  if (activeView === 'home') {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<div className="w-screen h-screen bg-[#07090D]" />}>
+          <ParticleHomeScreen />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <div
@@ -471,6 +506,23 @@ export const V6AppShell: React.FC = () => {
           onClose={() => setTransformationAuditModalOpen(false)}
         />
       </Suspense>
+
+      {/* Floating Contextual Forensic Guide Button */}
+      <button
+        onClick={() => setIsGuideOpen(true)}
+        className="fixed bottom-5 right-6 z-40 flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#FFFDF8] dark:bg-[#25221F] border border-[#D5CABE] dark:border-[#3B332F] shadow-lg text-[#292522] dark:text-[#E9E2D7] text-xs font-semibold hover:border-[#476D91] transition cursor-pointer"
+        title="Contextual Forensic & Algorithmic Guide (Press ? or G)"
+      >
+        <BookOpen size={14} className="text-[#476D91]" />
+        <span>Screen Guide</span>
+      </button>
+
+      {/* Contextual Forensic Guide Modal */}
+      <TarkaContextualGuideModal
+        viewId={activeView}
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+      />
 
       {/* Dev Fingerprint Overlay */}
       <CaseFingerprintDevOverlay />

@@ -167,6 +167,7 @@ export const HomeScreen: React.FC = () => {
             label="Total Exposure"
             value={formatInr(totalExposure)}
             subvalue="3 Bank Jurisdictions"
+            dataSemanticId="el-metric-total-loss"
             icon={<IndianRupee className="size-4" />}
             onClick={() => setActiveView('workspace')}
           />
@@ -174,6 +175,7 @@ export const HomeScreen: React.FC = () => {
             label="Shielded / Frozen"
             value={formatInr(totalShielded)}
             subvalue="40.3% Recovered"
+            dataSemanticId="el-metric-recovery-potential"
             trend="+₹31.4L"
             trendUp={true}
             icon={<ShieldCheck className="size-4 text-[#287653]" />}

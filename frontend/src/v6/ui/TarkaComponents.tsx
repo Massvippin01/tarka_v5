@@ -239,6 +239,7 @@ export interface TarkaMetricCardProps {
   badge?: React.ReactNode;
   onClick?: () => void;
   className?: string;
+  dataSemanticId?: string;
 }
 
 export const TarkaMetricCard: React.FC<TarkaMetricCardProps> = ({
@@ -251,12 +252,14 @@ export const TarkaMetricCard: React.FC<TarkaMetricCardProps> = ({
   badge,
   onClick,
   className,
+  dataSemanticId,
 }) => {
   return (
     <div
       onClick={onClick}
+      data-semantic-id={dataSemanticId}
       className={clsx(
-        'tarka-panel rounded-xl p-4 flex flex-col justify-between transition-all duration-150',
+        'tarka-panel tarka-semantic-target tarka-interactive-card rounded-xl p-4 flex flex-col justify-between transition-all duration-150',
         onClick && 'cursor-pointer hover:border-[#BDB0A3] hover:shadow-md select-none',
         className
       )}

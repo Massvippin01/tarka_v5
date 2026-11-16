@@ -234,7 +234,10 @@ export const DeviceSimScreen: React.FC = () => {
       {/* 12-Column Main Workbench: Left 7 Cols CGNAT Funnel, Right 5 Cols Dual-SIM & Z3 Caliper */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
         {/* Left 7 Columns: CGNAT Sequential Intersection Funnel */}
-        <div className="lg:col-span-7 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs">
+        <div
+          data-semantic-id="el-device-cgnat-funnel"
+          className="lg:col-span-7 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs tarka-semantic-target tarka-interactive-card"
+        >
           <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
             <div>
               <div className="flex items-center gap-2">

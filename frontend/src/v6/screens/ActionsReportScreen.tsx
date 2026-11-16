@@ -282,7 +282,10 @@ export const ActionsReportScreen: React.FC<ActionsReportScreenProps> = ({ initia
         </div>
       ) : (
         /* SUB-TAB 2: ADMISSIBLE COURT DOSSIER (A4 PREVIEW) */
-        <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-6 shadow-xs max-w-4xl mx-auto space-y-6">
+        <div
+          data-semantic-id="el-court-proof-certificate"
+          className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-6 shadow-xs max-w-4xl mx-auto space-y-6 tarka-semantic-target tarka-interactive-card"
+        >
           {/* Official Letterhead */}
           <div className="text-center pb-4 border-b-2 border-black space-y-1">
             <h2 className="text-[14px] font-bold uppercase tracking-widest text-black">

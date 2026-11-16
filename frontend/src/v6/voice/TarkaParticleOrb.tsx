@@ -14,7 +14,8 @@ export type OrbState =
 export interface TarkaParticleOrbProps {
   state: OrbState;
   audioLevel?: number; // 0.0 to 1.0 from Web Audio AnalyserNode
-  size?: number; // in pixels, default 340
+  frequencyData?: Uint8Array; // Full spectral FFT bins
+  size?: number; // in pixels, default 380
   onClick?: () => void;
   className?: string;
   theme?: "obsidian-glass" | "porcelain" | "midnight-teal" | "high-contrast" | string;
@@ -30,12 +31,15 @@ interface Particle {
   speed: number;
   size: number;
   alpha: number;
+  isCorona: boolean;
+  isGlint: boolean;
 }
 
 export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
   state,
   audioLevel = 0,
-  size = 340,
+  frequencyData,
+  size = 380,
   onClick,
   className = "",
   theme = "obsidian-glass",
@@ -44,6 +48,7 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
   const animFrameRef = useRef<number | null>(null);
   const stateRef = useRef<OrbState>(state);
   const audioLevelRef = useRef<number>(audioLevel);
+  const frequencyDataRef = useRef<Uint8Array | undefined>(frequencyData);
   const themeRef = useRef(theme);
 
   useEffect(() => {
@@ -53,6 +58,10 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
   useEffect(() => {
     audioLevelRef.current = audioLevel;
   }, [audioLevel]);
+
+  useEffect(() => {
+    frequencyDataRef.current = frequencyData;
+  }, [frequencyData]);
 
   useEffect(() => {
     themeRef.current = theme;
@@ -69,8 +78,8 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // High DPI scaling (capped at 2 for performance)
-    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    // High DPI scaling (capped at 2.0 to conserve GPU bandwidth)
+    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2.0) : 1;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = `${size}px`;
@@ -81,15 +90,15 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
     const centerY = size / 2;
     const sphereRadius = size * 0.38;
 
-    // Generate high-density spherical particles matching the canonical TARKA forensic orb (~6,800 points)
-    const particleCount = prefersReducedMotion ? 1800 : 6800;
+    // Generate high-density spherical particles matching the canonical TARKA forensic orb (~8,800 points)
+    const particleCount = prefersReducedMotion ? 2200 : 8800;
     const particles: Particle[] = [];
 
     // Golden angle for Fibonacci spherical distribution
     const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ~2.39996323
 
     // 1. Shell particles (base volumetric topography with organic wrinkles/crests)
-    const shellCount = Math.floor(particleCount * 0.78);
+    const shellCount = Math.floor(particleCount * 0.80);
     for (let i = 0; i < shellCount; i++) {
       const y = 1 - (2 * i) / (shellCount - 1);
       const phi = Math.acos(Math.max(-1, Math.min(1, y)));
@@ -118,10 +127,12 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
         speed: (0.0003 + Math.random() * 0.0005) * (i % 2 === 0 ? 1 : -1),
         size: pSize,
         alpha: isGlint ? 0.98 : 0.3 + Math.random() * 0.55,
+        isCorona: false,
+        isGlint,
       });
     }
 
-    // 2. Turbulent outer corona rim particles (irregular fringed boundary matching reference)
+    // 2. Turbulent outer corona rim particles (irregular fringed boundary)
     const rimCount = particleCount - shellCount;
     for (let i = 0; i < rimCount; i++) {
       const theta = Math.random() * Math.PI * 2;
@@ -144,6 +155,8 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
         speed: (0.0005 + Math.random() * 0.0008) * (i % 2 === 0 ? 1 : -1),
         size: 0.85 + Math.random() * 1.25,
         alpha: 0.65 + Math.random() * 0.35,
+        isCorona: true,
+        isGlint: Math.random() < 0.05,
       });
     }
 
@@ -156,7 +169,7 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
       const delta = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
 
-      // Pause or reduce when tab is hidden to save GPU cycles
+      // Throttle when document tab is hidden
       if (typeof document !== "undefined" && document.hidden) {
         animFrameRef.current = requestAnimationFrame(render);
         return;
@@ -167,6 +180,34 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
       const currentState = stateRef.current;
       const currentAudio = audioLevelRef.current;
       const currentTheme = themeRef.current;
+      const freq = frequencyDataRef.current;
+
+      // Calculate 3-band spectral energy from real FFT bins
+      let bassEnergy = 0;
+      let midEnergy = 0;
+      let trebleEnergy = 0;
+
+      if (freq && freq.length > 0) {
+        const binCount = freq.length;
+        const bassEnd = Math.floor(binCount * 0.15);
+        const midEnd = Math.floor(binCount * 0.60);
+
+        let bSum = 0;
+        for (let i = 0; i < bassEnd; i++) bSum += freq[i];
+        bassEnergy = bSum / (bassEnd * 255);
+
+        let mSum = 0;
+        for (let i = bassEnd; i < midEnd; i++) mSum += freq[i];
+        midEnergy = mSum / ((midEnd - bassEnd) * 255);
+
+        let tSum = 0;
+        for (let i = midEnd; i < binCount; i++) tSum += freq[i];
+        trebleEnergy = tSum / ((binCount - midEnd) * 255);
+      } else {
+        bassEnergy = currentAudio * 0.8;
+        midEnergy = currentAudio * 0.6;
+        trebleEnergy = currentAudio * 0.4;
+      }
 
       // Base rotation and state behavior
       let rotSpeed = 0.12;
@@ -181,8 +222,8 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
           break;
         case "listening":
           rotSpeed = 0.22;
-          pulseTarget = 1.03 + currentAudio * 0.25;
-          turbulenceScale = 1.0 + currentAudio * 1.8;
+          pulseTarget = 1.02 + bassEnergy * 0.28;
+          turbulenceScale = 1.0 + midEnergy * 2.2;
           break;
         case "processing":
         case "investigating":
@@ -192,8 +233,8 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
           break;
         case "speaking":
           rotSpeed = 0.16;
-          pulseTarget = 1.04 + Math.sin(time * 0.006) * 0.04 + currentAudio * 0.18;
-          turbulenceScale = 1.1 + currentAudio * 1.4;
+          pulseTarget = 1.04 + Math.sin(time * 0.006) * 0.04 + bassEnergy * 0.22;
+          turbulenceScale = 1.1 + midEnergy * 1.6;
           break;
         case "confirmation_required":
           rotSpeed = 0.06;
@@ -219,7 +260,7 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
         pulseTarget = 1.0;
       }
 
-      pulseScale += (pulseTarget - pulseScale) * 0.12;
+      pulseScale += (pulseTarget - pulseScale) * 0.14;
       rotX += rotSpeed * delta * 0.45;
       rotY += rotSpeed * delta * 0.8;
 
@@ -228,122 +269,118 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
       const sinX = Math.sin(rotX);
       const cosY = Math.cos(rotY);
       const sinY = Math.sin(rotY);
-      const fov = 380;
 
-      // Status indicator ring for confirmation_required or error
-      if (currentState === "confirmation_required") {
-        ctx.save();
-        ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 6]);
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, sphereRadius * 1.18 * pulseScale, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
+      // Color scheme setup based on state and theme
+      let baseR = 210, baseG = 225, baseB = 245; // Cool ivory steel-blue default
+      let glintR = 255, glintG = 255, glintB = 255;
+      let haloR = 71, haloG = 109, haloB = 145;
+
+      if (currentState === "speaking") {
+        baseR = 140; baseG = 195; baseB = 255; // Vibrant cyan/sky
+        haloR = 56; haloG = 189; haloB = 248;
+      } else if (currentState === "listening") {
+        baseR = 175; baseG = 230; baseB = 210; // Emerald cyan responsiveness
+        haloR = 16; haloG = 185; haloB = 129;
+      } else if (currentState === "processing" || currentState === "investigating") {
+        baseR = 215; baseG = 170; baseB = 255; // Electric violet intelligence
+        haloR = 168; haloG = 85; haloB = 247;
+      } else if (currentState === "confirmation_required") {
+        baseR = 255; baseG = 200; baseB = 120; // Amber notice
+        haloR = 245; haloG = 158; haloB = 11;
       } else if (currentState === "error") {
-        ctx.save();
-        ctx.strokeStyle = "rgba(244, 63, 94, 0.55)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, sphereRadius * 1.18 * pulseScale, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
+        baseR = 255; baseG = 120; baseB = 120; // Rose alert
+        haloR = 239; haloG = 68; haloB = 68;
+      } else if (currentState === "offline") {
+        baseR = 190; baseG = 190; baseB = 195; // Silver graphite local
+        haloR = 148; haloG = 163; haloB = 184;
       }
 
-      // Iterate and render particles
+      if (currentTheme === "porcelain") {
+        baseR = 90; baseG = 110; baseB = 140;
+      }
+
+      // Draw subtle background radial glow halo
+      const haloRadius = sphereRadius * (1.18 + bassEnergy * 0.25);
+      const grad = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        sphereRadius * 0.25,
+        centerX,
+        centerY,
+        haloRadius
+      );
+      grad.addColorStop(0, `rgba(${haloR}, ${haloG}, ${haloB}, 0.16)`);
+      grad.addColorStop(0.65, `rgba(${haloR}, ${haloG}, ${haloB}, 0.05)`);
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, haloRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Transform, sort, and render each particle with 3D depth
       const len = particles.length;
       for (let i = 0; i < len; i++) {
         const p = particles[i];
+
+        // Orbit update
         p.theta += p.speed;
 
-        // Subtle organic surface wave modulation
-        const wave =
-          Math.sin(time * 0.001 + p.theta * 3 + p.phi * 2) * 1.5 * turbulenceScale;
-        const r = (p.baseRadius + wave) * pulseScale;
+        // Apply dynamic wave / frequency displacement
+        let dynamicRadius = p.baseRadius * pulseScale;
+        if (p.isCorona) {
+          dynamicRadius += trebleEnergy * sphereRadius * 0.18 * Math.sin(p.theta * 7) * turbulenceScale;
+        } else {
+          dynamicRadius += midEnergy * sphereRadius * 0.08 * Math.cos(p.phi * 5) * turbulenceScale;
+        }
 
-        // 3D Spherical Coordinate -> Cartesian
+        // Spherical to 3D Cartesian coordinates
         const sinPhi = Math.sin(p.phi);
         const cosPhi = Math.cos(p.phi);
-        const x0 = r * sinPhi * Math.cos(p.theta);
-        const y0 = r * sinPhi * Math.sin(p.theta);
-        const z0 = r * cosPhi;
+        const sinTheta = Math.sin(p.theta);
+        const cosTheta = Math.cos(p.theta);
 
-        // 3D Rotations (around Y then X)
+        const x0 = dynamicRadius * sinPhi * cosTheta;
+        const y0 = dynamicRadius * cosPhi;
+        const z0 = dynamicRadius * sinPhi * sinTheta;
+
+        // Y-axis rotation
         const x1 = x0 * cosY + z0 * sinY;
+        const y1 = y0;
         const z1 = -x0 * sinY + z0 * cosY;
-        const y2 = y0 * cosX - z1 * sinX;
-        const z2 = y0 * sinX + z1 * cosX;
 
-        // Depth culling: Back hemisphere is heavily attenuated or culled so interior stays quiet and dark
-        const normZ = z2 / sphereRadius;
-        if (normZ < -0.15) {
-          if (normZ < -0.45 || i % 3 !== 0) continue;
+        // X-axis rotation
+        const x2 = x1;
+        const y2 = y1 * cosX - z1 * sinX;
+        const z2 = y1 * sinX + z1 * cosX;
+
+        // Perspective projection
+        const cameraDist = sphereRadius * 3.4;
+        const perspective = cameraDist / (cameraDist - z2);
+        const screenX = centerX + x2 * perspective;
+        const screenY = centerY + y2 * perspective;
+
+        // Depth culling & limb brightening: particles facing camera or on the tangent edge are highlighted
+        const depthFactor = (z2 + sphereRadius) / (sphereRadius * 2); // 0 (back) to 1 (front)
+        if (depthFactor < 0.08 && !p.isCorona) {
+          continue; // Back culling for performance and clarity
         }
 
-        // Perspective Projection
-        const scale = fov / (fov + z2);
-        const projX = centerX + x1 * scale;
-        const projY = centerY + y2 * scale;
+        const edgeFactor = Math.abs(z2) / sphereRadius;
+        const limbGlow = 1.0 - Math.min(1.0, edgeFactor * 0.5);
 
-        // Limb brightening calculation:
-        // As normZ approaches 0 (tangent rim), particle path through shell is thickest -> bright white
-        // As normZ approaches 1 (center facing camera), particles are dimmer silver/slate
-        const absZ = Math.abs(normZ);
-        const rimFactor = Math.pow(Math.max(0, 1 - absZ), 1.8); // 0 at center, 1 at rim
+        const finalAlpha = Math.max(
+          0.05,
+          Math.min(1.0, p.alpha * depthFactor * limbGlow * (0.65 + currentAudio * 0.4))
+        );
+        const finalSize = Math.max(0.4, p.size * perspective * (0.85 + depthFactor * 0.3));
 
-        const isLight = currentTheme === "porcelain";
-        let red = isLight ? 30 : 235;
-        let green = isLight ? 41 : 242;
-        let blue = isLight ? 59 : 255;
-        let alpha = p.alpha;
-        let dotSize = p.size * scale;
-
-        if (rimFactor > 0.55) {
-          // Outer rim: Brilliant pure silver-white with subtle steel-blue accent
-          red = isLight ? 15 : 240;
-          green = isLight ? 23 : 248;
-          blue = isLight ? 42 : 255;
-          alpha = Math.min(1.0, 0.75 + rimFactor * 0.25);
-          dotSize = Math.max(1.0, p.size * scale * 1.25);
+        if (p.isGlint) {
+          ctx.fillStyle = `rgba(${glintR}, ${glintG}, ${glintB}, ${Math.min(1.0, finalAlpha * 1.4)})`;
         } else {
-          // Center / interior: Dimmer silver-grey / muted steel to maintain visually quiet, dark center
-          const depthRatio = Math.max(0.15, normZ);
-          if (isLight) {
-            red = Math.round(71 + 30 * (1 - depthRatio));
-            green = Math.round(85 + 30 * (1 - depthRatio));
-            blue = Math.round(105 + 30 * (1 - depthRatio));
-          } else {
-            red = Math.round(130 + 80 * depthRatio);
-            green = Math.round(155 + 85 * depthRatio);
-            blue = Math.round(195 + 60 * depthRatio);
-          }
-          alpha = (0.2 + 0.35 * depthRatio) * p.alpha;
-          dotSize = Math.max(0.7, p.size * scale * 0.95);
+          ctx.fillStyle = `rgba(${baseR}, ${baseG}, ${baseB}, ${finalAlpha})`;
         }
 
-        // State-specific color modulations
-        if (currentState === "error") {
-          red = 244;
-          green = 63;
-          blue = 94;
-        } else if (currentState === "confirmation_required") {
-          red = 251;
-          green = 191;
-          blue = 36;
-        } else if (currentState === "offline") {
-          red = 148;
-          green = 163;
-          blue = 184;
-        } else if (currentState === "listening") {
-          // Steel blue / electric azure pulse when listening
-          red = Math.round(red * 0.7 + 56 * 0.3);
-          green = Math.round(green * 0.8 + 189 * 0.2);
-          blue = 255;
-        }
-
-        // Render point with sub-pixel rect for razor-sharp stippling (10x faster than ctx.arc)
-        ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-        ctx.fillRect(projX - dotSize / 2, projY - dotSize / 2, dotSize, dotSize);
+        ctx.fillRect(screenX, screenY, finalSize, finalSize);
       }
 
       animFrameRef.current = requestAnimationFrame(render);
@@ -356,51 +393,16 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [size, theme]);
-
-  const stateLabels: Record<OrbState, string> = {
-    idle: "TARKA Assistant Ready • Click or speak to activate",
-    listening: "Listening • Speak naturally in English, Tamil, Hindi or Bengali",
-    processing: "Analyzing evidence with deterministic Z3 solver",
-    investigating: "Synthesizing cross-source intelligence and timeline",
-    speaking: "Spoken Response Active • Speak anytime to barge in",
-    confirmation_required: "Human Confirmation Required for Consequential Statutory Action",
-    offline: "Fully Local Offline Enclave Active • Zero Network Egress",
-    error: "Voice connection error • Using fallback interface",
-    interrupted: "Interrupted • Assistant silenced",
-  };
+  }, [size]);
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-label={`TARKA Voice Sphere: ${stateLabels[state]}`}
+      className={`tarka-particle-orb-container relative flex items-center justify-center select-none cursor-pointer ${className}`}
       onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className={`tarka-particle-orb-container relative flex items-center justify-center cursor-pointer select-none outline-none ${className}`}
-      style={{
-        width: `${size}px`,
-        height: `${size}px`,
-      }}
+      style={{ width: `${size}px`, height: `${size}px` }}
+      title="TARKA Voice Intelligence Field"
     >
-      <canvas
-        ref={canvasRef}
-        className="block rounded-full pointer-events-none"
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-        }}
-      />
-      {/* Screen-reader only live status */}
-      <span className="sr-only" aria-live="polite">
-        {stateLabels[state]}
-      </span>
+      <canvas ref={canvasRef} />
     </div>
   );
 };
-
