@@ -11,8 +11,15 @@ import { TarkaCommandPalette } from '../../components/tarka/TarkaCommandPalette'
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
 import { Lock } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 // V6 Screens (lazy-loaded for speed & clean architecture)
+const ParticleHomeScreen = lazy(() =>
+  import('../screens/ParticleHomeScreen').then((m) => ({ default: m.ParticleHomeScreen }))
+);
+const HomeScreen = lazy(() =>
+  import('../screens/HomeScreen').then((m) => ({ default: m.HomeScreen }))
+);
 const CommandCenterScreen = lazy(() =>
   import('../screens/CommandCenterScreen').then((m) => ({ default: m.CommandCenterScreen }))
 );
@@ -56,13 +63,16 @@ const ViewNotFoundScreen = lazy(() =>
 const AskTarkaDrawer = lazy(() =>
   import('../ui/AskTarkaDrawer').then((m) => ({ default: m.AskTarkaDrawer }))
 );
-const SarvamVoiceModal = lazy(() =>
-  import('../../components/tarka/SarvamVoiceModal').then((m) => ({ default: m.SarvamVoiceModal }))
+const TarkaVoiceModal = lazy(() =>
+  import('../voice/TarkaVoiceModal').then((m) => ({ default: m.TarkaVoiceModal }))
 );
 const EvidenceIntakeModal = lazy(() =>
   import('../../components/tarka/workspace/EvidenceIntakeModal').then((m) => ({
     default: m.EvidenceIntakeModal,
   }))
+);
+const MassiveEvidenceIntakeModal = lazy(() =>
+  import('../ui/MassiveEvidenceIntakeModal').then((m) => ({ default: m.MassiveEvidenceIntakeModal }))
 );
 const NewCaseModal = lazy(() =>
   import('../../components/tarka/workspace/NewCaseModal').then((m) => ({
@@ -123,6 +133,8 @@ export const V6AppShell: React.FC = () => {
     selectedEvidenceEdge,
     transformationAuditModalOpen,
     setTransformationAuditModalOpen,
+    massiveIntakeModalOpen,
+    setMassiveIntakeModalOpen,
   } = useTarkaUiStore();
 
   const [isDemoUserOpen, setIsDemoUserOpen] = useState(false);
@@ -202,6 +214,7 @@ export const V6AppShell: React.FC = () => {
   // Case validity validation
   const effectiveCaseId = activeCaseId || 'CASE-2026-001';
   const knownViews = [
+    'home',
     'workspace',
     'dash',
     'dashboard',
@@ -254,9 +267,17 @@ export const V6AppShell: React.FC = () => {
     }
 
     switch (activeView) {
+      case 'home':
+        return <ParticleHomeScreen />;
       case 'workspace':
+      case 'command-centre':
       case 'dash':
       case 'dashboard':
+        return <HomeScreen />;
+      case 'commandcenter':
+      case 'command-center':
+      case 'cases-hub':
+      case 'hub':
         return <CommandCenterScreen />;
       case 'cases':
         return <CasesScreen />;
@@ -341,8 +362,12 @@ export const V6AppShell: React.FC = () => {
         )}
 
         {/* View container */}
-        <main className="v6-view" id="v6-view" data-case-id={effectiveCaseId}>
-          <HorizontalStepper />
+        <main
+          className={cn('v6-view', activeView === 'home' && 'p-0 overflow-y-auto bg-[#07090D]')}
+          id="v6-view"
+          data-case-id={effectiveCaseId}
+        >
+          {activeView !== 'home' && <HorizontalStepper />}
           <ErrorBoundary>
             <Suspense
               fallback={
@@ -378,10 +403,9 @@ export const V6AppShell: React.FC = () => {
         <AskTarkaDrawer />
       </Suspense>
 
-      {/* Multimodal Voice Modal (Sarvam STT/TTS) */}
+      {/* Multimodal Voice Interrogation Station */}
       <Suspense fallback={null}>
-        <SarvamVoiceModal
-          caseId={effectiveCaseId}
+        <TarkaVoiceModal
           isOpen={voiceModalOpen}
           onClose={() => setVoiceModalOpen(false)}
         />
@@ -390,6 +414,12 @@ export const V6AppShell: React.FC = () => {
       {/* Cryptographic Evidence Intake Modal */}
       <Suspense fallback={null}>
         <EvidenceIntakeModal />
+        {massiveIntakeModalOpen && (
+          <MassiveEvidenceIntakeModal
+            isOpen={massiveIntakeModalOpen}
+            onClose={() => setMassiveIntakeModalOpen(false)}
+          />
+        )}
       </Suspense>
 
       {/* New Case Registration Modal */}

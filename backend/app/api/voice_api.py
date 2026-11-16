@@ -59,6 +59,19 @@ class VoiceTurnRequest(BaseModel):
     language_hint: str = "en-IN"
 
 
+class OfflineTranscribeRequest(BaseModel):
+    audio_base64: Optional[str] = None
+    language_code: str = "en-IN"
+    mode: str = "codemix"
+
+
+class OfflineSynthesizeRequest(BaseModel):
+    text: str
+    target_language_code: str = "en-IN"
+    speaker: Optional[str] = "tarka_male_investigator"
+    sample_rate: int = 22050
+
+
 # ────────────────────────────────────────────────────────────────────
 # Endpoints
 # ────────────────────────────────────────────────────────────────────
@@ -285,3 +298,52 @@ async def transition_ambient_state(
 
     result = session.transition_ambient(req.event, metadata=meta)
     return result
+
+
+# ────────────────────────────────────────────────────────────────────
+# TARKA Local Offline Voice Endpoints (100% Offline, Zero Cloud)
+# ────────────────────────────────────────────────────────────────────
+
+import base64
+from app.services.voice.local_offline_voice_service import local_offline_voice_service
+
+
+@router.get("/offline/models", tags=["Offline Voice Pipeline"])
+def get_offline_voice_models(user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    """Retrieve inventory of local offline ASR and TTS models with hardware telemetry."""
+    return local_offline_voice_service.get_installed_models()
+
+
+@router.get("/offline/comparison", tags=["Offline Voice Pipeline"])
+def get_offline_benchmark_comparison(user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    """Retrieve benchmark comparison between Fully Local Offline mode and Sarvam Cloud mode."""
+    return local_offline_voice_service.get_benchmark_comparison()
+
+
+@router.post("/offline/transcribe", tags=["Offline Voice Pipeline"])
+def transcribe_speech_offline(
+    req: OfflineTranscribeRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Transcribe audio completely offline using local Faster-Whisper model."""
+    audio_bytes = base64.b64decode(req.audio_base64) if req.audio_base64 else b""
+    return local_offline_voice_service.transcribe_audio(
+        audio_bytes=audio_bytes,
+        language_code=req.language_code,
+        mode=req.mode,
+    )
+
+
+@router.post("/offline/synthesize", tags=["Offline Voice Pipeline"])
+def synthesize_speech_offline(
+    req: OfflineSynthesizeRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Synthesize natural, human-grade speech into 22,050 Hz PCM WAV bytes completely offline."""
+    return local_offline_voice_service.synthesize_speech(
+        text=req.text,
+        target_language_code=req.target_language_code,
+        speaker=req.speaker,
+        sample_rate=req.sample_rate,
+    )
+

@@ -353,12 +353,12 @@ def test_counterfactual_depended_vs_unrelated_exclusion(client: TestClient):
     assert amount_finding is not None
     target_finding_id = amount_finding["finding_id"]
 
-    # 2. Create Challenge Run excluding screenshot ART-004-BCCD4200
+    # 2. Create Challenge Run excluding screenshot ART-004-6155034A
     chlg_resp = client.post(
         f"/api/cases/{case_id}/analysis-runs/baseline/challenge",
         json={
             "run_name": "Challenge: Exclude Screenshot",
-            "excluded_artifact_ids": ["ART-004-BCCD4200"],
+            "excluded_artifact_ids": ["ART-004-6155034A"],
             "rationale": "Testing hypothesis that screenshot claims are inaccurate",
             "created_by": "Lead Investigator",
         },
@@ -376,8 +376,8 @@ def test_counterfactual_depended_vs_unrelated_exclusion(client: TestClient):
 
     assert cf_data.baseline_status == "ACTIVE"
     assert cf_data.challenge_status == "INACTIVE"
-    assert "ART-004-BCCD4200" in cf_data.excluded_artifact_ids
-    assert "ART-004-BCCD4200" in cf_data.deactivated_dependencies
+    assert "ART-004-6155034A" in cf_data.excluded_artifact_ids
+    assert "ART-004-6155034A" in cf_data.deactivated_dependencies
     assert cf_data.is_provenance_justified is True
     assert "transitioned to inactive" in cf_data.transition_summary.lower()
 
@@ -559,10 +559,10 @@ def test_empty_case_and_forward_trace(client: TestClient):
     case_store.create_case(case_id=case_id, title="Empty Case", description="Graceful degradation")
 
     # Artifact forward trace on demo case
-    art_trace_resp = client.get(f"/api/cases/upi_payment_discrepancy/artifacts/ART-004-BCCD4200/impact")
+    art_trace_resp = client.get(f"/api/cases/upi_payment_discrepancy/artifacts/ART-004-6155034A/impact")
     assert art_trace_resp.status_code == 200
     trace = ProvenanceTraceResponse(**art_trace_resp.json())
-    assert trace.root_id == "ART-004-BCCD4200"
+    assert trace.root_id == "ART-004-6155034A"
     assert trace.direction == "FORWARD"
     assert len(trace.nodes) > 0
 
@@ -768,7 +768,7 @@ def test_independent_findings_survive_exclusion_list(client: TestClient):
     chlg_res = client.post(
         f"/api/cases/{case_id}/analysis-runs/baseline/challenge",
         json={
-            "excluded_artifact_ids": ["ART-004-BCCD4200"],
+            "excluded_artifact_ids": ["ART-004-6155034A"],
             "investigator_note": "Testing independent survival",
         },
     )

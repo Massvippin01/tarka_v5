@@ -557,7 +557,7 @@ def test_api_challenge_run_priorities_isolation(test_client):
     cf_res = test_client.post(
         "/api/cases/upi_payment_discrepancy/analysis-runs/baseline/challenge",
         json={
-            "excluded_artifact_ids": ["ART-004-BCCD4200"],
+            "excluded_artifact_ids": ["ART-004-6155034A"],
             "investigator_note": "Phase 5D API Challenge Run Test",
         },
     )

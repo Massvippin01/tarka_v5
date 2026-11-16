@@ -303,7 +303,7 @@ class TestCounterfactualChallengeRunGraph:
         challenge_run, _ = case_store.challenge_analysis_run(
             case_id="upi_payment_discrepancy",
             baseline_run_id=baseline_run.run_id,
-            excluded_artifact_ids=["ART-004-BCCD4200"],
+            excluded_artifact_ids=["ART-004-6155034A"],
             investigator_note="Exclude suspicious screenshot",
         )
 
@@ -318,24 +318,24 @@ class TestCounterfactualChallengeRunGraph:
         cf_finding = next(n for n in cf_graph.nodes if n.node_id == "finding:amount_mismatch_discrepancy")
         assert cf_finding.status == ForensicNodeStatus.INACTIVE.value
         assert cf_finding.inactive_reason is not None
-        assert "ART-004-BCCD4200" in cf_finding.inactive_reason
+        assert "ART-004-6155034A" in cf_finding.inactive_reason
 
         # Screenshot fact is INACTIVE
         screenshot_facts = [
             n for n in cf_graph.nodes
             if n.node_type in [ForensicNodeType.FACT.value, ForensicNodeType.SOURCE_RECORD.value]
-            and (n.source_artifact_ids or []) == ["ART-004-BCCD4200"]
+            and (n.source_artifact_ids or []) == ["ART-004-6155034A"]
         ]
         assert len(screenshot_facts) > 0
         for sf in screenshot_facts:
             assert sf.status == ForensicNodeStatus.INACTIVE.value
-            assert "ART-004-BCCD4200" in (sf.inactive_reason or "")
+            assert "ART-004-6155034A" in (sf.inactive_reason or "")
 
         # Bank transaction fact and node remain ACTIVE / SURVIVING
         bank_facts = [
             n for n in cf_graph.nodes
             if n.node_type in [ForensicNodeType.FACT.value, ForensicNodeType.TRANSACTION.value]
-            and "ART-001-DB791B3C" in (n.source_artifact_ids or [])
+            and "ART-001-F06C36EE" in (n.source_artifact_ids or [])
         ]
         assert len(bank_facts) > 0
         for bf in bank_facts:
@@ -383,7 +383,7 @@ class TestInvestigationGraphEndpoints:
         cf_res = test_client.post(
             "/api/cases/upi_payment_discrepancy/analysis-runs/baseline/challenge",
             json={
-                "excluded_artifact_ids": ["ART-004-BCCD4200"],
+                "excluded_artifact_ids": ["ART-004-6155034A"],
                 "investigator_note": "Test run exclusion",
             },
         )
@@ -401,7 +401,7 @@ class TestInvestigationGraphEndpoints:
         # Check that inactive nodes exist for excluded artifact
         inactive_nodes = [n for n in graph_data["nodes"] if n["status"] == "INACTIVE"]
         assert len(inactive_nodes) > 0
-        assert any("ART-004-BCCD4200" in (n.get("inactive_reason") or "") for n in inactive_nodes)
+        assert any("ART-004-6155034A" in (n.get("inactive_reason") or "") for n in inactive_nodes)
 
         # 3. Fetch graph via direct run path /analysis-runs/{run_id}/investigation-graph
         direct_res = test_client.get(

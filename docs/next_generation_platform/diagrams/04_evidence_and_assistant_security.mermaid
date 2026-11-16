@@ -1,0 +1,39 @@
+flowchart TD
+    subgraph EvidenceEnclave["CANONICAL EVIDENCE BOUNDARY (DATA ONLY)"]
+        RawEvidence["Raw Evidence Files (PDF, PCAP, CDR, CSV)"]
+        Hash["SHA-256 Digest Computation"]
+        RawEvidence --> Hash
+        Vault[("WORM Object Store / Read-Only MinIO")]
+        Hash --> Vault
+        Sanitizer["Evidence Sanitizer (Strip Command Sequences)"]
+        Vault --> Sanitizer
+    end
+
+    subgraph PromptFirewall["AI PROMPT INJECTION DEFENSE"]
+        Sanitizer --> DataBlock["Strict DATA_ONLY Demarcation Block"]
+        UserPrompt["Investigator Query (Untrusted Speech / Text)"]
+        Guard["Lexical & Semantic Injection Scanner"]
+        UserPrompt --> Guard
+        SystemRules["Immutable System Constitution (Rules 1-16)"]
+        
+        SystemRules --> LLMRuntime["Forensic LLM Runtime"]
+        DataBlock --> LLMRuntime
+        Guard --> LLMRuntime
+    end
+
+    subgraph VerificationGate["FORENSIC VERIFICATION & OUTPUT GATE"]
+        LLMRuntime --> Propose["Proposed Hypotheses / Citations"]
+        FCC{"Forensic Claim Compiler: Hash Check"}
+        Propose --> FCC
+        FCC -->|"Valid SHA-256"| GroundedOutput["Grounded Assistant Response"]
+        FCC -->|"Missing / Mismatched Hash"| Quarantined["Rejected: UNGROUNDED_ASSERTION"]
+    end
+
+    subgraph GovernanceEnclave["GOVERNANCE & HUMAN CONTROL"]
+        GroundedOutput --> RiskCheck{"Is Action High-Risk? (Freeze/Subpoena/Merge)"}
+        RiskCheck -->|"Yes"| HumanAuth["Mandatory Human Confirmation (PIN / Signature)"]
+        RiskCheck -->|"No (Read-Only)"| Display["Deliver to Investigator Display"]
+        HumanAuth -->|"Authorized"| ExecuteAction["Log & Execute Action"]
+        HumanAuth -->|"Denied / Aborted"| AbortAction["Abort Action & Log Rejection"]
+    end
+

@@ -1,0 +1,39 @@
+flowchart TD
+    subgraph ExternalNetwork["LAW ENFORCEMENT WAN / POLNET / NIC VPN"]
+        Workstations["Secure Police Workstations (Investigator Desktops / Laptops)"]
+        MobileUnits["Field Forensic Tablets (Air-Gapped / Tailscale VPN)"]
+    end
+
+    subgraph DMZ["PERIMETER DMZ (TIER 1)"]
+        WAF["Web Application Firewall (NIC Shield / ModSecurity)"]
+        Nginx["Dual Reverse Proxy / mTLS Termination"]
+        AuthGateway["NIC Single Sign-On (Jan Parichay / Aadhaar OAuth)"]
+    end
+
+    subgraph AppZone["APPLICATION ENCLAVE (TIER 2 - PRIVATE SUBNET)"]
+        WebCore["Vite + React Static Nginx Pods"]
+        FastAPIPods["FastAPI Forensic Core (Stateless Containers)"]
+        OrchestratorService["Multi-Agent Orchestrator Service"]
+        LLMEnclave["Local LLM Enclave (Ollama / vLLM on Dedicated GPU Node)"]
+        AirLLMWorker["AirLLM Offline Deep-Graph Worker (Sequential RAM/SSD)"]
+        SpeechService["AI4Bharat / BHASHINI Multilingual Speech Service"]
+    end
+
+    subgraph DataZone["CANONICAL DATA ENCLAVE (TIER 3 - ISOLATED SUBNET)"]
+        PGCluster[("PostgreSQL 16 High-Availability Cluster")]
+        Neo4jCluster[("Neo4j Enterprise Graph Database")]
+        MinIOCluster[("MinIO Distributed WORM Object Storage")]
+        HSM["Hardware Security Module (FIPS 140-2 Level 3 Root Keys)"]
+    end
+
+    subgraph AuditZone["SOVEREIGN AUDIT & MONITORING"]
+        Prometheus["Prometheus / Grafana Telemetry"]
+        FlightLog[("WORM Immutable Flight Recorder (Logstash / SIEM)")]
+    end
+
+    ExternalNetwork --> DMZ
+    DMZ --> AppZone
+    AppZone --> DataZone
+    AppZone --> AuditZone
+    DataZone --> HSM
+

@@ -35,11 +35,11 @@ export function getInitialCaseIdFromUrl(): string | null {
 }
 
 export function getInitialViewFromUrl(): string {
-  if (typeof window === "undefined") return "workspace";
+  if (typeof window === "undefined") return "home";
   const params = new URLSearchParams(window.location.search);
   const v = params.get("view") || params.get("screen");
   if (v) return v;
-  return "workspace";
+  return "home";
 }
 
 export const useCaseStore = create<CaseStoreState>((set) => ({

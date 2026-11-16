@@ -47,6 +47,7 @@ backend/data/cases/*
 !backend/data/cases/upi_payment_discrepancy/
 backend/data/cases/upi_payment_discrepancy/**
 backend/data/staging/
+data/ingestion/
 
 # Test artifacts & scratch
 test-results/

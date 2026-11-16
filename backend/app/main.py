@@ -259,6 +259,14 @@ app.include_router(
     tags=["Mule Scoring Engine"],
 )
 
+from app.api.ingestion_api import router as ingestion_router
+
+app.include_router(
+    ingestion_router,
+    prefix="/api/v1/ingestion",
+    tags=["Massive Evidence Ingestion & Admission"],
+)
+
 from tarka.api.server import app as tarka_app
 
 app.mount("/api/v1/forensics/tarka", tarka_app)

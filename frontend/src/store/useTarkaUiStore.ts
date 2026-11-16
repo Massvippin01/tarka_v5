@@ -99,6 +99,11 @@ export interface TarkaUiState {
   setIntelligenceBriefOpen: (open: boolean) => void;
   transformationAuditModalOpen: boolean;
   setTransformationAuditModalOpen: (open: boolean) => void;
+
+  // Massive Evidence Ingestion Modal
+  massiveIntakeModalOpen: boolean;
+  setMassiveIntakeModalOpen: (open: boolean) => void;
+  toggleMassiveIntakeModal: () => void;
 }
 
 export const useTarkaUiStore = create<TarkaUiState>((set) => {
@@ -257,5 +262,9 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     setIntelligenceBriefOpen: (open) => set({ intelligenceBriefOpen: open }),
     transformationAuditModalOpen: false,
     setTransformationAuditModalOpen: (open) => set({ transformationAuditModalOpen: open }),
+
+    massiveIntakeModalOpen: false,
+    setMassiveIntakeModalOpen: (open) => set({ massiveIntakeModalOpen: open }),
+    toggleMassiveIntakeModal: () => set((state) => ({ massiveIntakeModalOpen: !state.massiveIntakeModalOpen })),
   };
 });

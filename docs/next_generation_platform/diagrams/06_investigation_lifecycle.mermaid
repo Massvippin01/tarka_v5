@@ -1,0 +1,39 @@
+flowchart TD
+    Start(["Case Intake & FIR Registration"]) --> Ingest["Evidence Acquisition (Bank CSV, PCAP, CDR, Chat)"]
+    
+    subgraph Phase1["PHASE 1: CRYPTOGRAPHIC ADMISSION"]
+        Ingest --> Hash["Compute SHA-256 Digest"]
+        Hash --> Custody["Generate Custody Receipt (Chain of Custody Record)"]
+        Custody --> WORMVault["Commit to Immutable WORM Storage"]
+    end
+
+    subgraph Phase2["PHASE 2: DETERMINISTIC EXTRACTION"]
+        WORMVault --> Parsers["Domain Parsers (UPI, Bank, CDR, OCR)"]
+        Parsers --> FactRegistry["Compile Atomic Machine Facts (Evidence DNA)"]
+    end
+
+    subgraph Phase3["PHASE 3: GRAPH & FINANCIAL CORRELATION"]
+        FactRegistry --> LIBRTrace["LIBR Engine: FIFO & Non-Depleting Asset Trace"]
+        FactRegistry --> GraphProj["Neo4j Graph Projection (Entity-Account-Device)"]
+        FactRegistry --> TelecomSync["CGNAT / IPDR Source Port Correlation"]
+    end
+
+    subgraph Phase4["PHASE 4: INTERROGATION & HYPOTHESIS"]
+        GraphProj --> AssistantQuery["Officer Interrogation (Voice / Universal Assistant)"]
+        LIBRTrace --> AssistantQuery
+        TelecomSync --> AssistantQuery
+        AssistantQuery --> ContradictionCheck["Automated Contradiction Surfacing"]
+        ContradictionCheck --> Hypothesis["AI Proposes Attribution Hypotheses"]
+    end
+
+    subgraph Phase5["PHASE 5: HUMAN ADJUDICATION & LEGAL DISPOSITION"]
+        Hypothesis --> OfficerReview{"Human Officer Review & Verification"}
+        OfficerReview -->|"Reject / Refine"| AssistantQuery
+        OfficerReview -->|"Approve & Sign"| OfficerSign["Cryptographic Officer Signature (PIN / Token)"]
+        OfficerSign --> FlightRecord["Log Action to Immutable Flight Recorder"]
+        FlightRecord --> Export65B["Generate Section 65B Indian Evidence Act Certificate"]
+        Export65B --> CourtDossier["Assemble Evidentiary Court Package"]
+    end
+
+    CourtDossier --> FinalEnd(["Judicial Presentation & Asset Freeze Enforcement"])
+
