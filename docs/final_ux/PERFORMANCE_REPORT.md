@@ -51,3 +51,4 @@ Built with Vite v8.0.16 + Rolldown code splitting:
   - `ParticleHomeScreen`: $10.8\text{ kB}$ gzip
   - `EvidenceLedgerScreen`: $4.5\text{ kB}$ gzip
 - **Time-to-Interactive (TTI)**: $420\text{ms}$ on local HTTP/1.1; $< 280\text{ms}$ on HTTP/2 CDN.
+

@@ -76,3 +76,4 @@ The system provides instant switching across 11 official Indian languages via ke
 | **Intent & Nav Resolve** | Local AST Regex Parser | $< 5\text{ms}$ | $1.2\text{ms}$ |
 | **TTS Synthesis** | Sarvam Bulbul v1 Chunked | $< 800\text{ms}$ | $520\text{ms}$ |
 | **Barge-In Interruption** | Client AudioBufferSourceNode stop | $< 50\text{ms}$ | $22\text{ms}$ |
+

@@ -107,3 +107,4 @@ Keyboard Quick-Reference for Presenter:
    - Merkle root linking back to the tamper-evident Flight Recorder audit trail.
 3. **Presenter Talking Point**:
    > *"Finally, everything culminates in a legally admissible electronic certificate ready for immediate submission to the magistrate. Every bit is cryptographically verified and fully reproducible."*
+

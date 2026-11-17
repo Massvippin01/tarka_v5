@@ -682,3 +682,4 @@ export const TARKA_CONTEXTUAL_GUIDES: Record<string, ScreenGuide> = {
 export function getContextualGuide(viewId: string): ScreenGuide {
   return TARKA_CONTEXTUAL_GUIDES[viewId] || TARKA_CONTEXTUAL_GUIDES.workspace;
 }
+

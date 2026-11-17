@@ -56,3 +56,4 @@ For investigators with vestibular sensitivities:
 - All major layout zones feature standard ARIA roles: `<main role="main">`, `<aside role="navigation" aria-label="Forensic navigation">`, `<header role="banner">`.
 - Live voice status updates and transcription results use `aria-live="polite"` to avoid disorienting assistive technology users.
 - Modal dialogues enforce focus traps and close on `Escape`.
+

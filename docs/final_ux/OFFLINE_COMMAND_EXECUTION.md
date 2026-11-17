@@ -56,3 +56,4 @@ When running offline:
 - Graph traversals (BFS money flow trace) execute in-memory or via local Neo4j instances.
 - Cryptographic hash verifications execute using native browser `crypto.subtle.digest('SHA-256')`.
 - Evidence conservation balance equations are computed synchronously without server dependency.
+

@@ -67,3 +67,4 @@ Key elements across the application are tagged with permanent `data-semantic-id`
 5. `el-graph-node-mule-1`: Primary mule aggregator node in Fraud Network Graph.
 6. `el-device-cgnat-funnel`: CGNAT port allocation table in Device & SIM Telemetry.
 7. `el-court-proof-certificate`: Statutory Section 63 BSA Certificate card on Court Ready screen.
+

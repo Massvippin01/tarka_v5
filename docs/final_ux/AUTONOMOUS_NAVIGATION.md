@@ -55,3 +55,4 @@ flowchart TD
 
 ### 2.1 Context-Preserving Navigation
 When navigating between screens, the active case identifier (e.g., `CASE-2026-001`), the active investigator credentials (`IO-409`), and any selected transaction records are retained in the global state store. An investigator jumping from the **Fraud Network Graph** to the **Device Telemetry** screen maintains focus on the active suspect entity seamlessly.
+

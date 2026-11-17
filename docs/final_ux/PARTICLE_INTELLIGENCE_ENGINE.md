@@ -74,3 +74,4 @@ sortedIndices.sort((a, b) => transformedZ[b] - transformedZ[a]);
 1. **DPR Clamping**: `window.devicePixelRatio` is capped at $2.0$ to prevent fillrate exhaustion on 4K/Retina displays.
 2. **Animation Frame Throttling**: Frame delta is monitored; if frame time exceeds 24ms, particle count dynamically subsamples to maintain a smooth 60 FPS.
 3. **Reduced Motion Compliance**: Automatically detects `window.matchMedia('(prefers-reduced-motion: reduce)')`, halting rotational velocities and dampening displacement amplitude by 85%.
+

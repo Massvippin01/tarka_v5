@@ -87,3 +87,4 @@ The sidebar uses an organic curved silhouette:
 - **Primary Sans**: `Inter`, `-apple-system`, `sans-serif` (weights 400, 500, 600, 700).
 - **Monospace Forensic Ingestion**: `JetBrains Mono`, `IBM Plex Mono` for all hashes, timestamps, RRNs, IPs, and port numbers.
 - **Tabular Figures**: Always enabled (`font-variant-numeric: tabular-nums`) on financial figures and metrics to guarantee column alignment.
+

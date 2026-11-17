@@ -215,3 +215,4 @@ class TarkaHighlightController {
 }
 
 export const highlightController = new TarkaHighlightController();
+

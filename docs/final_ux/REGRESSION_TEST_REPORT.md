@@ -52,3 +52,4 @@ pie title Test Verification Distribution (166 Total Tests Passed)
 ### 2.3 Section 63 BSA Hash Chain Invariant
 - **Verification**: `src/utils/__tests__/forensicCrypto.test.ts`
 - **Result**: Proves that modifying a single character in any admitted artifact immediately breaks the SHA-256 Merkle root and invalidates the court certificate.
+

@@ -55,3 +55,4 @@ The modal automatically parses and decodes acronyms relevant to the active scree
 Each metric card (e.g., *Total Loss*, *Recoverable Pool*, *Hop Attenuation*, *Clustering Coefficient*) contains explicit warning thresholds:
 - **Normal Range**: Safe operational parameters.
 - **Investigation Anomaly**: High-risk threshold requiring mandatory supervisor concurrence.
+

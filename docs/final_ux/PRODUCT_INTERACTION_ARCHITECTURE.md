@@ -82,3 +82,4 @@ flowchart TD
 1. **Non-Invasive AI Proposals**: The assistant never commits judicial actions, freezes bank accounts, or modifies ledger records autonomously. It prepares actions in the *Pending Judicial Review* queue.
 2. **Deterministic Cryptographic Verification**: Every claim made by the assistant is grounded in an immutable SHA-256 artifact hash and Section 63 Bharatiya Sakshya Adhiniyam (BSA) digital certificate.
 3. **Fail-Closed Offline Operation**: When internet connectivity is severed, the system defaults to 100% local processing with complete zero-TTS silence (visual responses only) to ensure no unverified audio generation occurs.
+

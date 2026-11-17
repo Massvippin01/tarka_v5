@@ -45,3 +45,4 @@ This document explicitly identifies known technical boundaries, dependencies, an
 1. **Advisory Role Only**:
    - The AI Assistant generates investigative hypotheses, attribution scores, and draft freeze notices.
    - Under no circumstances does the software auto-dispatch seizure notices or judicial summonses without human investigator digital signature (e-Sign/DSC).
+
