@@ -244,7 +244,7 @@ export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
                         {(cw.typology || "").replace(/_/g, " ")}
                       </span>
                       <span className="truncate flex-1 text-[11px] text-zinc-500">
-                        {cw.title}
+                        {cw.title || "Uploaded statements"}
                       </span>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { sha256HexSync } from "../utils/sha256";
 import { CaseSyncBridge } from "../services/caseSyncBridge";
 import { useTarkaUiStore } from "../store/useTarkaUiStore";
 import { useCaseStore } from "../store/useCaseStore";
+import { CANONICAL_CASES } from "../fixtures/cases";
 
 export type ActiveRoute =
   | "workspace"
@@ -48,7 +49,7 @@ export interface CaseWorkspace {
   policeStation: string;        // e.g., "Noida Cyber Crime PS, UP"
   ncrpAckNo: string;            // e.g., "1930-ACK-2311098412"
   title: string;                // e.g., "CBI/TRAI Fake Digital Arrest Extortion"
-  typology: "DIGITAL_ARREST" | "APK_SIM_SWAP" | "TELEGRAM_INVESTMENT" | "CORPORATE_BEC" | "TASK_FRAUD";
+  typology: "DIGITAL_ARREST" | "APK_SIM_SWAP" | "TELEGRAM_INVESTMENT" | "CORPORATE_BEC" | "TASK_FRAUD" | "UNCLASSIFIED";
   complainantName: string;
   leadInvestigator: string;     // e.g., "Insp. R. K. Sharma (IO-409)"
   claimedLossInr: number;
@@ -121,7 +122,7 @@ interface TarkaGlobalContextType {
   caseWorkspaces: CaseWorkspace[];
   setCaseWorkspaces: React.Dispatch<React.SetStateAction<CaseWorkspace[]>>;
   selectCaseWorkspace: (caseId: string, navigateToStage?: ActiveRoute) => void;
-  createNewCaseWorkspace: (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">) => string;
+  createNewCaseWorkspace: (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">) => Promise<string>;
   registerDiscoveredCase: (workspace: CaseWorkspace) => void;
   ingestArtifactToCase: (caseId: string, artifact: IngestedArtifact) => void;
   removeQuarantinedArtifact: (caseId: string, artifactId: string) => void;
@@ -212,7 +213,7 @@ function createIngestedArtifact(
 }
 
 // 4 Pre-Populated Forensic Case Workspaces
-export const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = [
+const SEED_CASE_WORKSPACES: CaseWorkspace[] = [
   {
     caseId: "CASE-2026-001",
     firNumber: "FIR #149/2026",
@@ -485,6 +486,31 @@ export const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = [
   },
 ];
 
+/**
+ * Seed workspaces take every figure from the canonical case bundle, so Dashboard, Command Center
+ * and Cases can never disagree with the investigation screens (single source of truth).
+ */
+export const INITIAL_CASE_WORKSPACES: CaseWorkspace[] = SEED_CASE_WORKSPACES.map((w) => {
+  const c = CANONICAL_CASES[w.caseId];
+  if (!c) return w;
+  return {
+    ...w,
+    firNumber: c.firNumber,
+    policeStation: c.policeStation,
+    ncrpAckNo: c.ncrpAckNo,
+    title: c.title,
+    typology: c.typology,
+    complainantName: c.complainant.name,
+    leadInvestigator: c.leadInvestigator,
+    claimedLossInr: c.financials.claimedLossInr,
+    bookedLossInr: c.financials.bookedLossInr,
+    recoverableInr: c.financials.recoverableLibrInr,
+    commercialShieldedInr: c.financials.shieldedCommercialInr,
+    goldenHourRemainingMins: c.financials.goldenHourRemainingMins,
+    priority: c.priority,
+  };
+});
+
 const TarkaGlobalContext = createContext<TarkaGlobalContextType | undefined>(undefined);
 
 export function syncTarkaUrl(caseId: string, view: string) {
@@ -494,7 +520,10 @@ export function syncTarkaUrl(caseId: string, view: string) {
   legacyParams.forEach((k) => url.searchParams.delete(k));
   url.searchParams.set("case", caseId);
   url.searchParams.set("view", view);
-  window.history.replaceState({}, "", url.toString());
+  // The store setters already pushed a history entry; only tidy the same entry here.
+  if (url.search !== window.location.search) {
+    window.history.replaceState({}, "", url.toString());
+  }
 }
 
 export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -592,11 +621,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
         url.searchParams.set("case", activeCaseId);
         hasLegacy = true;
       }
-      if (!url.searchParams.has("view")) {
-        const initialPage = useTarkaUiStore.getState().activePage;
-        url.searchParams.set("view", initialPage === "benchmark" ? "benchmarks" : activeRoute);
-        hasLegacy = true;
-      }
+      // Do not invent a ?view here; useCaseStore owns the view (defaults to "home" when absent).
       if (hasLegacy) {
         window.history.replaceState({}, "", url.toString());
       }
@@ -625,7 +650,11 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     let mounted = true;
     CaseSyncBridge.getInstance().listCasesFromBackend().then((backendCases) => {
       if (mounted && backendCases && backendCases.length > 0) {
-        setCaseWorkspaces(backendCases);
+        // Union by id: backend rows win, demo cases the backend doesn't list stay.
+        setCaseWorkspaces((prev) => {
+          const ids = new Set(backendCases.map((c) => c.caseId));
+          return [...backendCases, ...prev.filter((c) => !ids.has(c.caseId))];
+        });
       }
     });
 
@@ -718,8 +747,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Multi-Case Action: Create New Workspace
   const createNewCaseWorkspace = useCallback(
-    (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">): string => {
-      const newId = `CASE-2026-${String(caseWorkspaces.length + 1).padStart(3, "0")}`;
+    async (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">): Promise<string> => {
+      const newId = await CaseSyncBridge.getInstance().createCase(payload.title);
       const newWorkspace: CaseWorkspace = {
         ...payload,
         caseId: newId,
@@ -729,8 +758,6 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
       setCaseWorkspaces((prev) => [newWorkspace, ...prev]);
       setActiveCaseId(newId);
-      // Persist to backend database
-      CaseSyncBridge.getInstance().registerCaseWithBackend(newWorkspace).catch(() => {});
       return newId;
     },
     [caseWorkspaces.length, setActiveCaseId]

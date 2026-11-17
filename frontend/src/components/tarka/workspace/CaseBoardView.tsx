@@ -131,7 +131,7 @@ export const CaseBoardView: React.FC<CaseBoardViewProps> = ({
             >
               {columnCases.map((c) => {
                 const isActive = c.caseId === activeCaseId;
-                const shielded = c.commercialShieldedInr || c.recoverableInr || 0;
+                const shielded = c.recoverableInr || c.commercialShieldedInr || 0;
                 const ratio = c.bookedLossInr > 0 ? Math.round((shielded / c.bookedLossInr) * 100) : 0;
 
                 return (
@@ -183,8 +183,8 @@ export const CaseBoardView: React.FC<CaseBoardViewProps> = ({
                           <span>{c.goldenHourRemainingMins}m</span>
                         </span>
                       ) : (
-                        <span style={{ fontSize: "9px", color: "#64748B", fontWeight: 700 }}>
-                          {c.firNumber}
+                        <span style={{ fontSize: "9px", color: "#BE123C", fontWeight: 800 }} title={c.firNumber}>
+                          Expired · {c.firNumber}
                         </span>
                       )}
                     </div>

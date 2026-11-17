@@ -267,6 +267,19 @@ app.include_router(
     tags=["Massive Evidence Ingestion & Admission"],
 )
 
+from app.api.projects_api import networks_router, router as projects_router
+
+app.include_router(projects_router, prefix="/api/v1/projects", tags=["Projects"])
+app.include_router(networks_router, prefix="/api/v1/cases", tags=["Fraud Networks"])
+
+from app.api.people_api import router as people_router
+
+app.include_router(people_router, prefix="/api/v1/cases", tags=["People & Accounts"])
+
+from app.api.freeze_notices_api import router as freeze_notices_router
+
+app.include_router(freeze_notices_router, prefix="/api/v1/cases", tags=["Freeze Notices"])
+
 from tarka.api.server import app as tarka_app
 
 app.mount("/api/v1/forensics/tarka", tarka_app)

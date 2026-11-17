@@ -138,7 +138,7 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
               const isSelected = selectedCaseIds.has(c.caseId);
               const isActive = c.caseId === activeCaseId;
               const typo = getTypologyColor(c.typology);
-              const shielded = c.commercialShieldedInr || c.recoverableInr || 0;
+              const shielded = c.recoverableInr || c.commercialShieldedInr || 0;
               const ratio = c.bookedLossInr > 0 ? Math.round((shielded / c.bookedLossInr) * 100) : 0;
               const statusKey = ((c as any).status || "INVESTIGATING").toUpperCase();
               const statusMeta = STATUS_LABELS[statusKey] || STATUS_LABELS.INVESTIGATING;
@@ -296,12 +296,12 @@ export const CaseTableView: React.FC<CaseTableViewProps> = ({
                           fontWeight: 700,
                           padding: "2px 6px",
                           borderRadius: "4px",
-                          background: "#ECFDF5",
-                          color: "#047857",
-                          border: "1px solid #A7F3D0",
+                          background: "#FFF1F2",
+                          color: "#BE123C",
+                          border: "1px solid #FECDD3",
                         }}
                       >
-                        Standard Triage
+                        Golden hour expired
                       </span>
                     )}
                   </td>

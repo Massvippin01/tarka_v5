@@ -90,7 +90,7 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
             </button>
           </div>
           <div className="text-[12px] font-mono text-emerald-950">
-            RFC-6962 Merkle Root: <strong>{investigation.postIngestionMerkleRoot.slice(0, 32)}…</strong>
+            RFC-6962 Merkle Root: <strong>{investigation.postIngestionMerkleRoot ? `${investigation.postIngestionMerkleRoot.slice(0, 32)}…` : "not computed yet"}</strong>
           </div>
           <div className="text-[12px] text-emerald-800">
             Zero In-Memory Tamper · All 5 CSV artifacts & derived graph nodes sealed under SHA-256 tree.

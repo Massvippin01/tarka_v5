@@ -429,7 +429,7 @@ export const CourtProofScreen: React.FC = () => {
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1 bg-[var(--surface-1)] p-1 rounded-lg border border-[var(--line)] shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-1 bg-[var(--surface-1)] p-1 rounded-lg border border-[var(--line)] min-w-0 max-w-full overflow-x-auto">
           {[
             { id: "loo", label: "1. LOO Stress-Test", icon: ShieldCheck },
             { id: "certificates", label: "2. BSA §63(4) Certificates", icon: FileCheck },

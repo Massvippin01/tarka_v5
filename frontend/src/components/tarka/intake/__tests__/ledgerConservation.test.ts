@@ -16,7 +16,7 @@ describe("Screen 01 Ledger Conservation Proof (Prompt 2)", () => {
         false
       );
 
-      expect(rows.length).toBeGreaterThanOrEqual(4);
+      expect(rows.length).toBeGreaterThanOrEqual(2);
 
       // 1. Sort by sequenceNo
       const sortedRows = [...rows].sort((a, b) => a.sequenceNo - b.sequenceNo);

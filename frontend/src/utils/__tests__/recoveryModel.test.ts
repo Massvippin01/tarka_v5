@@ -1,34 +1,36 @@
 import { describe, it, expect } from "vitest";
 import { recoveryModel } from "../recoveryModel";
+import { resolveCase, selectFinancialSummary } from "../../selectors/caseSelectors";
 
 describe("recoveryModel Selector", () => {
-  it("computes accurate baseline recovery numbers at K=3", () => {
-    const res = recoveryModel(false, 3);
-    expect(res.grossVictimLoss).toBe(500000);
-    expect(res.atmCashedOut).toBe(120000);
-    expect(res.muleRetainedHold).toBe(200000);
-    expect(res.merchantSpecificLien).toBe(180000);
-    expect(res.netRecoverableSum).toBe(380000);
-    expect(res.recoveryPotentialPct).toBe(76.0);
+  it("takes every figure from the case's own selectors", () => {
+    const c = resolveCase("CASE-2026-001")!;
+    const fin = selectFinancialSummary(c);
+    const res = recoveryModel(false, 6, "CASE-2026-001");
+    expect(res.grossVictimLoss).toBe(fin.bookedLossInr);
+    expect(res.netRecoverableSum).toBe(fin.recoverableInr);
+    expect(res.atmCashedOut).toBe(fin.unrecoverableCashoutInr);
+    expect(res.librRecoverable).toBe(c.financials.recoverableLibrInr);
     expect(res.openEscapeExits).toBe(0);
-    expect(res.containmentPct).toBe(100);
-    expect(res.rulesEqual).toBe(true);
-    expect(res.librRecoverable).toBe(380000);
   });
 
-  it("handles clean commercial deposit injection and rules divergence", () => {
-    const res = recoveryModel(true, 3);
-    expect(res.cleanDepositInjected).toBe(250000);
-    expect(res.rulesEqual).toBe(false);
-    expect(res.librRecoverable).toBe(380000);
-    expect(res.fifoRecoverable).toBe(200000);
-    expect(res.proRataRecoverable).toBe(274000);
+  it("clean deposit what-if can only lower pro-rata, never LIBR", () => {
+    const base = recoveryModel(false, 6, "CASE-2026-001");
+    const res = recoveryModel(true, 6, "CASE-2026-001");
+    expect(res.librRecoverable).toBe(base.librRecoverable);
+    expect(res.proRataRecoverable).toBeLessThanOrEqual(base.proRataRecoverable);
   });
 
-  it("handles insufficient freeze budget (K=1)", () => {
-    const res = recoveryModel(false, 1);
-    expect(res.openEscapeExits).toBe(2);
-    expect(res.containmentPct).toBeLessThan(100);
+  it("small freeze budget leaves exits open", () => {
+    const res = recoveryModel(false, 0, "CASE-2026-001");
+    expect(res.openEscapeExits).toBe(res.totalEscapeRoutes);
+  });
+
+  it("unknown or missing case shows zeros, never invented figures", () => {
+    for (const res of [recoveryModel(false, 3), recoveryModel(false, 3, "NO-SUCH-CASE")]) {
+      expect(res.grossVictimLoss).toBe(0);
+      expect(res.netRecoverableSum).toBe(0);
+      expect(res.totalEscapeRoutes).toBe(0);
+    }
   });
 });
-

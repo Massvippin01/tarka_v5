@@ -1,4 +1,4 @@
-import { getCanonicalCase } from "../fixtures/cases";
+import { findCase, type CanonicalCaseFinancials } from "../fixtures/cases";
 import type { CaseActionRecord, CaseActionsSummary } from "../types/actions";
 
 export interface UnifiedCaseFinancials {
@@ -22,12 +22,25 @@ export interface UnifiedCaseFinancials {
  * Reconciles Header Ring, Money Trail (Taint), Fraud Network, Dashboard KPIs,
  * Cases Table, and Investigation Report from the exact same mathematical source.
  */
+const NO_FINANCIALS: CanonicalCaseFinancials = {
+  bookedLossInr: 0,
+  claimedLossInr: 0,
+  recoverableLibrInr: 0,
+  shieldedCommercialInr: 0,
+  frozenMuleBalanceInr: 0,
+  unrecoverableCashoutInr: 0,
+  goldenHourRemainingMins: 0,
+};
+
 export function selectCaseActionFinancials(
   caseId: string,
   actions?: CaseActionRecord[] | null,
-  backendSummary?: CaseActionsSummary | null
+  backendSummary?: CaseActionsSummary | null,
+  /** accountId -> amount a bank confirmed frozen via a §106/§107 notice (wins over the action record for that account). */
+  noticeFrozen?: ReadonlyMap<string, number> | null
 ): UnifiedCaseFinancials {
-  const canonical = getCanonicalCase(caseId);
+  // Unknown / not-yet-loaded case: zeros, never another case's figures.
+  const canonical = findCase(caseId) ?? { financials: NO_FINANCIALS };
   const bookedLossInr = canonical.financials.bookedLossInr;
   const claimedLossInr = canonical.financials.claimedLossInr;
   const recoverableLibrInr = canonical.financials.recoverableLibrInr;
@@ -39,6 +52,7 @@ export function selectCaseActionFinancials(
 
   if (actions && actions.length > 0) {
     for (const a of actions) {
+      if (noticeFrozen?.has(a.accountId)) continue;
       if (a.status === "FROZEN" || a.status === "PARTIAL") {
         frozenAccountIds.add(a.accountId);
         frozenAccountIds.add(a.id);
@@ -49,6 +63,10 @@ export function selectCaseActionFinancials(
     computedFrozen = backendSummary.totalFrozen;
   }
 
+  for (const [id, inr] of noticeFrozen ?? []) {
+    frozenAccountIds.add(id);
+    computedFrozen += inr;
+  }
   const frozenAmountInr = computedFrozen;
   const pendingFreezeInr = Math.max(0, recoverableLibrInr - frozenAmountInr);
   const isFullyFrozen = Boolean(backendSummary?.isFullyFrozen || (frozenAmountInr >= recoverableLibrInr && recoverableLibrInr > 0));

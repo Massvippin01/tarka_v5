@@ -37,8 +37,8 @@ export const TarkaPanel: React.FC<TarkaPanelProps> = ({
       className={clsx(
         'tarka-panel rounded-xl transition-all duration-150',
         paddingClasses[padding],
-        variant === 'bordered' && 'border-2 border-[#D5CABE]',
-        variant === 'flat' && 'shadow-none bg-[#F8F4ED]',
+        variant === 'bordered' && 'border-2 border-[var(--line)]',
+        variant === 'flat' && 'shadow-none bg-[var(--surface-2)]',
         className
       )}
       {...props}
@@ -114,12 +114,12 @@ export const TarkaButton = forwardRef<HTMLButtonElement, TarkaButtonProps>(
     };
 
     const variantClasses = {
-      primary: 'bg-[#A85C2A] text-[#FFFDF8] hover:bg-[#8D491E] border border-[#8D491E] shadow-xs active:translate-y-px',
-      secondary: 'bg-[#FFFDF8] text-[#292522] hover:bg-[#F8F4ED] border border-[#D5CABE] shadow-xs active:translate-y-px',
-      tactile: 'tarka-button text-[#292522] hover:bg-[#F8F4ED]',
-      destructive: 'bg-[#B6423B] text-white hover:bg-[#992F29] border border-[#992F29] shadow-xs active:translate-y-px',
-      safe: 'bg-[#287653] text-white hover:bg-[#1E5C40] border border-[#1E5C40] shadow-xs active:translate-y-px',
-      ghost: 'bg-transparent text-[#756A60] hover:text-[#292522] hover:bg-[#EFE9DF] border border-transparent shadow-none',
+      primary: 'bg-[var(--accent)] text-[#FFFDF8] hover:bg-[var(--accent-hover)] border border-[#8D491E] shadow-xs active:translate-y-px',
+      secondary: 'bg-[var(--surface-1)] text-[var(--fg-1)] hover:bg-[var(--surface-2)] border border-[var(--line)] shadow-xs active:translate-y-px',
+      tactile: 'tarka-button text-[var(--fg-1)] hover:bg-[var(--surface-2)]',
+      destructive: 'bg-[var(--risk)] text-white hover:bg-[#992F29] border border-[#992F29] shadow-xs active:translate-y-px',
+      safe: 'bg-[var(--safe)] text-white hover:bg-[#1E5C40] border border-[#1E5C40] shadow-xs active:translate-y-px',
+      ghost: 'bg-transparent text-[var(--fg-2)] hover:text-[var(--fg-1)] hover:bg-[var(--hover)] border border-transparent shadow-none',
     };
 
     return (
@@ -127,7 +127,7 @@ export const TarkaButton = forwardRef<HTMLButtonElement, TarkaButtonProps>(
         ref={ref}
         disabled={disabled || isLoading}
         className={clsx(
-          'inline-flex items-center justify-center font-semibold select-none transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A85C2A]',
+          'inline-flex items-center justify-center font-semibold select-none transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
           sizeClasses[size],
           variantClasses[variant],
           (disabled || isLoading) && 'opacity-55 cursor-not-allowed pointer-events-none',
@@ -199,18 +199,18 @@ export const TarkaStatus: React.FC<TarkaStatusProps> = ({
   className,
 }) => {
   const statusStyles = {
-    safe: 'bg-[#DCEBE1] text-[#287653] border-[#287653]/30',
-    urgent: 'bg-[#F5E9D2] text-[#A66A17] border-[#A66A17]/30',
-    risk: 'bg-[#F5DFDC] text-[#B6423B] border-[#B6423B]/30',
-    info: 'bg-[#E0EAF1] text-[#476D91] border-[#476D91]/30',
-    neutral: 'bg-[#F1ECE4] text-[#756A60] border-[#D5CABE]',
+    safe: 'bg-[var(--safe-bg)] text-[var(--safe)] border-[var(--safe)]/30',
+    urgent: 'bg-[var(--urgent-bg)] text-[var(--urgent)] border-[#A66A17]/30',
+    risk: 'bg-[var(--risk-bg)] text-[var(--risk)] border-[var(--risk)]/30',
+    info: 'bg-[var(--flow-bg)] text-[var(--flow)] border-[var(--flow)]/30',
+    neutral: 'bg-[#F1ECE4] text-[var(--fg-2)] border-[var(--line)]',
   };
 
   const dotColors = {
-    safe: 'bg-[#287653]',
+    safe: 'bg-[var(--safe)]',
     urgent: 'bg-[#A66A17] animate-pulse',
-    risk: 'bg-[#B6423B] animate-pulse',
-    info: 'bg-[#476D91]',
+    risk: 'bg-[var(--risk)] animate-pulse',
+    info: 'bg-[var(--flow)]',
     neutral: 'bg-[#978B7F]',
   };
 
@@ -257,19 +257,19 @@ export const TarkaMetricCard: React.FC<TarkaMetricCardProps> = ({
       onClick={onClick}
       className={clsx(
         'tarka-panel rounded-xl p-4 flex flex-col justify-between transition-all duration-150',
-        onClick && 'cursor-pointer hover:border-[#BDB0A3] hover:shadow-md select-none',
+        onClick && 'cursor-pointer hover:border-[var(--line-2)] hover:shadow-md select-none',
         className
       )}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[12px] font-bold text-[#756A60] uppercase tracking-wider truncate">
+        <span className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider truncate">
           {label}
         </span>
-        {icon && <span className="text-[#A85C2A] shrink-0">{icon}</span>}
+        {icon && <span className="text-[var(--accent)] shrink-0">{icon}</span>}
         {badge && <span className="shrink-0">{badge}</span>}
       </div>
       <div>
-        <div className="text-2xl font-extrabold text-[#292522] tracking-tight tabular-nums font-mono">
+        <div className="text-2xl font-extrabold text-[var(--fg-1)] tracking-tight tabular-nums font-mono">
           {value}
         </div>
         {(subvalue || trend) && (
@@ -278,13 +278,13 @@ export const TarkaMetricCard: React.FC<TarkaMetricCardProps> = ({
               <span
                 className={clsx(
                   'font-bold tabular-nums',
-                  trendUp ? 'text-[#287653]' : 'text-[#B6423B]'
+                  trendUp ? 'text-[var(--safe)]' : 'text-[var(--risk)]'
                 )}
               >
                 {trend}
               </span>
             )}
-            {subvalue && <span className="text-[#978B7F] truncate">{subvalue}</span>}
+            {subvalue && <span className="text-[var(--fg-3)] truncate">{subvalue}</span>}
           </div>
         )}
       </div>
@@ -340,23 +340,23 @@ export const TarkaModal: React.FC<TarkaModalProps> = ({
         aria-modal="true"
         aria-label={title}
         className={clsx(
-          'relative w-full bg-[#FFFDF8] border border-[#D5CABE] rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150',
+          'relative w-full bg-[var(--surface-1)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150',
           maxWidthClasses[maxWidth]
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#D5CABE] bg-[#F8F4ED] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--surface-2)] shrink-0">
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-base font-bold text-[#292522]">{title}</h2>
+              <h2 className="text-base font-bold text-[var(--fg-1)]">{title}</h2>
               {badge}
             </div>
-            {subtitle && <p className="text-[12px] text-[#756A60] mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-[12px] text-[var(--fg-2)] mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="size-8 rounded-lg flex items-center justify-center text-[#756A60] hover:text-[#292522] hover:bg-[#EFE9DF] transition-colors cursor-pointer"
+            className="size-8 rounded-lg flex items-center justify-center text-[var(--fg-2)] hover:text-[var(--fg-1)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="size-4" />
@@ -364,11 +364,11 @@ export const TarkaModal: React.FC<TarkaModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#FFFDF8]">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6 bg-[var(--surface-1)]">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-3.5 border-t border-[#D5CABE] bg-[#F8F4ED] flex items-center justify-end gap-2.5 shrink-0">
+          <div className="px-6 py-3.5 border-t border-[var(--line)] bg-[var(--surface-2)] flex items-center justify-end gap-2.5 shrink-0">
             {footer}
           </div>
         )}
@@ -416,23 +416,23 @@ export const TarkaDrawer: React.FC<TarkaDrawerProps> = ({
         aria-modal="true"
         aria-label={title}
         className={clsx(
-          'relative h-full bg-[#FFFDF8] border-l border-[#D5CABE] shadow-[-16px_0_40px_rgba(41,37,34,0.18)] z-50 flex flex-col max-w-[96vw] animate-in slide-in-from-right duration-200',
+          'relative h-full bg-[var(--surface-1)] border-l border-[var(--line)] shadow-[-16px_0_40px_rgba(41,37,34,0.18)] z-50 flex flex-col max-w-[96vw] animate-in slide-in-from-right duration-200',
           width
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#D5CABE] bg-[#F8F4ED] shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--line)] bg-[var(--surface-2)] shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[#292522]">{title}</h2>
+              <h2 className="text-sm font-bold text-[var(--fg-1)]">{title}</h2>
               {badge}
             </div>
-            {subtitle && <p className="text-[12px] text-[#756A60] mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-[12px] text-[var(--fg-2)] mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="size-8 rounded-lg flex items-center justify-center text-[#756A60] hover:text-[#292522] hover:bg-[#EFE9DF] transition-colors cursor-pointer"
+            className="size-8 rounded-lg flex items-center justify-center text-[var(--fg-2)] hover:text-[var(--fg-1)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
             aria-label="Close drawer"
           >
             <X className="size-4" />
@@ -440,11 +440,11 @@ export const TarkaDrawer: React.FC<TarkaDrawerProps> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 bg-[#FFFDF8] flex flex-col">{children}</div>
+        <div className="flex-1 overflow-y-auto p-5 bg-[var(--surface-1)] flex flex-col">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="px-5 py-3 border-t border-[#D5CABE] bg-[#F8F4ED] flex items-center justify-end gap-2 shrink-0">
+          <div className="px-5 py-3 border-t border-[var(--line)] bg-[var(--surface-2)] flex items-center justify-end gap-2 shrink-0">
             {footer}
           </div>
         )}
@@ -477,12 +477,12 @@ export const TarkaEmptyState: React.FC<TarkaEmptyStateProps> = ({
       )}
     >
       {icon && (
-        <div className="size-12 rounded-xl bg-[#F8F4ED] border border-[#D5CABE] flex items-center justify-center text-[#A85C2A] mb-3 shadow-2xs">
+        <div className="size-12 rounded-xl bg-[var(--surface-2)] border border-[var(--line)] flex items-center justify-center text-[var(--accent)] mb-3 shadow-2xs">
           {icon}
         </div>
       )}
-      <h3 className="text-sm font-bold text-[#292522]">{title}</h3>
-      <p className="text-[12.5px] text-[#756A60] max-w-md mt-1 mb-4 leading-relaxed">
+      <h3 className="text-sm font-bold text-[var(--fg-1)]">{title}</h3>
+      <p className="text-[12.5px] text-[var(--fg-2)] max-w-md mt-1 mb-4 leading-relaxed">
         {description}
       </p>
       {action}
@@ -507,8 +507,8 @@ export const TarkaLoadingState: React.FC<TarkaLoadingStateProps> = ({
         className
       )}
     >
-      <Loader2 className="size-6 text-[#A85C2A] animate-spin" />
-      <span className="text-[13px] font-semibold text-[#756A60]">{label}</span>
+      <Loader2 className="size-6 text-[var(--accent)] animate-spin" />
+      <span className="text-[13px] font-semibold text-[var(--fg-2)]">{label}</span>
     </div>
   );
 };
@@ -530,15 +530,15 @@ export const TarkaErrorState: React.FC<TarkaErrorStateProps> = ({
   return (
     <div
       className={clsx(
-        'tarka-panel rounded-xl p-6 border-l-4 border-l-[#B6423B] bg-[#FFFDF8] my-4 space-y-3',
+        'tarka-panel rounded-xl p-6 border-l-4 border-l-[var(--risk)] bg-[var(--surface-1)] my-4 space-y-3',
         className
       )}
     >
-      <div className="flex items-center gap-2 text-[#B6423B] font-bold text-sm">
+      <div className="flex items-center gap-2 text-[var(--risk)] font-bold text-sm">
         <AlertTriangle className="size-4 shrink-0" />
         <span>{title}</span>
       </div>
-      <p className="text-[12.5px] text-[#756A60] font-mono bg-[#F8F4ED] p-2.5 rounded-lg border border-[#D5CABE]">
+      <p className="text-[12.5px] text-[var(--fg-2)] font-mono bg-[var(--surface-2)] p-2.5 rounded-lg border border-[var(--line)]">
         {error}
       </p>
       {onRetry && (

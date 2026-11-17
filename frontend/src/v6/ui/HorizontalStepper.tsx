@@ -11,12 +11,12 @@ export interface StepItem {
 }
 
 const STEPS: StepItem[] = [
-  { id: 'evidence', stepNum: 1, label: '1. Evidence & Ledger', views: ['evidence', 'intake'] },
-  { id: 'people', stepNum: 2, label: '2. People & Accounts', views: ['people', 'entities'] },
-  { id: 'money', stepNum: 3, label: '3. Money Trail', views: ['money', 'taint-engine'] },
-  { id: 'network', stepNum: 4, label: '4. Fraud Network', views: ['network'] },
-  { id: 'device', stepNum: 5, label: '5. Device & SIM', views: ['device', 'attribution', 'handset-sim'] },
-  { id: 'actions', stepNum: 6, label: '6. Actions & Report', views: ['actions', 'report'] },
+  { id: 'evidence', stepNum: 1, label: 'Evidence', views: ['evidence', 'intake'] },
+  { id: 'people', stepNum: 2, label: 'People & accounts', views: ['people', 'entities'] },
+  { id: 'money', stepNum: 3, label: 'Money trail', views: ['money', 'taint-engine'] },
+  { id: 'network', stepNum: 4, label: 'Network', views: ['network'] },
+  { id: 'device', stepNum: 5, label: 'Devices & SIMs', views: ['device', 'attribution', 'handset-sim'] },
+  { id: 'actions', stepNum: 6, label: 'Actions & report', views: ['actions', 'report'] },
 ];
 
 export const HorizontalStepper: React.FC = () => {
@@ -42,7 +42,7 @@ export const HorizontalStepper: React.FC = () => {
               className={clsx(
                 'flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md transition-colors whitespace-nowrap cursor-pointer',
                 isCurrent
-                  ? 'text-[#8D491E] font-bold bg-[#EED9C7]/50 border border-[#A85C2A]/40 shadow-xs'
+                  ? 'text-[var(--accent-hover)] font-bold bg-[var(--accent-bg)]/50 border border-[var(--accent)]/40 shadow-xs'
                   : isDone
                   ? 'text-[var(--fg-2)] hover:text-[var(--fg-1)]'
                   : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]'
@@ -52,9 +52,9 @@ export const HorizontalStepper: React.FC = () => {
                 className={clsx(
                   'w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-bold border transition-all flex-none',
                   isCurrent
-                    ? 'border-[#A85C2A] text-white bg-[#A85C2A] shadow-xs'
+                    ? 'border-[var(--accent)] text-white bg-[var(--accent)] shadow-xs'
                     : isDone
-                    ? 'bg-[#287653] border-[#287653] text-white shadow-xs'
+                    ? 'bg-[var(--safe)] border-[var(--safe)] text-white shadow-xs'
                     : 'border-[var(--line)] text-[var(--fg-3)] bg-[var(--surface-2)]'
                 )}
               >

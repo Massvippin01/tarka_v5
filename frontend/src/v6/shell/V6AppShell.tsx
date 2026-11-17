@@ -11,6 +11,7 @@ import { TarkaCommandPalette } from '../../components/tarka/TarkaCommandPalette'
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
 import { Lock } from 'lucide-react';
+import { Toaster } from 'sonner';
 import { cn } from '../../lib/utils';
 
 // V6 Screens (lazy-loaded for speed & clean architecture)
@@ -22,6 +23,9 @@ const HomeScreen = lazy(() =>
 );
 const CommandCenterScreen = lazy(() =>
   import('../screens/CommandCenterScreen').then((m) => ({ default: m.CommandCenterScreen }))
+);
+const DeskScreen = lazy(() =>
+  import('../screens/DeskScreen').then((m) => ({ default: m.DeskScreen }))
 );
 const CasesScreen = lazy(() =>
   import('../screens/CasesScreen').then((m) => ({ default: m.CasesScreen }))
@@ -35,6 +39,7 @@ const PeopleAccountsScreen = lazy(() =>
 const MoneyTrailScreen = lazy(() =>
   import('../screens/MoneyTrailScreen').then((m) => ({ default: m.MoneyTrailScreen }))
 );
+import { NetworkStep } from '../network/NetworkStep';
 const FraudNetworkScreen = lazy(() =>
   import('../screens/FraudNetworkScreen').then((m) => ({ default: m.FraudNetworkScreen }))
 );
@@ -43,6 +48,15 @@ const DeviceSimScreen = lazy(() =>
 );
 const ActionsReportScreen = lazy(() =>
   import('../screens/ActionsReportScreen').then((m) => ({ default: m.ActionsReportScreen }))
+);
+const UploadCenterScreen = lazy(() =>
+  import('../screens/UploadCenterScreen').then((m) => ({ default: m.UploadCenterScreen }))
+);
+const ProjectsScreen = lazy(() =>
+  import('../screens/ProjectsScreen').then((m) => ({ default: m.ProjectsScreen }))
+);
+const TriageScreen = lazy(() =>
+  import('../screens/TriageScreen').then((m) => ({ default: m.TriageScreen }))
 );
 const LabScreen = lazy(() =>
   import('../screens/LabScreen').then((m) => ({ default: m.LabScreen }))
@@ -141,6 +155,18 @@ export const V6AppShell: React.FC = () => {
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
   const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
 
+  // Truncated text anywhere shows its full value on hover (no clipped text without a tooltip).
+  useEffect(() => {
+    const onOver = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && !el.title && el.childElementCount === 0 && el.scrollWidth > el.clientWidth + 1) {
+        el.title = el.textContent?.trim() ?? '';
+      }
+    };
+    document.addEventListener('mouseover', onOver);
+    return () => document.removeEventListener('mouseover', onOver);
+  }, []);
+
   // Sync with browser URL changes
   useEffect(() => {
     window.addEventListener('popstate', syncFromUrl);
@@ -219,6 +245,9 @@ export const V6AppShell: React.FC = () => {
     'dash',
     'dashboard',
     'cases',
+    'projects',
+    'desk', // spans every case the user can access
+    'triage', // real backend data; split-off cases are not in the fixture list
     'settings',
     'health',
     'lab',
@@ -279,11 +308,20 @@ export const V6AppShell: React.FC = () => {
       case 'cases-hub':
       case 'hub':
         return <CommandCenterScreen />;
+      case 'desk':
+        return <DeskScreen />;
       case 'cases':
         return <CasesScreen />;
       case 'evidence':
       case 'intake':
         return <EvidenceLedgerScreen />;
+      case 'upload':
+      case 'uploads':
+        return <UploadCenterScreen />;
+      case 'projects':
+        return <ProjectsScreen />;
+      case 'triage':
+        return <TriageScreen />;
       case 'people':
       case 'entities':
         return <PeopleAccountsScreen />;
@@ -291,7 +329,7 @@ export const V6AppShell: React.FC = () => {
       case 'taint-engine':
         return <MoneyTrailScreen />;
       case 'network':
-        return <FraudNetworkScreen />;
+        return <NetworkStep diagram={(viewSwitch) => <FraudNetworkScreen viewSwitch={viewSwitch} />} />;
       case 'device':
       case 'handset-sim':
       case 'attribution':
@@ -474,6 +512,7 @@ export const V6AppShell: React.FC = () => {
 
       {/* Dev Fingerprint Overlay */}
       <CaseFingerprintDevOverlay />
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
 };

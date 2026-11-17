@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-v6-theme="dark"], [data-v6-theme="dark"] *));
 
 @theme {
   --color-tarka-canvas: #E9E2D7;
@@ -11,32 +11,32 @@
   --color-tarka-graphite-soft: #3B332F;
   --color-tarka-brown: #49362E;
   --color-tarka-brown-light: #655044;
-  --color-surface-1: #FFFDF8;
-  --color-surface-2: #F8F4ED;
-  --color-surface-3: #E5DDD1;
-  --color-surface: #F8F4ED;
-  --color-hover: #EFE9DF;
-  --color-line: #D5CABE;
-  --color-line-2: #BDB0A3;
-  --color-fg-1: #292522;
-  --color-fg-2: #756A60;
-  --color-fg-3: #978B7F;
-  --color-risk: #B6423B;
-  --color-risk-bg: #F5DFDC;
-  --color-safe: #287653;
-  --color-safe-bg: #DCEBE1;
-  --color-urgent: #A66A17;
-  --color-urgent-bg: #F5E9D2;
-  --color-flow: #476D91;
-  --color-flow-2: #385775;
-  --color-flow-bg: #E0EAF1;
-  --color-frozen: #476D91;
-  --color-frozen-bg: #E0EAF1;
-  --color-device: #7C3AED;
-  --color-device-bg: rgba(124, 58, 237, 0.08);
-  --color-accent: #A85C2A;
-  --color-accent-hover: #8D491E;
-  --color-accent-bg: #EED9C7;
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface: var(--surface-2);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-fg-1: var(--fg-1);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-risk: var(--risk);
+  --color-risk-bg: var(--risk-bg);
+  --color-safe: var(--safe);
+  --color-safe-bg: var(--safe-bg);
+  --color-urgent: var(--urgent);
+  --color-urgent-bg: var(--urgent-bg);
+  --color-flow: var(--flow);
+  --color-flow-2: var(--flow-2);
+  --color-flow-bg: var(--flow-bg);
+  --color-frozen: var(--frozen);
+  --color-frozen-bg: var(--frozen-bg);
+  --color-device: var(--device);
+  --color-device-bg: var(--device-bg);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-bg: var(--accent-bg);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
 }
@@ -129,31 +129,105 @@
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Dark Theme Toggle Support (Optional override) */
+/* =====================================================================
+   GLASS TOKEN LAYER (Phase 2) — one accent, glass levels, spacing, type.
+   Light is the default; dark is :root[data-v6-theme="dark"] (toggle in topbar,
+   persisted by useV6Theme). Screens use these vars, never raw hex.
+   ===================================================================== */
+:root {
+  --bg-grad:
+    radial-gradient(1200px 600px at 85% -10%, rgba(168, 92, 42, 0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(71, 109, 145, 0.08), transparent 60%);
+  --glass-1: rgba(255, 253, 248, 0.58);
+  --glass-2: rgba(255, 253, 248, 0.74);
+  --glass-3: rgba(255, 253, 248, 0.90);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-edge: rgba(73, 54, 46, 0.10);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 0 0 1px var(--glass-edge), 0 10px 30px -14px rgba(55, 40, 29, 0.22);
+  --glass-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 0 1px var(--line-2), 0 16px 40px -16px rgba(55, 40, 29, 0.28);
+  --blur-1: 8px;
+  --blur-2: 16px;
+  --blur-3: 28px;
+  --accent-ring: rgba(168, 92, 42, 0.35);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-kpi: 30px;
+}
+
+:root[data-v6-theme="dark"],
 [data-theme="dark"],
 .dark-theme {
-  --bg: #060a13;
-  --bg-grad: none;
-  --surface-1: #0c1220;
-  --surface-2: #111a2c;
-  --surface-3: #17223a;
-  --hover: #1b2742;
-  --line: rgba(148, 163, 184, 0.12);
-  --line-2: rgba(148, 163, 184, 0.22);
-  --fg-1: #eef2f8;
-  --fg-2: #a9b4c7;
-  --fg-3: #7d8aa3;
-  --risk: #dc2626;
-  --risk-bg: rgba(220, 38, 38, 0.12);
-  --safe: #16a34a;
-  --safe-bg: rgba(22, 163, 74, 0.12);
-  --urgent: #d97706;
-  --urgent-bg: rgba(217, 119, 6, 0.12);
-  --flow: #2563eb;
-  --flow-2: #0284c7;
-  --flow-bg: rgba(37, 99, 235, 0.14);
-  --frozen: #0369a1;
-  --frozen-bg: rgba(3, 105, 161, 0.12);
+  color-scheme: dark;
+  --bg: #0A0D14;
+  --bg-grad:
+    radial-gradient(1100px 600px at 85% -10%, rgba(224, 149, 95, 0.12), transparent 60%),
+    radial-gradient(900px 520px at -10% 110%, rgba(96, 140, 190, 0.10), transparent 60%);
+  --surface-1: #121722;
+  --surface-2: #171D2A;
+  --surface-3: #1F2735;
+  --hover: #222B3B;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --line-glow: rgba(224, 149, 95, 0.22);
+  --fg-1: #EEF1F6;
+  --fg-2: #A8B1C2;
+  --fg-3: #7F8AA0;
+  --accent: #BA6C34;
+  --accent-hover: #D88A50;
+  --accent-bg: rgba(224, 149, 95, 0.14);
+  --accent-ring: rgba(186, 108, 52, 0.5);
+  --risk: #F07A72;
+  --risk-2: #E35D54;
+  --risk-bg: rgba(240, 122, 114, 0.13);
+  --safe: #4CC38A;
+  --safe-2: #36A774;
+  --safe-bg: rgba(76, 195, 138, 0.13);
+  --urgent: #E8B04F;
+  --urgent-bg: rgba(232, 176, 79, 0.13);
+  --flow: #79A6D6;
+  --flow-2: #9CBDE2;
+  --flow-bg: rgba(121, 166, 214, 0.14);
+  --frozen: #79A6D6;
+  --frozen-bg: rgba(121, 166, 214, 0.14);
+  --device: #A78BFA;
+  --device-bg: rgba(167, 139, 250, 0.12);
+  --tarka-surface: #171D2A;
+  --tarka-surface-inset: #1F2735;
+  --tarka-border: rgba(255, 255, 255, 0.08);
+  --tarka-accent: #E0955F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 30px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.5), 0 20px 48px -12px rgba(0, 0, 0, 0.65);
+  --glass-1: rgba(22, 28, 40, 0.50);
+  --glass-2: rgba(22, 28, 40, 0.66);
+  --glass-3: rgba(22, 28, 40, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-edge: rgba(255, 255, 255, 0.06);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px var(--glass-edge), 0 14px 36px -14px rgba(0, 0, 0, 0.7);
+  --glass-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px var(--line-2), 0 18px 44px -14px rgba(0, 0, 0, 0.8);
+}
+
+/* Glass surface utility: subtle blur, 1px light border, soft depth. */
+.v6-glass {
+  background: var(--glass-2);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(140%);
+  backdrop-filter: blur(var(--blur-2)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 /* Light Paper Theme (Admissible dossier / formal report print) */
@@ -352,7 +426,9 @@
   gap: 10px;
   padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  background: var(--surface-1);
+  background: var(--glass-3);
+  -webkit-backdrop-filter: blur(var(--blur-3)) saturate(150%);
+  backdrop-filter: blur(var(--blur-3)) saturate(150%);
   z-index: 10;
   white-space: nowrap;
 }
@@ -539,19 +615,20 @@
    Cards & Surfaces
    ===================================================================== */
 .v6-card {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 12px 14px;
+  background: var(--glass-2);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(140%);
+  backdrop-filter: blur(var(--blur-2)) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: var(--space-3) var(--space-4);
   position: relative;
   min-width: 0;
-  box-shadow: var(--shadow);
+  box-shadow: var(--glass-shadow);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
 
 .v6-card:hover {
-  border-color: var(--line-2);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-shadow-hover);
 }
 
 .v6-card-h {
@@ -781,7 +858,7 @@
   font-weight: 600;
   color: var(--fg-3);
   text-align: left;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
   position: sticky;
@@ -791,7 +868,7 @@
 }
 
 .v6-table td {
-  padding: 11px 12px;
+  padding: 11px 10px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
@@ -958,9 +1035,6 @@
 
 /* Responsive adjustments */
 @media (max-width: 1400px) {
-  .v6-app {
-    grid-template-columns: 208px 1fr;
-  }
   .v6-view {
     padding: 20px 22px 32px;
   }
@@ -999,3 +1073,459 @@
   font-size: 12px !important;
 }
 
+
+/* ⌘K palette: keyboard-selected row uses the one accent. */
+[cmdk-item][data-selected="true"] {
+  background: var(--accent-bg) !important;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+[cmdk-group-heading] {
+  padding-bottom: 4px;
+}
+/* Group inline styles (uppercase headings) must not leak into the rows. */
+[cmdk-item] {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+}
+
+/* shortcut: dark-mode remap of light-palette hex one-offs still hard-coded in screens.
+   Delete each line once its screens use tokens (grep the hex). Rail is excluded: it is dark by design. */
+:root[data-v6-theme="dark"] .v6-main .text-\[\#292522\] {
+  color: var(--fg-1);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#49362E\],
+:root[data-v6-theme="dark"] .v6-main .text-\[\#756A60\],
+:root[data-v6-theme="dark"] .v6-main .text-\[\#655044\] {
+  color: var(--fg-2);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#978B7F\],
+:root[data-v6-theme="dark"] .v6-main .text-\[\#8C7F73\],
+:root[data-v6-theme="dark"] .v6-main .text-\[\#A89C90\] {
+  color: var(--fg-3);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#A85C2A\] {
+  color: var(--accent);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#287653\] {
+  color: var(--safe);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#B6423B\] {
+  color: var(--risk);
+}
+:root[data-v6-theme="dark"] .v6-main .text-\[\#476D91\] {
+  color: var(--flow);
+}
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#FFFDF8\],
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#F7F4EB\],
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#fafafa\],
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#f4f4f5\] {
+  background-color: var(--surface-1);
+}
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#F8F4ED\],
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#EFE9DF\] {
+  background-color: var(--surface-2);
+}
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#EED9C7\] {
+  background-color: var(--accent-bg);
+}
+:root[data-v6-theme="dark"] .v6-main .bg-\[\#DCEBE1\] {
+  background-color: var(--safe-bg);
+}
+:root[data-v6-theme="dark"] .v6-main .border-\[\#D5CABE\],
+:root[data-v6-theme="dark"] .v6-main .border-\[\#C5BCB1\] {
+  border-color: var(--line);
+}
+:root[data-v6-theme="dark"] .v6-main .border-\[\#A85C2A\] {
+  border-color: var(--accent);
+}
+
+/* --muted is used by older screens; give it a v6 meaning. */
+.v6-app {
+  --muted: var(--fg-3);
+}
+
+/* shortcut: dark mode for legacy screens styled with Tailwind palette tints (bg-slate-100, text-blue-900…).
+   Light tints become dark tinted surfaces, dark inks become light inks; 300–600 (solid fills) untouched.
+   Remove once those screens use tokens. */
+:root[data-v6-theme="dark"] .v6-main,
+:root[data-v6-theme="dark"] [role="dialog"] {
+  --color-slate-50: var(--surface-2);
+  --color-slate-100: var(--surface-3);
+  --color-slate-200: var(--line-2);
+  --color-slate-600: var(--fg-2);
+  --color-slate-700: var(--fg-2);
+  --color-slate-800: var(--fg-1);
+  --color-slate-900: var(--fg-1);
+  --color-slate-950: var(--fg-1);
+  --color-gray-50: var(--surface-2);
+  --color-gray-100: var(--surface-3);
+  --color-gray-200: var(--line-2);
+  --color-gray-600: var(--fg-2);
+  --color-gray-700: var(--fg-2);
+  --color-gray-800: var(--fg-1);
+  --color-gray-900: var(--fg-1);
+  --color-gray-950: var(--fg-1);
+  --color-zinc-50: var(--surface-2);
+  --color-zinc-100: var(--surface-3);
+  --color-zinc-200: var(--line-2);
+  --color-zinc-600: var(--fg-2);
+  --color-zinc-700: var(--fg-2);
+  --color-zinc-800: var(--fg-1);
+  --color-zinc-900: var(--fg-1);
+  --color-zinc-950: var(--fg-1);
+  --color-neutral-50: var(--surface-2);
+  --color-neutral-100: var(--surface-3);
+  --color-neutral-200: var(--line-2);
+  --color-neutral-600: var(--fg-2);
+  --color-neutral-700: var(--fg-2);
+  --color-neutral-800: var(--fg-1);
+  --color-neutral-900: var(--fg-1);
+  --color-neutral-950: var(--fg-1);
+  --color-stone-50: var(--surface-2);
+  --color-stone-100: var(--surface-3);
+  --color-stone-200: var(--line-2);
+  --color-stone-600: var(--fg-2);
+  --color-stone-700: var(--fg-2);
+  --color-stone-800: var(--fg-1);
+  --color-stone-900: var(--fg-1);
+  --color-stone-950: var(--fg-1);
+  --color-blue-50: color-mix(in oklab, var(--color-blue-500) 10%, var(--surface-1));
+  --color-blue-100: color-mix(in oklab, var(--color-blue-500) 16%, var(--surface-1));
+  --color-blue-200: color-mix(in oklab, var(--color-blue-500) 30%, var(--surface-1));
+  --color-blue-700: color-mix(in oklab, var(--color-blue-400) 45%, white);
+  --color-blue-800: color-mix(in oklab, var(--color-blue-400) 35%, white);
+  --color-blue-900: color-mix(in oklab, var(--color-blue-400) 25%, white);
+  --color-blue-950: color-mix(in oklab, var(--color-blue-400) 18%, white);
+  --color-sky-50: color-mix(in oklab, var(--color-sky-500) 10%, var(--surface-1));
+  --color-sky-100: color-mix(in oklab, var(--color-sky-500) 16%, var(--surface-1));
+  --color-sky-200: color-mix(in oklab, var(--color-sky-500) 30%, var(--surface-1));
+  --color-sky-700: color-mix(in oklab, var(--color-sky-400) 45%, white);
+  --color-sky-800: color-mix(in oklab, var(--color-sky-400) 35%, white);
+  --color-sky-900: color-mix(in oklab, var(--color-sky-400) 25%, white);
+  --color-sky-950: color-mix(in oklab, var(--color-sky-400) 18%, white);
+  --color-indigo-50: color-mix(in oklab, var(--color-indigo-500) 10%, var(--surface-1));
+  --color-indigo-100: color-mix(in oklab, var(--color-indigo-500) 16%, var(--surface-1));
+  --color-indigo-200: color-mix(in oklab, var(--color-indigo-500) 30%, var(--surface-1));
+  --color-indigo-700: color-mix(in oklab, var(--color-indigo-400) 45%, white);
+  --color-indigo-800: color-mix(in oklab, var(--color-indigo-400) 35%, white);
+  --color-indigo-900: color-mix(in oklab, var(--color-indigo-400) 25%, white);
+  --color-indigo-950: color-mix(in oklab, var(--color-indigo-400) 18%, white);
+  --color-violet-50: color-mix(in oklab, var(--color-violet-500) 10%, var(--surface-1));
+  --color-violet-100: color-mix(in oklab, var(--color-violet-500) 16%, var(--surface-1));
+  --color-violet-200: color-mix(in oklab, var(--color-violet-500) 30%, var(--surface-1));
+  --color-violet-700: color-mix(in oklab, var(--color-violet-400) 45%, white);
+  --color-violet-800: color-mix(in oklab, var(--color-violet-400) 35%, white);
+  --color-violet-900: color-mix(in oklab, var(--color-violet-400) 25%, white);
+  --color-violet-950: color-mix(in oklab, var(--color-violet-400) 18%, white);
+  --color-purple-50: color-mix(in oklab, var(--color-purple-500) 10%, var(--surface-1));
+  --color-purple-100: color-mix(in oklab, var(--color-purple-500) 16%, var(--surface-1));
+  --color-purple-200: color-mix(in oklab, var(--color-purple-500) 30%, var(--surface-1));
+  --color-purple-700: color-mix(in oklab, var(--color-purple-400) 45%, white);
+  --color-purple-800: color-mix(in oklab, var(--color-purple-400) 35%, white);
+  --color-purple-900: color-mix(in oklab, var(--color-purple-400) 25%, white);
+  --color-purple-950: color-mix(in oklab, var(--color-purple-400) 18%, white);
+  --color-emerald-50: color-mix(in oklab, var(--color-emerald-500) 10%, var(--surface-1));
+  --color-emerald-100: color-mix(in oklab, var(--color-emerald-500) 16%, var(--surface-1));
+  --color-emerald-200: color-mix(in oklab, var(--color-emerald-500) 30%, var(--surface-1));
+  --color-emerald-700: color-mix(in oklab, var(--color-emerald-400) 45%, white);
+  --color-emerald-800: color-mix(in oklab, var(--color-emerald-400) 35%, white);
+  --color-emerald-900: color-mix(in oklab, var(--color-emerald-400) 25%, white);
+  --color-emerald-950: color-mix(in oklab, var(--color-emerald-400) 18%, white);
+  --color-green-50: color-mix(in oklab, var(--color-green-500) 10%, var(--surface-1));
+  --color-green-100: color-mix(in oklab, var(--color-green-500) 16%, var(--surface-1));
+  --color-green-200: color-mix(in oklab, var(--color-green-500) 30%, var(--surface-1));
+  --color-green-700: color-mix(in oklab, var(--color-green-400) 45%, white);
+  --color-green-800: color-mix(in oklab, var(--color-green-400) 35%, white);
+  --color-green-900: color-mix(in oklab, var(--color-green-400) 25%, white);
+  --color-green-950: color-mix(in oklab, var(--color-green-400) 18%, white);
+  --color-teal-50: color-mix(in oklab, var(--color-teal-500) 10%, var(--surface-1));
+  --color-teal-100: color-mix(in oklab, var(--color-teal-500) 16%, var(--surface-1));
+  --color-teal-200: color-mix(in oklab, var(--color-teal-500) 30%, var(--surface-1));
+  --color-teal-700: color-mix(in oklab, var(--color-teal-400) 45%, white);
+  --color-teal-800: color-mix(in oklab, var(--color-teal-400) 35%, white);
+  --color-teal-900: color-mix(in oklab, var(--color-teal-400) 25%, white);
+  --color-teal-950: color-mix(in oklab, var(--color-teal-400) 18%, white);
+  --color-cyan-50: color-mix(in oklab, var(--color-cyan-500) 10%, var(--surface-1));
+  --color-cyan-100: color-mix(in oklab, var(--color-cyan-500) 16%, var(--surface-1));
+  --color-cyan-200: color-mix(in oklab, var(--color-cyan-500) 30%, var(--surface-1));
+  --color-cyan-700: color-mix(in oklab, var(--color-cyan-400) 45%, white);
+  --color-cyan-800: color-mix(in oklab, var(--color-cyan-400) 35%, white);
+  --color-cyan-900: color-mix(in oklab, var(--color-cyan-400) 25%, white);
+  --color-cyan-950: color-mix(in oklab, var(--color-cyan-400) 18%, white);
+  --color-amber-50: color-mix(in oklab, var(--color-amber-500) 10%, var(--surface-1));
+  --color-amber-100: color-mix(in oklab, var(--color-amber-500) 16%, var(--surface-1));
+  --color-amber-200: color-mix(in oklab, var(--color-amber-500) 30%, var(--surface-1));
+  --color-amber-700: color-mix(in oklab, var(--color-amber-400) 45%, white);
+  --color-amber-800: color-mix(in oklab, var(--color-amber-400) 35%, white);
+  --color-amber-900: color-mix(in oklab, var(--color-amber-400) 25%, white);
+  --color-amber-950: color-mix(in oklab, var(--color-amber-400) 18%, white);
+  --color-yellow-50: color-mix(in oklab, var(--color-yellow-500) 10%, var(--surface-1));
+  --color-yellow-100: color-mix(in oklab, var(--color-yellow-500) 16%, var(--surface-1));
+  --color-yellow-200: color-mix(in oklab, var(--color-yellow-500) 30%, var(--surface-1));
+  --color-yellow-700: color-mix(in oklab, var(--color-yellow-400) 45%, white);
+  --color-yellow-800: color-mix(in oklab, var(--color-yellow-400) 35%, white);
+  --color-yellow-900: color-mix(in oklab, var(--color-yellow-400) 25%, white);
+  --color-yellow-950: color-mix(in oklab, var(--color-yellow-400) 18%, white);
+  --color-orange-50: color-mix(in oklab, var(--color-orange-500) 10%, var(--surface-1));
+  --color-orange-100: color-mix(in oklab, var(--color-orange-500) 16%, var(--surface-1));
+  --color-orange-200: color-mix(in oklab, var(--color-orange-500) 30%, var(--surface-1));
+  --color-orange-700: color-mix(in oklab, var(--color-orange-400) 45%, white);
+  --color-orange-800: color-mix(in oklab, var(--color-orange-400) 35%, white);
+  --color-orange-900: color-mix(in oklab, var(--color-orange-400) 25%, white);
+  --color-orange-950: color-mix(in oklab, var(--color-orange-400) 18%, white);
+  --color-red-50: color-mix(in oklab, var(--color-red-500) 10%, var(--surface-1));
+  --color-red-100: color-mix(in oklab, var(--color-red-500) 16%, var(--surface-1));
+  --color-red-200: color-mix(in oklab, var(--color-red-500) 30%, var(--surface-1));
+  --color-red-700: color-mix(in oklab, var(--color-red-400) 45%, white);
+  --color-red-800: color-mix(in oklab, var(--color-red-400) 35%, white);
+  --color-red-900: color-mix(in oklab, var(--color-red-400) 25%, white);
+  --color-red-950: color-mix(in oklab, var(--color-red-400) 18%, white);
+  --color-rose-50: color-mix(in oklab, var(--color-rose-500) 10%, var(--surface-1));
+  --color-rose-100: color-mix(in oklab, var(--color-rose-500) 16%, var(--surface-1));
+  --color-rose-200: color-mix(in oklab, var(--color-rose-500) 30%, var(--surface-1));
+  --color-rose-700: color-mix(in oklab, var(--color-rose-400) 45%, white);
+  --color-rose-800: color-mix(in oklab, var(--color-rose-400) 35%, white);
+  --color-rose-900: color-mix(in oklab, var(--color-rose-400) 25%, white);
+  --color-rose-950: color-mix(in oklab, var(--color-rose-400) 18%, white);
+  --color-pink-50: color-mix(in oklab, var(--color-pink-500) 10%, var(--surface-1));
+  --color-pink-100: color-mix(in oklab, var(--color-pink-500) 16%, var(--surface-1));
+  --color-pink-200: color-mix(in oklab, var(--color-pink-500) 30%, var(--surface-1));
+  --color-pink-700: color-mix(in oklab, var(--color-pink-400) 45%, white);
+  --color-pink-800: color-mix(in oklab, var(--color-pink-400) 35%, white);
+  --color-pink-900: color-mix(in oklab, var(--color-pink-400) 25%, white);
+  --color-pink-950: color-mix(in oklab, var(--color-pink-400) 18%, white);
+}
+:root[data-v6-theme="dark"] .v6-main .bg-white,
+:root[data-v6-theme="dark"] [role="dialog"] .bg-white {
+  background-color: var(--surface-1);
+}
+
+/* Scrollbars: thin, no track, thumb from the theme; darker while the scroller is hovered. */
+:root {
+  --scroll-thumb: color-mix(in oklab, var(--fg-3) 38%, transparent);
+  --scroll-thumb-hover: color-mix(in oklab, var(--fg-2) 60%, transparent);
+}
+.v6-app,
+.v6-app *,
+[role="dialog"],
+[role="dialog"] *,
+[cmdk-list] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+.v6-app *:hover,
+[role="dialog"] *:hover,
+[cmdk-list]:hover {
+  scrollbar-color: var(--scroll-thumb-hover) transparent;
+}
+.v6-rail,
+.v6-rail * {
+  scrollbar-color: rgba(255, 253, 248, 0.16) transparent;
+}
+.v6-rail:hover {
+  scrollbar-color: rgba(255, 253, 248, 0.3) transparent;
+}
+
+/* Status badge on KPI tiles: one line, pill, ellipsis (the shell adds a hover tooltip when cut). */
+.v6-badge {
+  display: inline-block;
+  flex: none;
+  max-width: 55%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flex:has(> .v6-badge) {
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.flex:has(> .v6-badge) > :not(.v6-badge) {
+  min-width: 0;
+}
+
+/* shortcut: dark mode for inline-styled legacy components (style={{ background: "#FFFFFF" }} etc.).
+   Matches the browser-normalised style text; remove once those components use tokens. */
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(255, 255, 255)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: var(--surface-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(250, 252, 255)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(250, 252, 255)"] {
+  background-color: var(--surface-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(248, 250, 252)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(248, 250, 252)"] {
+  background-color: var(--surface-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(249, 250, 251)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(249, 250, 251)"] {
+  background-color: var(--surface-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(241, 245, 249)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(241, 245, 249)"] {
+  background-color: var(--surface-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(243, 244, 246)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(243, 244, 246)"] {
+  background-color: var(--surface-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(15, 23, 42)"]:not([style*="-color: rgb(15, 23, 42)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(30, 41, 59)"]:not([style*="-color: rgb(30, 41, 59)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(17, 24, 39)"]:not([style*="-color: rgb(17, 24, 39)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(51, 65, 85)"]:not([style*="-color: rgb(51, 65, 85)"]) {
+  color: var(--fg-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(71, 85, 105)"]:not([style*="-color: rgb(71, 85, 105)"]) {
+  color: var(--fg-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(100, 116, 139)"]:not([style*="-color: rgb(100, 116, 139)"]) {
+  color: var(--fg-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="border: 1px solid rgb(226, 232, 240)"],
+:root[data-v6-theme="dark"] .v6-main [style*="border-color: rgb(226, 232, 240)"] {
+  border-color: var(--line) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="border: 1px solid rgb(203, 213, 225)"],
+:root[data-v6-theme="dark"] .v6-main [style*="border-color: rgb(203, 213, 225)"] {
+  border-color: var(--line-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="border: 1px solid rgb(229, 231, 235)"],
+:root[data-v6-theme="dark"] .v6-main [style*="border-color: rgb(229, 231, 235)"] {
+  border-color: var(--line) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(250, 250, 250)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(250, 250, 250)"] {
+  background-color: var(--surface-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(244, 244, 245)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(244, 244, 245)"] {
+  background-color: var(--surface-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(255, 253, 248)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(255, 253, 248)"] {
+  background-color: var(--surface-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(248, 244, 237)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(248, 244, 237)"] {
+  background-color: var(--surface-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(9, 9, 11)"]:not([style*="-color: rgb(9, 9, 11)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(0, 0, 0)"]:not([style*="-color: rgb(0, 0, 0)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(24, 24, 27)"]:not([style*="-color: rgb(24, 24, 27)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(39, 39, 42)"]:not([style*="-color: rgb(39, 39, 42)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(63, 63, 70)"]:not([style*="-color: rgb(63, 63, 70)"]) {
+  color: var(--fg-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(82, 82, 91)"]:not([style*="-color: rgb(82, 82, 91)"]) {
+  color: var(--fg-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(113, 113, 122)"]:not([style*="-color: rgb(113, 113, 122)"]) {
+  color: var(--fg-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(41, 37, 34)"]:not([style*="-color: rgb(41, 37, 34)"]) {
+  color: var(--fg-1) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="border: 1px solid rgb(228, 228, 231)"],
+:root[data-v6-theme="dark"] .v6-main [style*="border-color: rgb(228, 228, 231)"] {
+  border-color: var(--line) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="border: 1px solid rgb(212, 212, 216)"],
+:root[data-v6-theme="dark"] .v6-main [style*="border-color: rgb(212, 212, 216)"] {
+  border-color: var(--line-2) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(226, 232, 240)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(226, 232, 240)"] {
+  background-color: var(--surface-3) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(255, 241, 242)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(255, 241, 242)"] {
+  background-color: var(--risk-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(254, 242, 242)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(254, 242, 242)"] {
+  background-color: var(--risk-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(238, 242, 255)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(238, 242, 255)"] {
+  background-color: var(--flow-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(239, 246, 255)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(239, 246, 255)"] {
+  background-color: var(--flow-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(236, 253, 245)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(236, 253, 245)"] {
+  background-color: var(--safe-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(240, 253, 244)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(240, 253, 244)"] {
+  background-color: var(--safe-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(255, 251, 235)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(255, 251, 235)"] {
+  background-color: var(--urgent-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="background: rgb(254, 243, 199)"],
+:root[data-v6-theme="dark"] .v6-main [style*="background-color: rgb(254, 243, 199)"] {
+  background-color: var(--urgent-bg) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(190, 18, 60)"]:not([style*="-color: rgb(190, 18, 60)"]) {
+  color: var(--risk) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(159, 18, 57)"]:not([style*="-color: rgb(159, 18, 57)"]) {
+  color: var(--risk) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(153, 27, 27)"]:not([style*="-color: rgb(153, 27, 27)"]) {
+  color: var(--risk) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(185, 28, 28)"]:not([style*="-color: rgb(185, 28, 28)"]) {
+  color: var(--risk) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(127, 29, 29)"]:not([style*="-color: rgb(127, 29, 29)"]) {
+  color: var(--risk) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(6, 95, 70)"]:not([style*="-color: rgb(6, 95, 70)"]) {
+  color: var(--safe) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(4, 120, 87)"]:not([style*="-color: rgb(4, 120, 87)"]) {
+  color: var(--safe) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(21, 128, 61)"]:not([style*="-color: rgb(21, 128, 61)"]) {
+  color: var(--safe) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(146, 64, 14)"]:not([style*="-color: rgb(146, 64, 14)"]) {
+  color: var(--urgent) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(180, 83, 9)"]:not([style*="-color: rgb(180, 83, 9)"]) {
+  color: var(--urgent) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(30, 64, 175)"]:not([style*="-color: rgb(30, 64, 175)"]) {
+  color: var(--flow) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(29, 78, 216)"]:not([style*="-color: rgb(29, 78, 216)"]) {
+  color: var(--flow) !important;
+}
+:root[data-v6-theme="dark"] .v6-main [style*="color: rgb(55, 48, 163)"]:not([style*="-color: rgb(55, 48, 163)"]) {
+  color: var(--flow) !important;
+}

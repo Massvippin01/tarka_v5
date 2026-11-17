@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { DEFAULT_VIEW, parseUrlState, pushUrlState } from "../lib/urlState";
 
 export interface CaseListItem {
   id: string;
@@ -48,23 +49,11 @@ export const useCaseStore = create<CaseStoreState>((set) => ({
   cases: [],
   setActiveCaseId: (caseId) => {
     set({ activeCaseId: caseId });
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (caseId) {
-        url.searchParams.set("case", caseId);
-      } else {
-        url.searchParams.delete("case");
-      }
-      window.history.replaceState({}, "", url.toString());
-    }
+    pushUrlState({ caseId });
   },
   setActiveView: (view) => {
     set({ activeView: view });
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("view", view);
-      window.history.replaceState({}, "", url.toString());
-    }
+    pushUrlState({ view });
   },
   setCases: (cases) => set({ cases })
 }));
@@ -75,18 +64,14 @@ export const useCaseStore = create<CaseStoreState>((set) => ({
 export function useUrlSync() {
   const { activeCaseId, activeView } = useCaseStore();
 
+  // Back/Forward: apply the URL to the store without writing history.
   const syncFromUrl = () => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const c = params.get("case");
-    const v = params.get("view") || params.get("screen") || "workspace";
-
-    if (c !== activeCaseId) {
-      useCaseStore.setState({ activeCaseId: c });
-    }
-    if (v !== activeView) {
-      useCaseStore.setState({ activeView: v });
-    }
+    const { view, caseId } = parseUrlState(window.location.search);
+    const cur = useCaseStore.getState();
+    const nextView = view || DEFAULT_VIEW;
+    if (caseId !== cur.activeCaseId) useCaseStore.setState({ activeCaseId: caseId });
+    if (nextView !== cur.activeView) useCaseStore.setState({ activeView: nextView });
   };
 
   return {
@@ -95,24 +80,11 @@ export function useUrlSync() {
     navigateCase: (newCaseId: string | null, newView?: string) => {
       const targetView = newView || useCaseStore.getState().activeView || "intake";
       useCaseStore.setState({ activeCaseId: newCaseId, activeView: targetView });
-      if (typeof window !== "undefined") {
-        const url = new URL(window.location.href);
-        if (newCaseId) {
-          url.searchParams.set("case", newCaseId);
-        } else {
-          url.searchParams.delete("case");
-        }
-        url.searchParams.set("view", targetView);
-        window.history.pushState({}, "", url.toString());
-      }
+      pushUrlState({ caseId: newCaseId, view: targetView });
     },
     navigateView: (targetView: string) => {
       useCaseStore.setState({ activeView: targetView });
-      if (typeof window !== "undefined") {
-        const url = new URL(window.location.href);
-        url.searchParams.set("view", targetView);
-        window.history.pushState({}, "", url.toString());
-      }
+      pushUrlState({ view: targetView });
     },
     syncFromUrl
   };

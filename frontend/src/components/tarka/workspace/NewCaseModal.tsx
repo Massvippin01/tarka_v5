@@ -62,7 +62,7 @@ export const NewCaseModal: React.FC = () => {
     setErrorMsg(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firNumber.trim() || !title.trim() || !ncrpAckNo.trim() || !complainantName.trim()) {
       setErrorMsg("Please fill in all mandatory investigation parameters (FIR, Ack, Title, Complainant).");
@@ -70,7 +70,7 @@ export const NewCaseModal: React.FC = () => {
     }
 
     try {
-      const newId = createNewCaseWorkspace({
+      const newId = await createNewCaseWorkspace({
         firNumber: firNumber.trim(),
         policeStation: policeStation.trim(),
         ncrpAckNo: ncrpAckNo.trim(),
@@ -80,18 +80,12 @@ export const NewCaseModal: React.FC = () => {
         leadInvestigator: leadInvestigator.trim(),
         claimedLossInr: Number(claimedLossInr) || 0,
         bookedLossInr: Number(bookedLossInr) || 0,
-        recoverableInr: Math.round((Number(bookedLossInr) || 0) * 0.85),
-        commercialShieldedInr: Math.round((Number(bookedLossInr) || 0) * 0.35),
+        recoverableInr: 0,
+        commercialShieldedInr: 0,
         goldenHourRemainingMins: Number(goldenHourRemainingMins) || 0,
         priority,
         currentStage: "intake",
-        syndicateLinks: [
-          {
-            linkedCaseId: "CASE-2026-001",
-            sharedAnchorType: "MULE_ACCOUNT",
-            sharedAnchorValue: "SBI-9021884102-MULE",
-          },
-        ],
+        syndicateLinks: [],
       });
 
       setCreatedCaseId(newId);

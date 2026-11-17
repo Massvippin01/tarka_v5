@@ -114,3 +114,13 @@ describe("selectCaseActionFinancials pure selector", () => {
   });
 });
 
+
+describe("selectCaseActionFinancials with notice-confirmed freezes", () => {
+  it("counts a notice freeze once, replacing the action record for the same account", () => {
+    const action = { id: "A1", caseId: "CASE-2026-001", accountId: "M1", accountMasked: "", accountHolder: "", bank: "", ifsc: "", layer: "LAYER_1_MULE", urgency: "STANDARD", status: "FROZEN", targetAmount: 999, frozenAmount: 999, referenceNo: "" } as CaseActionRecord;
+    const fin = selectCaseActionFinancials("CASE-2026-001", [action], null, new Map([["M1", 45000], ["M2", 1000]]));
+    expect(fin.frozenAmountInr).toBe(46000);
+    expect(fin.pendingFreezeInr).toBe(380000 - 46000);
+    expect(fin.frozenAccountIds.has("M2")).toBe(true);
+  });
+});

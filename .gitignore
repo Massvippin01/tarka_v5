@@ -1,31 +1,56 @@
 # Environment secrets
 .env
 *.env
+.env.local
+.env.*.local
 backend/.env
 
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.db
 backend/data/*.db
 venv/
 backend/venv/
 backend/.venv312/
-.claude/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+local_dev.db
 
-# Node
+# Node & Frontend
 node_modules/
 frontend/node_modules/
 dist/
 frontend/dist/
+.vite/
+frontend/.vite/
+*.tsbuildinfo
+.eslintcache
 
-# IDE
+# Graphify & Visualization outputs
+graphify-out/
+.graphify*
+graphify/
+
+# IDE & Editors
 .vscode/
 .idea/
+.claude/
+*.swp
+*.swo
+*~
+.history/
 
-# OS
+# OS & System
 .DS_Store
 Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
 
 # Logs and Media
 *.log
@@ -36,7 +61,6 @@ npm-debug.log*
 *.png
 !docs/**/*.png
 frontend/tmp/
-.pytest_cache/
 backups/
 
 # Runtime evidence and test databases (preserve only the synthetic demo case)

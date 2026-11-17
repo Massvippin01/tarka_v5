@@ -1,5 +1,6 @@
 import type { CaseWorkspace } from "../context/TarkaGlobalContext";
-import { getCanonicalCase } from "../fixtures/cases";
+import { findCase } from "../fixtures/cases";
+import { selectAccountFlows, selectFinancialSummary, TYPOLOGY_LABELS } from "./caseSelectors";
 import { selectCaseActionFinancials } from "./actionSelectors";
 
 export interface DashboardFinancialMetrics {
@@ -81,11 +82,12 @@ export function selectDashboardFinancials(cases: CaseWorkspace[]): DashboardFina
   let totalCrossFirLinks = 0;
 
   cases.forEach((c) => {
-    const fin = selectCaseActionFinancials(c.caseId);
-    const booked = fin.bookedLossInr || c.bookedLossInr || 0;
-    const recoverable = fin.recoverableLibrInr || c.recoverableInr || 0;
-    const frozen = fin.frozenAmountInr || (c as any).frozenAmountInr || 0;
-    const remainingMins = fin.goldenHourRemainingMins || c.goldenHourRemainingMins || 0;
+    const isCanonical = !!findCase(c.caseId);
+    const fin = isCanonical ? selectCaseActionFinancials(c.caseId) : null;
+    const booked = fin ? fin.bookedLossInr : c.bookedLossInr || 0;
+    const recoverable = fin ? fin.recoverableLibrInr : c.recoverableInr || 0;
+    const frozen = fin ? fin.frozenAmountInr : (c as any).frozenAmountInr || 0;
+    const remainingMins = fin ? fin.goldenHourRemainingMins : c.goldenHourRemainingMins || 0;
 
     totalReportedLossInr += booked;
     totalRecoverableInr += recoverable;
@@ -96,21 +98,20 @@ export function selectDashboardFinancials(cases: CaseWorkspace[]): DashboardFina
     }
 
     // Suspect accounts from canonical fixture if available
-    try {
-      const canonical = getCanonicalCase(c.caseId);
-      const mules = canonical.accounts.filter(
-        (a) => a.holderType === "LAYER_1_MULE" || a.holderType === "LAYER_2_CONDUIT"
-      );
-      totalSuspectAccounts += mules.length;
-    } catch {
-      totalSuspectAccounts += (c as any).accountsCount || 2;
+    const canonical = findCase(c.caseId);
+    if (canonical) {
+      totalSuspectAccounts += canonical.accounts.filter(
+        (a) => a.holderType === "LAYER_1_MULE" || a.holderType === "LAYER_2_CONDUIT" || a.holderType === "UNRESOLVED_SUBSCRIBER"
+      ).length;
+    } else {
+      totalSuspectAccounts += (c as any).accountsCount || 0;
     }
 
     totalCrossFirLinks += c.syndicateLinks?.length || 0;
   });
 
   const recoveryPercentage =
-    totalReportedLossInr > 0 ? Math.round((totalFrozenInr / totalReportedLossInr) * 100) : 0;
+    totalReportedLossInr > 0 ? Math.round((totalRecoverableInr / totalReportedLossInr) * 100) : 0;
 
   return {
     totalCases: cases.length,
@@ -133,17 +134,14 @@ export function selectActNowQueue(cases: CaseWorkspace[]): ActNowQueueItem[] {
   cases.forEach((c) => {
     if (c.status === "CLOSED" || c.status === "ARCHIVED") return;
 
-    const fin = selectCaseActionFinancials(c.caseId);
-    let victimName = (c as any).victimName || (c as any).complainant?.name || "Complainant";
-    try {
-      const canonical = getCanonicalCase(c.caseId);
-      victimName = canonical.complainant.name;
-    } catch {
-      // Fall through to case metadata
-    }
+    const canonical = findCase(c.caseId);
+    const fin = canonical
+      ? selectCaseActionFinancials(c.caseId)
+      : ({ goldenHourRemainingMins: c.goldenHourRemainingMins || 0, pendingFreezeInr: 0, recoverableLibrInr: c.recoverableInr || 0, isFullyFrozen: false } as ReturnType<typeof selectCaseActionFinancials>);
+    const victimName = canonical ? canonical.complainant.name : c.complainantName || "Complainant";
 
-    const sla = fin.goldenHourRemainingMins > 0 ? fin.goldenHourRemainingMins : c.goldenHourRemainingMins || 0;
-    const recoverable = fin.pendingFreezeInr > 0 ? fin.pendingFreezeInr : fin.recoverableLibrInr || c.recoverableInr || 0;
+    const sla = fin.goldenHourRemainingMins;
+    const recoverable = fin.pendingFreezeInr > 0 ? fin.pendingFreezeInr : fin.recoverableLibrInr;
 
     let urgentTitle = "Issue Statutory §106/§107 BNSS Freeze Directives";
     if (c.status === "DRAFT" || c.status === "INTAKE") {
@@ -181,71 +179,32 @@ export function selectActNowQueue(cases: CaseWorkspace[]): ActNowQueueItem[] {
  * Builds geographical origin-to-destination flow arcs across Indian states for ECharts or SVG map.
  */
 export function selectIndiaMuleFlows(cases: CaseWorkspace[]): IndiaMuleArc[] {
-  const arcs: IndiaMuleArc[] = [
-    {
-      id: "arc-001",
-      caseId: "CASE-2026-001",
-      firNumber: "FIR #149/2026",
-      originState: "Uttar Pradesh",
-      originCity: "Noida / Delhi-NCR",
-      originCoords: [28.5355, 77.3910],
-      targetState: "Haryana / Rajasthan",
-      targetCity: "Mewat Syndicate Hub",
-      targetCoords: [27.9944, 76.9635],
-      amountInr: 500000,
-      muleName: "Vikram Shah (Axis ...0291)",
-      bankName: "Axis Bank",
-      isGoldenHour: true,
-    },
-    {
-      id: "arc-002",
-      caseId: "CASE-2026-002",
-      firNumber: "FIR #882/2026",
-      originState: "Telangana",
-      originCity: "Hyderabad Cyberabad",
-      originCoords: [17.3850, 78.4867],
-      targetState: "Karnataka",
-      targetCity: "Bangalore Outer Ring",
-      targetCoords: [12.9716, 77.5946],
-      amountInr: 2400000,
-      muleName: "K. R. Murthy (HDFC ...4401)",
-      bankName: "HDFC Bank",
-      isGoldenHour: true,
-    },
-    {
-      id: "arc-003",
-      caseId: "CASE-2026-003",
-      firNumber: "FIR #104/2026",
-      originState: "Maharashtra",
-      originCity: "Mumbai BKC",
-      originCoords: [19.0657, 72.8687],
-      targetState: "Gujarat",
-      targetCity: "Surat Diamond Bourse",
-      targetCoords: [21.1702, 72.8311],
-      amountInr: 1200000,
-      muleName: "Harish Patel (ICICI ...9901)",
-      bankName: "ICICI Bank",
-      isGoldenHour: false,
-    },
-    {
-      id: "arc-004",
-      caseId: "CASE-2026-004",
-      firNumber: "FIR #405/2026",
-      originState: "Karnataka",
-      originCity: "Bengaluru South",
-      originCoords: [12.9250, 77.5938],
-      targetState: "Delhi NCT",
-      targetCity: "Janakpuri Foreign Exchange",
-      targetCoords: [28.6219, 77.0878],
-      amountInr: 850000,
-      muleName: "Tarun Bajaj (Axis ...1182)",
-      bankName: "Axis Bank",
-      isGoldenHour: false,
-    },
-  ];
-
-  const activeIds = new Set(cases.map((c) => c.caseId));
-  return arcs.filter((a) => activeIds.has(a.caseId));
+  // Geography is case metadata; every amount, mule and bank below comes from the case bundle.
+  const GEO: Record<string, Pick<IndiaMuleArc, "originState" | "originCity" | "originCoords" | "targetState" | "targetCity" | "targetCoords">> = {
+    "CASE-2026-001": { originState: "Uttar Pradesh", originCity: "Noida / Delhi-NCR", originCoords: [28.5355, 77.391], targetState: "Haryana / Rajasthan", targetCity: "Mewat Syndicate Hub", targetCoords: [27.9944, 76.9635] },
+    "CASE-2026-002": { originState: "Telangana", originCity: "Hyderabad Cyberabad", originCoords: [17.385, 78.4867], targetState: "Karnataka", targetCity: "Bangalore Outer Ring", targetCoords: [12.9716, 77.5946] },
+    "CASE-2026-003": { originState: "Maharashtra", originCity: "Mumbai BKC", originCoords: [19.0657, 72.8687], targetState: "Gujarat", targetCity: "Surat Diamond Bourse", targetCoords: [21.1702, 72.8311] },
+    "CASE-2026-004": { originState: "Karnataka", originCity: "Bengaluru South", originCoords: [12.925, 77.5938], targetState: "Delhi NCT", targetCity: "Janakpuri Foreign Exchange", targetCoords: [28.6219, 77.0878] },
+  };
+  const arcs: IndiaMuleArc[] = [];
+  cases.forEach((w, i) => {
+    const c = findCase(w.caseId);
+    const geo = GEO[w.caseId];
+    if (!c || !geo) return;
+    const fin = selectCaseActionFinancials(w.caseId);
+    const lead = selectAccountFlows(c).find((a) => a.role === "MULE") ?? selectAccountFlows(c).find((a) => a.role === "CONDUIT");
+    arcs.push({
+      id: `arc-${String(i + 1).padStart(3, "0")}`,
+      caseId: c.caseId,
+      firNumber: c.firNumber,
+      ...geo,
+      amountInr: fin.bookedLossInr,
+      muleName: lead ? `${lead.holderName} (${lead.bank} ${lead.accountMasked})` : "Unidentified",
+      bankName: lead?.bank ?? "Unknown",
+      isGoldenHour: fin.goldenHourRemainingMins > 0,
+    });
+  });
+  return arcs;
 }
 
 /**
@@ -254,6 +213,8 @@ export function selectIndiaMuleFlows(cases: CaseWorkspace[]): IndiaMuleArc[] {
 export function selectTypologyDistribution(cases: CaseWorkspace[]): TypologyCount[] {
   const map: Record<string, { count: number; lossInr: number; color: string }> = {
     DIGITAL_ARREST: { count: 0, lossInr: 0, color: "#EF4444" },
+    APK_SIM_SWAP: { count: 0, lossInr: 0, color: "#0EA5E9" },
+    CORPORATE_BEC: { count: 0, lossInr: 0, color: "#10B981" },
     TASK_FRAUD: { count: 0, lossInr: 0, color: "#F59E0B" },
     INVESTMENT_SCAM: { count: 0, lossInr: 0, color: "#8B5CF6" },
     LOAN_APP_EXTORTION: { count: 0, lossInr: 0, color: "#06B6D4" },
@@ -261,8 +222,9 @@ export function selectTypologyDistribution(cases: CaseWorkspace[]): TypologyCoun
   };
 
   cases.forEach((c) => {
-    const typ = (c as any).crimeType || (c as any).crime_type || (c as any).typology || "DIGITAL_ARREST";
-    const loss = c.bookedLossInr || selectCaseActionFinancials(c.caseId).bookedLossInr || 0;
+    const canonical = findCase(c.caseId);
+    const typ = canonical?.typology || (c as any).crimeType || (c as any).crime_type || c.typology || "OTHER";
+    const loss = canonical ? selectFinancialSummary(canonical).bookedLossInr : c.bookedLossInr || 0;
     if (map[typ]) {
       map[typ].count += 1;
       map[typ].lossInr += loss;
@@ -275,7 +237,7 @@ export function selectTypologyDistribution(cases: CaseWorkspace[]): TypologyCoun
   return Object.entries(map)
     .filter(([_, v]) => v.count > 0)
     .map(([k, v]) => ({
-      typology: k.replace(/_/g, " "),
+      typology: (TYPOLOGY_LABELS as Record<string, string>)[k] ?? k.replace(/_/g, " "),
       count: v.count,
       lossInr: v.lossInr,
       color: v.color,
@@ -286,48 +248,33 @@ export function selectTypologyDistribution(cases: CaseWorkspace[]): TypologyCoun
  * Aggregates top banks handling mule accounts.
  */
 export function selectTopBanksByMules(cases: CaseWorkspace[]): BankMuleCount[] {
-  const bankCounts: Record<string, { mules: number; totalLoss: number; frozen: number }> = {
-    "Axis Bank": { mules: 0, totalLoss: 0, frozen: 0 },
-    "HDFC Bank": { mules: 0, totalLoss: 0, frozen: 0 },
-    "ICICI Bank": { mules: 0, totalLoss: 0, frozen: 0 },
-    "State Bank of India": { mules: 0, totalLoss: 0, frozen: 0 },
-    "Punjab National Bank": { mules: 0, totalLoss: 0, frozen: 0 },
-  };
-
-  cases.forEach((c) => {
-    try {
-      const canonical = getCanonicalCase(c.caseId);
-      canonical.accounts.forEach((acc) => {
-        if (acc.holderType === "LAYER_1_MULE" || acc.holderType === "LAYER_2_CONDUIT") {
-          const bank = acc.bank.includes("Axis")
-            ? "Axis Bank"
-            : acc.bank.includes("HDFC")
-            ? "HDFC Bank"
-            : acc.bank.includes("ICICI")
-            ? "ICICI Bank"
-            : acc.bank.includes("State Bank") || acc.bank.includes("SBI")
-            ? "State Bank of India"
-            : acc.bank.includes("Punjab") || acc.bank.includes("PNB")
-            ? "Punjab National Bank"
-            : "Other Commercial Bank";
-
-          if (!bankCounts[bank]) {
-            bankCounts[bank] = { mules: 0, totalLoss: 0, frozen: 0 };
-          }
-          bankCounts[bank].mules += 1;
-        }
+  const norm = (bank: string) =>
+    bank.includes("Axis") ? "Axis Bank"
+    : bank.includes("HDFC") ? "HDFC Bank"
+    : bank.includes("ICICI") ? "ICICI Bank"
+    : bank.includes("State Bank") || bank.includes("SBI") ? "State Bank of India"
+    : bank.includes("Punjab") || bank.includes("PNB") ? "Punjab National Bank"
+    : bank.replace(/ (Corporate|Escrow)$/, "");
+  const acc: Record<string, { mules: number; inflow: number; frozen: number }> = {};
+  cases.forEach((w) => {
+    const c = findCase(w.caseId);
+    if (!c) return;
+    selectAccountFlows(c)
+      .filter((a) => a.role === "MULE" || a.role === "CONDUIT" || a.role === "UNRESOLVED")
+      .forEach((a) => {
+        const k = norm(a.bank);
+        const e = (acc[k] ||= { mules: 0, inflow: 0, frozen: 0 });
+        e.mules += 1;
+        e.inflow += a.inflowInr;
+        e.frozen += a.frozenInr;
       });
-    } catch {
-      // If fixture not available, fallback
-    }
   });
-
-  return Object.entries(bankCounts)
-    .map(([bankName, stats]) => ({
+  return Object.entries(acc)
+    .map(([bankName, e]) => ({
       bankName,
-      muleAccountCount: stats.mules || 1,
-      totalTraffickedInr: (stats.mules || 1) * 350000,
-      frozenRatio: 0.65,
+      muleAccountCount: e.mules,
+      totalTraffickedInr: e.inflow,
+      frozenRatio: e.inflow > 0 ? Math.min(1, e.frozen / e.inflow) : 0,
     }))
-    .sort((a, b) => b.muleAccountCount - a.muleAccountCount);
+    .sort((a, b) => b.totalTraffickedInr - a.totalTraffickedInr);
 }

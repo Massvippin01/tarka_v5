@@ -28,13 +28,13 @@ export const PageHead: React.FC<PageHeadProps> = ({
             </span>
           )}
           {kicker && <span className="text-[var(--line-2)] flex-none">/</span>}
-          <h1 className="text-[20px] font-[650] tracking-tight leading-tight text-[var(--fg-1)] truncate">
+          <h1 title={title} className="text-[20px] font-[650] tracking-tight leading-tight text-[var(--fg-1)] line-clamp-2 min-w-0">
             {title}
           </h1>
           {badge && <div className="flex-none">{badge}</div>}
         </div>
         {subtitle && (
-          <div className="text-[12.5px] text-[var(--fg-2)] mt-0.5 truncate flex items-center gap-2">
+          <div title={subtitle} className="text-[12.5px] text-[var(--fg-2)] mt-0.5 truncate flex items-center gap-2">
             {subtitle}
           </div>
         )}

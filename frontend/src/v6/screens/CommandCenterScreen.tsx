@@ -31,7 +31,10 @@ import {
   selectTypologyDistribution,
   selectTopBanksByMules,
 } from '../../selectors/dashboardSelectors';
-import { formatInr } from '../../utils/formatters';
+import { formatInr, formatInrCompact, formatGoldenHour, pctOf } from '../../lib/formatInr';
+import { CANONICAL_CASES, buildCaseBundleFromFixture, findCase } from '../../fixtures/cases';
+import { useBundleCases, withBundleFigures } from '../../selectors/bundleAdapter';
+import { selectRecentActivity, selectFinancialSummary, selectPortfolioMoneyFigure } from '../../selectors/caseSelectors';
 import { reconstruct5FileInvestigation } from '../../utils/investigationReconstructor';
 
 import { CaseTableView } from '../../components/tarka/workspace/CaseTableView';
@@ -44,8 +47,11 @@ import { EditCaseSheet } from '../../components/tarka/cases/EditCaseSheet';
 import { CrossCaseComparatorDrawer } from '../../components/tarka/workspace/CrossCaseComparatorDrawer';
 
 export const CommandCenterScreen: React.FC = () => {
-  const { setActiveCaseId, setActiveView } = useCaseStore();
-  const { caseWorkspaces, selectCaseWorkspace } = useTarkaGlobal();
+  const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
+  const { caseWorkspaces: listedWorkspaces, selectCaseWorkspace } = useTarkaGlobal();
+  // Cases with no demo fixture load their uploaded data; a new array identity re-runs every memo below when it lands.
+  const bundleCases = useBundleCases(listedWorkspaces.map((w) => w.caseId));
+  const caseWorkspaces = useMemo(() => withBundleFigures(listedWorkspaces, bundleCases), [listedWorkspaces, bundleCases]);
   const { setReconstructedInvestigation } = useTarkaUiStore();
   const { setActiveCaseId: setWorkbenchCaseId } = useCaseWorkbenchStore();
 
@@ -73,6 +79,14 @@ export const CommandCenterScreen: React.FC = () => {
   const dashboardMetrics = useMemo(() => {
     return selectDashboardFinancials(caseWorkspaces);
   }, [caseWorkspaces]);
+  // Rows behind the portfolio KPIs; the figure stays the dashboard's, so any case without rows shows as a gap in the sheet.
+  const portfolioFigs = useMemo(() => {
+    const fixtures = caseWorkspaces.map((w) => findCase(w.caseId) ?? bundleCases[w.caseId]).filter((f): f is NonNullable<typeof f> => !!f);
+    return {
+      loss: { ...selectPortfolioMoneyFigure(fixtures, 'loss'), totalInr: dashboardMetrics.totalReportedLossInr },
+      recoverable: { ...selectPortfolioMoneyFigure(fixtures, 'recoverable'), totalInr: dashboardMetrics.totalRecoverableInr },
+    };
+  }, [caseWorkspaces, bundleCases, dashboardMetrics]);
 
   const actNowQueue = useMemo(() => {
     return selectActNowQueue(caseWorkspaces);
@@ -89,6 +103,27 @@ export const CommandCenterScreen: React.FC = () => {
   const muleArcs = useMemo(() => {
     return selectIndiaMuleFlows(caseWorkspaces);
   }, [caseWorkspaces]);
+
+  const canonicalList = useMemo(
+    () => caseWorkspaces.map((w) => findCase(w.caseId)).filter((c): c is NonNullable<typeof c> => !!c),
+    [caseWorkspaces]
+  );
+  const activityFeed = useMemo(() => selectRecentActivity(canonicalList, 4), [canonicalList]);
+  const nextSlaMins = useMemo(() => {
+    const live = canonicalList.map((c) => c.financials.goldenHourRemainingMins).filter((m) => m > 0);
+    return live.length ? Math.min(...live) : null;
+  }, [canonicalList]);
+  const evidenceIntegrityPct = useMemo(() => {
+    let pass = 0;
+    let total = 0;
+    canonicalList.forEach((c) => {
+      const files = buildCaseBundleFromFixture(c).fileManifest;
+      total += files.length;
+      pass += files.filter((f) => f.status === 'PASS').length;
+    });
+    return pctOf(pass, total);
+  }, [canonicalList]);
+  const STATE_NAMES: Record<string, string> = { UP: 'Uttar Pradesh', DL: 'Delhi', HR: 'Haryana', RJ: 'Rajasthan', MH: 'Maharashtra', KA: 'Karnataka', GJ: 'Gujarat', WB: 'West Bengal', JH: 'Jharkhand', TG: 'Telangana' };
 
   // Filtered cases for tables/views
   const filteredCases = useMemo(() => {
@@ -129,8 +164,10 @@ export const CommandCenterScreen: React.FC = () => {
     setWorkbenchCaseId('CASE-2026-001');
     selectCaseWorkspace('CASE-2026-001');
     setActiveCaseId('CASE-2026-001');
-    toast.success('Loaded Canonical 5-File Case Pack (CASE-2026-001: Sunil Kumar Digital Arrest)', {
-      description: '₹5.00L Booked Loss · 4 Mule Sinks · 100% SHA-256 Merkle Provenance',
+    const packCase = CANONICAL_CASES['CASE-2026-001'];
+    const packFin = selectFinancialSummary(packCase);
+    toast.success(`Loaded 5-file case pack (${packCase.caseId}: ${packCase.complainant.name})`, {
+      description: `${formatInr(packFin.bookedLossInr)} booked loss · ${packCase.accounts.length} accounts · SHA-256 Merkle provenance`,
     });
   };
 
@@ -175,7 +212,7 @@ export const CommandCenterScreen: React.FC = () => {
       <PageHead
         kicker="Command Center · Station Command"
         title="Good morning, Inspector"
-        subtitle="4 active cases · 3 inside golden hour · live Samanvaya enclave sync"
+        subtitle={`${dashboardMetrics.totalCases} active cases · ${dashboardMetrics.goldenHourActiveCount} inside golden hour`}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -320,22 +357,24 @@ export const CommandCenterScreen: React.FC = () => {
               value={dashboardMetrics.goldenHourActiveCount}
               icon={<Clock className="w-3.5 h-3.5 text-[var(--urgent)]" />}
               iconClass="bg-[var(--urgent-bg)]"
-              foot={<span className="text-[var(--urgent)] font-semibold text-xs">Next SLA: 42 min</span>}
+              foot={<span className={`font-semibold text-xs ${nextSlaMins === null ? 'text-[var(--risk)]' : 'text-[var(--urgent)]'}`}>{nextSlaMins === null ? 'All windows expired' : `Next SLA: ${formatGoldenHour(nextSlaMins)}`}</span>}
             />
 
             <KpiCard
               label="Cumulative exposure"
               value={dashboardMetrics.totalReportedLossInr}
               isInr
+              figure={portfolioFigs.loss}
               icon={<IndianRupee className="w-3.5 h-3.5 text-[var(--risk)]" />}
               iconClass="bg-[var(--risk-bg)]"
               foot={<span className="text-[var(--fg-3)] text-xs">across {dashboardMetrics.totalCases} FIRs</span>}
             />
 
             <KpiCard
-              label="Shielded capital (§106/107)"
+              label="Recoverable capital (§106/107)"
               value={dashboardMetrics.totalRecoverableInr}
               isInr
+              figure={portfolioFigs.recoverable}
               icon={<Snowflake className="w-3.5 h-3.5 text-[var(--frozen)]" />}
               iconClass="bg-[var(--frozen-bg)]"
               foot={
@@ -360,10 +399,10 @@ export const CommandCenterScreen: React.FC = () => {
 
             <KpiCard
               label="Evidence integrity"
-              value={100}
+              value={evidenceIntegrityPct}
               icon={<ShieldCheck className="w-3.5 h-3.5 text-[var(--safe)]" />}
               iconClass="bg-[var(--safe-bg)]"
-              foot={<span className="text-[var(--safe)] font-semibold text-xs">100% SHA-256 Merkle root</span>}
+              foot={<span className="text-[var(--safe)] font-semibold text-xs">{evidenceIntegrityPct}% of exhibits passed SHA-256 checks</span>}
             />
           </div>
 
@@ -420,7 +459,14 @@ export const CommandCenterScreen: React.FC = () => {
 
                     {/* State pulse hubs */}
                     {Object.entries(stateCoords).map(([st, [x, y]]) => (
-                      <g key={st} className="cursor-pointer" onClick={() => handleSelectCase('CASE-2026-001', 'network')}>
+                      <g
+                        key={st}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const arc = muleArcs.find((a) => a.originState === STATE_NAMES[st] || a.targetState.includes(STATE_NAMES[st]));
+                          if (arc) handleSelectCase(arc.caseId, 'network');
+                        }}
+                      >
                         <circle cx={x} cy={y} r="8" fill="rgba(37,99,235,0.12)" />
                         <circle cx={x} cy={y} r="3.5" fill="#2563eb" />
                         <text
@@ -441,16 +487,14 @@ export const CommandCenterScreen: React.FC = () => {
                   {/* Corridor Legend Overlay */}
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[12px] bg-white/95 px-2.5 py-1.5 rounded border border-[var(--line)] shadow-xs">
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1 font-medium text-[var(--fg-2)]">
-                        <span className="w-2 h-2 rounded-full bg-[#2563eb] inline-block" />
-                        Noida (UP) → Mumbai (MH) · ₹3.80L
-                      </span>
-                      <span className="flex items-center gap-1 font-medium text-[var(--fg-2)]">
-                        <span className="w-2 h-2 rounded-full bg-[#0284c7] inline-block" />
-                        UP → Gurugram (HR) · ₹1.20L
-                      </span>
+                      {muleArcs.slice(0, 2).map((arc, i) => (
+                        <span key={arc.id} className="flex items-center gap-1 font-medium text-[var(--fg-2)] truncate" title={`${arc.originCity} to ${arc.targetCity}`}>
+                          <span className={`w-2 h-2 rounded-full inline-block ${i === 0 ? 'bg-[#2563eb]' : 'bg-[#0284c7]'}`} />
+                          {arc.originCity.split(' ')[0]} → {arc.targetCity.split(' ')[0]} · {formatInrCompact(arc.amountInr)}
+                        </span>
+                      ))}
                     </div>
-                    <span className="font-semibold text-[var(--accent)] v6-mono">5 Interstate Links</span>
+                    <span className="font-semibold text-[var(--accent)] v6-mono">{muleArcs.length} corridor{muleArcs.length === 1 ? '' : 's'}</span>
                   </div>
                 </div>
               </Card>
@@ -522,7 +566,7 @@ export const CommandCenterScreen: React.FC = () => {
 
                       <div className="flex items-center gap-2 shrink-0">
                         <Chip variant={item.slaMinsRemaining < 60 ? 'risk' : 'urgent'} withDot>
-                          {item.slaMinsRemaining}m
+                          {formatGoldenHour(item.slaMinsRemaining)}
                         </Chip>
                         <button
                           type="button"
@@ -576,21 +620,14 @@ export const CommandCenterScreen: React.FC = () => {
                   subtitle="Immutable audit hash-chain events"
                 />
                 <div className="space-y-1.5 text-xs text-[var(--fg-2)]">
-                  <div className="flex items-center gap-2 py-1 border-b border-[var(--line)]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe)] shrink-0" />
-                    <span className="truncate">Auto-drafted §106 BNSS notice for PNB ••4471</span>
-                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">2m ago</span>
-                  </div>
-                  <div className="flex items-center gap-2 py-1 border-b border-[var(--line)]">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe)] shrink-0" />
-                    <span className="truncate">SHA-256 Merkle leaf sealed for CDR 9871123941</span>
-                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">6m ago</span>
-                  </div>
-                  <div className="flex items-center gap-2 py-1">
-                    <Activity className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                    <span className="truncate">Samanvaya cluster match: Gurugram FIR #89/2026</span>
-                    <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0">12m ago</span>
-                  </div>
+                  {activityFeed.length === 0 && <div className="text-[var(--fg-3)]">No events logged yet.</div>}
+                  {activityFeed.map((e, i) => (
+                    <div key={`${e.caseId}-${i}`} className="flex items-center gap-2 py-1 border-b border-[var(--line)] last:border-0">
+                      {e.severity === 'RECOVERY' ? <CheckCircle2 className="w-3.5 h-3.5 text-[var(--safe)] shrink-0" /> : <Activity className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />}
+                      <span className="truncate" title={`${e.caseId}: ${e.detail}`}>{e.title}</span>
+                      <span className="ml-auto text-[12px] text-[var(--fg-3)] shrink-0 v6-mono">{e.caseId.replace('CASE-2026-', '#')} · {e.timestampIst.slice(11, 16)}</span>
+                    </div>
+                  ))}
                 </div>
               </Card>
             </div>
@@ -615,7 +652,7 @@ export const CommandCenterScreen: React.FC = () => {
 
             <CaseTableView
               cases={filteredCases}
-              activeCaseId="CASE-2026-001"
+              activeCaseId={activeCaseId ?? ""}
               onSelectCase={handleSelectCase}
               onOpenCompare={handleOpenCompare}
               onEditCase={(caseItem) => setEditingCase(caseItem)}
@@ -629,7 +666,7 @@ export const CommandCenterScreen: React.FC = () => {
         <div className="space-y-2">
           <CaseTableView
             cases={filteredCases}
-            activeCaseId="CASE-2026-001"
+            activeCaseId={activeCaseId ?? ""}
             onSelectCase={handleSelectCase}
             onOpenCompare={handleOpenCompare}
             onEditCase={(caseItem) => setEditingCase(caseItem)}
@@ -640,7 +677,7 @@ export const CommandCenterScreen: React.FC = () => {
       {viewMode === 'board' && (
         <CaseBoardView
           cases={filteredCases}
-          activeCaseId="CASE-2026-001"
+          activeCaseId={activeCaseId ?? ""}
           onSelectCase={handleSelectCase}
           onOpenCompare={handleOpenCompare}
         />
@@ -649,7 +686,7 @@ export const CommandCenterScreen: React.FC = () => {
       {viewMode === 'timeline' && (
         <CaseTimelineView
           cases={filteredCases}
-          activeCaseId="CASE-2026-001"
+          activeCaseId={activeCaseId ?? ""}
           onSelectCase={handleSelectCase}
         />
       )}

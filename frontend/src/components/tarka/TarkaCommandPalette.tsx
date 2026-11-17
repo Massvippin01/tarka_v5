@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
 import {
   FileText,
@@ -32,6 +32,7 @@ import {
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { useCaseStore } from '../../store/useCaseStore';
+import { PaletteSearchGroups, paletteFilter } from '../../v6/shell/PaletteSearchGroups';
 
 export const TarkaCommandPalette: React.FC = () => {
   const {
@@ -73,6 +74,8 @@ export const TarkaCommandPalette: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [commandPaletteOpen, setCommandPaletteOpen]);
 
+  const [selected, setSelected] = useState('');
+
   if (!commandPaletteOpen) return null;
 
   const navigateTo = (view: string) => {
@@ -94,9 +97,9 @@ export const TarkaCommandPalette: React.FC = () => {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(5, 8, 15, 0.78)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        background: 'rgba(8, 10, 16, 0.45)',
+        backdropFilter: 'blur(var(--blur-1))',
+        WebkitBackdropFilter: 'blur(var(--blur-1))',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
@@ -109,16 +112,21 @@ export const TarkaCommandPalette: React.FC = () => {
         style={{
           width: '640px',
           maxWidth: '92vw',
-          background: 'var(--surface-1)',
+          background: 'var(--glass-3)',
+          backdropFilter: 'blur(var(--blur-3)) saturate(150%)',
+          WebkitBackdropFilter: 'blur(var(--blur-3)) saturate(150%)',
           borderRadius: '16px',
-          border: '1px solid var(--line-2)',
-          boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(124, 131, 255, 0.12)',
+          border: '1px solid var(--glass-border)',
+          boxShadow: 'var(--glass-shadow), var(--shadow-lg)',
           overflow: 'hidden',
           fontFamily: 'var(--font-sans)',
         }}
       >
         <Command
           label="TARKA Global Forensic Command Palette"
+          filter={paletteFilter}
+          value={selected}
+          onValueChange={setSelected}
           style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
         >
           {/* Input Header */}
@@ -129,14 +137,14 @@ export const TarkaCommandPalette: React.FC = () => {
               gap: '12px',
               padding: '14px 18px',
               borderBottom: '1px solid var(--line)',
-              background: 'var(--surface-2)',
+              background: 'transparent',
             }}
           >
             <Search size={18} style={{ color: 'var(--fg-3)', flexShrink: 0 }} />
             <Command.Input
               data-testid="command-palette-input"
               autoFocus
-              placeholder="Type a command, case, screen, or tool... (Esc to close)"
+              placeholder="Search a UPI ID, phone, account, case or screen…"
               style={{
                 width: '100%',
                 border: 'none',
@@ -179,8 +187,14 @@ export const TarkaCommandPalette: React.FC = () => {
                 fontSize: '13px',
               }}
             >
-              No matching forensic commands or cases found.
+              Nothing matches. Try a UPI ID, phone number, account or case number.
             </Command.Empty>
+
+            <PaletteSearchGroups
+              knownCaseIds={caseWorkspaces.map((cw) => cw.caseId)}
+              onDone={() => setCommandPaletteOpen(false)}
+              onTopHit={setSelected}
+            />
 
             {/* Group 0: Ask TARKA AI & Intelligent Assistance */}
             <Command.Group

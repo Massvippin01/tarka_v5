@@ -1,0 +1,102 @@
+/** Types and pure helpers for the Triage board (GET /cases/{id}/networks). No I/O here. */
+import { formatInr } from '../../lib/formatInr';
+
+export type MemberRole = 'VICTIM' | 'MULE' | 'CASH_OUT' | 'UNKNOWN';
+
+export interface NetworkMember {
+  id: string;
+  label: string;
+  kind: string;
+  role: MemberRole;
+  mule_score: number;
+  hop: number | null;
+  why: string;
+  /** ₹ still sitting in this account (what a freeze could hold). */
+  held_inr?: number;
+  /** Money in / out of this account and first / last activity (epoch s). Older servers omit them. */
+  in_inr?: number;
+  out_inr?: number;
+  first_ts?: number | null;
+  last_ts?: number | null;
+  /** Investigator's verdict on this account (People page); NOT_MULE accounts come back with role UNKNOWN. */
+  verdict?: 'CONFIRMED_MULE' | 'NOT_MULE' | null;
+}
+
+export interface FraudNetwork {
+  network_id: string;
+  member_count: number;
+  mule_count: number;
+  victim_count: number;
+  amount_inr: number;
+  cashed_out_inr?: number;
+  recoverable_inr?: number;
+  unaccounted_inr?: number;
+  members: NetworkMember[];
+  /** payer → payee money links between the listed members: [payer id, payee id, ₹]. Older servers omit it. */
+  links?: [string, string, number][];
+}
+
+export interface ReviewItem {
+  a: string;
+  b: string;
+  confidence: number;
+  why: string;
+  /** Sorted party keys joined by "|"; verdict MERGE / NOT_SAME once decided. */
+  key?: string;
+  verdict?: 'MERGE' | 'NOT_SAME' | null;
+}
+
+export interface CrossCaseHit {
+  identifier: string;
+  kind: string;
+  case_ids: string[];
+}
+
+export interface NetworksResponse {
+  networks: FraudNetwork[];
+  review_queue: ReviewItem[];
+  cross_case_hits: CrossCaseHit[];
+}
+
+export interface TriageTotals {
+  networks: number;
+  mules: number;
+  victims: number;
+  amount: number;
+}
+
+export function triageTotals(networks: FraudNetwork[]): TriageTotals {
+  return networks.reduce(
+    (t, n) => ({
+      networks: t.networks + 1,
+      mules: t.mules + (n.mule_count || 0),
+      victims: t.victims + (n.victim_count || 0),
+      amount: t.amount + (n.amount_inr || 0),
+    }),
+    { networks: 0, mules: 0, victims: 0, amount: 0 }
+  );
+}
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
+
+/** "3 networks — 5 mules, 2 victims, ₹1.2 L" */
+export function headlineText(t: TriageTotals): string {
+  return `${plural(t.networks, 'network')} — ${plural(t.mules, 'mule')}, ${plural(t.victims, 'victim')}, ${formatInr(t.amount, { compact: true })}`;
+}
+
+/** Most mule-like first; ties broken by distance from the victim, then label. */
+export function rankMembers(members: NetworkMember[]): NetworkMember[] {
+  return [...members].sort(
+    (a, b) =>
+      (b.mule_score ?? 0) - (a.mule_score ?? 0) ||
+      (a.hop ?? Infinity) - (b.hop ?? Infinity) ||
+      a.label.localeCompare(b.label)
+  );
+}
+
+export const ROLE_LABEL: Record<MemberRole, { label: string; variant: 'risk' | 'safe' | 'urgent' | 'flow' | 'muted' }> = {
+  VICTIM: { label: 'Victim', variant: 'safe' },
+  MULE: { label: 'Mule', variant: 'risk' },
+  CASH_OUT: { label: 'Cash-out', variant: 'urgent' },
+  UNKNOWN: { label: 'Unclear', variant: 'muted' },
+};

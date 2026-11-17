@@ -26,6 +26,7 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { getBnss94CbsDirective } from "../../../utils/statutoryDirectives";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 import { formatInr } from "../../../utils/formatters";
+import { resolveCase } from "../../../selectors/caseSelectors";
 import { sha256HexSync, computeMerkleRootSync, canonicalJson } from "../../../utils/sha256";
 
 export type ValidatedLedgerRow = LedgerRowData & {
@@ -51,6 +52,8 @@ export interface LedgerCardProps {
   claimedLabel?: string;
   cbsBookedAmount?: number;
   disputedRrn?: string;
+  /** Active case id: drives every bank / amount label in this card. */
+  caseId?: string;
 }
 
 const ROW_HASHES: Record<number, string> = {
@@ -80,7 +83,12 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
   claimedLabel,
   cbsBookedAmount,
   disputedRrn,
+  caseId,
 }) => {
+  const fixtureCase = resolveCase(caseId);
+  const drainTxns = (fixtureCase?.transactions ?? []).filter((t) => t.category === "VICTIM_DRAIN");
+  const bankLabel = fixtureCase?.complainant.bank ?? "Core";
+  const drainTotal = drainTxns.reduce((s, t) => s + t.amount, 0);
   const { density, setSelectedRowSeq, setActiveDockTab } = useTarkaUiStore();
 
   const [copiedHash, setCopiedHash] = useState(false);
@@ -183,7 +191,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
   const effectiveCbsBooked = cbsBookedAmount ?? (disputedRow?.debit || 285000);
   const deltaLoss = effectiveCbsBooked - effectiveClaimed;
   const ratioLoss = (effectiveCbsBooked / Math.max(1, effectiveClaimed)).toFixed(1);
-  const effectiveDisputedRrn = disputedRrn || disputedRow?.rrn || "626510149921";
+  const effectiveDisputedRrn = disputedRrn || disputedRow?.rrn || drainTxns[0]?.rrn || "";
 
   return (
     <div
@@ -242,7 +250,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
             </div>
             <div>
               <span style={{ fontSize: "12.5px", fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>
-                SBI Core Banking Ledger
+                {bankLabel} Core Banking Ledger
               </span>
               <span
                 style={{
@@ -545,7 +553,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                 borderRadius: "3px",
               }}
             >
-              {claimedLabel || "Canva"}
+              {claimedLabel || "Receipt"}
             </span>
           </div>
 
@@ -629,9 +637,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(getBnss94CbsDirective());
+              navigator.clipboard.writeText(getBnss94CbsDirective(caseId));
               toast.success("Copied §94 BNSS CBS Directive to clipboard", {
-                description: "Statutory requisition for UTR 626510149921 with ₹2.00L delta and dual %%EOF offsets.",
+                description: `Statutory requisition for RRN ${effectiveDisputedRrn || "n/a"}.`,
                 duration: 3500,
               });
             }}
@@ -818,9 +826,9 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
                               whiteSpace: "nowrap",
                               flexShrink: 0,
                             }}
-                            title="Tranche 1 of ₹5,00,000.00 Total Fraud Outflow to Vikram Shah"
+                            title={`${drainTxns.length} fraud transfer(s) totalling ${formatInr(drainTotal)}`}
                           >
-                            Tranche 1 of ₹5.00L Outflow
+                            {drainTxns.length} transfer{drainTxns.length === 1 ? "" : "s"} · {formatInr(drainTotal, { compact: true })}
                           </span>
                         )}
                       </div>
@@ -1145,7 +1153,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
 
                             {row.sequenceNo === 14 && (
                               <span style={{ fontSize: "10px", fontWeight: 700, color: "#92400E", background: "#FEF3C7", padding: "1px 6px", borderRadius: "4px", border: "1px solid #FDE68A" }}>
-                                Fraud Outflow: ₹2,15,000 (Tranche 1) + ₹2,85,000 (Tranche 2 IMPS) = ₹5,00,000.00 Total
+                                Fraud outflow: {drainTxns.map((t) => formatInr(t.amount, { showPaise: false })).join(" + ")} = {formatInr(drainTotal)} total
                               </span>
                             )}
 
@@ -1205,10 +1213,10 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>
-                Double-Entry Balance Conservation Synthesis (SBI Finacle 10.x)
+                Double-Entry Balance Conservation Synthesis ({bankLabel} core banking)
               </span>
               <span style={{ fontSize: "9px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
-                Account #30981140029
+                Account #{fixtureCase?.complainant.accountNumber ?? "n/a"}
               </span>
             </div>
 
@@ -1424,7 +1432,7 @@ export const LedgerCard: React.FC<LedgerCardProps> = ({
           <span>Tier-1 HSM Conservation Verified · Cryptographic Chain of Custody</span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "9.5px", color: "#94A3B8" }}>
-          SBI-FINACLE-10.2-PROD
+          CBS-LEDGER-PROD
         </span>
       </div>
     </div>

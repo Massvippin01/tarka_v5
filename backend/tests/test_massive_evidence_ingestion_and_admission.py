@@ -27,7 +27,9 @@ def auth_headers():
 
 
 @pytest.fixture
-def client():
+def client(tmp_path, monkeypatch):
+    # Fresh job store per test: the same payload re-uploaded across runs would otherwise be a DUPLICATE.
+    monkeypatch.setattr(IngestionJobManager, "_instance", IngestionJobManager(base_dir=tmp_path))
     return TestClient(app)
 
 
@@ -212,7 +214,9 @@ def test_07_rest_api_full_ingestion_lifecycle(client, auth_headers):
     assert final_status is not None
     assert final_status["sha256"] is not None
     assert final_status["admitted_artifact_id"] is not None
-    assert "reconciliation_status" in final_status["analytics_summary"]
+    summary = final_status["analytics_summary"]
+    assert summary["rows_accepted"] == 1 and summary["rows_rejected"] == 0
+    assert summary["row_accounting"] == "ALL_ROWS_ACCOUNTED"
 
 
 def test_08_pause_resume_cancel_job(client, auth_headers):

@@ -9,28 +9,41 @@ import { generateBsa63SplitSchedules, getCanonicalPaperAnchor, generateOfflineVe
 
 describe("Statutory Directives & Statutory Precision", () => {
   it("formats Section 106 BNSS Specific Lien with mandatory §106(3) Magistrate report", () => {
-    const notice = getBnss106PoliceSpecificLienNotice();
+    const notice = getBnss106PoliceSpecificLienNotice("CASE-2026-001");
     expect(notice).toContain("SECTION 106 BNSS, 2023");
-    expect(notice).toContain("₹1,80,000.00 IN A/C 001405008129");
+    expect(notice).toContain("₹1,80,000 IN A/C 004205001192");
     expect(notice).toContain("Apex Electronics Pvt Ltd");
     expect(notice).toContain("DO NOT FREEZE THE ENTIRE ACCOUNT");
     expect(notice).toContain("Roscoe v. Winder");
     expect(notice).toContain("Section 106(3) BNSS");
 
-    const cbs = getBnss94CbsDirective();
+    const cbs = getBnss94CbsDirective("CASE-2026-001");
     expect(cbs).toContain("SECTION 94 BNSS");
 
-    const dot = getDot3920PortBlockDirective();
+    const dot = getDot3920PortBlockDirective("CASE-2026-001");
     expect(dot).toContain("DOT CLAUSE 39.20");
   });
 
   it("formats Section 107 BNSS Judicial Attachment with DSP concurrence and victim restitution", () => {
-    const app = getBnss107JudicialAttachmentApplication();
+    const app = getBnss107JudicialAttachmentApplication("CASE-2026-001");
     expect(app).toContain("SECTION 107 BNSS, 2023");
-    expect(app).toContain("₹3,80,000.00");
-    expect(app).toContain("COUNTERSIGNATURE OF SUPERINTENDENT OF POLICE");
+    expect(app).toContain("₹3,80,000");
+    expect(app).toContain("prior written concurrence of the Superintendent of Police");
     expect(app).toContain("14-day Show Cause Notice under Section 107(2) BNSS");
     expect(app).toContain("Section 107(6) and 107(7) BNSS");
+  });
+
+  it("never leaks Case 001 identifiers into another case's directives", () => {
+    const all = [
+      getBnss106PoliceSpecificLienNotice("CASE-2026-003"),
+      getBnss94CbsDirective("CASE-2026-003"),
+      getDot3920PortBlockDirective("CASE-2026-003"),
+      getBnss107JudicialAttachmentApplication("CASE-2026-003"),
+    ].join(" ");
+    expect(all).not.toContain("Vikram");
+    expect(all).not.toContain("Apex Electronics");
+    expect(all).not.toContain("626510149921");
+    expect(all).toContain("Cloud VPS");
   });
 
   it("generates BSA §63(4) Part A & Part B schedules", () => {

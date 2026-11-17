@@ -1,12 +1,20 @@
 import React, { useEffect, useRef } from "react";
 import * as echarts from "echarts";
+import { formatInrCompact } from "../../../lib/formatInr";
 
 interface GoldenHourDecayChartProps {
   height?: number | string;
+  /** Booked loss, recoverable and cash-out amounts (INR) of the active case. */
+  lossInr: number;
+  recoverableInr: number;
+  cashoutInr: number;
 }
 
 export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
   height = 175,
+  lossInr,
+  recoverableInr,
+  cashoutInr,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
@@ -20,15 +28,11 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
 
     const chart = chartInstance.current;
 
-    // Piecewise timeline points:
-    // T+0 (09:30): Victim Debit ₹5.00L
-    // T+18m (09:48): ATM Cash Out -₹1.20L -> ₹3.80L
-    // T+1h (10:30): L2 Mule Forwarding
-    // T+2.5h (12:00): Case Clock / Actual Lien Order Placed (₹3.80L secured)
-    // T+3h (12:30): Golden Hour SLA Window
-    // T+24h (Next day): SOP Statutory Deadline
-    const times = ["T+0 (09:30)", "T+18m (ATM)", "T+1h", "T+2.5h (Lien)", "T+3h (SLA)", "T+24h"];
-    const recoverableValues = [5.0, 3.8, 3.8, 3.8, 3.8, 3.8];
+    const times = ["Debit", "Cash-out", "+1h", "Lien placed", "SLA window", "+24h"];
+    const L = lossInr / 100000;
+    const R = recoverableInr / 100000;
+    const recoverableValues = [L, R, R, R, R, R];
+    const pct = lossInr > 0 ? Math.round((recoverableInr / lossInr) * 100) : 0;
 
     const option: echarts.EChartsOption = {
       grid: {
@@ -47,9 +51,9 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
           return `
             <div style="font-size:11px; font-family:Inter,sans-serif;">
               <strong>${tName}</strong><br/>
-              Recoverable Capital: <strong style="color:#059669;">₹${rec.toFixed(2)}L (76%)</strong><br/>
-              ${tName.includes("ATM") ? '<span style="color:#E11D48;font-weight:700;">⚠ ATM DL-049 Dispensed ₹1.20L Cash</span>' : ""}
-              ${tName.includes("Lien") ? '<span style="color:#4F46E5;font-weight:700;">★ §106/§107 Liens Executed</span>' : ""}
+              Recoverable: <strong style="color:#059669;">${formatInrCompact(rec * 100000)} (${pct}%)</strong><br/>
+              ${tName.includes("Cash") ? `<span style="color:#E11D48;font-weight:700;">Cash withdrawn: ${formatInrCompact(cashoutInr)}</span>` : ""}
+              ${tName.includes("Lien") ? '<span style="color:#4F46E5;font-weight:700;">§106/§107 liens executed</span>' : ""}
             </div>
           `;
         },
@@ -68,12 +72,12 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
       yAxis: {
         type: "value",
         min: 0,
-        max: 5.5,
-        interval: 1.0,
+        max: Math.max(1, Math.ceil(L * 1.1)),
+        interval: Math.max(1, Math.ceil(L / 5)),
         axisLabel: {
           color: "#64748B",
           fontSize: 9.5,
-          formatter: "₹{value}L",
+          formatter: "₹{value} L",
         },
         splitLine: {
           lineStyle: { color: "#F1F5F9" },
@@ -97,8 +101,8 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
             data: [
               {
                 name: "ATM Cashout",
-                coord: ["T+18m (ATM)", 3.8],
-                value: "-₹1.20L",
+                coord: ["Cash-out", R],
+                value: `-${formatInrCompact(cashoutInr)}`,
                 itemStyle: { color: "#E11D48" },
                 label: {
                   fontSize: 9,
@@ -108,8 +112,8 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
               },
               {
                 name: "Actual Lien",
-                coord: ["T+2.5h (Lien)", 3.8],
-                value: "Lien ₹3.8L",
+                coord: ["Lien placed", R],
+                value: `Lien ${formatInrCompact(recoverableInr)}`,
                 itemStyle: { color: "#4F46E5" },
                 label: {
                   fontSize: 9,
@@ -123,10 +127,10 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
             symbol: "none",
             data: [
               {
-                xAxis: "T+2.5h (Lien)",
+                xAxis: "Lien placed",
                 lineStyle: { color: "#4F46E5", type: "dashed", width: 1.5 },
                 label: {
-                  formatter: "Current T+2.5h",
+                  formatter: "Lien placed",
                   position: "insideEndTop",
                   color: "#4F46E5",
                   fontSize: 9,
@@ -149,7 +153,7 @@ export const GoldenHourDecayChart: React.FC<GoldenHourDecayChartProps> = ({
       chart.dispose();
       chartInstance.current = null;
     };
-  }, []);
+  }, [lossInr, recoverableInr, cashoutInr]);
 
   return <div ref={chartRef} style={{ width: "100%", height }} />;
 };

@@ -1,394 +1,146 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Download,
-  Printer,
-  Copy,
-  Check,
-  ArrowRight,
-} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import clsx from 'clsx';
+import { AlertTriangle, ChevronDown, Copy, FileText, Snowflake } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageHead, FindingStrip, Button } from '../ui';
-import { useCaseStore } from '../../store/useCaseStore';
-import { getCanonicalCase } from '../../fixtures/cases';
-import { useSettingsStore } from '../../store/useSettingsStore';
-import { formatInr } from '../../utils/formatters';
+import { PageHead } from '../ui';
+import { formatInr } from '../../lib/formatInr';
+import { useFocus } from '../../lib/focusUrl';
+import { selectDeviceFacts, selectLedgerFacts, selectSyndicate } from '../../selectors/caseSelectors';
+import { withActiveCase, type ActiveCaseProps } from './shared/withActiveCase';
 import { CaseActionsPanel } from '../../components/tarka/actions/CaseActionsPanel';
 import { getDot3920PortBlockDirective } from '../../utils/statutoryDirectives';
+import { FocusBar } from '../evidence/IntegrityPanel';
+import { FreezeQueuePanel, NoticeList } from '../freeze/FreezeQueuePanel';
+import { CourtChecklist, ProgressHeader } from '../freeze/ActionSummary';
+import { useActionData } from '../freeze/useActionData';
+import { ReportBuilder } from '../report/ReportBuilder';
 
 export interface ActionsReportScreenProps {
   initialTab?: 'actions' | 'report' | 'dossier';
 }
 
-type ReportSubTab = 'actions' | 'dossier';
-type NoticeTab = 'freeze' | 'telecom' | 'npci' | 'i4c';
+type Tab = 'freeze' | 'report';
+type LetterTab = 'telecom' | 'npci' | 'i4c';
 
-export const ActionsReportScreen: React.FC<ActionsReportScreenProps> = ({ initialTab = 'actions' }) => {
-  const { activeCaseId } = useCaseStore();
-  const caseId = activeCaseId || 'CASE-2026-001';
-  const canonical = useMemo(() => getCanonicalCase(caseId), [caseId]);
-  const { station, profile } = useSettingsStore();
+/** ?sel=a,b from the Money trail's "Freeze these first": pre-ticks those accounts once, then leaves the URL. */
+function takeSelection(): string[] {
+  const p = new URLSearchParams(window.location.search);
+  const sel = p.get('sel');
+  if (!sel) return [];
+  p.delete('sel');
+  const qs = p.toString();
+  window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+  return sel.split(',').filter(Boolean);
+}
 
-  const [subTab, setSubTab] = useState<ReportSubTab>(initialTab === 'report' ? 'dossier' : 'actions');
-  const [activeNoticeTab, setActiveNoticeTab] = useState<NoticeTab>('freeze');
-  const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
-
-  const bookedLoss = canonical.financials.bookedLossInr;
-  const recoverableAmount = Math.round(bookedLoss * 0.76);
-  const recoverablePct = 76;
-
-  const stationTitle = station.letterheadTitle || 'STATE POLICE DEPARTMENT · CYBER CRIME CELL';
-  const stationSub = `${station.stationName || 'Noida Cyber Crime PS'}, ${station.district || 'Gautam Buddha Nagar'}, Uttar Pradesh`;
-  const issuingOfficer = `${profile.rank || 'Inspector'} ${profile.name || 'Rajeshwar Rao'} (${profile.badgeNo || 'UP-78921'})`;
-
-  // Notice Text Templates
-  const noticeTexts = useMemo(() => {
-    const fId = canonical.firNumber || '149/2026';
+const OtherLetters: React.FC<ActiveCaseProps> = ({ fixture: c }) => {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<LetterTab>('telecom');
+  const ledger = useMemo(() => selectLedgerFacts(c), [c]);
+  const devices = useMemo(() => selectDeviceFacts(c), [c]);
+  const syndicate = useMemo(() => selectSyndicate(c), [c]);
+  const texts: Record<LetterTab, string> = useMemo(() => {
+    const dev = devices.devices[0];
     return {
-      freeze: `FORM 27-B: STATUTORY NOTICE FOR PROPORTIONAL DEBIT LIEN\n[Under Section 106(1) Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023]\nTo: Designated Nodal Officer, ICICI Bank Ltd / HDFC Bank Ltd / Axis Bank Ltd\nCase: FIR #${fId}, Cyber Crime PS, UP\nVictim: ${canonical.complainant.name} | Account: ${canonical.complainant.accountMasked}\n\nDIRECTIVE:\nYou are hereby directed to immediately place an administrative lien/freeze on the following conduit beneficiary accounts:\n1. Vikram Shah | Axis Bank ••0291 | Amount: ₹2,85,000\n2. Rohit Verma | HDFC Bank ••1992 | Amount: ₹1,20,000\n3. Sameer Khan | ICICI Bank ••8129 | Amount: ₹35,000\n4. Apex Electronics | Specific Lien under LIBR Doctrine: ₹1,80,000\n\nCompliance is mandatory within 2 hours of receipt per MHA Golden Hour SOP.`,
-      telecom: getDot3920PortBlockDirective(caseId),
-      npci: `NPCI SWITCH SETTLEMENT AUDIT REQUISITION\n[Under Section 94 BNSS & PSS Act 2007]\nTo: National Payments Corporation of India (NPCI) Switch Operations\nCase Ref: FIR #${fId}\n\nSUBJECT: Full Switch Telemetry & RRN Trace Log for RRN #626510149921\n1. STAN Sequence: 149921\n2. Julian Day: 265 (22 Sep 2026)\n3. Issuing Bank: State Bank of India (SBI Finacle)\n4. Acquirer Bank: Axis Bank (VPA vikramshah@okaxis)\n5. Timestamp: 2026-09-22T10:00:14.281 IST\n\nPreserve and certify switch message packets under BSA §63(4).`,
-      i4c: `I4C SAMANVAYA / PRATIBIMB INTER-STATE SYNDICATE LINK REPORT\nCase Ref: FIR #${fId}\nExposure Pool: ₹10.42 Cr across 14 multi-state FIRs\nCentral Database Hash: 89c20491823091ffeed891241aa44591aefc48201\n\nSYNDICATE CLUSTER: Mewat/Cyberabad Digital Arrest Extortion Module\nTarget Handset: IMEI 867492061234564 (Dual-SIM chassis match)\nAccomplice BSSID: 74:DA:38:A2:11:BC`,
+      telecom: getDot3920PortBlockDirective(c.caseId),
+      npci: `NPCI SWITCH SETTLEMENT AUDIT REQUISITION\n[Under Section 94 BNSS & PSS Act 2007]\nTo: National Payments Corporation of India (NPCI) Switch Operations\nCase Ref: ${c.firNumber}\n\nSUBJECT: Switch log and RRN trace for RRN #${ledger.firstDrainRrn ?? 'n/a'}\n1. STAN: ${ledger.stan ?? 'n/a'}\n2. Julian day: ${ledger.julianDay ?? 'n/a'}\n3. Issuing bank: ${ledger.victimBank}\n4. Acquirer bank: ${ledger.acquirerBank ?? 'n/a'} (VPA ${ledger.acquirerVpa ?? 'n/a'})\n5. Time: ${ledger.firstDrainIst ?? 'n/a'}\n\nPlease preserve and certify the switch message packets under BSA §63(4).`,
+      i4c: `I4C SAMANVAYA LINKED-CASE REPORT\nCase Ref: ${c.firNumber}\nCombined exposure: ${formatInr(syndicate.combinedExposureInr)} across ${syndicate.combinedCases.length} linked case${syndicate.combinedCases.length === 1 ? '' : 's'} (${syndicate.combinedCases.map((x) => x.caseId).join(', ') || 'none'})\n\nHandset: ${dev ? `IMEI ${dev.imei}` : 'none recorded'}\nShared identifiers: ${syndicate.anchors.map((a) => `${a.type} ${a.value}`).join('; ') || 'none'}\nWi-Fi BSSIDs: ${devices.bssids.join(', ') || 'none recorded'}`,
     };
-  }, [canonical, caseId]);
+  }, [c, ledger, devices, syndicate]);
+  const label: Record<LetterTab, string> = { telecom: 'Telecom (block SIM / port)', npci: 'NPCI switch log', i4c: 'I4C linked cases' };
+  return (
+    <section className="v6-glass rounded-2xl">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left">
+        <span className="flex items-center gap-2 text-[14px] font-semibold text-[var(--fg-1)]">
+          <FileText className="h-4 w-4 text-[var(--fg-3)]" /> Other letters and case tasks
+        </span>
+        <ChevronDown className={clsx('h-4 w-4 text-[var(--fg-3)] transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="space-y-3 border-t border-[var(--line)] p-4">
+          <div className="flex flex-wrap gap-1.5">
+            {(Object.keys(label) as LetterTab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={clsx('rounded-lg border px-2.5 py-1 text-[12px] font-medium', tab === t ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--color-flow-bg)]' : 'border-[var(--line)] text-[var(--fg-2)] hover:bg-[var(--hover)]')}
+              >
+                {label[t]}
+              </button>
+            ))}
+          </div>
+          <pre className="max-h-[260px] overflow-auto whitespace-pre-wrap rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-3 text-[11.5px] leading-relaxed text-[var(--fg-1)]">{texts[tab]}</pre>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(texts[tab]).then(() => toast.success('Letter copied'), () => toast.error('Copy blocked by the browser'))}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] px-2.5 py-1 text-[12px] font-medium text-[var(--fg-2)] hover:bg-[var(--hover)]"
+          >
+            <Copy className="h-3.5 w-3.5" /> Copy letter
+          </button>
+          <div className="min-h-[200px] border-t border-[var(--line)] pt-3">
+            <CaseActionsPanel caseId={c.caseId} />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+};
 
-  const handleCopyNotice = (type: NoticeTab) => {
-    navigator.clipboard.writeText(noticeTexts[type]);
-    setCopiedNotice(type);
-    toast.success('Statutory directive copied to clipboard');
-    setTimeout(() => setCopiedNotice(null), 2000);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleExportJson = () => {
-    const data = {
-      caseId,
-      canonicalCase: canonical,
-      timestamp: new Date().toISOString(),
-      merkleRoot: '89c20491823091ffeed891241aa44591aefc48201',
-      bsa63Certified: true,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `TARKA_Admissible_Dossier_${caseId}.json`;
-    a.click();
-    toast.success('Downloaded cryptographic case dossier JSON');
-  };
+const ActionsReportScreenInner: React.FC<ActionsReportScreenProps & ActiveCaseProps> = ({ initialTab = 'actions', fixture }) => {
+  const data = useActionData(fixture);
+  const focus = useFocus();
+  const [tab, setTab] = useState<Tab>(initialTab === 'actions' ? 'freeze' : 'report');
+  const [initialSelection] = useState(takeSelection);
+  const seg = 'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12.5px] font-semibold transition-colors';
 
   return (
-    <div className="v6-enter space-y-3" data-testid="v6-actions-screen">
-      {/* Page Header */}
+    <div className="v6-enter space-y-4" data-testid="v6-actions-screen">
       <PageHead
         kicker="Step 6 · Actions & Report"
-        title="Stop the money. Build the case."
+        title="What to do now, and is the case ready for court?"
         actions={
-          <div className="flex items-center gap-2">
-            <div className="inline-flex p-0.5 bg-[var(--surface-2)] border border-[var(--line)] rounded-md">
-              <button
-                type="button"
-                onClick={() => setSubTab('actions')}
-                className={`px-3 py-1 text-[12px] font-semibold rounded transition-all ${
-                  subTab === 'actions'
-                    ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs'
-                    : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]'
-                }`}
-              >
-                Statutory Freezes & Notices
-              </button>
-              <button
-                type="button"
-                onClick={() => setSubTab('dossier')}
-                className={`px-3 py-1 text-[12px] font-semibold rounded transition-all ${
-                  subTab === 'dossier'
-                    ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs'
-                    : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]'
-                }`}
-              >
-                Admissible Court Dossier (A4)
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleExportJson}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-[var(--fg-2)] bg-[var(--surface-1)] border border-[var(--line)] rounded-md hover:bg-[var(--hover)] hover:text-[var(--fg-1)] transition-colors shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span>Export JSON</span>
+          <div role="tablist" aria-label="Actions or report" className="inline-flex rounded-lg border border-[var(--line)] bg-[var(--glass-1)] p-0.5">
+            <button type="button" role="tab" aria-selected={tab === 'freeze'} onClick={() => setTab('freeze')} className={clsx(seg, tab === 'freeze' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]')}>
+              <Snowflake className="h-3.5 w-3.5" /> Freeze & banks
             </button>
-
-            <Button variant="default" size="md" onClick={handlePrint}>
-              <span className="flex items-center gap-1.5">
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Dossier</span>
-              </span>
-            </Button>
+            <button type="button" role="tab" aria-selected={tab === 'report'} onClick={() => setTab('report')} className={clsx(seg, tab === 'report' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]')}>
+              <FileText className="h-3.5 w-3.5" /> Court report
+            </button>
           </div>
         }
       />
 
-      {/* Finding Strip */}
-      <FindingStrip
-        variant="safe"
-        action={
-          <button
-            type="button"
-            onClick={() => setSubTab('dossier')}
-            className="text-[12px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1"
-          >
-            <span>Preview Court Dossier</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        }
-      >
-        <span>
-          Proportional debit liens (§106) and seizure directives (§107) dispatched to 4 nodal banks. Court investigation report cryptographically sealed with SHA-256 Merkle root.
-        </span>
-      </FindingStrip>
+      <FocusBar caseId={data.caseId} focus={focus} networks={data.fromServer ? data.networks : null} />
 
-      {/* 4 KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="v6-card">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[12px] font-medium text-[var(--fg-3)]">Victim booked loss</span>
-            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-risk-bg)] text-[var(--risk)]">
-              CBS AUDIT
-            </span>
-          </div>
-          <div className="text-[20px] font-bold text-[var(--risk)]">
-            {formatInr(bookedLoss)}
-          </div>
-          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
-            {canonical.complainant.name} · {canonical.complainant.bank}
-          </div>
-        </div>
-
-        <div className="v6-card">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[12px] font-medium text-[var(--fg-3)]">Frozen / Recoverable</span>
-            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-safe-bg)] text-[var(--safe)]">
-              {recoverablePct}% RECOVERED
-            </span>
-          </div>
-          <div className="text-[20px] font-bold text-[var(--safe)]">
-            {formatInr(recoverableAmount)}
-          </div>
-          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
-            Secured across 4 beneficiary banks
-          </div>
-        </div>
-
-        <div className="v6-card">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[12px] font-medium text-[var(--fg-3)]">Statutory directives</span>
-            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-flow-bg)] text-[var(--flow)]">
-              BNSS COMPLIANT
-            </span>
-          </div>
-          <div className="text-[20px] font-bold text-[var(--fg-1)]">
-            4 Dispatched
-          </div>
-          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate">
-            §106 Liens, §107 Attachments, §94 Orders
-          </div>
-        </div>
-
-        <div className="v6-card">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[12px] font-medium text-[var(--fg-3)]">Court admissibility</span>
-            <span className="text-[12px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-safe-bg)] text-[var(--safe)]">
-              BSA §63(4) CERTIFIED
-            </span>
-          </div>
-          <div className="text-[20px] font-bold text-[var(--safe)]">
-            100% Sealed
-          </div>
-          <div className="text-[12px] text-[var(--fg-3)] mt-1 truncate font-mono">
-            Merkle Root 89c20491...
-          </div>
-        </div>
-      </div>
-
-      {subTab === 'actions' ? (
-        /* SUB-TAB 1: STATUTORY ACTIONS & NOTICES */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
-          {/* Left 7 Columns: CaseActionsPanel */}
-          <div className="lg:col-span-7 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 shadow-xs min-h-[520px]">
-            <CaseActionsPanel caseId={caseId} onNavigateToReport={() => setSubTab('dossier')} />
-          </div>
-
-          {/* Right 5 Columns: Statutory Notice Drafter & Letters */}
-          <div className="lg:col-span-5 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-3 space-y-3 shadow-xs">
-            <div className="pb-1.5 border-b border-[var(--line)] flex items-center justify-between">
-              <div>
-                <span className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider">
-                  Statutory Directives & Nodal Letters
-                </span>
-                <p className="text-[12px] text-[var(--fg-3)] mt-0.5">
-                  Pre-formatted legal requisitions ready for IO signature.
-                </p>
-              </div>
-            </div>
-
-            {/* Notice Tab Selectors */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {(
-                [
-                  ['freeze', '§106/107 Bank Freeze'],
-                  ['telecom', '§94 Telecom (DoT 39.20)'],
-                  ['npci', 'NPCI Switch STAN'],
-                  ['i4c', 'I4C Samanvaya Syndicate'],
-                ] as [NoticeTab, string][]
-              ).map(([t, label]) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setActiveNoticeTab(t)}
-                  className={`p-2 rounded border text-left text-[12px] font-semibold transition-all ${
-                    activeNoticeTab === t
-                      ? 'bg-[var(--color-flow-bg)] border-[var(--accent)] text-[var(--accent)] shadow-xs'
-                      : 'bg-[var(--surface-2)] border-[var(--line)] text-[var(--fg-2)] hover:bg-[var(--hover)]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Notice Content Box */}
-            <div className="flex-1 min-h-[340px] p-3 rounded bg-[var(--surface-2)] border border-[var(--line)] font-mono text-[12px] text-[var(--fg-1)] leading-relaxed whitespace-pre-wrap overflow-y-auto">
-              {noticeTexts[activeNoticeTab]}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--line)]">
-              <span className="text-[12px] text-[var(--fg-3)]">
-                Binding Statutory SLA: <strong>2 Hours</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => handleCopyNotice(activeNoticeTab)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded shadow-xs"
-              >
-                {copiedNotice === activeNoticeTab ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedNotice === activeNoticeTab ? 'Copied!' : 'Copy Directive'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* SUB-TAB 2: ADMISSIBLE COURT DOSSIER (A4 PREVIEW) */
-        <div className="bg-[var(--surface-1)] border border-[var(--line)] rounded-lg p-6 shadow-xs max-w-4xl mx-auto space-y-6">
-          {/* Official Letterhead */}
-          <div className="text-center pb-4 border-b-2 border-black space-y-1">
-            <h2 className="text-[14px] font-bold uppercase tracking-widest text-black">
-              {stationTitle}
-            </h2>
-            <p className="text-[12px] text-zinc-700">{stationSub}</p>
-            <p className="text-[12px] font-semibold text-zinc-800">
-              POLICE INVESTIGATION REPORT · BHARATIYA SAKSHYA ADHINIYAM (BSA) § 63(4) CERTIFICATE
-            </p>
-          </div>
-
-          {/* Statutory Preamble */}
-          <div className="grid grid-cols-2 gap-4 text-[12px] text-zinc-800 p-3 bg-zinc-50 border border-zinc-200 rounded">
-            <div>
-              <div><strong>FIR Number:</strong> #{canonical.firNumber || '149/2026'}</div>
-              <div><strong>Police Station:</strong> {canonical.policeStation || 'Noida Cyber Crime PS'}</div>
-              <div><strong>Complainant:</strong> {canonical.complainant.name} ({canonical.complainant.phone})</div>
-              <div><strong>Penal Sections:</strong> § 66D IT Act 2000, § 318(4) BNS 2023</div>
-            </div>
-            <div>
-              <div><strong>NCRP Portal Ref:</strong> {canonical.ncrpAckNo || 'NCRP-1930-DL-2026'}</div>
-              <div><strong>Date of Offense:</strong> 22 September 2026 10:00 IST</div>
-              <div><strong>Investigating Officer:</strong> {issuingOfficer}</div>
-              <div><strong>Judicial Court:</strong> Court of Special CJM, Gautam Buddha Nagar</div>
-            </div>
-          </div>
-
-          {/* Financial Breakdown Table */}
-          <div className="space-y-2">
-            <h4 className="text-[13px] font-bold text-black uppercase tracking-wider">
-              1. Executive Accounting & Seizure Schedule (BNSS §106 / §107)
-            </h4>
-            <table className="w-full text-[12px] border-collapse border border-zinc-300">
-              <thead>
-                <tr className="bg-zinc-100 text-left font-bold text-black">
-                  <th className="border border-zinc-300 p-2">Beneficiary / Conduit</th>
-                  <th className="border border-zinc-300 p-2">Bank & Account</th>
-                  <th className="border border-zinc-300 p-2">Stolen Debit</th>
-                  <th className="border border-zinc-300 p-2">Statutory Measure</th>
-                  <th className="border border-zinc-300 p-2">Seizure Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-zinc-300 p-2 font-semibold">Vikram Shah</td>
-                  <td className="border border-zinc-300 p-2 font-mono">Axis Bank ••0291</td>
-                  <td className="border border-zinc-300 p-2 font-bold text-rose-700">₹2,85,000</td>
-                  <td className="border border-zinc-300 p-2">§ 107 BNSS Attachment</td>
-                  <td className="border border-zinc-300 p-2 font-semibold text-emerald-700">FROZEN (100%)</td>
-                </tr>
-                <tr>
-                  <td className="border border-zinc-300 p-2 font-semibold">Rohit Verma</td>
-                  <td className="border border-zinc-300 p-2 font-mono">HDFC Bank ••1992</td>
-                  <td className="border border-zinc-300 p-2 font-bold text-rose-700">₹1,20,000</td>
-                  <td className="border border-zinc-300 p-2">§ 107 BNSS Attachment</td>
-                  <td className="border border-zinc-300 p-2 font-semibold text-emerald-700">FROZEN (100%)</td>
-                </tr>
-                <tr>
-                  <td className="border border-zinc-300 p-2 font-semibold">Apex Electronics</td>
-                  <td className="border border-zinc-300 p-2 font-mono">ICICI Bank ••8129</td>
-                  <td className="border border-zinc-300 p-2 font-bold text-blue-700">₹1,80,000</td>
-                  <td className="border border-zinc-300 p-2">§ 106(1) Specific Lien (LIBR)</td>
-                  <td className="border border-zinc-300 p-2 font-semibold text-blue-700">LIEN PLACED</td>
-                </tr>
-                <tr>
-                  <td className="border border-zinc-300 p-2 font-semibold">ATM Noida Sec 18</td>
-                  <td className="border border-zinc-300 p-2 font-mono">Terminal #DL-049</td>
-                  <td className="border border-zinc-300 p-2 font-bold text-amber-700">₹1,20,000</td>
-                  <td className="border border-zinc-300 p-2">CCTV Seizure Requisition</td>
-                  <td className="border border-zinc-300 p-2 text-zinc-600">DISPATCHED</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Cryptographic Exhibits & Merkle Root */}
-          <div className="space-y-2">
-            <h4 className="text-[13px] font-bold text-black uppercase tracking-wider">
-              2. Evidentiary Lineage & Merkle Root Hash Chain
-            </h4>
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded font-mono text-[12px] space-y-1 text-zinc-800">
-              <div>[EXHIBIT-01] SBI Finacle CBS Core Banking Statement: <code>7f83b165...8842</code> (VERIFIED)</div>
-              <div>[EXHIBIT-02] NPCI UPI Switch STAN Telemetry 149921: <code>4b227777...9921</code> (IN SPEC)</div>
-              <div>[EXHIBIT-03] Airtel CGNAT IPDR Port-Allocation Log: <code>3a910029...7712</code> (COLLAPSED)</div>
-              <div>[EXHIBIT-04] WhatsApp Forensic Export (Indic Transliteration): <code>91eef840...1109</code> (BOUND)</div>
-              <div className="pt-2 border-t border-zinc-300 font-bold text-black">
-                ROOT HASH: <code>89c20491823091ffeed891241aa44591aefc482010839217fa84</code>
-              </div>
-            </div>
-          </div>
-
-          {/* Verification Seal */}
-          <div className="flex items-center justify-between pt-6 border-t border-zinc-300 text-[12px] text-zinc-800">
-            <div className="space-y-1">
-              <div className="font-bold text-black">CRYPTOGRAPHICALLY SEALED AND VERIFIED</div>
-              <div>SHA-256 Hash Chain Integrity: 100% UNBROKEN</div>
-              <div>Generated via TARKA v6 Production Forensic Engine</div>
-            </div>
-            <div className="text-right space-y-1">
-              <div className="font-bold text-black">{issuingOfficer}</div>
-              <div className="text-zinc-600">Investigating Officer</div>
-              <div className="text-zinc-500 font-mono text-[12px]">Digital Seal: [BSA-63-4-VERIFIED]</div>
-            </div>
-          </div>
+      {data.networksError && (
+        <div role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--color-risk-bg)] px-3 py-2 text-[12.5px] text-[var(--risk)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" /> Could not load this case’s networks, so the queue is not split by network. Reload the page; if it persists, check that the server is running.
         </div>
       )}
+
+      <ProgressHeader data={data} />
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-4">
+          {tab === 'freeze' ? (
+            <>
+              <FreezeQueuePanel key={`${focus.networkId}|${focus.account}`} data={data} fixture={fixture} initialSelection={initialSelection} />
+              <NoticeList data={data} />
+            </>
+          ) : (
+            <ReportBuilder data={data} />
+          )}
+        </div>
+        <aside className="min-w-0 space-y-4">
+          <div className="xl:sticky xl:top-4 space-y-4">
+            <CourtChecklist data={data} />
+            <OtherLetters fixture={fixture} />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 };
+
+export const ActionsReportScreen = withActiveCase(ActionsReportScreenInner);

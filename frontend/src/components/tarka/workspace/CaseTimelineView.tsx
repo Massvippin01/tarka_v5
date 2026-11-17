@@ -103,8 +103,8 @@ export const CaseTimelineView: React.FC<CaseTimelineViewProps> = ({
                     <span>{c.goldenHourRemainingMins}m SLA Window Active</span>
                   </span>
                 ) : (
-                  <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 700 }}>
-                    Standard Prosecution Phase
+                  <span style={{ fontSize: "10px", color: "#BE123C", fontWeight: 800 }}>
+                    Golden hour expired
                   </span>
                 )}
               </div>
@@ -130,7 +130,7 @@ export const CaseTimelineView: React.FC<CaseTimelineViewProps> = ({
                     T + 120m : §106 PROVISIONAL LIEN
                   </div>
                   <div style={{ fontSize: "10.5px", fontWeight: 800, color: isGoldenHour ? "#92400E" : "#047857", marginTop: "2px" }}>
-                    Secured: ₹{((c.commercialShieldedInr || c.recoverableInr || 0)).toLocaleString("en-IN")}
+                    Recoverable: ₹{((c.recoverableInr || c.commercialShieldedInr || 0)).toLocaleString("en-IN")}
                   </div>
                 </div>
 

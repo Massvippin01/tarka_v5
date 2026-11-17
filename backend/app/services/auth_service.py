@@ -304,9 +304,16 @@ class AuthService:
         Access outside assigned scope requires an explicit auditable override.
         Unknown cases must be denied for every role.
         """
-        if not user or not user.scope or not user.scope.allowed_cases:
+        if not user or not user.scope:
             return False
-        return case_id in user.scope.allowed_cases
+        if case_id in (user.scope.allowed_cases or []):
+            return True
+        # Cases created in TARKA belong to their creator (persisted in the local case registry).
+        from app.services.ingestion.large_evidence_engine import IngestionJobManager
+        from app.services.ingestion.projects_store import ProjectsStore
+
+        reg = ProjectsStore(IngestionJobManager.get_instance().base_dir).registered(case_id)
+        return bool(reg and reg["owner_id"] == user.user_id)
 
     def has_permission(self, user: UserIdentity, permission: AccessPermissionEnum) -> bool:
         if user.role == UserRoleEnum.SYSTEM_ADMINISTRATOR and permission == AccessPermissionEnum.SECURITY_ADMIN:

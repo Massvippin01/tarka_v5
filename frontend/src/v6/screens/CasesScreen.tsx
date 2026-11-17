@@ -200,16 +200,16 @@ export const CasesScreen: React.FC = () => {
     {
       key: 'caseId',
       header: 'Case ID',
-      width: '130px',
-      render: (row) => <span className="v6-mono font-semibold text-[var(--fg-1)]">{row.caseId}</span>,
+      width: '150px',
+      render: (row) => <span className="v6-mono text-[12.5px] font-semibold text-[var(--fg-1)] whitespace-nowrap">{row.caseId}</span>,
     },
     {
       key: 'firNumber',
       header: 'FIR · Station',
-      width: '180px',
+      width: '150px',
       render: (row) => (
-        <div>
-          <div className="font-semibold text-[var(--fg-1)]">{row.firNumber}</div>
+        <div className="min-w-0 max-w-[128px]">
+          <div className="font-semibold text-[var(--fg-1)] truncate">{row.firNumber}</div>
           <div className="v6-card-s truncate">{row.policeStation.split(',')[0]}</div>
         </div>
       ),
@@ -218,33 +218,41 @@ export const CasesScreen: React.FC = () => {
       key: 'victimName',
       header: 'Victim · Typology',
       render: (row) => (
-        <div>
-          <div className="font-semibold text-[var(--fg-1)]">{row.victimName}</div>
-          <div className="v6-card-s capitalize">{row.typology.toLowerCase()}</div>
+        <div className="min-w-0 max-w-[150px]">
+          <div className="font-semibold text-[var(--fg-1)] truncate">{row.victimName}</div>
+          <div className="v6-card-s capitalize truncate">{row.typology.toLowerCase().replace(/_/g, ' ')}</div>
         </div>
       ),
     },
     {
       key: 'status',
       header: 'Status',
-      width: '140px',
+      width: '124px',
       render: (row) => (
-        <Chip variant={row.statusVariant} withDot={row.statusVariant === 'urgent'}>
-          {row.status}
-        </Chip>
+        <div className="flex flex-col items-start gap-1">
+          <Chip variant={row.statusVariant} withDot={row.statusVariant === 'urgent'}>
+            {row.status}
+          </Chip>
+          <span
+            className={row.goldenHourMins !== null && row.goldenHourMins >= 60 ? 'text-xs text-[var(--urgent)]' : 'text-xs text-[var(--risk)]'}
+            title="Golden hour: time left to freeze money before it is withdrawn"
+          >
+            {row.goldenHourMins !== null ? `${row.goldenHourMins} min to freeze` : 'Golden hour over'}
+          </span>
+        </div>
       ),
     },
     {
       key: 'lossInr',
-      header: 'Reported Loss',
+      header: 'Loss',
       isAmount: true,
-      width: '140px',
+      width: '112px',
       render: (row) => formatInr(row.lossInr, { showPaise: false }),
     },
     {
       key: 'recoveredInr',
       header: 'Recovered',
-      width: '160px',
+      width: '88px',
       render: (row) => (
         <div className="flex items-center gap-2.5">
           <div className="flex-1">
@@ -257,28 +265,15 @@ export const CasesScreen: React.FC = () => {
       ),
     },
     {
-      key: 'goldenHourMins',
-      header: 'Golden Hour',
-      width: '120px',
-      render: (row) =>
-        row.goldenHourMins !== null ? (
-          <Chip variant={row.goldenHourMins < 60 ? 'risk' : 'urgent'}>
-            {row.goldenHourMins} min
-          </Chip>
-        ) : (
-          <Chip variant="muted">Closed</Chip>
-        ),
-    },
-    {
       key: 'ioName',
       header: 'IO',
-      width: '150px',
-      render: (row) => <span className="text-[var(--fg-2)] text-xs">{row.ioName}</span>,
+      width: '140px',
+      render: (row) => <span className="block truncate max-w-[100px] text-[var(--fg-2)] text-xs" title={row.ioName}>{row.ioName}</span>,
     },
     {
       key: 'actions',
       header: 'Actions',
-      width: '120px',
+      width: '84px',
       render: (row) => (
         <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           <Button

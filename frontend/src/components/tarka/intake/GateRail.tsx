@@ -37,7 +37,7 @@ export const GateRail: React.FC<GateRailProps> = ({
   isPdfAppended,
   isMerkleCompliant,
 }) => {
-  const { setIntakeGate, toggleMutation, resetAllMutations } = useTarkaGlobal();
+  const { setIntakeGate, toggleMutation, resetAllMutations, activeCaseId } = useTarkaGlobal();
   const { setProofStepIndex, setActiveDockTab, density } = useTarkaUiStore();
   const isCompact = density === "compact";
   const [breakMenuOpen, setBreakMenuOpen] = useState(false);
@@ -494,13 +494,13 @@ export const GateRail: React.FC<GateRailProps> = ({
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(getBnss94CbsDirective());
+            navigator.clipboard.writeText(getBnss94CbsDirective(activeCaseId ?? undefined));
             toast.success("Copied §94 BNSS CBS Directive to clipboard!", {
-              description: "Requisition for UTR #626510149921 with ₹2.00L delta and dual %%EOF byte ranges.",
+              description: "Requisition pre-filled from this case's disputed ledger debit.",
               duration: 3500,
             });
           }}
-          title="Copy pre-filled §94 BNSS statutory directive to SBI Nodal Officer"
+          title="Copy pre-filled §94 BNSS statutory directive to the bank's Nodal Officer"
           className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
           style={{
             fontSize: "10px",

@@ -3,6 +3,7 @@ import case002Raw from './CASE-2026-002.json';
 import case003Raw from './CASE-2026-003.json';
 import case004Raw from './CASE-2026-004.json';
 import type { ReconstructedInvestigation, ReconstructedNode, ReconstructedEdge } from '../../utils/investigationReconstructor';
+import { useBundleCaseStore } from '../../store/useBundleCaseStore';
 import { sha256HexSync, computeMerkleRootSync, canonicalJson } from '../../utils/sha256';
 
 export interface CanonicalCaseComplainant {
@@ -21,6 +22,8 @@ export interface CanonicalCaseReceiptClaim {
   claimedAmount: number;
   label: string;
   discrepancyNote: string;
+  /** Present only when the complainant's document shows post-issuance edits. */
+  pdfTamper?: { sourceFile: string; finding: string; technicalOffset: string };
 }
 
 export interface CanonicalCaseFinancials {
@@ -74,6 +77,9 @@ export interface CanonicalCaseTransaction {
   clientPort?: number;
   ja4Tls?: string;
   bssidMac?: string;
+  /** Uploaded file and 1-based row this transaction was read from, when the parser kept them. */
+  sourceFile?: string;
+  sourceRow?: number;
 }
 
 export interface CanonicalTimelineEvent {
@@ -98,7 +104,7 @@ export interface CanonicalCaseFixture {
   policeStation: string;
   ncrpAckNo: string;
   title: string;
-  typology: "DIGITAL_ARREST" | "APK_SIM_SWAP" | "CORPORATE_BEC" | "TASK_FRAUD";
+  typology: "DIGITAL_ARREST" | "APK_SIM_SWAP" | "CORPORATE_BEC" | "TASK_FRAUD" | "UNCLASSIFIED";
   priority: "CRITICAL_GOLDEN_HOUR" | "HIGH_SYNDICATE" | "COURT_FILING_READY";
   currentStage: "intake" | "attribution" | "network" | "court-proof";
   leadInvestigator: string;
@@ -118,8 +124,14 @@ export const CANONICAL_CASES: Record<string, CanonicalCaseFixture> = {
   "CASE-2026-004": case004Raw as unknown as CanonicalCaseFixture,
 };
 
+/** Built-in demo fixture, else a case loaded from the backend bundle (uploaded data). */
+export function findCase(caseId: string | null | undefined): CanonicalCaseFixture | undefined {
+  if (!caseId) return undefined;
+  return CANONICAL_CASES[caseId] ?? useBundleCaseStore.getState().cases[caseId];
+}
+
 export function getCanonicalCase(caseId: string): CanonicalCaseFixture {
-  return CANONICAL_CASES[caseId] || CANONICAL_CASES["CASE-2026-001"];
+  return findCase(caseId) || CANONICAL_CASES["CASE-2026-001"];
 }
 
 /**
@@ -202,10 +214,10 @@ export function buildCaseBundleFromFixture(fixture: CanonicalCaseFixture): Recon
     recoverableLibrInr: fixture.financials.recoverableLibrInr,
     shieldedCommercialInr: fixture.financials.shieldedCommercialInr,
     preIngestionTamper: {
-      hasTamper: fixture.caseId === "CASE-2026-001",
-      sourceFile: fixture.caseId === "CASE-2026-001" ? "Canva_Digital_Arrest_Notice.pdf" : "None",
-      finding: fixture.caseId === "CASE-2026-001" ? "2 %%EOF markers detected (+14.2 KB incremental append)" : "No post-issuance edits detected",
-      technicalOffset: fixture.caseId === "CASE-2026-001" ? "0x14209..0x15080" : "0x0000",
+      hasTamper: !!fixture.receiptClaim.pdfTamper,
+      sourceFile: fixture.receiptClaim.pdfTamper?.sourceFile ?? "None",
+      finding: fixture.receiptClaim.pdfTamper?.finding ?? "No post-issuance edits detected",
+      technicalOffset: fixture.receiptClaim.pdfTamper?.technicalOffset ?? "0x0000",
       discrepancyNote: fixture.receiptClaim.discrepancyNote,
     },
     postIngestionMerkleRoot: computeMerkleRootSync([

@@ -38,9 +38,9 @@ export const AskTarkaDrawer: React.FC = () => {
         role="dialog"
         aria-modal="true"
         aria-label="Ask TARKA Forensic AI Copilot"
-        className={`fixed z-50 flex flex-col transition-all duration-200 bg-[#FFFDF8] border-l border-[#D5CABE] shadow-[-16px_0_40px_rgba(41,37,34,0.18)] ${
+        className={`fixed z-50 flex flex-col transition-all duration-200 bg-[var(--surface-1)] border-l border-[var(--line)] shadow-[-16px_0_40px_rgba(41,37,34,0.18)] ${
           isFullscreen
-            ? 'inset-4 md:inset-8 rounded-2xl border border-[#D5CABE] shadow-2xl animate-in zoom-in-95'
+            ? 'inset-4 md:inset-8 rounded-2xl border border-[var(--line)] shadow-2xl animate-in zoom-in-95'
             : 'top-0 right-0 bottom-0 w-[540px] max-w-[96vw] animate-in slide-in-from-right duration-200'
         }`}
       >

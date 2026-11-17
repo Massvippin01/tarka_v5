@@ -10,6 +10,10 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 import { lintViz } from "../../../utils/lintViz";
+import type { MoneyFlow, FlowNode } from "../../../selectors/caseSelectors";
+import { formatInr, formatInrCompact } from "../../../lib/formatInr";
+
+const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 export interface MoneyFlowSankeyGraphProps {
   freezeBudgetK: number;
@@ -19,22 +23,18 @@ export interface MoneyFlowSankeyGraphProps {
   selectedRule: "LIBR" | "FIFO" | "PRO_RATA";
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string | null) => void;
-  victimName?: string;
-  victimAccount?: string;
-  lossAmount?: number;
-  primaryMuleName?: string;
-  primaryMuleAccount?: string;
+  /** Nodes + links built from the active case's transactions (selectMoneyFlow). */
+  flow: MoneyFlow;
 }
 
 interface CustomNodeData {
   id: string;
   name: string;
   subname: string;
-  category: "victim" | "mule" | "merchant" | "cashout" | "hold" | "clean";
+  category: FlowNode["category"] | "clean";
   treatment: "frozen" | "lien" | "cashout" | "clean" | "victim";
   balance: number;
   statute: string;
-  column: number;
 }
 
 interface CustomLinkData {
@@ -53,18 +53,16 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
   onToggleInjectClean,
   selectedNodeId,
   onSelectNode,
-  victimName,
-  victimAccount,
-  lossAmount,
-  primaryMuleName,
-  primaryMuleAccount,
+  flow,
 }) => {
+  const lossAmount = flow.totalInr;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 840, height: 280 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const [isTableView, setIsTableView] = useState(false);
+  const requiredK = Math.max(1, flow.links.filter((l) => (l.treatment === "frozen" || l.treatment === "lien") && !flow.links.some((x) => x.source === l.target)).length);
 
   // ResizeObserver for dynamic fit
   useEffect(() => {
@@ -98,196 +96,65 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
       window.__tarkaViz = window.__tarkaViz || {};
       window.__tarkaViz.sankey = {
         stats: () => ({
-          totalLoss: lossAmount || 500000,
-          recoverable: Math.round((lossAmount || 500000) * 0.76),
+          totalLoss: lossAmount,
+          recoverable: flow.links.filter((l) => (l.treatment === "frozen" || l.treatment === "lien") && !flow.links.some((x) => x.source === l.target)).reduce((s, l) => s + l.value, 0),
           freezeBudgetK,
           isInjectClean,
-          nodeCount: isInjectClean ? 9 : 8,
-          linkCount: isInjectClean ? 8 : 7,
+          nodeCount: flow.nodes.length + (isInjectClean ? 1 : 0),
+          linkCount: flow.links.length + (isInjectClean ? 1 : 0),
         }),
       };
     }
-  }, [freezeBudgetK, isInjectClean, lossAmount]);
+  }, [freezeBudgetK, isInjectClean, lossAmount, flow]);
 
-  // Nodes & Links Data
+  // Nodes & Links Data (built from the active case; only the clean-deposit scenario is layered on top)
+  const merchantNode = flow.nodes.find((n) => n.category === "merchant");
   const rawData = useMemo(() => {
-    const rawNodes: CustomNodeData[] = [
-      {
-        id: "sunil",
-        name: victimName || "Victim Account",
-        subname: victimAccount || "Victim Core Banking",
-        category: "victim",
-        treatment: "victim",
-        balance: lossAmount || 500000,
-        statute: "Victim Origin",
-        column: 0,
-      },
-      {
-        id: "vikram",
-        name: primaryMuleName || "Primary Mule",
-        subname: primaryMuleAccount || "L1 Mule Nodal",
-        category: "mule",
-        treatment: "frozen",
-        balance: 500000,
-        statute: "§107 BNSS Complete Hold",
-        column: 1,
-      },
-      {
-        id: "rohit",
-        name: "Rohit Verma",
-        subname: "HDFC 5010029419920",
-        category: "mule",
-        treatment: "frozen",
-        balance: 300000,
-        statute: "§107 BNSS Split Conduit",
-        column: 2,
-      },
-      {
-        id: "sameer",
-        name: "Sameer Khan",
-        subname: "AXIS 9140200410291",
-        category: "mule",
-        treatment: "frozen",
-        balance: 200000,
-        statute: "§107 BNSS Cashout Conduit",
-        column: 2,
-      },
-      // Sinks (Column 3)
-      {
-        id: "apex",
-        name: "Apex Electronics",
-        subname: "ICICI · GSTIN 07AAACA1234F1Z8",
-        category: "merchant",
-        treatment: "lien",
-        balance: isInjectClean ? 430000 : 180000,
-        statute: "§106 Lien",
-        column: 3,
-      },
-      {
-        id: "rohit_hold",
-        name: "Rohit HDFC Hold",
-        subname: "HDFC 5010029419920",
-        category: "hold",
-        treatment: "frozen",
-        balance: 120000,
-        statute: "§107 Hold",
-        column: 3,
-      },
-      {
-        id: "atm",
-        name: "Noida ATM DL-049",
-        subname: "Terminal Cash Out (Irreversible)",
-        category: "cashout",
-        treatment: "cashout",
-        balance: 120000,
-        statute: "Cash Out",
-        column: 3,
-      },
-      {
-        id: "sameer_hold",
-        name: "Sameer Axis Hold",
-        subname: "AXIS 9140200410291",
-        category: "hold",
-        treatment: "frozen",
-        balance: 80000,
-        statute: "§107 Hold",
-        column: 3,
-      },
-    ];
+    const treatmentOfNode = (n: FlowNode): CustomNodeData["treatment"] =>
+      n.category === "victim" ? "victim" : n.category === "merchant" ? "lien" : n.category === "cashout" ? "cashout" : "frozen";
+    const rawNodes: CustomNodeData[] = flow.nodes.map((n) => ({
+      id: n.id,
+      name: n.name,
+      subname: n.subname,
+      category: n.category,
+      treatment: treatmentOfNode(n),
+      balance: n.balance,
+      statute: n.statute,
+    }));
 
-    if (isInjectClean) {
+    // Freeze order: biggest terminal holds / liens are cut first as the budget K grows.
+    const terminalIds = new Set(flow.nodes.filter((n) => !flow.links.some((l) => l.source === n.id) && n.category !== "cashout").map((n) => n.id));
+    const cuttable = flow.links
+      .filter((l) => terminalIds.has(l.target) && (l.treatment === "frozen" || l.treatment === "lien"))
+      .sort((a, b) => b.value - a.value);
+    const rawLinks: CustomLinkData[] = flow.links.map((l) => {
+      const idx = cuttable.indexOf(l);
+      return { ...l, isCut: idx >= 0 && freezeBudgetK > idx };
+    });
+
+    if (isInjectClean && merchantNode) {
+      const cleanAmt = merchantNode.balance;
       rawNodes.unshift({
         id: "clean",
-        name: "Clean Revenue Inflow",
-        subname: "Commercial POS Settlements",
+        name: "Clean revenue inflow",
+        subname: "Commercial POS settlements",
         category: "clean",
         treatment: "clean",
-        balance: 250000,
-        statute: "LIBR Protected Capital",
-        column: 0,
+        balance: cleanAmt,
+        statute: "LIBR protected capital",
       });
-    }
-
-    const rawLinks: CustomLinkData[] = [
-      {
-        source: "sunil",
-        target: "vikram",
-        value: 500000,
-        treatment: "outflow",
-        isCut: false,
-        label: "₹5.00L (100%)",
-        pct: 100,
-      },
-      {
-        source: "vikram",
-        target: "rohit",
-        value: 300000,
-        treatment: "frozen",
-        isCut: false,
-        label: "₹3.00L (60%)",
-        pct: 60,
-      },
-      {
-        source: "vikram",
-        target: "sameer",
-        value: 200000,
-        treatment: "frozen",
-        isCut: false,
-        label: "₹2.00L (40%)",
-        pct: 40,
-      },
-      {
-        source: "rohit",
-        target: "apex",
-        value: 180000,
-        treatment: "lien",
-        isCut: freezeBudgetK >= 1,
-        label: "₹1.80L §106",
-        pct: 36,
-      },
-      {
-        source: "rohit",
-        target: "rohit_hold",
-        value: 120000,
-        treatment: "frozen",
-        isCut: freezeBudgetK >= 2,
-        label: "₹1.20L §107",
-        pct: 24,
-      },
-      {
-        source: "sameer",
-        target: "atm",
-        value: 120000,
-        treatment: "cashout",
-        isCut: false,
-        label: "₹1.20L Cash",
-        pct: 24,
-      },
-      {
-        source: "sameer",
-        target: "sameer_hold",
-        value: 80000,
-        treatment: "frozen",
-        isCut: freezeBudgetK >= 3,
-        label: "₹80K §107",
-        pct: 16,
-      },
-    ];
-
-    if (isInjectClean) {
       rawLinks.push({
         source: "clean",
-        target: "apex",
-        value: 250000,
+        target: merchantNode.id,
+        value: cleanAmt,
         treatment: "clean",
         isCut: false,
-        label: "+₹2.50L Clean",
-        pct: 50,
+        label: `+${formatInrCompact(cleanAmt)} clean`,
+        pct: 0,
       });
     }
-
     return { rawNodes, rawLinks };
-  }, [isInjectClean, freezeBudgetK]);
+  }, [flow, isInjectClean, freezeBudgetK, merchantNode]);
 
   // Compute Layout with d3-sankey
   const sankeyData = useMemo(() => {
@@ -312,10 +179,10 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
     // extent [[56, 30], [W - 240, H - 30]] ensures dedicated right gutter for sinks and room for Sunil on left
     const sankeyGenerator = d3Sankey<any, any>()
       .nodeWidth(14)
-      .nodePadding(28)
+      .nodePadding(22)
       .extent([
-        [56, 30],
-        [w - 240, h - 30],
+        [24, 44],
+        [w - 270, h - 30],
       ])
       .nodeAlign(sankeyJustify)
       .iterations(64);
@@ -391,7 +258,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               fontFamily: "var(--font-mono)",
             }}
           >
-            D3-SANKEY · ZERO CYCLES
+            MONEY FLOW
           </span>
 
           <span
@@ -400,19 +267,20 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               fontWeight: 700,
               padding: "2px 6px",
               borderRadius: "4px",
-              background: freezeBudgetK >= 3 ? "#ECFDF5" : "#FFF1F2",
-              color: freezeBudgetK >= 3 ? "#047857" : "#BE123C",
-              border: `1px solid ${freezeBudgetK >= 3 ? "#A7F3D0" : "#FECDD3"}`,
+              background: freezeBudgetK >= requiredK ? "#ECFDF5" : "#FFF1F2",
+              color: freezeBudgetK >= requiredK ? "#047857" : "#BE123C",
+              border: `1px solid ${freezeBudgetK >= requiredK ? "#A7F3D0" : "#FECDD3"}`,
             }}
           >
-            {freezeBudgetK >= 3
-              ? "DINIC MIN-CUT SAT (K=3 SEALED) ✓"
-              : `UNCONTAINED LEAKAGE (K=${freezeBudgetK}) ⚠️`}
+            {freezeBudgetK >= requiredK
+              ? `All exits sealed (K=${freezeBudgetK}) ✓`
+              : `Funds can still escape (K=${freezeBudgetK} of ${requiredK} needed)`}
           </span>
         </div>
 
         {/* Right: Mutators & Table Switcher */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {merchantNode && (
           <button
             type="button"
             onClick={onToggleInjectClean}
@@ -429,11 +297,12 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               color: isInjectClean ? "#047857" : "#475569",
               cursor: "pointer",
             }}
-            title="Inject ₹2.5L clean commercial working capital into Apex Electronics to test LIBR protection"
+            title={`Inject ${formatInrCompact(merchantNode.balance)} of clean working capital into ${merchantNode.name} to test LIBR protection`}
           >
             <Sparkles size={11} color={isInjectClean ? "#059669" : "#64748B"} />
-            <span>{isInjectClean ? "Clean Deposit Active (+₹2.5L)" : "+ Inject Clean Deposit (+₹2.5L)"}</span>
+            <span>{isInjectClean ? "Clean deposit active" : "+ Inject clean deposit"}</span>
           </button>
+          )}
 
           <button
             type="button"
@@ -566,7 +435,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                     />
 
                     {/* Ribbon amount label at t=0.40 (only if width >= 20px or hovered) */}
-                    {((link.width || 0) >= 20 || isHovered) && (
+                    {((link.width || 0) >= 26 || isHovered) && (
                       <text
                         className="ribbon-label"
                         x={textX}
@@ -605,7 +474,8 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                 const color = treatmentColors[node.category] || "#64748B";
                 const isHovered = hoveredNodeId === node.id;
                 const isSelected = selectedNodeId === node.id;
-                const isSink = node.column === 3;
+                const isSink = (node.sourceLinks || []).length === 0;
+                const isFirst = (node.targetLinks || []).length === 0;
                 const barHeight = Math.max(8, node.y1 - node.y0);
 
                 return (
@@ -635,14 +505,15 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
 
                     {/* Column 0-2: Labels ABOVE the bar with white halo */}
                     {!isSink && (
-                      <g transform={`translate(${node.x0 + (node.x1 - node.x0) / 2}, ${node.y0 - 8})`}>
+                      <g transform={`translate(${isFirst ? node.x0 : node.x0 + (node.x1 - node.x0) / 2}, ${node.y0 - 8})`}>
+                        <title>{node.name}</title>
                         <text
                           x="0"
-                          y="-2"
+                          y="-15"
                           fill="#18181b"
-                          fontSize="12.5"
+                          fontSize="12"
                           fontWeight="700"
-                          textAnchor="middle"
+                          textAnchor={isFirst ? "start" : "middle"}
                           style={{
                             paintOrder: "stroke",
                             stroke: "#FFFFFF",
@@ -650,14 +521,16 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                             pointerEvents: "none",
                           }}
                         >
-                          {node.name} · <tspan fill={color} fontWeight="700" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan>
+                          <tspan x="0">{truncate(node.name, 18)}</tspan>
+                          <tspan x="0" dy="13" fill={color} fontWeight="700" fontFamily="var(--font-mono)">{formatInrCompact(node.balance)}</tspan>
                         </text>
                       </g>
                     )}
 
                     {/* Column 3 (Sinks): Render in right-hand gutter (W-240..W) */}
                     {isSink && (
-                      <g transform={`translate(${node.x1 + 10}, ${node.y0 + barHeight / 2})`}>
+                      <g transform={`translate(${node.x1 + 8}, ${node.y0 + barHeight / 2})`}>
+                        <title>{`${node.name} · ${formatInrCompact(node.balance)} · ${node.statute}`}</title>
                         <text
                           x="0"
                           y="0"
@@ -672,7 +545,7 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
                             pointerEvents: "none",
                           }}
                         >
-                          {node.name} · <tspan fill={color} fontWeight="700" fontFamily="var(--font-mono)">₹{(node.balance / 100000).toFixed(2)}L</tspan> <tspan fontSize="12" fill="#52525b" fontWeight="600">({Math.round((node.balance / 500000) * 100)}% · {node.statute})</tspan>
+                          {truncate(node.name, 24)} <tspan fill={color} fontWeight="700" fontFamily="var(--font-mono)">{formatInrCompact(node.balance)}</tspan> <tspan fontSize="11" fill="#52525b" fontWeight="600">({lossAmount > 0 ? Math.round((node.balance / lossAmount) * 100) : 0}%)</tspan>
                         </text>
                       </g>
                     )}
@@ -701,10 +574,10 @@ export const MoneyFlowSankeyGraph: React.FC<MoneyFlowSankeyGraphProps> = ({
               {rawData.rawLinks.map((link, idx) => (
                 <tr key={idx} style={{ borderBottom: "1px solid #F1F5F9" }}>
                   <td style={{ padding: "8px", fontWeight: 700, color: "#0F172A" }}>{link.label}</td>
-                  <td style={{ padding: "8px" }}>{link.source}</td>
-                  <td style={{ padding: "8px" }}>{link.target}</td>
+                  <td style={{ padding: "8px" }}>{rawData.rawNodes.find((n) => n.id === link.source)?.name ?? link.source}</td>
+                  <td style={{ padding: "8px" }}>{rawData.rawNodes.find((n) => n.id === link.target)?.name ?? link.target}</td>
                   <td style={{ padding: "8px", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                    ₹{link.value.toLocaleString("en-IN")}
+                    {formatInr(link.value)}
                   </td>
                   <td style={{ padding: "8px", textAlign: "right", fontFamily: "var(--font-mono)" }}>
                     {link.pct}%

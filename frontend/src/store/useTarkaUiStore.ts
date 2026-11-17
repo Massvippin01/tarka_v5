@@ -154,12 +154,11 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
         } else {
           url.searchParams.delete("case");
         }
-        if (page === "benchmark") {
-          url.searchParams.set("view", "benchmark");
-        } else if (page === "workspaces") {
-          url.searchParams.set("view", "workspace");
+        // Never rewrite ?view here: the URL's view is owned by useCaseStore (pushState on change).
+        // Only strip legacy params, and only touch history if something actually changed.
+        if (url.search !== window.location.search) {
+          window.history.replaceState({}, "", url.toString());
         }
-        window.history.replaceState({}, "", url.toString());
       }
     },
 

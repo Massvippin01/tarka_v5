@@ -14,16 +14,29 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import io
+import json
 import logging
 import math
 import os
 from pathlib import Path
+import re
 import shutil
+import sqlite3
 import time
+from contextlib import closing
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 import zipfile
+
+from app.services.ingestion.device_store import ingest_device_csv, looks_like_device_log
+from app.services.ingestion.derived_store import (
+    DerivedStore,
+    columns_from_names,
+    looks_like_bank_statement,
+    read_header,
+    read_sample_rows,
+)
 
 try:
     import psutil
@@ -48,6 +61,10 @@ class IngestionStage(str, Enum):
     STAGE_8_ANALYTICS_COMPLETED = "ANALYTICAL_PROCESSING_COMPLETED"
     STAGE_9_RESULTS_VALIDATED = "RESULTS_VALIDATED"
     STAGE_10_EVIDENCE_AVAILABLE = "EVIDENCE_AVAILABLE"
+    # Terminal side-states
+    NEEDS_MAPPING = "NEEDS_MAPPING"  # tabular file whose columns we don't recognise yet
+    REJECTED = "REJECTED"  # failed format / archive safety checks
+    DUPLICATE = "DUPLICATE"  # same SHA-256 as a file already admitted
 
 
 class OperationalClass(str, Enum):
@@ -397,7 +414,7 @@ class IngestionJob:
         
         self.stage = IngestionStage.STAGE_1_FILE_RECEIVED
         self.bytes_uploaded = 0
-        self.hasher = StreamingChunkedHasher()
+        self.hasher: Optional[StreamingChunkedHasher] = StreamingChunkedHasher()
         self.start_time = time.time()
         self.last_chunk_time = time.time()
         self.throughput_mbps = 0.0
@@ -412,6 +429,7 @@ class IngestionJob:
         self.retry_count = 0
         self.checkpoints: List[int] = [0]
         self.analytics_summary: Dict[str, Any] = {}
+        self.column_map: Optional[Dict[str, str]] = None  # investigator's {field: header name}, when set
 
     def to_dict(self) -> Dict[str, Any]:
         pct = 100.0 if self.total_size_bytes == 0 else min(100.0, (self.bytes_uploaded / self.total_size_bytes) * 100.0)
@@ -434,7 +452,35 @@ class IngestionJob:
             "error_message": self.error_message,
             "analytics_summary": self.analytics_summary,
             "elapsed_seconds": round(time.time() - self.start_time, 2),
+            "intake_officer": self.intake_officer,
+            "started_at": self.start_time,
         }
+
+
+_CASE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+MAX_CHUNK_BYTES = 16 * 1024 * 1024
+
+
+def validate_case_id(case_id: str) -> str:
+    """Case ids become directory names: allow only [A-Za-z0-9_-]."""
+    if not isinstance(case_id, str) or not _CASE_ID_RE.match(case_id):
+        raise ValueError(f"Invalid case id: {case_id!r}")
+    return case_id
+
+
+def safe_filename(filename: str) -> str:
+    """Reduce a client-supplied name to a plain basename with no path or control characters."""
+    name = re.split(r"[\\/]", filename or "")[-1]
+    name = re.sub(r"[^A-Za-z0-9._ ()-]", "_", name).strip(" .")
+    return name[:180] or "upload.bin"
+
+
+def ensure_inside(base: Path, target: Path) -> Path:
+    """Fail closed if a resolved path escapes its storage root."""
+    resolved = target.resolve()
+    if not resolved.is_relative_to(base.resolve()):
+        raise ValueError("Resolved path escapes storage root.")
+    return resolved
 
 
 class IngestionJobManager:
@@ -448,15 +494,137 @@ class IngestionJobManager:
             cls._instance = cls()
         return cls._instance
 
-    def __init__(self):
+    _TERMINAL = {"EVIDENCE_AVAILABLE", "NEEDS_MAPPING", "REJECTED", "DUPLICATE"}
+
+    def __init__(self, base_dir: Path = Path("data/ingestion")):
         self.jobs: Dict[str, IngestionJob] = {}
-        self.base_dir = Path("data/ingestion")
+        self._tasks: set = set()  # strong refs so background pipelines are not garbage-collected
+        self.base_dir = Path(base_dir)
         self.staging_dir = self.base_dir / "staging"
         self.evidence_dir = self.base_dir / "evidence"
         self.derived_dir = self.base_dir / "derived"
 
         for d in (self.staging_dir, self.evidence_dir, self.derived_dir):
             d.mkdir(parents=True, exist_ok=True)
+
+        # shortcut: job table in a local SQLite file (single backend process); move to the main DB for multi-node.
+        self._db_path = self.base_dir / "jobs.sqlite"
+        with closing(sqlite3.connect(self._db_path)) as db:
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS jobs (job_id TEXT PRIMARY KEY, case_id TEXT, filename TEXT, "
+                "total_size_bytes INTEGER, intake_officer TEXT, stage TEXT, sha256 TEXT, artifact_id TEXT, "
+                "error_message TEXT, analytics_json TEXT, is_cancelled INTEGER, start_time REAL)"
+            )
+            if "column_map" not in {r[1] for r in db.execute("PRAGMA table_info(jobs)")}:
+                db.execute("ALTER TABLE jobs ADD COLUMN column_map TEXT")
+            # Chain of custody: append-only, one row per thing that happened to a file.
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS custody (job_id TEXT, case_id TEXT, ts REAL, actor TEXT, action TEXT, detail TEXT)"
+            )
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS mapping_templates (name TEXT PRIMARY KEY, headers_json TEXT, columns_json TEXT)"
+            )
+            db.commit()
+        self._load_jobs()
+
+    def _save(self, job: IngestionJob) -> None:
+        with closing(sqlite3.connect(self._db_path)) as db:
+            db.execute(
+                "INSERT OR REPLACE INTO jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (job.job_id, job.case_id, job.filename, job.total_size_bytes, job.intake_officer, job.stage.value,
+                 job.sha256_digest, job.admitted_artifact_id, job.error_message,
+                 json.dumps(job.analytics_summary, default=str), int(job.is_cancelled), job.start_time,
+                 json.dumps(job.column_map) if job.column_map else None),
+            )
+            db.commit()
+
+    SYSTEM_ACTOR = "TARKA (automatic)"
+
+    def _custody(self, job: IngestionJob, action: str, detail: str = "", actor: Optional[str] = None) -> None:
+        with closing(sqlite3.connect(self._db_path)) as db:
+            db.execute("INSERT INTO custody VALUES (?,?,?,?,?,?)",
+                       (job.job_id, job.case_id, time.time(), actor or self.SYSTEM_ACTOR, action, detail))
+            db.commit()
+
+    def custody_events(self, case_id: str) -> List[Dict[str, Any]]:
+        """Who did what to this case's files, oldest first. Files uploaded before the log existed get
+        their events rebuilt from the job record (upload start, sealing time, outcome), marked reconstructed."""
+        with closing(sqlite3.connect(self._db_path)) as db:
+            rows = db.execute(
+                "SELECT job_id, ts, actor, action, detail FROM custody WHERE case_id=? ORDER BY ts, rowid", (case_id,)
+            ).fetchall()
+        logged = {r[0] for r in rows}
+        events = [{"job_id": j, "ts": ts, "actor": a, "action": act, "detail": d, "reconstructed": False}
+                  for j, ts, a, act, d in rows]
+        for job in self.list_jobs({case_id}):
+            if job.job_id in logged:
+                continue
+            ev = lambda ts, actor, action, detail="": events.append(
+                {"job_id": job.job_id, "ts": ts, "actor": actor, "action": action, "detail": detail, "reconstructed": True})
+            ev(job.start_time, job.intake_officer, "Upload started", job.filename)
+            sealed = job.analytics_summary.get("timestamp")
+            sealed_ts = datetime.fromisoformat(sealed).timestamp() if sealed else job.start_time
+            if job.sha256_digest:
+                ev(sealed_ts, self.SYSTEM_ACTOR, "Fingerprint taken", f"SHA-256 {job.sha256_digest}")
+            ev(sealed_ts, self.SYSTEM_ACTOR, *self._outcome(job))
+            if job.is_cancelled:
+                ev(sealed_ts, job.intake_officer, "Upload cancelled", job.filename)
+        return sorted(events, key=lambda e: e["ts"])
+
+    @staticmethod
+    def _outcome(job: IngestionJob) -> tuple:
+        stage = job.stage
+        if job.error_message and stage.value not in IngestionJobManager._TERMINAL:
+            return ("Processing failed", job.error_message)
+        if stage == IngestionStage.STAGE_10_EVIDENCE_AVAILABLE:
+            a = job.analytics_summary
+            if a.get("parser"):
+                return ("Ready", f"{a.get('rows_accepted', 0):,} rows accepted, {a.get('rows_rejected', 0):,} rejected")
+            return ("Ready", "Stored as evidence (no reader for this file type yet)")
+        if stage == IngestionStage.REJECTED:
+            return ("Rejected", job.error_message or "")
+        if stage == IngestionStage.DUPLICATE:
+            return ("Marked duplicate", job.analytics_summary.get("note", ""))
+        if stage == IngestionStage.NEEDS_MAPPING:
+            return ("Waiting for column mapping", job.analytics_summary.get("note", ""))
+        return ("In progress", stage.value)
+
+    def _load_jobs(self) -> None:
+        """Rebuild jobs after a restart. Upload progress = bytes already in the staging file."""
+        with closing(sqlite3.connect(self._db_path)) as db:
+            rows = db.execute("SELECT * FROM jobs").fetchall()
+        for (job_id, case_id, filename, total, officer, stage, sha, art, err, analytics, cancelled, started, cmap) in rows:
+            job = IngestionJob(job_id, case_id, filename, total, officer)
+            job.stage = IngestionStage(stage)
+            job.sha256_digest, job.admitted_artifact_id, job.error_message = sha, art, err
+            job.analytics_summary = json.loads(analytics or "{}")
+            job.is_cancelled = bool(cancelled)
+            job.start_time = started
+            job.column_map = json.loads(cmap) if cmap else None
+            job.staging_path = self.staging_dir / f"{job_id}_{filename}"
+            job.hasher = None  # rebuilt from the staging file on next use
+            if job.stage == IngestionStage.STAGE_1_FILE_RECEIVED:
+                job.bytes_uploaded = job.staging_path.stat().st_size if job.staging_path.exists() else 0
+            else:
+                job.bytes_uploaded = total
+            in_flight = job.stage.value not in self._TERMINAL and job.stage != IngestionStage.STAGE_1_FILE_RECEIVED
+            if in_flight and not job.is_cancelled:
+                job.error_message = job.error_message or "Processing was interrupted by a server restart. Resume to re-run it."
+            self.jobs[job_id] = job
+
+    @staticmethod
+    def _rehash(path: Path) -> StreamingChunkedHasher:
+        hasher = StreamingChunkedHasher()
+        if path.exists():
+            with open(path, "rb") as f:
+                while block := f.read(8 * 1024 * 1024):
+                    hasher.update(block)
+        return hasher
+
+    def _spawn_pipeline(self, job: IngestionJob) -> None:
+        task = asyncio.create_task(self._process_admitted_pipeline(job))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
     def create_job(
         self,
@@ -465,6 +633,8 @@ class IngestionJobManager:
         total_size_bytes: int,
         intake_officer: str = "Forensic Examiner",
     ) -> IngestionJob:
+        validate_case_id(case_id)
+        filename = safe_filename(filename)
         job_id = f"JOB-{hashlib.sha256(f'{case_id}:{filename}:{time.time()}'.encode()).hexdigest()[:12].upper()}"
         job = IngestionJob(
             job_id=job_id,
@@ -473,12 +643,14 @@ class IngestionJobManager:
             total_size_bytes=total_size_bytes,
             intake_officer=intake_officer,
         )
-        job_staging_path = self.staging_dir / f"{job_id}_{filename}"
+        job_staging_path = ensure_inside(self.staging_dir, self.staging_dir / f"{job_id}_{filename}")
         job.staging_path = job_staging_path
         # Clear any prior stale staging file
         if job_staging_path.exists():
             job_staging_path.unlink()
         self.jobs[job_id] = job
+        self._save(job)
+        self._custody(job, "Upload started", f"{filename} ({total_size_bytes:,} bytes)", actor=intake_officer)
         logger.info(f"Created ingestion job {job_id} for case {case_id}: {filename} ({total_size_bytes} bytes)")
         return job
 
@@ -488,13 +660,25 @@ class IngestionJobManager:
         if not job:
             raise KeyError(f"Ingestion job '{job_id}' not found.")
         if job.is_cancelled:
-            raise RuntimeError(f"Ingestion job '{job_id}' has been cancelled.")
+            raise ValueError(f"Ingestion job '{job_id}' has been cancelled.")
+        if job.stage != IngestionStage.STAGE_1_FILE_RECEIVED:
+            raise ValueError(f"Ingestion job '{job_id}' already received all bytes.")
+        if len(chunk_bytes) > MAX_CHUNK_BYTES:
+            raise OverflowError(f"Chunk exceeds {MAX_CHUNK_BYTES} bytes.")
+        if job.bytes_uploaded + len(chunk_bytes) > job.total_size_bytes:
+            raise ValueError(
+                f"Chunk overflows declared size for job '{job_id}': "
+                f"{job.bytes_uploaded + len(chunk_bytes)} > {job.total_size_bytes} bytes."
+            )
 
         if offset != job.bytes_uploaded:
             # Resumable alignment mismatch
             raise ValueError(
                 f"Byte offset mismatch for job '{job_id}': expected {job.bytes_uploaded}, received {offset}."
             )
+
+        if job.hasher is None:
+            job.hasher = await asyncio.to_thread(self._rehash, job.staging_path)
 
         now = time.time()
         # Append chunk to staging file on disk (bounded memory)
@@ -521,15 +705,18 @@ class IngestionJobManager:
 
         if job.bytes_uploaded >= job.total_size_bytes:
             job.stage = IngestionStage.STAGE_2_UPLOAD_COMPLETED
+            self._custody(job, "Upload received", f"All {job.total_size_bytes:,} bytes", actor=job.intake_officer)
             if job.operational_class == OperationalClass.SMALL:
                 await self._process_admitted_pipeline(job)
             else:
-                asyncio.create_task(self._process_admitted_pipeline(job))
+                self._spawn_pipeline(job)
+        self._save(job)
 
         return job.to_dict()
 
     async def _process_admitted_pipeline(self, job: IngestionJob) -> None:
-        """Executes stages 3 through 10 in a safe, non-blocking background task."""
+        """Stages 3-10: validate, hash, seal, parse, index, summarise, self-check, publish."""
+        job.error_message = None
         try:
             # Stage 3: File Validated
             job.stage = IngestionStage.STAGE_3_FILE_VALIDATED
@@ -537,6 +724,7 @@ class IngestionJobManager:
                 header = f.read(512)
             is_valid, detected_fmt, msg = FormatSignatureValidator.validate_signature(job.filename, header)
             if not is_valid:
+                job.stage = IngestionStage.REJECTED
                 job.error_message = f"Format validation failed: {msg}"
                 logger.error(f"Job {job.job_id} failed stage 3: {msg}")
                 return
@@ -545,13 +733,26 @@ class IngestionJobManager:
             if detected_fmt in ("zip", "docx", "xlsx"):
                 safe, arc_msg, arc_telemetry = ArchiveSafetyQuarantine.audit_archive_file(job.staging_path)
                 if not safe:
+                    job.stage = IngestionStage.REJECTED
                     job.error_message = f"Archive quarantine rejection: {arc_msg}"
                     logger.error(f"Job {job.job_id} archive audit failed: {arc_msg}")
                     return
 
-            # Stage 4: Hash Calculated
+            # Stage 4: Hash Calculated (rebuilt from disk if the server restarted mid-upload)
             job.stage = IngestionStage.STAGE_4_HASH_CALCULATED
+            if job.hasher is None or job.hasher.total_bytes != job.bytes_uploaded:
+                job.hasher = await asyncio.to_thread(self._rehash, job.staging_path)
             job.sha256_digest = job.hasher.hexdigest
+            self._custody(job, "Fingerprint taken", f"SHA-256 {job.sha256_digest}")
+            original = self.find_duplicate(job)
+            if original:
+                job.stage = IngestionStage.DUPLICATE
+                job.analytics_summary = {
+                    "sha256": job.sha256_digest,
+                    "duplicate_of": {"job_id": original.job_id, "case_id": original.case_id, "filename": original.filename},
+                    "note": f"Same file already uploaded to {original.case_id} as {original.filename}.",
+                }
+                return
 
             # Stage 5: Evidence Admitted
             job.stage = IngestionStage.STAGE_5_EVIDENCE_ADMITTED
@@ -559,23 +760,15 @@ class IngestionJobManager:
             job.admitted_artifact_id = artifact_id
 
             # Seal into permanent evidence directory (WORM layout)
-            sealed_case_dir = self.evidence_dir / job.case_id
+            sealed_case_dir = ensure_inside(self.evidence_dir, self.evidence_dir / validate_case_id(job.case_id))
             sealed_case_dir.mkdir(parents=True, exist_ok=True)
-            sealed_target = sealed_case_dir / f"{artifact_id}_{job.filename}"
+            sealed_target = ensure_inside(sealed_case_dir, sealed_case_dir / f"{artifact_id}_{job.filename}")
             if not sealed_target.exists():
-                shutil.copyfile(job.staging_path, sealed_target)
+                # Copy off the event loop: multi-GB files would otherwise block every request.
+                await asyncio.to_thread(shutil.copyfile, job.staging_path, sealed_target)
+            self._custody(job, "Sealed in evidence store", f"Read-only copy {artifact_id}")
 
-            # Stage 6: Content Extracted
-            job.stage = IngestionStage.STAGE_6_CONTENT_EXTRACTED
-            await asyncio.sleep(0.05)  # Yield to event loop
-
-            # Stage 7: Content Indexed
-            job.stage = IngestionStage.STAGE_7_CONTENT_INDEXED
-            await asyncio.sleep(0.05)
-
-            # Stage 8: Analytical Processing Completed
-            job.stage = IngestionStage.STAGE_8_ANALYTICS_COMPLETED
-            job.analytics_summary = {
+            base_summary = {
                 "artifact_id": artifact_id,
                 "sha256": job.sha256_digest,
                 "file_size": job.total_size_bytes,
@@ -583,22 +776,116 @@ class IngestionJobManager:
                 "intake_officer": job.intake_officer,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "chunk_count": len(job.hasher.chunk_manifest),
-                "reconciliation_status": "RECONCILED",
-                "contradictions_found": 0,
-                "statutory_tier": "T1_OFFICIAL" if "bank" in job.filename.lower() else "T2_CORROBORATIVE",
             }
 
-            # Stage 9: Results Validated
+            # Stage 6: Content Extracted. Only tabular text has a parser today.
+            job.stage = IngestionStage.STAGE_6_CONTENT_EXTRACTED
+            parse_summary: Dict[str, Any] = {
+                "parser": None,
+                "note": f"No parser for .{detected_fmt} files yet; stored as evidence only.",
+            }
+            if detected_fmt in ("csv", "txt"):
+                headers = await asyncio.to_thread(read_header, sealed_target)
+                template = None if job.column_map else self.template_for(headers)
+                names = job.column_map or (template["columns"] if template else None)
+                columns = None
+                if names:
+                    columns = columns_from_names(headers, names)
+                    base_summary["column_mapping"] = template["name"] if template else "manual"
+                elif looks_like_device_log(headers):
+                    columns = "device"
+                elif not looks_like_bank_statement(",".join(headers)):
+                    job.stage = IngestionStage.NEEDS_MAPPING
+                    job.analytics_summary = {
+                        **base_summary,
+                        "detected_headers": headers[:60],
+                        "sample_rows": await asyncio.to_thread(read_sample_rows, sealed_target),
+                        "note": "Columns not recognised. Map the date and amount columns to continue.",
+                    }
+                    return
+                case_dir = ensure_inside(self.derived_dir, self.derived_dir / job.case_id)
+                if columns == "device":  # CDR / IPDR / bank login log → device_events
+                    parse_summary = await asyncio.to_thread(ingest_device_csv, case_dir, job.job_id, sealed_target)
+                else:
+                    parse_summary = await asyncio.to_thread(DerivedStore(case_dir).ingest_bank_csv, job.job_id, sealed_target, columns)
+
+            # Stage 7: Content Indexed (rows + identifiers are in the case's derived store)
+            job.stage = IngestionStage.STAGE_7_CONTENT_INDEXED
+
+            # Stage 8: Analytics summary from real counts
+            job.stage = IngestionStage.STAGE_8_ANALYTICS_COMPLETED
+            job.analytics_summary = {**base_summary, **parse_summary}
+
+            # Stage 9: Results Validated. Every non-empty data row is either accepted or rejected.
             job.stage = IngestionStage.STAGE_9_RESULTS_VALIDATED
-            await asyncio.sleep(0.05)
+            if parse_summary.get("parser"):
+                accounted = parse_summary["rows_accepted"] + parse_summary["rows_rejected"]
+                if accounted != parse_summary["rows_read"]:
+                    raise RuntimeError(f"Row count mismatch: read {parse_summary['rows_read']}, accounted {accounted}.")
+                job.analytics_summary["row_accounting"] = "ALL_ROWS_ACCOUNTED"
 
             # Stage 10: Evidence Available
             job.stage = IngestionStage.STAGE_10_EVIDENCE_AVAILABLE
+            from app.services.ingestion.projects_store import ProjectsStore  # local: projects_store is a leaf module
+
+            store_meta = ProjectsStore(self.base_dir)
+            if store_meta.case_meta(job.case_id)["lifecycle"] in ("INTAKE", "PROCESSING"):
+                store_meta.set_case(job.case_id, lifecycle="INVESTIGATING")
             logger.info(f"Ingestion job {job.job_id} successfully reached STAGE_10_EVIDENCE_AVAILABLE.")
 
         except Exception as e:
             job.error_message = f"Pipeline execution failure: {str(e)}"
             logger.exception(f"Ingestion job {job.job_id} encountered unexpected failure: {e}")
+        finally:
+            self._save(job)
+            self._custody(job, *self._outcome(job))
+
+    def find_duplicate(self, job: IngestionJob) -> Optional[IngestionJob]:
+        """An earlier, still-valid job with the same SHA-256 (any case)."""
+        for other in self.jobs.values():
+            if (other.job_id != job.job_id and other.sha256_digest == job.sha256_digest and not other.is_cancelled
+                    and other.stage not in (IngestionStage.REJECTED, IngestionStage.DUPLICATE)):
+                return other
+        return None
+
+    def list_jobs(self, case_ids: Optional[set] = None) -> List[IngestionJob]:
+        jobs = [j for j in self.jobs.values() if case_ids is None or j.case_id in case_ids]
+        return sorted(jobs, key=lambda j: j.start_time, reverse=True)
+
+    # Column mapping & per-bank templates
+    def templates(self) -> List[Dict[str, Any]]:
+        with closing(sqlite3.connect(self._db_path)) as db:
+            rows = db.execute("SELECT name, headers_json, columns_json FROM mapping_templates ORDER BY name").fetchall()
+        return [{"name": n, "headers": json.loads(h), "columns": json.loads(c)} for n, h, c in rows]
+
+    def template_for(self, headers: List[str]) -> Optional[Dict[str, Any]]:
+        key = [h.strip().lower() for h in headers]
+        return next((t for t in self.templates() if [h.strip().lower() for h in t["headers"]] == key), None)
+
+    async def apply_mapping(self, job_id: str, columns: Dict[str, str], template_name: Optional[str] = None,
+                            actor: Optional[str] = None) -> Dict[str, Any]:
+        job = self.jobs.get(job_id)
+        if not job:
+            raise KeyError(f"Job '{job_id}' not found.")
+        if job.stage != IngestionStage.NEEDS_MAPPING or job.is_cancelled:
+            raise ValueError("Only a file waiting for column mapping can be mapped.")
+        headers = job.analytics_summary.get("detected_headers") or []
+        names = {k: v for k, v in columns.items() if v}
+        columns_from_names(headers, names)  # raises ValueError with a plain message
+        if template_name and template_name.strip():
+            with closing(sqlite3.connect(self._db_path)) as db:
+                db.execute("INSERT OR REPLACE INTO mapping_templates VALUES (?,?,?)",
+                           (template_name.strip()[:80], json.dumps(headers), json.dumps(names)))
+                db.commit()
+        job.column_map = names
+        job.stage = IngestionStage.STAGE_2_UPLOAD_COMPLETED
+        self._save(job)
+        self._custody(job, "Columns mapped", ", ".join(f"{k} = {v}" for k, v in names.items()), actor=actor)
+        if job.operational_class == OperationalClass.SMALL:
+            await self._process_admitted_pipeline(job)
+        else:
+            self._spawn_pipeline(job)
+        return job.to_dict()
 
     def pause_job(self, job_id: str) -> Dict[str, Any]:
         job = self.jobs.get(job_id)
@@ -613,6 +900,9 @@ class IngestionJobManager:
             raise KeyError(f"Job '{job_id}' not found.")
         job.is_paused = False
         job.retry_count += 1
+        upload_done = job.bytes_uploaded >= job.total_size_bytes and job.stage != IngestionStage.STAGE_1_FILE_RECEIVED
+        if upload_done and not job.is_cancelled and job.stage.value not in self._TERMINAL:
+            self._spawn_pipeline(job)  # re-run processing interrupted by a restart or failure
         return job.to_dict()
 
     def cancel_job(self, job_id: str) -> Dict[str, Any]:
@@ -622,5 +912,7 @@ class IngestionJobManager:
         job.is_cancelled = True
         if job.staging_path and job.staging_path.exists():
             job.staging_path.unlink()
+        self._save(job)
+        self._custody(job, "Upload cancelled", job.filename, actor=job.intake_officer)
         return job.to_dict()
 

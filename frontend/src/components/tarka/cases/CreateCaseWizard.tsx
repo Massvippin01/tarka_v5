@@ -169,7 +169,7 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
     if (currentStep < 4) return;
     setIsSubmitting(true);
     try {
-      const newId = createNewCaseWorkspace({
+      const newId = await createNewCaseWorkspace({
         firNumber: data.firNumber.trim(),
         policeStation: data.policeStation.trim(),
         ncrpAckNo: data.ncrpAckNo.trim(),
@@ -179,8 +179,8 @@ export const CreateCaseWizard: React.FC<CreateCaseWizardProps> = ({ isOpen, onCl
         leadInvestigator: data.leadInvestigator.trim(),
         claimedLossInr: Number(data.claimedLossInr) || 0,
         bookedLossInr: Number(data.bookedLossInr) || 0,
-        recoverableInr: Math.round((Number(data.bookedLossInr) || 0) * 0.75),
-        commercialShieldedInr: Math.round((Number(data.bookedLossInr) || 0) * 0.35),
+        recoverableInr: 0,
+        commercialShieldedInr: 0,
         goldenHourRemainingMins: 120,
         priority: data.priority as any,
         currentStage: "intake",

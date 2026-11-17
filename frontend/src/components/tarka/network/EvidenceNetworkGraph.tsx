@@ -32,8 +32,9 @@ import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 import { buildCase002Bundle, buildCase003Bundle } from "../../../services/caseSyncBridge";
-import { CANONICAL_CASES, buildCaseBundleFromFixture } from "../../../fixtures/cases";
+import { CANONICAL_CASES, buildCaseBundleFromFixture, findCase } from "../../../fixtures/cases";
 import { formatInr } from "../../../utils/formatters";
+import { selectAccountFlows, selectDeviceFacts, selectFinancialSummary } from "../../../selectors/caseSelectors";
 import { sha256HexSync, canonicalJson } from "../../../utils/sha256";
 import { useQuery } from "@tanstack/react-query";
 import type { CaseActionsResponse } from "../../../types/actions";
@@ -79,163 +80,7 @@ export interface ReplayStepData {
   >;
 }
 
-export const CHRONOLOGICAL_REPLAY_STEPS: ReplayStepData[] = [
-  {
-    step: 0,
-    phaseId: "sim-swap",
-    timeLabel: "T - 16m",
-    clockTime: "09:44:00 IST",
-    title: "PRE-ATTACK BTS REGISTRATION & SIM SWAP",
-    headline: "Unauthorized SIM swap on victim Sunil Kumar at Airtel Tower DL-TWR-891",
-    narrative:
-      "Attacker executes unauthorized SIM swap on victim Sunil Kumar (MSISDN +91-98711-23941) registered at Rohini Sector 4 BTS (Azimuth 120°). Attacker hijacks SMS/OTP authentication channel, initiating 15-minute credential harvesting window before bank alert triggers.",
-    amount: "—",
-    statutory: "DoT License Clause 39.20 & Airtel BTS Stratum-2",
-    activeNodeIds: ["node-tower", "node-victim"],
-    activeEdgeIds: ["edge-tower-hero"],
-    muleBalances: {
-      "node-victim": { balance: "₹5,00,000", note: "Victim Balance (SBI A/c 30910029101)", tone: "slate" },
-      "acc-vikram": { balance: "₹0", note: "L1 Primary Mule Standby", tone: "slate" },
-      "acc-rohit": { balance: "₹0", note: "L2A Conduit Standby", tone: "slate" },
-      "acc-sameer": { balance: "₹0", note: "L2B Conduit Standby", tone: "slate" },
-      "acc-sink": { balance: "₹0", note: "Escrow Sink Standby", tone: "slate" },
-      "node-atm": { balance: "₹0", note: "ATM Terminal Standby", tone: "slate" },
-    },
-  },
-  {
-    step: 1,
-    phaseId: "primary-inflow",
-    timeLabel: "T + 00m",
-    clockTime: "10:00:14 IST",
-    title: "PRIMARY FRAUDULENT INFLOW (VICTIM → L1 MULE)",
-    headline: "Victim Sunil Kumar debited ₹5,00,000 via SBI UPI 2.0 to primary mule Vikram Shah",
-    narrative:
-      "Victim Sunil Kumar (SBI A/c 30910029101) is fraudulently debited ₹5,00,000 under UPI RRN 42910029101. Funds credit instantly into L1 primary mule Vikram Shah (SBI A/c 41088291083). NPCI Central Switch captures BSSID 74:DA:38:A2:11:BC in device stanza.",
-    amount: "₹5,00,000",
-    statutory: "BSA §63(4) Electronic Stanza & NPCI Central Switch T1",
-    activeNodeIds: ["node-victim", "acc-vikram"],
-    activeEdgeIds: ["edge-cash-victim-vikram"],
-    muleBalances: {
-      "node-victim": { balance: "₹0", change: "-₹5.00L", note: "Debited via UPI RRN 42910029101", tone: "rose" },
-      "acc-vikram": { balance: "₹5,00,000", change: "+₹5.00L", note: "Credited in Full (SBI A/c 41088291083)", tone: "emerald" },
-      "acc-rohit": { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
-      "acc-sameer": { balance: "₹0", note: "Awaiting Layering Transfer", tone: "slate" },
-      "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
-      "node-atm": { balance: "₹0", note: "ATM Standby", tone: "slate" },
-    },
-  },
-  {
-    step: 2,
-    phaseId: "ap-binding",
-    timeLabel: "T + 04m",
-    clockTime: "10:04:12 IST",
-    title: "HOTSPOT TETHERING & JA4 TLS AP BINDING",
-    headline: "Accomplice Wi-Fi Hotspot (Poco X5 AP) binds 4 mule banking sessions simultaneously",
-    narrative:
-      "Controller Device Cluster activates portable Wi-Fi AP (BSSID 74:DA:38:A2:11:BC). Airtel PGW confirms decremented TTL=63 (-1 hop). Identical client TLS fingerprint JA4=t13d1516h2_8daaf6 across all 4 CBS banking sessions proves single physical operator.",
-    amount: "—",
-    statutory: "ISO/IEC 27037 & DoT License Clause 39.20 (TTL=63 Corroboration)",
-    activeNodeIds: ["node-hero", "hub-tether", "hub-ja4", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink"],
-    activeEdgeIds: [
-      "edge-hero-tether",
-      "edge-tether-vikram",
-      "edge-tether-rohit",
-      "edge-tether-sameer",
-      "edge-tether-sink",
-      "edge-hero-ja4",
-      "edge-ja4-vikram",
-      "edge-ja4-rohit",
-      "edge-ja4-sameer",
-      "edge-ja4-sink",
-    ],
-    muleBalances: {
-      "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
-      "acc-vikram": { balance: "₹5,00,000", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "emerald" },
-      "acc-rohit": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
-      "acc-sameer": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
-      "acc-sink": { balance: "₹0", note: "Banking Session Active (TTL=63 · JA4 Match)", tone: "slate" },
-      "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
-    },
-  },
-  {
-    step: 3,
-    phaseId: "fan-out",
-    timeLabel: "T + 09m",
-    clockTime: "10:09:45 IST",
-    title: "RAPID LAYERING FAN-OUT (L1 → L2A & L2B)",
-    headline: "Vikram Shah fans out ₹5,00,000 within 5 seconds to Rohit Verma (₹3.00L) & Sameer Khan (₹2.00L)",
-    narrative:
-      "Vikram Shah disperses all ₹5,00,000 within 5 seconds: ₹3,00,000 via IMPS to Rohit Verma (HDFC A/c 5010029419920) and ₹2,00,000 to Sameer Khan (Axis A/c 9140200410291). Deliberate layering fan-out orchestrated to evade immediate single-account lien limits.",
-    amount: "₹5,00,000 (Split: ₹3.00L + ₹2.00L)",
-    statutory: "CBS Core Banking Ledgers & IMPS RRN 42910029881 / 42910029889",
-    activeNodeIds: ["acc-vikram", "acc-rohit", "acc-sameer"],
-    activeEdgeIds: ["edge-cash-vikram-rohit", "edge-cash-vikram-sameer"],
-    muleBalances: {
-      "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
-      "acc-vikram": { balance: "₹0", change: "-₹5.00L", note: "Fully Dispersed to Layer 2 Mules", tone: "amber" },
-      "acc-rohit": { balance: "₹3,00,000", change: "+₹3.00L", note: "Credited HDFC A/c 5010029419920", tone: "emerald" },
-      "acc-sameer": { balance: "₹2,00,000", change: "+₹2.00L", note: "Credited Axis A/c 9140200410291", tone: "emerald" },
-      "acc-sink": { balance: "₹0", note: "Awaiting Transfer", tone: "slate" },
-      "node-atm": { balance: "₹0", note: "Standby", tone: "slate" },
-    },
-  },
-  {
-    step: 4,
-    phaseId: "cashout-sink",
-    timeLabel: "T + 18m",
-    clockTime: "10:18:22 IST",
-    title: "IMMEDIATE PHYSICAL CASHOUT & ESCROW SINK",
-    headline: "Sameer Khan withdraws ₹1.20L cash at Rohini ATM; Rohit Verma swipes ₹1.80L into merchant pool",
-    narrative:
-      "Sameer Khan executes ₹1,20,000 ATM cash withdrawal at Rohini Sector 4 ATM DL-049. Simultaneously, Rohit Verma swipes ₹1,80,000 via Apex Electronics POS terminal into Paytm Merchant Pool Sink (#1109) to conceal asset trail before cyber police intercept.",
-    amount: "₹3,00,000 (₹1.20L ATM Cash + ₹1.80L Escrow)",
-    statutory: "ATM DL-049 Electronic Journal & CCTV Log · Paytm Escrow Ledger",
-    activeNodeIds: ["acc-sameer", "node-atm", "acc-rohit", "acc-sink"],
-    activeEdgeIds: ["edge-cash-sameer-atm", "edge-cash-rohit-sink"],
-    muleBalances: {
-      "node-victim": { balance: "₹0", note: "Debited", tone: "rose" },
-      "acc-vikram": { balance: "₹0", note: "Exhausted", tone: "slate" },
-      "acc-rohit": { balance: "₹1,20,000", change: "-₹1.80L", note: "Remaining in HDFC Account", tone: "amber" },
-      "acc-sameer": { balance: "₹80,000", change: "-₹1.20L", note: "Remaining in Axis Account", tone: "amber" },
-      "acc-sink": { balance: "₹1,80,000", change: "+₹1.80L", note: "Locked in Paytm Merchant Escrow", tone: "indigo" },
-      "node-atm": { balance: "₹1,20,000", change: "Cash Out", note: "Physical Currency Dispensed (ATM DL-049)", tone: "rose" },
-    },
-  },
-  {
-    step: 5,
-    phaseId: "freeze-secured",
-    timeLabel: "T + 2.5h",
-    clockTime: "10:30:00 IST",
-    title: "STATUTORY FREEZE & LIBR RECOVERY (BNSS §106/§107)",
-    headline: "Section 106/107 BNSS freeze executed; ₹3,80,000 (76%) secured under Clayton's Case LIBR rule",
-    narrative:
-      "Noida Cyber Crime PS transmits emergency provisional debit freezes under BNSS §106/§107 via I4C NCRP API. Clayton's Case Lowest Intermediate Balance Rule (LIBR) legally binds ₹1.20L in HDFC, ₹80k in Axis, and ₹1.80L in Paytm Escrow. Net recovered: ₹3,80,000 / ₹5,00,000 (76%).",
-    amount: "₹3,80,000 Secured (76% Restitution)",
-    statutory: "BNSS §106/§107 & BSA §63 Electronic Admissibility Protocol",
-    recoverySummary: "₹3,80,000 SECURED (76% RESTITUTION READY UNDER LIBR DOCTRINE)",
-    activeNodeIds: ["node-victim", "acc-vikram", "acc-rohit", "acc-sameer", "acc-sink", "node-atm"],
-    activeEdgeIds: [
-      "edge-cash-victim-vikram",
-      "edge-cash-vikram-rohit",
-      "edge-cash-vikram-sameer",
-      "edge-cash-sameer-atm",
-      "edge-cash-rohit-sink",
-    ],
-    muleBalances: {
-      "node-victim": { balance: "₹3,80,000", note: "Secured for Restitution (76%)", tone: "emerald" },
-      "acc-vikram": { balance: "₹0 (Frozen)", note: "BNSS §107 Debit Freeze", tone: "slate" },
-      "acc-rohit": { balance: "₹1,20,000 (Frozen)", note: "BNSS §107 Debit Freeze", tone: "emerald" },
-      "acc-sameer": { balance: "₹80,000 (Frozen)", note: "BNSS §107 Debit Freeze", tone: "emerald" },
-      "acc-sink": { balance: "₹1,80,000 (Liened)", note: "Paytm Escrow Lien Secured", tone: "emerald" },
-      "node-atm": { balance: "₹1,20,000 (Withdrawn)", note: "CCTV Physical Evidence Seized", tone: "rose" },
-    },
-  },
-];
-
-export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayStepData[] {
-  if (caseId === "CASE-2026-001" && !canonicalCase) {
-    return CHRONOLOGICAL_REPLAY_STEPS;
-  }
+export function getCaseReplaySteps(_caseId: string, canonicalCase?: any): ReplayStepData[] {
   const victimAcc = canonicalCase?.accounts?.find((a: any) => a.holderType === "VICTIM");
   const l1Acc = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE");
   const l2Acc = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_2_CONDUIT");
@@ -249,17 +94,17 @@ export function getCaseReplaySteps(caseId: string, canonicalCase?: any): ReplayS
   const sinkId = sinkAcc?.nodeId || "node-atm";
 
   const victim = canonicalCase?.complainant?.name || "Victim";
-  const lossFormatted = formatInr(canonicalCase?.financials?.bookedLossInr || 500000);
+  const lossFormatted = formatInr(canonicalCase?.financials?.bookedLossInr ?? 0);
   const l1Mule = l1Acc?.holderName || "Primary Mule";
   const l2Mule = l2Acc?.holderName || "Intermediary Mule";
   const merchant = merchAcc?.holderName || "Commercial Merchant";
   const bank = canonicalCase?.complainant?.bank || "Core Banking";
   const acc = canonicalCase?.complainant?.accountMasked || "A/c";
   const station = canonicalCase?.policeStation || "Cyber Crime Police Station";
-  const recoverable = formatInr(canonicalCase?.financials?.recoverableLibrInr || Math.round((canonicalCase?.financials?.bookedLossInr || 500000) * 0.75));
-  const frozenMuleInr = formatInr(canonicalCase?.financials?.frozenMuleBalanceInr || 60000);
-  const shieldedInr = formatInr(canonicalCase?.financials?.shieldedCommercialInr || 50000);
-  const cashoutInr = formatInr(canonicalCase?.financials?.unrecoverableCashoutInr || 70000);
+  const recoverable = formatInr(canonicalCase?.financials?.recoverableLibrInr ?? 0);
+  const frozenMuleInr = formatInr(canonicalCase?.financials?.frozenMuleBalanceInr ?? 0);
+  const shieldedInr = formatInr(canonicalCase?.financials?.shieldedCommercialInr ?? 0);
+  const cashoutInr = formatInr(canonicalCase?.financials?.unrecoverableCashoutInr ?? 0);
 
   return [
     {
@@ -470,11 +315,16 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   const activeCaseId = propCaseId || storeCaseId || globalCaseId || "CASE-2026-001";
 
   const investigation = useMemo(() => {
-    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId && CANONICAL_CASES[activeCaseId]) {
       return reconstructedInvestigation;
     }
-    if (activeCaseId && CANONICAL_CASES[activeCaseId]) {
-      return buildCaseBundleFromFixture(CANONICAL_CASES[activeCaseId]);
+    // Demo fixture or uploaded-data case (same shape, see selectors/bundleAdapter).
+    const known = findCase(activeCaseId);
+    if (known) {
+      return buildCaseBundleFromFixture(known);
+    }
+    if (reconstructedInvestigation && reconstructedInvestigation.caseId === activeCaseId) {
+      return reconstructedInvestigation;
     }
     if (activeCaseId === "CASE-2026-002") {
       return buildCase002Bundle();
@@ -606,11 +456,42 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
   }, [layout.height, inPageFitScale]);
 
   const caseId = activeCaseId || "CASE-2026-001";
-  const canonicalCase = (activeCaseId && CANONICAL_CASES[activeCaseId]) ? CANONICAL_CASES[activeCaseId] : CANONICAL_CASES["CASE-2026-001"];
+  const canonicalCase = findCase(activeCaseId) ?? CANONICAL_CASES["CASE-2026-001"];
+  const recoveryPct = selectFinancialSummary(canonicalCase).recoveryPct;
   const replaySteps = useMemo(() => {
     return getCaseReplaySteps(caseId, canonicalCase);
   }, [caseId, canonicalCase]);
-  const currentStepData = replaySteps[replayStep] || replaySteps[5] || CHRONOLOGICAL_REPLAY_STEPS[5];
+  const currentStepData = replaySteps[replayStep] ?? replaySteps[replaySteps.length - 1];
+
+  // Case-driven facts for chips, evidence sheets and the correlation matrix (no hard-coded names).
+  const caseFlows = useMemo(() => selectAccountFlows(canonicalCase), [canonicalCase]);
+  const caseDevices = useMemo(() => selectDeviceFacts(canonicalCase), [canonicalCase]);
+  const matrixAccounts = useMemo(() => caseFlows.filter((a) => a.role !== "VICTIM"), [caseFlows]);
+  const matrixNames = matrixAccounts.map((a) => a.holderName);
+  const matrixRows = useMemo(() => {
+    const total = matrixAccounts.length;
+    const bssid = caseDevices.bssids[0];
+    const ja4 = caseDevices.ja4s[0];
+    const imei = caseDevices.devices[0]?.imei;
+    const introCounts = new Map<string, number>();
+    matrixAccounts.forEach((a) => {
+      if (a.introducerId && !/^(NONE|DIRECT|COMMERCIAL|CASH)/.test(a.introducerId)) introCounts.set(a.introducerId, (introCounts.get(a.introducerId) ?? 0) + 1);
+    });
+    const topIntro = [...introCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const mk = (vector: string, type: string, test: (a: (typeof matrixAccounts)[number]) => string | null, color: string, basis: string) => {
+      const cells = matrixAccounts.map((a) => test(a) ?? "—");
+      const hits = cells.filter((c) => c !== "—").length;
+      return { vector, type, cells, strength: `${hits}/${total} ${hits === total && total > 0 ? "(Deterministic)" : hits > 0 ? "(Corroborative)" : "(No match)"}`, color, basis };
+    };
+    const rows = [
+      mk("UPI / bank money flow", "Financial ledgers", (a) => (a.inflowInr > 0 ? formatInr(a.inflowInr) + " in" : null), "#059669", "BSA §63 & BNSS §106/§107"),
+    ];
+    if (bssid) rows.push(mk(`Wi-Fi anchor (${bssid})`, "Hardware", (a) => (a.bssidHotspot === bssid ? "● MATCH" : null), "#8B5CF6", "BSA §63(4) Electronic Stanza"));
+    if (ja4) rows.push(mk(`JA4 TLS fingerprint (${ja4})`, "App fingerprint", (a) => (caseDevices.sessions.some((x) => x.accountName === a.holderName && x.ja4 === ja4) || a.deviceImei ? "● MATCH" : null), "#10B981", "ISO/IEC 27037 Telemetry"));
+    if (imei) rows.push(mk(`Handset IMEI ${imei}`, "Device", (a) => (a.deviceImei === imei ? "● MATCH" : null), "#0284C7", "DoT Clause 39.20"));
+    if (topIntro) rows.push(mk(`Shared introducer (${topIntro})`, "Account opening", (a) => (a.introducerId === topIntro ? "● MATCH" : null), "#F59E0B", "KYC / CAF records"));
+    return rows;
+  }, [matrixAccounts, caseDevices]);
 
   // Replay playback timer
   useEffect(() => {
@@ -800,7 +681,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
         bottom: isFullscreen ? 0 : undefined,
         height: isFullscreen ? "100vh" : undefined,
         zIndex: isFullscreen ? 99999 : 1,
-        background: isFullscreen ? "#FAFCFF" : "#FAFCFF",
+        background: "var(--surface-1)",
         overflow: isFullscreen ? "hidden" : "visible",
       }}
     >
@@ -1537,7 +1418,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               }}
             >
               <Wifi size={11} color={isHotspotActive ? "#E11D48" : "#64748B"} />
-              <span>{isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}</span>
+              <span>{isHotspotActive ? "Shared Wi-Fi anchor" : "No shared anchor"}</span>
             </button>
 
             {/* Graph | Matrix | Table Switcher */}
@@ -1823,21 +1704,16 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
 
           {/* Center: Live Mule Balance Badges */}
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>Mules:</span>
-            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
-              Vikram: <b>{currentStepData.muleBalances["acc-vikram"]?.balance}</b>
-            </span>
-            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
-              Rohit: <b>{currentStepData.muleBalances["acc-rohit"]?.balance}</b>
-            </span>
-            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
-              Sameer: <b>{currentStepData.muleBalances["acc-sameer"]?.balance}</b>
-            </span>
-            <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
-              Paytm: <b>{currentStepData.muleBalances["acc-sink"]?.balance}</b>
-            </span>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>Accounts:</span>
+            {matrixAccounts
+              .filter((a) => a.role !== "SINK" && currentStepData.muleBalances[a.nodeId]?.balance !== undefined)
+              .map((a) => (
+                <span key={a.nodeId} title={a.holderName} style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px" }}>
+                  {a.holderName.split(" ")[0]}: <b>{currentStepData.muleBalances[a.nodeId]?.balance}</b>
+                </span>
+              ))}
             <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", padding: "1px 5px", background: "#FEE2E2", color: "#B91C1C", border: "1px solid #FECDD3", borderRadius: "3px" }}>
-              ATM: <b>{currentStepData.muleBalances["node-atm"]?.balance}</b>
+              Cash-out: <b>{currentStepData.muleBalances[matrixAccounts.find((a) => a.role === "SINK")?.nodeId ?? "node-atm"]?.balance ?? "—"}</b>
             </span>
           </div>
 
@@ -2033,8 +1909,11 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                 { idx: 2, label: "2: AP BIND" },
                 { idx: 3, label: "3: FAN-OUT" },
                 { idx: 4, label: "4: CASHOUT" },
-                { idx: 5, label: "5: FREEZE (76%)" },
-              ].map((st) => {
+                { idx: 5, label: `5: FREEZE (${recoveryPct}%)` },
+              ]
+                // SIM swap / Wi-Fi binding steps only when the case holds device evidence.
+                .filter((st) => (st.idx !== 0 && st.idx !== 2) || caseDevices.devices.length > 0 || caseDevices.bssids.length > 0)
+                .map((st) => {
                 const isCur = replayStep === st.idx;
                 return (
                   <button
@@ -2139,7 +2018,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                     }}
                   >
                     <ShieldCheck size={11} />
-                    <span>76% SECURED UNDER LIBR</span>
+                    <span>{recoveryPct}% SECURED UNDER LIBR</span>
                   </span>
                 )}
               </div>
@@ -2185,7 +2064,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             overflowY: isFullscreen ? "auto" : "hidden",
             scrollbarWidth: "thin",
             flex: isFullscreen ? "1 1 auto" : undefined,
-            background: "#FAFCFF",
+            background: "var(--surface-1)",
           }}
         >
           {/* Zoom & Scaling Wrapper */}
@@ -2423,11 +2302,11 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       openEvidenceSheet({
                         title: node.label,
                         category: isHero ? "Controller Device Cluster" : "Network Ingress",
-                        source: isHero ? "Airtel PGW & Samsung TAC 86749206" : "Rohini Sector 4 BTS",
+                        source: isHero ? `Telecom IPDR${caseDevices.devices[0] ? ` · IMEI ${caseDevices.devices[0].imei}` : ""}` : "Network ingress log",
                         sha256: "89c20491823091ffeed891241aa44591aefc48201",
                         statutoryBasis: "BSA §63 & DoT License Clause 39.20",
                         details: node.sublabel,
-                        linkedEntities: ["Vikram Shah (L1)", "Rohit Verma (L2A)", "Sameer Khan (L2B)", "Paytm Sink #1109"],
+                        linkedEntities: matrixNames,
                       })
                     }
                     style={{
@@ -2497,7 +2376,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                             border: isHotspotActive ? "1px solid #FECDD3" : "1px solid #A7F3D0",
                           }}
                         >
-                          {isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct"}
+                          {isHotspotActive ? "Shared Wi-Fi anchor" : "No shared anchor"}
                         </span>
                       </div>
                     )}
@@ -2562,12 +2441,11 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                             ? "Airtel BSSID Telemetry"
                             : hub.id === "hub-ja4"
                               ? "JA4 TLS Fingerprint"
-                              : "Mewat CAF Retailer Logs",
+                              : "CAF / KYC records",
                         sha256: "339109bbcf12498214aa88231908812c3f19a03b",
                         statutoryBasis: "BSA §63 Admissibility Protocol",
                         details: `Coverage: ${hub.strength} accounts correlated under this evidence vector.`,
-                        linkedEntities:
-                          hub.id === "hub-caf" ? ["Sameer Khan (L2B)", "Paytm Sink #1109"] : ["All 4 Mule Accounts"],
+                        linkedEntities: hub.id === "hub-caf" ? matrixAccounts.filter((a) => a.introducerId && !/^(NONE|DIRECT|COMMERCIAL|CASH)/.test(a.introducerId)).map((a) => a.holderName) : matrixNames,
                       })
                     }
                     style={{
@@ -2634,7 +2512,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               })}
 
             {/* =====================================================================
-              ROW B SATELLITE: VICTIM NODE (Sunil Kumar)
+              ROW B SATELLITE: VICTIM NODE
               ===================================================================== */}
             {layout.nodes
               .filter((n) => n.category === "victim")
@@ -3111,7 +2989,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {isNodeFrozen ? "🔒 §107 Frozen" : "§107 Frozen"}
+                        {isNodeFrozen ? "🔒 §107 Frozen" : "Not frozen"}
                       </span>
                     </div>
                   </div>
@@ -3139,7 +3017,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
               Multi-Source Evidence Correlation & Money Trail Matrix
             </h3>
             <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
-              Shows cross-session intersection of physical hardware, network IPDR, CAF vectors, and UPI cash flows tying 4 accounts to 1 cluster.
+              Cross-session intersection of hardware, network and cash-flow evidence across the {matrixAccounts.length} non-victim accounts in this case.
             </p>
           </div>
 
@@ -3154,83 +3032,17 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
             <thead>
               <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0" }}>
                 <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Evidence Vector</th>
-                <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Vikram Shah (L1)</th>
-                <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Rohit Verma (L2A)</th>
-                <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Sameer Khan (L2B)</th>
-                <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Paytm Sink</th>
+                {matrixAccounts.map((a) => (
+                  <th key={a.nodeId} title={a.holderName} style={{ padding: "8px 10px", fontWeight: 800, color: "#334155", maxWidth: 140, overflowWrap: "anywhere" }}>
+                    {a.holderName}
+                  </th>
+                ))}
                 <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Strength</th>
                 <th style={{ padding: "8px 10px", fontWeight: 800, color: "#334155" }}>Statutory Admissibility</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                {
-                  vector: "UPI 2.0 Inflow & Dispersal Flow",
-                  type: "Financial Ledgers",
-                  m1: `${investigation?.bookedLossInr ? formatInr(investigation.bookedLossInr) : "Inflow"} Inflow`,
-                  m2a: "₹3.00L Split",
-                  m2b: "₹2.00L Split",
-                  sink: "₹1.80L Escrow",
-                  strength: "100% Tracked",
-                  color: "#059669",
-                  basis: "BSA §63 & BNSS §106/§107",
-                },
-                {
-                  vector: "Wi-Fi Tether AP (74:DA:38:A2:11:BC)",
-                  type: "Hardware Tether",
-                  m1: "● MATCH",
-                  m2a: "● MATCH",
-                  m2b: "● MATCH",
-                  sink: "● MATCH",
-                  strength: "4/4 (Deterministic)",
-                  color: "#8B5CF6",
-                  basis: "BSA §63(4) Electronic Stanza",
-                },
-                {
-                  vector: "JA4 TLS Fingerprint (t13d1516h2_8daaf6)",
-                  type: "App Binary Hash",
-                  m1: "● MATCH",
-                  m2a: "● MATCH",
-                  m2b: "● MATCH",
-                  sink: "● MATCH",
-                  strength: "4/4 (Deterministic)",
-                  color: "#10B981",
-                  basis: "ISO/IEC 27037 Telemetry",
-                },
-                {
-                  vector: "Shared CAF Retailer (Mewat #4401)",
-                  type: "SIM Registration",
-                  m1: "—",
-                  m2a: "—",
-                  m2b: "● MATCH",
-                  sink: "● MATCH",
-                  strength: "2/4 (Corroborative)",
-                  color: "#F59E0B",
-                  basis: "DoT Clause 39.20 CAF",
-                },
-                {
-                  vector: "Telegram C2 Exfiltration (@c2_bot)",
-                  type: "C2 Telemetry",
-                  m1: "● MATCH",
-                  m2a: "● MATCH",
-                  m2b: "● MATCH",
-                  sink: "● MATCH",
-                  strength: "4/4 (Deterministic)",
-                  color: "#BE123C",
-                  basis: "CERT-In Ingress Log",
-                },
-                {
-                  vector: "Cell Tower Azimuth (DL-TWR-891 Sec 4)",
-                  type: "Geographic Co-location",
-                  m1: "● MATCH",
-                  m2a: "● MATCH",
-                  m2b: "● MATCH",
-                  sink: "● MATCH",
-                  strength: "4/4 (100% Sector)",
-                  color: "#0284C7",
-                  basis: "Airtel BTS Stratum-2",
-                },
-              ].map((row, idx) => (
+              {matrixRows.map((row, idx) => (
                 <tr
                   key={idx}
                   style={{
@@ -3246,7 +3058,7 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       sha256: "4a2b918374c810dfaa291882410a8ef183c0",
                       statutoryBasis: row.basis,
                       details: `Deterministic match across targeted accounts with score ${row.strength}.`,
-                      linkedEntities: ["Vikram Shah", "Rohit Verma", "Sameer Khan", "Paytm Sink"],
+                      linkedEntities: matrixNames,
                     })
                   }
                 >
@@ -3256,18 +3068,11 @@ export const EvidenceNetworkGraph: React.FC<EvidenceNetworkGraphProps> = ({
                       <span>{row.vector}</span>
                     </div>
                   </td>
-                  <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: row.m1 === "—" ? "#94A3B8" : "#047857" }}>
-                    {row.m1}
-                  </td>
-                  <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: row.m2a === "—" ? "#94A3B8" : "#047857" }}>
-                    {row.m2a}
-                  </td>
-                  <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: row.m2b === "—" ? "#94A3B8" : "#047857" }}>
-                    {row.m2b}
-                  </td>
-                  <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: row.sink === "—" ? "#94A3B8" : "#047857" }}>
-                    {row.sink}
-                  </td>
+                  {row.cells.map((cell, ci) => (
+                    <td key={ci} style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: cell === "—" ? "#94A3B8" : "#047857" }}>
+                      {cell}
+                    </td>
+                  ))}
                   <td style={{ padding: "8px 10px", fontWeight: 800, color: row.color }}>{row.strength}</td>
                   <td style={{ padding: "8px 10px", color: "#475569", fontFamily: "var(--font-mono)", fontSize: "12px" }}>
                     {row.basis}

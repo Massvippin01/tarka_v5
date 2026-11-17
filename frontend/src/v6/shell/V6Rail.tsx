@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Inbox,
   Shield,
   Home,
   LayoutDashboard,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useCaseStore } from '../../store/useCaseStore';
+import { useBundleCaseStore } from '../../store/useBundleCaseStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { getCanonicalCase } from '../../fixtures/cases';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -149,6 +151,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
   const financials = selectCaseActionFinancials(caseId);
   const ghMins = financials.goldenHourRemainingMins > 0
     ? financials.goldenHourRemainingMins
@@ -162,49 +165,43 @@ export const V6Rail: React.FC<V6RailProps> = ({
       num: 1,
       id: 'evidence',
       views: ['evidence', 'intake'],
-      label: 'Evidence & Ledger',
+      label: 'Evidence',
       icon: <FileSpreadsheet className="size-3.5" />,
-      done: true,
     },
     {
       num: 2,
       id: 'people',
       views: ['people', 'entities'],
-      label: 'People & Accounts',
+      label: 'People & accounts',
       icon: <Users className="size-3.5" />,
-      done: true,
     },
     {
       num: 3,
       id: 'money',
       views: ['money', 'taint-engine'],
-      label: 'Money Trail (Reconstruction)',
+      label: 'Money trail',
       icon: <GitMerge className="size-3.5" />,
-      done: true,
     },
     {
       num: 4,
       id: 'network',
       views: ['network'],
-      label: 'Fraud Network Graph',
+      label: 'Network',
       icon: <Network className="size-3.5" />,
-      done: true,
     },
     {
       num: 5,
       id: 'device',
       views: ['device', 'handset-sim', 'attribution'],
-      label: 'Device, SIM & Claims',
+      label: 'Devices & SIMs',
       icon: <Smartphone className="size-3.5" />,
-      done: false,
     },
     {
       num: 6,
       id: 'actions',
       views: ['actions', 'report'],
-      label: 'Actions & Recovery',
+      label: 'Actions & report',
       icon: <Scale className="size-3.5" />,
-      done: false,
     },
   ];
 
@@ -312,13 +309,14 @@ export const V6Rail: React.FC<V6RailProps> = ({
           className="my-2 p-2.5 rounded-xl bg-[#231E1B] border border-white/10 hover:border-amber-600/30 transition-all cursor-pointer group space-y-1.5"
           title={`Active Investigation: ${displayCaseId}`}
         >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-bold text-amber-300 bg-amber-950/70 px-2 py-0.5 rounded-md border border-amber-800/60 leading-none">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <span className="font-mono text-[11px] font-bold text-amber-300 bg-amber-950/70 px-2 py-0.5 rounded-md border border-amber-800/60 leading-none whitespace-nowrap truncate min-w-0">
               {displayCaseId}
             </span>
             <span
+              title={isGoldenHourActive ? 'Golden hour left to freeze the money' : undefined}
               className={cn(
-                'inline-flex items-center gap-1 text-[10.5px] font-bold tabular-nums px-2 py-0.5 rounded-md border',
+                'inline-flex items-center gap-1 text-[10.5px] font-bold tabular-nums px-2 py-0.5 rounded-md border whitespace-nowrap flex-none',
                 isGoldenHourActive
                   ? 'text-amber-300 bg-amber-950/60 border-amber-700/60'
                   : 'text-emerald-300 bg-emerald-950/60 border-emerald-700/60'
@@ -330,7 +328,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
                   isGoldenHourActive ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
                 )}
               />
-              {isGoldenHourActive ? `${ghMins}m golden` : 'Active'}
+              {isGoldenHourActive
+                ? `${ghMins >= 60 ? `${Math.floor(ghMins / 60)}h ${ghMins % 60}m` : `${ghMins}m`}`
+                : 'Active'}
             </span>
           </div>
           <div className="text-[12px] font-semibold text-[#FFFDF8] truncate group-hover:text-amber-200">
@@ -351,68 +351,50 @@ export const V6Rail: React.FC<V6RailProps> = ({
       )}
       <div className="space-y-0.5">
         <RailItem
-          icon={<Home className="size-4" />}
-          label="Home (Orb Interface)"
-          active={isCurrentView(['home'])}
-          onClick={() => setActiveView('home')}
+          icon={<Inbox className="size-4" />}
+          label="My Desk"
+          active={isCurrentView(['desk'])}
+          onClick={() => setActiveView('desk')}
           collapsed={isCollapsed}
-          title="TARKA Particle Intelligence Home"
-          testId="rail-nav-home"
+          title="Act now: what needs you across your cases"
+          testId="rail-nav-desk"
         />
 
         <RailItem
           icon={<LayoutDashboard className="size-4" />}
-          label="Command Centre"
+          label="Station overview"
           active={isCurrentView(['workspace', 'dash', 'dashboard'])}
           onClick={() => setActiveView('workspace')}
           collapsed={isCollapsed}
-          title="Skeuomorphic Operational Command Centre"
+          title="Every active case at your station"
         />
 
         <RailItem
           icon={<FolderKanban className="size-4" />}
-          label="Investigations (All Cases)"
-          badge={
-            <span className="text-[10px] font-bold text-amber-200 bg-[#3B2F28] px-1.5 py-0.2 rounded-full border border-white/10">
-              4
-            </span>
-          }
-          active={isCurrentView(['cases'])}
-          onClick={() => setActiveView('cases')}
+          label="Projects"
+          active={isCurrentView(['projects'])}
+          onClick={() => setActiveView('projects')}
           collapsed={isCollapsed}
-          title="All Cases Registry"
-        />
-
-        <RailItem
-          icon={<FileSpreadsheet className="size-4" />}
-          label="Evidence Ledger & Intake"
-          active={isCurrentView(['evidence', 'intake'])}
-          onClick={() => setActiveView('evidence')}
-          collapsed={isCollapsed}
-          title="Admitted Evidence Ledger & Streaming Intake"
-        />
-
-        <RailItem
-          icon={<MessageSquare className="size-4" />}
-          label="Universal AI Copilot"
-          active={false}
-          onClick={toggleAskTarka}
-          collapsed={isCollapsed}
-          title="Open Evidence-Grounded Assistant (Key: A)"
+          title="Group related cases into one operation"
+          testId="rail-nav-projects"
         />
 
         <RailItem
           icon={<FileText className="size-4" />}
-          label="Statutory Reports"
-          badge={
-            <span className="text-[10px] font-mono font-semibold text-amber-200 bg-[#3B2F28] px-1.5 py-0.2 rounded-md border border-white/10">
-              §63 BSA
-            </span>
-          }
-          active={isCurrentView(['actions', 'report'])}
-          onClick={() => setActiveView('actions')}
+          label="All cases"
+          active={isCurrentView(['cases'])}
+          onClick={() => setActiveView('cases')}
           collapsed={isCollapsed}
-          title="Statutory Certificates & Court Proofs"
+          title="Every case you can access"
+        />
+
+        <RailItem
+          icon={<MessageSquare className="size-4" />}
+          label="Ask TARKA"
+          active={false}
+          onClick={toggleAskTarka}
+          collapsed={isCollapsed}
+          title="Ask questions about this case's evidence (key: A)"
         />
       </div>
 
@@ -423,12 +405,14 @@ export const V6Rail: React.FC<V6RailProps> = ({
           className="flex items-center justify-between px-2 pt-3 pb-1 cursor-pointer select-none text-[#8C7F73] hover:text-[#FFFDF8] transition-colors"
         >
           <span className="text-[10.5px] font-mono font-bold uppercase tracking-wider">
-            Investigation Tools
+            This case
           </span>
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold text-amber-300 bg-[#3B2F28] px-1.5 py-0.2 rounded-md">
-              Stage {activeStepNumber}/6
-            </span>
+            {currentStepIndex >= 0 && (
+              <span className="text-[10px] font-bold text-amber-300 bg-[#3B2F28] px-1.5 py-0.2 rounded-md">
+                Step {activeStepNumber} of 6
+              </span>
+            )}
             {toolsOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
           </div>
         </div>
@@ -437,8 +421,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {toolsOpen && (
         <div className={cn('space-y-0.5', !isCollapsed && 'pl-1 border-l border-white/10 ml-2')}>
-          {steps.map((s) => {
+          {steps.map((s, idx) => {
             const isCurrent = isCurrentView(s.views);
+            const isDone = currentStepIndex >= 0 && idx < currentStepIndex; // same rule as the top stepper
             return (
               <button
                 key={s.id}
@@ -463,31 +448,50 @@ export const V6Rail: React.FC<V6RailProps> = ({
                 <span
                   className={cn(
                     'size-5 rounded-full flex items-center justify-center text-[10.5px] font-bold shrink-0 transition-colors border',
-                    s.done && !isCurrent
+                    isDone
                       ? 'bg-[#287653] text-white border-[#287653]'
                       : isCurrent
                       ? 'bg-[#E08244] text-white border-[#E08244]'
                       : 'bg-[#342C28] text-[#8C7F73] border-white/10'
                   )}
                 >
-                  {s.done && !isCurrent ? <Check className="size-3 stroke-[3]" /> : s.num}
+                  {isDone ? <Check className="size-3 stroke-[3]" /> : s.num}
                 </span>
                 {!isCollapsed && <span className="truncate flex-1 font-medium">{s.label}</span>}
               </button>
             );
           })}
+          <RailItem
+            icon={<Network className="size-4" />}
+            label="Mule triage"
+            active={isCurrentView(['triage'])}
+            onClick={() => setActiveView('triage')}
+            collapsed={isCollapsed}
+            title="Fraud networks found in this case's uploaded files"
+            testId="rail-nav-triage"
+          />
         </div>
       )}
 
-      {/* 4. Group: LABORATORY */}
+      {/* 4. Group: ADVANCED (orb home + labs) */}
       {!isCollapsed && (
         <div className="px-2 pt-3 pb-1 text-[10.5px] font-mono font-bold text-[#8C7F73] uppercase tracking-wider">
-          Laboratory
+          Advanced
         </div>
       )}
       {isCollapsed && <div className="w-8 h-px bg-white/10 my-1.5 mx-auto" />}
 
       <div className="space-y-0.5">
+        <RailItem
+          icon={<Home className="size-4" />}
+          label="Voice home (orb)"
+          active={isCurrentView(['home'])}
+          onClick={() => setActiveView('home')}
+          collapsed={isCollapsed}
+          title="TARKA Particle Intelligence Home"
+          testId="rail-nav-home"
+        />
+
         <RailItem
           icon={<FlaskConical className="size-4" />}
           label="Temporal Evidence Loom"

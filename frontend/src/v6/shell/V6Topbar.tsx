@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  Moon,
+  Sun,
   AlertTriangle,
   ChevronDown,
   Sparkles,
@@ -8,6 +10,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
+import { useBundleCaseStore } from '../../store/useBundleCaseStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { getCanonicalCase } from '../../fixtures/cases';
 import { selectCaseActionFinancials } from '../../selectors/actionSelectors';
@@ -15,6 +18,7 @@ import { ProgressRing } from '../ui/ProgressRing';
 import { Button } from '../ui/Button';
 import { CaseStatusControl } from '../../components/tarka/cases/CaseStatusControl';
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
+import { useV6Theme } from './useV6Theme';
 import { NotificationCenterPopover } from '../../components/tarka/notifications/NotificationCenterPopover';
 import { UpgradedCaseSwitcher } from '../../components/shell/UpgradedCaseSwitcher';
 
@@ -30,11 +34,13 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   onOpenAuditTrail,
 }) => {
   const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
+  const { theme, toggle: toggleTheme } = useV6Theme();
   const { caseWorkspaces, activeCase, setActiveCaseId: setTarkaGlobalCaseId } = useTarkaGlobal();
   const { toggleAskTarka, setIntelligenceBriefOpen } = useTarkaUiStore();
 
   const caseId = activeCaseId || 'CASE-2026-001';
   const canonicalCase = getCanonicalCase(caseId);
+  useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
   const financials = selectCaseActionFinancials(caseId);
 
   // Golden hour format
@@ -82,7 +88,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const casePillTrigger = (
     <button
       type="button"
-      className="flex items-center gap-2 h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--surface-1)] hover:border-[var(--line-2)] transition-colors cursor-pointer text-left shrink-0 max-w-[280px]"
+      className="flex items-center gap-2 h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--glass-2)] hover:border-[var(--line-2)] transition-colors cursor-pointer text-left shrink-0 max-w-[280px]"
       aria-label={`Switch case · ${displayCaseId} · ${displayFir}`}
       title={fullCaseTooltip}
     >
@@ -128,12 +134,12 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
       <button
         type="button"
         onClick={onOpenCommandPalette}
-        className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--surface-1)] hover:border-[var(--line-2)] text-[var(--fg-3)] hover:text-[var(--fg-1)] text-xs transition-colors cursor-pointer shrink-0"
+        className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-[var(--line)] bg-[var(--glass-2)] hover:border-[var(--line-2)] text-[var(--fg-3)] hover:text-[var(--fg-1)] text-xs transition-colors cursor-pointer shrink-0"
         aria-label="Open command palette"
         data-testid="v6-topbar-command-btn"
       >
         <Search className="w-3.5 h-3.5 shrink-0" />
-        <span className="hidden lg:inline font-medium">Search or jump...</span>
+        <span className="hidden 2xl:inline font-medium">Search or jump...</span>
         <kbd className="v6-mono text-[12px] bg-[var(--surface-2)] px-1.5 py-0.5 rounded border border-[var(--line)] text-[var(--fg-3)]">
           ⌘K
         </kbd>
@@ -141,9 +147,21 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
 
       <div className="flex-1 min-w-2" />
 
+      {/* Light / dark theme (persists) */}
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="flex items-center justify-center w-8 h-8 rounded-md border border-[var(--line)] bg-[var(--glass-2)] hover:border-[var(--line-2)] text-[var(--fg-2)] hover:text-[var(--fg-1)] transition-colors cursor-pointer shrink-0"
+        aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+        data-testid="v6-theme-toggle"
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
       {/* Golden Hour Countdown Ring */}
       <div
-        className="flex items-center gap-2 h-8 px-2.5 rounded-md bg-[var(--surface-1)] border border-[var(--line)] shrink-0"
+        className="flex items-center gap-2 h-8 px-2.5 rounded-md bg-[var(--glass-2)] border border-[var(--line)] shrink-0"
         title="Golden hour: critical legal containment window to freeze accounts"
       >
         <ProgressRing
@@ -153,7 +171,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
           color={ghMins < 45 ? 'var(--risk)' : 'var(--urgent)'}
         />
         <div className="flex items-center gap-1.5 leading-none">
-          <span className="text-[12px] text-[var(--fg-3)] font-medium hidden sm:inline">Golden hour</span>
+          <span className="text-[12px] text-[var(--fg-3)] font-medium hidden 2xl:inline">Golden hour</span>
           <span
             className="text-xs font-bold v6-mono"
             style={{ color: ghMins < 45 ? 'var(--risk)' : 'var(--urgent)' }}
@@ -170,10 +188,10 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
         icon={<FileText className="w-3.5 h-3.5 text-[var(--fg-2)]" />}
         onClick={() => setIntelligenceBriefOpen(true)}
         data-testid="v6-topbar-brief-btn"
-        className="h-8 px-2.5 border border-[var(--line)] bg-[var(--surface-1)] text-xs shrink-0"
+        className="h-8 px-2.5 border border-[var(--line)] bg-[var(--glass-2)] text-xs shrink-0"
         title="7-Question Intelligence Brief"
       >
-        <span className="hidden sm:inline">Brief</span>
+        <span className="hidden 2xl:inline">Brief</span>
       </Button>
 
       {/* Ask TARKA Command / AI */}
@@ -183,9 +201,11 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
         icon={<Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />}
         onClick={() => toggleAskTarka()}
         data-testid="v6-topbar-ask-tarka-btn"
-        className="h-8 px-2.5 border border-[var(--line)] bg-[var(--surface-1)] text-xs shrink-0"
+        aria-label="Ask TARKA"
+        title="Ask TARKA (A)"
+        className="h-8 px-2.5 border border-[var(--line)] bg-[var(--glass-2)] text-xs shrink-0"
       >
-        Ask TARKA
+        <span className="hidden 2xl:inline">Ask TARKA</span>
       </Button>
 
       {/* Quick Action: Freeze accounts */}

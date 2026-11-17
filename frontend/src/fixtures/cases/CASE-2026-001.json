@@ -16,21 +16,26 @@
     "accountNumber": "610514882109",
     "ifsc": "SBIN0004821",
     "panMasked": "XXXXX4920K",
-    "openingBalance": 529140.00,
-    "salaryCredit": 125000.00
+    "openingBalance": 529140,
+    "salaryCredit": 125000
   },
   "receiptClaim": {
-    "claimedAmount": 15000.00,
+    "claimedAmount": 15000,
     "label": "Amount on forged receipt (Canva PDF incremental edit)",
-    "discrepancyNote": "Complainant payment screenshot displays ₹15,000; authentic Finacle CBS ledger proves booked loss of ₹5,00,000.00"
+    "discrepancyNote": "Complainant payment screenshot displays ₹15,000; authentic Finacle CBS ledger proves booked loss of ₹5,00,000.00",
+    "pdfTamper": {
+      "sourceFile": "Canva_Digital_Arrest_Notice.pdf",
+      "finding": "2 %%EOF markers detected (+14.2 KB incremental append)",
+      "technicalOffset": "0x14209..0x15080"
+    }
   },
   "financials": {
-    "bookedLossInr": 500000.00,
-    "claimedLossInr": 15000.00,
-    "recoverableLibrInr": 380000.00,
-    "shieldedCommercialInr": 180000.00,
-    "frozenMuleBalanceInr": 200000.00,
-    "unrecoverableCashoutInr": 120000.00,
+    "bookedLossInr": 500000,
+    "claimedLossInr": 15000,
+    "recoverableLibrInr": 380000,
+    "shieldedCommercialInr": 180000,
+    "frozenMuleBalanceInr": 200000,
+    "unrecoverableCashoutInr": 120000,
     "goldenHourRemainingMins": 118
   },
   "accounts": [
@@ -78,7 +83,7 @@
       "evidenceStatus": "VERIFIED_ACCUSED",
       "deviceImei": "867492061234564",
       "bssidHotspot": "74:DA:38:A2:11:BC",
-      "frozenBalance": 120000.00
+      "frozenBalance": 120000
     },
     {
       "nodeId": "M2B-SAMEER",
@@ -94,7 +99,7 @@
       "evidenceStatus": "VERIFIED_ACCUSED",
       "deviceImei": "867492061234564",
       "bssidHotspot": "74:DA:38:A2:11:BC",
-      "frozenBalance": 35000.00
+      "frozenBalance": 35000
     },
     {
       "nodeId": "M2C-DEEPAK",
@@ -106,9 +111,9 @@
       "ifsc": "PUNB0142000",
       "panMasked": "FGPM9012N",
       "introducerId": "DIRECT_BRANCH_WALK_IN",
-      "tenureMonths": 38.0,
+      "tenureMonths": 38,
       "evidenceStatus": "INSUFFICIENT_EVIDENCE",
-      "frozenBalance": 45000.00
+      "frozenBalance": 45000
     },
     {
       "nodeId": "MERCH-APEX",
@@ -122,9 +127,9 @@
       "gstin": "07AAACA1234F1Z8",
       "mcaCin": "U51909DL2018PTC334912",
       "introducerId": "COMMERCIAL_BANKING_RELATIONSHIP",
-      "tenureMonths": 68.0,
+      "tenureMonths": 68,
       "evidenceStatus": "EXCLUDED_COMMERCIAL",
-      "frozenBalance": 180000.00
+      "frozenBalance": 180000
     },
     {
       "nodeId": "SINK-ATM",
@@ -153,7 +158,7 @@
       "toName": "Sunil Kumar",
       "fromVpa": "pension@sbi",
       "toVpa": "sunil.k@oksbi",
-      "amount": 25000.00,
+      "amount": 25000,
       "paymentRail": "NEFT",
       "rrn": "NEFT-SALARY-449",
       "category": "SALARY_CREDIT",
@@ -171,7 +176,7 @@
       "toName": "Vikram Shah",
       "fromVpa": "sunil.k@oksbi",
       "toVpa": "quicktransfer.nodal@axisbank",
-      "amount": 285000.00,
+      "amount": 285000,
       "paymentRail": "IMPS",
       "rrn": "626509188410",
       "category": "VICTIM_DRAIN",
@@ -194,7 +199,7 @@
       "toName": "Vikram Shah",
       "fromVpa": "sunil.k@oksbi",
       "toVpa": "quicktransfer.nodal@axisbank",
-      "amount": 215000.00,
+      "amount": 215000,
       "paymentRail": "UPI",
       "rrn": "626510149921",
       "category": "VICTIM_DRAIN",
@@ -217,7 +222,7 @@
       "toName": "Rohit Verma",
       "fromVpa": "quicktransfer.nodal@axisbank",
       "toVpa": "rohit.v@hdfcbank",
-      "amount": 300000.00,
+      "amount": 300000,
       "paymentRail": "IMPS",
       "rrn": "626510201140",
       "category": "LAYERING",
@@ -240,7 +245,7 @@
       "toName": "Sameer Khan",
       "fromVpa": "quicktransfer.nodal@axisbank",
       "toVpa": "sameer.k@icici",
-      "amount": 155000.00,
+      "amount": 155000,
       "paymentRail": "IMPS",
       "rrn": "626510250918",
       "category": "LAYERING",
@@ -263,7 +268,7 @@
       "toName": "Deepak Meena",
       "fromVpa": "quicktransfer.nodal@axisbank",
       "toVpa": "deepak.m@pnb",
-      "amount": 45000.00,
+      "amount": 45000,
       "paymentRail": "UPI",
       "rrn": "626510289104",
       "category": "LAYERING",
@@ -284,7 +289,7 @@
       "toName": "Apex Electronics Pvt Ltd",
       "fromVpa": "rohit.v@hdfcbank",
       "toVpa": "apex.pos@icicibank",
-      "amount": 180000.00,
+      "amount": 180000,
       "paymentRail": "UPI_POS",
       "rrn": "626510341102",
       "category": "COMMERCIAL_ESCROW",
@@ -307,7 +312,7 @@
       "toName": "Noida Sec 18 ATM DL-049",
       "fromVpa": "sameer.k@icici",
       "toVpa": "ATM-DL049@sbi",
-      "amount": 120000.00,
+      "amount": 120000,
       "paymentRail": "ATM_CASH",
       "rrn": "626510398412",
       "category": "ATM_CASHOUT",

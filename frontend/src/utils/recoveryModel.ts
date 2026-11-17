@@ -1,20 +1,20 @@
-import { CANONICAL_CASES } from "../fixtures/cases";
+import { resolveCase, selectFinancialSummary, selectDoctrineComparison, selectFreezeActions } from "../selectors/caseSelectors";
 
 export interface RecoveryModelResult {
-  grossVictimLoss: number; // 500000
-  atmCashedOut: number; // 120000 (irrecoverable cashout at ATM DL-049)
-  muleRetainedHold: number; // 200000 (Rohit 1.20L + Sameer 80k under Sec 107)
-  merchantSpecificLien: number; // 180000 (Apex Electronics under Sec 106)
-  cleanDepositInjected: number; // 250000 if isInjectClean, else 0
-  netRecoverableSum: number; // 380000 (76.0% of stolen capital)
-  recoveryPotentialPct: number; // 76.0
-  openEscapeExits: number; // 0 if freezeBudgetK >= 3, else (3 - freezeBudgetK)
-  totalEscapeRoutes: number; // 4
-  containmentPct: number; // 100 if freezeBudgetK >= 3, else 50..75
-  librRecoverable: number; // 380000
-  fifoRecoverable: number; // 200000
-  proRataRecoverable: number; // 274000 if clean deposit commingled, else 380000
-  rulesEqual: boolean; // true if clean deposit is not injected
+  grossVictimLoss: number; 
+  atmCashedOut: number;
+  muleRetainedHold: number;
+  merchantSpecificLien: number;
+  cleanDepositInjected: number;
+  netRecoverableSum: number;
+  recoveryPotentialPct: number;
+  openEscapeExits: number;
+  totalEscapeRoutes: number;
+  containmentPct: number;
+  librRecoverable: number;
+  fifoRecoverable: number;
+  proRataRecoverable: number;
+  rulesEqual: boolean;
 }
 
 /**
@@ -26,44 +26,35 @@ export function recoveryModel(
   freezeBudgetK: number = 3,
   caseId?: string
 ): RecoveryModelResult {
-  const canonical = (caseId && CANONICAL_CASES[caseId]) ? CANONICAL_CASES[caseId] : null;
-  const grossVictimLoss = canonical ? canonical.financials.bookedLossInr : 500000;
-  const netRecoverableSum = canonical ? canonical.financials.recoverableLibrInr : 380000;
-  const atmCashedOut = canonical ? canonical.financials.unrecoverableCashoutInr : 120000;
-  const muleRetainedHold = canonical ? Math.round(netRecoverableSum * 0.526) : 200000;
-  const merchantSpecificLien = canonical ? netRecoverableSum - muleRetainedHold : 180000;
-  const cleanDepositInjected = isInjectClean ? (canonical ? Math.round(grossVictimLoss * 0.5) : 250000) : 0;
-  const recoveryPotentialPct = grossVictimLoss > 0 ? parseFloat(((netRecoverableSum / grossVictimLoss) * 100).toFixed(1)) : 76.0;
-
-  // Dinic Min-Cut containment
-  const isContained = freezeBudgetK >= 3;
-  const openEscapeExits = isContained ? 0 : Math.max(0, 3 - freezeBudgetK);
-  const containmentPct = isContained ? 100 : Math.round((freezeBudgetK / 3) * 100);
-
-  // Accounting doctrine derivations:
-  // LIBR: Lowest Intermediate Balance Rule strictly protects clean capital.
-  // FIFO: First-in, first-out assumes early withdrawals depleted tainted pool.
-  // Pro-rata: proportional commingling when clean commercial funds exist.
-  const librRecoverable = netRecoverableSum;
-  const fifoRecoverable = muleRetainedHold;
-  const proRataRecoverable = isInjectClean ? (canonical ? Math.round(netRecoverableSum * 0.72) : 274000) : netRecoverableSum;
-  const rulesEqual = !isInjectClean;
-
+  // Demo fixtures and uploaded-case bundles alike; an unknown case shows zeros, never another case's figures.
+  const canonical = resolveCase(caseId);
+  if (!canonical) {
+    return {
+      grossVictimLoss: 0, atmCashedOut: 0, muleRetainedHold: 0, merchantSpecificLien: 0, cleanDepositInjected: 0,
+      netRecoverableSum: 0, recoveryPotentialPct: 0, openEscapeExits: 0, totalEscapeRoutes: 0, containmentPct: 0,
+      librRecoverable: 0, fifoRecoverable: 0, proRataRecoverable: 0, rulesEqual: true,
+    };
+  }
+  // Case-driven: every number comes from the shared selectors (one source of truth).
+  const fin = selectFinancialSummary(canonical);
+  const doctrine = selectDoctrineComparison(canonical, isInjectClean);
+  const requiredK = Math.max(1, selectFreezeActions(canonical).filter((a) => a.kind !== "CASHOUT_REQUISITION" && a.amountInr > 0).length);
+  const openExits = Math.max(0, requiredK - freezeBudgetK);
   return {
-    grossVictimLoss,
-    atmCashedOut,
-    muleRetainedHold,
-    merchantSpecificLien,
-    cleanDepositInjected,
-    netRecoverableSum,
-    recoveryPotentialPct,
-    openEscapeExits,
-    totalEscapeRoutes: 4,
-    containmentPct,
-    librRecoverable,
-    fifoRecoverable,
-    proRataRecoverable,
-    rulesEqual,
+    grossVictimLoss: fin.bookedLossInr,
+    atmCashedOut: fin.unrecoverableCashoutInr,
+    muleRetainedHold: fin.frozenMuleInr,
+    merchantSpecificLien: fin.shieldedCommercialInr,
+    cleanDepositInjected: doctrine.cleanDepositInjectedInr,
+    netRecoverableSum: fin.recoverableInr,
+    recoveryPotentialPct: parseFloat(((fin.recoverableInr / Math.max(1, fin.bookedLossInr)) * 100).toFixed(1)),
+    openEscapeExits: openExits,
+    totalEscapeRoutes: requiredK,
+    containmentPct: openExits === 0 ? 100 : Math.round((Math.min(freezeBudgetK, requiredK) / requiredK) * 100),
+    librRecoverable: doctrine.libr,
+    fifoRecoverable: doctrine.fifo,
+    proRataRecoverable: doctrine.proRata,
+    rulesEqual: doctrine.rulesEqual,
   };
 }
 

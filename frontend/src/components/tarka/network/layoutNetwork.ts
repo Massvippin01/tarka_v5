@@ -1,4 +1,5 @@
 import type { ReconstructedInvestigation } from "../../../utils/investigationReconstructor";
+import { resolveCase, selectDeviceFacts } from "../../../selectors/caseSelectors";
 
 export interface CommunityHullLayout {
   id: string;
@@ -82,6 +83,16 @@ export function layoutDataDrivenInvestigation(
 ): NetworkLayoutResult {
   const width = Math.max(1160, W);
   const height = Math.max(780, H);
+
+  // Infrastructure labels come from this case's own network / device evidence.
+  const caseRef = resolveCase(investigation.caseId);
+  const dev = caseRef ? selectDeviceFacts(caseRef) : null;
+  const infraBssid = dev?.bssids[0] ?? "no BSSID recorded";
+  const infraImei = dev?.devices[0]?.imei;
+  const infraIp = dev?.publicIps[0];
+  const infraDeviceLine = infraImei ? `IMEI ${infraImei}` : "no handset recorded";
+  const infraNetLine = infraIp ? `${infraIp.ip}${infraIp.ports[0] ? `:${infraIp.ports[0]}` : ""}` : "no public IP recorded";
+  const firstSession = dev?.sessions[0];
 
   const yRowA = Math.round(0.12 * height);
   const yRowB = Math.round(0.32 * height);
@@ -257,12 +268,10 @@ export function layoutDataDrivenInvestigation(
   const heroNode: NetworkNodeLayout = {
     id: "node-hero",
     label: "Controller device cluster",
-    sublabel: isHotspotActive
-      ? "Poco X5 Hotspot · 74:DA:38:A2:11:BC · TTL=63"
-      : "Poco X5 Hotspot · 74:DA:38:A2:11:BC · TTL=64 Direct",
+    sublabel: `${infraDeviceLine} · ${infraBssid}`,
     labelLine1: "Controller device cluster",
-    labelLine2: "Poco X5 AP (74:DA:38:A2:11:BC) · TTL 63 Tethered",
-    tooltip: "Samsung SM-M346B (867492061234564) via Accomplice Poco X5 Hotspot",
+    labelLine2: `${infraDeviceLine} · ${infraBssid}`,
+    tooltip: `${infraDeviceLine} via Wi-Fi anchor ${infraBssid}`,
     category: "hero",
     cx: cxHero,
     cy: yRowA,
@@ -287,10 +296,10 @@ export function layoutDataDrivenInvestigation(
 
   const towerNode: NetworkNodeLayout = {
     id: "node-tower",
-    label: "Airtel DL-TWR-891",
-    sublabel: "Sector 4 Rohini · Az 120° · PGW Ingress",
-    labelLine1: "Airtel DL-TWR-891",
-    labelLine2: "Sector 4 Rohini · Az 120°",
+    label: "Carrier ingress",
+    sublabel: infraIp ? `Public IP ${infraIp.ip} · ${infraIp.sessionCount} sessions` : "no carrier evidence yet",
+    labelLine1: "Carrier ingress",
+    labelLine2: infraIp ? `Public IP ${infraIp.ip}` : "no carrier evidence yet",
     category: "controller",
     cx: cxTower,
     cy: yRowA,
@@ -311,10 +320,10 @@ export function layoutDataDrivenInvestigation(
 
   const c2Node: NetworkNodeLayout = {
     id: "node-c2",
-    label: "Telegram C2 @c2_bot",
-    sublabel: "103.21.144.92:443 · OTP Exfiltration",
-    labelLine1: "Telegram C2 @c2_bot",
-    labelLine2: "103.21.144.92:443 · OTP Exfil",
+    label: "Session source",
+    sublabel: `${infraNetLine} · ${firstSession ? firstSession.timestampIst : "no session"}`,
+    labelLine1: "Session source",
+    labelLine2: infraNetLine,
     category: "controller",
     cx: cxC2,
     cy: yRowA,
@@ -342,7 +351,7 @@ export function layoutDataDrivenInvestigation(
   const hubTether: NetworkNodeLayout = {
     id: "hub-tether",
     label: "Wi-Fi Hotspot",
-    sublabel: isHotspotActive ? "TTL=63 Tethered" : "TTL=64 Direct",
+    sublabel: isHotspotActive ? "Shared Wi-Fi anchor" : "No shared anchor",
     category: "hub",
     strength: "BSSID",
     cx: cxHubTether,
@@ -548,11 +557,17 @@ export function layoutDataDrivenInvestigation(
       ? layoutEdges
       : layoutEdges.filter((e) => e.type === activeFilter);
 
+  // No handset / Wi-Fi / IP evidence in this case: draw only the money, never placeholder device boxes or links.
+  const hasDeviceEvidence = !!dev && (dev.devices.length > 0 || dev.bssids.length > 0 || dev.publicIps.length > 0);
+  const INFRA = new Set(["node-hero", "node-tower", "node-c2"]);
+
   return {
     width,
     height,
-    nodes: layoutNodes,
-    edges: filteredEdges,
+    nodes: hasDeviceEvidence ? layoutNodes : layoutNodes.filter((n) => !INFRA.has(n.id)),
+    edges: hasDeviceEvidence
+      ? filteredEdges
+      : filteredEdges.filter((e) => e.type === "cash" && !INFRA.has(e.sourceId) && !INFRA.has(e.targetId)),
     communityHulls,
   };
 }

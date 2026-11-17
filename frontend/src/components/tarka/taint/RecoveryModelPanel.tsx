@@ -1,11 +1,14 @@
 import React from "react";
-import {
-  FileText,
-  X,
-  ChevronRight,
-} from "lucide-react";
+import { FileText, X, ChevronRight } from "lucide-react";
 import { ScaleBar } from "../kit/ScaleBar";
 import { recoveryModel } from "../../../utils/recoveryModel";
+import {
+  resolveCase,
+  selectAccountFlows,
+  selectDoctrineComparison,
+  selectFinancialSummary,
+} from "../../../selectors/caseSelectors";
+import { formatInr, formatInrCompact, formatDuration } from "../../../lib/formatInr";
 
 interface RecoveryModelPanelProps {
   isInjectClean: boolean;
@@ -17,6 +20,8 @@ interface RecoveryModelPanelProps {
   victimName?: string;
 }
 
+const box: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" };
+
 export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
   isInjectClean,
   freezeBudgetK,
@@ -24,204 +29,93 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
   onCloseNodeDrawer,
   onOpenOrders,
   caseId,
-  victimName,
 }) => {
+  const fixture = resolveCase(caseId);
+  if (!fixture) {
+    return <div style={{ padding: 12, fontSize: 12, color: "#64748B" }}>No money-trail data for this case yet.</div>;
+  }
   const model = recoveryModel(isInjectClean, freezeBudgetK, caseId);
+  const fin = selectFinancialSummary(fixture);
+  const doctrine = selectDoctrineComparison(fixture, isInjectClean);
+  const flows = selectAccountFlows(fixture);
+  const merchants = flows.filter((a) => a.role === "MERCHANT");
 
-  // If a node is selected, render the Node Drawer view
+  // Node drawer
   if (selectedNodeId) {
-    const nodeDossiers: Record<
-      string,
-      {
-        title: string;
-        role: string;
-        bank: string;
-        account: string;
-        amount: string;
-        statute: string;
-        dwell: string;
-        description: string;
-      }
-    > = {
-      sunil: {
-        title: `${victimName || "Victim"} (Complainant)`,
-        role: "Victim Origin",
-        bank: "Origin Bank",
-        account: "Origin Salary A/C",
-        amount: `-₹${model.grossVictimLoss.toLocaleString("en-IN")}.00`,
-        statute: "BNSS §106 Victim Inception",
-        dwell: "0s (Direct Debit)",
-        description: "Victim debited via fraudulent APK credential sniff and coerced UPI intent session.",
-      },
-      vikram: {
-        title: "Vikram Shah",
-        role: "Layer-1 Conduit Mule",
-        bank: "State Bank of India",
-        account: "SBI 41088291083",
-        amount: "₹5,00,000 Inflow",
-        statute: "BNSS §107 Provisional Seizure",
-        dwell: "112 seconds",
-        description: "Received full ₹5.00L victim funds; rapidly split into Layer-2 accounts within 112s.",
-      },
-      rohit: {
-        title: "Rohit Verma",
-        role: "Layer-2A Split Conduit",
-        bank: "HDFC Bank",
-        account: "HDFC 5010029419920",
-        amount: "₹3,00,000 Inflow",
-        statute: "BNSS §107 Provisional Seizure",
-        dwell: "185 seconds",
-        description: "Forwarded ₹1.80L to merchant Apex Electronics; ₹1.20L retained in account and frozen.",
-      },
-      sameer: {
-        title: "Sameer Khan",
-        role: "Layer-2B Cashout Conduit",
-        bank: "Axis Bank",
-        account: "AXIS 9140200410291",
-        amount: "₹2,00,000 Inflow",
-        statute: "BNSS §107 Provisional Seizure",
-        dwell: "140 seconds",
-        description: "Dispensed ₹1.20L cash at Noida ATM DL-049; ₹80,000 retained in account and frozen.",
-      },
-      apex: {
-        title: "Apex Electronics Pvt Ltd",
-        role: "Bona-Fide POS Merchant",
-        bank: "ICICI Bank",
-        account: "ICICI 001405008129",
-        amount: "₹1,80,000 Specific Lien",
-        statute: "BNSS §106 Specific Debit Lien",
-        dwell: "Active Merchant",
-        description: "Legitimate electronics retailer. §106 specific lien attaches only to ₹1.80L tainted funds, shielding innocent trade.",
-      },
-      atm: {
-        title: "Noida Sec 18 ATM DL-049",
-        role: "Terminal Cash Out",
-        bank: "State Bank of India ATM Network",
-        account: "ATM Switch #DL-049",
-        amount: "₹1,20,000 Dispensed (Irrecoverable)",
-        statute: "Physical Cash Leakage",
-        dwell: "Completed Cashout",
-        description: "Physical cash withdrawal executed at 09:48 IST. Cash is irrecoverable from banking rails.",
-      },
-      rohit_hold: {
-        title: "Rohit HDFC Residual",
-        role: "Mule Account Hold",
-        bank: "HDFC Bank",
-        account: "HDFC 5010029419920",
-        amount: "₹1,20,000 Frozen",
-        statute: "BNSS §107 Complete Attachment",
-        dwell: "Secured",
-        description: "Account balance frozen under §107 BNSS awaiting magistrate disposal.",
-      },
-      sameer_hold: {
-        title: "Sameer Axis Residual",
-        role: "Mule Account Hold",
-        bank: "Axis Bank",
-        account: "AXIS 9140200410291",
-        amount: "₹80,000 Frozen",
-        statute: "BNSS §107 Complete Attachment",
-        dwell: "Secured",
-        description: "Account balance frozen under §107 BNSS awaiting magistrate disposal.",
-      },
-    };
+    const acctId = selectedNodeId.replace("::held", "");
+    const acct = flows.find((a) => a.nodeId === acctId);
+    const isHeld = selectedNodeId.endsWith("::held");
+    const dossier = acct
+      ? {
+          title: isHeld ? `${acct.holderName} (balance held)` : acct.holderName,
+          role: acct.roleLabel,
+          account: `${acct.bank} ${acct.accountMasked}`,
+          amount:
+            acct.role === "VICTIM"
+              ? `-${formatInr(acct.outflowInr)}`
+              : isHeld
+                ? `${formatInr(acct.heldInr)} held`
+                : acct.role === "MERCHANT"
+                  ? `${formatInr(acct.frozenInr)} specific lien`
+                  : acct.role === "SINK"
+                    ? `${formatInr(acct.inflowInr)} cash withdrawn`
+                    : `${formatInr(acct.inflowInr)} received`,
+          statute:
+            acct.role === "VICTIM"
+              ? "Complainant account"
+              : acct.role === "MERCHANT"
+                ? "BNSS §106 specific debit lien"
+                : acct.role === "SINK"
+                  ? "Physical cash leakage"
+                  : "BNSS §107 provisional seizure",
+          dwell: acct.dwellSeconds !== null ? formatDuration(acct.dwellSeconds) : "—",
+          description:
+            acct.role === "VICTIM"
+              ? `Debited ${formatInr(acct.outflowInr)} in ${acct.txOut} transfer${acct.txOut === 1 ? "" : "s"}.`
+              : acct.role === "SINK"
+                ? "Cash is irrecoverable from banking rails; request CCTV and the terminal journal."
+                : acct.role === "MERCHANT"
+                  ? "Commercial account. A specific lien attaches only to the traced receipt, shielding lawful turnover."
+                  : `Received ${formatInr(acct.inflowInr)}, forwarded ${formatInr(acct.outflowInr)}, ${formatInr(acct.heldInr)} still in the account${acct.frozenInr > 0 ? ` (${formatInr(acct.frozenInr)} frozen)` : ""}.`,
+        }
+      : { title: "Account", role: "Entity", account: selectedNodeId, amount: "—", statute: "BNSS statutory order", dwell: "—", description: "No further detail in this case." };
 
-    const dossier = nodeDossiers[selectedNodeId] || {
-      title: "Target Account",
-      role: "Entity",
-      bank: "Bank Rail",
-      account: selectedNodeId,
-      amount: "₹0",
-      statute: "BNSS Statutory Order",
-      dwell: "N/A",
-      description: "Forensic banking telemetry node.",
-    };
+    const row = (label: string, value: string, color = "#0F172A", mono = true) => (
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 6px", background: "#FFFFFF", border: "1px solid #F1F5F9", borderRadius: "4px" }}>
+        <span style={{ color: "#64748B", fontWeight: 600, flexShrink: 0 }}>{label}</span>
+        <span title={value} style={{ fontWeight: 700, color, fontFamily: mono ? "var(--font-mono)" : undefined, textAlign: "right", overflowWrap: "anywhere" }}>
+          {value}
+        </span>
+      </div>
+    );
 
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "10px" }}>
-        {/* Node Drawer Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "8px 10px",
-            background: "#F8FAFC",
-            borderRadius: "6px",
-            border: "1px solid #E2E8F0",
-          }}
-        >
-          <div>
-            <span style={{ fontSize: "8.5px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>
-              {dossier.role}
-            </span>
-            <div style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", marginTop: "1px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", background: "#F8FAFC", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontSize: "9px", fontWeight: 800, color: "#4F46E5", textTransform: "uppercase" }}>{dossier.role}</span>
+            <div title={dossier.title} style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", marginTop: "1px", overflowWrap: "anywhere" }}>
               {dossier.title}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onCloseNodeDrawer}
-            style={{
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              padding: "4px",
-              color: "#64748B",
-            }}
-          >
+          <button type="button" onClick={onCloseNodeDrawer} style={{ border: "none", background: "transparent", cursor: "pointer", padding: "4px", color: "#64748B" }}>
             <X size={15} />
           </button>
         </div>
-
-        {/* Dossier Fields */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "10px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#FFFFFF", border: "1px solid #F1F5F9", borderRadius: "4px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>BANK & ACCOUNT</span>
-            <span style={{ fontWeight: 700, color: "#0F172A", fontFamily: "var(--font-mono)" }}>{dossier.account}</span>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#FFFFFF", border: "1px solid #F1F5F9", borderRadius: "4px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>AMOUNT / LIEN</span>
-            <span style={{ fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)" }}>{dossier.amount}</span>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#FFFFFF", border: "1px solid #F1F5F9", borderRadius: "4px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>LEGAL BASIS</span>
-            <span style={{ fontWeight: 700, color: "#059669" }}>{dossier.statute}</span>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#FFFFFF", border: "1px solid #F1F5F9", borderRadius: "4px" }}>
-            <span style={{ color: "#64748B", fontWeight: 600 }}>DWELL TIME</span>
-            <span style={{ fontWeight: 700, color: "#64748B", fontFamily: "var(--font-mono)" }}>{dossier.dwell}</span>
-          </div>
-
-          <div style={{ padding: "6px 8px", background: "#F1F5F9", borderRadius: "5px", color: "#334155", lineHeight: 1.4, marginTop: "2px" }}>
-            {dossier.description}
-          </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "10.5px" }}>
+          {row("Bank and account", dossier.account)}
+          {row("Amount", dossier.amount)}
+          {row("Legal basis", dossier.statute, "#059669", false)}
+          {row("Dwell time", dossier.dwell, "#64748B")}
+          <div style={{ padding: "6px 8px", background: "#F1F5F9", borderRadius: "5px", color: "#334155", lineHeight: 1.4, marginTop: "2px" }}>{dossier.description}</div>
         </div>
-
-        {/* Pinned Action Buttons */}
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ marginTop: "auto" }}>
           <button
             type="button"
             onClick={onOpenOrders}
-            style={{
-              width: "100%",
-              padding: "7px 10px",
-              borderRadius: "5px",
-              border: "none",
-              background: "#4F46E5",
-              color: "#FFFFFF",
-              fontSize: "10.5px",
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "4px",
-            }}
+            style={{ width: "100%", padding: "7px 10px", borderRadius: "5px", border: "none", background: "#4F46E5", color: "#FFFFFF", fontSize: "11px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}
           >
-            <span>Draft BNSS §106/§107 Orders</span>
+            <span>Draft BNSS §106/§107 orders</span>
             <ChevronRight size={13} />
           </button>
         </div>
@@ -229,250 +123,162 @@ export const RecoveryModelPanel: React.FC<RecoveryModelPanelProps> = ({
     );
   }
 
-  // DEFAULT VIEW: RECOVERY MODEL PANEL (IMAGE 3 REPLACEMENT)
+  const maxL = fin.bookedLossInr / 100000;
+  const cashL = fin.unrecoverableCashoutInr / 100000;
+  const muleL = fin.frozenMuleInr / 100000;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "8px", boxSizing: "border-box" }}>
-      {/* =========================================================================
-          SUBSECTION 1: WHERE THE ₹5.00L IS NOW (STACKED SCALEBAR)
-          ========================================================================= */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#0F172A" }}>Where the ₹5.00L is Now</span>
-          <span
-            style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              color: "#059669",
-              background: "#ECFDF5",
-              padding: "1px 5px",
-              borderRadius: "3px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            Recovery Potential: ₹3.80L (76%)
+      {/* 1. Where the money is now */}
+      <div style={box}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A" }}>Where the {formatInrCompact(fin.bookedLossInr)} is now</span>
+          <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 6px", borderRadius: "3px", fontFamily: "var(--font-mono)" }}>
+            Recoverable {formatInrCompact(fin.recoverableInr)} ({fin.recoveryPct}%)
           </span>
         </div>
-
-        {/* 100% Width Stacked ScaleBar */}
         <ScaleBar
           min={0}
-          max={5}
-          value={3.8}
+          max={maxL}
+          value={fin.recoverableInr / 100000}
           unit="L"
           height={14}
           zones={[
-            { from: 0, to: 1.2, color: "#F43F5E", label: "Cashed Out ₹1.2L (24%)" },
-            { from: 1.2, to: 3.2, color: "#F59E0B", label: "Mule Hold ₹2.0L (40%)" },
-            { from: 3.2, to: 5.0, color: "#0284C7", label: "Merchant Lien ₹1.8L (36%)" },
+            { from: 0, to: cashL, color: "#F43F5E", label: `Cashed out ${formatInrCompact(fin.unrecoverableCashoutInr)} (${fin.cashoutPct}%)` },
+            { from: cashL, to: cashL + muleL, color: "#F59E0B", label: `Mule hold ${formatInrCompact(fin.frozenMuleInr)}` },
+            { from: cashL + muleL, to: maxL, color: "#0284C7", label: `Merchant lien ${formatInrCompact(fin.shieldedCommercialInr)}` },
           ]}
         />
-
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: "#64748B", marginTop: "4px" }}>
-          <span style={{ color: "#E11D48", fontWeight: 700 }}>■ ATM Cashout ₹1.20L</span>
-          <span style={{ color: "#B45309", fontWeight: 700 }}>■ Held in Mules ₹2.00L</span>
-          <span style={{ color: "#0284C7", fontWeight: 700 }}>■ Merchant Lien ₹1.80L</span>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 4, fontSize: "9.5px", marginTop: "4px" }}>
+          <span style={{ color: "#E11D48", fontWeight: 700 }}>■ ATM cash-out {formatInrCompact(fin.unrecoverableCashoutInr)}</span>
+          <span style={{ color: "#B45309", fontWeight: 700 }}>■ Held in mules {formatInrCompact(fin.frozenMuleInr)}</span>
+          <span style={{ color: "#0284C7", fontWeight: 700 }}>■ Merchant lien {formatInrCompact(fin.shieldedCommercialInr)}</span>
         </div>
       </div>
 
-      {/* =========================================================================
-          SUBSECTION 2: CONTAINMENT VS RECOVERY (SEPARATE INDICATORS)
-          ========================================================================= */}
+      {/* 2. Containment vs recovery */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-        {/* Indicator A: Dinic Min-Cut Containment Pips */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
-            Containment Exits
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "4px" }}>
-            {[1, 2, 3, 4].map((pip) => {
+        <div style={{ ...box, padding: "6px 8px", borderRadius: 6 }}>
+          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>Containment exits</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "4px", flexWrap: "wrap" }}>
+            {Array.from({ length: Math.max(1, model.totalEscapeRoutes) }, (_, i) => i + 1).map((pip) => {
               const isSealed = model.openEscapeExits === 0 || pip > model.openEscapeExits;
               return (
-                <span
-                  key={pip}
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    background: isSealed ? "#10B981" : "#F43F5E",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "8px",
-                    color: "#FFFFFF",
-                    fontWeight: 800,
-                  }}
-                >
+                <span key={pip} style={{ width: 12, height: 12, borderRadius: "50%", background: isSealed ? "#10B981" : "#F43F5E", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "#FFF", fontWeight: 800 }}>
                   {isSealed ? "✓" : "!"}
                 </span>
               );
             })}
           </div>
-          <div style={{ fontSize: "8.5px", color: model.openEscapeExits === 0 ? "#059669" : "#BE123C", fontWeight: 700, marginTop: "2px" }}>
-            {model.openEscapeExits === 0 ? "0 / 4 Open Exits (Sealed)" : `${model.openEscapeExits} Open Leak Exits`}
+          <div style={{ fontSize: "9.5px", color: model.openEscapeExits === 0 ? "#059669" : "#BE123C", fontWeight: 700, marginTop: "2px" }}>
+            {model.openEscapeExits === 0 ? `0 of ${model.totalEscapeRoutes} exits open (sealed)` : `${model.openEscapeExits} of ${model.totalEscapeRoutes} exits still open`}
           </div>
         </div>
-
-        {/* Indicator B: Recovery Progress Bar */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px" }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
-            Net Recovery Rate
+        <div style={{ ...box, padding: "6px 8px", borderRadius: 6 }}>
+          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>Net recovery rate</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)", marginTop: 1 }}>
+            {model.recoveryPotentialPct}% <span style={{ fontSize: 9.5, color: "#059669" }}>({formatInrCompact(fin.recoverableInr)})</span>
           </div>
-          <div style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", fontFamily: "var(--font-mono)", marginTop: "1px" }}>
-            76.0% <span style={{ fontSize: "9px", color: "#059669" }}>(₹3.80L)</span>
-          </div>
-          <div style={{ width: "100%", height: "4px", background: "#E2E8F0", borderRadius: "2px", overflow: "hidden", marginTop: "3px" }}>
-            <div style={{ width: "76%", height: "100%", background: "#059669" }} />
+          <div style={{ width: "100%", height: 4, background: "#E2E8F0", borderRadius: 2, overflow: "hidden", marginTop: 3 }}>
+            <div style={{ width: `${fin.recoveryPct}%`, height: "100%", background: "#059669" }} />
           </div>
         </div>
       </div>
 
-      {/* =========================================================================
-          SUBSECTION 3: ACCOUNTING DOCTRINES (LIBR / FIFO / PRO-RATA ON ONE AXIS)
-          ========================================================================= */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-          <span style={{ fontSize: "10px", fontWeight: 800, color: "#0F172A" }}>
-            Accounting Doctrine Comparison
-          </span>
-          <span style={{ fontSize: "8px", color: "#64748B" }}>
-            {model.rulesEqual ? "Equal until funds commingle" : "Commingled divergence"}
-          </span>
+      {/* 3. Accounting doctrines */}
+      <div style={box}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: "#0F172A" }}>Accounting doctrine comparison</span>
+          <span style={{ fontSize: 9, color: "#64748B" }}>{doctrine.rulesEqual ? "Equal until funds commingle" : "Doctrines diverge"}</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+          {doctrine.rows.map((row) => (
+            <div key={row.key}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9.5, marginBottom: 1, gap: 6 }}>
+                <span title={row.note} style={{ fontWeight: row.key === "LIBR" ? 800 : 600, color: row.key === "LIBR" ? "#059669" : "#475569" }}>
+                  {row.label}
+                  {row.key === "LIBR" ? " ★" : ""}
+                </span>
+                <span style={{ fontWeight: 800, fontFamily: "var(--font-mono)", color: row.key === "LIBR" ? "#059669" : "#475569" }}>{formatInr(row.recoverableInr)}</span>
+              </div>
+              <div style={{ width: "100%", height: 5, background: "#F1F5F9", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ width: `${row.pctOfLoss}%`, height: "100%", background: row.key === "LIBR" ? "#059669" : row.key === "FIFO" ? "#64748B" : "#8B5CF6" }} />
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
-          {/* LIBR */}
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", marginBottom: "1px" }}>
-              <span style={{ fontWeight: 800, color: "#059669" }}>LIBR (Judicial HC Precedent) ★</span>
-              <span style={{ fontWeight: 800, fontFamily: "var(--font-mono)", color: "#059669" }}>₹3,80,000</span>
+        {merchants.map((m) => (
+          <div key={m.nodeId} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 6, padding: "6px 8px", marginTop: 6 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "#0F172A", marginBottom: 3, overflowWrap: "anywhere" }} title={`${m.holderName} · ${m.bank} ${m.accountMasked}`}>
+              LIBR ledger · {m.holderName} ({m.bank} {m.accountMasked})
             </div>
-            <div style={{ width: "100%", height: "5px", background: "#F1F5F9", borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ width: "76%", height: "100%", background: "#059669" }} />
-            </div>
+            <table style={{ width: "100%", fontSize: 9.5, fontFamily: "var(--font-mono)", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ color: "#64748B", borderBottom: "1px solid #E2E8F0" }}>
+                  <th style={{ textAlign: "left", padding: 2 }}>Step</th>
+                  <th style={{ textAlign: "right", padding: 2 }}>Amount</th>
+                  <th style={{ textAlign: "right", padding: 2 }}>Tainted hold</th>
+                  <th style={{ textAlign: "right", padding: 2 }}>Clean</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: 2 }}>Traced receipt</td>
+                  <td style={{ textAlign: "right", padding: 2, color: "#E11D48" }}>+{formatInr(m.inflowInr)}</td>
+                  <td style={{ textAlign: "right", padding: 2, color: "#E11D48", fontWeight: 800 }}>{formatInr(m.frozenInr)}</td>
+                  <td style={{ textAlign: "right", padding: 2 }}>{formatInr(0)}</td>
+                </tr>
+                {isInjectClean && (
+                  <tr>
+                    <td style={{ padding: 2 }}>Clean deposit (scenario)</td>
+                    <td style={{ textAlign: "right", padding: 2, color: "#059669" }}>+{formatInr(doctrine.cleanDepositInjectedInr)}</td>
+                    <td style={{ textAlign: "right", padding: 2, color: "#E11D48", fontWeight: 800 }}>{formatInr(m.frozenInr)}</td>
+                    <td style={{ textAlign: "right", padding: 2, color: "#059669", fontWeight: 800 }}>{formatInr(doctrine.cleanDepositInjectedInr)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-
-          {/* FIFO */}
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", marginBottom: "1px" }}>
-              <span style={{ fontWeight: 600, color: "#475569" }}>FIFO (First In First Out)</span>
-              <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)", color: "#475569" }}>₹2,00,000</span>
-            </div>
-            <div style={{ width: "100%", height: "5px", background: "#F1F5F9", borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ width: "40%", height: "100%", background: "#64748B" }} />
-            </div>
-          </div>
-
-          {/* Pro-Rata */}
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8.5px", marginBottom: "1px" }}>
-              <span style={{ fontWeight: 600, color: "#475569" }}>Pro-Rata Fraction</span>
-              <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)", color: "#475569" }}>
-                ₹{model.proRataRecoverable.toLocaleString("en-IN")}
-              </span>
-            </div>
-            <div style={{ width: "100%", height: "5px", background: "#F1F5F9", borderRadius: "2px", overflow: "hidden" }}>
-              <div style={{ width: `${Math.round((model.proRataRecoverable / 500000) * 100)}%`, height: "100%", background: "#8B5CF6" }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Exact Commingling & LIBR Accounting Ledger for L2C (Apex Electronics Pvt Ltd) */}
-        <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", marginTop: "6px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
-            <span style={{ fontSize: "9px", fontWeight: 800, color: "#0F172A" }}>Apex Electronics LIBR Ledger (ICICI 001405008129)</span>
-            <span style={{ fontSize: "8px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>Roscoe v. Winder</span>
-          </div>
-          <table style={{ width: "100%", fontSize: "8px", fontFamily: "var(--font-mono)", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ color: "#64748B", borderBottom: "1px solid #E2E8F0" }}>
-                <th style={{ textAlign: "left", padding: "2px" }}>Sequence</th>
-                <th style={{ textAlign: "right", padding: "2px" }}>Credit/Debit</th>
-                <th style={{ textAlign: "right", padding: "2px" }}>Tainted Hold</th>
-                <th style={{ textAlign: "right", padding: "2px" }}>Clean Shielded</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding: "2px" }}>1. Opening Balance</td>
-                <td style={{ textAlign: "right", padding: "2px" }}>₹1,10,000</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#64748B" }}>₹0</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#059669", fontWeight: 700 }}>₹1,10,000</td>
-              </tr>
-              <tr>
-                <td style={{ padding: "2px" }}>2. Inward Fraud Debit</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48" }}>+₹1,80,000</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48", fontWeight: 800 }}>₹1,80,000</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#059669" }}>₹1,10,000</td>
-              </tr>
-              <tr>
-                <td style={{ padding: "2px" }}>3. Clean POS Settlement</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#059669" }}>+₹1,40,000</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#E11D48", fontWeight: 800 }}>₹1,80,000</td>
-                <td style={{ textAlign: "right", padding: "2px", color: "#059669", fontWeight: 800 }}>₹2,50,000</td>
-              </tr>
-            </tbody>
-          </table>
-          <div style={{ fontSize: "7.5px", color: "#475569", marginTop: "3px", borderTop: "1px dashed #CBD5E1", paddingTop: "2px" }}>
-            <strong>Sum Check:</strong> ₹2.00L (HDFC) + ₹1.80L (ICICI Lien) = <strong>₹3,80,000 Recoverable (76%)</strong> + ₹1,20,000 ATM Cashout (24%) = <strong>₹5,00,000 Total Loss (100% Reconciled)</strong>
-          </div>
+        ))}
+        <div style={{ fontSize: 9.5, color: "#475569", marginTop: 6, borderTop: "1px dashed #CBD5E1", paddingTop: 3 }}>
+          <strong>Sum check:</strong> {formatInr(fin.frozenMuleInr)} frozen in mules + {formatInr(fin.shieldedCommercialInr)} merchant lien ={" "}
+          <strong>
+            {formatInr(fin.recoverableInr)} recoverable ({fin.recoveryPct}%)
+          </strong>{" "}
+          + {formatInr(fin.unrecoverableCashoutInr)} cash-out ({fin.cashoutPct}%) ={" "}
+          <strong>
+            {formatInr(fin.bookedLossInr)} total loss{fin.isReconciled ? " (reconciled)" : ` (unaccounted ${formatInr(fin.unaccountedInr)})`}
+          </strong>
         </div>
       </div>
 
-      {/* =========================================================================
-          SUBSECTION 4: HORIZONTAL SOP TIMELINE STRIP
-          ========================================================================= */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
-        <div style={{ fontSize: "10px", fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
-          MHA 2026 Golden Hour SOP Schedule
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px", textAlign: "center" }}>
-          <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "3px", borderRadius: "4px" }}>
-            <div style={{ fontSize: "7.5px", fontWeight: 800, color: "#047857" }}>24h Freeze</div>
-            <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#065F46" }}>T+2.5h ✓</div>
-          </div>
-          <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", padding: "3px", borderRadius: "4px" }}>
-            <div style={{ fontSize: "7.5px", fontWeight: 800, color: "#4338CA" }}>7d Lien Notice</div>
-            <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#312E81" }}>T+7d</div>
-          </div>
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-            <div style={{ fontSize: "7.5px", fontWeight: 600, color: "#64748B" }}>15d Summons</div>
-            <div style={{ fontSize: "8.5px", fontWeight: 600, color: "#475569" }}>T+15d</div>
-          </div>
-          <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "3px", borderRadius: "4px" }}>
-            <div style={{ fontSize: "7.5px", fontWeight: 600, color: "#64748B" }}>90d Court</div>
-            <div style={{ fontSize: "8.5px", fontWeight: 600, color: "#475569" }}>T+90d</div>
-          </div>
+      {/* 4. SOP schedule */}
+      <div style={box}>
+        <div style={{ fontSize: 10.5, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>MHA 2026 golden hour SOP schedule</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, textAlign: "center" }}>
+          {[
+            ["24h freeze", "T+24h", "#ECFDF5", "#A7F3D0", "#047857"],
+            ["7d lien notice", "T+7d", "#EEF2FF", "#C7D2FE", "#4338CA"],
+            ["15d summons", "T+15d", "#F8FAFC", "#E2E8F0", "#64748B"],
+            ["90d court", "T+90d", "#F8FAFC", "#E2E8F0", "#64748B"],
+          ].map(([a, b, bg, bd, fg]) => (
+            <div key={a} style={{ background: bg, border: `1px solid ${bd}`, padding: 3, borderRadius: 4 }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: fg }}>{a}</div>
+              <div style={{ fontSize: 9.5, fontWeight: 800, color: fg }}>{b}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* =========================================================================
-          SUBSECTION 5: PINNED BOTTOM CTA (FILLS CARD, NO GAPS > 24px)
-          ========================================================================= */}
-      <div style={{ marginTop: "auto", paddingTop: "4px" }}>
+      <div style={{ marginTop: "auto", paddingTop: 4 }}>
         <button
           type="button"
           onClick={onOpenOrders}
-          className="hover:bg-indigo-700 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 transition-all"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            width: "100%",
-            padding: "8px 12px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#4F46E5",
-            color: "#FFFFFF",
-            fontSize: "11px",
-            fontWeight: 700,
-            cursor: "pointer",
-            boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
-            transition: "background 0.15s ease",
-          }}
+          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "8px 12px", borderRadius: 6, border: "none", background: "#4F46E5", color: "#FFFFFF", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)" }}
         >
           <FileText size={13} />
-          <span>📋 Draft BNSS §106/§107 Orders</span>
+          <span>Draft BNSS §106/§107 orders</span>
         </button>
       </div>
     </div>

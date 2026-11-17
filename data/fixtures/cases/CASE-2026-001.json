@@ -22,7 +22,12 @@
   "receiptClaim": {
     "claimedAmount": 15000.00,
     "label": "Amount on forged receipt (Canva PDF incremental edit)",
-    "discrepancyNote": "Complainant payment screenshot displays ₹15,000; authentic Finacle CBS ledger proves booked loss of ₹5,00,000.00"
+    "discrepancyNote": "Complainant payment screenshot displays ₹15,000; authentic Finacle CBS ledger proves booked loss of ₹5,00,000.00",
+    "pdfTamper": {
+      "sourceFile": "Canva_Digital_Arrest_Notice.pdf",
+      "finding": "2 %%EOF markers detected (+14.2 KB incremental append)",
+      "technicalOffset": "0x14209..0x15080"
+    }
   },
   "financials": {
     "bookedLossInr": 500000.00,

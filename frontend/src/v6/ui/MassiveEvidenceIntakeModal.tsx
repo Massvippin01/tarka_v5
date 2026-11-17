@@ -248,7 +248,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
         {/* Header */}
         <div className="px-6 py-4 bg-[#231E1B] text-[#FFFDF8] flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="size-8 rounded-lg bg-[#A85C2A] flex items-center justify-center text-white shadow-sm">
+            <div className="size-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white shadow-sm">
               <FileUp className="size-4.5" />
             </div>
             <div>
@@ -272,7 +272,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
         {/* Body */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Case Context Banner */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-[#D5CABE] text-xs">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/70 border border-[var(--line)] text-xs">
             <div className="flex items-center gap-2">
               <ShieldCheck className="size-4 text-emerald-600" />
               <span className="font-semibold text-slate-800">Target Case:</span>
@@ -306,7 +306,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
               </div>
             </div>
           ) : (
-            <div className="p-4 rounded-xl bg-white/80 border border-[#D5CABE] space-y-3">
+            <div className="p-4 rounded-xl bg-white/80 border border-[var(--line)] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <HardDrive className="size-5 text-amber-700" />
@@ -377,7 +377,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
 
           {/* Upload Progress & 10-Stage Pipeline Telemetry */}
           {jobStatus && (
-            <div className="p-4 rounded-xl bg-white border border-[#D5CABE] space-y-4">
+            <div className="p-4 rounded-xl bg-white border border-[var(--line)] space-y-4">
               <div className="flex items-center justify-between text-xs">
                 <div>
                   <span className="font-bold text-slate-800">Job: {jobStatus.job_id}</span>
@@ -507,7 +507,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
                 type="button"
                 onClick={startUpload}
                 disabled={estimating || isUploading}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#A85C2A] hover:bg-[#8F4E24] text-white shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] hover:bg-[#8F4E24] text-white shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
                 Admit Evidence to Case
               </button>

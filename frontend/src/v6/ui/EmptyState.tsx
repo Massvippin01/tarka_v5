@@ -19,7 +19,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div
       className={clsx(
-        'flex flex-col items-center justify-center p-8 text-center rounded-xl border border-dashed border-[var(--line-2)] bg-[var(--surface-1)]',
+        'flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-dashed border-[var(--line-2)] bg-[var(--glass-1)] backdrop-blur-md',
         className
       )}
     >

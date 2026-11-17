@@ -438,8 +438,9 @@ export class CaseSyncBridge {
    */
   public async listCasesFromBackend(): Promise<CaseWorkspace[] | null> {
     try {
-      const res = await apiClient.get(`/api/v1/cases`, { timeout: 2500 });
-      if (Array.isArray(res.data) && res.data.length > 0) {
+      // The SQL case list can be unavailable (no Postgres locally); cases created in TARKA or with uploads still load.
+      const res = await apiClient.get(`/api/v1/cases`, { timeout: 2500 }).catch(() => ({ data: [] as any[] }));
+      if (Array.isArray(res.data)) {
         const mapped: CaseWorkspace[] = await Promise.all(
           res.data.map(async (c: any) => {
             const meta = c.metadata_json || {};
@@ -457,23 +458,24 @@ export class CaseSyncBridge {
             return {
               caseId: c.id,
               firNumber: c.fir_number || `FIR #${c.id.slice(-4)}/2026`,
-              policeStation: c.police_station || "Noida Cyber Crime PS, UP",
+              policeStation: c.police_station || "",
               ncrpAckNo: meta.ncrp_ack_no || `1930-ACK-${c.id.slice(-6)}`,
               title: c.title,
-              typology: (c.crime_type || meta.typology || "DIGITAL_ARREST") as any,
-              complainantName: meta.complainant_name || "Complainant",
-              leadInvestigator: meta.lead_investigator || "Insp. R. K. Sharma (IO-409)",
-              claimedLossInr: meta.claimed_loss_inr || 15000,
-              bookedLossInr: meta.booked_loss_inr || 500000,
-              recoverableInr: meta.recoverable_inr || 380000,
-              commercialShieldedInr: meta.commercial_shielded_inr || 250000,
-              goldenHourRemainingMins: meta.golden_hour_remaining_mins ?? 90,
+              typology: (c.crime_type || meta.typology || "UNCLASSIFIED") as any,
+              // Unknown figures stay 0 — never invent a loss for a case (uploaded data fills them via the bundle).
+              complainantName: meta.complainant_name || "",
+              leadInvestigator: meta.lead_investigator || "",
+              claimedLossInr: meta.claimed_loss_inr || 0,
+              bookedLossInr: meta.booked_loss_inr || 0,
+              recoverableInr: meta.recoverable_inr || 0,
+              commercialShieldedInr: meta.commercial_shielded_inr || 0,
+              goldenHourRemainingMins: meta.golden_hour_remaining_mins ?? 0,
               status: c.status,
               archived_at: c.archived_at,
               closed_at: c.closed_at,
               priority: (c.priority || meta.priority || "HIGH_SYNDICATE") as any,
               currentStage: meta.current_stage || "intake",
-              gatesPassed: meta.gates_passed ?? 4,
+              gatesPassed: meta.gates_passed ?? 0,
               gatesHalted: meta.gates_halted ?? false,
               syndicateLinks: (meta.syndicate_links || []).map((l: any) => ({
                 linkedCaseId: l.linked_case_id || l.linkedCaseId,
@@ -484,12 +486,35 @@ export class CaseSyncBridge {
             };
           })
         );
-        return mapped;
+        // Cases created in TARKA, in a project, or with uploads are listed by /projects/cases, not /cases.
+        const known = new Set(mapped.map((w) => w.caseId));
+        for (const c of await this.listRegisteredCases()) {
+          if (!known.has(c.case_id)) {
+            known.add(c.case_id);
+            mapped.push({ ...uploadOnlyWorkspace(c.case_id), title: c.title || "" });
+          }
+        }
+        return mapped.length > 0 ? mapped : null;
       }
       return null;
     } catch {
       return null;
     }
+  }
+
+  private async listRegisteredCases(): Promise<{ case_id: string; title?: string }[]> {
+    try {
+      const res = await apiClient.get<{ case_id: string; title?: string }[]>(`/api/v1/projects/cases`, { timeout: 2500 });
+      return Array.isArray(res.data) ? res.data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** Open a new case on the backend; it issues the id and gives the creator access. */
+  public async createCase(title: string, projectId?: string): Promise<string> {
+    const res = await apiClient.post<{ case_id: string }>(`/api/v1/projects/cases`, { title, project_id: projectId ?? null });
+    return res.data.case_id;
   }
 
   /**
@@ -647,104 +672,59 @@ export class CaseSyncBridge {
    */
   public deriveCaseLedgerRows(
     caseId: string,
-    inv: ReconstructedInvestigation,
+    _inv: ReconstructedInvestigation,
     sortPolarity: "ASC" | "DESC" = "ASC",
     isTampered: boolean = false,
     customTamperVal?: string,
     permute: boolean = false
   ): LedgerRowData[] {
+    // Victim statement = opening balance + the complainant's own credits/debits from the case data. No filler rows.
     const fixture = getCanonicalCase(caseId);
-    const victim = inv?.nodes?.find((n) => n.entityType === "VICTIM" || n.id.includes("VICTIM")) || inv?.nodes?.[0];
-    const l1Mule = inv?.nodes?.find((n) => n.entityType === "LAYER_1_MULE" || n.id.includes("PRIMARY") || n.id.includes("M1")) || inv?.nodes?.[1];
-    const primaryEdge = inv?.edges?.[0];
+    const c = fixture.complainant;
+    const own = fixture.transactions
+      .filter((tx) => tx.category === "SALARY_CREDIT" || tx.category === "VICTIM_DRAIN")
+      .sort((a, b) => a.timestampUtc.localeCompare(b.timestampUtc));
+    const firstDrainIdx = Math.max(0, own.findIndex((tx) => tx.category === "VICTIM_DRAIN"));
+    const firstDrain = own[firstDrainIdx];
+    // LedgerCard marks sequence #14 as the disputed row: pin the first fraud debit to 14.
+    const seqBase = 14 - firstDrainIdx;
+    const toIso = (ist: string) => ist.replace(" IST", "").replace(" ", "T");
 
-    const drainTxns = fixture.transactions.filter((tx) => tx.category === "VICTIM_DRAIN");
-    const drainAmount = drainTxns[0]?.amount || primaryEdge?.amount || inv.bookedLossInr || 285000;
-    const drainRrn = drainTxns[0]?.rrn || primaryEdge?.rrn || `626510${caseId.slice(-3)}921`;
-    const secondaryTx = drainTxns[1];
-
-    const bal0 = fixture.complainant.openingBalance || 529140.0;
-    const bal1 = bal0 - 3450;
-    const salaryCredit = fixture.complainant.salaryCredit || 125000;
-    const bal2 = bal1 + salaryCredit;
-    const normalBal3 = bal2 - drainAmount;
-
-    let row3Bal = normalBal3;
-    if (isTampered) {
-      if (customTamperVal !== undefined && !isNaN(parseFloat(customTamperVal))) {
-        row3Bal = parseFloat(customTamperVal);
-      } else {
-        row3Bal = normalBal3 - 200000; // -₹2.00L deficit invariant violation
-      }
-    }
-
-    const bal4 = row3Bal - 4200;
-    const secondaryAmount = secondaryTx ? secondaryTx.amount : (primaryEdge ? Math.round(drainAmount * 0.1) : 10000);
-    const bal5 = bal4 - secondaryAmount;
-
-    const timePrefix = "2026-09-22T";
+    let balance = c.openingBalance;
     const rows: LedgerRowData[] = [
       {
-        id: `CBS-${caseId.slice(-3)}-01`,
-        sequenceNo: 11,
-        timestamp: `${timePrefix}09:15:02`,
-        description: `OPENING BALANCE B/F [${victim?.bank || fixture.complainant.bank} A/C ${victim?.accountMasked || fixture.complainant.accountMasked}]`,
+        id: `CBS-${caseId.slice(-3)}-00`,
+        sequenceNo: seqBase - 1,
+        timestamp: toIso(own[0]?.timestampIst ?? firstDrain?.timestampIst ?? ""),
+        description: `OPENING BALANCE B/F [${c.bank} A/C ${c.accountMasked}]`,
         rrn: "—",
-        debit: 0.0,
-        credit: 0.0,
-        balance: bal0,
-      },
-      {
-        id: `CBS-${caseId.slice(-3)}-02`,
-        sequenceNo: 12,
-        timestamp: `${timePrefix}09:42:18`,
-        description: "UPI/DR/6265091148/RETAIL_STORE",
-        rrn: "626509114820",
-        debit: 3450.0,
-        credit: 0.0,
-        balance: bal1,
-      },
-      {
-        id: `CBS-${caseId.slice(-3)}-03`,
-        sequenceNo: 13,
-        timestamp: permute ? `${timePrefix}10:00:14` : `${timePrefix}09:55:00`,
-        description: "NEFT/CR/LEGITIMATE_SALARY_SETTLEMENT",
-        rrn: "SBIN260922123456",
-        debit: 0.0,
-        credit: salaryCredit,
-        balance: bal2,
-      },
-      {
-        id: `CBS-${caseId.slice(-3)}-04`,
-        sequenceNo: 14,
-        timestamp: `${timePrefix}10:00:14`,
-        description: `UPI/DR/${drainRrn}/${(l1Mule?.label || "MULE").replace(/\s+/g, "_").toUpperCase()}`,
-        rrn: drainRrn,
-        debit: drainAmount,
-        credit: 0.0,
-        balance: row3Bal,
-      },
-      {
-        id: `CBS-${caseId.slice(-3)}-05`,
-        sequenceNo: 15,
-        timestamp: `${timePrefix}10:14:32`,
-        description: "UPI/DR/6265118821/MUNICIPAL_UTILITIES",
-        rrn: "626511882194",
-        debit: 4200.0,
-        credit: 0.0,
-        balance: bal4,
-      },
-      {
-        id: `CBS-${caseId.slice(-3)}-06`,
-        sequenceNo: 16,
-        timestamp: `${timePrefix}10:28:45`,
-        description: secondaryTx ? `UPI/DR/${secondaryTx.rrn}/TRANCHE_2_EXTORTION` : `IMPS/DR/SECONDARY_LAYERING_DISBURSEMENT`,
-        rrn: secondaryTx ? secondaryTx.rrn : "626512994031",
-        debit: secondaryAmount,
-        credit: 0.0,
-        balance: bal5,
+        debit: 0,
+        credit: 0,
+        balance,
       },
     ];
+    own.forEach((tx, i) => {
+      const isCredit = tx.category === "SALARY_CREDIT";
+      balance += isCredit ? tx.amount : -tx.amount;
+      let shown = balance;
+      if (isTampered && tx === firstDrain) {
+        const custom = customTamperVal !== undefined ? parseFloat(customTamperVal) : NaN;
+        shown = isNaN(custom) ? balance - 200000 : custom; // demo: -₹2.00L invariant violation
+      }
+      const counterparty = (isCredit ? tx.fromName : tx.toName).replace(/\s+/g, "_").toUpperCase();
+      rows.push({
+        id: `CBS-${caseId.slice(-3)}-${String(i + 1).padStart(2, "0")}`,
+        sequenceNo: seqBase + i,
+        // permute demo: move the credit onto the fraud debit's timestamp to create an ordering conflict
+        timestamp: toIso(permute && isCredit && firstDrain ? firstDrain.timestampIst : tx.timestampIst),
+        description: `${tx.paymentRail}/${isCredit ? "CR" : "DR"}/${tx.rrn}/${counterparty}`,
+        rrn: tx.rrn,
+        debit: isCredit ? 0 : tx.amount,
+        credit: isCredit ? tx.amount : 0,
+        balance: shown,
+      });
+      if (shown !== balance && tx === firstDrain) balance = shown; // later rows run from the tampered figure
+    });
 
     return sortPolarity === "ASC" ? rows : [...rows].reverse();
   }
@@ -1849,4 +1829,30 @@ export class CaseSyncBridge {
       edges,
     };
   }
+}
+
+/** A case known only by id (from Projects): every figure comes from its bundle once loaded. */
+export function uploadOnlyWorkspace(caseId: string): CaseWorkspace {
+  return {
+    caseId,
+    firNumber: "",
+    policeStation: "",
+    ncrpAckNo: "",
+    title: "",
+    typology: "UNCLASSIFIED",
+    complainantName: "",
+    leadInvestigator: "",
+    claimedLossInr: 0,
+    bookedLossInr: 0,
+    recoverableInr: 0,
+    commercialShieldedInr: 0,
+    goldenHourRemainingMins: 0,
+    priority: "HIGH_SYNDICATE",
+    status: "INTAKE",
+    currentStage: "intake",
+    gatesPassed: 0,
+    gatesHalted: false,
+    syndicateLinks: [],
+    artifacts: [],
+  };
 }

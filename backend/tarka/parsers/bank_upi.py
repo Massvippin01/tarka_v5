@@ -67,6 +67,29 @@ class BankUPIParser:
                 return None
         return None
 
+    @staticmethod
+    def map_columns(header: List[str]) -> Dict[str, int]:
+        """Header cells → {date,time,payer,payee,amount,ref,lat,lon: column index}."""
+        col_indices: Dict[str, int] = {}
+        for i, col in enumerate(c.strip().lower() for c in header):
+            if any(k in col for k in ["txn_date", "date", "txndate"]):
+                col_indices["date"] = i
+            elif any(k in col for k in ["txn_time", "time"]):
+                col_indices["time"] = i
+            elif any(k in col for k in ["payer", "from", "debit_acc"]):
+                col_indices["payer"] = i
+            elif any(k in col for k in ["payee", "to", "beneficiary", "merchant"]):
+                col_indices["payee"] = i
+            elif any(k in col for k in ["amount", "amt", "debit", "withdrawal"]):
+                col_indices["amount"] = i
+            elif any(k in col for k in ["rrn", "ref_no", "utr", "txn_id"]):
+                col_indices["ref"] = i
+            elif any(k in col for k in ["lat", "terminal_lat"]):
+                col_indices["lat"] = i
+            elif any(k in col for k in ["lon", "terminal_lon", "lng"]):
+                col_indices["lon"] = i
+        return col_indices
+
     def parse_text(self, csv_text: str, filename: str = "bank_statement.csv") -> ParseResult:
         """Parses bank statement CSV into canonical Facts and rejection logs."""
         sha256_hash = compute_sha256_for_content(csv_text)
@@ -100,23 +123,7 @@ class BankUPIParser:
 
             if header is None:
                 header = [c.strip().lower() for c in row]
-                for i, col in enumerate(header):
-                    if any(k in col for k in ["txn_date", "date", "txndate"]):
-                        col_indices["date"] = i
-                    elif any(k in col for k in ["txn_time", "time"]):
-                        col_indices["time"] = i
-                    elif any(k in col for k in ["payer", "from", "debit_acc"]):
-                        col_indices["payer"] = i
-                    elif any(k in col for k in ["payee", "to", "beneficiary", "merchant"]):
-                        col_indices["payee"] = i
-                    elif any(k in col for k in ["amount", "amt", "debit", "withdrawal"]):
-                        col_indices["amount"] = i
-                    elif any(k in col for k in ["rrn", "ref_no", "utr", "txn_id"]):
-                        col_indices["ref"] = i
-                    elif any(k in col for k in ["lat", "terminal_lat"]):
-                        col_indices["lat"] = i
-                    elif any(k in col for k in ["lon", "terminal_lon", "lng"]):
-                        col_indices["lon"] = i
+                col_indices = self.map_columns(header)
                 continue
 
             raw_line = ",".join(row)

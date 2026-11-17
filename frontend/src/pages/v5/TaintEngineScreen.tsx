@@ -32,6 +32,8 @@ import { sha256HexSync } from "../../utils/sha256";
 import { CaseSyncBridge } from "../../services/caseSyncBridge";
 import { reconstruct5FileInvestigation } from "../../utils/investigationReconstructor";
 import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
+import { formatInrCompact } from "../../lib/formatInr";
+import { selectMoneyFlow } from "../../selectors/caseSelectors";
 import { MoneyFlowSankeyGraph } from "../../components/tarka/taint/MoneyFlowSankeyGraph";
 import { GoldenHourDecayChart } from "../../components/tarka/taint/GoldenHourDecayChart";
 import { RecoveryModelPanel } from "../../components/tarka/taint/RecoveryModelPanel";
@@ -88,6 +90,8 @@ export const TaintEngineScreen: React.FC = () => {
   const recModel = useMemo(() => {
     return recoveryModel(isInjectClean, freezeBudgetK, activeCaseId || undefined);
   }, [isInjectClean, freezeBudgetK, activeCaseId]);
+
+  const legacyFlow = useMemo(() => selectMoneyFlow(getCanonicalCase(activeCaseId || "CASE-2026-001")), [activeCaseId]);
 
   const { data: actionsData } = useQuery<CaseActionsResponse>({
     queryKey: ["case", activeCaseId, "actions"],
@@ -652,11 +656,7 @@ export const TaintEngineScreen: React.FC = () => {
                           selectedRule={selectedRule}
                           selectedNodeId={selectedNodeId}
                           onSelectNode={setSelectedNodeId}
-                          victimName={investigation.complainantName}
-                          lossAmount={investigation.bookedLossInr}
-                          primaryMuleName={l1Node?.label}
-                          primaryMuleAccount={l1Node?.bank ? `${l1Node.bank} ${l1Node.accountMasked}` : undefined}
-                          victimAccount={victimNode?.bank ? `${victimNode.bank} ${victimNode.accountMasked}` : undefined}
+                          flow={legacyFlow}
                         />
                       </div>
 
@@ -677,11 +677,11 @@ export const TaintEngineScreen: React.FC = () => {
                             Recoverable Capital Over Time (Golden-Hour Decay)
                           </span>
                           <span style={{ fontSize: "8.5px", color: "#64748B" }}>
-                            ATM Step: -₹1.20L at T+18m | Current Lien: T+2.5h (₹3.80L Secured)
+                            Cash-out: -{formatInrCompact(recModel.atmCashedOut)} | Recoverable: {formatInrCompact(recModel.netRecoverableSum)}
                           </span>
                         </div>
                         <div style={{ flex: "1 1 0%", minHeight: 0 }}>
-                          <GoldenHourDecayChart height="100%" />
+                          <GoldenHourDecayChart height="100%" lossInr={recModel.grossVictimLoss} recoverableInr={recModel.netRecoverableSum} cashoutInr={recModel.atmCashedOut} />
                         </div>
                       </div>
                     </div>

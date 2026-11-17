@@ -1,6 +1,8 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useCountUp } from './useCountUp';
+import { SourceNumber } from './SourceNumber';
+import type { MoneyFigure } from '../../selectors/caseSelectors';
 
 export interface KpiCardProps {
   label: React.ReactNode;
@@ -11,6 +13,8 @@ export interface KpiCardProps {
   iconClass?: string;
   foot?: React.ReactNode;
   onWhy?: () => void;
+  /** Makes the value open the transaction rows behind it. */
+  figure?: MoneyFigure;
   className?: string;
 }
 
@@ -23,6 +27,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   iconClass,
   foot,
   onWhy,
+  figure,
   className,
 }) => {
   const displayVal = useCountUp(value, { isInr, showPaise });
@@ -46,7 +51,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
           </button>
         )}
       </div>
-      <div className="k-val v6-mono">{displayVal}</div>
+      <div className="k-val v6-mono">{figure ? <SourceNumber figure={figure}>{displayVal}</SourceNumber> : displayVal}</div>
       {foot && <div className="k-foot">{foot}</div>}
     </div>
   );

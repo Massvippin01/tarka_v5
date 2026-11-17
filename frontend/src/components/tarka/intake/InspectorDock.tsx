@@ -19,6 +19,7 @@ import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
 import { CANONICAL_CASES } from "../../../fixtures/cases";
+import { formatInr } from "../../../lib/formatInr";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 import { ScaleBar } from "../kit/ScaleBar";
 import { sha256HexSync, computeMerkleRootSync } from "../../../utils/sha256";
@@ -67,6 +68,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   const merchant = canonicalCase?.accounts?.find((a: any) => a.holderType === "BONA_FIDE_MERCHANT") || canonicalCase?.accounts?.[4];
   const merchantName = merchant?.holderName || "Bona-Fide Commercial Merchant";
   const merchantGstin = merchant?.gstin || "07AAACA1234F1Z8";
+  const pdfTamper = canonicalCase?.receiptClaim?.pdfTamper;
 
   // Tab 1 (RRN) state
   const [selectedRail, setSelectedRail] = useState<"UPI" | "NEFT" | "RTGS">("UPI");
@@ -279,6 +281,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           >
             <FileText size={12} color={activeDockTab === "pdf" ? "#BE123C" : "#64748B"} />
             <span>PDF</span>
+            {pdfTamper && (
             <span
               style={{
                 fontSize: "7.5px",
@@ -291,6 +294,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             >
               2 %%EOF
             </span>
+            )}
           </Tabs.Trigger>
 
           {/* TAB 3: PRIVACY */}
@@ -951,6 +955,11 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             gap: "10px",
           }}
         >
+          {!pdfTamper ? (
+            <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px", fontSize: "11px", color: "#166534", lineHeight: 1.5 }}>
+              <strong>No edited documents in this case.</strong> {canonicalCase?.receiptClaim?.discrepancyNote}
+            </div>
+          ) : (<>
           {/* Visual Binary File Map Bar (0x00000 to 0x15080) */}
           <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", padding: "8px 10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "10px", color: "#64748B", marginBottom: "6px" }}>
@@ -1125,6 +1134,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               The claimant PDF file contains 2 distinct %%EOF trailers. Canva added an updated xref table modifying the visual text layer from ₹2,15,000 to ₹15,000 while leaving the underlying stream intact.
             </div>
           </div>
+          </>)}
         </Tabs.Content>
 
         {/* =====================================================================
@@ -1334,7 +1344,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               severity: "BLOCKING",
               formula: "Bal[k] = Bal[k-1] + Cr[k] - Dr[k]",
               expected: "0.00 Deficit across all rows",
-              observed: isRow14Tampered ? "Δ ₹2,00,000 Deficit at Row #14 ✗" : "6/6 Reconciled ✓",
+              observed: isRow14Tampered ? "Δ ₹2,00,000 Deficit at Row #14 ✗" : "All rows reconciled ✓",
               passed: !isRow14Tampered,
               onBreak: onToggleRow14Tamper,
               breakLabel: isRow14Tampered ? "Restore Row #14" : "Tamper Row #14 Balance",
@@ -1355,8 +1365,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               name: "CBS ↔ Switch Settlement",
               severity: "BLOCKING",
               formula: "CBS.Debit == Switch.Settlement",
-              expected: "₹2,15,000.00 Certified Debit",
-              observed: "Matched ₹2,15,000.00 ✓",
+              expected: `${formatInr(canonicalCase?.financials?.bookedLossInr ?? 0)} certified debit`,
+              observed: `Matched ${formatInr(canonicalCase?.financials?.bookedLossInr ?? 0)} ✓`,
               passed: true,
             },
             {
@@ -1365,8 +1375,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               severity: "FLAGGING",
               formula: "Trailer.Count == 1",
               expected: "1 %%EOF Trailer",
-              observed: "2 Trailers (Canva Appended Overwrite ✗)",
-              passed: false,
+              observed: pdfTamper ? "2 Trailers (Canva Appended Overwrite ✗)" : "No edited documents ✓",
+              passed: !pdfTamper,
             },
             {
               id: "I5",
