@@ -1,0 +1,30 @@
+{
+  "station": {
+    "station_name": "Noida Cyber Crime PS, UP",
+    "district": "Gautam Buddha Nagar",
+    "state": "Uttar Pradesh",
+    "letterhead_title": "CYBER CRIME POLICE STATION",
+    "letterhead_subtitle": "COMMISSIONERATE GAUTAM BUDDHA NAGAR, UTTAR PRADESH",
+    "default_io_name": "Insp. Rajeshwar Rao",
+    "default_io_badge": "UP-CY-4091",
+    "show_national_emblem": true
+  },
+  "scoring_weights": {
+    "velocity": 0.35,
+    "fan_out": 0.25,
+    "structuring": 0.2,
+    "account_tenure": 0.2
+  },
+  "investigation_defaults": {
+    "golden_hour_sla_mins": 180,
+    "mule_alert_threshold": 75,
+    "high_value_threshold_inr": 100000,
+    "timezone": "Asia/Kolkata (IST)"
+  },
+  "ai_config": {
+    "ollama_endpoint": "http://127.0.0.1:11434",
+    "default_model": "llama3.2:latest",
+    "enable_voice_narration": false
+  },
+  "updated_at": "2026-11-14T14:50:01.769793+00:00"
+}

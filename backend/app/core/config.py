@@ -66,6 +66,10 @@ class Settings(BaseSettings):
         default=False,
         description="Enable debug mode (MUST be false in staging/production)"
     )
+    DEBUG_SQL: bool = Field(
+        default=False,
+        description="Enable SQLAlchemy SQL query echo logging (default False to prevent log spam)"
+    )
     PORT: int = Field(
         default=8000,
         description="API HTTP port (1-65535)"

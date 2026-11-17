@@ -1,0 +1,19 @@
+{
+  "case_id": "CASE_SUTRAM_2026_001",
+  "fir_number": "FIR #149/2026 Cyber Crime PS (Special Cell)",
+  "title": "Operation GhostLayer: Multi-Jurisdictional UPI Mule Syndicate",
+  "description": "Investigation into unauthorized fund siphonage of \u20b915,00,000 from victim Sunita Verma via reverse-engineered APK overlay, fast-channeled through multiple inter-bank mule accounts and ATM cashouts.",
+  "primary_io_name": "Insp. Vikram Sharma",
+  "primary_io_badge": "DL-CYBER-8842",
+  "jurisdiction": "Cyber Crime Police Station, South District, New Delhi",
+  "incident_time_start_utc": "2026-10-15T08:30:00Z",
+  "incident_time_end_utc": "2026-10-15T10:45:00Z",
+  "created_timestamp_utc": "2026-10-15T11:00:00Z",
+  "status": "INVESTIGATION",
+  "schema_version": "v1.0.0",
+  "metadata": {
+    "priority": "HIGH",
+    "statutory_act": "Bharatiya Nyaya Sanhita (BNS) \u00a7318(4), \u00a7319(2), IT Act \u00a766C, \u00a766D",
+    "bsa_certificate_required": true
+  }
+}

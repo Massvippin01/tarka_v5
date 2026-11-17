@@ -108,7 +108,7 @@ export function executeUIActions(
         break;
 
       case "OPEN_EVIDENCE":
-      case "SHOW_SOURCE":
+      case "SHOW_SOURCE": {
         const evId = args.evidence_id || args.artifact_id;
         if (evId) {
           handlers.selectEvidence(evId);
@@ -120,6 +120,7 @@ export function executeUIActions(
           }
         }
         break;
+      }
 
       case "SHOW_SUPPORT":
         if (args.claim_id) {

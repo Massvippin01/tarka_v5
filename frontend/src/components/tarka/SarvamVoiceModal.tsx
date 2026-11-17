@@ -159,6 +159,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
   const [sarvamStatus, setSarvamStatus] = useState<{
     api_configured?: boolean;
+    provider_reachable?: string;
     stt_model?: string;
     tts_model?: string;
     mode?: string;
@@ -194,6 +195,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
   const lastSpeechTimeRef = useRef<number>(0);
   const consecutiveVoiceFramesRef = useRef<number>(0);
   const playbackStartTimeRef = useRef<number>(0);
+  const lastAudioLevelUpdateRef = useRef<number>(0);
+  const lastAudioLevelValRef = useRef<number>(0);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -239,13 +242,20 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       cancelAnimationFrame(vadRafIdRef.current);
       vadRafIdRef.current = null;
     }
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+    if (mediaRecorderRef.current) {
       try {
-        mediaRecorderRef.current.stop();
+        // Disarm event listeners so that stopping does not trigger post-cleanup transcription
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = null;
+        if (mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+        }
       } catch {
         // ignore
       }
+      mediaRecorderRef.current = null;
     }
+    audioChunksRef.current = [];
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
@@ -344,7 +354,16 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       }
       const rms = Math.sqrt(sumSquares / timeData.length);
       const levelPercent = Math.min(100, Math.round(rms * 250));
-      setAudioLevel(levelPercent);
+      const frameNow = Date.now();
+      // Throttle state update to at most 25 updates/sec or notable audible jumps to prevent 60fps re-render overhead
+      if (
+        frameNow - lastAudioLevelUpdateRef.current >= 40 ||
+        Math.abs(levelPercent - lastAudioLevelValRef.current) >= 4
+      ) {
+        lastAudioLevelUpdateRef.current = frameNow;
+        lastAudioLevelValRef.current = levelPercent;
+        setAudioLevel(levelPercent);
+      }
 
       // 2. Compute Voice Band Energy (approx 300Hz - 3400Hz speech formants)
       // With fftSize 512 and 16-48kHz sampleRate, speech band spans bins 5 to 60
@@ -446,9 +465,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
     vadRafIdRef.current = requestAnimationFrame(checkFrame);
   }, [cancelSpeech]);
 
-  // Start a recording chunk
-  const startRecordingTurn = useCallback(() => {
-    if (!mediaStreamRef.current) return;
+  // Start a recording chunk (supports hands-free automatic trigger and manual push-to-talk)
+  const startRecordingTurn = useCallback(async () => {
+    if (!mediaStreamRef.current) {
+      const granted = await setupMicrophoneStream();
+      if (!granted || !mediaStreamRef.current) return;
+    }
     try {
       audioChunksRef.current = [];
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -479,7 +501,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       setIsRecording(false);
       isRecordingRef.current = false;
     }
-  }, []);
+  }, [setupMicrophoneStream]);
   startRecordingTurnRef.current = startRecordingTurn;
 
   // Stop recording chunk
@@ -574,29 +596,30 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
         setVadState("PLAYING_RESPONSE");
         playbackStartTimeRef.current = Date.now();
 
-        player.onended = () => {
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
+        const handlePlaybackEnded = () => {
+          if (activeTurnTokenRef.current === turnToken) {
+            setIsSpeaking(false);
+            isSpeakingRef.current = false;
+            if (!isRecordingRef.current) {
+              setVadState("IDLE_LISTENING");
+            }
+          }
         };
 
-        player.onerror = () => {
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
-        };
+        player.onended = handlePlaybackEnded;
+        player.onerror = handlePlaybackEnded;
 
         player.play().catch((err) => {
           console.warn("Audio play prevented or interrupted:", err);
-          setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          setVadState("IDLE_LISTENING");
+          handlePlaybackEnded();
         });
       } catch (e) {
         console.error("Failed to play audio:", e);
         setIsSpeaking(false);
         isSpeakingRef.current = false;
-        setVadState("IDLE_LISTENING");
+        if (!isRecordingRef.current) {
+          setVadState("IDLE_LISTENING");
+        }
       }
     },
     []
@@ -706,8 +729,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             setTtsUnavailable(false);
             setTtsDiagnosticNotice("");
             playBase64Audio(res.speech.audio_base64, turnToken);
-          } else if (typeof window !== "undefined" && window.speechSynthesis && res.speech.spoken_text) {
-            // Air-gap offline voice fallback via Web Speech API (zero external calls)
+          } else if (res.speech.use_browser_speech && typeof window !== "undefined" && window.speechSynthesis && res.speech.spoken_text) {
+            // Air-gap offline voice fallback via Web Speech API (zero external calls, only when explicitly authorized)
             setActiveSpeechProvider("WEB_SPEECH_OFFLINE");
             setTtsUnavailable(false);
             setTtsDiagnosticNotice("Air-Gap Offline: Playing audio via browser on-device Web Speech API.");
@@ -719,14 +742,22 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             utterance.pitch = 1.0;
             utterance.lang = "en-IN";
             utterance.onend = () => {
-              setIsSpeaking(false);
-              isSpeakingRef.current = false;
-              setVadState("IDLE_LISTENING");
+              if (activeTurnTokenRef.current === turnToken) {
+                setIsSpeaking(false);
+                isSpeakingRef.current = false;
+                if (!isRecordingRef.current) {
+                  setVadState("IDLE_LISTENING");
+                }
+              }
             };
             utterance.onerror = () => {
-              setIsSpeaking(false);
-              isSpeakingRef.current = false;
-              setVadState("IDLE_LISTENING");
+              if (activeTurnTokenRef.current === turnToken) {
+                setIsSpeaking(false);
+                isSpeakingRef.current = false;
+                if (!isRecordingRef.current) {
+                  setVadState("IDLE_LISTENING");
+                }
+              }
             };
             window.speechSynthesis.speak(utterance);
           } else {
@@ -907,8 +938,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.78)",
-        backdropFilter: "blur(8px)",
+        backgroundColor: "rgba(15, 23, 42, 0.45)",
+        backdropFilter: "blur(6px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -926,9 +957,9 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
           flexDirection: "column",
           overflow: "hidden",
           borderRadius: "12px",
-          backgroundColor: "#0D111A",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #CBD5E1",
+          boxShadow: "0 25px 60px -15px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(15, 23, 42, 0.05)",
         }}
       >
         {/* Tier 1: Compact Header */}
@@ -936,18 +967,18 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
           className="glass-modal-header"
           style={{
             padding: "12px 20px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: "1px solid #E2E8F0",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             flexShrink: 0,
-            backgroundColor: "rgba(13, 17, 26, 0.95)",
+            backgroundColor: "#F8FAFC",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <span
               style={{
-                backgroundColor: "#2563EB",
+                backgroundColor: "#4F46E5",
                 color: "#FFFFFF",
                 fontSize: "11px",
                 fontWeight: 700,
@@ -962,7 +993,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             >
               <Zap size={11} /> TARKA ONE
             </span>
-            <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "#F3F4F6" }}>
+            <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#0F172A" }}>
               Conversational Forensics Workstation
             </h2>
             <span
@@ -970,32 +1001,53 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 fontSize: "11px",
                 padding: "2px 8px",
                 borderRadius: "4px",
-                backgroundColor: "rgba(59, 130, 246, 0.12)",
-                border: "1px solid rgba(59, 130, 246, 0.3)",
-                color: "#93C5FD",
+                backgroundColor: "#EEF2FF",
+                border: "1px solid #C7D2FE",
+                color: "#4338CA",
+                fontWeight: 600,
                 fontFamily: "var(--font-mono)",
                 fontVariantNumeric: "tabular-nums",
               }}
             >
               CASE: {caseId}
             </span>
-            <span
-              style={{
-                fontSize: "11px",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                backgroundColor: "rgba(16, 185, 129, 0.14)",
-                border: "1px solid rgba(16, 185, 129, 0.35)",
-                color: "#34D399",
-                fontFamily: "var(--font-mono)",
-                fontVariantNumeric: "tabular-nums",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <Shield size={10} color="#34D399" /> 🔒 On-Premise Air-Gapped Indic Speech Engine (Local Quantized INT4 ONNX / WebGPU Worker · 0 External API Calls)
-            </span>
+            {sarvamStatus?.api_configured && sarvamStatus?.provider_reachable !== "no" && sarvamStatus?.mode !== "OFFLINE_LOCAL_FALLBACK" ? (
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  color: "#047857",
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Radio size={10} color="#059669" /> 🟢 Sarvam AI Cloud Voice Active (Disclosed Transcription · Saaras STT / Bulbul TTS)
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#F1F5F9",
+                  border: "1px solid #CBD5E1",
+                  color: "#334155",
+                  fontFamily: "var(--font-mono)",
+                  fontVariantNumeric: "tabular-nums",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Shield size={10} color="#4F46E5" /> 🔵 Deterministic Offline Air-Gap Mode (Local Air-Gapped Engine · 0 External Calls)
+              </span>
+            )}
           </div>
           <button
             onClick={() => {
@@ -1005,7 +1057,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             style={{
               background: "none",
               border: "none",
-              color: "#9CA3AF",
+              color: "#64748B",
               cursor: "pointer",
               padding: "6px",
               display: "flex",
@@ -1034,17 +1086,17 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             <div
               style={{
                 padding: "10px 14px",
-                backgroundColor: "rgba(244, 63, 94, 0.12)",
-                border: "1px solid #F43F5E",
+                backgroundColor: "#FFF1F2",
+                border: "1px solid #FECDD3",
                 borderRadius: "6px",
-                color: "#FECDD3",
+                color: "#BE123C",
                 fontSize: "12px",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
               }}
             >
-              <AlertTriangle size={15} style={{ color: "#F43F5E", flexShrink: 0 }} />
+              <AlertTriangle size={15} style={{ color: "#E11D48", flexShrink: 0 }} />
               <div>
                 <strong>Notice:</strong> {errorMessage}
               </div>
@@ -1055,8 +1107,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
           <div
             style={{
               padding: "16px 20px",
-              backgroundColor: "#131722",
-              border: "1px solid rgba(255, 255, 255, 0.07)",
+              backgroundColor: "#F8FAFC",
+              border: "1px solid #E2E8F0",
               borderRadius: "8px",
               display: "flex",
               flexDirection: "column",
@@ -1091,7 +1143,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
             {/* Tier 3: Clearly Separated Voice-State Label & Controls */}
             <div>
-              <div style={{ fontSize: "13px", fontWeight: 600, color: "#F3F4F6", minHeight: "20px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A", minHeight: "20px" }}>
                 {vadState === "INTERRUPTED"
                   ? "⚡ Barge-in Detected • Playback stopped • Listening to new command..."
                   : isRecording
@@ -1129,21 +1181,21 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     padding: "6px 16px",
                     borderRadius: "20px",
                     backgroundColor: isRecording
-                      ? "#EF4444"
+                      ? "#DC2626"
                       : isSpeaking
-                      ? "#10B981"
+                      ? "#059669"
                       : vadState === "INTERRUPTED"
-                      ? "#F59E0B"
-                      : "#2563EB",
+                      ? "#D97706"
+                      : "#4F46E5",
                     border: "none",
                     color: "#FFFFFF",
                     fontSize: "12px",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: transcribing || executing ? "not-allowed" : "pointer",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "6px",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                    boxShadow: "0 2px 6px rgba(79, 70, 229, 0.25)",
                   }}
                 >
                   {isRecording ? (
@@ -1167,10 +1219,10 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     }}
                     style={{
                       padding: "6px 14px",
-                      backgroundColor: "rgba(239, 68, 68, 0.2)",
-                      border: "1px solid #EF4444",
+                      backgroundColor: "#FFF1F2",
+                      border: "1px solid #FECDD3",
                       borderRadius: "20px",
-                      color: "#FCA5A5",
+                      color: "#BE123C",
                       fontSize: "12px",
                       fontWeight: 600,
                       cursor: "pointer",
@@ -1189,12 +1241,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
             {/* Live Audio Energy Visualizer Bar */}
             {micPermission === "granted" && (
-              <div style={{ width: "220px", height: "4px", backgroundColor: "#1E293B", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ width: "220px", height: "4px", backgroundColor: "#E2E8F0", borderRadius: "2px", overflow: "hidden" }}>
                 <div
                   style={{
                     height: "100%",
                     width: `${audioLevel}%`,
-                    backgroundColor: isSpeaking ? "#10B981" : isRecording ? "#EF4444" : "#60A5FA",
+                    backgroundColor: isSpeaking ? "#059669" : isRecording ? "#DC2626" : "#4F46E5",
                     transition: "width 0.05s ease",
                   }}
                 />
@@ -1206,7 +1258,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               className="voice-diagnostics-row"
               style={{
                 fontSize: "11px",
-                color: "#9CA3AF",
+                color: "#475569",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1224,23 +1276,23 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   gap: "5px",
                   backgroundColor:
                     effectiveAmbientState === "PROCESSING"
-                      ? "rgba(245, 158, 11, 0.2)"
+                      ? "#FFFBEB"
                       : effectiveAmbientState === "READY"
-                      ? "rgba(16, 185, 129, 0.15)"
-                      : "#1E222D",
+                      ? "#ECFDF5"
+                      : "#FFFFFF",
                   border: `1px solid ${
                     effectiveAmbientState === "PROCESSING"
-                      ? "#F59E0B"
+                      ? "#FDE68A"
                       : effectiveAmbientState === "READY"
-                      ? "#10B981"
-                      : "rgba(255,255,255,0.12)"
+                      ? "#A7F3D0"
+                      : "#CBD5E1"
                   }`,
                   color:
                     effectiveAmbientState === "PROCESSING"
-                      ? "#FBBF24"
+                      ? "#B45309"
                       : effectiveAmbientState === "READY"
-                      ? "#34D399"
-                      : "#9CA3AF",
+                      ? "#047857"
+                      : "#334155",
                   padding: "3px 10px",
                   borderRadius: "4px",
                   fontSize: "11px",
@@ -1259,9 +1311,9 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 <span
                   style={{
                     fontSize: "10px",
-                    color: effectiveAmbientState === "PROCESSING" ? "#FBBF24" : "#34D399",
-                    backgroundColor: effectiveAmbientState === "PROCESSING" ? "rgba(245, 158, 11, 0.1)" : "rgba(16, 185, 129, 0.1)",
-                    border: `1px solid ${effectiveAmbientState === "PROCESSING" ? "rgba(245, 158, 11, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+                    color: effectiveAmbientState === "PROCESSING" ? "#B45309" : "#047857",
+                    backgroundColor: effectiveAmbientState === "PROCESSING" ? "#FFFBEB" : "#ECFDF5",
+                    border: `1px solid ${effectiveAmbientState === "PROCESSING" ? "#FDE68A" : "#A7F3D0"}`,
                     padding: "2px 6px",
                     borderRadius: "3px",
                     fontFamily: "var(--font-mono)",
@@ -1279,7 +1331,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    color: micSettings.aec ? "#34D399" : "#F59E0B",
+                    color: micSettings.aec ? "#047857" : "#B45309",
                     fontSize: "11px",
                     fontFamily: "var(--font-mono)",
                     fontVariantNumeric: "tabular-nums",
@@ -1294,8 +1346,9 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               {bargeInCount > 0 && (
                 <span
                   style={{
-                    backgroundColor: "rgba(245, 158, 11, 0.15)",
-                    color: "#FBBF24",
+                    backgroundColor: "#FEF3C7",
+                    color: "#B45309",
+                    border: "1px solid #FDE68A",
                     padding: "2px 6px",
                     borderRadius: "3px",
                     fontSize: "10px",
@@ -1309,7 +1362,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
               {/* Voice Preset Selector */}
               <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ color: "#6B7280" }}>Voice:</span>
+                <span style={{ color: "#64748B" }}>Voice:</span>
                 <select
                   value={speaker}
                   onChange={(e) => {
@@ -1318,9 +1371,9 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     localStorage.setItem("tarka_voice_speaker", val);
                   }}
                   style={{
-                    backgroundColor: "#1A1E29",
-                    color: "#93C5FD",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    backgroundColor: "#FFFFFF",
+                    color: "#0F172A",
+                    border: "1px solid #CBD5E1",
                     borderRadius: "4px",
                     padding: "2px 6px",
                     fontSize: "11px",
@@ -1338,14 +1391,14 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
               {/* Language Selector */}
               <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ color: "#6B7280" }}>Lang:</span>
+                <span style={{ color: "#64748B" }}>Lang:</span>
                 <select
                   value={languageCode}
                   onChange={(e) => setLanguageCode(e.target.value)}
                   style={{
-                    backgroundColor: "#1A1E29",
-                    color: "#60A5FA",
-                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    backgroundColor: "#FFFFFF",
+                    color: "#0F172A",
+                    border: "1px solid #CBD5E1",
                     borderRadius: "4px",
                     padding: "2px 6px",
                     fontSize: "11px",
@@ -1375,10 +1428,10 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               style={{
                 flex: 1,
                 padding: "8px 12px",
-                backgroundColor: "#141824",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                backgroundColor: "#FFFFFF",
+                border: "1px solid #CBD5E1",
                 borderRadius: "6px",
-                color: "#F3F4F6",
+                color: "#0F172A",
                 fontSize: "12px",
                 outline: "none",
               }}
@@ -1388,8 +1441,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               disabled={!queryText.trim() || executing}
               style={{
                 padding: "8px 16px",
-                backgroundColor: queryText.trim() && !executing ? "#2563EB" : "#1E293B",
-                color: "#FFFFFF",
+                backgroundColor: queryText.trim() && !executing ? "#4F46E5" : "#E2E8F0",
+                color: queryText.trim() && !executing ? "#FFFFFF" : "#94A3B8",
                 border: "none",
                 borderRadius: "6px",
                 fontSize: "12px",
@@ -1408,7 +1461,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
 
           {/* Tier 6: Concise Suggested Prompts Chips */}
           <div>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#6B7280", letterSpacing: "0.5px", marginBottom: "6px" }}>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", letterSpacing: "0.5px", marginBottom: "6px" }}>
               SUGGESTED INVESTIGATIVE QUERIES:
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -1421,10 +1474,10 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   }}
                   style={{
                     padding: "4px 8px",
-                    backgroundColor: "#161B26",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    backgroundColor: "#F8FAFC",
+                    border: "1px solid #CBD5E1",
                     borderRadius: "4px",
-                    color: "#93C5FD",
+                    color: "#334155",
                     fontSize: "11px",
                     cursor: "pointer",
                     textAlign: "left",
@@ -1442,8 +1495,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             <div
               style={{
                 padding: "14px 16px",
-                backgroundColor: "#131722",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                backgroundColor: "#F8FAFC",
+                border: "1px solid #E2E8F0",
                 borderRadius: "8px",
                 display: "flex",
                 flexDirection: "column",
@@ -1462,9 +1515,9 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                           style={{
                             padding: "3px 6px",
                             borderRadius: "3px",
-                            backgroundColor: isDone ? "rgba(16, 185, 129, 0.15)" : "#1E222D",
-                            border: `1px solid ${isDone ? "#10B981" : "rgba(255,255,255,0.08)"}`,
-                            color: isDone ? "#34D399" : "#6B7280",
+                            backgroundColor: isDone ? "#ECFDF5" : "#FFFFFF",
+                            border: `1px solid ${isDone ? "#A7F3D0" : "#CBD5E1"}`,
+                            color: isDone ? "#047857" : "#64748B",
                             fontSize: "10px",
                             fontWeight: 600,
                             fontFamily: "var(--font-mono)",
@@ -1474,13 +1527,13 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                           {isDone && <Check size={10} style={{ marginRight: "3px", display: "inline" }} />}
                           {stage}
                         </div>
-                        {sIdx < 5 && <span style={{ color: "#4B5563", fontSize: "10px" }}>→</span>}
+                        {sIdx < 5 && <span style={{ color: "#94A3B8", fontSize: "10px" }}>→</span>}
                       </React.Fragment>
                     );
                   })}
                 </div>
                 {agentResponse.execution_latency_ms !== undefined && (
-                  <div style={{ fontSize: "10px", color: "#60A5FA", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+                  <div style={{ fontSize: "10px", color: "#4F46E5", fontWeight: 600, fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                     Latency: {agentResponse.execution_latency_ms}ms
                   </div>
                 )}
@@ -1491,15 +1544,15 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 <div
                   style={{
                     padding: "12px 14px",
-                    backgroundColor: "rgba(245, 158, 11, 0.12)",
-                    border: "1px solid #F59E0B",
+                    backgroundColor: "#FFFBEB",
+                    border: "1px solid #FDE68A",
                     borderRadius: "6px",
                   }}
                 >
-                  <div style={{ fontWeight: 600, color: "#FBBF24", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ fontWeight: 700, color: "#B45309", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                     <AlertTriangle size={14} /> Human Confirmation Required (Consequential Statutory Action)
                   </div>
-                  <div style={{ fontSize: "12px", color: "#F3F4F6", marginTop: "5px", lineHeight: 1.5 }}>
+                  <div style={{ fontSize: "12px", color: "#1E293B", marginTop: "5px", lineHeight: 1.5 }}>
                     {agentResponse.confirmation_prompt}
                   </div>
                   <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
@@ -1523,10 +1576,10 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                       onClick={handleCancelAction}
                       style={{
                         padding: "5px 12px",
-                        backgroundColor: "#1E222D",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #CBD5E1",
                         borderRadius: "4px",
-                        color: "#D1D5DB",
+                        color: "#334155",
                         fontSize: "11px",
                         cursor: "pointer",
                       }}
@@ -1541,8 +1594,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               <div
                 style={{
                   padding: "12px 14px",
-                  backgroundColor: "rgba(37, 99, 235, 0.08)",
-                  border: "1px solid rgba(59, 130, 246, 0.28)",
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid #C7D2FE",
                   borderRadius: "6px",
                 }}
               >
@@ -1550,7 +1603,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   style={{
                     fontSize: "11px",
                     fontWeight: 700,
-                    color: "#60A5FA",
+                    color: "#4F46E5",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
@@ -1566,7 +1619,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   className="voice-modal-response-scroll"
                   style={{
                     fontSize: "13px",
-                    color: "#F3F4F6",
+                    color: "#0F172A",
                     lineHeight: 1.6,
                     maxHeight: "180px",
                     overflowY: "auto",
@@ -1581,10 +1634,10 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 <div
                   style={{
                     padding: "10px 14px",
-                    backgroundColor: "rgba(245, 158, 11, 0.12)",
-                    border: "1px solid rgba(245, 158, 11, 0.4)",
+                    backgroundColor: "#FFFBEB",
+                    border: "1px solid #FDE68A",
                     borderRadius: "6px",
-                    color: "#FBBF24",
+                    color: "#92400E",
                     fontSize: "12px",
                     display: "flex",
                     alignItems: "center",
@@ -1621,7 +1674,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               {/* Interactive Recommended Next Actions */}
               {agentResponse.presentation?.suggested_actions && agentResponse.presentation.suggested_actions.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#93C5FD", letterSpacing: "0.5px" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#4338CA", letterSpacing: "0.5px" }}>
                     RECOMMENDED FORENSIC ACTIONS:
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -1641,12 +1694,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                         disabled={executing}
                         style={{
                           padding: "5px 10px",
-                          backgroundColor: "rgba(59, 130, 246, 0.15)",
-                          border: "1px solid rgba(59, 130, 246, 0.4)",
+                          backgroundColor: "#EEF2FF",
+                          border: "1px solid #C7D2FE",
                           borderRadius: "4px",
-                          color: "#93C5FD",
+                          color: "#4338CA",
                           fontSize: "11px",
-                          fontWeight: 500,
+                          fontWeight: 600,
                           cursor: executing ? "not-allowed" : "pointer",
                           display: "inline-flex",
                           alignItems: "center",
@@ -1668,7 +1721,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     style={{
                       fontSize: "11px",
                       fontWeight: 700,
-                      color: "#9CA3AF",
+                      color: "#475569",
                       display: "flex",
                       alignItems: "center",
                       gap: "6px",
@@ -1687,14 +1740,15 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                         className="voice-citation-card"
                         style={{
                           padding: "10px 12px",
-                          backgroundColor: "#161B26",
-                          border: "1px solid rgba(255, 255, 255, 0.08)",
+                          backgroundColor: "#FFFFFF",
+                          border: "1px solid #E2E8F0",
                           borderRadius: "6px",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
                           flexWrap: "wrap",
                           gap: "8px",
+                          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
                         }}
                       >
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -1705,21 +1759,21 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                                 fontWeight: 700,
                                 padding: "1px 6px",
                                 borderRadius: "3px",
-                                backgroundColor: cit.source_tier === "T1" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
-                                color: cit.source_tier === "T1" ? "#34D399" : "#FBBF24",
-                                border: `1px solid ${cit.source_tier === "T1" ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
+                                backgroundColor: cit.source_tier === "T1" ? "#ECFDF5" : "#FFFBEB",
+                                color: cit.source_tier === "T1" ? "#047857" : "#B45309",
+                                border: `1px solid ${cit.source_tier === "T1" ? "#A7F3D0" : "#FDE68A"}`,
                                 fontFamily: "var(--font-mono)",
                                 fontVariantNumeric: "tabular-nums",
                               }}
                             >
                               {cit.source_tier === "T1" ? "T1: Official Ledger" : "T3: Unverified Claim"}
                             </span>
-                            <span style={{ fontSize: "12px", fontWeight: 600, color: "#E5E7EB" }}>
+                            <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                               {cit.title}
                             </span>
                           </div>
-                          <div style={{ fontSize: "11px", color: "#9CA3AF" }}>
-                            <code>{cit.filename}</code> • <span style={{ color: "#34D399" }}>{cit.status_desc}</span>
+                          <div style={{ fontSize: "11px", color: "#64748B" }}>
+                            <code>{cit.filename}</code> • <span style={{ color: "#047857", fontWeight: 600 }}>{cit.status_desc}</span>
                             {cit.role && ` • ${cit.role}`}
                           </div>
                         </div>
@@ -1736,7 +1790,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                                 border: "none",
                                 borderRadius: "4px",
                                 fontSize: "11px",
-                                fontWeight: 500,
+                                fontWeight: 600,
                                 cursor: executing ? "not-allowed" : "pointer",
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -1753,12 +1807,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                             disabled={previewLoading}
                             style={{
                               padding: "4px 10px",
-                              backgroundColor: "#2563EB",
+                              backgroundColor: "#4F46E5",
                               color: "#FFFFFF",
                               border: "none",
                               borderRadius: "4px",
                               fontSize: "11px",
-                              fontWeight: 500,
+                              fontWeight: 600,
                               cursor: previewLoading ? "wait" : "pointer",
                               display: "inline-flex",
                               alignItems: "center",
@@ -1775,11 +1829,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                             }}
                             style={{
                               padding: "4px 8px",
-                              backgroundColor: "#1E222D",
-                              border: "1px solid rgba(255, 255, 255, 0.1)",
-                              color: "#93C5FD",
+                              backgroundColor: "#F8FAFC",
+                              border: "1px solid #CBD5E1",
+                              color: "#334155",
                               borderRadius: "4px",
                               fontSize: "11px",
+                              fontWeight: 600,
                               cursor: "pointer",
                               display: "inline-flex",
                               alignItems: "center",
@@ -1797,11 +1852,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                             }}
                             style={{
                               padding: "4px 8px",
-                              backgroundColor: "#1E222D",
-                              border: "1px solid rgba(255, 255, 255, 0.1)",
-                              color: "#6EE7B7",
+                              backgroundColor: "#F8FAFC",
+                              border: "1px solid #CBD5E1",
+                              color: "#047857",
                               borderRadius: "4px",
                               fontSize: "11px",
+                              fontWeight: 600,
                               cursor: "pointer",
                               display: "inline-flex",
                               alignItems: "center",
@@ -1823,8 +1879,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                 <div
                   style={{
                     padding: "12px 14px",
-                    backgroundColor: "#0B0E17",
-                    border: "1px solid rgba(59, 130, 246, 0.4)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #CBD5E1",
                     borderRadius: "6px",
                     display: "flex",
                     flexDirection: "column",
@@ -1834,35 +1890,61 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       {previewArtifact.content_type === "csv" ? (
-                        <Table size={14} style={{ color: "#60A5FA" }} />
+                        <Table size={14} style={{ color: "#4F46E5" }} />
                       ) : previewArtifact.content_type === "image" ? (
-                        <ImageIcon size={14} style={{ color: "#60A5FA" }} />
+                        <ImageIcon size={14} style={{ color: "#4F46E5" }} />
                       ) : (
-                        <Eye size={14} style={{ color: "#60A5FA" }} />
+                        <Eye size={14} style={{ color: "#4F46E5" }} />
                       )}
-                      <span style={{ fontSize: "12px", fontWeight: 600, color: "#F3F4F6" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                         RECORD PREVIEW: {previewArtifact.filename}
                       </span>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          color: "#34D399",
-                          backgroundColor: "rgba(16, 185, 129, 0.15)",
-                          padding: "1px 6px",
-                          borderRadius: "3px",
-                          fontFamily: "var(--font-mono)",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        Bitstream Intact
-                      </span>
+                      {previewArtifact.bitstream_verified ? (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#047857",
+                            backgroundColor: "#ECFDF5",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <Shield size={10} />
+                          {previewArtifact.source_tier === "STAGED"
+                            ? "Staged Bitstream (SHA-256 Calculated)"
+                            : "Bitstream Intact (SHA-256 Verified)"}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#DC2626",
+                            backgroundColor: "#FEF2F2",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            fontFamily: "var(--font-mono)",
+                            fontVariantNumeric: "tabular-nums",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <AlertTriangle size={10} />
+                          Bitstream Mismatch / Tampered
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => setPreviewArtifact(null)}
                       style={{
                         background: "none",
                         border: "none",
-                        color: "#9CA3AF",
+                        color: "#64748B",
                         cursor: "pointer",
                         padding: "2px",
                       }}
@@ -1877,8 +1959,8 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     style={{
                       maxHeight: "220px",
                       overflowY: "auto",
-                      backgroundColor: "#11141E",
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                      backgroundColor: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "4px",
                       padding: "8px",
                     }}
@@ -1922,7 +2004,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                           fontSize: "11px",
                           fontFamily: "var(--font-mono)",
                           fontVariantNumeric: "tabular-nums",
-                          color: "#D1D5DB",
+                          color: "#334155",
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-all",
                         }}
@@ -1941,21 +2023,26 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                       justifyContent: "space-between",
                       alignItems: "center",
                       fontSize: "10px",
-                      color: "#6B7280",
+                      color: "#64748B",
                     }}
                   >
                     <span>
-                      SHA-256 confirms bitstream integrity during custody storage. Bitstream match proves bytes have not changed since acquisition.
+                      {previewArtifact.bitstream_verified
+                        ? previewArtifact.source_tier === "STAGED"
+                          ? "SHA-256 calculated from raw staging file bytes. Un-ingested local staging."
+                          : "SHA-256 confirms bitstream integrity during custody storage. Bitstream match proves bytes have not changed since acquisition."
+                        : "WARNING: Computed SHA-256 does not match recorded custody hash! Potential tampering or bitstream corruption detected."}
                     </span>
                     <a
                       href={previewArtifact.download_url}
                       download={previewArtifact.filename}
                       style={{
-                        color: "#93C5FD",
+                        color: "#4F46E5",
                         textDecoration: "none",
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "3px",
+                        fontWeight: 600,
                       }}
                     >
                       <Download size={11} />
@@ -1968,7 +2055,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
               {/* Collapsible Technical Details for Examiners */}
               <div
                 style={{
-                  borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+                  borderTop: "1px solid #E2E8F0",
                   paddingTop: "8px",
                 }}
               >
@@ -1977,7 +2064,7 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#9CA3AF",
+                    color: "#64748B",
                     cursor: "pointer",
                     fontSize: "11px",
                     fontWeight: 600,
@@ -1997,13 +2084,13 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
                     style={{
                       marginTop: "8px",
                       padding: "10px",
-                      backgroundColor: "#0B0E14",
-                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      backgroundColor: "#F8FAFC",
+                      border: "1px solid #E2E8F0",
                       borderRadius: "4px",
                       fontSize: "11px",
                       fontFamily: "var(--font-mono)",
                       fontVariantNumeric: "tabular-nums",
-                      color: "#9CA3AF",
+                      color: "#334155",
                       maxHeight: "160px",
                       overflowY: "auto",
                       whiteSpace: "pre-wrap",
@@ -2025,16 +2112,16 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
         <div
           style={{
             padding: "10px 20px",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+            borderTop: "1px solid #E2E8F0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            backgroundColor: "#11141E",
+            backgroundColor: "#F8FAFC",
             flexShrink: 0,
           }}
         >
-          <div style={{ fontSize: "11px", color: "#6B7280" }}>
-            Zero raw evidence transmitted • Deterministic Z3 formal verification • BSA Section 63 compliant
+          <div style={{ fontSize: "11px", color: "#64748B" }}>
+            Local evidence custody preserved • Ephemeral voice buffer • Deterministic Z3 solver • BSA Sec 63 audit trail maintained
           </div>
           <button
             onClick={() => {
@@ -2043,12 +2130,12 @@ export const SarvamVoiceModal: React.FC<SarvamVoiceModalProps> = ({
             }}
             style={{
               padding: "5px 14px",
-              backgroundColor: "#1E222D",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #CBD5E1",
               borderRadius: "4px",
-              color: "#E5E7EB",
+              color: "#0F172A",
               fontSize: "12px",
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: "pointer",
             }}
           >

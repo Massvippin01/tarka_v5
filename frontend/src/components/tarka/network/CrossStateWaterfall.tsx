@@ -26,8 +26,8 @@ export const CrossStateWaterfall: React.FC<CrossStateWaterfallProps> = ({ height
 
     const option: echarts.EChartsOption = {
       grid: {
-        top: 24,
-        right: 84,
+        top: 28,
+        right: 120,
         bottom: 24,
         left: 48,
         containLabel: true,
@@ -53,10 +53,10 @@ export const CrossStateWaterfall: React.FC<CrossStateWaterfallProps> = ({ height
       xAxis: {
         type: "category",
         data: states,
-        axisLine: { lineStyle: { color: "#CBD5E1" } },
+        axisLine: { lineStyle: { color: "rgba(255, 255, 255, 0.15)" } },
         axisLabel: {
-          color: "#475569",
-          fontSize: 10,
+          color: "#94A3B8",
+          fontSize: 11,
           fontWeight: 600,
         },
         axisTick: { show: false },
@@ -68,12 +68,12 @@ export const CrossStateWaterfall: React.FC<CrossStateWaterfallProps> = ({ height
         interval: 3,
         axisLine: { show: false },
         axisLabel: {
-          color: "#64748B",
-          fontSize: 10,
+          color: "#94A3B8",
+          fontSize: 11,
           formatter: "₹{value}Cr",
         },
         splitLine: {
-          lineStyle: { color: "#F1F5F9" },
+          lineStyle: { color: "rgba(255, 255, 255, 0.08)" },
         },
       },
       series: [
@@ -99,7 +99,7 @@ export const CrossStateWaterfall: React.FC<CrossStateWaterfallProps> = ({ height
           name: "Exposure",
           type: "bar",
           stack: "total",
-          barWidth: "48%",
+          barWidth: "55%",
           data: incrementAmounts.map((val, idx) => {
             const isDL = idx === 4; // DL crosses threshold
             return {
@@ -118,15 +118,16 @@ export const CrossStateWaterfall: React.FC<CrossStateWaterfallProps> = ({ height
               {
                 yAxis: 10.0,
                 lineStyle: {
-                  color: "#DC2626",
+                  color: "#EF4444",
                   type: "dashed",
                   width: 1.5,
                 },
                 label: {
-                  formatter: "₹10.00 Cr Mandate",
-                  position: "end",
-                  color: "#DC2626",
-                  fontSize: 9.5,
+                  formatter: "★ ₹10.00 Cr Mandate",
+                  position: "insideEndTop",
+                  distance: 6,
+                  color: "#EF4444",
+                  fontSize: 11,
                   fontWeight: 700,
                 },
               },

@@ -266,7 +266,7 @@ def test_challenge_report_excluding_screenshot(client: TestClient, report_builde
     # Create challenge run
     ch_resp = client.post(f"/api/cases/{case_id}/analysis-runs/baseline/challenge", json={
         "run_name": "Report Challenge Test",
-        "excluded_artifact_ids": ["ART-004-BCCD4200"],
+        "excluded_artifact_ids": ["ART-004-6155034A"],
         "rationale": "Testing hypothesis that screenshot claims are inaccurate",
         "created_by": "Senior Forensic Examiner",
     })
@@ -285,7 +285,7 @@ def test_challenge_report_excluding_screenshot(client: TestClient, report_builde
 
     assert ch_report["metadata"]["run_type"] == "COUNTERFACTUAL_CHALLENGE"
     assert ch_report["counterfactual"]["is_counterfactual_run"] is True
-    assert "ART-004-BCCD4200" in ch_report["counterfactual"]["excluded_artifact_ids"]
+    assert "ART-004-6155034A" in ch_report["counterfactual"]["excluded_artifact_ids"]
     assert ch_report["counterfactual"]["provenance_justified"] is True
 
     # Invariant 11: Correct identification of findings that changed
@@ -307,7 +307,7 @@ def test_identification_of_findings_changed_under_challenge(client: TestClient):
         f"/api/cases/{case_id}/analysis-runs/baseline/challenge",
         json={
             "run_name": "Invariant 11 Test",
-            "excluded_artifact_ids": ["ART-004-BCCD4200"],
+            "excluded_artifact_ids": ["ART-004-6155034A"],
             "rationale": "Testing hypothesis exclusion",
             "created_by": "Senior Examiner",
         },
@@ -329,7 +329,7 @@ def test_independent_findings_surviving_challenge(client: TestClient):
         f"/api/cases/{case_id}/analysis-runs/baseline/challenge",
         json={
             "run_name": "Invariant 12 Test",
-            "excluded_artifact_ids": ["ART-004-BCCD4200"],
+            "excluded_artifact_ids": ["ART-004-6155034A"],
             "rationale": "Testing hypothesis exclusion",
             "created_by": "Senior Examiner",
         },

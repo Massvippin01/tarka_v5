@@ -1,0 +1,28 @@
+sequenceDiagram
+    autonumber
+    actor IO as Investigating Officer
+    participant Assistant as TarkaUniversalAssistant (UI)
+    participant Sec as Security Firewall & Prompt Sanitizer
+    participant Router as Intent & Context Router
+    participant Spec as Specialist Forensic Agents
+    participant DNA as Evidence DNA / FCC Registry
+    participant WORM as Flight Recorder (Audit Log)
+
+    IO->>Assistant: Submit Query (Voice / Text in Hindi/Tamil/English/etc.)
+    Assistant->>Sec: Pre-filter input (Strip instruction escapes)
+    Sec->>Router: Sanitized Query + Active View Context (e.g., LIBR)
+    Router->>Spec: Dispatch query to specialist agents (Financial / Graph / Telecom)
+    Spec->>DNA: Fetch verified facts by SHA-256 hash
+    DNA-->>Spec: Grounded observations & contradictions
+    Spec-->>Router: Synthesized forensic findings
+    Router->>DNA: Verify all citations are authenticated
+    DNA-->>Router: Citation verification passed
+    opt High-Risk Action Detected (e.g., Freeze Account / Subpoena)
+        Router->>Assistant: Trigger Human Confirmation Dialog
+        Assistant->>IO: Prompt for IO PIN & Statutory Authority
+        IO->>Assistant: Authenticate with Officer Signature
+    end
+    Router->>WORM: Log interaction, model prompt, citations & action
+    Router-->>Assistant: Render structured response (Facts, Inferences, Citations)
+    Assistant-->>IO: Display Skeuomorphic Answer with Clickable Badges
+

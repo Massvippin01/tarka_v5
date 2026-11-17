@@ -1,10 +1,12 @@
 import { create } from "zustand";
+import { useCaseStore } from "./useCaseStore";
 import type { DiscoveredFraudCluster } from "../utils/publicDatasetAdapters";
 import type { ReconstructedEdge, ReconstructedInvestigation } from "../utils/investigationReconstructor";
 
 export type TopLevelPage = "workspaces" | "workbench" | "benchmark";
 export type DockTab = "rrn" | "pdf" | "privacy" | "proof" | "entities";
 export type UiDensity = "comfortable" | "compact";
+export type InvestigationPresentationMode = "guided" | "analyst" | "review";
 
 export interface TarkaUiState {
   // Top-Level Application Page Routing
@@ -42,14 +44,39 @@ export interface TarkaUiState {
   setPresentationMode: (mode: boolean) => void;
   togglePresentationMode: () => void;
 
+  // Phase 15 Adaptive Investigation Presentation Modes
+  investigationMode: InvestigationPresentationMode;
+  setInvestigationMode: (mode: InvestigationPresentationMode) => void;
+  cycleInvestigationMode: () => void;
+
   // Plain-English Explain Simply mode
   explainSimply: boolean;
   setExplainSimply: (val: boolean) => void;
   toggleExplainSimply: () => void;
 
+  // Prompt 14: Judge Mode Guided 3-Minute Demo Walkthrough
+  judgeDemoActive: boolean;
+  judgeDemoStep: number;
+  judgeDemoAutoPlay: boolean;
+  setJudgeDemoActive: (active: boolean) => void;
+  setJudgeDemoStep: (step: number) => void;
+  setJudgeDemoAutoPlay: (auto: boolean) => void;
+  toggleJudgeDemoAutoPlay: () => void;
+  startJudgeDemo: () => void;
+  stopJudgeDemo: () => void;
+  nextJudgeDemoStep: () => void;
+  prevJudgeDemoStep: () => void;
+
   // Command palette
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
+
+  // Ask TARKA AI Copilot & Voice Modal
+  askTarkaOpen: boolean;
+  setAskTarkaOpen: (open: boolean) => void;
+  toggleAskTarka: () => void;
+  voiceModalOpen: boolean;
+  setVoiceModalOpen: (open: boolean) => void;
 
   // Benchmark Lab Drawer
   benchmarkLabOpen: boolean;
@@ -72,14 +99,25 @@ export interface TarkaUiState {
   setIntelligenceBriefOpen: (open: boolean) => void;
   transformationAuditModalOpen: boolean;
   setTransformationAuditModalOpen: (open: boolean) => void;
+
+  // Massive Evidence Ingestion Modal
+  massiveIntakeModalOpen: boolean;
+  setMassiveIntakeModalOpen: (open: boolean) => void;
+  toggleMassiveIntakeModal: () => void;
 }
 
 export const useTarkaUiStore = create<TarkaUiState>((set) => {
   const getInitialActivePage = (): TopLevelPage => {
     if (typeof window === "undefined") return "workspaces";
     const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    if (view === "benchmark" || view === "benchmarks") return "benchmark";
+    if (view === "workspace" || view === "workspaces") return "workspaces";
+    if (view && ["intake", "entities", "attribution", "network", "taint-engine", "court-proof", "privacy-crypto", "workstation", "report"].includes(view)) {
+      return "workbench";
+    }
     const page = params.get("page") || params.get("mode");
-    if (page === "benchmark" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
+    if (page === "benchmark" || page === "benchmarks" || page === "lab" || params.get("benchmark") === "true") return "benchmark";
     if (page === "workbench" || page === "case" || params.get("stage")) return "workbench";
     if (page === "workspaces" || page === "workspace") return "workspaces";
     return "workspaces";
@@ -93,9 +131,37 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     ? "compact"
     : "comfortable";
 
+  const initialInvestigationMode = ((): InvestigationPresentationMode => {
+    if (typeof window === "undefined") return "guided";
+    const stored = localStorage.getItem("tarka_investigation_mode");
+    if (stored === "guided" || stored === "analyst" || stored === "review") {
+      return stored as InvestigationPresentationMode;
+    }
+    return "guided";
+  })();
+
   return {
     activePage: getInitialActivePage(),
-    setActivePage: (page) => set({ activePage: page }),
+    setActivePage: (page) => {
+      set({ activePage: page });
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level", "screen", "page", "stage", "benchmark"];
+        legacyParams.forEach((k) => url.searchParams.delete(k));
+        const currentCase = useCaseStore.getState().activeCaseId || url.searchParams.get("case");
+        if (currentCase) {
+          url.searchParams.set("case", currentCase);
+        } else {
+          url.searchParams.delete("case");
+        }
+        if (page === "benchmark") {
+          url.searchParams.set("view", "benchmark");
+        } else if (page === "workspaces") {
+          url.searchParams.set("view", "workspace");
+        }
+        window.history.replaceState({}, "", url.toString());
+      }
+    },
 
     activeDiscoveredCluster: null,
     setActiveDiscoveredCluster: (cluster) => set({ activeDiscoveredCluster: cluster }),
@@ -133,12 +199,50 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     setPresentationMode: (mode) => set({ presentationMode: mode }),
     togglePresentationMode: () => set((state) => ({ presentationMode: !state.presentationMode })),
 
-    explainSimply: false,
+    investigationMode: initialInvestigationMode,
+    setInvestigationMode: (mode) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("tarka_investigation_mode", mode);
+      }
+      set({ investigationMode: mode });
+    },
+    cycleInvestigationMode: () => {
+      set((state) => {
+        const modes: InvestigationPresentationMode[] = ["guided", "analyst", "review"];
+        const nextIdx = (modes.indexOf(state.investigationMode) + 1) % modes.length;
+        const nextMode = modes[nextIdx];
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tarka_investigation_mode", nextMode);
+        }
+        return { investigationMode: nextMode };
+      });
+    },
+
+    explainSimply: true,
     setExplainSimply: (val) => set({ explainSimply: val }),
     toggleExplainSimply: () => set((state) => ({ explainSimply: !state.explainSimply })),
 
+    // Prompt 14: Judge Demo Walkthrough State
+    judgeDemoActive: false,
+    judgeDemoStep: 0,
+    judgeDemoAutoPlay: false,
+    setJudgeDemoActive: (active) => set({ judgeDemoActive: active }),
+    setJudgeDemoStep: (step) => set({ judgeDemoStep: step }),
+    setJudgeDemoAutoPlay: (auto) => set({ judgeDemoAutoPlay: auto }),
+    toggleJudgeDemoAutoPlay: () => set((state) => ({ judgeDemoAutoPlay: !state.judgeDemoAutoPlay })),
+    startJudgeDemo: () => set({ judgeDemoActive: true, judgeDemoStep: 0, judgeDemoAutoPlay: true }),
+    stopJudgeDemo: () => set({ judgeDemoActive: false, judgeDemoAutoPlay: false }),
+    nextJudgeDemoStep: () => set((state) => ({ judgeDemoStep: Math.min(state.judgeDemoStep + 1, 5) })),
+    prevJudgeDemoStep: () => set((state) => ({ judgeDemoStep: Math.max(state.judgeDemoStep - 1, 0) })),
+
     commandPaletteOpen: false,
     setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
+
+    askTarkaOpen: false,
+    setAskTarkaOpen: (open) => set({ askTarkaOpen: open }),
+    toggleAskTarka: () => set((state) => ({ askTarkaOpen: !state.askTarkaOpen })),
+    voiceModalOpen: false,
+    setVoiceModalOpen: (open) => set({ voiceModalOpen: open }),
 
     benchmarkLabOpen: false,
     setBenchmarkLabOpen: (open) => set({ benchmarkLabOpen: open }),
@@ -158,5 +262,9 @@ export const useTarkaUiStore = create<TarkaUiState>((set) => {
     setIntelligenceBriefOpen: (open) => set({ intelligenceBriefOpen: open }),
     transformationAuditModalOpen: false,
     setTransformationAuditModalOpen: (open) => set({ transformationAuditModalOpen: open }),
+
+    massiveIntakeModalOpen: false,
+    setMassiveIntakeModalOpen: (open) => set({ massiveIntakeModalOpen: open }),
+    toggleMassiveIntakeModal: () => set((state) => ({ massiveIntakeModalOpen: !state.massiveIntakeModalOpen })),
   };
 });

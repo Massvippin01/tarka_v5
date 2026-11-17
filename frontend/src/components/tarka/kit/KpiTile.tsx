@@ -55,8 +55,8 @@ export const KpiTile: React.FC<KpiTileProps> = ({
       <div
         className={`kpi-tile-skeleton animate-pulse ${className}`}
         style={{
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
+          background: "var(--reui-card-bg, #0F1B2E)",
+          border: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
           borderRadius: "12px",
           padding: "8px 12px",
           minHeight: "68px",
@@ -69,10 +69,10 @@ export const KpiTile: React.FC<KpiTileProps> = ({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
-          <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#F1F5F9" }} />
+          <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "rgba(255, 255, 255, 0.08)" }} />
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-            <div style={{ width: "60%", height: "10px", background: "#F1F5F9", borderRadius: "3px" }} />
-            <div style={{ width: "40%", height: "18px", background: "#F1F5F9", borderRadius: "4px" }} />
+            <div style={{ width: "60%", height: "10px", background: "rgba(255, 255, 255, 0.08)", borderRadius: "3px" }} />
+            <div style={{ width: "40%", height: "18px", background: "rgba(255, 255, 255, 0.08)", borderRadius: "4px" }} />
           </div>
         </div>
       </div>
@@ -80,11 +80,11 @@ export const KpiTile: React.FC<KpiTileProps> = ({
   }
 
   const badgeColors = {
-    emerald: { bg: "#ECFDF5", text: "#047857", border: "#A7F3D0" },
-    rose: { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" },
-    amber: { bg: "#FFFBEB", text: "#B45309", border: "#FDE68A" },
-    indigo: { bg: "#EEF2FF", text: "#4338CA", border: "#C7D2FE" },
-    slate: { bg: "#F8FAFC", text: "#475569", border: "#E2E8F0" },
+    emerald: { bg: "rgba(16, 185, 129, 0.16)", text: "#34D399", border: "rgba(16, 185, 129, 0.35)" },
+    rose: { bg: "rgba(244, 63, 94, 0.16)", text: "#FB7185", border: "rgba(244, 63, 94, 0.35)" },
+    amber: { bg: "rgba(245, 158, 11, 0.16)", text: "#FBBF24", border: "rgba(245, 158, 11, 0.35)" },
+    indigo: { bg: "rgba(6, 182, 212, 0.16)", text: "#22D3EE", border: "rgba(34, 211, 238, 0.35)" },
+    slate: { bg: "rgba(255, 255, 255, 0.06)", text: "#94A3B8", border: "rgba(255, 255, 255, 0.10)" },
   };
 
   const badgeStyle = statusBadge
@@ -109,15 +109,15 @@ export const KpiTile: React.FC<KpiTileProps> = ({
       aria-disabled={disabled}
       className={`kpi-tile group ${
         onClick && !disabled
-          ? "cursor-pointer hover:border-indigo-400 hover:shadow-sm active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+          ? "cursor-pointer hover:border-cyan-400 hover:shadow-md active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
           : ""
       } ${disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""} ${className}`}
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E2E8F0",
+        background: "var(--reui-card-bg, #0F1B2E)",
+        border: "1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08))",
         borderRadius: "12px",
         padding: "8px 12px",
-        boxShadow: "0 1px 3px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.85)",
+        boxShadow: "0 4px 18px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.06)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -144,7 +144,7 @@ export const KpiTile: React.FC<KpiTileProps> = ({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            border: "1px solid rgba(0,0,0,0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
           }}
         >
           <Icon size={18} color={iconColor} strokeWidth={2.2} />
@@ -158,7 +158,7 @@ export const KpiTile: React.FC<KpiTileProps> = ({
               style={{
                 fontSize: "10.5px",
                 fontWeight: 700,
-                color: "#64748B",
+                color: "var(--reui-text-secondary, #94A3B8)",
                 textTransform: "uppercase",
                 letterSpacing: "0.03em",
                 whiteSpace: "nowrap",
@@ -178,12 +178,13 @@ export const KpiTile: React.FC<KpiTileProps> = ({
                       aria-label="Provenance Information"
                       style={{
                         fontSize: "9px",
-                        color: "#94A3B8",
                         cursor: "help",
-                        lineHeight: 1,
+                        opacity: 0.8,
+                        display: "inline-flex",
+                        alignItems: "center",
                       }}
                     >
-                      ⓘ
+                      ℹ️
                     </span>
                   </Tooltip.Trigger>
                   <Tooltip.Portal>
@@ -191,18 +192,19 @@ export const KpiTile: React.FC<KpiTileProps> = ({
                       side="top"
                       sideOffset={4}
                       style={{
-                        background: "#0F172A",
+                        background: "#132238",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
                         color: "#FFFFFF",
                         fontSize: "10px",
                         padding: "4px 8px",
                         borderRadius: "5px",
                         maxWidth: "220px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
                         zIndex: 9999,
                       }}
                     >
                       {provenanceTooltip}
-                      <Tooltip.Arrow style={{ fill: "#0F172A" }} />
+                      <Tooltip.Arrow style={{ fill: "#132238" }} />
                     </Tooltip.Content>
                   </Tooltip.Portal>
                 </Tooltip.Root>
@@ -214,16 +216,17 @@ export const KpiTile: React.FC<KpiTileProps> = ({
           <div
             data-testid="kpi-value"
             style={{
-              fontSize: "clamp(15px, 1.4vw, 19px)",
+              fontSize: isNumber ? "clamp(15px, 1.4vw, 19px)" : "clamp(12px, 1.1vw, 14px)",
               fontWeight: 800,
-              color: "#0F172A",
+              color: "var(--reui-text-strong, #FFFFFF)",
               fontFamily: "var(--font-sans)",
               fontVariantNumeric: "tabular-nums",
-              lineHeight: 1.2,
+              lineHeight: 1.25,
               display: "flex",
               alignItems: "baseline",
               gap: "2px",
-              whiteSpace: "nowrap",
+              whiteSpace: "normal",
+              wordBreak: "break-word",
             }}
           >
             {isNumber ? (
@@ -239,7 +242,7 @@ export const KpiTile: React.FC<KpiTileProps> = ({
 
           {/* Optional Subtitle */}
           {subtitle && (
-            <span style={{ fontSize: "9px", color: "#64748B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <span style={{ fontSize: "9px", color: "var(--reui-text-muted, #64748B)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {subtitle}
             </span>
           )}

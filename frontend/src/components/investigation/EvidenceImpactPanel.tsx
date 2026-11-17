@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useInvestigation } from "../../context/InvestigationContext";
+import { sha256HexSync } from "../../utils/sha256";
 
 interface ImpactData {
   artifact_id: string;
@@ -22,7 +23,7 @@ export const EvidenceImpactPanel: React.FC = () => {
     let isMounted = true;
     const fetchImpact = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/state`);
+        const res = await fetch(`/api/v1/investigations/${activeCaseId}/state`);
         if (res.ok) {
           await res.json();
           if (isMounted) {
@@ -31,7 +32,7 @@ export const EvidenceImpactPanel: React.FC = () => {
               artifact_id: artId,
               source_type: "FINANCIAL_TRANSACTION",
               record_id: "HAWALA-8819",
-              content_hash: "79f9c644849ca001257d7715225a5e01521c32f25f50437ecace882e90f29f62",
+              content_hash: sha256HexSync(`FINANCIAL_TRANSACTION_HAWALA-8819_${artId}`),
               integrity_status: "VERIFIED",
               observations_count: 2,
               facts_count: 2,

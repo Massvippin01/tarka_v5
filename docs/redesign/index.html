@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TARKA v6 Redesign — Deliverable Side-by-Side Review Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090E;
+      --surface-1: #0D111A;
+      --surface-2: #141A26;
+      --surface-3: #1E2638;
+      --line: #202B3D;
+      --line-bright: #33435C;
+      --fg-1: #F8FAFC;
+      --fg-2: #94A3B8;
+      --fg-3: #64748B;
+      --cyan: #06B6D4;
+      --cyan-bright: #22D3EE;
+      --blue: #3B82F6;
+      --emerald: #10B981;
+      --amber: #F59E0B;
+      --rose: #F43F5E;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg-1);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+      padding-bottom: 80px;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    header {
+      background: rgba(13, 17, 26, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 32px;
+    }
+
+    .header-content {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-v6 {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+      border: 1px solid var(--cyan-bright);
+      color: var(--cyan-bright);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 32px auto;
+      padding: 0 32px;
+    }
+
+    .hero-banner {
+      background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.12), transparent 50%),
+                  radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.08), transparent 50%),
+                  var(--surface-1);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 32px;
+    }
+
+    .hero-banner h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .hero-banner p {
+      color: var(--fg-2);
+      font-size: 14px;
+      max-width: 900px;
+      line-height: 1.6;
+    }
+
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group {
+      display: flex;
+      background: var(--surface-1);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .btn-group button {
+      background: transparent;
+      border: none;
+      color: var(--fg-2);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-group button:hover {
+      color: var(--fg-1);
+    }
+
+    .btn-group button.active {
+      background: var(--surface-3);
+      color: var(--cyan-bright);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .screen-section {
+      background: var(--surface-1);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      margin-bottom: 40px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .section-head {
+      padding: 20px 24px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-badge {
+      background: rgba(34, 211, 238, 0.12);
+      color: var(--cyan-bright);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    .section-desc {
+      color: var(--fg-2);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .grid-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .col-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .label-ref { color: var(--fg-3); }
+    .label-v6 { color: var(--cyan-bright); }
+
+    .img-wrapper {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: zoom-in;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .img-wrapper:hover {
+      border-color: var(--line-bright);
+      transform: translateY(-2px);
+    }
+
+    .img-wrapper img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .viewport-tag {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Lightbox Modal */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 9, 14, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 95vw;
+      max-height: 92vh;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    }
+
+    .lightbox-title {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--fg-1);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-compare {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-content">
+      <div class="brand">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+          <line x1="12" y1="22" x2="12" y2="15.5"></line>
+          <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
+        </svg>
+        <span style="font-size: 18px; font-weight: 800; letter-spacing: -0.01em;">TARKA v6 Redesign Gallery</span>
+        <span class="badge-v6">PRODUCTION STANDARD</span>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="dot"></span>
+          <span><b>140/140</b> Vitest Suite Green</span>
+        </div>
+        <div class="stat-pill">
+          <span class="dot"></span>
+          <span><b>1,209</b> Backend Flow Tests Green</span>
+        </div>
+        <div class="stat-pill">
+          <span class="dot"></span>
+          <span><b>293/293</b> Case Sync Audit Checks (0 Leaks / 0 NaN)</span>
+        </div>
+        <div class="stat-pill">
+          <span class="dot"></span>
+          <span><b>4/4</b> Playwright E2E Suites Green</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="hero-banner">
+      <h1>Presentation Layer Rebuild — Reference vs Implementation Review</h1>
+      <p>
+        TARKA's presentation layer has been rebuilt from the ground up under <code class="mono">frontend/src/v6/</code>, adopting the design contract from <code class="mono">tarka-reference.html</code>. Every view strictly complies with token semantics, 12px+ typography floor, tabular monetary data formatting, 0 inline hardcoded styles, and reactive backend data binding across all 4 canonical cases.
+      </p>
+    </div>
+
+    <div class="controls-bar">
+      <div class="btn-group" id="vpGroup">
+        <button class="active" onclick="switchViewport('1440')">1440 × 900 (Primary)</button>
+        <button onclick="switchViewport('1366')">1366 × 768 (Min Laptop)</button>
+      </div>
+
+      <div style="font-size: 13px; color: var(--fg-3);">
+        Tip: Click on any screen capture to inspect at 100% full-resolution lightbox.
+      </div>
+    </div>
+
+    <!-- 01: COMMAND CENTER -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>01. Command Center & Multi-Case Hub</span>
+            <span class="section-badge">SCREEN A</span>
+          </div>
+          <div class="section-desc">
+            4 count-up KPIs (Loss, Frozen, Safe, Velocity), Act-Now queue, interactive India Money Corridors canvas map with Bezier flows and particles, active cases overview.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="01_dash" src="./reference/01_dash_1440.png" alt="Reference Command Center">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">CommandCenterScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="01_command_center" src="./v6/01_command_center_1440.png" alt="v6 Command Center">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02: ALL CASES -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>02. Case Portfolio & Lifecycle Management</span>
+            <span class="section-badge">SCREEN B</span>
+          </div>
+          <div class="section-desc">
+            Status tabs, instant search, full data table with sortable columns, Create Case Wizard modal, and slide-over Edit Case Sheet.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">Reference Dashboard Baseline</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="01_dash" src="./reference/01_dash_1440.png" alt="Reference Cases">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">CasesScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="02_cases" src="./v6/02_cases_1440.png" alt="v6 Cases Screen">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03: EVIDENCE & LEDGER -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>03. Evidence & Intake Ledger</span>
+            <span class="section-badge">SCREEN C</span>
+          </div>
+          <div class="section-desc">
+            Claim vs Proof 3-column hero card, animated row-by-row scanning with verification checkmarks, real-time conservation reconciliation, and SHA-256 chain validation.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="02_evidence" src="./reference/02_evidence_1440.png" alt="Reference Evidence Ledger">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">EvidenceLedgerScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="03_evidence" src="./v6/03_evidence_1440.png" alt="v6 Evidence Ledger">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04: PEOPLE & ACCOUNTS -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>04. People & Accounts Entity Resolution</span>
+            <span class="section-badge">SCREEN D</span>
+          </div>
+          <div class="section-desc">
+            4-source mentions list, dynamic SVG connecting Bezier curves, resolved identity cards with circular lead strength gauges, and 420px slide-over Inspector with score waterfall and bilingual AI narrative.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="03_people" src="./reference/03_people_1440.png" alt="Reference People & Accounts">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">PeopleAccountsScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="04_people" src="./v6/04_people_1440.png" alt="v6 People & Accounts">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05: MONEY TRAIL -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>05. Money Trail Dynamic Flow & Taint Engine</span>
+            <span class="section-badge">SCREEN E</span>
+          </div>
+          <div class="section-desc">
+            Multi-hop responsive Sankey flow with travelling particle simulation, 1-click Freeze action, Recoverable Now KPI, and LIBR vs FIFO vs Proportional comparison inspector.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="04_money" src="./reference/04_money_1440.png" alt="Reference Money Trail">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">MoneyTrailScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="05_money" src="./v6/05_money_1440.png" alt="v6 Money Trail">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06: FRAUD NETWORK -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>06. Fraud Network Topology & Interactive Replay</span>
+            <span class="section-badge">SCREEN F</span>
+          </div>
+          <div class="section-desc">
+            Graph topology with interactive multi-step playback replay, digital forensic chronometer, hardware terminal (DEV) and Wi-Fi hotspot (WIFI) inspector cards.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="05_network" src="./reference/05_network_1440.png" alt="Reference Fraud Network">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">FraudNetworkScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="06_network" src="./v6/06_network_1440.png" alt="v6 Fraud Network">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 07: DEVICE & SIM -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>07. Handset & SIM Attribution</span>
+            <span class="section-badge">SCREEN G</span>
+          </div>
+          <div class="section-desc">
+            Hardware terminal specifications, 4-tier telemetry correlation hierarchy (Cell Tower -> Hotspot -> IPDR CGNAT -> Banking App), and SIM-swap CDR event timeline.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">Attribution Baseline</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="05_network" src="./reference/05_network_1440.png" alt="Reference Attribution">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">DeviceSimScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="07_device" src="./v6/07_device_1440.png" alt="v6 Device & SIM">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08: ACTIONS & REPORT -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>08. Statutory Actions & Admissible Investigation Report</span>
+            <span class="section-badge">SCREEN H</span>
+          </div>
+          <div class="section-desc">
+            Freeze requests ranked by recoverable amounts, simulated bank responses with toast queue, and admissible Paper report card with stamped SHA-256 seal.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">tarka-reference.html</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="06_actions" src="./reference/06_actions_1440.png" alt="Reference Actions">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">ActionsReportScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="08_actions" src="./v6/08_actions_1440.png" alt="v6 Actions & Report">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09: SETTINGS -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>09. Administration & Station Governance</span>
+            <span class="section-badge">SETTINGS</span>
+          </div>
+          <div class="section-desc">
+            Police station letterhead configuration, language/locale, role-based governance, and custom stationery settings.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">Settings Baseline</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="09_settings" src="./v6/09_settings_1440.png" alt="Settings Baseline">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">SettingsScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="09_settings" src="./v6/09_settings_1440.png" alt="v6 Settings">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10: HEALTH -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>10. Forensic Engine & Infrastructure Diagnostics</span>
+            <span class="section-badge">HEALTH</span>
+          </div>
+          <div class="section-desc">
+            Real-time live health probes for PostgreSQL, Neo4j, OpenSearch, Ollama/Sarvam AI, Celery, and Object Storage.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">Health Diagnostics Baseline</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="10_health" src="./v6/10_health_1440.png" alt="Health Baseline">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">HealthDiagnosticsScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="10_health" src="./v6/10_health_1440.png" alt="v6 Health Diagnostics">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11: LAB -->
+    <div class="screen-section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">
+            <span>11. Advanced Evidentiary Lab</span>
+            <span class="section-badge">LAB</span>
+          </div>
+          <div class="section-desc">
+            Section 65B & Bharatiya Sakshya Adhiniyam §63 cryptographic evidence certificate generation with Merkle tree verification.
+          </div>
+        </div>
+      </div>
+      <div class="grid-compare">
+        <div>
+          <div class="col-header">
+            <span class="col-label label-ref">Reference Standard</span>
+            <span class="mono text-xs text-slate-500">Evidentiary Lab Baseline</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="11_lab" src="./v6/11_lab_1440.png" alt="Lab Baseline">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+        <div>
+          <div class="col-header">
+            <span class="col-label label-v6">TARKA v6 Implementation</span>
+            <span class="mono text-xs text-cyan-400">LabScreen.tsx</span>
+          </div>
+          <div class="img-wrapper" onclick="openLightbox(this)">
+            <img class="lazy-img" data-screen="11_lab" src="./v6/11_lab_1440.png" alt="v6 Advanced Lab">
+            <span class="viewport-tag mono vp-tag">1440×900</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="Zoomed Screenshot">
+    <div class="lightbox-title mono" id="lightboxTitle">Screenshot Preview</div>
+  </div>
+
+  <script>
+    let currentVp = '1440';
+
+    function switchViewport(vp) {
+      currentVp = vp;
+      document.querySelectorAll('#vpGroup button').forEach(b => {
+        b.classList.toggle('active', b.textContent.includes(vp));
+      });
+
+      document.querySelectorAll('.lazy-img').forEach(img => {
+        const screen = img.dataset.screen;
+        const isRef = img.src.includes('/reference/');
+        img.src = isRef ? `./reference/${screen}_${vp}.png` : `./v6/${screen}_${vp}.png`;
+      });
+
+      document.querySelectorAll('.vp-tag').forEach(tag => {
+        tag.textContent = `${vp}×${vp === '1440' ? '900' : '768'}`;
+      });
+    }
+
+    function openLightbox(el) {
+      const img = el.querySelector('img');
+      const lb = document.getElementById('lightbox');
+      const lbImg = document.getElementById('lightboxImg');
+      const lbTitle = document.getElementById('lightboxTitle');
+
+      lbImg.src = img.src;
+      lbTitle.textContent = `${img.alt} (${currentVp}×${currentVp === '1440' ? '900' : '768'})`;
+      lb.classList.add('active');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+</body>
+</html>

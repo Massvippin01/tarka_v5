@@ -1,0 +1,41 @@
+flowchart TD
+    subgraph ClientLayer["INVESTIGATOR CLIENT (BROWSER WORKSTATION)"]
+        UI["Tactile Skeuomorphic UI (V6)"]
+        HomeScreen["Home Command Dashboard (/?view=home)"]
+        AssistantUI["Universal Multilingual Assistant Drawer"]
+        VoiceModal["Real-Time Voice Interrogation Station"]
+        AudioEngine["Web Audio API (AnalyserNode + FFT Waveform)"]
+    end
+
+    subgraph APILayer["GATEWAY & SECURITY ENCLAVE"]
+        Nginx["Reverse Proxy / TLS 1.3 / mTLS"]
+        PolicyGateway["PolicyGateway (RBAC / ABAC / WORM)"]
+        FastAPI["FastAPI Forensic Core Engine"]
+    end
+
+    subgraph EngineLayer["FORENSIC INTELLIGENCE ENGINES"]
+        FCC["Forensic Claim Compiler (DNA Hash Verifier)"]
+        LIBR["LIBR Engine (FIFO & Proportionate Asset Tracing)"]
+        TelecomEngine["Telecom CDR / IPDR / CGNAT Correlator"]
+        FlightRecorder["Investigation Flight Recorder (Append-Only WORM)"]
+        Orchestrator["Multi-Agent Forensic Orchestrator (7 Specialists)"]
+    end
+
+    subgraph ModelServing["SOVEREIGN AI & MODEL RUNTIME"]
+        LocalLLM["Local Quantized LLM (Ollama / vLLM Llama-3.1 8B)"]
+        AirLLM["AirLLM 70B Offline Counterfactual Audit Engine"]
+        IndicTTS["AI4Bharat / BHASHINI Multilingual Speech Engine"]
+    end
+
+    subgraph PersistenceLayer["CANONICAL DATA & EVIDENCE PERSISTENCE"]
+        PG[("PostgreSQL 16 (Transactional Authority)")]
+        Neo4j[("Neo4j 5.x (Forensic Graph Projection)")]
+        MinIO[("MinIO / S3 (WORM Encrypted Evidence Vault)")]
+    end
+
+    ClientLayer --> APILayer
+    APILayer --> EngineLayer
+    EngineLayer --> ModelServing
+    EngineLayer --> PersistenceLayer
+    VoiceModal --> AudioEngine
+

@@ -31,7 +31,7 @@ def get_async_engine(custom_url: Optional[str] = None) -> AsyncEngine:
 
 def _build_engine(url: str) -> AsyncEngine:
     engine_kwargs = {
-        "echo": settings.DEBUG,
+        "echo": getattr(settings, "DEBUG_SQL", False),
         "future": True,
     }
     # Pool sizing applies to client/server databases (PostgreSQL), not SQLite memory

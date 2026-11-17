@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import {
   Shield,
   FileText,
@@ -13,37 +13,150 @@ import {
   FolderTree,
   Maximize2,
   Minimize2,
-  Copy,
   Plus,
   ArrowLeft,
-  FileUp,
   AlertTriangle,
-  Database,
   Clock,
   Sparkles,
+  FolderKanban,
+  FileSpreadsheet,
+  Users,
+  Crosshair,
+  Network,
+  GitMerge,
+  Scale,
+  ShieldCheck,
+  Binary,
+  FileCheck,
+  Cpu,
+  MoreHorizontal,
+  Compass,
+  Microscope,
+  Search,
+  Archive,
+  Settings,
+  Activity,
+  User,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { toast } from "sonner";
-import { useTarkaGlobal, type TarkaRoute } from "../../context/TarkaGlobalContext";
+import { useTarkaGlobal, type TarkaRoute, syncTarkaUrl } from "../../context/TarkaGlobalContext";
 import { useTarkaUiStore } from "../../store/useTarkaUiStore";
+import { useCaseStore } from "../../store/useCaseStore";
 import { ReuiStatusBadge } from "../tarka/BentoPrimitives";
-import { IntakeScreen } from "../../pages/v5/IntakeScreen";
-import { EntityResolutionScreen } from "../../pages/v5/EntityResolutionScreen";
-import { AttributionScreen } from "../../pages/v5/AttributionScreen";
-import { FraudNetworkScreen } from "../../pages/v5/FraudNetworkScreen";
-import { TaintEngineScreen } from "../../pages/v5/TaintEngineScreen";
-import { CourtProofScreen } from "../../pages/v5/CourtProofScreen";
-import { CaseWorkspaceScreen } from "../../pages/v5/CaseWorkspaceScreen";
-import { BenchmarkLabScreen } from "../../pages/v5/BenchmarkLabScreen";
-import { EvidenceIntakeModal } from "../tarka/workspace/EvidenceIntakeModal";
-import { NewCaseModal } from "../tarka/workspace/NewCaseModal";
-import { BenchmarkLabDrawer } from "../tarka/benchmark/BenchmarkLabDrawer";
-import { PublicDatasetBenchmarkModal } from "../tarka/benchmark/PublicDatasetBenchmarkModal";
-import { SarvamVoiceModal } from "../tarka/SarvamVoiceModal";
 import { TarkaCommandPalette } from "../tarka/TarkaCommandPalette";
-import { RelationshipEvidenceSheet } from "../tarka/investigation/RelationshipEvidenceSheet";
-import { InvestigationIntelligenceBrief } from "../tarka/investigation/InvestigationIntelligenceBrief";
-import { TransformationAuditLog } from "../tarka/investigation/TransformationAuditLog";
+import { JudgeModeWalkthrough } from "../tarka/demo/JudgeModeWalkthrough";
+import { forensicsApi } from "../../api/forensicsApi";
+import { ErrorBoundary } from "../common/ErrorBoundary";
+import { CANONICAL_CASES } from "../../fixtures/cases";
+import { CaseNotFoundScreen } from "../../pages/v5/CaseNotFoundScreen";
+import { CaseFingerprintDevOverlay } from "../common/CaseFingerprintDevOverlay";
+import { deriveInvestigationProgress } from "../../utils/investigationProgress";
+import { getCanonicalCase, buildCaseBundleFromFixture } from "../../fixtures/cases";
+import { WhatChangedBanner, type WhatChangedData } from "../tarka/common/WhatChangedBanner";
+import { useQuery } from "@tanstack/react-query";
+import type { CaseActionsResponse } from "../../types/actions";
+import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
+
+// Phase 15.2: Route-level lazy loading for bundle optimization & modular streaming
+const IntakeScreen = lazy(() => import("../../pages/v5/IntakeScreen").then((m) => ({ default: m.IntakeScreen })));
+const EntityResolutionScreen = lazy(() => import("../../pages/v5/EntityResolutionScreen").then((m) => ({ default: m.EntityResolutionScreen })));
+const AttributionScreen = lazy(() => import("../../pages/v5/AttributionScreen").then((m) => ({ default: m.AttributionScreen })));
+const FraudNetworkScreen = lazy(() => import("../../pages/v5/FraudNetworkScreen").then((m) => ({ default: m.FraudNetworkScreen })));
+const TaintEngineScreen = lazy(() => import("../../pages/v5/TaintEngineScreen").then((m) => ({ default: m.TaintEngineScreen })));
+const CourtProofScreen = lazy(() => import("../../pages/v5/CourtProofScreen").then((m) => ({ default: m.CourtProofScreen })));
+const CaseWorkspaceScreen = lazy(() => import("../../pages/v5/CaseWorkspaceScreen").then((m) => ({ default: m.CaseWorkspaceScreen })));
+const PrivacyCryptoWorkbench = lazy(() => import("../tarka/privacy/PrivacyCryptoWorkbench").then((m) => ({ default: m.PrivacyCryptoWorkbench })));
+const BenchmarkLabScreen = lazy(() => import("../../pages/v5/BenchmarkLabScreen").then((m) => ({ default: m.BenchmarkLabScreen })));
+const ForensicWorkstationScreen = lazy(() => import("../../pages/v5/ForensicWorkstationScreen").then((m) => ({ default: m.ForensicWorkstationScreen })));
+const ReportScreen = lazy(() => import("../../pages/v5/ReportScreen").then((m) => ({ default: m.ReportScreen })));
+const SettingsScreen = lazy(() => import("../../pages/v5/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
+const HealthDiagnosticsScreen = lazy(() => import("../../pages/v5/HealthDiagnosticsScreen").then((m) => ({ default: m.HealthDiagnosticsScreen })));
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { ViewNotFoundScreen } from "../tarka/feedback/ViewNotFoundScreen";
+import { DemoUserModal } from "../tarka/auth/DemoUserModal";
+
+// Lazy-loaded modal dialogs and drawers
+const EvidenceIntakeModal = lazy(() => import("../tarka/workspace/EvidenceIntakeModal").then((m) => ({ default: m.EvidenceIntakeModal })));
+const NewCaseModal = lazy(() => import("../tarka/workspace/NewCaseModal").then((m) => ({ default: m.NewCaseModal })));
+const BenchmarkLabDrawer = lazy(() => import("../tarka/benchmark/BenchmarkLabDrawer").then((m) => ({ default: m.BenchmarkLabDrawer })));
+const PublicDatasetBenchmarkModal = lazy(() => import("../tarka/benchmark/PublicDatasetBenchmarkModal").then((m) => ({ default: m.PublicDatasetBenchmarkModal })));
+const SarvamVoiceModal = lazy(() => import("../tarka/SarvamVoiceModal").then((m) => ({ default: m.SarvamVoiceModal })));
+const RelationshipEvidenceSheet = lazy(() => import("../tarka/investigation/RelationshipEvidenceSheet").then((m) => ({ default: m.RelationshipEvidenceSheet })));
+const InvestigationIntelligenceBrief = lazy(() => import("../tarka/investigation/InvestigationIntelligenceBrief").then((m) => ({ default: m.InvestigationIntelligenceBrief })));
+const TransformationAuditLog = lazy(() => import("../tarka/investigation/TransformationAuditLog").then((m) => ({ default: m.TransformationAuditLog })));
+import { UpgradedCaseSwitcher } from "./UpgradedCaseSwitcher";
+import { CaseStatusControl } from "../tarka/cases/CaseStatusControl";
+import { NotificationCenterPopover } from "../tarka/notifications/NotificationCenterPopover";
+import { CaseAuditTrailDrawer } from "../tarka/audit/CaseAuditTrailDrawer";
+
+// Polished Obsidian Glass Suspense Fallback
+const ScreenSuspenseFallback: React.FC = () => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      minHeight: "420px",
+      gap: "14px",
+      background: "transparent",
+    }}
+  >
+    <div
+      style={{
+        width: "36px",
+        height: "36px",
+        borderRadius: "50%",
+        border: "3px solid rgba(6, 182, 212, 0.20)",
+        borderTopColor: "#22D3EE",
+        animation: "spin 0.8s linear infinite",
+        boxShadow: "0 0 16px rgba(6, 182, 212, 0.35)",
+      }}
+    />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+      <span style={{ fontSize: "12px", fontWeight: 800, color: "#22D3EE", letterSpacing: "0.08em", fontFamily: "var(--font-mono)" }}>
+        STREAMING FORENSIC MODULE...
+      </span>
+      <span style={{ fontSize: "10px", color: "var(--text-muted, #8C9EB0)" }}>
+        Cryptographic Attestation & Component Invariants Active
+      </span>
+    </div>
+  </div>
+);
+
+const getStageGuidanceTitle = (route: TarkaRoute): string => {
+  switch (route) {
+    case "workspace": return "Multi-Case Command Hub";
+    case "intake": return "Step 01: Evidence & Ledger — Did the money really leave?";
+    case "entities": return "Step 02: People & Accounts — Who is who?";
+    case "taint-engine": return "Step 03: Money Trail — Where did it go?";
+    case "network": return "Step 04: Fraud Network — Who is connected?";
+    case "attribution": return "Step 05: Device & SIM Attribution — Which phone/SIM did it?";
+    case "report": return "Step 06: Report & Actions — Freeze orders & court certificate";
+    case "court-proof": return "Advanced Lab: BSA § 63 Evidence Certificate";
+    case "privacy-crypto": return "Advanced Lab: Cryptographic Verification & ZKP";
+    case "workstation": return "Advanced Lab: Deep Forensic Loom & Flight Recorder";
+    default: return "Forensic Investigation Workflow";
+  }
+};
+
+const getStageGuidanceAction = (route: TarkaRoute): string => {
+  switch (route) {
+    case "workspace": return "Select active FIR case or import digital evidence files.";
+    case "intake": return "Verify Finacle CBS statement & detect tampering in forged receipts.";
+    case "entities": return "Merge suspect aliases across bank accounts while protecting commercial entities.";
+    case "taint-engine": return "Trace fund dispersion under Lowest Intermediate Balance Rule (LIBR).";
+    case "network": return "Discover syndicate links, accomplice Wi-Fi hotspots, and mule rings.";
+    case "attribution": return "Isolate suspect handset via CGNAT port allocation and IMEI TAC.";
+    case "report": return "Review executive summary and export auto-drafted §106/§107 freeze directives.";
+    case "court-proof": return "Verify SHA-256 CAS integrity and export Section 63(4) admissible dossier.";
+    case "privacy-crypto": return "Inspect Zero-Knowledge proofs and HSM signature attestations.";
+    case "workstation": return "Analyze multi-track temporal evidence loom and Z3 claim ablation.";
+    default: return "Follow verified evidentiary findings.";
+  }
+};
 
 export const TarkaGlobalShell: React.FC = () => {
   const {
@@ -72,10 +185,12 @@ export const TarkaGlobalShell: React.FC = () => {
     toggleSidebar,
     presentationMode,
     togglePresentationMode,
+    investigationMode,
+    setInvestigationMode,
+    cycleInvestigationMode,
+    startJudgeDemo,
     density,
     setDensity,
-    toggleBenchmarkLab,
-    togglePublicDatasetModal,
     activeDiscoveredCluster,
     setActiveDiscoveredCluster,
     selectedEvidenceEdge,
@@ -86,13 +201,82 @@ export const TarkaGlobalShell: React.FC = () => {
     setIntelligenceBriefOpen,
     transformationAuditModalOpen,
     setTransformationAuditModalOpen,
+    reconstructedInvestigation,
   } = useTarkaUiStore();
 
   const [voiceOpen, setVoiceOpen] = useState<boolean>(false);
   const [mutatorRibbonOpen, setMutatorRibbonOpen] = useState<boolean>(false);
-  const [goldenHourOpen, setGoldenHourOpen] = useState<boolean>(false);
-  const [clockPopoverOpen, setClockPopoverOpen] = useState<boolean>(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState<boolean>(false);
   const [isHoverPeeking, setIsHoverPeeking] = useState<boolean>(false);
+  const [pipelineState, setPipelineState] = useState<{
+    status: string;
+    stage?: string;
+    progress?: number;
+    failedStep?: string;
+  }>({ status: "COMPLETED", progress: 100 });
+  const [globalWhatChanged, setGlobalWhatChanged] = useState<WhatChangedData | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+  const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState<boolean>(false);
+  const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
+
+  const currentBundle = useMemo(() => {
+    const canonical = activeCaseId ? getCanonicalCase(activeCaseId) : null;
+    if (canonical) {
+      return buildCaseBundleFromFixture(canonical);
+    }
+    return reconstructedInvestigation;
+  }, [activeCaseId, reconstructedInvestigation]);
+
+  const investigationProgress = useMemo(() => {
+    return deriveInvestigationProgress(currentBundle, activeCase);
+  }, [currentBundle, activeCase]);
+
+  const { data: headerActionsData } = useQuery<CaseActionsResponse>({
+    queryKey: ["case", activeCaseId, "actions"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/cases/${activeCaseId}/actions`, {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      return res.ok ? res.json() : null;
+    },
+    staleTime: 5000,
+  });
+
+  const headerActionFinancials = useMemo(() => {
+    return selectCaseActionFinancials(activeCaseId, headerActionsData?.actions, headerActionsData?.summary);
+  }, [activeCaseId, headerActionsData]);
+
+  // Sync Pipeline Status & SSE from Backend
+  useEffect(() => {
+    let mounted = true;
+    fetch(`/api/v1/cases/${activeCaseId}/pipeline-status`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (mounted && data) {
+          setPipelineState({
+            status: data.status,
+            stage: data.currentStage,
+            progress: data.progress,
+            failedStep: data.failedStep,
+          });
+        }
+      })
+      .catch(() => { });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeCaseId]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const getCompiledGoldenHourDirectives = () => {
     return `=== TARKA GOLDEN HOUR 1930 DISPATCH PACK — FIR #149/2026 ===
@@ -131,6 +315,41 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
     setMutationReceipts((prev) => [{ id: `rcpt-${Date.now()}-${Math.random()}`, time, text, type }, ...prev.slice(0, 7)]);
   };
 
+  // User profile from persisted settings store
+  const settingsProfile = useSettingsStore((s) => s.profile);
+  const userInitials = useMemo(() => {
+    return (
+      settingsProfile.name
+        .split(" ")
+        .map((w) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "IO"
+    );
+  }, [settingsProfile.name]);
+
+  // Backend connection status probe for zero-error offline resilience
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
+  const [isDemoUserModalOpen, setIsDemoUserModalOpen] = useState<boolean>(false);
+  useEffect(() => {
+    let isMounted = true;
+    const probe = async () => {
+      try {
+        await forensicsApi.getHealth();
+        if (isMounted) setIsBackendOnline(true);
+      } catch {
+        if (isMounted) setIsBackendOnline(false);
+      }
+    };
+    probe();
+    const interval = setInterval(probe, 25000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   // Global Ctrl+B (sidebar) and F (presentation mode) shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -161,7 +380,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         } else if (e.key === "3") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("attribution");
+          setActiveRoute("taint-engine");
         } else if (e.key === "4") {
           e.preventDefault();
           setActivePage("workbench");
@@ -169,14 +388,29 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
         } else if (e.key === "5") {
           e.preventDefault();
           setActivePage("workbench");
-          setActiveRoute("taint-engine");
+          setActiveRoute("attribution");
         } else if (e.key === "6") {
           e.preventDefault();
           setActivePage("workbench");
+          setActiveRoute("report");
+        } else if (e.key === "7") {
+          e.preventDefault();
+          setActivePage("workbench");
           setActiveRoute("court-proof");
+        } else if (e.key === "8") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("privacy-crypto");
+        } else if (e.key === "9") {
+          e.preventDefault();
+          setActivePage("workbench");
+          setActiveRoute("workstation");
         } else if (e.key === "b" || e.key === "B" || e.key === "d" || e.key === "D") {
           e.preventDefault();
           setActivePage("benchmark");
+        } else if (e.key === "m" || e.key === "M") {
+          e.preventDefault();
+          cycleInvestigationMode();
         }
       }
     };
@@ -184,86 +418,155 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar, togglePresentationMode, setActiveRoute, setActivePage]);
 
-  // 6 Core PS4 Deliverable Pipeline Navigation Items
-  const navItems = [
-    {
-      id: "workspace" as TarkaRoute,
-      step: "00",
-      title: "Station Command & Workspaces Hub",
-      shortTitle: "Command Hub",
-      subtitle: "Bento Workspaces",
-      badgeText: `${caseWorkspaces.length} Cases`,
-      badgeVariant: "indigo" as const,
-      tooltip: "Multi-Case Command Workspace & Intake Hub (Alt+0)",
-      isLocked: false,
-    },
+  // Command Hub Navigation Item
+  const workspaceNavItem = {
+    id: "workspace" as TarkaRoute,
+    step: "00",
+    title: "Station Command & Workspaces Hub",
+    shortTitle: "Command Hub",
+    subtitle: "Multi-Case Command Hub",
+    badgeText: `${caseWorkspaces.length} Cases`,
+    badgeVariant: "indigo" as const,
+    tooltip: "00 Command Hub — Multi-Case Command Workspace & Intake Hub (Alt+0)",
+    icon: FolderKanban,
+    isLocked: false,
+  };
+
+  // 6 Plain-Language Core PS4 Deliverable Pipeline Navigation Items
+  const coreNavItems = [
     {
       id: "intake" as TarkaRoute,
       step: "01",
-      title: "Multi-Vector Intake & Falsification Gate",
-      shortTitle: "Evidence Intake",
-      subtitle: "Ledger & PDF Integrity",
-      badgeText: mutations.alterBankRow14 ? "Fail" : "2",
-      badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("rose" as const),
-      tooltip: "Ledger Falsification, RRN Protocol & PDF Trailer Audit (Alt+1)",
+      title: "1 Evidence & Ledger",
+      shortTitle: "1 Evidence & Ledger",
+      subtitle: "Did the money really leave?",
+      badgeText: mutations.alterBankRow14 ? "Tampered" : "Valid",
+      badgeVariant: mutations.alterBankRow14 ? ("rose" as const) : ("emerald" as const),
+      tooltip: "01 Evidence & Ledger — Did the money really leave? (Alt+1)",
+      icon: FileSpreadsheet,
       isLocked: false,
+      isComplete: investigationProgress.steps[0]?.isComplete,
     },
     {
       id: "entities" as TarkaRoute,
       step: "02",
-      title: "Entity Extraction & Resolution Framework",
-      shortTitle: "Entity Resolution",
-      subtitle: "Multi-Source Extraction",
+      title: "2 People & Accounts",
+      shortTitle: "2 People & Accounts",
+      subtitle: "Who is who?",
       badgeText: "5 Ent",
       badgeVariant: "indigo" as const,
-      tooltip: "PS4 Deliverable #2: Multi-Source Extraction & Hard-Veto Shield (Alt+2)",
+      tooltip: "02 People & Accounts — Who is who? (Alt+2)",
+      icon: Users,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[1]?.isComplete,
     },
     {
-      id: "attribution" as TarkaRoute,
+      id: "taint-engine" as TarkaRoute,
       step: "03",
-      title: "Fraud Attribution & SIM-Swap Engine",
-      shortTitle: "CGNAT Attribution",
-      subtitle: "Port Funnel & IMEI Twin",
-      badgeText: "1:1",
+      title: "3 Money Trail",
+      shortTitle: "3 Money Trail",
+      subtitle: "Where did it go?",
+      badgeText: "LIBR",
       badgeVariant: "emerald" as const,
-      tooltip: "PS4 Deliverable #1: CGNAT 340→1 Funnel & Z3 SMT Clock Proof (Alt+3)",
+      tooltip: "03 Money Trail — Where did it go? (Alt+3)",
+      icon: GitMerge,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[2]?.isComplete,
     },
     {
       id: "network" as TarkaRoute,
       step: "04",
-      title: "Fraud-Network & Actor Relationships",
-      shortTitle: "Fraud Network",
-      subtitle: "Actor Relationships",
-      badgeText: "TTL=63",
+      title: "4 Fraud Network",
+      shortTitle: "4 Fraud Network",
+      subtitle: "Who is connected?",
+      badgeText: "Syndicate",
       badgeVariant: "indigo" as const,
-      tooltip: "PS4 Deliverable #4: Wi-Fi Hotspot BSSID, JA4 TLS & Syndicate Graph (Alt+4)",
+      tooltip: "04 Fraud Network — Who is connected? (Alt+4)",
+      icon: Network,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[3]?.isComplete,
     },
     {
-      id: "taint-engine" as TarkaRoute,
+      id: "attribution" as TarkaRoute,
       step: "05",
-      title: "Transaction Flow & Mule Taint DAG",
-      shortTitle: "Taint DAG",
-      subtitle: "Mule Flow & Min-Cut",
-      badgeText: "K=3",
-      badgeVariant: "indigo" as const,
-      tooltip: "PS4 Deliverable #3: 5-Column Money Trail, LIBR/FIFO & Dinic Min-Cut (Alt+5)",
+      title: "5 Device & SIM Attribution",
+      shortTitle: "5 Device & SIM",
+      subtitle: "Which phone/SIM did it?",
+      badgeText: "1:1 Match",
+      badgeVariant: "emerald" as const,
+      tooltip: "05 Device & SIM Attribution — Which phone/SIM did it? (Alt+5)",
+      icon: Crosshair,
       isLocked: intakeGate?.isHalted,
+      isComplete: investigationProgress.steps[4]?.isComplete,
     },
     {
-      id: "court-proof" as TarkaRoute,
+      id: "report" as TarkaRoute,
       step: "06",
-      title: "Actionable Intelligence & BSA §63(4) Dossier",
-      shortTitle: "Court Dossier",
-      subtitle: "MHA SOP & BSA §63",
-      badgeText: "§63(4)",
+      title: "6 Report & Actions",
+      shortTitle: "6 Report & Actions",
+      subtitle: "Freeze orders & court certificate",
+      badgeText: "Directives",
       badgeVariant: "emerald" as const,
-      tooltip: "PS4 Deliverable #5: MHA Jan 2026 SOP Orders, CBI STR Memo & LOO Proof (Alt+6)",
-      isLocked: intakeGate?.isHalted,
+      tooltip: "06 Report & Actions — Freeze orders & court certificate (Alt+6)",
+      icon: Scale,
+      isLocked: false,
+      isComplete: investigationProgress.steps[5]?.isComplete,
     },
   ];
+
+  // Advanced Forensic Lab Navigation Items
+  const advancedNavItems = [
+    {
+      id: "court-proof" as TarkaRoute,
+      step: "L1",
+      title: "Court Evidence Dossier",
+      shortTitle: "Court Dossier",
+      subtitle: "BSA §63(4) Certificate",
+      badgeText: "§63(4)",
+      badgeVariant: "emerald" as const,
+      tooltip: "Court Evidence Dossier — BSA §63(4) Certificate & LOO Proof (Alt+7)",
+      icon: FileCheck,
+      isLocked: false,
+    },
+    {
+      id: "privacy-crypto" as TarkaRoute,
+      step: "L2",
+      title: "Privacy, Cryptography & ZKP",
+      shortTitle: "Privacy & ZKP",
+      subtitle: "ECDH-PSI & ZKP proofs",
+      badgeText: "ZKP",
+      badgeVariant: "indigo" as const,
+      tooltip: "Privacy, Cryptography & ZKP Lab (Alt+8)",
+      icon: ShieldCheck,
+      isLocked: false,
+    },
+    {
+      id: "workstation" as TarkaRoute,
+      step: "L3",
+      title: "Forensic Loom Workstation",
+      shortTitle: "Forensic Loom",
+      subtitle: "Temporal Loom & SMT Lens",
+      badgeText: "LOOM",
+      badgeVariant: "emerald" as const,
+      tooltip: "Forensic Loom Workstation — Temporal Loom & SMT Lens (Alt+9)",
+      icon: Binary,
+      isLocked: false,
+    },
+    {
+      id: "benchmarks" as TarkaRoute,
+      step: "L4",
+      title: "Benchmark & Stress Lab",
+      shortTitle: "Benchmark Lab",
+      subtitle: "100k-row throughput",
+      badgeText: "100k Rows",
+      badgeVariant: "indigo" as const,
+      tooltip: "Benchmark & Stress Lab (Alt+B)",
+      icon: Cpu,
+      isLocked: false,
+    },
+  ];
+
+  const navItems = [workspaceNavItem, ...coreNavItems, ...advancedNavItems];
 
   // Ingested File Tree Artifacts
   const ingestedFiles = [
@@ -284,28 +587,173 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
 
   const currentNav = navItems.find((n) => n.id === activeRoute) || navItems[0];
 
-  const handlePrintPdf = () => {
-    window.print();
+  const renderNavButton = (item: (typeof navItems)[0]) => {
+    const isActive =
+      activePage === "benchmark"
+        ? item.id === "benchmarks"
+        : activePage === "workspaces"
+          ? item.id === "workspace"
+          : activeRoute === item.id;
+    const IconComp = item.icon;
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          if (item.id === "workspace") {
+            setActivePage("workspaces");
+            syncTarkaUrl(activeCaseId, "workspace");
+          } else if (item.id === "benchmarks") {
+            setActivePage("benchmark");
+            syncTarkaUrl(activeCaseId, "benchmarks");
+          } else {
+            setActivePage("workbench");
+            setActiveRoute(item.id);
+          }
+        }}
+        title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
+        className="hover:bg-cyan-500/10 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: isExpanded ? "space-between" : "center",
+          padding: isExpanded ? "7px 9px" : "6px 0",
+          borderRadius: "8px",
+          background: isActive ? "rgba(6, 182, 212, 0.16)" : "transparent",
+          border: isActive ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid transparent",
+          color: isActive ? "#FFFFFF" : "#94A3B8",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          transition: "all 0.12s ease",
+        }}
+      >
+        {isActive && (
+          <span
+            style={{
+              position: "absolute",
+              left: "0px",
+              top: "20%",
+              bottom: "20%",
+              width: "3px",
+              borderRadius: "0 3px 3px 0",
+              background: "#06B6D4",
+              boxShadow: "0 0 8px #22D3EE",
+            }}
+          />
+        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: isExpanded ? "6px" : "2px",
+              flexDirection: isExpanded ? "row" : "column",
+              flexShrink: 0,
+              width: isExpanded ? "auto" : "42px",
+            }}
+          >
+            <IconComp size={15} color={isActive ? "#22D3EE" : "#94A3B8"} />
+            <span
+              style={{
+                fontSize: isExpanded ? "11px" : "9.5px",
+                fontWeight: 800,
+                fontFamily: "var(--font-mono)",
+                color: isActive ? "#22D3EE" : "#94A3B8",
+                background: isActive ? "rgba(6, 182, 212, 0.22)" : "rgba(255, 255, 255, 0.04)",
+                padding: isExpanded ? "2px 5px" : "1px 3px",
+                borderRadius: "3px",
+                border: `1px solid ${isActive ? "rgba(34, 211, 238, 0.35)" : "rgba(255, 255, 255, 0.08)"}`,
+              }}
+            >
+              {item.step}
+            </span>
+          </div>
+          {isExpanded && (
+            <div style={{ minWidth: 0, overflow: "hidden" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? "#FFFFFF" : "#E2E8F0",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.shortTitle}
+              </div>
+              <div style={{ fontSize: "9.5px", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {item.subtitle}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {isExpanded && (
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+            {item.isLocked && <Lock size={12} color="#FB7185" />}
+            {(item as any).isComplete && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  color: "#10B981",
+                  background: "rgba(16, 185, 129, 0.15)",
+                  padding: "1px 4px",
+                  borderRadius: "3px",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                }}
+                title="Investigation gate satisfied from verified data"
+              >
+                ✓
+              </span>
+            )}
+            <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
+          </div>
+        )}
+      </button>
+    );
   };
 
   // Determine effective sidebar state (56px collapsed vs 232px expanded/peeking)
-  const isExpanded = !sidebarCollapsed || isHoverPeeking;
+  const isExpanded = isMobile ? !sidebarCollapsed : (!sidebarCollapsed || isHoverPeeking);
 
   return (
     <div
       style={{
         display: "flex",
-        width: "100vw",
+        width: "100%",
+        maxWidth: "100vw",
         height: "100vh",
-        background: "var(--reui-frame-bg, #F4F4F5)",
-        padding: "6px",
-        gap: "6px",
+        background: "var(--bento-canvas, #060B14)",
+        padding: isMobile ? "3px" : "6px",
+        gap: isMobile ? "3px" : "6px",
         boxSizing: "border-box",
-        overflow: "hidden",
+        overflowX: "hidden",
+        overflowY: "hidden",
         fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
       }}
     >
       <TarkaCommandPalette />
+      <JudgeModeWalkthrough />
+
+      {/* Mobile Drawer Backdrop */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          onClick={toggleSidebar}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(6, 11, 20, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 110,
+          }}
+        />
+      )}
 
       {/* =========================================================================
           1. SHADCN-STYLE COLLAPSIBLE SIDEBAR RAIL (56PX DEFAULT / 232PX EXPANDED)
@@ -314,29 +762,34 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       {!presentationMode && activePage === "workbench" && (
         <aside
           onMouseEnter={() => {
-            if (sidebarCollapsed) setIsHoverPeeking(true);
+            if (!isMobile && sidebarCollapsed) setIsHoverPeeking(true);
           }}
           onMouseLeave={() => {
-            if (sidebarCollapsed) setIsHoverPeeking(false);
+            if (!isMobile && sidebarCollapsed) setIsHoverPeeking(false);
           }}
           style={{
-            width: `${isExpanded ? 232 : 56}px`,
-            minWidth: `${isExpanded ? 232 : 56}px`,
-            maxWidth: `${isExpanded ? 232 : 56}px`,
-            height: "100%",
-            display: "flex",
+            display: isMobile && sidebarCollapsed ? "none" : "flex",
+            position: isMobile ? "fixed" : (isHoverPeeking ? "absolute" : "relative"),
+            left: isMobile ? "6px" : undefined,
+            top: isMobile ? "6px" : undefined,
+            bottom: isMobile ? "6px" : undefined,
+            width: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            minWidth: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            maxWidth: isMobile ? "240px" : `${isExpanded ? 232 : 56}px`,
+            height: isMobile ? "calc(100% - 12px)" : "100%",
             flexDirection: "column",
             justifyContent: "space-between",
             flexShrink: 0,
             boxSizing: "border-box",
             padding: "8px 6px",
-            background: "#FFFFFF",
-            border: "1px solid #E2E8F0",
+            background: "var(--glass-tint-level-2, rgba(19, 34, 56, 0.95))",
+            border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
             borderRadius: "12px",
-            boxShadow: isHoverPeeking ? "0 10px 25px -5px rgba(15, 23, 42, 0.1)" : "0 1px 3px rgba(0,0,0,0.02)",
-            position: isHoverPeeking ? "absolute" : "relative",
-            zIndex: isHoverPeeking ? 100 : 10,
-            transition: "width 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease",
+            boxShadow: isMobile || isHoverPeeking ? "0 16px 36px -4px rgba(0, 0, 0, 0.85)" : "0 4px 20px -2px rgba(0, 0, 0, 0.40)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            zIndex: isMobile ? 120 : (isHoverPeeking ? 100 : 10),
+            transition: isMobile ? "none" : "width 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease",
             overflow: "hidden",
             whiteSpace: "nowrap",
           }}
@@ -351,19 +804,19 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     width: "28px",
                     height: "28px",
                     borderRadius: "7px",
-                    background: "#4F46E5",
+                    background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#FFFFFF",
-                    boxShadow: "0 1px 3px rgba(79, 70, 229, 0.3)",
+                    boxShadow: "0 2px 10px rgba(6, 182, 212, 0.35)",
                     flexShrink: 0,
                   }}
                 >
                   <Shield size={16} strokeWidth={2.4} />
                 </div>
                 {isExpanded && (
-                  <span style={{ fontSize: "15px", fontWeight: 800, letterSpacing: "-0.03em", color: "#09090B" }}>
+                  <span style={{ fontSize: "15px", fontWeight: 800, letterSpacing: "-0.03em", color: "#FFFFFF" }}>
                     TARKA
                   </span>
                 )}
@@ -377,10 +830,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <button
                   type="button"
                   title={`${activeCase?.firNumber || "Case"} · ${activeCase?.policeStation || ""} · ${activeCase?.title || ""}`}
-                  className="hover:border-slate-300 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
+                  className="hover:border-cyan-400/50 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
                   style={{
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
                     borderRadius: "8px",
                     padding: isExpanded ? "6px 8px" : "6px",
                     display: "flex",
@@ -394,23 +847,23 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   {isExpanded ? (
                     <div style={{ textAlign: "left", minWidth: 0, overflow: "hidden" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                        <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5", background: "#EEF2FF", padding: "1px 4px", borderRadius: "3px" }}>
+                        <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#22D3EE", background: "rgba(6, 182, 212, 0.16)", border: "1px solid rgba(34, 211, 238, 0.25)", padding: "1px 4px", borderRadius: "3px" }}>
                           {activeCase?.firNumber || "CASE"}
                         </span>
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#64748B" }}>
+                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#94A3B8" }}>
                           {activeCase?.policeStation ? activeCase.policeStation.split(" ")[0] : "Station"}
                         </span>
                       </div>
-                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#F8FAFC", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {activeCase?.title ? activeCase.title.slice(0, 22) : "Digital Arrest"}...
                       </div>
                     </div>
                   ) : (
-                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#22D3EE" }}>
                       {activeCase?.firNumber ? activeCase.firNumber.replace(/[^0-9]/g, "").slice(0, 3) || "001" : "001"}
                     </span>
                   )}
-                  {isExpanded && <ChevronDown size={12} color="#71717A" />}
+                  {isExpanded && <ChevronDown size={12} color="#94A3B8" />}
                 </button>
               </Popover.Trigger>
 
@@ -420,19 +873,20 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="start"
                   sideOffset={8}
                   style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "10px",
                     padding: "10px 12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.70)",
                     width: "300px",
                     zIndex: 9999,
                     fontFamily: "var(--font-sans)",
+                    color: "#F8FAFC",
                   }}
                 >
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F1F5F9", paddingBottom: "6px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "6px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         SWITCH ACTIVE CASE WORKSPACE
                       </span>
                       <ReuiStatusBadge text={`${caseWorkspaces.length} Cases`} variant="indigo" dot={false} />
@@ -451,37 +905,37 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                               gap: "2px",
                               padding: "6px 8px",
                               borderRadius: "6px",
-                              background: isCurrent ? "#EEF2FF" : "#F8FAFC",
-                              border: isCurrent ? "1px solid #C7D2FE" : "1px solid #E2E8F0",
+                              background: isCurrent ? "rgba(6, 182, 212, 0.18)" : "rgba(255, 255, 255, 0.03)",
+                              border: isCurrent ? "1px solid rgba(34, 211, 238, 0.35)" : "1px solid rgba(255, 255, 255, 0.06)",
                               cursor: "pointer",
                             }}
                           >
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#4338CA" : "#334155" }}>
+                              <span style={{ fontSize: "10px", fontWeight: 800, fontFamily: "var(--font-mono)", color: isCurrent ? "#22D3EE" : "#CBD5E1" }}>
                                 {cw.firNumber}
                               </span>
                               {cw.goldenHourRemainingMins > 0 ? (
-                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#B45309", background: "#FEF3C7", padding: "1px 4px", borderRadius: "3px" }}>
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#FBBF24", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
                                   ⚡ {cw.goldenHourRemainingMins}m
                                 </span>
                               ) : isCurrent ? (
-                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+                                <span style={{ fontSize: "9px", fontWeight: 700, color: "#34D399", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.30)", padding: "1px 4px", borderRadius: "3px" }}>
                                   ACTIVE
                                 </span>
                               ) : null}
                             </div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#F8FAFC", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {cw.title}
                             </div>
                             <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                              {cw.policeStation.split(",")[0]} · {cw.complainantName}
+                              {(cw.policeStation || "PS Noida").split(",")[0]} · {cw.complainantName || "Complainant"}
                             </div>
                           </div>
                         );
                       })}
                     </div>
 
-                    <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "6px", display: "flex", gap: "6px" }}>
+                    <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "6px", display: "flex", gap: "6px" }}>
                       <button
                         type="button"
                         onClick={openNewCaseModal}
@@ -493,12 +947,13 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           gap: "4px",
                           padding: "5px 8px",
                           borderRadius: "6px",
-                          background: "#4F46E5",
+                          background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                           color: "#FFFFFF",
                           border: "none",
                           fontSize: "11px",
-                          fontWeight: 600,
+                          fontWeight: 700,
                           cursor: "pointer",
+                          boxShadow: "0 2px 8px rgba(6, 182, 212, 0.25)",
                         }}
                       >
                         <Plus size={12} />
@@ -506,105 +961,28 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       </button>
                     </div>
                   </div>
-                  <Popover.Arrow style={{ fill: "#FFFFFF" }} />
+                  <Popover.Arrow style={{ fill: "#132238" }} />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
 
             {/* Navigation Engines */}
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {navItems.map((item) => {
-                const isActive = activeRoute === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (item.id === "workspace") {
-                        setActivePage("workspaces");
-                      } else {
-                        setActivePage("workbench");
-                        setActiveRoute(item.id);
-                      }
-                    }}
-                    title={`${item.step} ${item.shortTitle} — ${item.subtitle}`}
-                    className="hover:bg-slate-100/70 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
-                    style={{
-                      position: "relative",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: isExpanded ? "space-between" : "center",
-                      padding: isExpanded ? "7px 9px" : "8px 0",
-                      borderRadius: "8px",
-                      background: isActive ? "#F1F5F9" : "transparent",
-                      border: isActive ? "1px solid #E2E8F0" : "1px solid transparent",
-                      color: "#09090B",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      width: "100%",
-                      transition: "all 0.12s ease",
-                    }}
-                  >
-                    {isActive && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          left: "0px",
-                          top: "20%",
-                          bottom: "20%",
-                          width: "3px",
-                          borderRadius: "0 3px 3px 0",
-                          background: "#4F46E5",
-                        }}
-                      />
-                    )}
+              {renderNavButton(workspaceNavItem)}
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          fontFamily: "var(--font-mono)",
-                          color: isActive ? "#4338CA" : "#64748B",
-                          background: isActive ? "#EEF2FF" : "#F8FAFC",
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          border: `1px solid ${isActive ? "#C7D2FE" : "#E2E8F0"}`,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {item.step}
-                      </span>
-                      {isExpanded && (
-                        <div style={{ minWidth: 0, overflow: "hidden" }}>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: isActive ? 700 : 500,
-                              color: isActive ? "#09090B" : "#475569",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {item.shortTitle}
-                          </div>
-                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                            {item.subtitle}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+              {isExpanded && (
+                <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.08em", padding: "8px 6px 3px" }}>
+                  Investigation Steps (1–6)
+                </div>
+              )}
+              {coreNavItems.map(renderNavButton)}
 
-                    {isExpanded && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        {item.isLocked && <Lock size={12} color="#E11D48" />}
-                        <ReuiStatusBadge text={item.badgeText} variant={item.badgeVariant} dot={false} />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+              {isExpanded && (
+                <div style={{ fontSize: "9.5px", fontWeight: 800, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.08em", padding: "12px 6px 3px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", marginTop: "6px" }}>
+                  Advanced Lab
+                </div>
+              )}
+              {advancedNavItems.map(renderNavButton)}
             </nav>
 
             {/* Artifacts Tree Popover Button */}
@@ -613,7 +991,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 <button
                   type="button"
                   title="Inspect Ingested Artifact Tree (T1/T2/T3 Tiers)"
-                  className="hover:bg-slate-100 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30"
+                  className="hover:bg-slate-800/60 enabled:active:scale-[0.98] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/30"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -621,16 +999,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     gap: "8px",
                     padding: isExpanded ? "6px 8px" : "8px 0",
                     borderRadius: "8px",
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
-                    color: "#334155",
+                    border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
+                    background: "rgba(255, 255, 255, 0.04)",
+                    color: "#F8FAFC",
                     fontSize: "11px",
                     fontWeight: 600,
                     cursor: "pointer",
                     width: "100%",
                   }}
                 >
-                  <FolderTree size={14} color="#64748B" />
+                  <FolderTree size={14} color="#94A3B8" />
                   {isExpanded && <span>Artifact Tree (5)</span>}
                 </button>
               </Popover.Trigger>
@@ -641,17 +1019,18 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   align="center"
                   sideOffset={8}
                   style={{
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
                     borderRadius: "10px",
                     padding: "10px 12px",
-                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.70)",
                     width: "280px",
                     zIndex: 9999,
                     fontFamily: "var(--font-sans)",
+                    color: "#F8FAFC",
                   }}
                 >
-                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#09090B", marginBottom: "6px" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 800, color: "#FFFFFF", marginBottom: "6px" }}>
                     Ingested Artifact Tree (T1–T3 Tiers)
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -664,14 +1043,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                           justifyContent: "space-between",
                           padding: "3px 5px",
                           borderRadius: "4px",
-                          background: "#F8FAFC",
-                          border: "1px solid #E2E8F0",
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.06)",
                           fontSize: "10.5px",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-                          <FileText size={11} color="#64748B" />
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <FileText size={11} color="#94A3B8" />
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "#F8FAFC", overflow: "hidden", textOverflow: "ellipsis" }}>
                             {f.name}
                           </span>
                         </div>
@@ -681,8 +1060,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                             fontWeight: 700,
                             padding: "0.5px 4px",
                             borderRadius: "3px",
-                            background: f.status === "emerald" ? "#ECFDF5" : f.status === "rose" ? "#FFF1F2" : "#FFFBEB",
-                            color: f.status === "emerald" ? "#047857" : f.status === "rose" ? "#BE123C" : "#92400E",
+                            background: f.status === "emerald" ? "rgba(16, 185, 129, 0.15)" : f.status === "rose" ? "rgba(244, 63, 94, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                            color: f.status === "emerald" ? "#34D399" : f.status === "rose" ? "#FB7185" : "#FBBF24",
+                            border: `1px solid ${f.status === "emerald" ? "rgba(16, 185, 129, 0.30)" : f.status === "rose" ? "rgba(244, 63, 94, 0.30)" : "rgba(245, 158, 11, 0.30)"}`,
                           }}
                         >
                           {f.tier}
@@ -690,14 +1070,14 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                       </div>
                     ))}
                   </div>
-                  <Popover.Arrow style={{ fill: "#FFFFFF" }} />
+                  <Popover.Arrow style={{ fill: "#132238" }} />
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
           </div>
 
           {/* Bottom Sidebar: Z3 Solver Telemetry, IO Avatar, and Collapse Toggle */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid #F1F5F9", paddingTop: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "8px" }}>
             {/* Z3 Status Dot & Tooltip */}
             <div
               title="Z3 SMT Solver: ONLINE 3.8 ms · CAS SHA-256 Chain INTACT"
@@ -706,34 +1086,68 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 alignItems: "center",
                 justifyContent: isExpanded ? "space-between" : "center",
                 padding: "4px",
-                background: "#F8FAFC",
+                background: "rgba(255, 255, 255, 0.04)",
                 borderRadius: "6px",
-                border: "1px solid #E2E8F0",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 fontSize: "10px",
                 cursor: "help",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10B981", flexShrink: 0 }} />
-                {isExpanded && <span style={{ fontWeight: 700, color: "#09090B" }}>Z3 SMT</span>}
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981", flexShrink: 0 }} />
+                {isExpanded && <span style={{ fontWeight: 700, color: "#FFFFFF" }}>Z3 SMT</span>}
               </div>
               {isExpanded && (
-                <span style={{ fontFamily: "var(--font-mono)", color: "#047857", fontWeight: 700, fontSize: "9px" }}>
+                <span style={{ fontFamily: "var(--font-mono)", color: "#34D399", fontWeight: 700, fontSize: "9px" }}>
                   3.8ms
                 </span>
               )}
             </div>
 
-            {/* IO Avatar (Tooltip: name + role) */}
-            <div
-              title="Insp. Vikram Sharma · Investigating Officer (IO)"
+            {/* Settings Link Button in Sidebar Rail */}
+            <button
+              type="button"
+              data-testid="sidebar-settings-link"
+              onClick={() => {
+                setActivePage("workbench");
+                setActiveRoute("settings");
+              }}
+              title="Settings & Administration (?view=settings)"
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: isExpanded ? "flex-start" : "center",
                 gap: "8px",
-                padding: "2px 4px",
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: activeRoute === "settings" ? "1px solid rgba(2, 132, 199, 0.45)" : "1px solid transparent",
+                background: activeRoute === "settings" ? "rgba(2, 132, 199, 0.20)" : "transparent",
+                color: activeRoute === "settings" ? "#38BDF8" : "#94A3B8",
                 cursor: "pointer",
+                fontSize: "11px",
+                fontWeight: 600,
+                width: "100%",
+                transition: "all 0.12s ease",
+              }}
+            >
+              <Settings size={14} color={activeRoute === "settings" ? "#38BDF8" : "#94A3B8"} />
+              {isExpanded && <span>Settings</span>}
+            </button>
+
+            {/* IO Avatar (Tooltip: name + role) */}
+            <div
+              data-testid="sidebar-io-avatar"
+              onClick={() => setIsDemoUserModalOpen(true)}
+              title={`${settingsProfile.name} · ${settingsProfile.rank} (${settingsProfile.role}) — Click to switch operational persona`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: isExpanded ? "flex-start" : "center",
+                gap: "8px",
+                padding: "3px 4px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                background: activeRoute === "settings" ? "rgba(255, 255, 255, 0.08)" : "transparent",
               }}
             >
               <div
@@ -741,7 +1155,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   width: "26px",
                   height: "26px",
                   borderRadius: "50%",
-                  background: "#4338CA",
+                  background:
+                    settingsProfile.role === "ADMIN"
+                      ? "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)"
+                      : settingsProfile.role === "SUPERVISOR"
+                        ? "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)"
+                        : "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
                   color: "#FFFFFF",
                   fontSize: "10px",
                   fontWeight: 800,
@@ -749,16 +1168,24 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
+                  boxShadow:
+                    settingsProfile.role === "ADMIN"
+                      ? "0 0 8px rgba(239, 68, 68, 0.4)"
+                      : settingsProfile.role === "SUPERVISOR"
+                        ? "0 0 8px rgba(59, 130, 246, 0.4)"
+                        : "0 0 8px rgba(6, 182, 212, 0.3)",
                 }}
               >
-                VS
+                {userInitials}
               </div>
               {isExpanded && (
                 <div style={{ minWidth: 0, overflow: "hidden" }}>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#09090B", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    Insp. Vikram Sharma
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#FFFFFF", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {settingsProfile.name}
                   </div>
-                  <div style={{ fontSize: "9px", color: "#64748B" }}>Investigating Officer</div>
+                  <div style={{ fontSize: "9px", color: "#94A3B8" }}>
+                    {settingsProfile.rank} · {settingsProfile.role}
+                  </div>
                 </div>
               )}
             </div>
@@ -768,7 +1195,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={toggleSidebar}
               title={`Toggle Sidebar Rail (Ctrl+B) — Currently ${sidebarCollapsed ? "Collapsed (56px)" : "Expanded (232px)"}`}
-              className="hover:bg-slate-50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-800/50 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -776,9 +1203,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 gap: "6px",
                 padding: "5px",
                 borderRadius: "6px",
-                border: "1px solid #E2E8F0",
-                background: "#FFFFFF",
-                color: "#64748B",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "rgba(255, 255, 255, 0.04)",
+                color: "#94A3B8",
                 cursor: "pointer",
                 fontSize: "10px",
                 fontWeight: 600,
@@ -798,27 +1225,29 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
       <div
         style={{
           flex: 1,
-          background: "#FFFFFF",
-          border: "1px solid #E2E8F0",
+          background: "var(--glass-tint-level-1, rgba(15, 27, 46, 0.75))",
+          border: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
           borderRadius: "12px",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+          boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.45)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           minWidth: 0,
           minHeight: 0,
           height: "100%",
         }}
       >
-        {/* TOP COMMAND HEADER (STRICT 44PX SINGLE-LINE, ZERO WRAPPING) */}
+        {/* TOP COMMAND HEADER — 3-ZONE FLEX LAYOUT (NO OVERLAP AT 1366 / 1440 / 1920) */}
         <header
           style={{
             height: "44px",
             minHeight: "44px",
             maxHeight: "44px",
-            background: "#FFFFFF",
-            borderBottom: "1px solid #E2E8F0",
-            padding: "0 12px",
+            background: "var(--glass-tint-level-2, rgba(19, 34, 56, 0.85))",
+            borderBottom: "1px solid var(--glass-border-specular, rgba(255, 255, 255, 0.08))",
+            padding: "0 10px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -827,17 +1256,41 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             boxSizing: "border-box",
             whiteSpace: "nowrap",
             zIndex: 20,
+            overflow: "hidden",
           }}
         >
-          {/* Left: Top-Level Mode Switcher + Breadcrumb / Active Case Switcher */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flexShrink: 1 }}>
-            {/* Top-Level Mode Switcher (Workspaces | Case Workbench | Benchmark Lab) */}
+          {/* ZONE 1 (LEFT): Mobile Drawer Trigger + Mode Switcher + Presentation Modes */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {isMobile && activePage === "workbench" && (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="lg:hidden"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "6px",
+                  background: "#F8FAFC",
+                  border: "1px solid #CBD5E1",
+                  color: "#0F172A",
+                  cursor: "pointer",
+                }}
+                title="Open Navigation Menu"
+              >
+                <FolderTree size={14} color="#4F46E5" />
+              </button>
+            )}
+
+            {/* Top-Level Mode Switcher (Workspaces | Workbench) */}
             <div
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                background: "#F1F5F9",
-                border: "1px solid #CBD5E1",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: "7px",
                 padding: "2px",
                 gap: "2px",
@@ -846,25 +1299,29 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             >
               <button
                 type="button"
-                onClick={() => setActivePage("workspaces")}
+                onClick={() => {
+                  setActivePage("workspaces");
+                  setActiveRoute("workspace");
+                }}
                 title="Workspaces Hub: Multi-Case Command & Evidence Dropzone (Alt+W / Alt+0)"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "5px",
                   padding: "3px 8px",
                   borderRadius: "5px",
                   fontSize: "11px",
                   fontWeight: activePage === "workspaces" ? 800 : 600,
-                  background: activePage === "workspaces" ? "#FFFFFF" : "transparent",
-                  color: activePage === "workspaces" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "workspaces" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "workspaces" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  background: activePage === "workspaces" ? "rgba(6, 182, 212, 0.20)" : "transparent",
+                  color: activePage === "workspaces" ? "#22D3EE" : "#94A3B8",
+                  boxShadow: activePage === "workspaces" ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
+                  border: activePage === "workspaces" ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.12s ease",
                 }}
               >
-                <span>🗂️ Workspaces</span>
+                <FolderKanban size={12} color={activePage === "workspaces" ? "#22D3EE" : "#94A3B8"} />
+                <span>Workspaces</span>
               </button>
 
               <button
@@ -877,528 +1334,334 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "5px",
                   padding: "3px 8px",
                   borderRadius: "5px",
                   fontSize: "11px",
                   fontWeight: activePage === "workbench" ? 800 : 600,
-                  background: activePage === "workbench" ? "#FFFFFF" : "transparent",
-                  color: activePage === "workbench" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "workbench" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "workbench" ? "1px solid #C7D2FE" : "1px solid transparent",
+                  background: activePage === "workbench" ? "rgba(6, 182, 212, 0.20)" : "transparent",
+                  color: activePage === "workbench" ? "#22D3EE" : "#94A3B8",
+                  boxShadow: activePage === "workbench" ? "0 0 10px rgba(6, 182, 212, 0.25)" : "none",
+                  border: activePage === "workbench" ? "1px solid rgba(34, 211, 238, 0.40)" : "1px solid transparent",
                   cursor: "pointer",
                   transition: "all 0.12s ease",
                 }}
               >
-                <span>🔍 Case Workbench</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActivePage("benchmark")}
-                title="Benchmark & Diagnostics Lab: Streaming & 27-Check Matrix (Alt+D / Alt+B)"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "3px 8px",
-                  borderRadius: "5px",
-                  fontSize: "11px",
-                  fontWeight: activePage === "benchmark" ? 800 : 600,
-                  background: activePage === "benchmark" ? "#FFFFFF" : "transparent",
-                  color: activePage === "benchmark" ? "#4338CA" : "#64748B",
-                  boxShadow: activePage === "benchmark" ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-                  border: activePage === "benchmark" ? "1px solid #C7D2FE" : "1px solid transparent",
-                  cursor: "pointer",
-                  transition: "all 0.12s ease",
-                }}
-              >
-                <span>⚡ Benchmark Lab</span>
+                <Search size={12} color={activePage === "workbench" ? "#22D3EE" : "#94A3B8"} />
+                <span>Workbench</span>
               </button>
             </div>
 
-            {/* Contextual Breadcrumb based on activePage — rendered only on Workbench to prevent header collision */}
-            {activePage === "workbench" && (
-              <>
-                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "#4F46E5", fontWeight: 700, background: "#EEF2FF", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>
-                  {activeCase?.firNumber || "CASE"}
-                </span>
-                <span style={{ color: "#CBD5E1", flexShrink: 0 }}>/</span>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#09090B", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {currentNav.title}
-                </span>
-                <span className="hidden md:inline-flex flex-shrink-0">
-                  <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
-                </span>
-                <span
-                  style={{
-                    fontSize: "9.5px",
-                    fontWeight: 800,
-                    color: "#047857",
-                    background: "#ECFDF5",
-                    border: "1px solid #A7F3D0",
-                    padding: "1px 6px",
-                    borderRadius: "4px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "3px",
-                    flexShrink: 0,
-                  }}
-                  title="Air-Gap Compliance: Zero external runtime network requests, connect-src 'none' enforced (BSA 2023 §63)"
-                >
-                  <Lock size={10} color="#059669" />
-                  <span>AIR-GAP</span>
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Center: Operational Timeline Stage Popover (Screens 01-06) */}
-          {activePage === "workbench" && (
-            <Popover.Root open={clockPopoverOpen} onOpenChange={setClockPopoverOpen}>
-              <Popover.Trigger asChild>
-                <button
-                  type="button"
-                  title="Operational Timeline Calibration (Click to jump between T+0m to T+48h)"
-                  className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                  style={{
-                    height: "28px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    background: "#F8FAFC",
-                    border: "1px solid #CBD5E1",
-                    color: "#0F172A",
-                    fontWeight: 700,
-                    fontSize: "11px",
-                    borderRadius: "6px",
-                    padding: "0 8px",
-                    cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                    flexShrink: 0,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <Clock size={12} color="#4F46E5" />
-                  <span style={{ fontFamily: "var(--font-mono)", color: "#4F46E5" }}>
-                    {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
-                  </span>
-                  <ChevronDown size={11} color="#64748B" />
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content
-                  align="center"
-                  sideOffset={6}
-                  style={{
-                    width: "290px",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15)",
-                    padding: "8px",
-                    zIndex: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <div style={{ fontSize: "10px", fontWeight: 800, color: "#64748B", padding: "2px 6px", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
-                    OPERATIONAL TIMELINE CALIBRATION
-                  </div>
-                  {clockStages.map((stg, idx) => {
-                    const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setTimeOffsetHours(stg.offset);
-                          setClockPopoverOpen(false);
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "6px 8px",
-                          borderRadius: "5px",
-                          border: isCurrent ? "1px solid #C7D2FE" : "1px solid transparent",
-                          background: isCurrent ? "#EEF2FF" : "transparent",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: "11px", fontWeight: 700, color: isCurrent ? "#4338CA" : "#0F172A" }}>
-                            {stg.label}
-                          </div>
-                          <div style={{ fontSize: "9.5px", color: "#64748B" }}>
-                            {stg.title}
-                          </div>
-                        </div>
-                        {isCurrent && (
-                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
-          )}
-
-          {/* Right Header Controls: [Density Slider] · [⚡ Mutator] · [🎙️ Voice AI] · [⬇ Export §63 PDF] */}
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-            {/* View Density Slide Toggle: Standard vs Short / Small View */}
+            {/* Investigation Presentation Modes (Guided | Analyst | Review) */}
             <div
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                background: "#E2E8F0",
-                border: "1px solid #CBD5E1",
-                borderRadius: "20px",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "7px",
                 padding: "2px",
-                height: "28px",
-                boxSizing: "border-box",
-                position: "relative",
-                userSelect: "none",
-                cursor: "pointer",
+                gap: "2px",
+                flexShrink: 0,
               }}
               role="radiogroup"
-              aria-label="Dashboard View Density"
+              aria-label="Investigation Presentation Mode"
             >
-              {/* Sliding Background Indicator Pill */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "2px",
-                  bottom: "2px",
-                  left: density === "comfortable" ? "2px" : "calc(50% + 1px)",
-                  width: "calc(50% - 3px)",
-                  background: "#FFFFFF",
-                  borderRadius: "16px",
-                  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.08)",
-                  transition: "all 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
-                  zIndex: 1,
-                  pointerEvents: "none",
-                }}
-              />
-
               <button
                 type="button"
-                onClick={() => setDensity("comfortable")}
-                role="radio"
-                aria-checked={density === "comfortable"}
-                title="Standard Comfortable View"
-                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
+                onClick={() => {
+                  setInvestigationMode("guided");
+                  startJudgeDemo();
+                }}
+                title="Guided Investigation: Step-by-step guidance for frontline officers & rapid response (Alt+M)"
                 style={{
-                  border: "none",
-                  background: "transparent",
-                  color: density === "comfortable" ? "#0F172A" : "#64748B",
-                  fontWeight: density === "comfortable" ? 700 : 500,
-                  fontSize: "10.5px",
-                  padding: "2px 8px",
-                  borderRadius: "16px",
-                  cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "3px",
-                  position: "relative",
-                  zIndex: 2,
-                  transition: "color 0.18s ease",
+                  gap: "4px",
+                  padding: "3px 7px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "guided" ? 800 : 600,
+                  background: investigationMode === "guided" ? "rgba(6, 182, 212, 0.22)" : "transparent",
+                  color: investigationMode === "guided" ? "#22D3EE" : "#94A3B8",
+                  border: investigationMode === "guided" ? "1px solid rgba(34, 211, 238, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
                 }}
               >
-                <Maximize2 size={10} color={density === "comfortable" ? "#4F46E5" : "#64748B"} />
-                <span>Standard</span>
+                <Compass size={11} color={investigationMode === "guided" ? "#22D3EE" : "#94A3B8"} />
+                <span>Guided</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setDensity("compact")}
-                role="radio"
-                aria-checked={density === "compact"}
-                title="Short / Small Dashboard View"
-                className="hover:text-slate-900 enabled:active:scale-[0.96] transition-[color,transform] duration-150 ease-out"
+                onClick={() => setInvestigationMode("analyst")}
+                title="Analyst Workbench: High-density multi-pane analytical workstation (Alt+M)"
                 style={{
-                  border: "none",
-                  background: "transparent",
-                  color: density === "compact" ? "#0F172A" : "#64748B",
-                  fontWeight: density === "compact" ? 700 : 500,
-                  fontSize: "10.5px",
-                  padding: "2px 8px",
-                  borderRadius: "16px",
-                  cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "3px",
-                  position: "relative",
-                  zIndex: 2,
-                  transition: "color 0.18s ease",
+                  gap: "4px",
+                  padding: "3px 7px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "analyst" ? 800 : 600,
+                  background: investigationMode === "analyst" ? "rgba(59, 130, 246, 0.22)" : "transparent",
+                  color: investigationMode === "analyst" ? "#60A5FA" : "#94A3B8",
+                  border: investigationMode === "analyst" ? "1px solid rgba(96, 165, 250, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
                 }}
               >
-                <Minimize2 size={10} color={density === "compact" ? "#4F46E5" : "#64748B"} />
-                <span>Small View</span>
+                <Microscope size={11} color={investigationMode === "analyst" ? "#60A5FA" : "#94A3B8"} />
+                <span>Analyst</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInvestigationMode("review")}
+                title="Forensic Review: Bitstream verification, SHA-256 CAS provenance, and BSA Section 63 admissibility (Alt+M)"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "3px 7px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: investigationMode === "review" ? 800 : 600,
+                  background: investigationMode === "review" ? "rgba(16, 185, 129, 0.22)" : "transparent",
+                  color: investigationMode === "review" ? "#34D399" : "#94A3B8",
+                  border: investigationMode === "review" ? "1px solid rgba(52, 211, 153, 0.45)" : "1px solid transparent",
+                  cursor: "pointer",
+                  transition: "all 0.12s ease",
+                }}
+              >
+                <Scale size={11} color={investigationMode === "review" ? "#34D399" : "#94A3B8"} />
+                <span>Review</span>
               </button>
             </div>
+          </div>
 
-            {/* ⚡ 1930 Golden Hour Batch Dispatch Popover */}
-            <Popover.Root open={goldenHourOpen} onOpenChange={setGoldenHourOpen}>
-              <Popover.Trigger asChild>
-                <button
-                  type="button"
-                  className="hover:bg-amber-100/80 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+          {/* ZONE 2 (CENTER): Flexible Breadcrumb with text-overflow ellipsis (Never Collides) */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              flex: "1 1 auto",
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ color: "rgba(255, 255, 255, 0.20)", flexShrink: 0 }}>/</span>
+            <span
+              style={{
+                fontSize: "11px",
+                fontFamily: "var(--font-mono)",
+                color: "#22D3EE",
+                fontWeight: 700,
+                background: "rgba(6, 182, 212, 0.16)",
+                border: "1px solid rgba(34, 211, 238, 0.25)",
+                padding: "1px 5px",
+                borderRadius: "3px",
+                flexShrink: 0,
+              }}
+            >
+              {activePage === "benchmark" ? "BENCHMARK-LAB" : activeCase?.firNumber || "CASE"}
+            </span>
+            <span style={{ color: "rgba(255, 255, 255, 0.20)", flexShrink: 0 }}>/</span>
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#F8FAFC",
+                letterSpacing: "-0.01em",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                minWidth: 0,
+              }}
+            >
+              {activePage === "benchmark"
+                ? "Synthetic & Public Dataset Forensic Benchmark"
+                : activePage === "workspaces" || activeRoute === "workspace"
+                  ? "Multi-Case Command Hub"
+                  : currentNav.shortTitle || currentNav.title}
+            </span>
+            <span className="hidden xl:inline-flex flex-shrink-0">
+              <ReuiStatusBadge text="Z3 Verified" variant="emerald" />
+            </span>
+            {activePage !== "benchmark" && activePage !== "workspaces" && activeRoute !== "workspace" && (
+              <>
+                <span className="flex-shrink-0">
+                  <CaseStatusControl
+                    caseId={activeCaseId}
+                    currentStatus={(activeCase as any)?.status || "INVESTIGATING"}
+                    isArchived={(activeCase as any)?.status === "ARCHIVED"}
+                  />
+                </span>
+                <span
+                  data-testid="investigation-progress-badge"
+                  className="hidden md:inline-flex flex-shrink-0"
                   style={{
-                    height: "28px",
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    background: "#FFFBEB",
-                    border: "1px solid #FDE68A",
-                    color: "#92400E",
-                    fontWeight: 700,
                     fontSize: "10.5px",
-                    borderRadius: "6px",
-                    padding: "0 8px",
-                    cursor: "pointer",
-                    boxShadow: "0 1px 2px rgba(217, 119, 6, 0.15)",
+                    fontWeight: 700,
+                    color: "#059669",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    padding: "2px 7px",
+                    borderRadius: "4px",
                   }}
+                  title={`Investigation Progress: ${investigationProgress.completedStepsCount} of ${investigationProgress.totalStepsCount} gates satisfied`}
                 >
-                  <Zap size={11} color="#D97706" />
-                  <span>⚡ 1930 Golden Hour</span>
-                  <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "0.5px 3.5px", borderRadius: "3px" }}>
-                    118m SLA
-                  </span>
-                </button>
-              </Popover.Trigger>
-              <Popover.Portal>
-                <Popover.Content
-                  align="end"
-                  sideOffset={6}
-                  style={{
-                    width: "360px",
-                    background: "#FFFFFF",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "10px",
-                    boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
-                    padding: "12px",
-                    zIndex: 100,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E2E8F0", paddingBottom: "6px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                      <Zap size={13} color="#D97706" />
-                      <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#0F172A" }}>
-                        1930 Golden Hour Dispatch Checklist
-                      </span>
-                    </div>
-                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#FFFBEB", color: "#B45309", border: "1px solid #FDE68A", padding: "1px 5px", borderRadius: "3px" }}>
-                      ⏱ SLA: 118m Remaining
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: "9.5px", color: "#475569", lineHeight: 1.35 }}>
-                    5 pre-filled statutory requisitions generated under BNSS 2023 &amp; DoT mandates for immediate nodal transmission:
-                  </div>
-
-                  {/* 5 Requisitions List */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    {[
-                      { num: "1", title: "SBI §94 CBS Verification", sub: "Finacle logs & HSM signature for UTR #626510149921", status: "READY" },
-                      { num: "2", title: "HDFC/Axis §107 Conduit Freeze", sub: "Immediate debit freeze on Layer-2 split accounts", status: "READY" },
-                      { num: "3", title: "ICICI §106 Proportional Lien", sub: "₹1.80L specific lien; protects ₹2.50L working capital", status: "READY" },
-                      { num: "4", title: "Airtel DoT 39.20 CGNAT Order", sub: "Dynamic IPDR translation for IP 103.21.144.92", status: "READY" },
-                      { num: "5", title: "NPCI Switch Certificate Demand", sub: "Section 63(4) BSA certification for UPI 2.0 session", status: "READY" },
-                    ].map((item) => (
-                      <div key={item.num} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "5px", padding: "4px 7px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontSize: "9.5px", fontWeight: 700, color: "#0F172A" }}>
-                            {item.num}. {item.title}
-                          </div>
-                          <div style={{ fontSize: "8px", color: "#64748B" }}>{item.sub}</div>
-                        </div>
-                        <span style={{ fontSize: "7.5px", fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "1px 4px", borderRadius: "3px" }}>
-                          {item.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 1-Click Copy All Button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(getCompiledGoldenHourDirectives());
-                      toast.success("Copied All 5 Golden-Hour Directives to clipboard!", {
-                        description: "Statutory dispatch bundle for SBI, HDFC, Axis, ICICI, Airtel, and NPCI.",
-                        duration: 4000,
-                      });
-                      setGoldenHourOpen(false);
-                    }}
+                  <span>✓ {investigationProgress.percentComplete}% Complete</span>
+                </span>
+                {headerActionFinancials.frozenAmountInr > 0 && (
+                  <span
+                    data-testid="header-recovered-badge"
+                    className="hidden lg:inline-flex flex-shrink-0"
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      gap: "5px",
-                      background: "#D97706",
-                      color: "#FFFFFF",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "6px 10px",
+                      gap: "4px",
                       fontSize: "10.5px",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      boxShadow: "0 2px 4px rgba(217, 119, 6, 0.25)",
+                      fontWeight: 800,
+                      color: headerActionFinancials.isFullyFrozen ? "#065F46" : "#0284C7",
+                      background: headerActionFinancials.isFullyFrozen ? "#ECFDF5" : "#F0F9FF",
+                      border: headerActionFinancials.isFullyFrozen ? "1px solid #A7F3D0" : "1px solid #BAE6FD",
+                      padding: "2px 7px",
+                      borderRadius: "4px",
+                    }}
+                    title={`Recovered Lien: ₹${headerActionFinancials.frozenAmountInr.toLocaleString("en-IN")} of ₹${headerActionFinancials.recoverableLibrInr.toLocaleString("en-IN")} recoverable`}
+                  >
+                    <Lock size={11} />
+                    <span>₹{headerActionFinancials.frozenAmountInr.toLocaleString("en-IN")} Frozen ({headerActionFinancials.recoveryPercentage}%)</span>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  data-testid="header-activity-button"
+                  onClick={() => {
+                    setAuditDrawerCaseId(activeCaseId);
+                    setIsAuditDrawerOpen(true);
+                  }}
+                  className="hidden md:inline-flex flex-shrink-0"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    color: "#4F46E5",
+                    background: "#EEF2FF",
+                    border: "1px solid #C7D2FE",
+                    padding: "2px 7px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                  title="Open Case Activity & Forensic Audit Log (SHA-256 Chained)"
+                >
+                  <Clock size={11} color="#4F46E5" />
+                  <span>Activity</span>
+                </button>
+                {pipelineState.status === "PROCESSING" && (
+                  <span
+                    data-testid="pipeline-processing-badge"
+                    className="flex-shrink-0"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      fontSize: "10.5px",
+                      fontWeight: 800,
+                      color: "#4F46E5",
+                      background: "#EEF2FF",
+                      border: "1px solid #C7D2FE",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
                     }}
                   >
-                    <Copy size={11} />
-                    <span>📋 Copy All 5 Golden-Hour Directives</span>
-                  </button>
-                </Popover.Content>
-              </Popover.Portal>
-            </Popover.Root>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4F46E5" }} className="animate-pulse" />
+                    <span>Pipeline: {pipelineState.stage || "Processing"} ({pipelineState.progress || 40}%)</span>
+                  </span>
+                )}
+              </>
+            )}
+            {!isBackendOnline ? (
+              <span
+                data-testid="offline-demo-pill"
+                className="flex-shrink-0"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "10.5px",
+                  fontWeight: 700,
+                  color: "#FBBF24",
+                  background: "rgba(245, 158, 11, 0.16)",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  padding: "2px 7px",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-mono)",
+                }}
+                title="Backend server offline · Operating deterministically with local verified fixtures"
+              >
+                <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#F59E0B" }} />
+                Offline demo data
+              </span>
+            ) : null}
+          </div>
 
-            {/* Live Judge Mutator Button */}
-            <button
-              type="button"
-              onClick={() => setMutatorRibbonOpen((prev) => !prev)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-              style={{
-                height: "28px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                background: activeMutationsCount > 0 ? "#FFF1F2" : "#F8FAFC",
-                border: activeMutationsCount > 0 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                color: activeMutationsCount > 0 ? "#BE123C" : "#334155",
-                fontWeight: 600,
-                fontSize: "11px",
-                borderRadius: "6px",
-                padding: "0 9px",
-                cursor: "pointer",
+          {/* ZONE 3 (RIGHT): Exactly 5 Visible Actions + Single '⋯ More' Popover */}
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+            {/* 1. Upgraded Case Switcher */}
+            <UpgradedCaseSwitcher
+              activeCase={activeCase}
+              activeCaseId={activeCaseId}
+              caseWorkspaces={caseWorkspaces}
+              onSelectCase={(targetCaseId) => {
+                const targetRoute = (activeRoute === "benchmarks" ? "intake" : activeRoute) as any;
+                selectCaseWorkspace(targetCaseId, targetRoute);
               }}
-            >
-              <Zap size={11} color={activeMutationsCount > 0 ? "#E11D48" : "#64748B"} />
-              <span>Mutator ({activeMutationsCount})</span>
-              <ChevronDown size={11} />
-            </button>
+              onOpenNewCase={openNewCaseModal}
+            />
 
-            {/* Benchmark Lab Drawer Trigger (Only shown on workbench to avoid header overlap) */}
-            {activePage === "workbench" && (
-              <button
-                type="button"
-                onClick={toggleBenchmarkLab}
-                className="hover:bg-emerald-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                title="Open Real-Time Dataset & Forensic Benchmark Lab (Alt+B)"
-                style={{
-                  height: "28px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  color: "#065F46",
-                  fontWeight: 700,
-                  fontSize: "11px",
-                  borderRadius: "6px",
-                  padding: "0 7px",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(5, 150, 105, 0.08)",
-                }}
-              >
-                <Zap size={11} color="#059669" />
-                <span>Lab</span>
-                <span
-                  style={{
-                    fontSize: "9px",
-                    padding: "1px 3px",
-                    borderRadius: "3px",
-                    background: "#D1FAE5",
-                    color: "#047857",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  Alt+B
-                </span>
-              </button>
-            )}
-
-            {/* Public Dataset Benchmark Trigger (Only shown on workbench to avoid header overlap) */}
-            {activePage === "workbench" && (
-              <button
-                type="button"
-                onClick={togglePublicDatasetModal}
-                className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
-                title="Open Public Dataset Benchmark (PaySim, IBM AML, IEEE-CIS) (Alt+D)"
-                style={{
-                  height: "28px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: "#EEF2FF",
-                  border: "1px solid #C7D2FE",
-                  color: "#3730A3",
-                  fontWeight: 700,
-                  fontSize: "11px",
-                  borderRadius: "6px",
-                  padding: "0 7px",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
-                }}
-              >
-                <Database size={11} color="#4F46E5" />
-                <span className="hidden xl:inline">Public</span>
-                <span>Datasets</span>
-                <span
-                  style={{
-                    fontSize: "9px",
-                    padding: "1px 3px",
-                    borderRadius: "3px",
-                    background: "#E0E7FF",
-                    color: "#4338CA",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  Alt+D
-                </span>
-              </button>
-            )}
-
-            {/* 7-Question Explainable Intelligence Brief */}
+            {/* 2. Brief */}
             <button
               type="button"
               onClick={() => setIntelligenceBriefOpen(true)}
-              className="hover:bg-indigo-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-cyan-500/20 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title="Open 7-Question Explainable Investigation Intelligence Brief"
               style={{
                 height: "28px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                color: "#4338CA",
+                background: "rgba(6, 182, 212, 0.14)",
+                border: "1px solid rgba(34, 211, 238, 0.30)",
+                color: "#22D3EE",
                 fontWeight: 700,
                 fontSize: "11px",
                 borderRadius: "6px",
                 padding: "0 8px",
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(79, 70, 229, 0.08)",
+                flexShrink: 0,
               }}
             >
-              <Sparkles size={11} color="#4F46E5" />
-              <span className="hidden xl:inline">Intelligence</span>
+              <Sparkles size={11} color="#22D3EE" />
               <span>Brief</span>
             </button>
 
-            {/* Voice AI */}
+            {/* 3. Voice AI */}
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
-              className="hover:bg-slate-100 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:bg-slate-800/60 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title="Voice AI Assistant"
               style={{
                 height: "28px",
@@ -1406,55 +1669,58 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 alignItems: "center",
                 gap: "4px",
                 background: "#F8FAFC",
-                border: "1px solid #E2E8F0",
+                border: "1px solid #CBD5E1",
                 color: "#334155",
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
-                padding: "0 7px",
+                padding: "0 8px",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
             >
-              <Mic size={11} color="#64748B" />
-              <span className="hidden 2xl:inline">Voice AI</span>
+              <Mic size={11} color="#4F46E5" />
+              <span>Voice AI</span>
             </button>
 
-            {/* Export §63 PDF */}
+            {/* 4. Export Report */}
             <button
               type="button"
               disabled={intakeGate?.isHalted}
-              onClick={handlePrintPdf}
+              onClick={() => setActiveRoute("report")}
               className="hover:bg-slate-800 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               title={
                 intakeGate?.isHalted
                   ? "Export disabled: Falsification Gate halted downstream admissibility"
-                  : "Generate & Export §63(4) BSA Evidence Certificate"
+                  : "View & Export Certified A4 Report (BSA §63(4))"
               }
               style={{
                 height: "28px",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                background: intakeGate?.isHalted ? "#F1F5F9" : "#0F172A",
-                color: intakeGate?.isHalted ? "#94A3B8" : "#FFFFFF",
-                border: "1px solid transparent",
+                background: intakeGate?.isHalted ? "rgba(255, 255, 255, 0.05)" : "#0F1B2E",
+                color: intakeGate?.isHalted ? "#8C9EB0" : "#FFFFFF",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontWeight: 600,
                 fontSize: "11px",
                 borderRadius: "6px",
                 padding: "0 8px",
                 cursor: intakeGate?.isHalted ? "not-allowed" : "pointer",
                 boxShadow: intakeGate?.isHalted ? "none" : "0 1px 2px rgba(0,0,0,0.1)",
+                flexShrink: 0,
               }}
             >
               <FileDown size={11} />
-              <span>Export §63</span>
+              <span>Export Report</span>
             </button>
 
+            {/* 5. + Evidence */}
             <button
               type="button"
               onClick={() => openEvidenceModal(activeCaseId)}
               title="Insert & Quarantine Forensic Evidence Exhibit (WebCrypto Hashing)"
-              className="hover:bg-indigo-700 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+              className="hover:brightness-110 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
               style={{
                 height: "28px",
                 display: "inline-flex",
@@ -1465,35 +1731,479 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 border: "1px solid #4338CA",
                 background: "#4F46E5",
                 color: "#FFFFFF",
-                cursor: "pointer",
-                fontSize: "11px",
                 fontWeight: 700,
+                fontSize: "11px",
+                cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
+                flexShrink: 0,
               }}
             >
-              <FileUp size={11} />
+              <Plus size={12} />
               <span>+ Evidence</span>
             </button>
+
+            {/* Notification Center Popover */}
+            <NotificationCenterPopover
+              onNavigateToCase={(cid, route) => selectCaseWorkspace(cid, route)}
+              onOpenAuditTrail={() => {
+                setAuditDrawerCaseId(activeCaseId);
+                setIsAuditDrawerOpen(true);
+              }}
+            />
+
+            {/* ⋯ More Popover (rarely used controls: Mutator, Lab, Compact, Lien clock, 1930 SLA) */}
+            <Popover.Root open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
+              <Popover.Trigger asChild>
+                <button
+                  type="button"
+                  title="More tools & forensic controls"
+                  className="hover:bg-slate-800/60 enabled:active:scale-[0.96] transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out"
+                  style={{
+                    height: "28px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px",
+                    background: activeMutationsCount > 0 ? "rgba(244, 63, 94, 0.18)" : "rgba(255, 255, 255, 0.05)",
+                    border: activeMutationsCount > 0 ? "1px solid rgba(244, 63, 94, 0.35)" : "1px solid rgba(255, 255, 255, 0.12)",
+                    color: activeMutationsCount > 0 ? "#FB7185" : "#F8FAFC",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    borderRadius: "6px",
+                    padding: "0 7px",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <MoreHorizontal size={13} />
+                  <span>More</span>
+                  {activeMutationsCount > 0 && (
+                    <span style={{ fontSize: "8.5px", fontWeight: 800, background: "#E11D48", color: "#FFFFFF", padding: "0.5px 3.5px", borderRadius: "3px" }}>
+                      {activeMutationsCount}
+                    </span>
+                  )}
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  align="end"
+                  sideOffset={6}
+                  style={{
+                    width: "290px",
+                    background: "#132238",
+                    border: "1px solid rgba(255, 255, 255, 0.14)",
+                    borderRadius: "10px",
+                    boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.75)",
+                    padding: "10px",
+                    zIndex: 100,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    color: "#F8FAFC",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                >
+                  <div style={{ fontSize: "10px", fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em", paddingBottom: "4px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                    FORENSIC UTILITIES &amp; LABS
+                  </div>
+
+                  {/* Operational Clock Stepper */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "10.5px", color: "#94A3B8" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Clock size={11} color="#60A5FA" />
+                        <span>Timeline Calibration</span>
+                      </span>
+                      <span style={{ fontFamily: "var(--font-mono)", color: "#22D3EE", fontWeight: 700 }}>
+                        {(clockStages.find((stg) => Math.abs(timeOffsetHours - stg.offset) < 0.5) || clockStages[2]).label}
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "3px" }}>
+                      {clockStages.map((stg, idx) => {
+                        const isCurrent = Math.abs(timeOffsetHours - stg.offset) < 0.5;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setTimeOffsetHours(stg.offset)}
+                            style={{
+                              padding: "4px 2px",
+                              fontSize: "10px",
+                              fontWeight: 700,
+                              borderRadius: "4px",
+                              border: isCurrent ? "1px solid #38BDF8" : "1px solid rgba(255, 255, 255, 0.08)",
+                              background: isCurrent ? "rgba(56, 189, 248, 0.20)" : "rgba(255, 255, 255, 0.04)",
+                              color: isCurrent ? "#38BDF8" : "#94A3B8",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {stg.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Live Judge Mutator Drawer */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMutatorRibbonOpen((prev) => !prev);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activeMutationsCount > 0 ? "rgba(244, 63, 94, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                      border: activeMutationsCount > 0 ? "1px solid rgba(244, 63, 94, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activeMutationsCount > 0 ? "#FB7185" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Zap size={12} color={activeMutationsCount > 0 ? "#F43F5E" : "#94A3B8"} />
+                      <span>Falsification Mutator</span>
+                    </span>
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: activeMutationsCount > 0 ? "#FB7185" : "#94A3B8" }}>
+                      {activeMutationsCount} Active →
+                    </span>
+                  </button>
+
+                  {/* Benchmark Lab Screen Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePage("benchmark");
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activePage === "benchmark" ? "rgba(16, 185, 129, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                      border: activePage === "benchmark" ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activePage === "benchmark" ? "#34D399" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Zap size={12} color="#10B981" />
+                      <span>Empirical Benchmark Lab</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#10B981", background: "rgba(16, 185, 129, 0.20)", padding: "1px 4px", borderRadius: "3px" }}>
+                      Alt+B
+                    </span>
+                  </button>
+
+                  {/* Density Compact Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setDensity(density === "comfortable" ? "compact" : "comfortable")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      color: "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      {density === "comfortable" ? <Minimize2 size={12} color="#94A3B8" /> : <Maximize2 size={12} color="#94A3B8" />}
+                      <span>Display Density</span>
+                    </span>
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#22D3EE" }}>
+                      {density === "comfortable" ? "Standard" : "Compact"}
+                    </span>
+                  </button>
+
+                  {/* 1930 SLA Golden Hour Dispatch */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard.writeText(getCompiledGoldenHourDirectives());
+                        toast.success("Copied 5 Golden-Hour Directives to clipboard!", {
+                          description: "Statutory dispatch bundle for SBI, HDFC, Axis, ICICI, Airtel, and NPCI.",
+                          duration: 4000,
+                        });
+                      }
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(245, 158, 11, 0.14)",
+                      border: "1px solid rgba(245, 158, 11, 0.30)",
+                      color: "#FBBF24",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700 }}>
+                      <Zap size={12} color="#F59E0B" />
+                      <span>1930 Golden Hour SLA</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", padding: "1px 4px", borderRadius: "3px" }}>
+                      118m Left (Copy Orders)
+                    </span>
+                  </button>
+
+                  {/* Settings & Administration Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePage("workbench");
+                      setActiveRoute("settings");
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activeRoute === "settings" ? "rgba(2, 132, 199, 0.20)" : "rgba(255, 255, 255, 0.04)",
+                      border: activeRoute === "settings" ? "1px solid rgba(2, 132, 199, 0.40)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activeRoute === "settings" ? "#38BDF8" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Settings size={12} color="#38BDF8" />
+                      <span>Settings &amp; Administration</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#38BDF8", background: "rgba(2, 132, 199, 0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                      ?view=settings
+                    </span>
+                  </button>
+
+                  {/* Forensic Audit Ledger Link */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuditDrawerCaseId(activeCaseId);
+                      setIsAuditDrawerOpen(true);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(99, 102, 241, 0.14)",
+                      border: "1px solid rgba(99, 102, 241, 0.30)",
+                      color: "#818CF8",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700 }}>
+                      <ShieldCheck size={12} color="#818CF8" />
+                      <span>Case Audit Ledger (SHA-256)</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 4px", borderRadius: "3px" }}>
+                      Immutable
+                    </span>
+                  </button>
+
+                  {/* System Health Diagnostics */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePage("workbench");
+                      setActiveRoute("health" as any);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("view", "health");
+                      window.history.pushState({}, "", url.toString());
+                      useCaseStore.getState().setActiveView("health" as any);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: activeRoute === "health" ? "rgba(16, 185, 129, 0.20)" : "rgba(255, 255, 255, 0.04)",
+                      border: activeRoute === "health" ? "1px solid rgba(16, 185, 129, 0.40)" : "1px solid rgba(255, 255, 255, 0.08)",
+                      color: activeRoute === "health" ? "#34D399" : "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <Activity size={12} color="#10B981" />
+                      <span>System Health &amp; Diagnostics</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#10B981", background: "rgba(16, 185, 129, 0.15)", padding: "1px 4px", borderRadius: "3px" }}>
+                      ?view=health
+                    </span>
+                  </button>
+
+                  {/* Switch Demo Persona */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDemoUserModalOpen(true);
+                      setMoreMenuOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      color: "#F8FAFC",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 600 }}>
+                      <User size={12} color="#94A3B8" />
+                      <span>Switch Operational Persona</span>
+                    </span>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "#60A5FA" }}>
+                      {settingsProfile.role}
+                    </span>
+                  </button>
+
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
           </div>
         </header>
+
+        {/* PHASE 15 ADAPTIVE PRESENTATION MODE HUD */}
+        {investigationMode === "guided" && activePage === "workbench" && (
+          <div
+            style={{
+              background: "rgba(6, 182, 212, 0.10)",
+              borderBottom: "1px solid rgba(34, 211, 238, 0.25)",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: "#F8FAFC",
+              flexShrink: 0,
+              zIndex: 15,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "#06B6D4", color: "#060B14", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", letterSpacing: "0.04em" }}>
+                GUIDED WORKFLOW
+              </span>
+              <span style={{ fontWeight: 700, color: "#22D3EE" }}>
+                {getStageGuidanceTitle(activeRoute)}
+              </span>
+              <span style={{ color: "#8C9EB0" }}>·</span>
+              <span style={{ color: "#CBD5E1" }}>
+                {getStageGuidanceAction(activeRoute)}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <button
+                type="button"
+                onClick={startJudgeDemo}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+                  color: "#FFFFFF",
+                  fontSize: "10.5px",
+                  fontWeight: 800,
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 1px 4px rgba(6, 182, 212, 0.3)",
+                }}
+              >
+                <Sparkles size={11} />
+                <span>⚡ 3-Min Judge Demo</span>
+              </button>
+              <span style={{ fontSize: "10px", color: "#94A3B8" }}>Press Alt+M for Analyst view</span>
+            </div>
+          </div>
+        )}
+
+        {investigationMode === "review" && activePage === "workbench" && (
+          <div
+            style={{
+              background: "rgba(16, 185, 129, 0.10)",
+              borderBottom: "1px solid rgba(16, 185, 129, 0.25)",
+              padding: "6px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: "#F8FAFC",
+              flexShrink: 0,
+              zIndex: 15,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ background: "#10B981", color: "#060B14", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", fontSize: "10px", letterSpacing: "0.04em" }}>
+                BSA § 63 REVIEW
+              </span>
+              <span style={{ fontWeight: 700, color: "#34D399" }}>
+                Immutable Evidence Chain Verified
+              </span>
+              <span style={{ color: "#8C9EB0" }}>·</span>
+              <span style={{ color: "#E2E8F0", fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+                SHA-256 CAS INTACT · Z3 SMT UNSAT PROVEN · NTP SKEW: +14s (COMPLIANT)
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button
+                type="button"
+                onClick={() => setTransformationAuditModalOpen(true)}
+                style={{
+                  background: "rgba(16, 185, 129, 0.18)",
+                  border: "1px solid rgba(16, 185, 129, 0.35)",
+                  color: "#34D399",
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                }}
+              >
+                📜 Lineage Audit Log
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Mutator Ribbon Drawer */}
         {mutatorRibbonOpen && (
           <div
             style={{
-              background: "#F8FAFC",
-              borderBottom: "1px solid #E2E8F0",
+              background: "#132238",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.10)",
               padding: "10px 14px",
               display: "flex",
               flexDirection: "column",
               gap: "8px",
               fontSize: "11px",
               flexShrink: 0,
+              color: "#F8FAFC",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontWeight: 700, color: "#0F172A" }}>Live Judge Falsification Mutators:</span>
+                <span style={{ fontWeight: 700, color: "#FFFFFF" }}>Live Judge Falsification Mutators:</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1504,9 +2214,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   style={{
                     padding: "3px 8px",
                     borderRadius: "4px",
-                    border: mutations.alterBankRow14 ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                    background: mutations.alterBankRow14 ? "#FFF1F2" : "#FFFFFF",
-                    color: mutations.alterBankRow14 ? "#BE123C" : "#334155",
+                    border: mutations.alterBankRow14 ? "1px solid rgba(244, 63, 94, 0.40)" : "1px solid rgba(255, 255, 255, 0.10)",
+                    background: mutations.alterBankRow14 ? "rgba(244, 63, 94, 0.20)" : "rgba(255, 255, 255, 0.05)",
+                    color: mutations.alterBankRow14 ? "#FB7185" : "#E2E8F0",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "inline-flex",
@@ -1514,7 +2224,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     gap: "4px",
                   }}
                 >
-                  <Zap size={11} color={mutations.alterBankRow14 ? "#E11D48" : "#64748B"} />
+                  <Zap size={11} color={mutations.alterBankRow14 ? "#F43F5E" : "#94A3B8"} />
                   <span>{mutations.alterBankRow14 ? "Row #14 Tampered (-₹2.00L)" : "Alter Bank Row #14"}</span>
                 </button>
 
@@ -1528,9 +2238,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   style={{
                     padding: "3px 8px",
                     borderRadius: "4px",
-                    border: mutations.forgeRrnTimestamp ? "1px solid #FECDD3" : "1px solid #E2E8F0",
-                    background: mutations.forgeRrnTimestamp ? "#FFF1F2" : "#FFFFFF",
-                    color: mutations.forgeRrnTimestamp ? "#BE123C" : "#334155",
+                    border: mutations.forgeRrnTimestamp ? "1px solid rgba(244, 63, 94, 0.40)" : "1px solid rgba(255, 255, 255, 0.10)",
+                    background: mutations.forgeRrnTimestamp ? "rgba(244, 63, 94, 0.20)" : "rgba(255, 255, 255, 0.05)",
+                    color: mutations.forgeRrnTimestamp ? "#FB7185" : "#E2E8F0",
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
@@ -1551,9 +2261,9 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   gap: "3px",
                   padding: "3px 8px",
                   borderRadius: "4px",
-                  border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#475569",
+                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#CBD5E1",
                   cursor: "pointer",
                   fontSize: "10.5px",
                 }}
@@ -1564,16 +2274,16 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             </div>
 
             {/* Live Judge Mutation Audit Log (Session Receipts) */}
-            <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>
+            <div style={{ background: "#0B1220", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "6px", padding: "6px 8px", display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9.5px", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase" }}>
                 <span>Live Judge Mutation Audit Trail (Session Receipts)</span>
-                <span style={{ color: "#059669" }}>Real-time Audit Log</span>
+                <span style={{ color: "#34D399" }}>Real-time Audit Log</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "2px", maxHeight: "72px", overflowY: "auto" }}>
                 {mutationReceipts.map((rcpt) => (
                   <div key={rcpt.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", fontFamily: "var(--font-mono)" }}>
-                    <span style={{ color: "#94A3B8" }}>{rcpt.time}</span>
-                    <span style={{ color: rcpt.type === "tamper" ? "#BE123C" : "#047857", fontWeight: 600 }}>
+                    <span style={{ color: "#8C9EB0" }}>{rcpt.time}</span>
+                    <span style={{ color: rcpt.type === "tamper" ? "#FB7185" : "#34D399", fontWeight: 600 }}>
                       {rcpt.type === "tamper" ? "✗" : "✓"} {rcpt.text}
                     </span>
                   </div>
@@ -1663,12 +2373,68 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           </div>
         )}
 
+        {/* PERSISTENT OFFLINE MODE BANNER WITH RETRY (Prompt F-8) */}
+        {!isBackendOnline && (
+          <div
+            data-testid="offline-alert-banner"
+            style={{
+              background: "rgba(245, 158, 11, 0.18)",
+              borderBottom: "1px solid rgba(245, 158, 11, 0.45)",
+              padding: "7px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexShrink: 0,
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#FDE68A",
+              zIndex: 20,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <AlertTriangle size={15} color="#F59E0B" />
+              <span>
+                <strong>Offline Mode Active:</strong> TARKA backend server is unreachable. Operating deterministically with verified local fixtures. Real-time pipeline updates paused.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await forensicsApi.getHealth();
+                  setIsBackendOnline(true);
+                  toast.success("Backend connection re-established.");
+                } catch {
+                  setIsBackendOnline(false);
+                  toast.error("Backend still unreachable.");
+                }
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                background: "rgba(245, 158, 11, 0.25)",
+                border: "1px solid rgba(245, 158, 11, 0.5)",
+                color: "#FDE68A",
+                padding: "3px 10px",
+                borderRadius: "5px",
+                fontSize: "11px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              <RotateCcw size={12} />
+              <span>Retry Connection</span>
+            </button>
+          </div>
+        )}
+
         {/* 1. PERSISTENT SANDBOX STRESS-TEST MODE WARNING BANNER */}
         {activeMutationsCount > 0 && (
           <div
             style={{
-              background: "#FFFBEB",
-              borderBottom: "1px solid #FCD34D",
+              background: "rgba(245, 158, 11, 0.16)",
+              borderBottom: "1px solid rgba(245, 158, 11, 0.35)",
               padding: "6px 14px",
               display: "flex",
               alignItems: "center",
@@ -1676,12 +2442,12 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               flexShrink: 0,
               fontSize: "11px",
               fontWeight: 700,
-              color: "#B45309",
+              color: "#FBBF24",
               zIndex: 15,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <AlertTriangle size={15} color="#D97706" />
+              <AlertTriangle size={15} color="#F59E0B" />
               <span>
                 ⚠️ SANDBOX STRESS-TEST MODE ACTIVE (Original Evidence Immutable · Signed Simulation Receipt Generated)
               </span>
@@ -1689,11 +2455,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                 style={{
                   fontSize: "10px",
                   fontWeight: 800,
-                  color: "#92400E",
-                  background: "#FEF3C7",
+                  color: "#FDE68A",
+                  background: "rgba(245, 158, 11, 0.25)",
                   padding: "1px 6px",
                   borderRadius: "3px",
-                  border: "1px solid #FDE68A",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
                   fontFamily: "var(--font-mono)",
                 }}
               >
@@ -1704,15 +2470,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
               type="button"
               onClick={resetAllMutations}
               style={{
-                background: "#FFFFFF",
-                border: "1px solid #F59E0B",
-                color: "#B45309",
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(245, 158, 11, 0.50)",
+                color: "#FDE68A",
                 padding: "3px 10px",
                 borderRadius: "5px",
                 cursor: "pointer",
                 fontSize: "10.5px",
                 fontWeight: 700,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
             >
               Reset All Mutators
@@ -1727,15 +2493,15 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
           activeRoute !== "entities" && (
             <div
               style={{
-                background: "#FFF1F2",
-                borderBottom: "1px solid #FECDD3",
+                background: "rgba(244, 63, 94, 0.16)",
+                borderBottom: "1px solid rgba(244, 63, 94, 0.35)",
                 padding: "8px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 flexShrink: 0,
                 fontSize: "11px",
-                color: "#BE123C",
+                color: "#FB7185",
                 zIndex: 15,
               }}
             >
@@ -1745,11 +2511,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                     width: "22px",
                     height: "22px",
                     borderRadius: "4px",
-                    background: "#FFE4E6",
+                    background: "rgba(244, 63, 94, 0.25)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#E11D48",
+                    color: "#FB7185",
                     fontWeight: 900,
                     fontSize: "13px",
                   }}
@@ -1757,10 +2523,10 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   ⛔
                 </div>
                 <div>
-                  <span style={{ fontWeight: 800 }}>
+                  <span style={{ fontWeight: 800, color: "#FFFFFF" }}>
                     PIPELINE HALTED: Upstream Invariant Violation Detected
                   </span>
-                  <span style={{ marginLeft: "6px", color: "#9F1239" }}>
+                  <span style={{ marginLeft: "6px", color: "#FECDD3" }}>
                     — Cannot Generate Admissible §63(4) Output on Unreconciled or Tampered Telemetry. Downstream attribution & certificates locked until resolved in Screen 01.
                   </span>
                 </div>
@@ -1777,7 +2543,7 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
                   cursor: "pointer",
                   fontSize: "10.5px",
                   fontWeight: 800,
-                  boxShadow: "0 1px 3px rgba(225, 29, 72, 0.3)",
+                  boxShadow: "0 1px 3px rgba(225, 29, 72, 0.4)",
                 }}
               >
                 Resolve in Intake (Alt+1) →
@@ -1800,54 +2566,141 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             height: "100%",
           }}
         >
-          {activePage === "workspaces" && <CaseWorkspaceScreen />}
-          {activePage === "benchmark" && <BenchmarkLabScreen />}
-          {activePage === "workbench" && (
-            <>
-              {(activeRoute === "intake" || activeRoute === "workspace") && <IntakeScreen />}
-              {activeRoute === "entities" && <EntityResolutionScreen />}
-              {activeRoute === "attribution" && <AttributionScreen />}
-              {activeRoute === "network" && <FraudNetworkScreen />}
-              {activeRoute === "taint-engine" && <TaintEngineScreen />}
-              {activeRoute === "court-proof" && <CourtProofScreen />}
-            </>
+          {/* Read-Only Archived Case Warning Banner */}
+          {(activeCase as any)?.status === "ARCHIVED" && activePage === "workbench" && (
+            <div
+              data-testid="archived-case-banner"
+              style={{
+                background: "#FEF3C7",
+                borderBottom: "1px solid #FCD34D",
+                padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                color: "#92400E",
+                fontSize: "12px",
+                fontWeight: 600,
+                flexShrink: 0,
+                zIndex: 20,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Archive size={14} color="#D97706" />
+                <span>This case is ARCHIVED and read-only. All evidence mutations and statutory actions are locked.</span>
+              </div>
+            </div>
           )}
+
+          <ErrorBoundary fallbackTitle="Screen Render Notice">
+            <Suspense fallback={<ScreenSuspenseFallback />}>
+              {activePage === "benchmark" ? (
+                <BenchmarkLabScreen />
+              ) : activeRoute === "settings" ? (
+                <SettingsScreen />
+              ) : activeRoute === "health" ? (
+                <HealthDiagnosticsScreen />
+              ) : activePage === "workspaces" || activeRoute === "workspace" ? (
+                <CaseWorkspaceScreen />
+              ) : !Boolean(
+                !activeCaseId ||
+                CANONICAL_CASES[activeCaseId] ||
+                caseWorkspaces.some((c) => c.caseId === activeCaseId || (c as any).id === activeCaseId)
+              ) ? (
+                <CaseNotFoundScreen caseId={activeCaseId} />
+              ) : activeRoute === "intake" ? (
+                <IntakeScreen />
+              ) : activeRoute === "entities" ? (
+                <EntityResolutionScreen />
+              ) : activeRoute === "attribution" ? (
+                <AttributionScreen />
+              ) : activeRoute === "network" ? (
+                <FraudNetworkScreen />
+              ) : activeRoute === "taint-engine" ? (
+                <TaintEngineScreen />
+              ) : activeRoute === "court-proof" ? (
+                <CourtProofScreen />
+              ) : activeRoute === "privacy-crypto" ? (
+                <PrivacyCryptoWorkbench />
+              ) : activeRoute === "workstation" ? (
+                <ForensicWorkstationScreen />
+              ) : activeRoute === "report" || activeRoute === "actions" ? (
+                <ReportScreen />
+              ) : (
+                <ViewNotFoundScreen view={activeRoute} />
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </div>
 
-      {/* Live Cryptographic Evidence Intake & Case Modals */}
-      <EvidenceIntakeModal />
-      <NewCaseModal />
-      <BenchmarkLabDrawer />
-      <PublicDatasetBenchmarkModal />
+      {/* Demo Persona Switching Modal (Prompt F-8) */}
+      <DemoUserModal
+        isOpen={isDemoUserModalOpen}
+        onClose={() => setIsDemoUserModalOpen(false)}
+      />
 
-      {/* Voice Assistant Modal */}
-      {voiceOpen && (
-        <SarvamVoiceModal
-          caseId={activeCaseId || "CASE-2026-001"}
-          isOpen={voiceOpen}
-          onClose={() => setVoiceOpen(false)}
+      {/* Live Cryptographic Evidence Intake & Case Modals (Lazy Loaded) */}
+      <Suspense fallback={null}>
+        <ErrorBoundary fallbackTitle="Evidence Modal Notice">
+          <EvidenceIntakeModal />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="New Case Modal Notice">
+          <NewCaseModal />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="Benchmark Drawer Notice">
+          <BenchmarkLabDrawer />
+        </ErrorBoundary>
+        <ErrorBoundary fallbackTitle="Benchmark Modal Notice">
+          <PublicDatasetBenchmarkModal />
+        </ErrorBoundary>
+
+        {/* Voice Assistant Modal */}
+        {voiceOpen && (
+          <ErrorBoundary fallbackTitle="Voice Assistant Notice">
+            <SarvamVoiceModal
+              caseId={activeCaseId || "CASE-2026-001"}
+              isOpen={voiceOpen}
+              onClose={() => setVoiceOpen(false)}
+            />
+          </ErrorBoundary>
+        )}
+
+        {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
+        <RelationshipEvidenceSheet
+          edge={selectedEvidenceEdge}
+          isOpen={relationshipSheetOpen}
+          onClose={() => {
+            setRelationshipSheetOpen(false);
+            setSelectedEvidenceEdge(null);
+          }}
         />
-      )}
 
-      {/* PS04 Multi-File Investigation Reconstructor Drawers & Modals */}
-      <RelationshipEvidenceSheet
-        edge={selectedEvidenceEdge}
-        isOpen={relationshipSheetOpen}
-        onClose={() => {
-          setRelationshipSheetOpen(false);
-          setSelectedEvidenceEdge(null);
-        }}
-      />
+        <ErrorBoundary fallbackTitle="Investigation Intelligence Brief Notice">
+          <InvestigationIntelligenceBrief
+            isOpen={intelligenceBriefOpen}
+            onClose={() => setIntelligenceBriefOpen(false)}
+          />
+        </ErrorBoundary>
 
-      <InvestigationIntelligenceBrief
-        isOpen={intelligenceBriefOpen}
-        onClose={() => setIntelligenceBriefOpen(false)}
-      />
+        <ErrorBoundary fallbackTitle="Transformation Audit Log Notice">
+          <TransformationAuditLog
+            isOpen={transformationAuditModalOpen}
+            onClose={() => setTransformationAuditModalOpen(false)}
+          />
+        </ErrorBoundary>
+      </Suspense>
 
-      <TransformationAuditLog
-        isOpen={transformationAuditModalOpen}
-        onClose={() => setTransformationAuditModalOpen(false)}
+      {/* Case Fingerprint Dev Overlay (Ctrl+Shift+D) */}
+      <CaseFingerprintDevOverlay />
+
+      {/* Global What Changed Banner */}
+      <WhatChangedBanner data={globalWhatChanged} onClose={() => setGlobalWhatChanged(null)} />
+
+      {/* Case & Station Forensic Audit Trail Drawer (BSA §63) */}
+      <CaseAuditTrailDrawer
+        caseId={auditDrawerCaseId}
+        isOpen={isAuditDrawerOpen}
+        onClose={() => setIsAuditDrawerOpen(false)}
       />
     </div>
   );

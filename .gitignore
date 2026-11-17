@@ -6,8 +6,12 @@ backend/.env
 # Python
 __pycache__/
 *.py[cod]
+*.db
+backend/data/*.db
 venv/
 backend/venv/
+backend/.venv312/
+.claude/
 
 # Node
 node_modules/
@@ -30,6 +34,7 @@ npm-debug.log*
 *.webm
 *.webp
 *.png
+!docs/**/*.png
 frontend/tmp/
 .pytest_cache/
 backups/
@@ -42,3 +47,14 @@ backend/data/cases/*
 !backend/data/cases/upi_payment_discrepancy/
 backend/data/cases/upi_payment_discrepancy/**
 backend/data/staging/
+data/ingestion/
+
+# Test artifacts & scratch
+test-results/
+frontend/test-results/
+playwright-report/
+frontend/playwright-report/
+scratch/
+frontend/scratch/
+*.sqlite
+*.sqlite3

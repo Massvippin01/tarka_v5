@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   FilePlus2,
@@ -7,11 +8,12 @@ import {
   Fingerprint,
   CheckCircle2,
   AlertCircle,
+  Shield,
 } from "lucide-react";
 import { useTarkaGlobal, type CaseWorkspace } from "../../../context/TarkaGlobalContext";
 
 export const NewCaseModal: React.FC = () => {
-  const { isNewCaseModalOpen, closeNewCaseModal, createNewCaseWorkspace, openEvidenceModal } = useTarkaGlobal();
+  const { isNewCaseModalOpen, closeNewCaseModal, createNewCaseWorkspace, openEvidenceModal, selectCaseWorkspace } = useTarkaGlobal();
 
   const [firNumber, setFirNumber] = useState("");
   const [policeStation, setPoliceStation] = useState("Noida Cyber Crime PS, UP");
@@ -27,6 +29,12 @@ export const NewCaseModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
 
+  const handleClose = () => {
+    setErrorMsg(null);
+    setCreatedCaseId(null);
+    closeNewCaseModal();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isNewCaseModalOpen) {
@@ -38,12 +46,6 @@ export const NewCaseModal: React.FC = () => {
   }, [isNewCaseModalOpen]);
 
   if (!isNewCaseModalOpen) return null;
-
-  const handleClose = () => {
-    setErrorMsg(null);
-    setCreatedCaseId(null);
-    closeNewCaseModal();
-  };
 
   const handleAutoFillEmergency = () => {
     setFirNumber("FIR #188/2026");
@@ -103,138 +105,61 @@ export const NewCaseModal: React.FC = () => {
     const caseId = createdCaseId;
     handleClose();
     setTimeout(() => {
+      selectCaseWorkspace(caseId, "intake");
       openEvidenceModal(caseId);
     }, 100);
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "6px 10px",
-    borderRadius: "6px",
-    border: "1px solid #CBD5E1",
-    background: "#FFFFFF",
-    fontSize: "12px",
-    color: "#0F172A",
-    boxSizing: "border-box",
-    outline: "none",
+  const handleReturnToHub = () => {
+    if (createdCaseId) {
+      selectCaseWorkspace(createdCaseId, "intake");
+    }
+    handleClose();
   };
 
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: 600,
-    color: "#334155",
-    marginBottom: "4px",
-  };
-
-  return (
+  const modalNode = (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(15, 23, 42, 0.55)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-        boxSizing: "border-box",
-      }}
+      className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        style={{
-          width: "660px",
-          maxWidth: "96vw",
-          maxHeight: "92vh",
-          background: "#FFFFFF",
-          borderRadius: "14px",
-          border: "1px solid #CBD5E1",
-          boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)",
-        }}
+        data-testid="register-new-case-modal"
+        className="w-full max-w-[680px] max-h-[min(90vh,700px)] my-auto flex flex-col overflow-hidden rounded-xl bg-white border border-[var(--line)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div
-          style={{
-            padding: "12px 18px",
-            borderBottom: "1px solid #E2E8F0",
-            background: "#F8FAFC",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                color: "#4F46E5",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <FilePlus2 size={16} />
+        <div className="shrink-0 p-4 sm:px-5 sm:py-3.5 border-b border-[var(--line)] bg-white flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-200 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <Shield size={18} />
             </div>
             <div>
-              <div style={{ fontSize: "13.5px", fontWeight: 800, color: "#0F172A" }}>
+              <div className="text-[14.5px] font-bold text-[var(--fg-1)]">
                 Register New Cyber Crime Investigation Workspace
               </div>
-              <div style={{ fontSize: "10.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
+              <div className="text-[12px] text-[var(--muted)] font-mono">
                 BSA 2023 §63 · BNSS 2023 §173 · NCRP 1930 Golden-Hour Intake
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleAutoFillEmergency}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                padding: "4px 8px",
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#92400E",
-                background: "#FEF3C7",
-                border: "1px solid #FDE68A",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
               title="Pre-fills a realistic emergency Corporate BEC case under NCRP 1930"
             >
-              <Zap size={12} color="#D97706" />
+              <Zap size={13} className="text-amber-600" />
               <span>⚡ 1-Click Auto-Fill Demo</span>
             </button>
 
             <button
               type="button"
               onClick={handleClose}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#94A3B8",
-                cursor: "pointer",
-                padding: "4px",
-                display: "flex",
-                alignItems: "center",
-              }}
+              className="text-[var(--muted)] hover:text-[var(--fg-1)] hover:bg-[#f4f4f5] p-1.5 rounded-lg border-none bg-transparent transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X size={16} />
@@ -243,114 +168,59 @@ export const NewCaseModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: "16px 20px", overflowY: "auto", flex: "1 1 0%" }}>
+        <div className="flex-1 min-h-0 overflow-y-auto p-5">
           {createdCaseId ? (
-            <div style={{ textAlign: "center", padding: "24px 0", display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#059669",
-                }}
-              >
-                <CheckCircle2 size={24} />
+            <div className="text-center py-6 flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 size={26} />
               </div>
               <div>
-                <div style={{ fontSize: "15px", fontWeight: 800, color: "#0F172A" }}>
+                <div className="text-[16px] font-bold text-[var(--fg-1)]">
                   Case Workspace Initialized Successfully
                 </div>
-                <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "4px" }}>
+                <div className="text-[12.5px] text-[var(--fg-2)] mt-1.5">
                   Enclave identifier:{" "}
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontWeight: 800,
-                      color: "#4F46E5",
-                      background: "#EEF2FF",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      border: "1px solid #C7D2FE",
-                    }}
-                  >
+                  <span className="font-mono font-bold text-[var(--accent)] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     {createdCaseId}
                   </span>
                 </div>
-                <div style={{ fontSize: "11px", color: "#64748B", maxWidth: "420px", margin: "8px auto 0 auto", lineHeight: 1.4 }}>
+                <div className="text-[12px] text-[var(--muted)] max-w-[460px] mx-auto mt-2 leading-relaxed">
                   All 5 forensic invariants (Double-Entry Balance, Root Hash Seal, Merkle Blinding, Audit Chain, and Golden-Hour SLA) have been provisioned.
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div className="flex items-center gap-2.5 mt-3">
                 <button
                   type="button"
                   onClick={handleLaunchWithEvidence}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "7px 14px",
-                    borderRadius: "7px",
-                    background: "#4F46E5",
-                    color: "#FFFFFF",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    border: "none",
-                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-blue-700 text-white text-[12.5px] font-bold cursor-pointer shadow-xs border-none transition-colors"
                 >
-                  <Fingerprint size={14} />
+                  <Fingerprint size={15} />
                   <span>📥 Insert Initial Evidence Exhibits</span>
                 </button>
                 <button
                   type="button"
-                  onClick={handleClose}
-                  style={{
-                    padding: "7px 12px",
-                    borderRadius: "7px",
-                    background: "#F1F5F9",
-                    color: "#334155",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    border: "1px solid #CBD5E1",
-                  }}
+                  onClick={handleReturnToHub}
+                  className="px-4 py-2 rounded-lg bg-white border border-[var(--line)] text-[var(--fg-1)] text-[12.5px] font-semibold hover:bg-[#f4f4f5] cursor-pointer transition-colors"
                 >
                   Return to Workspace Hub
                 </button>
               </div>
             </div>
           ) : (
-            <form id="new-case-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <form id="new-case-modal-form" onSubmit={handleSubmit} className="space-y-3.5">
               {errorMsg && (
-                <div
-                  style={{
-                    padding: "8px 12px",
-                    background: "#FFF1F2",
-                    border: "1px solid #FECDD3",
-                    borderRadius: "7px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "#BE123C",
-                    fontSize: "11.5px",
-                  }}
-                >
-                  <AlertCircle size={14} color="#E11D48" />
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-[12.5px]">
+                  <AlertCircle size={15} className="text-red-600 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
               {/* Row 1: FIR & NCRP Ack */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label style={labelStyle}>
-                    FIR / Regular Case Number <span style={{ color: "#E11D48" }}>*</span>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    FIR / Regular Case Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -358,12 +228,12 @@ export const NewCaseModal: React.FC = () => {
                     value={firNumber}
                     onChange={(e) => setFirNumber(e.target.value)}
                     placeholder="e.g. FIR #188/2026 or RC-09/2026"
-                    style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>
-                    NCRP 1930 Ack Number <span style={{ color: "#E11D48" }}>*</span>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    NCRP 1930 Ack Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -371,15 +241,15 @@ export const NewCaseModal: React.FC = () => {
                     value={ncrpAckNo}
                     onChange={(e) => setNcrpAckNo(e.target.value)}
                     placeholder="e.g. 1930-ACK-2611004921"
-                    style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
               </div>
 
-              {/* Row 2: Title & Police Station */}
+              {/* Row 2: Title */}
               <div>
-                <label style={labelStyle}>
-                  Investigation Subject / Title <span style={{ color: "#E11D48" }}>*</span>
+                <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                  Investigation Subject / Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -387,41 +257,48 @@ export const NewCaseModal: React.FC = () => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Digital Arrest Extortion via Spoofed Telecom Nodal Gateway"
-                  style={inputStyle}
+                  className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {/* Row 3: Jurisdiction & IO */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label style={labelStyle}>Jurisdiction / Police Station</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Jurisdiction / Police Station
+                  </label>
                   <input
                     type="text"
                     value={policeStation}
                     onChange={(e) => setPoliceStation(e.target.value)}
                     placeholder="e.g. Noida Cyber Crime PS, UP"
-                    style={inputStyle}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Lead Investigating Officer (IO)</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Lead Investigating Officer (IO)
+                  </label>
                   <input
                     type="text"
                     value={leadInvestigator}
                     onChange={(e) => setLeadInvestigator(e.target.value)}
                     placeholder="e.g. Insp. R. K. Sharma (IO-409)"
-                    style={inputStyle}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
               </div>
 
-              {/* Row 3: Typology & Priority */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {/* Row 4: Typology & Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label style={labelStyle}>Crime Typology / Modus</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Crime Typology / Modus
+                  </label>
                   <select
                     value={typology}
                     onChange={(e) => setTypology(e.target.value as any)}
-                    style={{ ...inputStyle, height: "32px", cursor: "pointer" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border cursor-pointer"
                   >
                     <option value="DIGITAL_ARREST">Digital Arrest Extortion (CBI/ED Impersonation)</option>
                     <option value="APK_SIM_SWAP">APK Malware SMS Stealer &amp; Dual-SIM Swap</option>
@@ -431,11 +308,13 @@ export const NewCaseModal: React.FC = () => {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Initial SLA Priority</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Initial SLA Priority
+                  </label>
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as any)}
-                    style={{ ...inputStyle, height: "32px", cursor: "pointer" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border cursor-pointer"
                   >
                     <option value="CRITICAL_GOLDEN_HOUR">⚡ Critical Golden-Hour (Active 180m Triage)</option>
                     <option value="HIGH_SYNDICATE">🔗 High Syndicate (Cross-State Linkage)</option>
@@ -444,10 +323,10 @@ export const NewCaseModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 4: Complainant Name & Financial Figures */}
+              {/* Row 5: Complainant Name */}
               <div>
-                <label style={labelStyle}>
-                  Complainant Name &amp; Organization <span style={{ color: "#E11D48" }}>*</span>
+                <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                  Complainant Name &amp; Organization <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -455,62 +334,56 @@ export const NewCaseModal: React.FC = () => {
                   value={complainantName}
                   onChange={(e) => setComplainantName(e.target.value)}
                   placeholder="e.g. Sunil Kumar or Novus Cloud Tech Pvt Ltd"
-                  style={inputStyle}
+                  className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+              {/* Row 6: Loss Amounts */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
-                  <label style={labelStyle}>Claimed Loss (₹)</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Claimed Loss (₹)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     step="1000"
                     value={claimedLossInr}
                     onChange={(e) => setClaimedLossInr(Number(e.target.value))}
-                    style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Booked Loss (₹)</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Booked Loss (₹)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     step="1000"
                     value={bookedLossInr}
                     onChange={(e) => setBookedLossInr(Number(e.target.value))}
-                    style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Golden Hour (Mins)</label>
+                  <label className="text-[12px] font-bold text-[var(--fg-2)] uppercase tracking-wider mb-1 block">
+                    Golden Hour (Mins)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     max="180"
                     value={goldenHourRemainingMins}
                     onChange={(e) => setGoldenHourRemainingMins(Number(e.target.value))}
-                    style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
+                    className="w-full px-3 py-2 text-[13px] text-[var(--fg-1)] bg-white border border-[var(--line)] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[var(--accent)] box-border"
                   />
                 </div>
               </div>
 
-              {/* Informational Callout */}
-              <div
-                style={{
-                  padding: "8px 12px",
-                  background: "#EEF2FF",
-                  border: "1px solid #C7D2FE",
-                  borderRadius: "7px",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "8px",
-                  fontSize: "11px",
-                  color: "#3730A3",
-                  lineHeight: 1.4,
-                }}
-              >
-                <ShieldAlert size={14} color="#4F46E5" style={{ flexShrink: 0, marginTop: "2px" }} />
+              {/* Callout */}
+              <div className="p-3 bg-blue-50/60 border border-blue-200/80 rounded-lg flex items-start gap-2.5 text-[12px] text-blue-900 leading-relaxed">
+                <ShieldAlert size={16} className="text-[var(--accent)] shrink-0 mt-0.5" />
                 <span>
                   Upon registration, TARKA will generate a SHA-256 genesis hash and initialize an isolated cryptographic envelope for evidence admission. All subsequent artifacts will be verified against double-entry ledgers and Merkle blinded prior to tribunal submission.
                 </span>
@@ -521,57 +394,25 @@ export const NewCaseModal: React.FC = () => {
 
         {/* Modal Footer */}
         {!createdCaseId && (
-          <div
-            style={{
-              padding: "10px 18px",
-              borderTop: "1px solid #E2E8F0",
-              background: "#F8FAFC",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontSize: "11px", color: "#64748B" }}>
-              Press <kbd style={{ padding: "1px 4px", background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: "3px", fontFamily: "var(--font-mono)" }}>Esc</kbd> to cancel
+          <div className="shrink-0 px-5 py-3 bg-[#fafafa] border-t border-[var(--line)] flex items-center justify-between">
+            <span className="text-[12px] text-[var(--muted)]">
+              Press <kbd className="px-1.5 py-0.5 bg-white border border-[var(--line)] rounded text-[11px] font-mono shadow-2xs">Esc</kbd> to cancel
             </span>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={handleClose}
-                style={{
-                  padding: "5px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#475569",
-                  fontSize: "11.5px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className="text-[12.5px] font-semibold px-3.5 py-1.5 rounded-lg border-none bg-transparent hover:bg-black/[0.03] text-[var(--muted)] hover:text-[var(--fg-1)] transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                form="new-case-form"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "5px 14px",
-                  borderRadius: "6px",
-                  border: "1px solid #4338CA",
-                  background: "#4F46E5",
-                  color: "#FFFFFF",
-                  fontSize: "11.5px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(79, 70, 229, 0.25)",
-                }}
+                form="new-case-modal-form"
+                className="inline-flex items-center gap-1.5 text-[12.5px] font-bold px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-blue-700 text-white transition-colors cursor-pointer shadow-xs border-none"
               >
-                <FilePlus2 size={13} />
+                <FilePlus2 size={14} />
                 <span>Create Workspace</span>
               </button>
             </div>
@@ -580,4 +421,6 @@ export const NewCaseModal: React.FC = () => {
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalNode, document.body) : modalNode;
 };

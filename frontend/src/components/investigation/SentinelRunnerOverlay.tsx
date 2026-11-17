@@ -58,7 +58,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
     setExecuting(true);
     setErrorNotice(null);
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/interaction/runner/step", {
+      const res = await axios.post("/api/v1/interaction/runner/step", {
         plan_id: plan.plan_id,
         confirmation_token: token || confirmationToken || null,
         purpose: `Investigator execution of step ${plan.current_step_index}`,
@@ -96,7 +96,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
   const handleSkipStep = async (stepIndex: number) => {
     setErrorNotice(null);
     try {
-      await axios.post("http://localhost:8000/api/v1/interaction/runner/skip", {
+      await axios.post("/api/v1/interaction/runner/skip", {
         plan_id: plan.plan_id,
         step_index: stepIndex,
       });
@@ -115,7 +115,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
 
   const handlePause = async () => {
     try {
-      await axios.post(`http://localhost:8000/api/v1/interaction/runner/pause?plan_id=${plan.plan_id}`);
+      await axios.post(`/api/v1/interaction/runner/pause?plan_id=${plan.plan_id}`);
       onPlanUpdated({ ...plan, status: "PAUSED" });
     } catch (err) {
       console.error(err);
@@ -124,7 +124,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
 
   const handleResume = async () => {
     try {
-      await axios.post(`http://localhost:8000/api/v1/interaction/runner/resume?plan_id=${plan.plan_id}`);
+      await axios.post(`/api/v1/interaction/runner/resume?plan_id=${plan.plan_id}`);
       onPlanUpdated({ ...plan, status: "RUNNING" });
     } catch (err) {
       console.error(err);
@@ -133,7 +133,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
 
   const handleCancel = async () => {
     try {
-      await axios.post(`http://localhost:8000/api/v1/interaction/runner/cancel?plan_id=${plan.plan_id}`);
+      await axios.post(`/api/v1/interaction/runner/cancel?plan_id=${plan.plan_id}`);
       onPlanUpdated({ ...plan, status: "CANCELLED" });
     } catch (err) {
       console.error(err);

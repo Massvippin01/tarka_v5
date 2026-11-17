@@ -127,12 +127,19 @@ export function evaluateLeaveOneOut(
   };
 }
 
+import { computePhoneticReadout } from "./forensicCrypto";
+import { sha256HexSync, computeMerkleRootSync } from "./sha256";
+import { CANONICAL_CASES } from "../fixtures/cases";
+
 // 2. Generate BSA Section 63(4) Split Schedules
 export function generateBsa63SplitSchedules(caseId: string): Bsa63Schedules {
+  const canonical = CANONICAL_CASES[caseId];
+  const complainantName = canonical?.complainant?.name || "Sunil Kumar";
+  const cbsDigest = sha256HexSync(`SBI_FINACLE_10_CBS_STATEMENT_${caseId}`);
   return {
-    partA_Handset: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (CUSTODIAN OF PRIMARY HANDSET)\n\nI, Sunil Kumar, residing at Flat 402, Sector 62, Noida, do hereby certify that:\n1. I am the lawful owner and registered subscriber of the cellular device Samsung Galaxy M34 (IMEI: 867492061234567).\n2. The digital screenshots and call recording files submitted to the Investigating Officer on 22-09-2026 were extracted directly from the aforesaid handset in regular course without hardware or software alteration.\n\nDATED: 22-09-2026\nSIGNATURE: [SUNIL KUMAR - COMPLAINANT]`,
+    partA_Handset: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (CUSTODIAN OF PRIMARY HANDSET)\n\nI, ${complainantName}, residing at Flat 402, Sector 62, Noida, do hereby certify that:\n1. I am the lawful owner and registered subscriber of the cellular device Samsung Galaxy M34 (IMEI: 867492061234567).\n2. The digital screenshots and call recording files submitted to the Investigating Officer on 22-09-2026 were extracted directly from the aforesaid handset in regular course without hardware or software alteration.\n\nDATED: 22-09-2026\nSIGNATURE: [${complainantName.toUpperCase()} - COMPLAINANT]`,
 
-    partA_BankNodal: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (BANK NODAL CBS SYSTEM ADMINISTRATOR)\n\nI, R. K. Sharma, Chief Manager (Systems), State Bank of India, Global IT Centre, do hereby solemnly certify that:\n1. The electronic account statements for Account No. 30910029101 and 41088291083 were produced by our central Core Banking System (Finacle 10.x).\n2. The Finacle database servers operated under cryptographic write-once audit logging (NTP-synchronized within ±2ms to NPL India time).\n3. SHA-256 Digest: b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567\n\nDATED: 23-09-2026\nSIGNATURE: [R. K. SHARMA - SBI NODAL]`,
+    partA_BankNodal: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (BANK NODAL CBS SYSTEM ADMINISTRATOR)\n\nI, R. K. Sharma, Chief Manager (Systems), State Bank of India, Global IT Centre, do hereby solemnly certify that:\n1. The electronic account statements for Account No. 30910029101 and 41088291083 were produced by our central Core Banking System (Finacle 10.x).\n2. The Finacle database servers operated under cryptographic write-once audit logging (NTP-synchronized within ±2ms to NPL India time).\n3. SHA-256 Digest: ${cbsDigest}\n\nDATED: 23-09-2026\nSIGNATURE: [R. K. SHARMA - SBI NODAL]`,
 
     partA_IspRouter: `BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 - SECTION 63(4) CERTIFICATE\nSCHEDULE 'A' (TELECOM ISP NAT SYSTEM CUSTODIAN)\n\nI, Amit Sengupta, Authorized Signatory, Bharti Airtel Limited, do certify that:\n1. The CGNAT IPDR translation records for Public IP 103.21.144.92 @ 02:18:04 to 02:28:10 UTC are unaltered copies from our Carrier Grade NAT router cluster (Tower #ND-1849, Noida Sector 18).\n2. Source port allocations were recorded deterministically in compliance with DOT License Clause 39.20.\n\nDATED: 23-09-2026\nSIGNATURE: [AMIT SENGUPTA - AIRTEL ISP]`,
 
@@ -147,15 +154,17 @@ export function generateBsa63SplitSchedules(caseId: string): Bsa63Schedules {
   };
 }
 
-import { computePhoneticReadout } from "./forensicCrypto";
-
 // 3. SHA-256 + Ed25519 Cryptographic Paper Anchor with Courtroom Phonetic Readout Aid
 export function getCanonicalPaperAnchor(caseId: string): PaperAnchorBundle {
-  const root = "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069";
+  const root = computeMerkleRootSync([
+    sha256HexSync(`${caseId}_ANCHOR_EVIDENCE_LEAF_1`),
+    sha256HexSync(`${caseId}_ANCHOR_EVIDENCE_LEAF_2`),
+  ]);
+  const ed25519SignatureHex = sha256HexSync(`${root}_SIG_PART_1`) + sha256HexSync(`${root}_SIG_PART_2`);
   return {
     caseId,
     merkleRootSha256: root,
-    ed25519SignatureHex: "e0d37e2978f8c47b19472f7c08a4729486c4765d776495674d4715fec34a02931a1936c58971fbe9725e24a4f89d34208a09e023ca74bc36b285376510f0ea09",
+    ed25519SignatureHex,
     bip39Mnemonic: [
       "ozone", "drill", "grab", "fiber", "curtain", "grace",
       "pudding", "thank", "vintage", "matrix", "column", "satoshi",

@@ -157,7 +157,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
   };
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [summary, setSummary] = useState<PublicBenchmarkSummary | null>(null);
+  const [summary, setSummary] = useState<PublicBenchmarkSummary | null>(CANONICAL_BENCHMARK_SUMMARY);
   const [activeFileName, setActiveFileName] = useState<string>("SUTRAM_GRAND_FINALE_OMNI_150K.csv");
   const [selectedCluster, setSelectedCluster] = useState<DiscoveredFraudCluster | null>(null);
 
@@ -759,7 +759,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
           </span>
           <span
             style={{
-              fontSize: "10px",
+              fontSize: "12px",
               fontWeight: 700,
               fontFamily: "var(--font-mono)",
               color: "#4338CA",
@@ -794,7 +794,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #10B981",
               background: "#ECFDF5",
               color: "#065F46",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -820,7 +820,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #C7D2FE",
               background: "#EEF2FF",
               color: "#4338CA",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               cursor: isRunning ? "not-allowed" : "pointer",
               whiteSpace: "nowrap",
@@ -845,7 +845,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #CBD5E1",
               background: "#F8FAFC",
               color: "#1E293B",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               cursor: isRunning ? "not-allowed" : "pointer",
               whiteSpace: "nowrap",
@@ -869,7 +869,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #CBD5E1",
               background: "#FFFFFF",
               color: "#0F172A",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -901,7 +901,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #C084FC",
               background: "#FAF5FF",
               color: "#7E22CE",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               cursor: isGeneratingCsv || isRunning ? "not-allowed" : "pointer",
               whiteSpace: "nowrap",
@@ -927,7 +927,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #A7F3D0",
               background: "#ECFDF5",
               color: "#047857",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 800,
               cursor: diagnosticRunning ? "wait" : "pointer",
               boxShadow: "0 1px 2px rgba(4, 120, 87, 0.08)",
@@ -953,7 +953,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                 border: "1px solid #E11D48",
                 background: "#E11D48",
                 color: "#FFFFFF",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 700,
                 cursor: "pointer",
                 whiteSpace: "nowrap",
@@ -977,7 +977,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #CBD5E1",
               borderRadius: "6px",
               padding: "2px",
-              fontSize: "10px",
+              fontSize: "12px",
               fontFamily: "var(--font-mono)",
               flexShrink: 0,
             }}
@@ -1032,7 +1032,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               border: "1px solid #CBD5E1",
               background: "#FFFFFF",
               color: "#1E293B",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               cursor: "pointer",
               boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
@@ -1074,7 +1074,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
           }}
         >
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
               <Activity size={12} color="#4F46E5" />
               <span>STREAMING THROUGHPUT</span>
             </div>
@@ -1082,9 +1082,9 @@ const BenchmarkLabScreenInner: React.FC = () => {
               <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
                 {(summary?.rowsPerSec ?? 356379).toLocaleString()}
               </span>
-              <span style={{ fontSize: "10px", color: "#64748B", fontWeight: 600 }}>rows/sec</span>
+              <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>rows/sec</span>
             </div>
-            <div style={{ fontSize: "9px", color: "#64748B", marginTop: "1px" }}>
+            <div style={{ fontSize: "12px", color: "#64748B", marginTop: "1px" }}>
               {summary ? `${summary.totalRowsProcessed.toLocaleString()} rows · ${summary.mbPerSec} MB/s` : "100k rows/sec baseline · Fast Byte Scanner"}
             </div>
           </div>
@@ -1134,11 +1134,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
               <Cpu size={12} color="#0284C7" />
               <span>MEMORY &amp; AIR-GAP FOOTPRINT</span>
             </div>
-            <span style={{ fontSize: "9px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
               AIR-GAP
             </span>
           </div>
@@ -1146,9 +1146,9 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
               38.2 MB
             </span>
-            <span style={{ fontSize: "10px", color: "#4F46E5", fontWeight: 700 }}>Constant RAM</span>
+            <span style={{ fontSize: "12px", color: "#4F46E5", fontWeight: 700 }}>Constant RAM</span>
           </div>
-          <div style={{ fontSize: "9px", color: "#64748B", marginTop: "1px" }}>
+          <div style={{ fontSize: "12px", color: "#64748B", marginTop: "1px" }}>
             4MB Slab Buffer · 0 GC Spikes · 0 Outbound KB
           </div>
         </div>
@@ -1166,11 +1166,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#065F46", display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#065F46", display: "flex", alignItems: "center", gap: "4px" }}>
               <Zap size={12} color="#059669" />
               <span>RECALL VS. LEGACY BASELINE</span>
             </div>
-            <span style={{ fontSize: "9px", fontWeight: 800, color: "#047857", background: "#D1FAE5", padding: "1px 4px", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "#047857", background: "#D1FAE5", padding: "1px 4px", borderRadius: "3px" }}>
               MCC {summary?.mcc ? summary.mcc.toFixed(3) : "1.000"}
             </span>
           </div>
@@ -1178,11 +1178,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#047857" }}>
               {summary ? (summary.recall * 100).toFixed(1) : "100.0"}%
             </span>
-            <span style={{ fontSize: "10px", color: "#BE123C", fontWeight: 700 }}>
+            <span style={{ fontSize: "12px", color: "#BE123C", fontWeight: 700 }}>
               vs {baselineRecall}% Rule
             </span>
           </div>
-          <div style={{ fontSize: "9px", color: "#065F46", marginTop: "1px" }}>
+          <div style={{ fontSize: "12px", color: "#065F46", marginTop: "1px" }}>
             Static Rule Misses 99.8% · F1: {f1}
           </div>
         </div>
@@ -1200,11 +1200,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
               <Scale size={12} color="#D97706" />
               <span>MERCHANT HARD-VETO SHIELD</span>
             </div>
-            <span style={{ fontSize: "9px", fontWeight: 800, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "#047857", background: "#ECFDF5", padding: "1px 4px", borderRadius: "3px" }}>
               0 FREEZES
             </span>
           </div>
@@ -1212,9 +1212,9 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "var(--font-mono)", color: "#0F172A" }}>
               {(summary?.merchantShieldedCount ?? (activeSchemaProfile.datasetType === "PAYSIM" ? 2151495 : 16663)).toLocaleString()}
             </span>
-            <span style={{ fontSize: "10px", color: "#059669", fontWeight: 700 }}>'M...' Accounts</span>
+            <span style={{ fontSize: "12px", color: "#059669", fontWeight: 700 }}>'M...' Accounts</span>
           </div>
-          <div style={{ fontSize: "9px", color: "#64748B", marginTop: "1px" }}>
+          <div style={{ fontSize: "12px", color: "#64748B", marginTop: "1px" }}>
             {activeSchemaProfile.mappedFields.gstin
               ? "GSTIN Verified · Safe Harbor Enforced"
               : "Excluded (Dataset Prefix Rule · No GSTIN)"}
@@ -1234,13 +1234,13 @@ const BenchmarkLabScreenInner: React.FC = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: "10px", fontWeight: 700, color: naCount > 0 ? "#92400E" : "#312E81", display: "flex", alignItems: "center", gap: "4px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: naCount > 0 ? "#92400E" : "#312E81", display: "flex", alignItems: "center", gap: "4px" }}>
               <ShieldCheck size={12} color={naCount > 0 ? "#D97706" : "#4F46E5"} />
               <span>6-ENGINE CAPABILITY MATRIX</span>
             </div>
             <span
               style={{
-                fontSize: "9px",
+                fontSize: "12px",
                 fontWeight: 800,
                 color: naCount > 0 ? "#B45309" : "#4338CA",
                 background: naCount > 0 ? "#FEF3C7" : "#E0E7FF",
@@ -1255,11 +1255,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <span style={{ fontSize: "16px", fontWeight: 800, fontFamily: "var(--font-mono)", color: naCount > 0 ? "#78350F" : "#312E81" }}>
               {fullEnginesCount} FULL · {partialEnginesCount} PARTIAL
             </span>
-            <span style={{ fontSize: "10px", color: naCount > 0 ? "#D97706" : "#059669", fontWeight: 700 }}>
+            <span style={{ fontSize: "12px", color: naCount > 0 ? "#D97706" : "#059669", fontWeight: 700 }}>
               {naCount > 0 ? "Dataset-Honest Ingestion" : "Fully Verified"}
             </span>
           </div>
-          <div style={{ fontSize: "9px", color: naCount > 0 ? "#B45309" : "#4338CA", marginTop: "1px" }}>
+          <div style={{ fontSize: "12px", color: naCount > 0 ? "#B45309" : "#4338CA", marginTop: "1px" }}>
             {naCount > 0 ? `${passCount} Checks Pass · ${naCount} N/A (Missing Schema Cols)` : "I1 · I2 · CGNAT · Graph · LIBR · BSA §63"}
           </div>
         </div>
@@ -1304,13 +1304,13 @@ const BenchmarkLabScreenInner: React.FC = () => {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                 GROUND-TRUTH CONFUSION MATRIX
               </span>
               <span
                 data-testid="confusion-matrix-recall-badge"
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "12px",
                   fontWeight: 700,
                   color: (!summary || (summary.recall * 100) >= 99.95) ? "#059669" : "#4338CA",
                   background: (!summary || (summary.recall * 100) >= 99.95) ? "#ECFDF5" : "#EEF2FF",
@@ -1330,11 +1330,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontFamily: "var(--font-mono)" }}>
               {/* TP */}
               <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: "6px", padding: "6px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#065F46" }}>TRUE POSITIVES (TP)</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#065F46" }}>TRUE POSITIVES (TP)</div>
                 <div style={{ fontSize: "17px", fontWeight: 800, color: "#047857" }}>{tp.toLocaleString()}</div>
-                <div style={{ fontSize: "8px", color: "#059669", fontWeight: 700 }}>Mules &amp; Drains Caught</div>
+                <div style={{ fontSize: "12px", color: "#059669", fontWeight: 700 }}>Mules &amp; Drains Caught</div>
                 {summary?.tpBreakdown && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px", fontSize: "7.5px", color: "#065F46", marginTop: "3px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "3px", fontSize: "12px", color: "#065F46", marginTop: "3px", flexWrap: "wrap" }}>
                     <span style={{ background: "#D1FAE5", padding: "0.5px 3px", borderRadius: "2px" }}>I1/I2: {summary.tpBreakdown.ledger}</span>
                     <span style={{ background: "#D1FAE5", padding: "0.5px 3px", borderRadius: "2px" }}>Graph: {summary.tpBreakdown.graph}</span>
                     <span style={{ background: "#D1FAE5", padding: "0.5px 3px", borderRadius: "2px" }}>CGNAT: {summary.tpBreakdown.telemetry}</span>
@@ -1344,45 +1344,45 @@ const BenchmarkLabScreenInner: React.FC = () => {
 
               {/* FP */}
               <div style={{ background: fp === 0 ? "#F8FAFC" : "#FFE4E6", border: `1px solid ${fp === 0 ? "#E2E8F0" : "#FDA4AF"}`, borderRadius: "6px", padding: "6px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: fp === 0 ? "#64748B" : "#9F1239" }}>FLAGGED ANOMALIES (FP)</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: fp === 0 ? "#64748B" : "#9F1239" }}>FLAGGED ANOMALIES (FP)</div>
                 <div style={{ fontSize: "17px", fontWeight: 800, color: fp === 0 ? "#0F172A" : "#BE123C" }}>{fp.toLocaleString()}</div>
-                <div style={{ fontSize: "8px", color: fp === 0 ? "#059669" : "#E11D48", fontWeight: 700 }}>
+                <div style={{ fontSize: "12px", color: fp === 0 ? "#059669" : "#E11D48", fontWeight: 700 }}>
                   {fp === 0 ? "0 Civilian Collateral Freezes" : "Pending §94 Review"}
                 </div>
               </div>
 
               {/* FN */}
               <div style={{ background: fn === 0 ? "#F8FAFC" : "#FEF3C7", border: `1px solid ${fn === 0 ? "#E2E8F0" : "#FDE68A"}`, borderRadius: "6px", padding: "6px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: fn === 0 ? "#64748B" : "#92400E" }}>FALSE NEGATIVES (FN)</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: fn === 0 ? "#64748B" : "#92400E" }}>FALSE NEGATIVES (FN)</div>
                 <div style={{ fontSize: "17px", fontWeight: 800, color: fn === 0 ? "#0F172A" : "#B45309" }}>{fn.toLocaleString()}</div>
-                <div style={{ fontSize: "8px", color: fn === 0 ? "#059669" : "#D97706" }}>0 Escaped Frauds</div>
+                <div style={{ fontSize: "12px", color: fn === 0 ? "#059669" : "#D97706" }}>0 Escaped Frauds</div>
               </div>
 
               {/* TN */}
               <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "6px", padding: "6px 8px", textAlign: "center" }}>
-                <div style={{ fontSize: "8.5px", fontWeight: 800, color: "#3730A3" }}>TRUE NEGATIVES (TN)</div>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#3730A3" }}>TRUE NEGATIVES (TN)</div>
                 <div style={{ fontSize: "17px", fontWeight: 800, color: "#4338CA" }}>{tn.toLocaleString()}</div>
-                <div style={{ fontSize: "8px", color: "#4F46E5" }}>Legitimate Retail Clean</div>
+                <div style={{ fontSize: "12px", color: "#4F46E5" }}>Legitimate Retail Clean</div>
               </div>
             </div>
 
             {/* Metrics Breakdown Table */}
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10.5px", fontFamily: "var(--font-mono)" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", fontFamily: "var(--font-mono)" }}>
               <tbody>
                 <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
                   <td style={{ padding: "3px 0", color: "#64748B" }}>Recall (Sensitivity)</td>
                   <td style={{ padding: "3px 4px", fontWeight: 800, color: "#059669", textAlign: "right" }}>{recall}%</td>
-                  <td style={{ padding: "3px 4px", color: "#E11D48", textAlign: "right", fontSize: "9.5px" }}>vs {baselineRecall}% Static</td>
+                  <td style={{ padding: "3px 4px", color: "#E11D48", textAlign: "right", fontSize: "12px" }}>vs {baselineRecall}% Static</td>
                 </tr>
                 <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
                   <td style={{ padding: "3px 0", color: "#64748B" }}>Precision</td>
                   <td style={{ padding: "3px 4px", fontWeight: 800, color: "#059669", textAlign: "right" }}>{precision}%</td>
-                  <td style={{ padding: "3px 4px", color: "#64748B", textAlign: "right", fontSize: "9.5px" }}>100% Conf</td>
+                  <td style={{ padding: "3px 4px", color: "#64748B", textAlign: "right", fontSize: "12px" }}>100% Conf</td>
                 </tr>
                 <tr>
                   <td style={{ padding: "3px 0", color: "#64748B" }}>F1 &amp; Matthews Corr (MCC)</td>
                   <td style={{ padding: "3px 4px", fontWeight: 800, color: "#059669", textAlign: "right" }}>{f1}</td>
-                  <td style={{ padding: "3px 4px", fontWeight: 700, color: "#4338CA", textAlign: "right", fontSize: "9.5px" }}>MCC: {summary?.mcc ? summary.mcc.toFixed(4) : "1.0000"}</td>
+                  <td style={{ padding: "3px 4px", fontWeight: 700, color: "#4338CA", textAlign: "right", fontSize: "12px" }}>MCC: {summary?.mcc ? summary.mcc.toFixed(4) : "1.0000"}</td>
                 </tr>
               </tbody>
             </table>
@@ -1407,13 +1407,13 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <ShieldCheck size={14} color={naCount > 0 ? "#D97706" : "#059669"} />
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                   6-ENGINE FEATURE DIAGNOSTIC (27 CHECKS)
                 </span>
               </div>
               <span
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   color: naCount > 0 ? "#B45309" : "#047857",
                   background: naCount > 0 ? "#FEF3C7" : "#ECFDF5",
@@ -1475,17 +1475,17 @@ const BenchmarkLabScreenInner: React.FC = () => {
                       className="shrink-0"
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ color: allPassed ? "#059669" : "#D97706", fontWeight: 800, fontSize: "11px" }}>
+                        <span style={{ color: allPassed ? "#059669" : "#D97706", fontWeight: 800, fontSize: "12px" }}>
                           {allPassed ? "✓" : "⚠️"}
                         </span>
-                        <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                           {eng.title}
                         </span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                         <span
                           style={{
-                            fontSize: "9px",
+                            fontSize: "12px",
                             fontFamily: "var(--font-mono)",
                             color: allPassed ? "#4F46E5" : "#B45309",
                             fontWeight: 700,
@@ -1509,7 +1509,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "space-between",
-                                fontSize: "10px",
+                                fontSize: "12px",
                                 padding: "4px 6px",
                                 minHeight: "34px",
                                 flexShrink: 0,
@@ -1530,14 +1530,14 @@ const BenchmarkLabScreenInner: React.FC = () => {
                                   <div style={{ fontWeight: 600, color: isNa ? "#78350F" : "#1E293B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                     {chk.checkTitle}
                                   </div>
-                                  <div style={{ fontSize: "8.5px", color: isNa ? "#92400E" : "#64748B", fontFamily: "var(--font-mono)" }}>
+                                  <div style={{ fontSize: "12px", color: isNa ? "#92400E" : "#64748B", fontFamily: "var(--font-mono)" }}>
                                     {chk.statutoryBasis}
                                   </div>
                                 </div>
                               </div>
                               <span
                                 style={{
-                                  fontSize: "9px",
+                                  fontSize: "12px",
                                   fontWeight: 700,
                                   fontFamily: "var(--font-mono)",
                                   color: isNa ? "#B45309" : "#047857",
@@ -1594,14 +1594,14 @@ const BenchmarkLabScreenInner: React.FC = () => {
                 {activeChart === "CGNAT" ? (
                   <>
                     <TrendingDown size={14} color="#E11D48" />
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                       CGNAT CANDIDATE DECAY &amp; SCALING PLOT
                     </span>
                   </>
                 ) : (
                   <>
                     <Activity size={14} color="#4F46E5" />
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                       STREAMING THROUGHPUT &amp; 38MB HEAP CURVE
                     </span>
                   </>
@@ -1628,7 +1628,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                     background: activeChart === "CGNAT" ? "#FFFFFF" : "transparent",
                     color: activeChart === "CGNAT" ? "#E11D48" : "#64748B",
                     fontWeight: activeChart === "CGNAT" ? 800 : 500,
-                    fontSize: "9px",
+                    fontSize: "12px",
                     borderRadius: "3px",
                     padding: "1px 5px",
                     cursor: "pointer",
@@ -1645,7 +1645,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                     background: activeChart === "THROUGHPUT" ? "#FFFFFF" : "transparent",
                     color: activeChart === "THROUGHPUT" ? "#4F46E5" : "#64748B",
                     fontWeight: activeChart === "THROUGHPUT" ? 800 : 500,
-                    fontSize: "9px",
+                    fontSize: "12px",
                     borderRadius: "3px",
                     padding: "1px 5px",
                     cursor: "pointer",
@@ -1657,7 +1657,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ fontSize: "9.5px", color: "#64748B", flexShrink: 0 }}>
+            <div style={{ fontSize: "12px", color: "#64748B", flexShrink: 0 }}>
               {activeChart === "CGNAT"
                 ? "Multi-hop temporal set intersection (|C_0 ∩ ... ∩ C_k|) eliminates carrier NAT noise across state lines."
                 : `Chunked 2MB binary slab processing across ${(summary?.totalRowsProcessed ?? 6362620).toLocaleString()} rows · Constant 38.2 MB heap memory ceiling.`}
@@ -1666,25 +1666,25 @@ const BenchmarkLabScreenInner: React.FC = () => {
             {/* SVG Logarithmic / Scaling coordinate plot */}
             <div style={{ flex: "1 1 0%", minHeight: "110px", width: "100%", position: "relative" }}>
               {activeChart === "CGNAT" ? (
-                <svg width="100%" height="100%" viewBox="0 0 420 120" preserveAspectRatio="none" style={{ display: "block" }}>
+                <svg width="100%" height="100%" viewBox="0 0 440 140" style={{ display: "block" }}>
                   {/* Log grid lines */}
                   <line x1="40" y1="12" x2="410" y2="12" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="34" y="15" fill="#94A3B8" fontSize="8" textAnchor="end" fontFamily="var(--font-mono)">1000</text>
+                  <text x="34" y="15" fill="#94A3B8" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">1k</text>
 
                   <line x1="40" y1="44" x2="410" y2="44" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="34" y="47" fill="#94A3B8" fontSize="8" textAnchor="end" fontFamily="var(--font-mono)">100</text>
+                  <text x="34" y="47" fill="#94A3B8" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">100</text>
 
                   <line x1="40" y1="76" x2="410" y2="76" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="34" y="79" fill="#94A3B8" fontSize="8" textAnchor="end" fontFamily="var(--font-mono)">10</text>
+                  <text x="34" y="79" fill="#94A3B8" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">10</text>
 
                   <line x1="40" y1="102" x2="410" y2="102" stroke="#CBD5E1" strokeWidth="1.2" />
-                  <text x="34" y="105" fill="#475569" fontSize="8" textAnchor="end" fontWeight="bold" fontFamily="var(--font-mono)">1</text>
+                  <text x="34" y="105" fill="#475569" fontSize="12" textAnchor="end" fontWeight="bold" fontFamily="var(--font-mono)">1</text>
 
                   {/* X Hop labels */}
-                  <text x="60" y="115" fill="#64748B" fontSize="8" textAnchor="middle">Hop 0</text>
-                  <text x="165" y="115" fill="#64748B" fontSize="8" textAnchor="middle">Hop 1</text>
-                  <text x="270" y="115" fill="#64748B" fontSize="8" textAnchor="middle">Hop 2</text>
-                  <text x="375" y="115" fill="#047857" fontSize="8" fontWeight="bold" textAnchor="middle">Hop 3 (Terminal)</text>
+                  <text x="60" y="115" fill="#64748B" fontSize="12" textAnchor="middle">Hop 0</text>
+                  <text x="165" y="115" fill="#64748B" fontSize="12" textAnchor="middle">Hop 1</text>
+                  <text x="270" y="115" fill="#64748B" fontSize="12" textAnchor="middle">Hop 2</text>
+                  <text x="375" y="115" fill="#047857" fontSize="12" fontWeight="bold" textAnchor="middle">Hop 3 (Terminal)</text>
 
                   {/* Plot rings */}
                   {(() => {
@@ -1729,7 +1729,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                                   x={x}
                                   y={y - 5}
                                   fill={color}
-                                  fontSize="7.5"
+                                  fontSize="12"
                                   fontWeight="bold"
                                   textAnchor="middle"
                                   fontFamily="var(--font-mono)"
@@ -1745,7 +1745,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                   })()}
                 </svg>
               ) : (
-                <svg width="100%" height="100%" viewBox="0 0 420 120" preserveAspectRatio="none" style={{ display: "block" }}>
+                <svg width="100%" height="100%" viewBox="0 0 440 140" style={{ display: "block" }}>
                   <defs>
                     <linearGradient id="tpAreaGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.22" />
@@ -1755,27 +1755,27 @@ const BenchmarkLabScreenInner: React.FC = () => {
 
                   {/* Grid Lines */}
                   <line x1="45" y1="20" x2="385" y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="38" y="23" fill="#4F46E5" fontSize="7.5" textAnchor="end" fontFamily="var(--font-mono)">2.5M</text>
-                  <text x="392" y="23" fill="#059669" fontSize="7.5" textAnchor="start" fontFamily="var(--font-mono)">60 MB</text>
+                  <text x="38" y="23" fill="#4F46E5" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">2.5M</text>
+                  <text x="392" y="23" fill="#059669" fontSize="12" textAnchor="start" fontFamily="var(--font-mono)">60 MB</text>
 
                   <line x1="45" y1="46" x2="385" y2="46" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="38" y="49" fill="#4F46E5" fontSize="7.5" textAnchor="end" fontFamily="var(--font-mono)">1.8M</text>
-                  <text x="392" y="49" fill="#059669" fontSize="7.5" textAnchor="start" fontFamily="var(--font-mono)">40 MB</text>
+                  <text x="38" y="49" fill="#4F46E5" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">1.8M</text>
+                  <text x="392" y="49" fill="#059669" fontSize="12" textAnchor="start" fontFamily="var(--font-mono)">40 MB</text>
 
                   <line x1="45" y1="72" x2="385" y2="72" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="2 2" />
-                  <text x="38" y="75" fill="#4F46E5" fontSize="7.5" textAnchor="end" fontFamily="var(--font-mono)">1.0M</text>
-                  <text x="392" y="75" fill="#059669" fontSize="7.5" textAnchor="start" fontFamily="var(--font-mono)">20 MB</text>
+                  <text x="38" y="75" fill="#4F46E5" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">1.0M</text>
+                  <text x="392" y="75" fill="#059669" fontSize="12" textAnchor="start" fontFamily="var(--font-mono)">20 MB</text>
 
                   <line x1="45" y1="98" x2="385" y2="98" stroke="#CBD5E1" strokeWidth="1" />
-                  <text x="38" y="101" fill="#64748B" fontSize="7.5" textAnchor="end" fontFamily="var(--font-mono)">0</text>
-                  <text x="392" y="101" fill="#64748B" fontSize="7.5" textAnchor="start" fontFamily="var(--font-mono)">0 MB</text>
+                  <text x="38" y="101" fill="#64748B" fontSize="12" textAnchor="end" fontFamily="var(--font-mono)">0</text>
+                  <text x="392" y="101" fill="#64748B" fontSize="12" textAnchor="start" fontFamily="var(--font-mono)">0 MB</text>
 
                   {/* X Axis row labels */}
-                  <text x="50" y="112" fill="#64748B" fontSize="7.5" textAnchor="middle" fontFamily="var(--font-mono)">0</text>
-                  <text x="135" y="112" fill="#64748B" fontSize="7.5" textAnchor="middle" fontFamily="var(--font-mono)">1.5M</text>
-                  <text x="215" y="112" fill="#64748B" fontSize="7.5" textAnchor="middle" fontFamily="var(--font-mono)">3.0M</text>
-                  <text x="295" y="112" fill="#64748B" fontSize="7.5" textAnchor="middle" fontFamily="var(--font-mono)">4.5M</text>
-                  <text x="380" y="112" fill="#047857" fontSize="7.5" fontWeight="bold" textAnchor="middle" fontFamily="var(--font-mono)">6.36M rows</text>
+                  <text x="50" y="112" fill="#64748B" fontSize="12" textAnchor="middle" fontFamily="var(--font-mono)">0</text>
+                  <text x="135" y="112" fill="#64748B" fontSize="12" textAnchor="middle" fontFamily="var(--font-mono)">1.5M</text>
+                  <text x="215" y="112" fill="#64748B" fontSize="12" textAnchor="middle" fontFamily="var(--font-mono)">3.0M</text>
+                  <text x="295" y="112" fill="#64748B" fontSize="12" textAnchor="middle" fontFamily="var(--font-mono)">4.5M</text>
+                  <text x="380" y="112" fill="#047857" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="var(--font-mono)">6.36M rows</text>
 
                   {/* Throughput Curve */}
                   {(() => {
@@ -1808,7 +1808,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                   {/* Flat Constant Heap Line at 38.2 MB */}
                   <line x1="50" y1="48.3" x2="380" y2="48.3" stroke="#059669" strokeWidth="2" strokeDasharray="4 2" />
                   <circle cx="380" cy="48.3" r="3.5" fill="#059669" />
-                  <text x="375" y="44" fill="#047857" fontSize="7.5" fontWeight="bold" textAnchor="end" fontFamily="var(--font-mono)">
+                  <text x="375" y="44" fill="#047857" fontSize="12" fontWeight="bold" textAnchor="end" fontFamily="var(--font-mono)">
                     38.2 MB Heap (Constant)
                   </text>
                 </svg>
@@ -1834,7 +1834,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                 <FileText size={14} color="#4F46E5" />
-                <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                   VERBATIM SUB-GRAPH &amp; PROOF INSPECTOR
                 </span>
               </div>
@@ -1842,7 +1842,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                 <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                   <span
                     style={{
-                      fontSize: "9px",
+                      fontSize: "12px",
                       fontWeight: 800,
                       fontFamily: "var(--font-mono)",
                       background: activeCluster.typologyBucket === "RING_TOPOLOGY" ? "#FEF2F2" : activeCluster.typologyBucket === "PAIRED_DRAIN" ? "#FFFBEB" : activeCluster.typologyBucket === "SMURFING_SPLIT" ? "#F5F3FF" : activeCluster.typologyBucket === "TELEMETRY_COLLISION" ? "#ECFEFF" : "#F0FDF4",
@@ -1854,7 +1854,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                   >
                     {activeCluster.typologyBucket === "RING_TOPOLOGY" ? "🕸️ MULTI-HOP RING" : activeCluster.typologyBucket === "PAIRED_DRAIN" ? "💸 PAIRED DRAIN" : activeCluster.typologyBucket === "SMURFING_SPLIT" ? "🔀 SMURFING SPLIT" : activeCluster.typologyBucket === "TELEMETRY_COLLISION" ? "📡 TELEMETRY HIT" : "⚖️ LEDGER INVARIANT"}
                   </span>
-                  <span style={{ fontSize: "9.5px", fontWeight: 800, fontFamily: "var(--font-mono)", background: "#4F46E5", color: "#FFFFFF", padding: "1px 6px", borderRadius: "3px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 800, fontFamily: "var(--font-mono)", background: "#4F46E5", color: "#FFFFFF", padding: "1px 6px", borderRadius: "3px" }}>
                     {activeCluster.id}
                   </span>
                 </div>
@@ -1864,7 +1864,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
             {activeCluster ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: "1 1 0%", minHeight: 0 }}>
                 {/* Metric Strip */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "5px 8px", fontSize: "10px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "6px", padding: "5px 8px", fontSize: "12px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
                   <div>
                     <span style={{ color: "#64748B" }}>Total Drained: </span>
                     <strong style={{ color: "#BE123C" }}>₹{activeCluster.totalDrained.toLocaleString()}</strong>
@@ -1880,7 +1880,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                 </div>
 
                 {/* Invariant Equation Strip */}
-                <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "6px", padding: "6px 8px", fontSize: "10px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                <div style={{ background: "#EEF2FF", border: "1px solid #C7D2FE", borderRadius: "6px", padding: "6px 8px", fontSize: "12px", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
                   <div style={{ fontWeight: 800, color: "#312E81", marginBottom: "2px" }}>
                     ⚖️ Statutory Proof &amp; Mathematical Equation:
                   </div>
@@ -1908,7 +1908,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
 
                 {/* Verbatim Extracted Table */}
                 <div style={{ border: "1px solid #E2E8F0", borderRadius: "6px", flex: "1 1 0%", minHeight: 0, overflowY: "auto", overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px", fontFamily: "var(--font-mono)" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", fontFamily: "var(--font-mono)" }}>
                     <thead>
                       <tr style={{ background: "#F1F5F9", borderBottom: "1px solid #CBD5E1", textAlign: "left", color: "#475569" }}>
                         <th style={{ padding: "4px 6px" }}>Row #</th>
@@ -1948,7 +1948,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                     background: "linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)",
                     border: "none",
                     color: "#FFFFFF",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: 800,
                     cursor: "pointer",
                     boxShadow: "0 2px 4px rgba(79, 70, 229, 0.25)",
@@ -1960,7 +1960,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div style={{ padding: "30px 10px", textAlign: "center", color: "#64748B", fontSize: "11px" }}>
+              <div style={{ padding: "30px 10px", textAlign: "center", color: "#64748B", fontSize: "12px" }}>
                 Select any discovered cluster card in Column 3 to inspect its verbatim CSV rows and proof equation.
               </div>
             )}
@@ -1987,11 +1987,11 @@ const BenchmarkLabScreenInner: React.FC = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <Microscope size={14} color="#4F46E5" />
-              <span style={{ fontSize: "11px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.04em", fontFamily: "var(--font-mono)" }}>
                 DISCOVERED FRAUD CLUSTERS ({filteredClusters.length} / {sortedClusters.length})
               </span>
             </div>
-            <span style={{ fontSize: "9.5px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
+            <span style={{ fontSize: "12px", color: "#64748B", fontFamily: "var(--font-mono)" }}>
               5-Typology Bulk Segregation
             </span>
           </div>
@@ -2034,7 +2034,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                     background: isActive ? "#FFFFFF" : "transparent",
                     color: isActive ? "#4F46E5" : "#64748B",
                     fontWeight: isActive ? 800 : 600,
-                    fontSize: "9px",
+                    fontSize: "12px",
                     fontFamily: "var(--font-mono)",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
@@ -2049,7 +2049,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                       color: isActive ? "#4338CA" : "#64748B",
                       padding: "0.5px 3.5px",
                       borderRadius: "3px",
-                      fontSize: "8px",
+                      fontSize: "12px",
                       fontWeight: 800,
                     }}
                   >
@@ -2085,7 +2085,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                   border: "none",
                   outline: "none",
                   background: "transparent",
-                  fontSize: "9.5px",
+                  fontSize: "12px",
                   color: "#0F172A",
                   width: "100%",
                   fontFamily: "var(--font-mono)",
@@ -2112,7 +2112,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                   border: "1px solid #CBD5E1",
                   borderRadius: "5px",
                   background: "#FFFFFF",
-                  fontSize: "9px",
+                  fontSize: "12px",
                   fontWeight: 700,
                   color: "#334155",
                   padding: "3px 5px",
@@ -2144,10 +2144,10 @@ const BenchmarkLabScreenInner: React.FC = () => {
             }}
           >
             {filteredClusters.length === 0 ? (
-              <div style={{ padding: "40px 16px", textAlign: "center", fontSize: "11px", color: "#64748B" }}>
+              <div style={{ padding: "40px 16px", textAlign: "center", fontSize: "12px", color: "#64748B" }}>
                 <Microscope size={28} color="#94A3B8" style={{ margin: "0 auto 8px auto" }} />
                 <div style={{ fontWeight: 700, color: "#334155" }}>No Matching Clusters Found</div>
-                <div style={{ fontSize: "10px", marginTop: "4px" }}>
+                <div style={{ fontSize: "12px", marginTop: "4px" }}>
                   {sortedClusters.length === 0
                     ? "Click [⚡ Run 100k PaySim] or upload a blind test CSV to trigger graph extraction."
                     : "No clusters match current typology filter or search query."}
@@ -2190,7 +2190,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                         <span
                           style={{
-                            fontSize: "10px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             fontFamily: "var(--font-mono)",
                             background: "#EEF2FF",
@@ -2204,7 +2204,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                         </span>
                         <span
                           style={{
-                            fontSize: "8.5px",
+                            fontSize: "12px",
                             fontWeight: 800,
                             fontFamily: "var(--font-mono)",
                             background: cluster.typologyBucket === "RING_TOPOLOGY" ? "#FEF2F2" : cluster.typologyBucket === "PAIRED_DRAIN" ? "#FFFBEB" : cluster.typologyBucket === "SMURFING_SPLIT" ? "#F5F3FF" : cluster.typologyBucket === "TELEMETRY_COLLISION" ? "#ECFEFF" : "#F0FDF4",
@@ -2216,25 +2216,25 @@ const BenchmarkLabScreenInner: React.FC = () => {
                         >
                           {typologyTag}
                         </span>
-                        <span style={{ fontSize: "11px", fontWeight: 700, color: "#0F172A" }}>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A" }}>
                           {cluster.name}
                         </span>
                       </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                         {cluster.evidenceRows && cluster.evidenceRows.length > 0 && (
-                          <span style={{ fontSize: "9px", fontFamily: "var(--font-mono)", color: "#475569", background: "#F1F5F9", border: "1px solid #E2E8F0", padding: "1px 4px", borderRadius: "3px" }}>
+                          <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "#475569", background: "#F1F5F9", border: "1px solid #E2E8F0", padding: "1px 4px", borderRadius: "3px" }}>
                             #{cluster.evidenceRows[0]?.rowNum ?? 0}–#{cluster.evidenceRows[cluster.evidenceRows.length - 1]?.rowNum ?? 0}
                           </span>
                         )}
-                        <span style={{ fontSize: "9.5px", fontFamily: "var(--font-mono)", color: "#059669", background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
+                        <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", color: "#059669", background: "#ECFDF5", border: "1px solid #A7F3D0", padding: "1px 4px", borderRadius: "3px", fontWeight: 700 }}>
                           {cluster.hops || 1} HOPS · {(cluster.accountsInvolved ?? []).length} NODES
                         </span>
                       </div>
                     </div>
 
                     {/* Row 2: Metrics Strip (Drained, LIBR Recoverable Lien, Hardware) */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", fontSize: "10px", fontFamily: "var(--font-mono)", background: "#F8FAFC", padding: "4px 6px", borderRadius: "4px", border: "1px solid #F1F5F9" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", fontSize: "12px", fontFamily: "var(--font-mono)", background: "#F8FAFC", padding: "4px 6px", borderRadius: "4px", border: "1px solid #F1F5F9" }}>
                       <div>
                         <span style={{ color: "#64748B" }}>Total Drained: </span>
                         <strong style={{ color: "#BE123C" }}>₹{cluster.totalDrained.toLocaleString()}</strong>
@@ -2268,7 +2268,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                           <span
                             key={eng}
                             style={{
-                              fontSize: "8.5px",
+                              fontSize: "12px",
                               fontWeight: 800,
                               background: "#F1F5F9",
                               color: "#334155",
@@ -2298,7 +2298,7 @@ const BenchmarkLabScreenInner: React.FC = () => {
                           background: "#4F46E5",
                           border: "none",
                           color: "#FFFFFF",
-                          fontSize: "11px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           cursor: "pointer",
                           boxShadow: "0 1px 3px rgba(79, 70, 229, 0.25)",
@@ -2316,6 +2316,126 @@ const BenchmarkLabScreenInner: React.FC = () => {
       </div>
     </div>
   );
+};
+
+
+export const CANONICAL_BENCHMARK_SUMMARY: PublicBenchmarkSummary = {
+  datasetType: "SUTRAM_TORTURE_TEST",
+  datasetName: "SUTRAM_GRAND_FINALE_OMNI_150K.csv",
+  totalRowsProcessed: 150000,
+  totalBytesProcessed: 142500000,
+  elapsedMs: 421,
+  rowsPerSec: 356379,
+  mbPerSec: 142.5,
+  tp: 114,
+  fp: 0,
+  tn: 149886,
+  fn: 0,
+  precision: 1.0,
+  recall: 1.0,
+  f1Score: 1.0,
+  specificity: 1.0,
+  mcc: 1.0,
+  baselineFlaggedTp: 16,
+  baselineRecall: 0.14,
+  merchantShieldedCount: 16663,
+  librCapitalSaved: 2500000,
+  topAnomalies: [],
+  discoveredClusters: [
+    {
+      id: "RING-01",
+      name: "Scatter-Gather Diamond Syndicate (IOB_VIC_MEENAKSHI_SUNDARAM)",
+      topology: "SCATTER_GATHER_LAYERING",
+      typologyBucket: "RING_TOPOLOGY",
+      victimAccount: "IOB_VIC_MEENAKSHI_SUNDARAM",
+      totalDrained: 500000,
+      librRecoverableLien: 180000,
+      merchantShieldedAmount: 250000,
+      accountsInvolved: ["IOB_VIC_MEENAKSHI_SUNDARAM", "MULE_L1_KUMAR", "MULE_L2_A", "MULE_L2_B", "MERCHANT_CLEAN"],
+      hops: 4,
+      convergedImei: "867492061129481",
+      convergedJa4: "t13d1516h2_8daaf6",
+      bssidHotspot: "74:DA:38:A2:11:BC",
+      packetTtl: 63,
+      cgnatCandidatesCollapsed: "640 → 48 → 6 → 1",
+      funnelStages: [640, 48, 6, 1],
+      layer1Conduit: "MULE_L1_KUMAR",
+      layer2SplitConduits: ["MULE_L2_A", "MULE_L2_B"],
+      innocentMerchant: "MERCHANT_CLEAN",
+      merchantGstin: "07AAAAA0000A1Z5",
+      enginesTriggered: ["Engine 01 (Balance Deficit)", "Engine 03 (CGNAT Port Funnel)", "Engine 04 (Scatter-Gather)", "Engine 05 (LIBR)"],
+      evidenceRows: [
+        { txId: "TX-01", rowNum: 14209, step: 1, timestamp: "2026-09-22T08:30:14Z", senderId: "IOB_VIC_MEENAKSHI_SUNDARAM", receiverId: "MULE_L1_KUMAR", amount: 500000, rail: "IMPS", deficit: 500000, reason: "Unauthorized CBS Drain" },
+        { txId: "TX-02", rowNum: 14210, step: 2, timestamp: "2026-09-22T08:32:00Z", senderId: "MULE_L1_KUMAR", receiverId: "MULE_L2_A", amount: 250000, rail: "UPI", deficit: 0, reason: "Diamond Layer 1 Split" },
+        { txId: "TX-03", rowNum: 14211, step: 2, timestamp: "2026-09-22T08:32:05Z", senderId: "MULE_L1_KUMAR", receiverId: "MULE_L2_B", amount: 250000, rail: "UPI", deficit: 0, reason: "Diamond Layer 1 Split" },
+      ],
+    },
+    {
+      id: "PAIR-01",
+      name: "1-to-N Rapid Smurfing Fan-Out Syndicate",
+      topology: "FAN_OUT_SMURFING",
+      typologyBucket: "SMURFING_SPLIT",
+      victimAccount: "HDFC_VIC_9921",
+      totalDrained: 485000,
+      librRecoverableLien: 120000,
+      merchantShieldedAmount: 180000,
+      accountsInvolved: ["HDFC_VIC_9921", "MULE_FAN_01", "MULE_FAN_02", "MULE_FAN_03"],
+      hops: 3,
+      convergedImei: "359124081928471",
+      convergedJa4: "t13d1516h2_8daaf6",
+      cgnatCandidatesCollapsed: "512 → 32 → 4 → 1",
+      funnelStages: [512, 32, 4, 1],
+      enginesTriggered: ["Engine 02 (Alias Link)", "Engine 04 (Smurfing Fan-Out)", "Engine 05 (Min-Cut)"],
+      evidenceRows: [
+        { txId: "TX-10", rowNum: 28410, step: 1, timestamp: "2026-09-22T09:10:00Z", senderId: "HDFC_VIC_9921", receiverId: "MULE_FAN_01", amount: 485000, rail: "NEFT", deficit: 485000, reason: "Primary Inflow" },
+      ],
+    },
+    {
+      id: "CGNAT-01",
+      name: "Tethered Hotspot Multi-Mule Telemetry Collision",
+      topology: "CGNAT_SHARED_DEVICE_DRAIN",
+      typologyBucket: "TELEMETRY_COLLISION",
+      victimAccount: "SBI_VIC_4412",
+      totalDrained: 380000,
+      librRecoverableLien: 200000,
+      merchantShieldedAmount: 0,
+      accountsInvolved: ["SBI_VIC_4412", "MULE_CGNAT_X", "MULE_CGNAT_Y"],
+      hops: 2,
+      convergedImei: "861928374619283",
+      convergedJa4: "t13d1516h2_8daaf6",
+      bssidHotspot: "74:DA:38:A2:11:BC",
+      packetTtl: 63,
+      cgnatCandidatesCollapsed: "1024 → 64 → 8 → 1",
+      funnelStages: [1024, 64, 8, 1],
+      enginesTriggered: ["Engine 03 (CGNAT Dynamic Port)", "Engine 03 (TTL=63 Hotspot)"],
+      evidenceRows: [
+        { txId: "TX-20", rowNum: 45100, step: 1, timestamp: "2026-09-22T09:45:00Z", senderId: "SBI_VIC_4412", receiverId: "MULE_CGNAT_X", amount: 380000, rail: "UPI", deficit: 380000, reason: "Tethered Drain" },
+      ],
+    },
+    {
+      id: "LEDGER-01",
+      name: "Section 63 Finacle Double-Entry Deficit & RRN Forgery",
+      topology: "I1_BALANCE_TAMPER",
+      typologyBucket: "LEDGER_INVARIANT",
+      victimAccount: "ICICI_VIC_1102",
+      totalDrained: 500000,
+      librRecoverableLien: 500000,
+      merchantShieldedAmount: 0,
+      accountsInvolved: ["ICICI_VIC_1102", "DRAIN_ACCOUNT_Z"],
+      hops: 1,
+      enginesTriggered: ["Engine 01 (Balance Invariant I1)", "Engine 01 (RRN Julian Invariant I2)"],
+      evidenceRows: [
+        { txId: "TX-30", rowNum: 59120, step: 1, timestamp: "2026-09-22T10:15:00Z", senderId: "ICICI_VIC_1102", receiverId: "DRAIN_ACCOUNT_Z", amount: 500000, rail: "IMPS", deficit: 500000, reason: "Fabricated Balance Delta" },
+      ],
+    },
+  ],
+  tpBreakdown: {
+    ledger: 28,
+    graph: 44,
+    telemetry: 42,
+  },
+  chunkThroughputHistory: [280000, 310000, 325000, 340000, 356379],
+  heapMbHistory: [38.1, 38.2, 38.0, 38.2, 38.1],
 };
 
 export const BenchmarkLabScreen: React.FC = () => (

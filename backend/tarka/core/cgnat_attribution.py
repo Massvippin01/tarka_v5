@@ -277,3 +277,85 @@ def detect_hotspot_collision(
         anomaly_summary=summary
     )
 
+
+# --- 5. DoT Clause 39.20 Statutory Inadmissibility Guardrail ---
+
+class CgnatAdmissibilityResult(BaseModel):
+    ip_address: str
+    source_port: Optional[int] = None
+    is_cgnat: bool
+    is_public_gateway: bool
+    is_admissible_for_individual_attribution: bool
+    status: str
+    statutory_caution: str
+    required_action: Optional[str] = None
+
+
+def enforce_cgnat_inadmissibility_guardrail(
+    ip_address: str,
+    source_port: Optional[int] = None,
+    has_isp_nat_translation: bool = False,
+) -> CgnatAdmissibilityResult:
+    """Enforces DoT License Clause 39.20 and SentinelX Constitution Principle 5.
+    
+    Constitutional Invariant:
+    Never attribute a person or suspect from an IP address alone.
+    Without verified ISP dynamic NAT port translation logs, an IP address
+    merely identifies a gateway or tower pool shared among hundreds of concurrent users.
+    """
+    import ipaddress
+    clean_ip = ip_address.strip()
+    if ":" in clean_ip and not clean_ip.startswith("[") and clean_ip.count(":") == 1:
+        ip_part, port_part = clean_ip.split(":")
+        clean_ip = ip_part
+        try:
+            source_port = int(port_part)
+        except ValueError:
+            pass
+
+    try:
+        ip_obj = ipaddress.ip_address(clean_ip)
+    except ValueError:
+        return CgnatAdmissibilityResult(
+            ip_address=ip_address,
+            source_port=source_port,
+            is_cgnat=False,
+            is_public_gateway=False,
+            is_admissible_for_individual_attribution=False,
+            status="INVALID_IP_FORMAT",
+            statutory_caution="Invalid IP address format.",
+        )
+
+    is_cgnat = (ip_obj in ipaddress.ip_network("100.64.0.0/10")) if ip_obj.version == 4 else False
+    is_public = ip_obj.is_global
+
+    if (is_cgnat or is_public) and not has_isp_nat_translation:
+        caution = (
+            "RFC 6598 CGNAT / Public Gateway IP. "
+            "Under Department of Telecommunications (DoT) License Clause 39.20 and Indian Evidence Act s.65B, "
+            "an IP address without verified ISP port allocation records is legally INADMISSIBLE to attribute an individual. "
+            "Single-actor guilt or ownership cannot be inferred."
+        )
+        return CgnatAdmissibilityResult(
+            ip_address=str(ip_obj),
+            source_port=source_port,
+            is_cgnat=is_cgnat,
+            is_public_gateway=is_public,
+            is_admissible_for_individual_attribution=False,
+            status="INSUFFICIENT_EVIDENCE_SHARED_GATEWAY",
+            statutory_caution=caution,
+            required_action="Issue Section 91 CrPC notice to Telecom Service Provider for IPDR NAT translation log (Source IP, Port, Destination IP, Port, Timestamp).",
+        )
+
+    return CgnatAdmissibilityResult(
+        ip_address=str(ip_obj),
+        source_port=source_port,
+        is_cgnat=is_cgnat,
+        is_public_gateway=is_public,
+        is_admissible_for_individual_attribution=True,
+        status="PORT_MAPPED_VERIFIED",
+        statutory_caution="ISP NAT IPDR translation record verified. Subscriber port mapping substantiated.",
+        required_action=None,
+    )
+
+

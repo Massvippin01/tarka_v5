@@ -22,7 +22,7 @@ export const ClaimInspector: React.FC = () => {
     let isMounted = true;
     const fetchClaims = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/state`);
+        const res = await fetch(`/api/v1/investigations/${activeCaseId}/state`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {

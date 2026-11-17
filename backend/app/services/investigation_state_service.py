@@ -107,7 +107,7 @@ class InvestigationStateService:
                 "type": "BANK_ACCOUNT",
                 "display_name": acc.account_number,
                 "bank_name": acc.bank_name,
-                "holder_name": acc.holder_name,
+                "holder_name": getattr(acc, "holder_name", getattr(acc, "owner_id", "")),
             })
 
         # 4. Evidence Facts & Observations
@@ -326,27 +326,32 @@ class InvestigationStateService:
 
         # 3. Legacy communication records & sightings
         for call in self.store.call_records:
+            caller = getattr(call, "caller_number", getattr(call, "caller_phone", ""))
+            receiver = getattr(call, "receiver_number", getattr(call, "receiver_phone", ""))
+            call_id = getattr(call, "id", "")
             timeline_entries.append({
-                "entry_id": f"CDR-{call.id}",
+                "entry_id": f"CDR-{call_id}",
                 "entry_type": "TELECOM_TRANSMISSION",
-                "title": f"Cellular Transmission: {call.caller_phone} -> {call.receiver_phone}",
+                "title": f"Cellular Transmission: {caller} -> {receiver}",
                 "timestamp": str(call.timestamp),
                 "timestamp_uncertainty_seconds": 30.0,
                 "location": getattr(call, "tower_location", "South Delhi Tower"),
                 "location_uncertainty_meters": 450.0,
-                "entities": [call.caller_phone, call.receiver_phone],
+                "entities": [caller, receiver],
             })
 
         for anpr in self.store.anpr_observations:
+            plate = getattr(anpr, "plate_number", getattr(anpr, "registration_number", ""))
+            anpr_id = getattr(anpr, "id", "")
             timeline_entries.append({
-                "entry_id": f"ANPR-{anpr.id}",
+                "entry_id": f"ANPR-{anpr_id}",
                 "entry_type": "VEHICLE_SIGHTING",
-                "title": f"ANPR Plate Capture: {anpr.registration_number}",
+                "title": f"ANPR Plate Capture: {plate}",
                 "timestamp": str(anpr.timestamp),
                 "timestamp_uncertainty_seconds": 5.0,
                 "location": getattr(anpr, "toll_plaza", "DND Toll Flyway"),
                 "location_uncertainty_meters": 15.0,
-                "entities": [anpr.registration_number],
+                "entities": [plate],
             })
 
         # Sort chronologically, preserving ISO sorting

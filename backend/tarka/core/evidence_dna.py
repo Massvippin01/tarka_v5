@@ -468,6 +468,8 @@ class CaseStore:
             case_file = cd / "case.json"
             with open(case_file, "w", encoding="utf-8") as f:
                 json.dump(case_obj.model_dump(mode="json"), f, indent=2)
+        else:
+            self.create_case(clean_case_id, title=f"Case {clean_case_id}")
 
     def list_artifacts(self, case_id: str) -> List[Artifact]:
         cd = self.get_case_dir(case_id)

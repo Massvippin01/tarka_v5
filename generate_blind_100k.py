@@ -5,7 +5,7 @@ import random
 random.seed(202604)
 
 OUTPUT_CSV = "SUTRAM_100K_BLIND_TORTURE_TEST.csv"
-ANSWER_KEY_JSON = "SUTRAM_SECRET_ANSWER_KEY.json"
+ANSWER_KEY_JSON = "frontend/scripts/fixtures/SUTRAM_SECRET_ANSWER_KEY.json" if os.path.exists("frontend/scripts/fixtures/SUTRAM_SECRET_ANSWER_KEY.json") else "SUTRAM_SECRET_ANSWER_KEY.json"
 TOTAL_ROWS = 100_000
 
 # ---------------------------------------------------------------------------

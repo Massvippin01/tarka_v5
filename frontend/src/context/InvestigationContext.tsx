@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useCaseStore } from "../store/useCaseStore";
 import type { OperatingContext } from "../types/operatingContext";
 import { OperatingContextService } from "../services/operatingContextService";
 import { commandBus } from "../services/commandBusService";
@@ -168,6 +169,15 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       : 0;
 
   const [experienceLevel, setExperienceLevelState] = useState<ExperienceLevel>(initialExperienceLevel);
+  const [lastEvent, setLastEvent] = useState<DomainEvent | null>(null);
+
+  const dispatchEvent = (type: DomainEventType, payload: Record<string, any>) => {
+    setLastEvent({
+      type,
+      payload,
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   const setExperienceLevel = (level: ExperienceLevel) => {
     setExperienceLevelState(level);
@@ -180,7 +190,11 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [isOnboarding, setIsOnboarding] = useState<boolean>(!hasExistingSession);
   const [operatingContext, setOperatingContext] = useState<OperatingContext | null>(null);
-  const [activeCaseId, setActiveCaseId] = useState<string>(initialCaseParam || storedCaseId || "CASE-2026-001");
+  const storeCaseId = useCaseStore((s) => s.activeCaseId);
+  const activeCaseId = storeCaseId || initialCaseParam || storedCaseId || "";
+  const setActiveCaseId = useCallback((c: string) => {
+    useCaseStore.getState().setActiveCaseId(c);
+  }, []);
 
   const [activeNav, setActiveNavState] = useState<NavRoute>(
     (initialParams.get("nav") as NavRoute) || "investigations"
@@ -208,7 +222,6 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotQuery, setCopilotQuery] = useState("");
-  const [lastEvent, setLastEvent] = useState<DomainEvent | null>(null);
   const [realtimeState, setRealtimeState] = useState<RealtimeConnectionState>("LIVE");
   const [newEvidenceAlert, setNewEvidenceAlert] = useState(false);
   const [lastSequenceNumber, setLastSequenceNumber] = useState(1);
@@ -237,23 +250,22 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       .catch((err) => console.warn("Context negotiation error:", err));
   }, []);
 
-  // URL Sync Effect
-
+  // URL Sync Effect: Strip legacy stale query parameters without overriding canonical ?case=<id>&view=<route>
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams();
-    if (activeCaseId) params.set("case", activeCaseId);
-    if (activeNav) params.set("nav", activeNav);
-    if (activeLens) params.set("lens", activeLens);
-    if (selectedEntityId) params.set("entity", selectedEntityId);
-    if (selectedRelationshipId) params.set("rel", selectedRelationshipId);
-    if (canvasMode) params.set("mode", canvasMode);
-    if (activeRightTab) params.set("tab", activeRightTab);
-    params.set("level", String(experienceLevel));
-
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", newUrl);
-  }, [activeCaseId, activeNav, activeLens, selectedEntityId, selectedRelationshipId, canvasMode, activeRightTab, experienceLevel]);
+    const currentUrl = new URL(window.location.href);
+    const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level"];
+    let changed = false;
+    for (const key of legacyParams) {
+      if (currentUrl.searchParams.has(key)) {
+        currentUrl.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  }, []);
 
   // Realtime Server-Sent Events (SSE) Listener
   useEffect(() => {
@@ -261,7 +273,8 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`http://localhost:8000/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      eventSource = new EventSource(`${apiBase}/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
 
       eventSource.onopen = () => {
         setRealtimeState("LIVE");
@@ -293,14 +306,6 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       if (eventSource) eventSource.close();
     };
   }, [activeCaseId]);
-
-  const dispatchEvent = (type: DomainEventType, payload: Record<string, any>) => {
-    setLastEvent({
-      type,
-      payload,
-      timestamp: new Date().toISOString(),
-    });
-  };
 
   const navigateTo = (nav: NavRoute, lens?: WorkspaceLens) => {
     const targetLens = lens || activeLens;

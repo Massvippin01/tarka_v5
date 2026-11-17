@@ -18,6 +18,8 @@
  * - 7-Question Explainable Investigation Intelligence Brief with clickable EvidenceChip citations
  */
 
+import { sha256HexSync, computeMerkleRootSync, canonicalJson } from "./sha256";
+
 export type MatchClassification =
   | "EXACT_DETERMINISTIC"       // RRN / UTR match across Switch & Finacle CBS
   | "CORROBORATED_MULTI_VECTOR"  // KYC introducer overlap + IMEI / IPDR cross-session match
@@ -69,6 +71,7 @@ export interface ReconstructedNode {
   bssidHotspot?: string;
   gstin?: string;
   mcaCin?: string;
+  isHardVeto?: boolean;
   details: string;
 }
 
@@ -162,14 +165,20 @@ export interface ReconstructedInvestigation {
     custodian: string;
     status: "PASS" | "QUARANTINED";
   }>;
+  muleScores?: Record<string, any>;
+  syndicateLinks?: any[];
+  clusters?: any[];
+  rawMentions?: any[];
+  canonicalEntities?: any[];
+  flightRecorderMerkleRoot?: string;
 }
 
 /* =========================================================================
    AUTHENTIC 5-FILE INDIAN CASE PACK RAW STRINGS
    ========================================================================= */
 
-export const DEFAULT_NCRP_1930_CSV = `complaint_id,fir_number,police_station,acknowledgement_timestamp_ist,complainant_name,complainant_mobile,claimed_loss_inr,primary_suspect_vpa,suspect_phone_shared,evidence_attachment_filename,attachment_sha256,attachment_format,pre_ingestion_authenticity_status,pre_ingestion_flags
-NCRP-1930-DL-2026-0922841,FIR #0149/2026,Noida Cyber Crime PS UP,2026-09-22 09:42:18 IST,Sunil Kumar,9810144920,500000.00,quicktransfer.nodal@axisbank,9871092811,victim_complaint_payment_screenshot.pdf,c89148bc92019482019a84719284102948192841029481928410294819284102,PDF_IMAGE_SCAN,QUARANTINED_INCREMENTAL_EDIT,"2 %%EOF markers detected; Canva PDF engine trailer append at byte offset 0x14209..0x15080 modifies printed loss figure from ₹5,00,000 to ₹15,000; original raw raster intact under XRef stream 4"`;
+export const DEFAULT_NCRP_1930_CSV = `complaint_id,fir_number,police_station,acknowledgement_timestamp_ist,complainant_name,complainant_mobile,claimed_loss_inr,primary_suspect_vpa,suspect_phone_shared,evidence_attachment_filename,attachment_sha256,attachment_format,pre_ingestion_authenticity_status,pre_ingflags
+NCRP-1930-DL-2026-0922841,FIR #0149/2026,Noida Cyber Crime PS UP,2026-09-22 09:42:18 IST,Sunil Kumar,9810144920,500000.00,quicktransfer.nodal@axisbank,9871092811,victim_complaint_payment_screenshot.pdf,${sha256HexSync("victim_complaint_payment_screenshot.pdf")},PDF_IMAGE_SCAN,QUARANTINED_INCREMENTAL_EDIT,"2 %%EOF markers detected; Canva PDF engine trailer append at byte offset 0x14209..0x15080 modifies printed loss figure from ₹5,00,000 to ₹15,000; original raw raster intact under XRef stream 4"`;
 
 export const DEFAULT_SBI_FINACLE_STATEMENT_CSV = `tran_date,value_date,chq_ref_no,particulars,branch_ifsc,withdrawal_dr,deposit_cr,balance_inr
 2026-09-21 18:00:00,2026-09-21,CHQ-OPEN-8821,OPENING BALANCE,SBIN0004821,0.00,0.00,524318.50
@@ -222,8 +231,57 @@ export function reconstruct5FileInvestigation(
     discrepancyNote: "Complainant screenshot displays purported ₹15,000 debit; true CBS Finacle ledger proves actual loss of ₹5,00,000.00 across RRN 626509188410 and 626510149921.",
   };
 
-  // 2. Post-Ingestion Merkle Root (Simulated deterministic SHA-256 Merkle root)
-  const postIngestionMerkleRoot = "0xb189302ca876543210fedcba9876543210abcdef0123456789abcdef01234567";
+  // 1b. Real SHA-256 File Manifest
+  const fileManifest = [
+    {
+      fileName: "01_NCRP_1930_Complaint_And_Intake_Manifest.csv",
+      fileId: "01_NCRP_1930",
+      byteSize: file1.length,
+      sha256: sha256HexSync(file1),
+      tier: "T3" as const,
+      custodian: "NCRP 1930 Portal & Complainant Handset",
+      status: "QUARANTINED" as const,
+    },
+    {
+      fileName: "02_Victim_SBI_Finacle_Statement_SBIN0004821.csv",
+      fileId: "02_Victim_SBI_Finacle",
+      byteSize: file2.length,
+      sha256: sha256HexSync(file2),
+      tier: "T1" as const,
+      custodian: "State Bank of India (Global IT Centre Nodal)",
+      status: "PASS" as const,
+    },
+    {
+      fileName: "03_NPCI_Central_Switch_UPI_IMPS_Log.csv",
+      fileId: "03_NPCI_Switch",
+      byteSize: file3.length,
+      sha256: sha256HexSync(file3),
+      tier: "T1" as const,
+      custodian: "NPCI Central Switch Operations Lead",
+      status: "PASS" as const,
+    },
+    {
+      fileName: "04_Suspect_And_Merchant_Nodal_CBS_KYC.csv",
+      fileId: "04_Nodal_KYC",
+      byteSize: file4.length,
+      sha256: sha256HexSync(file4),
+      tier: "T1" as const,
+      custodian: "Nodal Officers (Axis, HDFC, ICICI, PNB)",
+      status: "PASS" as const,
+    },
+    {
+      fileName: "05_Airtel_DoT_CGNAT_IPDR.csv",
+      fileId: "05_Airtel_CGNAT",
+      byteSize: file5.length,
+      sha256: sha256HexSync(file5),
+      tier: "T1" as const,
+      custodian: "Bharti Airtel DoT Intercept Enclave",
+      status: "PASS" as const,
+    },
+  ];
+
+  // 2. Post-Ingestion Merkle Root (Real SHA-256 Merkle root over all 5 raw artifact files)
+  const postIngestionMerkleRoot = "0x" + computeMerkleRootSync(fileManifest.map((f) => f.sha256));
 
   // 3. Reconstructed Graph Nodes
   const nodes: ReconstructedNode[] = [
@@ -657,15 +715,14 @@ export function reconstruct5FileInvestigation(
   ];
 
   // 5. 10-Step Deterministic Transformation Audit Steps
-  const transformationSteps: TransformationAuditStep[] = [
+  const rawSteps = [
     {
       stepIndex: 1,
       engine: "Crypto Hash & Merkle Ingestion",
       inputArtifacts: ["01_NCRP_1930", "02_Victim_SBI_Finacle", "03_NPCI_Switch", "04_Nodal_KYC", "05_Airtel_CGNAT"],
       operation: "SHA-256 leaf digest generation & BIP-39 mnemonic phrase computation",
       mathematicalBasis: "H(m) = SHA256(RawBytes) · Leaf_k = SHA256(0x00 || H(m))",
-      sha256Proof: "0xb189302ca876543210fedcba9876543210abcdef0123456789abcdef01234567",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 2,
@@ -673,8 +730,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["01_NCRP_1930 (victim_complaint_payment_screenshot.pdf)"],
       operation: "Dual %%EOF incremental trailer scan and xref stream diffing",
       mathematicalBasis: "Count(%%EOF) > 1 ∧ Offset_2 > Offset_1 ⇒ Incremental Canva Append",
-      sha256Proof: "0xc89148bc92019482019a84719284102948192841029481928410294819284102",
-      status: "QUARANTINED",
+      status: "QUARANTINED" as const,
     },
     {
       stepIndex: 3,
@@ -682,8 +738,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["05_Airtel_CGNAT_IPDR"],
       operation: "One-way cryptographic HMAC masking of 9,996 innocent bystander subscriber MSISDNs",
       mathematicalBasis: "Mask(MSISDN) = HMAC-SHA256(MSISDN, EnclaveSalt)",
-      sha256Proof: "0x4d71290481029481029481029481029481029481029481029481029481029481",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 4,
@@ -691,8 +746,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["02_Victim_SBI_Finacle"],
       operation: "Running balance invariant check across all debit and credit ledger rows",
       mathematicalBasis: "∀k: Bal[k] = Bal[k-1] + Cr[k] - Dr[k] ± 0.00",
-      sha256Proof: "0xb198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 5,
@@ -700,8 +754,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["03_NPCI_Switch"],
       operation: "Julian Day 265 decoding & bank CBS clock synchronization check",
       mathematicalBasis: "JulianDay = parseInt(RRN[1..3]) = 265 (Sept 22) · |t_cbs - t_switch| = 14.0s ≤ 180s",
-      sha256Proof: "0x9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 6,
@@ -709,8 +762,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["02_Victim_SBI_Finacle", "03_NPCI_Switch"],
       operation: "Inner join on RRN 626509188410 and 626510149921",
       mathematicalBasis: "Finacle.ChqRef == Switch.RRN ∧ Finacle.Dr == Switch.Amount",
-      sha256Proof: "0x12a9840192841029481029481029481029481029481029481029481029481029",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 7,
@@ -718,8 +770,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["04_Nodal_KYC"],
       operation: "Disjoint Set Union (DSU) clustering on introducer INTRO-MEWAT-991",
       mathematicalBasis: "Union(M1_Vikram, M2A_Rohit) ∧ Union(M1_Vikram, M2B_Sameer)",
-      sha256Proof: "0x3344556677889900aabbccddeeff00112233445566778899aabbccddeeff0011",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 8,
@@ -727,8 +778,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["05_Airtel_CGNAT_IPDR"],
       operation: "Candidate set intersection on public IP, port, timestamp, and TTL=63 hotspot hop",
       mathematicalBasis: "CandidatePool(44102) = 1 · CandidatePool(Port 0) = 340 (Quarantined)",
-      sha256Proof: "0x44556677889900aabbccddeeff00112233445566778899aabbccddeeff001122",
-      status: "INSUFFICIENT_FLAGGED",
+      status: "INSUFFICIENT_FLAGGED" as const,
     },
     {
       stepIndex: 9,
@@ -736,8 +786,7 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["03_NPCI_Switch", "04_Nodal_KYC"],
       operation: "Equitable lowest intermediate balance rule calculation on Apex Electronics",
       mathematicalBasis: "LienAmount = min(TaintedInflow, AccountBalance) = ₹1,80,000.00; Shielded = ₹2,50,000.00",
-      sha256Proof: "0x5566778899aabbccddeeff00112233445566778899aabbccddeeff0011223344",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
     {
       stepIndex: 10,
@@ -745,10 +794,14 @@ export function reconstruct5FileInvestigation(
       inputArtifacts: ["All Transformed Graphs"],
       operation: "Preparation of draft BSA §63(4) Part-A/B schedules & BNSS §94/§106/§107 orders for IO execution",
       mathematicalBasis: "Strict segregation of Forensic Technical Facts from Court Admissibility determination",
-      sha256Proof: "0x66778899aabbccddeeff00112233445566778899aabbccddeeff001122334455",
-      status: "PASSED_VERIFIED",
+      status: "PASSED_VERIFIED" as const,
     },
   ];
+
+  const transformationSteps: TransformationAuditStep[] = rawSteps.map((step) => ({
+    ...step,
+    sha256Proof: "0x" + sha256HexSync(canonicalJson(step)),
+  }));
 
   // 6. 7-Question Explainable Investigation Intelligence Brief
   const sevenQuestionBrief: SevenQuestionBrief = {
@@ -856,54 +909,7 @@ export function reconstruct5FileInvestigation(
     ],
   };
 
-  // 7. File Manifest
-  const fileManifest = [
-    {
-      fileName: "01_NCRP_1930_Complaint_And_Intake_Manifest.csv",
-      fileId: "01_NCRP_1930",
-      byteSize: file1.length,
-      sha256: "c89148bc92019482019a84719284102948192841029481928410294819284102",
-      tier: "T3" as const,
-      custodian: "NCRP 1930 Portal & Complainant Handset",
-      status: "QUARANTINED" as const,
-    },
-    {
-      fileName: "02_Victim_SBI_Finacle_Statement_SBIN0004821.csv",
-      fileId: "02_Victim_SBI_Finacle",
-      byteSize: file2.length,
-      sha256: "b198302ca876543210fedcba9876543210abcdef0123456789abcdef01234567",
-      tier: "T1" as const,
-      custodian: "State Bank of India (Global IT Centre Nodal)",
-      status: "PASS" as const,
-    },
-    {
-      fileName: "03_NPCI_Central_Switch_UPI_IMPS_Log.csv",
-      fileId: "03_NPCI_Switch",
-      byteSize: file3.length,
-      sha256: "9f1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
-      tier: "T1" as const,
-      custodian: "NPCI Central Switch Operations Lead",
-      status: "PASS" as const,
-    },
-    {
-      fileName: "04_Suspect_And_Merchant_Nodal_CBS_KYC.csv",
-      fileId: "04_Nodal_KYC",
-      byteSize: file4.length,
-      sha256: "3344556677889900aabbccddeeff00112233445566778899aabbccddeeff0011",
-      tier: "T1" as const,
-      custodian: "Nodal Officers (Axis, HDFC, ICICI, PNB)",
-      status: "PASS" as const,
-    },
-    {
-      fileName: "05_Airtel_DoT_CGNAT_IPDR.csv",
-      fileId: "05_Airtel_CGNAT",
-      byteSize: file5.length,
-      sha256: "4d71290481029481029481029481029481029481029481029481029481029481",
-      tier: "T1" as const,
-      custodian: "Bharti Airtel DoT Intercept Enclave",
-      status: "PASS" as const,
-    },
-  ];
+
 
   return {
     caseId: "CASE-2026-001",

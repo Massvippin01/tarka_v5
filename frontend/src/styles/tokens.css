@@ -1,137 +1,220 @@
 /* ==========================================================================
-   SENTINELX & TARKA v5.0 DESIGN SYSTEM TOKENS
-   Daylight Executive SaaS (Default) + Obsidian / Midnight Teal / High Contrast
+   TARKA v5.0 FORENSIC DESIGN SYSTEM TOKENS
+   Phase 3 Implementation — Daylight Executive SaaS (Default) + Dark Workstation
+   Approved Specification Reference: UI_UX_STATE_OF_ART.md
    ========================================================================== */
 
 :root, [data-theme="porcelain"], [data-theme="daylight"], [data-theme="forensic-paper"] {
-  /* Daylight Executive SaaS Palette (Default - Linear / Stripe / Salezy / FlowMail) */
-  --bg-canonical: #F4F6FB;
-  --surface-primary: #FFFFFF;
-  --surface-secondary: #F8FAFC;
-  --surface-elevated: #FFFFFF;
-  --surface-selected: #EEF2FF;
+  /* Surface Canvas Hierarchy */
+  --surface-canvas: #F4F6FB;           /* Base background behind workbench frames */
+  --surface-primary: #FFFFFF;          /* Main card surface, data tables, inspectors */
+  --surface-secondary: #F8FAFC;        /* Sub-panels, table headers, inactive rows */
+  --surface-elevated: #FFFFFF;         /* Popovers, dropdown menus, floating modals */
+  --surface-active: #EEF2FF;           /* Selected row, focused tree item, active tab */
   --surface-smoke: rgba(255, 255, 255, 0.88);
 
+  /* Legacy & Framework Surface Aliases */
+  --bg-canonical: var(--surface-canvas);
+  --bento-canvas: var(--surface-canvas);
+  --reui-frame-bg: #F4F5F9;
+  --reui-canvas-bg: var(--surface-secondary);
+  --reui-card-bg: var(--surface-primary);
+  --reui-card-well: #F4F5F9;
+
   /* Clean Hairline Borders */
-  --border-structural: #E2E8F0;
-  --border-subtle: #E2E8F0;
-  --border-strong: #CBD5E1;
+  --border-structural: #E2E8F0;       /* Standard 1px panel and card separation */
+  --border-subtle: #F1F5F9;           /* Inner dividers, secondary table gridlines */
+  --border-strong: #CBD5E1;           /* Interactive input borders, card outlines */
+
+  --reui-border-strong: var(--border-structural);
+  --reui-border-subtle: var(--border-subtle);
+  --reui-border-well: var(--border-structural);
+  --reui-border-inner: rgba(15, 23, 42, 0.06);
 
   /* High-Contrast Typography */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --text-primary: #0F172A;            /* High-contrast headings, primary data values */
+  --text-secondary: #475569;          /* Field labels, metadata tags, secondary copy */
+  --text-muted: #64748B;              /* Timestamps, tooltips, inactive indicators */
+  --text-inverse: #FFFFFF;            /* Text rendered over dark accent fills */
 
-  /* Executive Indigo Accent */
-  --color-electric-blue: #4F46E5;
-  --primary-accent: #4F46E5;
-  --primary-accent-subtle: #EEF2FF;
+  --reui-text-strong: #09090B;
+  --reui-text-primary: var(--text-primary);
+  --reui-text-secondary: var(--text-secondary);
+  --reui-text-muted: var(--text-muted);
+  --reui-text-inverse: var(--text-inverse);
 
-  /* Approved Forensic Palette Family */
-  --color-primary-periwinkle: #4F46E5;
-  --color-verified-lime: #059669;
-  --color-sentinel-coral: #E11D48;
-  --color-gap-amber: #D97706;
-  --color-restricted-violet: #7C3AED;
+  /* Institutional Authority Accent */
+  --accent-brand: #4F46E5;            /* Indigo 600 - Primary actions, active nav */
+  --accent-brand-hover: #4338CA;      /* Indigo 700 - Hover interaction state */
+  --accent-brand-subtle: #EEF2FF;     /* Indigo 50 - Active backgrounds, light badges */
+  --primary-accent: var(--accent-brand);
+  --primary-accent-subtle: var(--accent-brand-subtle);
+  --color-electric-blue: var(--accent-brand);
 
-  /* Semantic State Tokens */
-  --status-verified: #059669;
-  --status-contradicted: #E11D48;
-  --status-critical: #E11D48;
-  --status-failure: #E11D48;
-  --status-gap: #D97706;
+  /* Forensic Semantic State Tokens */
+  --forensic-verified: #059669;       /* Emerald 600 - SHA-256 Intact, Z3 Proven */
+  --forensic-verified-bg: #ECFDF5;    /* Emerald 50 - Verified badge backgrounds */
+  --forensic-verified-border: #A7F3D0;/* Emerald 200 - Verified border callouts */
+
+  --forensic-review: #D97706;         /* Amber 600 - Missing Data, Clock Drift Delta */
+  --forensic-review-bg: #FFFBEB;      /* Amber 50 - Review badge backgrounds */
+  --forensic-review-border: #FDE68A;  /* Amber 200 - Review border callouts */
+
+  --forensic-tamper: #E11D48;         /* Rose 600 - %%EOF Tampering, Ledger Deficit */
+  --forensic-tamper-bg: #FFF1F2;      /* Rose 50 - Tamper alert backgrounds */
+  --forensic-tamper-border: #FECDD3;  /* Rose 200 - Hard-stop gate alert borders */
+
+  /* Semantic State Aliases */
+  --status-verified: var(--forensic-verified);
+  --status-confirmed: var(--forensic-verified);
+  --status-documented: var(--forensic-verified);
+  --status-observed: var(--forensic-verified);
+  --evidence-teal: var(--forensic-verified);
+  --color-verified-lime: var(--forensic-verified);
+
+  --status-gap: var(--forensic-review);
+  --status-potential: var(--forensic-review);
+  --status-unresolved: var(--forensic-review);
+  --color-gap-amber: var(--forensic-review);
+
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
+  --status-failure: var(--forensic-tamper);
+  --color-sentinel-coral: var(--forensic-tamper);
+  --sentinel-crimson: var(--forensic-tamper);
+  --sentinel-dark-crimson: #BE123C;
+
   --status-restricted: #7C3AED;
+  --status-inferred: #7C3AED;
+  --color-restricted-violet: #7C3AED;
   --status-unknown: #64748B;
 
-  /* Sentinel Identity */
-  --sentinel-crimson: #E11D48;
-  --sentinel-dark-crimson: #BE123C;
-  --sentinel-coral: #E11D48;
+  /* ReUI Primitives Aliases */
+  --reui-emerald-bg: var(--forensic-verified-bg);
+  --reui-emerald-border: var(--forensic-verified-border);
+  --reui-emerald-text: var(--forensic-verified);
+  --reui-emerald-dot: #10B981;
 
-  /* Component Compatibility Aliases */
-  --evidence-teal: #059669;
-  --status-confirmed: #059669;
-  --status-documented: #059669;
-  --status-observed: #059669;
-  --status-inferred: #7C3AED;
-  --status-potential: #D97706;
-  --status-unresolved: #D97706;
-  --border-accent: #E11D48;
-  --text-accent: #E11D48;
-  --text-info: #475569;
+  --reui-rose-bg: var(--forensic-tamper-bg);
+  --reui-rose-border: var(--forensic-tamper-border);
+  --reui-rose-text: var(--forensic-tamper);
+  --reui-rose-dot: #F43F5E;
 
-  /* Typography Families: Plus Jakarta Sans / JetBrains Mono */
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --reui-amber-bg: var(--forensic-review-bg);
+  --reui-amber-border: var(--forensic-review-border);
+  --reui-amber-text: var(--forensic-review);
+  --reui-amber-dot: #F59E0B;
+
+  --reui-indigo-bg: var(--accent-brand-subtle);
+  --reui-indigo-border: #C7D2FE;
+  --reui-indigo-text: var(--accent-brand-hover);
+  --reui-indigo-solid: var(--accent-brand);
+
+  --reui-purple-bg: #F5F3FF;
+  --reui-purple-border: #DDD6FE;
+  --reui-purple-text: #6D28D9;
+  --reui-purple-dot: #8B5CF6;
+
+  /* Typography Families: IBM Plex Sans / IBM Plex Mono */
+  --font-sans: 'IBM Plex Sans', 'Plus Jakarta Sans', 'Inter Variable', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-display: var(--font-sans);
   --font-typewriter: var(--font-mono);
   --font-devanagari: 'Noto Sans Devanagari', var(--font-sans);
 
   /* Strict Compact Professional Sizing */
-  --font-size-meta: 12px;
-  --font-size-secondary: 13px;
-  --font-size-body: 14px;
-  --font-size-primary: 15px;
-  --font-size-section: 17px;
-  --font-size-contextual: 19px;
+  --font-size-meta: 11px;
+  --font-size-secondary: 12px;
+  --font-size-body: 13px;
+  --font-size-primary: 14px;
+  --font-size-section: 16px;
+  --font-size-contextual: 18px;
   --font-size-workspace: 22px;
   --font-size-case: 26px;
 
-  /* Minimal Precision Radii */
+  /* Geometry & Precision Radii */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
 }
 
 [data-theme="obsidian"], [data-theme="obsidian-glass"], [data-theme="tarka"], [data-theme="night-ops"] {
-  /* Dark Forensic Workstation Palette */
-  --bg-canonical: #0C0E12;
-  --surface-primary: #12141A;
-  --surface-secondary: #161922;
-  --surface-elevated: #1E222D;
-  --surface-selected: #252A38;
-  --surface-smoke: rgba(18, 22, 31, 0.72);
+  /* Admin Dashboard V2 Canonical Palette: Midnight Navy (#060B14) & Deep Ocean Blue (#0F1B2E) */
+  --surface-canvas: #060B14;
+  --surface-primary: #0F1B2E;
+  --surface-secondary: #132238;
+  --surface-elevated: #1A2C46;
+  --surface-selected: rgba(6, 182, 212, 0.18);
+  --surface-smoke: rgba(15, 27, 46, 0.75);
+
+  --bg-canonical: var(--surface-canvas);
+  --bento-canvas: var(--surface-canvas);
+  --reui-frame-bg: #060B14;
+  --reui-canvas-bg: #0B1220;
+  --reui-card-bg: var(--surface-primary);
+  --reui-card-well: #0B1220;
 
   --border-structural: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(34, 211, 238, 0.28);
+  --border-cyan: rgba(34, 211, 238, 0.40);
 
-  --text-primary: #F3F4F6;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
+  --reui-border-strong: var(--border-structural);
+  --reui-border-subtle: var(--border-subtle);
+  --reui-border-well: rgba(255, 255, 255, 0.08);
+  --reui-border-inner: rgba(255, 255, 255, 0.04);
 
-  --color-electric-blue: #2563EB;
-  --primary-accent: #2563EB;
-  --primary-accent-subtle: rgba(37, 99, 235, 0.15);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #8C9EB0;             /* Calibrated for WCAG AA (6.27:1 on card, 7.16:1 on canvas AAA) */
+  --text-disabled: #76889A;          /* Calibrated for WCAG AA (4.70:1 on card, 5.06:1 on canvas) */
+  --text-inverse: #060B14;
 
-  --color-primary-periwinkle: #707DE8;
-  --color-verified-lime: #22C55E;
-  --color-sentinel-coral: #FB7185;
-  --color-gap-amber: #FBBF24;
-  --color-restricted-violet: #A78BFA;
+  --reui-text-strong: #FFFFFF;
+  --reui-text-primary: var(--text-primary);
+  --reui-text-secondary: var(--text-secondary);
+  --reui-text-muted: var(--text-muted);
 
-  --primary-accent: var(--color-primary-periwinkle);
-  --status-verified: var(--color-verified-lime);
-  --status-contradicted: var(--color-sentinel-coral);
-  --status-critical: var(--color-sentinel-coral);
-  --status-failure: var(--color-sentinel-coral);
-  --status-gap: var(--color-gap-amber);
-  --status-restricted: var(--color-restricted-violet);
-  --status-unknown: #71717A;
+  --accent-brand: #06B6D4;
+  --accent-brand-hover: #22D3EE;
+  --accent-brand-subtle: rgba(6, 182, 212, 0.15);
+  --primary-accent: var(--accent-brand);
+  --primary-accent-subtle: var(--accent-brand-subtle);
+  --color-electric-blue: #3B82F6;
+  --color-cyan-glow: #22D3EE;
 
-  --sentinel-crimson: var(--color-sentinel-coral);
-  --sentinel-dark-crimson: #F43F5E;
-  --sentinel-coral: var(--color-sentinel-coral);
+  --forensic-verified: #10B981;
+  --forensic-verified-accessible: #34D399; /* WCAG AAA 8.32:1 */
+  --forensic-verified-bg: rgba(16, 185, 129, 0.14);
+  --forensic-verified-border: rgba(16, 185, 129, 0.32);
 
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-display: var(--font-sans);
-  --font-typewriter: var(--font-mono);
-  --font-devanagari: 'Noto Sans Devanagari', var(--font-sans);
+  --forensic-review: #F59E0B;
+  --forensic-review-accessible: #FBBF24;   /* WCAG AAA 9.58:1 */
+  --forensic-review-bg: rgba(245, 158, 11, 0.14);
+  --forensic-review-border: rgba(245, 158, 11, 0.32);
+
+  --forensic-tamper: #F43F5E;
+  --forensic-tamper-accessible: #FB7185;   /* WCAG AA 5.94:1 on elevated, 7.32:1 on canvas */
+  --forensic-tamper-bg: rgba(244, 63, 94, 0.14);
+  --forensic-tamper-border: rgba(244, 63, 94, 0.32);
+
+  --status-verified: var(--forensic-verified);
+  --status-gap: var(--forensic-review);
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
+  --status-failure: var(--forensic-tamper);
+  --status-restricted: #A78BFA;
+  --status-unknown: #8C9EB0;
 }
 
 [data-theme="midnight-teal"] {
-  --bg-canonical: #070E12;
+  --surface-canvas: #070E12;
   --surface-primary: #0D181E;
   --surface-secondary: #122129;
   --surface-elevated: #182C36;
@@ -146,19 +229,26 @@
   --text-secondary: #99F6E4;
   --text-muted: #5EEAD4;
 
-  --color-electric-blue: #14B8A6;
-  --primary-accent: #14B8A6;
-  --primary-accent-subtle: rgba(20, 184, 166, 0.18);
+  --accent-brand: #14B8A6;
+  --accent-brand-hover: #0D9488;
+  --accent-brand-subtle: rgba(20, 184, 166, 0.18);
+  --primary-accent: var(--accent-brand);
 
-  --color-primary-periwinkle: #2DD4BF;
-  --color-verified-lime: #10B981;
-  --color-sentinel-coral: #F43F5E;
-  --color-gap-amber: #F59E0B;
-  --color-restricted-violet: #8B5CF6;
+  --forensic-verified: #10B981;
+  --forensic-verified-bg: rgba(16, 185, 129, 0.14);
+  --forensic-verified-border: rgba(16, 185, 129, 0.32);
+
+  --forensic-review: #F59E0B;
+  --forensic-review-bg: rgba(245, 158, 11, 0.14);
+  --forensic-review-border: rgba(245, 158, 11, 0.32);
+
+  --forensic-tamper: #F43F5E;
+  --forensic-tamper-bg: rgba(244, 63, 94, 0.14);
+  --forensic-tamper-border: rgba(244, 63, 94, 0.32);
 }
 
 [data-theme="high-contrast"] {
-  --bg-canonical: #000000;
+  --surface-canvas: #000000;
   --surface-primary: #0A0A0A;
   --surface-secondary: #141414;
   --surface-elevated: #1F1F1F;
@@ -172,18 +262,113 @@
   --text-secondary: #E5E5E5;
   --text-muted: #A3A3A3;
 
-  --color-primary-periwinkle: #818CF8;
-  --color-verified-lime: #00FF66;
-  --color-sentinel-coral: #FF2E36;
-  --color-gap-amber: #FFE600;
-  --color-restricted-violet: #D946EF;
-
+  --accent-brand: #FFFFFF;
+  --accent-brand-hover: #E5E5E5;
+  --accent-brand-subtle: #2E2E2E;
   --primary-accent: #FFFFFF;
-  --status-verified: var(--color-verified-lime);
-  --status-contradicted: var(--color-sentinel-coral);
-  --status-critical: var(--color-sentinel-coral);
-  --status-failure: var(--color-sentinel-coral);
-  --status-gap: var(--color-gap-amber);
-  --status-restricted: var(--color-restricted-violet);
-  --status-unknown: #A3A3A3;
+
+  --forensic-verified: #00FF66;
+  --forensic-review: #FFE600;
+  --forensic-tamper: #FF2E36;
+}
+
+/* ==========================================================================
+   TARKA / FIELDNOTE SIGNATURE FORENSIC VISUAL IDENTITY
+   Competition Specification: SUTRAM 2026 PS04
+   Palette:
+     #101918 (Obsidian Deep Foundation)
+     #E9E9DF (Archive Paper Canvas)
+     #C8F751 (Signal Lime Forensic Verification)
+     #6B7770 (Slate Structural Neutral)
+     #B65B48 (Conflict Terracotta Contradiction)
+     #527C9A (Reference Blue Statutory Provenance)
+   ========================================================================== */
+
+:root {
+  --fieldnote-obsidian: #101918;
+  --fieldnote-archive: #E9E9DF;
+  --fieldnote-signal-lime: #C8F751;
+  --fieldnote-slate: #6B7770;
+  --fieldnote-conflict-terracotta: #B65B48;
+  --fieldnote-reference-blue: #527C9A;
+}
+
+[data-theme="fieldnote"], [data-theme="tarka-fieldnote"], [data-theme="analyst-dark"] {
+  --surface-canvas: #101918;
+  --surface-primary: #152220;
+  --surface-secondary: #1A2A28;
+  --surface-elevated: #213532;
+  --surface-selected: #2B4441;
+  --surface-smoke: rgba(16, 25, 24, 0.85);
+
+  --border-structural: rgba(107, 119, 112, 0.35);
+  --border-subtle: rgba(107, 119, 112, 0.18);
+  --border-strong: rgba(200, 247, 81, 0.40);
+
+  --text-primary: #F4F6F4;
+  --text-secondary: #A3B1AA;
+  --text-muted: #6B7770;
+  --text-inverse: #101918;
+
+  --accent-brand: #C8F751;
+  --accent-brand-hover: #B4E63C;
+  --accent-brand-subtle: rgba(200, 247, 81, 0.12);
+  --primary-accent: var(--accent-brand);
+
+  --forensic-verified: #C8F751;
+  --forensic-verified-bg: rgba(200, 247, 81, 0.12);
+  --forensic-verified-border: rgba(200, 247, 81, 0.32);
+
+  --forensic-review: #527C9A;
+  --forensic-review-bg: rgba(82, 124, 154, 0.14);
+  --forensic-review-border: rgba(82, 124, 154, 0.32);
+
+  --forensic-tamper: #B65B48;
+  --forensic-tamper-bg: rgba(182, 91, 72, 0.14);
+  --forensic-tamper-border: rgba(182, 91, 72, 0.35);
+
+  --status-verified: var(--forensic-verified);
+  --status-gap: var(--forensic-review);
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
+}
+
+[data-theme="fieldnote-light"], [data-theme="institutional-light"] {
+  --surface-canvas: #E9E9DF;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #DFDFD4;
+  --surface-elevated: #FFFFFF;
+  --surface-selected: #D4D4C7;
+  --surface-smoke: rgba(233, 233, 223, 0.92);
+
+  --border-structural: #CBCBC0;
+  --border-subtle: #DCDCD2;
+  --border-strong: #6B7770;
+
+  --text-primary: #101918;
+  --text-secondary: #3B4540;
+  --text-muted: #6B7770;
+  --text-inverse: #FFFFFF;
+
+  --accent-brand: #27523B;
+  --accent-brand-hover: #193827;
+  --accent-brand-subtle: rgba(200, 247, 81, 0.25);
+  --primary-accent: var(--accent-brand);
+
+  --forensic-verified: #1D6B3F;
+  --forensic-verified-bg: #EDF7F0;
+  --forensic-verified-border: #A3D8B4;
+
+  --forensic-review: #527C9A;
+  --forensic-review-bg: #EEF4F8;
+  --forensic-review-border: #B7D1E2;
+
+  --forensic-tamper: #B65B48;
+  --forensic-tamper-bg: #F9EFED;
+  --forensic-tamper-border: #E8B4AA;
+
+  --status-verified: var(--forensic-verified);
+  --status-gap: var(--forensic-review);
+  --status-contradicted: var(--forensic-tamper);
+  --status-critical: var(--forensic-tamper);
 }

@@ -725,21 +725,71 @@ def test_sarvam_voice_status_and_indic_languages(client: TestClient):
     assert data["cloud_processing_disclosed"] is True
 
 
-def test_sarvam_synthesize_endpoint_fallback_and_structure(client: TestClient):
-    """Verify Sarvam speech synthesis endpoint handles text with Indic locale."""
-    res = client.post(
-        "/api/v1/forensics/sarvam/synthesize",
-        json={
-            "text": "Forensic analysis complete. One mathematical contradiction identified in UPI transaction records.",
-            "target_language_code": "en-IN",
-            "speaker": "shubh",
-        },
-    )
-    assert res.status_code == 200
-    data = res.json()
-    assert "provider" in data
-    assert data["provider"] in ("SARVAM_CLOUD_BULBUL", "LOCAL_BROWSER_FALLBACK")
-    assert data["target_language_code"] == "en-IN"
+def test_sarvam_synthesize_endpoint_fallback_and_structure(client: TestClient, monkeypatch):
+    """Verify Sarvam speech synthesis endpoint covers test mode, live Sarvam mode, and unavailable-provider behavior."""
+    test_text = "Forensic analysis complete. One mathematical contradiction identified in UPI transaction records."
+    payload = {
+        "text": test_text,
+        "target_language_code": "en-IN",
+        "speaker": "shubh",
+    }
+
+    # 1. Test Mode (Safe default under pytest: deterministic, live external API calls disabled)
+    res_test = client.post("/api/v1/forensics/sarvam/synthesize", json=payload)
+    assert res_test.status_code == 200
+    data_test = res_test.json()
+    assert data_test["provider"] == "SARVAM_BULBUL_TEST"
+    assert data_test["use_browser_speech"] is False, "Production invariant: never silently fall back to browser speech synthesis"
+    assert data_test["tts_unavailable"] is True
+    assert data_test["target_language_code"] == "en-IN"
+    assert data_test["spoken_text"] == test_text
+
+    # 2. Live Sarvam Cloud Mode (Simulated live Sarvam Bulbul neural synthesis)
+    import requests
+    from unittest.mock import MagicMock
+    from app.intelligence.sarvam_voice_service import SarvamVoiceService
+
+    monkeypatch.setenv("RUN_LIVE_SARVAM_TEST", "1")
+    monkeypatch.setattr(SarvamVoiceService, "effective_api_key", property(lambda self: "test-valid-sarvam-key"))
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {"audios": ["UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="]}
+    monkeypatch.setattr(requests, "post", lambda *args, **kwargs: mock_resp)
+
+    res_live = client.post("/api/v1/forensics/sarvam/synthesize", json=payload)
+    assert res_live.status_code == 200
+    data_live = res_live.json()
+    assert data_live["provider"] == "SARVAM_CLOUD_BULBUL"
+    assert data_live["use_browser_speech"] is False
+    assert data_live["tts_unavailable"] is False
+    assert data_live["audio_base64"] is not None
+
+    # 3. Unavailable / Error Provider Mode (Provider failure fails closed without silent browser fallback)
+    mock_err_resp = MagicMock()
+    mock_err_resp.status_code = 503
+    mock_err_resp.text = "Service Temporarily Unavailable"
+    monkeypatch.setattr(requests, "post", lambda *args, **kwargs: mock_err_resp)
+
+    res_err = client.post("/api/v1/forensics/sarvam/synthesize", json=payload)
+    assert res_err.status_code == 200
+    data_err = res_err.json()
+    assert data_err["provider"] in ("SARVAM_ERROR", "SARVAM_BULBUL_UNAVAILABLE", "SARVAM_UNAVAILABLE")
+    assert data_err["use_browser_speech"] is False, "Provider failure must fail closed to text-only, not browser speech"
+    assert data_err["tts_unavailable"] is True
+    assert data_err["audio_base64"] is None
+
+    # 4. Missing Credentials Mode (Simulate unconfigured credentials outside pytest)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setattr(SarvamVoiceService, "effective_api_key", property(lambda self: None))
+    res_unconfigured = client.post("/api/v1/forensics/sarvam/synthesize", json=payload)
+    assert res_unconfigured.status_code == 200
+    data_unconf = res_unconfigured.json()
+    assert data_unconf["provider"] == "SARVAM_BULBUL_UNAVAILABLE"
+    assert data_unconf["use_browser_speech"] is False, "Unconfigured voice must fail closed without browser speech fallback"
+    assert data_unconf["tts_unavailable"] is True
+    assert data_unconf["audio_base64"] is None
+    assert data_unconf["target_language_code"] == "en-IN"
 
 
 def test_sarvam_transcribe_endpoint_structure(client: TestClient):
@@ -798,6 +848,54 @@ def test_safe_agent_orchestration_pipeline_and_tools(client: TestClient):
     assert data_g["tool_executed"] == "list_evidence_gaps"
     assert data_g["status"] == "COMPLETED"
     assert data_g["result"] is not None
+
+
+def test_safe_agent_contradiction_vs_navigation_intent_regression(client: TestClient):
+    """Regression test: verifies analytical contradiction requests route to list_contradictions and UI view switches route to navigate_to_view."""
+    case_id = "upi_payment_discrepancy"
+
+    # Analytical queries (English, Tamil, Tanglish, and conflict phrasing) -> must execute list_contradictions and return Z3 results
+    analytical_queries = [
+        "Show all contradictions in this case",
+        "Find contradictions",
+        "What conflicts with the evidence?",
+        "இந்த case-ல என்ன முரண்பாடுகள் இருக்கு?",
+        "Indha case-la contradictions enna?",
+        "Show contradictions",
+        "List contradictions in this case",
+        "Are there any contradictions?",
+        "What contradictions exist in this case?",
+    ]
+    for analytical_query in analytical_queries:
+        res = client.post(
+            f"/api/v1/forensics/cases/{case_id}/agent/orchestrate",
+            json={"query": analytical_query},
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "COMPLETED", f"Query '{analytical_query}' status was {data.get('status')}"
+        assert data["tool_executed"] == "list_contradictions", f"Query '{analytical_query}' was routed to {data.get('tool_executed')}"
+        assert "contradictions" in data["result"], f"Query '{analytical_query}' did not return contradiction results"
+        assert data["navigation_view"] is None
+
+    # Explicit UI navigation queries -> must execute navigate_to_view
+    for nav_query, expected_view in [
+        ("Navigate to contradictions", "contradictions"),
+        ("Switch to contradictions tab", "contradictions"),
+        ("Show the contradictions view", "contradictions"),
+        ("Navigate to the timeline", "timeline"),
+        ("Navigate to the reports library", "reports"),
+        ("Go to overview", "overview"),
+    ]:
+        res_nav = client.post(
+            f"/api/v1/forensics/cases/{case_id}/agent/orchestrate",
+            json={"query": nav_query},
+        )
+        assert res_nav.status_code == 200
+        data_nav = res_nav.json()
+        assert data_nav["status"] == "COMPLETED"
+        assert data_nav["tool_executed"] == "navigate_to_view", f"Query '{nav_query}' was not routed to navigate_to_view"
+        assert data_nav["navigation_view"] == expected_view or data_nav["result"].get("view") == expected_view
 
 
 def test_safe_agent_consequential_action_requires_explicit_confirmation(client: TestClient):

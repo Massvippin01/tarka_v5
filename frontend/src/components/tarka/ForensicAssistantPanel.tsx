@@ -291,17 +291,15 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
     setMessages(getInitialMessages());
   };
 
-  // Safe formatting without any accidental border wrappers
+  // Safe markdown formatting
   const renderFormattedText = (raw: string) => {
-    // Clean any brackets that wrapped whole sentences
     const cleanText = raw.replace(/^\[(.*)\]$/, "$1");
-
-    // Split on bold (`**bold**`) and inline code (```code```)
     const parts = cleanText.split(/(\*\*.*?\*\*|`.*?`)/g);
+
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
         return (
-          <strong key={i} style={{ color: "#F8FAFC", fontWeight: 600 }}>
+          <strong key={i} className="font-semibold text-zinc-950" style={{ color: "#09090b" }}>
             {part.slice(2, -2)}
           </strong>
         );
@@ -310,15 +308,8 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
         return (
           <code
             key={i}
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.07)",
-              color: "#93C5FD",
-              padding: "2px 5px",
-              borderRadius: "4px",
-              fontSize: "11px",
-              fontFamily: "var(--font-mono)",
-              fontVariantNumeric: "tabular-nums",
-            }}
+            className="bg-zinc-100 text-blue-700 px-1.5 py-0.5 rounded text-[11.5px] font-mono tabular-nums border border-zinc-200"
+            style={{ color: "#1d4ed8" }}
           >
             {part.slice(1, -1)}
           </code>
@@ -331,7 +322,7 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
   const renderMessageContent = (text: string) => {
     const paragraphs = text.split("\n\n");
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div className="flex flex-col gap-2.5">
         {paragraphs.map((para, idx) => {
           const trimmed = para.trim();
           if (!trimmed) return null;
@@ -340,13 +331,13 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
           if (trimmed.includes("\n- ") || trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
             const lines = trimmed.split("\n");
             return (
-              <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "5px", paddingLeft: "4px" }}>
+              <div key={idx} className="flex flex-col gap-1.5 pl-1">
                 {lines.map((line, lIdx) => {
                   const itemText = line.replace(/^[-*]\s+/, "");
                   return (
-                    <div key={lIdx} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "12px", lineHeight: 1.55 }}>
-                      <span style={{ color: "#3B82F6", marginTop: "3px", fontSize: "10px" }}>•</span>
-                      <span style={{ color: "#E2E8F0" }}>{renderFormattedText(itemText)}</span>
+                    <div key={lIdx} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
+                      <span className="text-blue-600 mt-1 text-[10px] select-none flex-shrink-0" style={{ color: "#2563eb" }}>•</span>
+                      <span className="text-zinc-700">{renderFormattedText(itemText)}</span>
                     </div>
                   );
                 })}
@@ -357,7 +348,7 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
           // Headers
           if (trimmed.startsWith("### ")) {
             return (
-              <div key={idx} style={{ fontSize: "12px", fontWeight: 700, color: "#93C5FD", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: "4px" }}>
+              <div key={idx} className="text-[12px] font-bold text-zinc-800 uppercase tracking-wider mt-1">
                 {renderFormattedText(trimmed.replace(/^###\s+/, ""))}
               </div>
             );
@@ -365,7 +356,7 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
 
           // Regular paragraph
           return (
-            <p key={idx} style={{ margin: 0, fontSize: "12px", lineHeight: 1.6, color: "#E2E8F0" }}>
+            <p key={idx} className="m-0 text-[12.5px] leading-relaxed text-zinc-700">
               {renderFormattedText(trimmed)}
             </p>
           );
@@ -376,56 +367,27 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
 
   return (
     <div
-      className={className}
-      style={{
-        flex: 1,
-        height: "100%",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#070A10",
-        fontFamily: "var(--font-sans)",
-      }}
+      className={`flex-1 h-full min-h-0 flex flex-col bg-white font-sans ${className}`}
     >
-      {/* 1. Sleek Minimal Header (No clutter, no local acceleration box) */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 14px",
-          backgroundColor: "#0C101A",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      {/* 1. Sleek Minimal Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-b border-[var(--line)] flex-shrink-0">
+        <div className="flex items-center gap-2">
           <div
-            style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              backgroundColor: runtimeStatus?.runtime_available ? "#10B981" : "#F59E0B",
-              boxShadow: runtimeStatus?.runtime_available
-                ? "0 0 8px rgba(16, 185, 129, 0.6)"
-                : "0 0 8px rgba(245, 158, 11, 0.6)",
-            }}
+            className={`w-2 h-2 rounded-full ${
+              runtimeStatus?.runtime_available
+                ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+            }`}
           />
-          <span style={{ color: "#F8FAFC", fontSize: "13px", fontWeight: 600, letterSpacing: "-0.01em" }}>
+          <span className="text-[13px] font-semibold text-zinc-900 tracking-tight">
             TARKA Forensic Copilot
           </span>
           <span
-            style={{
-              backgroundColor: runtimeStatus?.runtime_available ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)",
-              color: runtimeStatus?.runtime_available ? "#34D399" : "#FBBF24",
-              border: runtimeStatus?.runtime_available ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(245, 158, 11, 0.3)",
-              borderRadius: "4px",
-              padding: "1px 6px",
-              fontSize: "10px",
-              fontWeight: 600,
-              fontFamily: "var(--font-mono)",
-              fontVariantNumeric: "tabular-nums",
-            }}
+            className={`px-2 py-0.5 rounded text-[11px] font-semibold font-mono tabular-nums ${
+              runtimeStatus?.runtime_available
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}
           >
             {runtimeStatus?.runtime_available
               ? (runtimeStatus.active_model || "Llama 3.1 8B Active")
@@ -433,133 +395,62 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className="flex items-center gap-1.5">
           <button
+            type="button"
             onClick={() => setSpeechActive(!speechActive)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              padding: "3px 8px",
-              borderRadius: "5px",
-              backgroundColor: speechActive ? "rgba(37, 99, 235, 0.15)" : "rgba(255, 255, 255, 0.04)",
-              border: speechActive ? "1px solid rgba(59, 130, 246, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
-              color: speechActive ? "#93C5FD" : "#64748B",
-              fontSize: "10px",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11.5px] font-medium border transition-colors cursor-pointer ${
+              speechActive
+                ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                : "bg-zinc-100 text-zinc-500 border-zinc-200 hover:bg-zinc-200"
+            }`}
             title="Toggle Voice Speech Output"
           >
-            {speechActive ? <Volume2 size={12} style={{ color: "#60A5FA" }} /> : <VolumeX size={12} />}
+            {speechActive ? <Volume2 size={13} className="text-blue-600" /> : <VolumeX size={13} />}
             <span>{speechActive ? "Voice On" : "Muted"}</span>
           </button>
 
           <button
+            type="button"
             onClick={handleResetChat}
-            style={{
-              padding: "4px 6px",
-              borderRadius: "5px",
-              backgroundColor: "transparent",
-              border: "none",
-              color: "#64748B",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/70 transition-colors cursor-pointer flex items-center justify-center"
             title="Reset Conversation"
+            aria-label="Reset Conversation"
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={13} />
           </button>
         </div>
       </div>
 
-      {/* 2. Messages Thread Container (Smooth scroll without bubbling) */}
+      {/* 2. Messages Thread Container */}
       <div
         ref={messagesContainerRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          minHeight: 0,
-          padding: "12px 14px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          backgroundColor: "#070A10",
-        }}
+        className="flex-1 overflow-y-auto min-h-0 p-4 flex flex-col gap-3.5 bg-zinc-50/60"
       >
         {messages.map((m) => (
           <div
             key={m.id}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: m.sender === "user" ? "flex-end" : "flex-start",
-              width: "100%",
-            }}
+            className={`flex flex-col w-full ${m.sender === "user" ? "items-end" : "items-start"}`}
           >
             {m.sender === "assistant" ? (
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "rgba(18, 24, 38, 0.7)",
-                  border: "1px solid rgba(255, 255, 255, 0.07)",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  boxShadow: "0 4px 14px rgba(0, 0, 0, 0.35)",
-                }}
-              >
+              <div className="w-full bg-white border border-[var(--line)] rounded-xl p-3.5 shadow-2xs">
                 {/* Assistant Turn Header */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "10px",
-                    paddingBottom: "8px",
-                    borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-[var(--line)]">
+                  <div className="flex items-center gap-2">
                     <div
-                      style={{
-                        width: "18px",
-                        height: "18px",
-                        borderRadius: "4px",
-                        backgroundColor: "#2563EB",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center shadow-2xs"
+                      style={{ color: "#ffffff", backgroundColor: "#2563eb" }}
                     >
-                      <Sparkles size={11} style={{ color: "#FFFFFF" }} />
+                      <Sparkles size={11} style={{ color: "#ffffff" }} />
                     </div>
-                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#E2E8F0" }}>
+                    <span className="text-[12.5px] font-bold text-zinc-900">
                       TARKA Copilot
                     </span>
-                    <span
-                      style={{
-                        fontSize: "9px",
-                        padding: "1px 5px",
-                        borderRadius: "3px",
-                        backgroundColor: "rgba(59, 130, 246, 0.12)",
-                        color: "#93C5FD",
-                        fontFamily: "var(--font-mono)",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
+                    <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono tabular-nums">
                       {m.modelUsed || "llama3.1:8b"}
                     </span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      color: "#64748B",
-                      fontFamily: "var(--font-mono)",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
+                  <span className="text-[11px] text-zinc-400 font-mono tabular-nums">
                     {m.timestamp}
                   </span>
                 </div>
@@ -569,79 +460,37 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
 
                 {/* Citations Section */}
                 {m.citations && m.citations.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      paddingTop: "10px",
-                      borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        color: "#94A3B8",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                        marginBottom: "6px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <Paperclip size={10} style={{ color: "#60A5FA" }} />
+                  <div className="mt-3.5 pt-2.5 border-t border-[var(--line)]">
+                    <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Paperclip size={12} className="text-blue-600" />
                       <span>Verified Citations ({m.citations.length})</span>
                     </div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    <div className="flex flex-wrap gap-1.5">
                       {m.citations.map((c) => (
                         <button
                           key={c.citation_id}
+                          type="button"
                           onClick={() => onSelectArtifact && onSelectArtifact(c.artifact_id)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            padding: "4px 8px",
-                            borderRadius: "6px",
-                            backgroundColor: "rgba(0, 0, 0, 0.4)",
-                            border: "1px solid rgba(255, 255, 255, 0.08)",
-                            color: "#CBD5E1",
-                            fontSize: "10px",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            transition: "all 0.15s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "rgba(96, 165, 250, 0.4)";
-                            e.currentTarget.style.backgroundColor = "rgba(15, 23, 42, 0.7)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
-                          }}
+                          className="group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 border border-zinc-200/90 text-zinc-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-900 transition-all text-[11.5px] cursor-pointer text-left shadow-2xs"
                           title={`Inspect ${c.source_filename}`}
                         >
                           <span
-                            style={{
-                              padding: "1px 4px",
-                              borderRadius: "3px",
-                              fontSize: "9px",
-                              fontWeight: 700,
-                              backgroundColor:
-                                c.trust_tier === "T1" ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
-                              color: c.trust_tier === "T1" ? "#34D399" : "#FBBF24",
-                            }}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              c.trust_tier === "T1"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300/60"
+                                : "bg-amber-100 text-amber-800 border border-amber-300/60"
+                            }`}
                           >
                             {c.trust_tier}
                           </span>
-                          <span style={{ fontWeight: 600, color: "#93C5FD", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+                          <span className="font-semibold text-blue-700 font-mono tabular-nums">
                             {c.artifact_id}
                           </span>
-                          <span style={{ color: "#64748B", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+                          <span className="text-zinc-500 font-mono tabular-nums">
                             ({c.sha256_short})
                           </span>
-                          <ExternalLink size={9} style={{ color: "#64748B" }} />
+                          <ExternalLink size={10} className="text-zinc-400 group-hover:text-blue-600 transition-colors" />
                         </button>
                       ))}
                     </div>
@@ -650,24 +499,10 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
 
                 {/* Statutory Admissibility Notice */}
                 {m.uncertainty && (
-                  <div
-                    style={{
-                      marginTop: "10px",
-                      padding: "8px 10px",
-                      borderRadius: "0 6px 6px 0",
-                      borderLeft: "3px solid #F59E0B",
-                      backgroundColor: "rgba(245, 158, 11, 0.08)",
-                      color: "#FDE68A",
-                      fontSize: "11px",
-                      lineHeight: 1.5,
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "6px",
-                    }}
-                  >
-                    <Scale size={13} style={{ color: "#F59E0B", marginTop: "2px", flexShrink: 0 }} />
+                  <div className="mt-3 p-2.5 rounded-r-lg border-l-3 border-amber-500 bg-amber-50/80 border-y border-r border-amber-200/60 text-[12px] text-amber-900 leading-relaxed flex items-start gap-2">
+                    <Scale size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <strong style={{ color: "#FBBF24" }}>Statutory Admissibility Notice:</strong> {m.uncertainty}
+                      <strong className="text-amber-950 font-semibold">Statutory Admissibility Notice:</strong> {m.uncertainty}
                     </div>
                   </div>
                 )}
@@ -675,28 +510,15 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
             ) : (
               /* User Message Bubble */
               <div
-                style={{
-                  maxWidth: "85%",
-                  backgroundColor: "#2563EB",
-                  backgroundImage: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
-                  borderRadius: "14px 14px 2px 14px",
-                  padding: "10px 14px",
-                  color: "#FFFFFF",
-                  fontSize: "12px",
-                  lineHeight: 1.5,
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.25)",
-                }}
+                className="max-w-[85%] bg-blue-600 !text-white rounded-2xl rounded-br-xs px-3.5 py-2.5 text-[12.5px] leading-relaxed shadow-xs"
+                style={{ backgroundColor: "#2563eb", color: "#ffffff" }}
               >
-                <div style={{ wordBreak: "break-word" }}>{m.text}</div>
+                <div className="break-words font-medium" style={{ color: "#ffffff" }}>
+                  {m.text}
+                </div>
                 <div
-                  style={{
-                    fontSize: "9px",
-                    color: "rgba(255, 255, 255, 0.65)",
-                    textAlign: "right",
-                    marginTop: "4px",
-                    fontFamily: "var(--font-mono)",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
+                  className="text-[10.5px] text-right mt-1 font-mono tabular-nums"
+                  style={{ color: "rgba(255, 255, 255, 0.85)" }}
                 >
                   {m.timestamp}
                 </div>
@@ -706,33 +528,13 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
         ))}
 
         {loading && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 14px",
-              borderRadius: "8px",
-              backgroundColor: "rgba(18, 24, 38, 0.6)",
-              border: "1px solid rgba(255, 255, 255, 0.06)",
-              maxWidth: "85%",
-            }}
-          >
-            <div
-              style={{
-                width: "14px",
-                height: "14px",
-                borderRadius: "50%",
-                border: "2px solid #3B82F6",
-                borderTopColor: "transparent",
-                animation: "spin 0.8s linear infinite",
-              }}
-            />
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ color: "#F1F5F9", fontSize: "11px", fontWeight: 500 }}>
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[var(--line)] shadow-xs max-w-[85%]">
+            <div className="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-zinc-900 text-[12px] font-semibold">
                 Llama 3.1 8B analyzing evidence...
               </span>
-              <span style={{ color: "#64748B", fontSize: "10px" }}>
+              <span className="text-zinc-500 text-[11px]">
                 Evaluating Z3 difference logic & bitstream custody
               </span>
             </div>
@@ -740,113 +542,51 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
         )}
       </div>
 
-      {/* 3. Suggested Prompt Chips Ribbon (Clean, no white borders) */}
-      <div
-        style={{
-          padding: "8px 12px",
-          backgroundColor: "#090D15",
-          borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-          flexShrink: 0,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "10px",
-            fontWeight: 600,
-            color: "#64748B",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-            marginBottom: "6px",
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <Sparkles size={11} style={{ color: "#3B82F6" }} />
+      {/* 3. Suggested Prompt Chips Ribbon (No visible scrollbar) */}
+      <div className="px-4 py-2.5 bg-white border-t border-[var(--line)] flex-shrink-0">
+        <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Sparkles size={12} className="text-blue-600" />
           <span>Quick Inquiries</span>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "6px",
-            overflowX: "auto",
-            paddingBottom: "2px",
-          }}
-        >
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {SUGGESTED_PROMPTS.map((item, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => handleSendMessage(item.prompt)}
               disabled={loading}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "4px 8px",
-                borderRadius: "6px",
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                color: "#CBD5E1",
-                fontSize: "11px",
-                cursor: loading ? "not-allowed" : "pointer",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.4)";
-                  e.currentTarget.style.backgroundColor = "rgba(37, 99, 235, 0.15)";
-                  e.currentTarget.style.color = "#FFFFFF";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                  e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
-                  e.currentTarget.style.color = "#CBD5E1";
-                }
-              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[12px] font-medium whitespace-nowrap flex-shrink-0 transition-all shadow-2xs ${
+                loading
+                  ? "bg-zinc-50 border-zinc-200 text-zinc-400 cursor-not-allowed"
+                  : "bg-zinc-50/80 hover:bg-blue-50 border-zinc-200 hover:border-blue-300 text-zinc-700 hover:text-blue-700 cursor-pointer active:scale-[0.98]"
+              }`}
             >
               <span>{item.icon}</span>
-              <span style={{ fontWeight: 500 }}>{item.title}</span>
+              <span className="font-semibold">{item.title}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* 4. Input Field & Controls Bar */}
-      <div
-        style={{
-          padding: "10px 12px",
-          backgroundColor: "#0A0E18",
-          borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          flexShrink: 0,
-        }}
-      >
+      <div className="px-4 py-3 bg-white border-t border-[var(--line)] flex items-center gap-2 flex-shrink-0">
         <button
+          type="button"
           onClick={toggleRecording}
           disabled={!voiceSupported || loading}
-          style={{
-            padding: "8px",
-            borderRadius: "8px",
-            backgroundColor: isRecording ? "#DC2626" : "rgba(255, 255, 255, 0.04)",
-            border: isRecording ? "1px solid #EF4444" : "1px solid rgba(255, 255, 255, 0.08)",
-            color: "#FFFFFF",
-            cursor: voiceSupported && !loading ? "pointer" : "not-allowed",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            transition: "all 0.15s ease",
-          }}
+          className={`p-2 rounded-lg border transition-all flex items-center justify-center flex-shrink-0 ${
+            isRecording
+              ? "bg-rose-600 border-rose-600 text-white animate-pulse"
+              : voiceSupported && !loading
+              ? "bg-zinc-100 hover:bg-zinc-200/80 border-zinc-200 text-zinc-700 cursor-pointer"
+              : "bg-zinc-50 border-zinc-200 text-zinc-300 cursor-not-allowed"
+          }`}
+          style={isRecording ? { backgroundColor: "#dc2626", color: "#ffffff" } : undefined}
           title={isRecording ? "Listening... Tap to stop" : "Speak command"}
+          aria-label={isRecording ? "Stop voice listening" : "Start voice listening"}
         >
-          {isRecording ? <Square size={13} style={{ fill: "currentColor" }} /> : <Mic size={14} />}
+          {isRecording ? <Square size={14} className="fill-current" /> : <Mic size={15} />}
         </button>
 
         <input
@@ -856,68 +596,32 @@ export const ForensicAssistantPanel: React.FC<ForensicAssistantPanelProps> = ({
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
           placeholder="Ask Llama 3.1 8B about discrepancies, timeline, or evidence..."
           disabled={loading}
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.45)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
-            borderRadius: "8px",
-            padding: "8px 12px",
-            color: "#F8FAFC",
-            fontSize: "12px",
-            outline: "none",
-            fontFamily: "var(--font-sans)",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.5)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)";
-          }}
+          className="flex-1 bg-zinc-50 hover:bg-white focus:bg-white border border-zinc-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-lg px-3.5 py-2 text-[12.5px] text-zinc-900 placeholder:text-zinc-400 outline-none transition-all font-sans"
         />
 
         <button
+          type="button"
           onClick={() => handleSendMessage()}
           disabled={!inputText.trim() || loading}
-          style={{
-            padding: "8px 14px",
-            borderRadius: "8px",
-            backgroundColor: !inputText.trim() || loading ? "rgba(255, 255, 255, 0.05)" : "#2563EB",
-            border: "none",
-            color: !inputText.trim() || loading ? "#64748B" : "#FFFFFF",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: !inputText.trim() || loading ? "not-allowed" : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "5px",
-            flexShrink: 0,
-            transition: "all 0.15s ease",
-          }}
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-semibold transition-all flex-shrink-0 ${
+            !inputText.trim() || loading
+              ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 !text-white shadow-xs cursor-pointer active:scale-[0.98]"
+          }`}
+          style={!inputText.trim() || loading ? undefined : { backgroundColor: "#2563eb", color: "#ffffff" }}
         >
-          <span>Send</span>
-          <Send size={11} />
+          <span style={!inputText.trim() || loading ? undefined : { color: "#ffffff" }}>Send</span>
+          <Send size={12} style={!inputText.trim() || loading ? undefined : { color: "#ffffff" }} />
         </button>
       </div>
 
       {/* 5. Clean Single-Row Footer */}
-      <div
-        style={{
-          padding: "5px 12px",
-          backgroundColor: "#06080D",
-          borderTop: "1px solid rgba(255, 255, 255, 0.04)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: "10px",
-          color: "#64748B",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-          <Lock size={10} style={{ color: "#10B981" }} />
+      <div className="px-4 py-2 bg-zinc-50 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-zinc-500 flex-shrink-0 font-mono">
+        <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700">
+          <Lock size={12} className="text-emerald-600" />
           <span>Evidence DATA_ONLY</span>
         </span>
-        <span style={{ color: "#64748B" }}>
+        <span className="text-zinc-400">
           Llama 3.1 8B • BSA § 63
         </span>
       </div>

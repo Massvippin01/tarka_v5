@@ -18,8 +18,10 @@ import { useTarkaUiStore, type DockTab } from "../../../store/useTarkaUiStore";
 import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
 import { type DecodedRailReference } from "../../../utils/intakeFalsifier";
 import { getBnss94EntityResolutionDirective } from "../../../utils/statutoryDirectives";
+import { CANONICAL_CASES } from "../../../fixtures/cases";
 import { StripeSegmentedBar } from "../../ui/forensic-infographics";
 import { ScaleBar } from "../kit/ScaleBar";
+import { sha256HexSync, computeMerkleRootSync } from "../../../utils/sha256";
 
 export interface InspectorDockProps {
   rrnInput: string;
@@ -48,7 +50,23 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
     setProofStepIndex,
   } = useTarkaUiStore();
 
-  const { resetAllMutations } = useTarkaGlobal();
+  const { resetAllMutations, activeCaseId } = useTarkaGlobal();
+  const canonicalCase = (activeCaseId && CANONICAL_CASES[activeCaseId]) ? CANONICAL_CASES[activeCaseId] : CANONICAL_CASES["CASE-2026-001"];
+  const victimName = canonicalCase?.complainant?.name || "Victim Origin";
+  const victimBank = canonicalCase?.complainant?.bank || "SBI";
+  const victimAcc = canonicalCase?.complainant?.accountMasked || "30910029101";
+  const victimPhone = canonicalCase?.complainant?.phone || "+91-9810044210";
+  const l1 = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_1_MULE") || canonicalCase?.accounts?.[1];
+  const l1Name = l1?.holderName || "Layer 1 Mule";
+  const l1Bank = l1?.bank || "SBI";
+  const l1Acc = l1?.accountMasked || "41088291083";
+  const l2A = canonicalCase?.accounts?.find((a: any) => a.holderType === "LAYER_2_CONDUIT") || canonicalCase?.accounts?.[2];
+  const l2AName = l2A?.holderName || "Intermediary Conduit";
+  const l2ABank = l2A?.bank || "HDFC";
+  const l2AAcc = l2A?.accountMasked || "5010029419920";
+  const merchant = canonicalCase?.accounts?.find((a: any) => a.holderType === "BONA_FIDE_MERCHANT") || canonicalCase?.accounts?.[4];
+  const merchantName = merchant?.holderName || "Bona-Fide Commercial Merchant";
+  const merchantGstin = merchant?.gstin || "07AAACA1234F1Z8";
 
   // Tab 1 (RRN) state
   const [selectedRail, setSelectedRail] = useState<"UPI" | "NEFT" | "RTGS">("UPI");
@@ -69,8 +87,8 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
   // Tab 5 (Entities) state
   const [hoveredEntity, setHoveredEntity] = useState<string | null>(null);
 
-  const fullMerkleRoot = "0xb189f3a9712a45d886910384cf22da810842e09153b6fa034e3209847492c810";
-  const tamperedMerkleRoot = "0xdeadbeef712a45d886910384cf22da810842e09153b6fa034e3209847492beef";
+  const fullMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
+  const tamperedMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01_tampered", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
 
   // Re-verify Merkle path when sibling tamper state changes
   useEffect(() => {
@@ -1087,7 +1105,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   <span style={{ color: "#047857", fontWeight: 700 }}>Finacle Certified Original</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", color: "#0F172A", marginTop: "2px", wordBreak: "break-all" }}>
-                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                  {sha256HexSync("Rev 1 Stream Finacle Certified Original")}
                 </div>
               </div>
 
@@ -1097,7 +1115,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
                   <span style={{ color: "#BE123C", fontWeight: 700 }}>Canva Web Export (+18.4 KB)</span>
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", color: "#BE123C", marginTop: "2px", wordBreak: "break-all" }}>
-                  7d1b54f9a0c8432a98eef65bc042a1948efb4e1329a4309a6f1d8c919f2a41d0
+                  {sha256HexSync("Rev 2 Append Canva Web Export")}
                 </div>
               </div>
             </div>
@@ -1507,7 +1525,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
             </span>
           </div>
 
-          {/* Entity 1: Sunil Kumar (Victim) */}
+          {/* Entity 1: Victim Origin */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-01")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1522,18 +1540,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10.5px", fontWeight: 800, color: hoveredEntity === "ENT-01" ? "#4338CA" : "#0F172A" }}>
-                ENT-01 · Sunil Kumar (Victim Origin)
+                ENT-01 · {victimName} (Victim Origin)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#EEF2FF", color: "#4338CA", padding: "1px 5px", borderRadius: "3px" }}>
                 VICTIM COMPLAINANT
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "3px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (3):</strong> SBI A/c <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>30910029101</code> · MSISDN <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>+91-9810044210</code> · Handset Video Call Screenshot (Verified PII).
+              <strong>Resolved Tokens (3):</strong> {victimBank} A/c <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>{victimAcc}</code> · MSISDN <code style={{ color: "#0F172A", background: hoveredEntity === "ENT-01" ? "#EEF2FF" : "#F1F5F9", padding: "0 3px", borderRadius: "2px" }}>{victimPhone}</code> · Handset Evidence Token (Verified PII).
             </div>
           </div>
 
-          {/* Entity 2: Vikram Shah (L1 Mule) */}
+          {/* Entity 2: L1 Mule */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-02")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1548,18 +1566,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#BE123C" }}>
-                ENT-02 · Vikram Shah (Layer-1 Conduit)
+                ENT-02 · {l1Name} (Layer-1 Conduit)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#FFF1F2", color: "#BE123C", border: "1px solid #FECDD3", padding: "1px 5px", borderRadius: "3px" }}>
                 L1 CONDUIT MULE
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#64748B", marginTop: "3px", lineHeight: 1.35 }}>
-              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>VIKRAM_MULE</code> · VPA: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>vikram.pay@okaxis</code> · MSISDN: <code style={{ color: "#BE123C" }}>+91-9871123941</code> · IMEI: <code style={{ color: "#BE123C" }}>867492061234564</code> (Dwell: 112s).
+              <strong>Resolved Tokens (4):</strong> Narration: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>{l1Name.toUpperCase().replace(/\s+/g, '_')}_MULE</code> · Bank: <code style={{ color: "#BE123C", background: "#FFE4E6", padding: "0 3px", borderRadius: "2px" }}>{l1Bank} {l1Acc}</code> · Session Telemetry (Active Dwell).
             </div>
           </div>
 
-          {/* Entity 3 & 4: Rohit Verma & Sameer Khan */}
+          {/* Entity 3 & 4: Syndicate Intermediaries */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-03")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1574,18 +1592,18 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#92400E" }}>
-                ENT-03 &amp; ENT-04 · Rohit Verma (L2A) &amp; Sameer Khan (L2B)
+                ENT-03 &amp; ENT-04 · {l2AName} (L2A Conduit)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#FEF3C7", color: "#B45309", border: "1px solid #FCD34D", padding: "1px 5px", borderRadius: "3px" }}>
                 CROSS-ACTOR SYNDICATE HIT
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#78350F", marginTop: "3px", lineHeight: 1.35 }}>
-              <strong>Syndicate Linkage Alert:</strong> Different KYC names &amp; accounts (HDFC <code style={{ color: "#92400E", background: "#FEF3C7", padding: "0 2px" }}>5010029419920</code> &amp; AXIS <code style={{ color: "#92400E", background: "#FEF3C7", padding: "0 2px" }}>9140200410291</code>), but linked via identical <strong>JA4 TLS Fingerprint (t13d1516h2_8daaf6)</strong> and shared <strong>Wi-Fi Hotspot BSSID (74:DA:38:A2:11:BC)</strong>.
+              <strong>Syndicate Linkage Alert:</strong> Intermediary routing ({l2ABank} <code style={{ color: "#92400E", background: "#FEF3C7", padding: "0 2px" }}>{l2AAcc}</code>), linked via identical <strong>JA4 TLS Fingerprint (t13d1516h2_8daaf6)</strong> and shared <strong>Wi-Fi Hotspot BSSID (74:DA:38:A2:11:BC)</strong>.
             </div>
           </div>
 
-          {/* Entity 5: Apex Electronics (Hard Veto) */}
+          {/* Entity 5: Bona-Fide Merchant (Hard Veto) */}
           <div
             onMouseEnter={() => setHoveredEntity("ENT-05")}
             onMouseLeave={() => setHoveredEntity(null)}
@@ -1594,20 +1612,20 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
               border: hoveredEntity === "ENT-05" ? "1.5px solid #16A34A" : "1px solid #BBF7D0",
               borderRadius: "7px",
               padding: "8px 10px",
-              boxShadow: hoveredEntity === "ENT-05" ? "0 0 0 3px rgba(22, 163, 74, 0.15)" : "none",
+              boxShadow: hoveredEntity === "ENT-05" ? "0 0 0 3px rgba(22 established, 163, 74, 0.15)" : "none",
               transition: "all 0.15s ease",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#166534" }}>
-                ENT-05 · Apex Electronics Pvt Ltd (Bona-Fide Merchant)
+                ENT-05 · {merchantName} (Bona-Fide Merchant)
               </span>
               <span style={{ fontSize: "8px", fontWeight: 800, background: "#DCFCE7", color: "#15803D", border: "1px solid #86EFAC", padding: "1px 5px", borderRadius: "3px" }}>
                 ✓ HARD VETO PROTECTION
               </span>
             </div>
             <div style={{ fontSize: "8.5px", color: "#14532D", marginTop: "3px", lineHeight: 1.35 }}>
-              <strong>Hard Veto Applied:</strong> Received ₹1.80L from L2A, but verified GSTIN (<code style={{ color: "#166534", background: "#DCFCE7", padding: "0 2px" }}>07AAACA1234F1Z8</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
+              <strong>Hard Veto Applied:</strong> Verified GSTIN (<code style={{ color: "#166534", background: "#DCFCE7", padding: "0 2px" }}>{merchantGstin}</code>) + 0 shared device/IP tokens + commercial POS history prevents false mule merge. Shielded under Section 106(1) Specific Lien.
             </div>
           </div>
 
@@ -1615,7 +1633,7 @@ export const InspectorDock: React.FC<InspectorDockProps> = ({
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(getBnss94EntityResolutionDirective());
+              navigator.clipboard.writeText(getBnss94EntityResolutionDirective(activeCaseId || undefined));
               toast.success("Copied §94 BNSS KYC/CAF Requisition to clipboard!", {
                 description: "Statutory order for 5 resolved targets served to SBI, HDFC, Axis, ICICI and Airtel.",
                 duration: 3500,

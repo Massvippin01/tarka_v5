@@ -10,6 +10,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
+import { useTarkaGlobal } from "../../../context/TarkaGlobalContext";
+import { CANONICAL_CASES } from "../../../fixtures/cases";
+import { formatInr } from "../../../utils/formatters";
 
 interface EndToEndReconstructionStripProps {
   onOpenFileManifest?: (fileId: string) => void;
@@ -19,6 +22,10 @@ export const EndToEndReconstructionStrip: React.FC<EndToEndReconstructionStripPr
   onOpenFileManifest,
 }) => {
   const { setIntelligenceBriefOpen, setTransformationAuditModalOpen } = useTarkaUiStore();
+  const { activeCaseId } = useTarkaGlobal();
+  const canonical = (activeCaseId && CANONICAL_CASES[activeCaseId]) ? CANONICAL_CASES[activeCaseId] : CANONICAL_CASES["CASE-2026-001"];
+  const bookedLossStr = canonical?.financials?.bookedLossInr ? formatInr(canonical.financials.bookedLossInr) : "₹5.00L";
+  const bankName = canonical?.complainant?.bank || "SBI";
 
   const files = [
     {
@@ -28,16 +35,16 @@ export const EndToEndReconstructionStrip: React.FC<EndToEndReconstructionStripPr
       statusText: "2 %%EOF Canva Edit",
       badgeVariant: "rose" as const,
       icon: FileText,
-      tooltip: "Complaint NCRP-1930-DL-2026-0922841 · Quarantined ₹15k Canva incremental append",
+      tooltip: `Complaint ${canonical?.ncrpAckNo || "NCRP-1930"} · Intake Evidence`,
     },
     {
       id: "02_Victim_SBI_Finacle",
-      name: "02 SBI Finacle Statement",
+      name: `02 ${bankName} Finacle Statement`,
       status: "PASS",
-      statusText: "₹5.00L Debit Invariant",
+      statusText: `${bookedLossStr} Debit Invariant`,
       badgeVariant: "emerald" as const,
       icon: FileSpreadsheet,
-      tooltip: "SBIN0004821 Core Banking Statement · RRN 626509188410 & 626510149921 Commit",
+      tooltip: `${bankName} Core Banking Statement · Commit Verified`,
     },
     {
       id: "03_NPCI_Switch",

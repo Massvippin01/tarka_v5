@@ -1,0 +1,17 @@
+{
+  "result_id": "PSI_RES_2026_091",
+  "request_id": "PSI_REQ_2026_091",
+  "participating_institution_ids": [
+    "INST_HDFC_01",
+    "INST_SBI_01"
+  ],
+  "result_state": "SUCCESS",
+  "intersection_cardinality": 1,
+  "matched_blinded_tokens": [
+    "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+  ],
+  "execution_duration_ms": 52.4,
+  "audit_ledger_hash": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+  "timestamp_utc": "2026-10-15T12:00:02Z",
+  "schema_version": "v1.0.0"
+}

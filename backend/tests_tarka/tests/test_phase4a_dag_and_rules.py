@@ -199,7 +199,7 @@ def test_dag_fingerprint_is_deterministic(case_store: CaseStore):
 # =============================================================================
 
 def test_screenshot_challenge_deactivates_only_dependent_nodes(case_store: CaseStore):
-    """Challenging screenshot claim ART-004-BCCD4200 must deactivate only dependent nodes.
+    """Challenging screenshot claim ART-004-6155034A must deactivate only dependent nodes.
     
     Specifically:
     - Screenshot artifact becomes INACTIVE.
@@ -212,7 +212,7 @@ def test_screenshot_challenge_deactivates_only_dependent_nodes(case_store: CaseS
     challenge_run, _ = case_store.challenge_analysis_run(
         case_id="upi_payment_discrepancy",
         baseline_run_id=baseline_run.run_id,
-        excluded_artifact_ids=["ART-004-BCCD4200"],
+        excluded_artifact_ids=["ART-004-6155034A"],
         investigator_note="Excluding screenshot claim for challenge impact test",
     )
     artifacts = case_store.list_artifacts("upi_payment_discrepancy")
@@ -228,7 +228,7 @@ def test_screenshot_challenge_deactivates_only_dependent_nodes(case_store: CaseS
     assert impact_dag.is_acyclic() is True
 
     # 1. Screenshot artifact node must be INACTIVE
-    screenshot_art_node = next((n for n in impact_dag.nodes if n.node_id == "art:ART-004-BCCD4200"), None)
+    screenshot_art_node = next((n for n in impact_dag.nodes if n.node_id == "art:ART-004-6155034A"), None)
     assert screenshot_art_node is not None
     assert screenshot_art_node.status == DAGNodeStatus.INACTIVE
 
@@ -262,7 +262,7 @@ def test_screenshot_challenge_deactivates_only_dependent_nodes(case_store: CaseS
     # 6. Verify edge from excluded artifact has EXCLUDED_FROM_ACTIVE_RUN type
     excluded_edges = [e for e in impact_dag.edges if e.edge_type == DAGEdgeType.EXCLUDED_FROM_ACTIVE_RUN]
     assert len(excluded_edges) >= 1
-    assert any(e.source_id == "art:ART-004-BCCD4200" for e in excluded_edges)
+    assert any(e.source_id == "art:ART-004-6155034A" for e in excluded_edges)
 
 
 def test_artifact_scoped_derivation_dag(case_store: CaseStore):
@@ -272,7 +272,7 @@ def test_artifact_scoped_derivation_dag(case_store: CaseStore):
     dna_items = case_store.list_evidence_dna("upi_payment_discrepancy")
 
     scoped_dag = ProvenanceDAGBuilder.build_artifact_derivation_dag(
-        artifact_id="ART-004-BCCD4200",
+        artifact_id="ART-004-6155034A",
         run=baseline_run,
         artifacts=artifacts,
         evidence_dna_items=dna_items,
@@ -280,7 +280,7 @@ def test_artifact_scoped_derivation_dag(case_store: CaseStore):
 
     assert scoped_dag.is_acyclic() is True
     # Root artifact node must be present
-    assert any(n.node_id == "art:ART-004-BCCD4200" for n in scoped_dag.nodes)
+    assert any(n.node_id == "art:ART-004-6155034A" for n in scoped_dag.nodes)
     # Bank-only artifact must NOT be in the scoped DAG root nodes
     assert not any(n.node_id == "art:ART-001-AABB1100" and n.node_type == DAGNodeType.ARTIFACT for n in scoped_dag.nodes)
     # The contradiction and finding depending on ART-004 must be present in the downstream path

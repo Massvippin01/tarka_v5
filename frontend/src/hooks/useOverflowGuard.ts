@@ -39,7 +39,7 @@ export function useOverflowGuard(enabled = import.meta.env?.DEV ?? true) {
 
           if (overflowsRight || overflowsLeft) {
             el.style.outline = "2px dashed #EF4444";
-            console.error(
+            console.warn(
               `[OVERFLOW GUARD] Element escaped card bounds:`,
               el,
               `Card right: ${cardRect.right}px, Element right: ${rect.right}px (Delta: +${(rect.right - cardRect.right).toFixed(1)}px)`

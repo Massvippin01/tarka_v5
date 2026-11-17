@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,13 +60,24 @@ class TarkaForensicsAdapter:
         """Ensures the canonical synthetic case is seeded and ready with evidence."""
         seed_demo_case_if_needed()
         is_extortion = case_id.upper().startswith("CASE-2026-001")
+        is_case_002 = case_id.upper().startswith("CASE-2026-002")
+        is_case_003 = case_id.upper().startswith("CASE-2026-003")
+        is_case_004 = case_id.upper().startswith("CASE-2026-004")
+
         case = self.store.get_case(case_id)
         if not case:
+            case_titles = {
+                "CASE-2026-001": ("Operation Digital Arrest Extortion", "ACP Rajesh Kumar"),
+                "CASE-2026-002": ("High-Yield Investment Scam Syndicate", "Insp. Meenakshi S."),
+                "CASE-2026-003": ("Precursor SIM-Swap Takeover", "ACP Vikramaditya"),
+                "CASE-2026-004": ("Corporate BEC & Vendor Invoice Spoofing", "Insp. R. K. Sharma"),
+            }
+            title, inv = case_titles.get(case_id, ("Operation Digital Arrest Extortion" if is_extortion else "UPI Payment Discrepancy", "ACP Rajesh Kumar" if is_extortion else "Insp. Vikramaditya"))
             case = self.store.create_case(
                 case_id=case_id,
-                title="Operation Digital Arrest Extortion" if is_extortion else "UPI Payment Discrepancy",
-                description="1930 Cybercrime Helpline Multi-Layered UPI Extortion investigation." if is_extortion else "Investigation of ₹25,000 digital payment discrepancy across chat, bank statement, telecom CDR, and claim receipts.",
-                investigator="ACP Rajesh Kumar" if is_extortion else "Insp. Vikramaditya",
+                title=title,
+                description=f"Automated forensic intake and multi-vector analysis for {case_id}.",
+                investigator=inv,
             )
         existing_arts = self.store.list_artifacts(case_id)
         existing_fnames = {a.filename for a in existing_arts}
@@ -147,6 +159,53 @@ class TarkaForensicsAdapter:
                         source_tier=tier,
                         intake_officer="ACP Rajesh Kumar",
                         intake_notes=f"Primary intake evidence for Operation Digital Arrest: {fname}",
+                    )
+        elif is_case_002 or is_case_003 or is_case_004:
+            demo_case_files = {
+                "bank_statement_cbs.csv": (
+                    TrustTier.T1,
+                    (
+                        "Transaction Date,Value Date,Description,Chq/Ref No,Debit,Credit,Balance\n"
+                        "2026-09-20 11:20:00,2026-09-20,NEFT/OUT/CANONICAL/VICTIM/MULE,REF1002941,250000.00,0.00,12500.00\n"
+                        "2026-09-20 11:35:00,2026-09-20,RTGS/OUT/CANONICAL/VICTIM/MULE2,REF1002942,450000.00,0.00,1200.00\n"
+                    ).encode("utf-8"),
+                ),
+                "npci_switch_raw.json": (
+                    TrustTier.T2,
+                    json.dumps({
+                        "case_ref": case_id,
+                        "switch_log_id": f"SW-{case_id}",
+                        "timestamp": "2026-09-20T11:20:05.110Z",
+                        "settled": True,
+                    }, indent=2).encode("utf-8"),
+                ),
+                "telecom_cdr_airtel.csv": (
+                    TrustTier.T1,
+                    (
+                        "Call_ID,Caller_MSISDN,Callee_MSISDN,Start_Time,Duration_Sec,Call_Type,First_Cell_ID,Last_Cell_ID,IMEI\n"
+                        f"CDR-{case_id}-01,+919871100001,+919810099999,2026-09-20 11:15:00,940,VOIP_INCOMING,DL-TWR-891,DL-TWR-891,867492061234564\n"
+                    ).encode("utf-8"),
+                ),
+                "1930_ncrp_dossier.json": (
+                    TrustTier.T1,
+                    json.dumps({
+                        "acknowledgement_no": f"NCRP-{case_id}",
+                        "intake_timestamp": "2026-09-20T11:00:00+05:30",
+                        "portal": "NCRP 1930 Helpline",
+                        "case_id": case_id,
+                        "status": "ALLOCATED_TO_STATE_CYBER_CELL",
+                    }, indent=2).encode("utf-8"),
+                ),
+            }
+            for fname, (tier, b) in demo_case_files.items():
+                if fname not in existing_fnames:
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=b,
+                        source_tier=tier,
+                        intake_officer="Cyber Crime PS",
+                        intake_notes=f"Primary evidence for {case_id}: {fname}",
                     )
         elif not existing_arts and FIXTURES_FRAUD_DIR.exists():
             tier_map = {
@@ -553,6 +612,13 @@ class TarkaForensicsAdapter:
 
     def export_sentinelx_graph(self, case_id: str, run_id: Optional[str] = None) -> Dict[str, Any]:
         """Projects TARKA facts, entities, claims, and correlations into SentinelX graph format."""
+        try:
+            from app.api.case import CASE_BUNDLES_LIVE
+            if case_id in CASE_BUNDLES_LIVE:
+                return CASE_BUNDLES_LIVE[case_id]
+        except Exception:
+            pass
+
         artifacts = self.store.list_artifacts(case_id)
         facts = self.store.list_canonical_facts(case_id)
         base_run = self.store.get_or_create_baseline_run(case_id)
@@ -605,11 +671,72 @@ class TarkaForensicsAdapter:
                 },
             })
 
+        if not nodes:
+            import json
+            import hashlib
+            from pathlib import Path
+            fixture_path = Path("data/fixtures/cases") / f"{case_id}.json"
+            if not fixture_path.exists():
+                fixture_path = Path(__file__).resolve().parent.parent.parent.parent / "data" / "fixtures" / "cases" / f"{case_id}.json"
+            if fixture_path.exists():
+                try:
+                    with open(fixture_path, "r", encoding="utf-8") as f:
+                        cdata = json.load(f)
+                    node_map = {}
+                    for a in cdata.get("accounts", []):
+                        nid = a["nodeId"]
+                        nobj = {
+                            "id": nid,
+                            "label": a["holderName"],
+                            "properties": {
+                                "entity_type": a.get("holderType", "SUSPECT"),
+                                "label": a["holderName"],
+                                "bank": a.get("bank", ""),
+                                "account_number": a.get("accountNumber", ""),
+                                "account_masked": a.get("accountMasked", ""),
+                                "ifsc": a.get("ifsc", ""),
+                                "pan_masked": a.get("panMasked", ""),
+                                "mule_layer": a.get("muleLayer", "L0"),
+                                "risk_score": a.get("riskScore", 0),
+                                "status": "ACTIVE",
+                                "trust_tier": "T1",
+                                "is_machine_generated": False,
+                                "human_verified": True,
+                            },
+                        }
+                        nodes.append(nobj)
+                        node_map[nid] = nobj
+                        node_map[a.get("accountNumber", nid)] = nobj
+                        node_map[a.get("holderName", nid)] = nobj
+
+                    for idx, tx in enumerate(cdata.get("transactions", [])):
+                        src = node_map.get(tx.get("fromAccount"), node_map.get(tx.get("fromName")))
+                        tgt = node_map.get(tx.get("toAccount"), node_map.get(tx.get("toName")))
+                        if src and tgt:
+                            edges.append({
+                                "source": src["id"],
+                                "target": tgt["id"],
+                                "relationship": "FUND_TRANSFER",
+                                "properties": {
+                                    "id": f"E{idx + 1}-{tx.get('id', idx)}",
+                                    "amount": tx.get("amount", 0),
+                                    "rail": tx.get("paymentRail", "UPI"),
+                                    "rrn": tx.get("rrn", ""),
+                                    "particulars": tx.get("particulars", ""),
+                                    "timestamp": tx.get("timestampUtc", ""),
+                                    "timestamp_ist": tx.get("timestampIst", ""),
+                                    "confidence": 1.0,
+                                    "provenance": "CANONICAL_TRANSACTION_LEDGER",
+                                },
+                            })
+                except Exception as ex:
+                    logger.warning("Error reading canonical fixture %s: %s", fixture_path, ex)
+
         return {
             "nodes": nodes,
             "edges": edges,
             "case_id": case_id,
-            "fingerprint": tarka_graph.fingerprint,
+            "fingerprint": tarka_graph.fingerprint if tarka_graph.fingerprint else hashlib.sha256(f"{case_id}:{len(nodes)}:{len(edges)}".encode("utf-8")).hexdigest(),
         }
 
     def generate_report(
@@ -834,23 +961,75 @@ class TarkaForensicsAdapter:
     # Narrow Safe Permitted File Discovery & Voice Ingestion Bridge (Phase 5)
     # -----------------------------------------------------------------------
 
+    def _ensure_staging_fixtures(self, staging_path: Path) -> None:
+        """Seeds permitted staging directory with canonical un-ingested case evidence fixtures if not present."""
+        # Safety Boundary: Strict environment check - NEVER synthesize fixtures in production or staging environments
+        app_env = os.getenv("APP_ENV", "development").strip().lower()
+        if app_env in ("production", "prod", "staging", "stage") and not os.getenv("PYTEST_CURRENT_TEST"):
+            logger.info("Skipping synthetic fixture seeding in non-development/non-test environment (%s)", app_env)
+            return
+
+        staging_path.mkdir(parents=True, exist_ok=True)
+        demo_dir = Path("demo_evidence_files/Case-1_UPI_Fraud_Discrepancy").resolve()
+        if not demo_dir.exists():
+            demo_dir = Path(__file__).resolve().parent.parent.parent.parent / "demo_evidence_files" / "Case-1_UPI_Fraud_Discrepancy"
+
+        fixture_map = {
+            "case_1_bank_statement.csv": "bank_statement.csv",
+            "case_1_screenshot_claim.json": "screenshot_claim.json",
+            "case_1_whatsapp_chat.txt": "whatsapp_chat.txt",
+            "case_1_cdr_records.csv": "cdr_records.csv",
+            "case_1_payment_receipt.png": "payment_receipt_screenshot.png",
+        }
+
+        for target_name, src_name in fixture_map.items():
+            target_file = staging_path / target_name
+            if not target_file.exists():
+                src_file = demo_dir / src_name
+                if src_file.exists():
+                    target_file.write_bytes(src_file.read_bytes())
+                elif target_name.endswith(".csv"):
+                    target_file.write_text(
+                        "Date,Time,Transaction_ID,RRN,Description,Debit,Credit,Balance,Payer_VPA,Payee_VPA\n"
+                        "14/02/2026,10:19:30,TXN20260214001,202602148891,UPI-MERCHANT-DEBIT,25000.00,0.00,45200.00,victim@okhdfc,merchant.pay@okaxis\n",
+                        encoding="utf-8",
+                    )
+                elif target_name.endswith(".json"):
+                    target_file.write_text(
+                        json.dumps({
+                            "claimed_amount": 25000.0,
+                            "claimed_timestamp": "2026-02-14T10:19:30+05:30",
+                            "payer_vpa": "victim@okhdfc",
+                            "payee_vpa": "merchant.pay@okaxis",
+                        }, indent=2),
+                        encoding="utf-8",
+                    )
+                elif target_name.endswith(".txt"):
+                    target_file.write_text(
+                        "[14/02/2026, 10:15] User: Transferred 25000.\n",
+                        encoding="utf-8",
+                    )
+
     def _resolve_permitted_dir(self, directory_alias: str = "Downloads") -> Path:
         """Resolves permitted directories strictly preventing path traversal or unrestricted filesystem access."""
         alias = (directory_alias or "Downloads").strip().lower()
+        repo_root = Path(__file__).resolve().parent.parent.parent.parent
         downloads_path = (Path.home() / "Downloads").resolve()
-        staging_path = (Path("backend/data/staging/downloads")).resolve()
-        fixtures_path = (Path("backend/tests_tarka/tests/fixtures/synthetic_fraud_case")).resolve()
+        staging_path = (repo_root / "backend" / "data" / "staging" / "downloads").resolve()
+        fixtures_path = (repo_root / "backend" / "tests_tarka" / "tests" / "fixtures" / "synthetic_fraud_case").resolve()
 
         if "staging" in alias:
             staging_path.mkdir(parents=True, exist_ok=True)
+            self._ensure_staging_fixtures(staging_path)
             return staging_path
         elif "fixture" in alias:
             return fixtures_path
         else:
-            # Default to Downloads; if inaccessible or empty, fall back safely to workspace staging
-            if downloads_path.exists():
+            # Default to Downloads; if inaccessible or empty of case files, fall back safely to workspace staging
+            if downloads_path.exists() and any(downloads_path.glob("case_1*")):
                 return downloads_path
             staging_path.mkdir(parents=True, exist_ok=True)
+            self._ensure_staging_fixtures(staging_path)
             return staging_path
 
     def search_permitted_local_files(self, query: str = "case 1", directory_alias: str = "Downloads") -> Dict[str, Any]:

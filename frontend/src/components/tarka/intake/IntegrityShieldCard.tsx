@@ -5,6 +5,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
+import { sha256HexSync, computeMerkleRootSync } from "../../../utils/sha256";
 
 export interface IntegrityShieldCardProps {
   activeTab?: "pdf" | "cgnat";
@@ -29,8 +30,8 @@ export const IntegrityShieldCard: React.FC<IntegrityShieldCardProps> = ({
   const [merkleVerified, setMerkleVerified] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const fullMerkleRoot = "0xb189f3a9712a45d886910384cf22da810842e09153b6fa034e3209847492c810";
-  const tamperedMerkleRoot = "0xdeadbeef712a45d886910384cf22da810842e09153b6fa034e3209847492beef";
+  const fullMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
+  const tamperedMerkleRoot = "0x" + computeMerkleRootSync(["leaf_cgnat_01_tampered", "leaf_cgnat_02", "leaf_cgnat_03"].map((l) => sha256HexSync(l)));
 
   // Re-verify Merkle path when sibling tamper state changes
   useEffect(() => {

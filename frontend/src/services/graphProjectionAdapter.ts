@@ -75,7 +75,7 @@ class GraphProjectionAdapter {
 
     try {
       const res = await axios.post<GraphProjectionResponseData>(
-        "http://localhost:8000/api/v1/investigation/graph/projection",
+        "/api/v1/investigation/graph/projection",
         {
           case_id: params.case_id || "C102",
           root_entity_id: params.root_entity_id || null,

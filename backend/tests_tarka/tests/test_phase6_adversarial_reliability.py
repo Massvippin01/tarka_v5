@@ -722,7 +722,7 @@ class TestPhase6FForensicReviewAndExplainability:
         # Q9 & Q10: What would change if screenshot is excluded, and which findings survive?
         challenge_resp = client.post(
             f"/api/cases/{case_id}/analysis-runs",
-            json={"case_id": case_id, "excluded_artifact_ids": ["ART-004-BCCD4200"], "challenge_reason": "Challenge screenshot validity"},
+            json={"case_id": case_id, "excluded_artifact_ids": ["ART-004-6155034A"], "challenge_reason": "Challenge screenshot validity"},
         )
         assert challenge_resp.status_code == 200
         chlg_run = challenge_resp.json()
@@ -734,7 +734,7 @@ class TestPhase6FForensicReviewAndExplainability:
         ch_findings = ch_analysis.json()
         ch_contra = next(f for f in ch_findings if f["finding_id"] == amt_finding["finding_id"])
         assert ch_contra["status"] == "INACTIVE"
-        assert "ART-004-BCCD4200" in (ch_contra["inactive_reason"] or "")
+        assert "ART-004-6155034A" in (ch_contra["inactive_reason"] or "")
 
         # Independent facts/artifacts remain active
         surviving = [f for f in ch_findings if f["status"] == "ACTIVE"]

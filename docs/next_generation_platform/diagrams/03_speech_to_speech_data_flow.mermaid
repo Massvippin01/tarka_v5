@@ -1,0 +1,31 @@
+flowchart LR
+    subgraph AudioCapture["AUDIO INGESTION & VISUALIZATION"]
+        Mic["Microphone Input"] --> Context["AudioContext (Web Audio API)"]
+        Context --> Analyser["AnalyserNode (FFT Frequency Engine)"]
+        Analyser --> Canvas["HTML5 Canvas Waveform Rendering"]
+    end
+
+    subgraph SpeechInput["SPEECH-TO-TEXT & NORMALIZATION"]
+        Context --> STT["Streaming STT (Browser / AI4Bharat)"]
+        STT --> LangDetect["Multilingual Language Detector (11 Languages + Dialects)"]
+        LangDetect --> Transcript["Live Transcript Stream"]
+    end
+
+    subgraph ReasoningEnclave["GROUNDED FORENSIC REASONING"]
+        Transcript --> Guardrail["Prompt Injection Firewall"]
+        Guardrail --> ContextInject["Active Screen Context Injector"]
+        ContextInject --> LLM["Local LLM Reasoning Engine (Llama-3.1 8B)"]
+        LLM --> FactCheck["Evidence DNA Fact Verifier"]
+    end
+
+    subgraph AudioSynthesis["SPEECH SYNTHESIS & PLAYBACK"]
+        FactCheck --> StructuredResp["Structured Response (Text + Citations)"]
+        StructuredResp --> TTS["Speech Synthesis (Web Speech / IndicTTS)"]
+        TTS --> Speaker["Audio Output (Spoken Findings)"]
+    end
+
+    subgraph BargeInControl["FULL-DUPLEX BARGE-IN INTERRUPT"]
+        Mic -.->|"User begins speaking"| VAD["Voice Activity Detector (VAD)"]
+        VAD -.->|"Cancel Audio Buffer"| TTS
+    end
+

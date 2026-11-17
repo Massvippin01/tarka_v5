@@ -6,7 +6,7 @@ import type {
 } from "../types/command";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_URL || "";
 
 export class CommandBusService {
   private static instance: CommandBusService | null = null;

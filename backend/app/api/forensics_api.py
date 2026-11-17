@@ -591,6 +591,8 @@ def query_grounded_assistant(
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
 
+    adapter.ensure_synthetic_case(case_id)
+    adapter.ensure_synthetic_case(case_id)
     artifacts = adapter.list_artifacts(case_id)
 
     facts = adapter.store.list_canonical_facts(case_id)
@@ -636,6 +638,7 @@ def voice_interact(
             "requires_human_confirmation": True,
         }
 
+    adapter.ensure_synthetic_case(case_id)
     artifacts = adapter.list_artifacts(case_id)
     facts = adapter.store.list_canonical_facts(case_id)
     contradictions = adapter.get_contradictions(case_id).get("contradictions", [])
@@ -777,6 +780,7 @@ def orchestrate_agent_action(
         "preview_artifact_id": execution.get("preview_artifact_id"),
         "speech": execution.get("speech"),
         "navigation_view": execution.get("navigation_view"),
+        "target_tab": execution.get("navigation_view"),
         "language_code": execution.get("language_code", req.language_code or "en-IN"),
         "execution_latency_ms": execution.get("execution_latency_ms"),
         "error": execution.get("error"),

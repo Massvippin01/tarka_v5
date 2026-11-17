@@ -130,6 +130,11 @@ class InvestigationEdge(BaseModel):
     is_contradiction: bool = Field(default=False, description="True if link represents an amount or record conflict")
     status: str = Field(default="ACTIVE", description="ACTIVE or INACTIVE")
     inactive_reason: Optional[str] = Field(default=None, description="Reason if deactivated in counterfactual run")
+    nature: str = Field(default="OBSERVED", description="OBSERVED (physical/ledger evidence) or INFERRED (hypothesis)")
+    ambiguity_type: Optional[str] = Field(default=None, description="Ambiguity category (SHARED_HOTSPOT, CGNAT_POOL, etc.)")
+    ambiguity_caution_notice: Optional[str] = Field(default=None, description="Statutory caution warning")
+    valid_from_iso: Optional[str] = Field(default=None, description="Valid time interval start")
+    valid_to_iso: Optional[str] = Field(default=None, description="Valid time interval end")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Edge properties")
 
 
@@ -462,3 +467,128 @@ class InvestigationGraphBuilder:
             run=run,
             baseline_run=baseline_run,
         )
+
+
+class InvestigationGraphQuery:
+    """Forensic graph analysis: temporal slicing, multi-hop pathfinding, and motif detection."""
+
+    @staticmethod
+    def filter_by_time_range(
+        graph: InvestigationGraph,
+        start_iso: Optional[str] = None,
+        end_iso: Optional[str] = None,
+    ) -> InvestigationGraph:
+        """Filters nodes and edges within a temporal window [start_iso, end_iso]."""
+        filtered_nodes = []
+        node_id_set = set()
+
+        for n in graph.nodes:
+            ts = n.timestamp_iso
+            include = True
+            if ts:
+                if start_iso and ts < start_iso:
+                    include = False
+                if end_iso and ts > end_iso:
+                    include = False
+            if include:
+                filtered_nodes.append(n)
+                node_id_set.add(n.node_id)
+
+        filtered_edges = [
+            e for e in graph.edges
+            if e.source_id in node_id_set and e.target_id in node_id_set
+        ]
+
+        fingerprint = compute_investigation_fingerprint(filtered_nodes, filtered_edges)
+        return InvestigationGraph(
+            graph_id=f"{graph.graph_id}_time_filtered",
+            case_id=graph.case_id,
+            nodes=filtered_nodes,
+            edges=filtered_edges,
+            fingerprint=fingerprint,
+        )
+
+    @staticmethod
+    def find_multi_hop_paths(
+        graph: InvestigationGraph,
+        source_id: str,
+        target_id: str,
+        max_hops: int = 5,
+    ) -> List[List[InvestigationEdge]]:
+        """DFS discovery of multi-hop paths between source and target entities."""
+        adj: Dict[str, List[InvestigationEdge]] = {}
+        for edge in graph.edges:
+            if edge.status == "ACTIVE":
+                adj.setdefault(edge.source_id, []).append(edge)
+
+        paths: List[List[InvestigationEdge]] = []
+
+        def dfs(current: str, target: str, current_path: List[InvestigationEdge], visited: Set[str], hops_left: int) -> None:
+            if current == target and current_path:
+                paths.append(list(current_path))
+                return
+            if hops_left <= 0:
+                return
+
+            for edge in adj.get(current, []):
+                nxt = edge.target_id
+                if nxt not in visited:
+                    visited.add(nxt)
+                    current_path.append(edge)
+                    dfs(nxt, target, current_path, visited, hops_left - 1)
+                    current_path.pop()
+                    visited.remove(nxt)
+
+        dfs(source_id, target_id, [], {source_id}, max_hops)
+        return paths
+
+    @staticmethod
+    def detect_motifs(graph: InvestigationGraph) -> List[Dict[str, Any]]:
+        """Identifies suspicious fraud network motifs (Fan-Out, Fan-In, Cycles, Co-location clusters)."""
+        motifs = []
+        out_edges: Dict[str, List[InvestigationEdge]] = {}
+        in_edges: Dict[str, List[InvestigationEdge]] = {}
+
+        for e in graph.edges:
+            out_edges.setdefault(e.source_id, []).append(e)
+            in_edges.setdefault(e.target_id, []).append(e)
+
+        # 1. Fan-Out (1 -> N, N >= 3)
+        for src, edges in out_edges.items():
+            financial_edges = [e for e in edges if "DEBITS" in str(e.edge_type) or "PAYMENT" in str(e.edge_type) or "FUNDS" in str(e.edge_type)]
+            if len(financial_edges) >= 3:
+                motifs.append({
+                    "motif_type": "FAN_OUT",
+                    "root_node": src,
+                    "target_nodes": [e.target_id for e in financial_edges],
+                    "edge_count": len(financial_edges),
+                    "description": f"Fan-Out Motif: Node {src} disbursed funds across {len(financial_edges)} downstream destinations.",
+                })
+
+        # 2. Fan-In (N -> 1, N >= 3)
+        for tgt, edges in in_edges.items():
+            financial_edges = [e for e in edges if "DEBITS" in str(e.edge_type) or "PAYMENT" in str(e.edge_type) or "FUNDS" in str(e.edge_type)]
+            if len(financial_edges) >= 3:
+                motifs.append({
+                    "motif_type": "FAN_IN",
+                    "collector_node": tgt,
+                    "source_nodes": [e.source_id for e in financial_edges],
+                    "edge_count": len(financial_edges),
+                    "description": f"Fan-In Motif: Collector Node {tgt} consolidated funds from {len(financial_edges)} upstream sources.",
+                })
+
+        # 3. Co-location Ambiguity Clusters (Shared IP/Device)
+        colocated = [
+            e for e in graph.edges
+            if e.ambiguity_type or "SHARED" in str(e.edge_type) or "CO_LOCATED" in str(e.edge_type)
+        ]
+        if colocated:
+            motifs.append({
+                "motif_type": "CO_LOCATION_AMBIGUITY",
+                "edge_count": len(colocated),
+                "caution": "Statutory rule: Physical device or network co-location does not prove single-actor ownership.",
+                "edges": [e.edge_id for e in colocated],
+            })
+
+        return motifs
+

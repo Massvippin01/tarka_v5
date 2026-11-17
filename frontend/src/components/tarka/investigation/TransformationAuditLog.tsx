@@ -10,6 +10,7 @@ import {
   Scale,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTarkaUiStore } from "../../../store/useTarkaUiStore";
 import { reconstruct5FileInvestigation } from "../../../utils/investigationReconstructor";
 
 interface TransformationAuditLogProps {
@@ -24,8 +25,12 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
   isEmbedded = false,
 }) => {
   const [copiedRoot, setCopiedRoot] = useState(false);
-  const investigation = reconstruct5FileInvestigation();
-  const steps = investigation.transformationSteps;
+  const { reconstructedInvestigation } = useTarkaUiStore();
+  const defaultInv = reconstruct5FileInvestigation();
+  const investigation = reconstructedInvestigation || defaultInv;
+  const steps = Array.isArray(investigation?.transformationSteps) && investigation.transformationSteps.length > 0
+    ? investigation.transformationSteps
+    : defaultInv.transformationSteps;
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,88 +50,49 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
   };
 
   const content = (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        height: "100%",
-        boxSizing: "border-box",
-      }}
-    >
+    <div className="flex flex-col gap-3 w-full max-w-full min-w-0">
       {/* =========================================================================
           AUTHENTICITY VS INTEGRITY DUAL BANNER
           ========================================================================= */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "10px",
-          flexShrink: 0,
-        }}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
         {/* Box A: Pre-Ingestion Authenticity */}
-        <div
-          style={{
-            borderRadius: "8px",
-            border: "1px solid #FECDD3",
-            background: "#FFF1F2",
-            padding: "10px 14px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#BE123C" }}>
-            <AlertOctagon size={15} />
-            <span style={{ fontSize: "11.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+        <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 space-y-1.5 shadow-2xs">
+          <div className="flex items-center gap-2 text-rose-800">
+            <AlertOctagon className="size-4 shrink-0 text-rose-600" />
+            <span className="text-[12px] font-bold uppercase tracking-wide">
               Pre-Ingestion Authenticity Check (Input File Audit)
             </span>
           </div>
-          <div style={{ fontSize: "11px", color: "#9F1239", marginTop: "4px", lineHeight: 1.4 }}>
-            <strong>{investigation.preIngestionTamper.finding}</strong>
+          <div className="text-[12.5px] font-semibold text-rose-950 leading-snug">
+            {investigation?.preIngestionTamper?.finding || defaultInv.preIngestionTamper.finding}
           </div>
-          <div style={{ fontSize: "10px", color: "#E11D48", marginTop: "4px" }}>
-            {investigation.preIngestionTamper.discrepancyNote}
+          <div className="text-[12px] text-rose-800 leading-normal">
+            {investigation?.preIngestionTamper?.discrepancyNote || defaultInv.preIngestionTamper.discrepancyNote}
           </div>
         </div>
 
         {/* Box B: Post-Ingestion Cryptographic Integrity */}
-        <div
-          style={{
-            borderRadius: "8px",
-            border: "1px solid #A7F3D0",
-            background: "#ECFDF5",
-            padding: "10px 14px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#065F46" }}>
-              <ShieldCheck size={15} />
-              <span style={{ fontSize: "11.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 space-y-1.5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-emerald-800">
+              <ShieldCheck className="size-4 shrink-0 text-emerald-600" />
+              <span className="text-[12px] font-bold uppercase tracking-wide">
                 Post-Ingestion Cryptographic Integrity (Memory Seal)
               </span>
             </div>
             <button
               type="button"
               onClick={handleCopyMerkleRoot}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "#059669",
-                display: "flex",
-                alignItems: "center",
-                gap: "3px",
-                fontSize: "10px",
-                fontWeight: 700,
-              }}
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white border border-emerald-300 text-emerald-800 text-[12px] font-semibold hover:bg-emerald-100 transition-colors cursor-pointer"
             >
-              {copiedRoot ? <Check size={11} /> : <Copy size={11} />}
+              {copiedRoot ? <Check className="size-3" /> : <Copy className="size-3" />}
               <span>{copiedRoot ? "Copied" : "Copy Merkle Root"}</span>
             </button>
           </div>
-          <div style={{ fontSize: "11px", color: "#047857", marginTop: "4px", fontFamily: "var(--font-mono)" }}>
-            RFC-6962 Merkle Root: <strong>{investigation.postIngestionMerkleRoot.slice(0, 28)}...</strong>
+          <div className="text-[12px] font-mono text-emerald-950">
+            RFC-6962 Merkle Root: <strong>{investigation.postIngestionMerkleRoot.slice(0, 32)}…</strong>
           </div>
-          <div style={{ fontSize: "10px", color: "#059669", marginTop: "4px" }}>
+          <div className="text-[12px] text-emerald-800">
             Zero In-Memory Tamper · All 5 CSV artifacts & derived graph nodes sealed under SHA-256 tree.
           </div>
         </div>
@@ -135,50 +101,29 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
       {/* =========================================================================
           LEGAL SEPARATION NOTICE
           ========================================================================= */}
-      <div
-        style={{
-          borderRadius: "6px",
-          border: "1px solid #C7D2FE",
-          background: "#EEF2FF",
-          padding: "8px 12px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          fontSize: "10.5px",
-          color: "#3730A3",
-          flexShrink: 0,
-        }}
-      >
-        <Scale size={15} color="#4F46E5" style={{ flexShrink: 0 }} />
-        <div>
-          <strong>Statutory Separation of Powers Notice:</strong> TARKA produces <em>Forensic Technical Findings and Draft Statutory Requisitions</em> for execution by the Investigating Officer & Custodians. Admissibility in law is adjudicated strictly by the learned Court under Section 63(4) of the Bharatiya Sakshya Adhiniyam, 2023.
+      <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 flex items-start gap-2.5 text-[12px] text-blue-950 shrink-0 shadow-2xs">
+        <Scale className="size-4 text-[var(--accent)] shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <strong className="font-semibold text-blue-900">Statutory Separation of Powers Notice:</strong>{" "}
+          TARKA produces <em>Forensic Technical Findings and Draft Statutory Requisitions</em> for execution by the Investigating Officer & Custodians. Admissibility in law is adjudicated strictly by the learned Court under Section 63(4) of the Bharatiya Sakshya Adhiniyam, 2023.
         </div>
       </div>
 
       {/* =========================================================================
           10-STEP TRANSFORMATION AUDIT TABLE
           ========================================================================= */}
-      <div
-        style={{
-          flex: "1 1 0%",
-          minHeight: 0,
-          borderRadius: "8px",
-          border: "1px solid #E2E8F0",
-          background: "#FFFFFF",
-          overflow: "auto",
-        }}
-      >
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", textAlign: "left" }}>
+      <div className="w-full max-w-full overflow-x-auto rounded-xl border border-[var(--line)] bg-white shadow-2xs">
+        <table className="w-full min-w-[760px] border-collapse text-left text-[12px]">
           <thead>
-            <tr style={{ background: "#F1F5F9", color: "#475569", borderBottom: "1px solid #CBD5E1", position: "sticky", top: 0, zIndex: 10 }}>
-              <th style={{ padding: "8px 10px", fontWeight: 700, width: "45px" }}>Step</th>
-              <th style={{ padding: "8px 10px", fontWeight: 700, width: "180px" }}>Engine & Operation</th>
-              <th style={{ padding: "8px 10px", fontWeight: 700 }}>Input Evidentiary Artifacts</th>
-              <th style={{ padding: "8px 10px", fontWeight: 700 }}>Mathematical Transformation Basis</th>
-              <th style={{ padding: "8px 10px", fontWeight: 700, width: "110px" }}>Audit Status</th>
+            <tr className="bg-[var(--surface-1)] text-[var(--fg-2)] border-b border-[var(--line)] font-semibold">
+              <th className="py-2.5 px-3.5 w-16">Step</th>
+              <th className="py-2.5 px-3.5 w-48">Engine & Operation</th>
+              <th className="py-2.5 px-3.5">Input Evidentiary Artifacts</th>
+              <th className="py-2.5 px-3.5">Mathematical Transformation Basis</th>
+              <th className="py-2.5 px-3.5 w-36">Audit Status</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[var(--line)]">
             {steps.map((st) => {
               const isQuarantined = st.status === "QUARANTINED";
               const isFlagged = st.status === "INSUFFICIENT_FLAGGED";
@@ -187,60 +132,51 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
               return (
                 <tr
                   key={st.stepIndex}
-                  style={{
-                    borderBottom: "1px solid #F1F5F9",
-                    background: isQuarantined ? "#FFF8F8" : isFlagged ? "#FFFDF5" : st.stepIndex % 2 === 0 ? "#FFFFFF" : "#FAFAFA",
-                  }}
+                  className={`transition-colors ${
+                    isQuarantined
+                      ? "bg-rose-50/40"
+                      : isFlagged
+                      ? "bg-amber-50/40"
+                      : st.stepIndex % 2 === 0
+                      ? "bg-white"
+                      : "bg-[var(--surface-1)]/40"
+                  } hover:bg-[var(--surface-2)]/60`}
                 >
-                  <td style={{ padding: "8px 10px", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#64748B" }}>
+                  <td className="py-2.5 px-3.5 font-mono font-bold text-[var(--fg-3)]">
                     #{String(st.stepIndex).padStart(2, "0")}
                   </td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <div style={{ fontWeight: 800, color: "#0F172A" }}>{st.engine}</div>
-                    <div style={{ fontSize: "10px", color: "#64748B", marginTop: "2px" }}>{st.operation}</div>
+                  <td className="py-2.5 px-3.5">
+                    <div className="font-bold text-[var(--fg-1)]">{st.engine}</div>
+                    <div className="text-[12px] text-[var(--fg-3)] mt-0.5">{st.operation}</div>
                   </td>
-                  <td style={{ padding: "8px 10px", color: "#334155" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "3px" }}>
-                      {st.inputArtifacts.map((art, aIdx) => (
+                  <td className="py-2.5 px-3.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(st.inputArtifacts || []).map((art, aIdx) => (
                         <span
                           key={aIdx}
-                          style={{
-                            padding: "1px 5px",
-                            borderRadius: "3px",
-                            background: "#F1F5F9",
-                            border: "1px solid #E2E8F0",
-                            fontSize: "9.5px",
-                            fontFamily: "var(--font-mono)",
-                            color: "#0369A1",
-                          }}
+                          className="px-2 py-0.5 rounded-md bg-[var(--surface-1)] border border-[var(--line)] text-[12px] font-mono text-[var(--accent)]"
                         >
                           {art}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td style={{ padding: "8px 10px", fontFamily: "var(--font-mono)", fontSize: "10.5px", color: "#1E293B" }}>
+                  <td className="py-2.5 px-3.5 font-mono text-[12px] text-[var(--fg-2)] leading-relaxed">
                     {st.mathematicalBasis}
                   </td>
-                  <td style={{ padding: "8px 10px" }}>
+                  <td className="py-2.5 px-3.5">
                     <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        padding: "2px 6px",
-                        borderRadius: "4px",
-                        fontSize: "9.5px",
-                        fontWeight: 800,
-                        background: isQuarantined ? "#FFE4E6" : isFlagged ? "#FEF3C7" : "#ECFDF5",
-                        color: isQuarantined ? "#BE123C" : isFlagged ? "#92400E" : "#059669",
-                        border: `1px solid ${isQuarantined ? "#FDA4AF" : isFlagged ? "#FCD34D" : "#A7F3D0"}`,
-                        whiteSpace: "nowrap",
-                      }}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-semibold whitespace-nowrap ${
+                        isQuarantined
+                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                          : isFlagged
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      }`}
                     >
-                      {isPassed && <ShieldCheck size={10} />}
-                      {isQuarantined && <AlertOctagon size={10} />}
-                      {isFlagged && <AlertTriangle size={10} />}
+                      {isPassed && <ShieldCheck className="size-3.5 text-emerald-600" />}
+                      {isQuarantined && <AlertOctagon className="size-3.5 text-rose-600" />}
+                      {isFlagged && <AlertTriangle className="size-3.5 text-amber-600" />}
                       <span>{st.status.replace(/_/g, " ")}</span>
                     </span>
                   </td>
@@ -261,71 +197,24 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9999,
-        background: "rgba(15, 23, 42, 0.5)",
-        backdropFilter: "blur(3px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-        boxSizing: "border-box",
-      }}
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        style={{
-          width: "100%",
-          maxWidth: "1100px",
-          height: "90vh",
-          background: "#FFFFFF",
-          borderRadius: "12px",
-          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.25)",
-          display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box",
-          overflow: "hidden",
-        }}
+        className="w-full max-w-5xl max-h-[90vh] bg-white rounded-2xl shadow-xl flex flex-col border border-[var(--line)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div
-          style={{
-            padding: "14px 20px",
-            background: "#F8FAFC",
-            borderBottom: "1px solid #E2E8F0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                background: "#EEF2FF",
-                border: "1px solid #C7D2FE",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#4F46E5",
-              }}
-            >
-              <FileCheck2 size={18} />
+        <div className="p-4 bg-[var(--surface-1)] border-b border-[var(--line)] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[var(--accent)]">
+              <FileCheck2 className="size-4" />
             </div>
             <div>
-              <div style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A" }}>
+              <div className="text-[14px] font-bold text-[var(--fg-1)]">
                 10-Step Deterministic Transformation Audit Log
               </div>
-              <div style={{ fontSize: "11px", color: "#64748B" }}>
+              <div className="text-[12px] text-[var(--fg-3)]">
                 Verifiable Pipeline from 5 Raw Evidentiary Files to BSA §63(4) Court Dossier
               </div>
             </div>
@@ -334,27 +223,15 @@ export const TransformationAuditLog: React.FC<TransformationAuditLogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "1px solid #E2E8F0",
-              borderRadius: "6px",
-              padding: "4px 8px",
-              cursor: "pointer",
-              color: "#64748B",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "11px",
-              fontWeight: 600,
-            }}
+            className="px-2.5 py-1 rounded-lg border border-[var(--line)] text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-white text-[12px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <X size={14} />
+            <X className="size-3.5" />
             <span>Close (Esc)</span>
           </button>
         </div>
 
         {/* Body */}
-        <div style={{ flex: "1 1 0%", minHeight: 0, padding: "16px 20px", boxSizing: "border-box" }}>
+        <div className="flex-1 min-h-0 p-5 overflow-y-auto">
           {content}
         </div>
       </div>
