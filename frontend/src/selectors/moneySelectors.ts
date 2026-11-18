@@ -223,9 +223,9 @@ export function selectReplay(s: MoneyScope): Replay | null {
     const payer = byKey.get(a);
     const payee = byKey.get(b);
     if (!payer || !payee) continue;
-    if (payer.role === 'VICTIM') {
-      if (payee.role === 'MULE') fromLinks.set(a, (fromLinks.get(a) ?? 0) + v);
-    } else fromLinks.set(b, (fromLinks.get(b) ?? 0) + v);
+    if (payer.role === 'VICTIM' && payee.role !== 'MULE') continue; // a victim's ordinary payment
+    if (payer.role === 'VICTIM') fromLinks.set(a, (fromLinks.get(a) ?? 0) + v);
+    fromLinks.set(b, (fromLinks.get(b) ?? 0) + v);
   }
   const useLinks = s.links.length > 0;
   for (const m of s.members) {

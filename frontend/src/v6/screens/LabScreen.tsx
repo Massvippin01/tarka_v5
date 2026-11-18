@@ -1,10 +1,4 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import {
-  Scale,
-  ShieldCheck,
-  Cpu,
-  Zap,
-} from 'lucide-react';
 import { PageHead } from '../ui/PageHead';
 import { Skeleton } from '../ui/Skeleton';
 import { useCaseStore } from '../../store/useCaseStore';
@@ -12,19 +6,9 @@ import { useCaseStore } from '../../store/useCaseStore';
 const CourtProofScreen = lazy(() =>
   import('../../pages/v5/CourtProofScreen').then((m) => ({ default: m.CourtProofScreen }))
 );
-const PrivacyCryptoWorkbench = lazy(() =>
-  import('../../components/tarka/privacy/PrivacyCryptoWorkbench').then((m) => ({
-    default: m.PrivacyCryptoWorkbench,
-  }))
-);
-const ForensicWorkstationScreen = lazy(() =>
-  import('../../pages/v5/ForensicWorkstationScreen').then((m) => ({
-    default: m.ForensicWorkstationScreen,
-  }))
-);
-const BenchmarkLabScreen = lazy(() =>
-  import('../../pages/v5/BenchmarkLabScreen').then((m) => ({ default: m.BenchmarkLabScreen }))
-);
+const ScaleLabScreen = lazy(() => import('./ScaleLabScreen').then((m) => ({ default: m.ScaleLabScreen })));
+const CaseTimelineScreen = lazy(() => import('./CaseTimelineScreen').then((m) => ({ default: m.CaseTimelineScreen })));
+const PrivacyLabScreen = lazy(() => import('./PrivacyLabScreen').then((m) => ({ default: m.PrivacyLabScreen })));
 
 export type LabTab = 'court-proof' | 'privacy-crypto' | 'workstation' | 'benchmarks';
 
@@ -33,7 +17,7 @@ interface LabScreenProps {
 }
 
 export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
-  const { activeView, setActiveView } = useCaseStore();
+  const { activeView } = useCaseStore();
 
   const getActiveTabFromView = (view: string): LabTab => {
     if (view === 'court-proof' || view === 'court' || view === 'court-dossier') return 'court-proof';
@@ -51,102 +35,33 @@ export const LabScreen: React.FC<LabScreenProps> = ({ initialTab }) => {
     }
   }, [activeView]);
 
-  const handleTabChange = (tab: LabTab) => {
-    setActiveTab(tab);
-    setActiveView(tab);
-  };
-
-  const tabs: Array<{ id: LabTab; label: string; icon: React.ReactNode; badge?: string }> = [
-    {
-      id: 'court-proof',
-      label: 'Court Dossier & Admissibility',
-      icon: <Scale className="w-4 h-4" />,
-      badge: 'BSA §63',
-    },
-    {
-      id: 'privacy-crypto',
-      label: 'Privacy & Cryptography',
-      icon: <ShieldCheck className="w-4 h-4" />,
-      badge: 'ECDH-PSI',
-    },
-    {
-      id: 'workstation',
-      label: 'Forensic Workstation',
-      icon: <Cpu className="w-4 h-4" />,
-      badge: 'Loom & Flight',
-    },
-    {
-      id: 'benchmarks',
-      label: 'Benchmark & Stress Lab',
-      icon: <Zap className="w-4 h-4" />,
-      badge: '100k CGNAT',
-    },
-  ];
+  const fallback = (
+    <div className="space-y-4 p-4">
+      <Skeleton height={60} />
+      <div className="grid grid-cols-3 gap-4">
+        <Skeleton height={120} />
+        <Skeleton height={120} />
+        <Skeleton height={120} />
+      </div>
+      <Skeleton height={380} />
+    </div>
+  );
 
   return (
-    <div className="v6-enter space-y-6" data-testid="v6-lab-screen">
-      <PageHead
-        kicker="Forensic Labs & Mathematical Proof Engines"
-        title="Can the evidence withstand cross-examination in court?"
-        subtitle="Zero-knowledge private intersection, tamper falsification, temporal evidence loom, and synthetic stress calibration."
-      />
-
-      {/* Lab Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 overflow-x-auto">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-blue-50 text-blue-900 border-2 border-blue-500 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white border border-transparent'
-              }`}
-            >
-              <span className={isActive ? 'text-blue-600 font-bold' : 'text-slate-400'}>
-                {tab.icon}
-              </span>
-              <span className={isActive ? 'text-blue-900 font-bold' : ''}>{tab.label}</span>
-              {tab.badge && (
-                <span
-                  className={`text-[12px] px-2 py-0.5 rounded-md font-mono font-semibold ${
-                    isActive
-                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                      : 'bg-slate-100 text-slate-600 border border-slate-200'
-                  }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content Panes */}
-      <div className="min-h-[600px]">
-        <Suspense
-          fallback={
-            <div className="space-y-4 p-4">
-              <Skeleton height={60} />
-              <div className="grid grid-cols-3 gap-4">
-                <Skeleton height={140} />
-                <Skeleton height={140} />
-                <Skeleton height={140} />
-              </div>
-              <Skeleton height={420} />
-            </div>
-          }
-        >
-          {activeTab === 'court-proof' && <CourtProofScreen />}
-          {activeTab === 'privacy-crypto' && <PrivacyCryptoWorkbench />}
-          {activeTab === 'workstation' && <ForensicWorkstationScreen />}
-          {activeTab === 'benchmarks' && <BenchmarkLabScreen />}
-        </Suspense>
-      </div>
-    </div>
+    <Suspense fallback={fallback}>
+      {activeTab === 'court-proof' && (
+        <div className="v6-enter space-y-6" data-testid="v6-lab-screen">
+          <PageHead
+            kicker="Court"
+            title="Can the evidence stand up in court?"
+            subtitle="Check each piece of evidence is intact and complete before it goes into the charge sheet."
+          />
+          <CourtProofScreen />
+        </div>
+      )}
+      {activeTab === 'privacy-crypto' && <PrivacyLabScreen />}
+      {activeTab === 'workstation' && <CaseTimelineScreen />}
+      {activeTab === 'benchmarks' && <ScaleLabScreen />}
+    </Suspense>
   );
 };

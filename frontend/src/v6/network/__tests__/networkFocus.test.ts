@@ -5,6 +5,9 @@ import type { FraudNetwork, NetworkMember } from '../../triage/triage';
 import { buildExplorerGraph, groupKey, layerGroups, layerKey, memberKey, type Palette } from '../networkGraph';
 import {
   crossCaseByMember,
+  crossCaseLinks,
+  fixtureCaseHits,
+  linkSentence,
   fixtureNetworks,
   focusSearch,
   memberFigure,
@@ -30,9 +33,9 @@ const B = net('NET-B', [m('v2', 'VICTIM', 0), m('m2', 'MULE', 1, 0.7)], { amount
 describe('focus in the URL', () => {
   it('parses and writes net/acct while keeping other params', () => {
     expect(parseFocus('?view=network&net=NET-A&acct=m1')).toEqual({ net: 'NET-A', acct: 'm1' });
-    expect(parseFocus('?acct=m1')).toEqual({ net: null, acct: null }); // account needs its network
+    expect(parseFocus('?acct=m1')).toEqual({ net: null, acct: 'm1' }); // e.g. a link from another case
     expect(focusSearch('?view=network&case=C1', { net: 'NET-A', acct: 'm1' })).toBe('?view=network&case=C1&net=NET-A&acct=m1');
-    expect(focusSearch('?view=network&net=NET-A&acct=m1', { net: null, acct: 'm1' })).toBe('?view=network');
+    expect(focusSearch('?view=network&net=NET-A&acct=m1', { net: null, acct: null })).toBe('?view=network');
   });
   it('resolves the zoom level and falls back on unknown ids', () => {
     expect(resolveFocus([A, B], { net: null, acct: null }).zoom).toBe('project');
@@ -40,6 +43,8 @@ describe('focus in the URL', () => {
     expect(resolveFocus([A, B], { net: 'NET-A', acct: 'nope' })).toMatchObject({ zoom: 'network', network: A });
     expect(resolveFocus([A, B], { net: 'NET-A', acct: 'm1' })).toMatchObject({ zoom: 'account', member: A.members[1] });
     expect(resolveFocus([B], { net: null, acct: null })).toMatchObject({ zoom: 'network', network: B }); // one gang → open it
+    expect(resolveFocus([A, B], { net: null, acct: 'm2' })).toMatchObject({ zoom: 'account', network: B, member: B.members[1] }); // account alone finds its network
+    expect(resolveFocus([A, B], { net: null, acct: 'nobody' }).zoom).toBe('project');
   });
 });
 
@@ -110,5 +115,28 @@ describe('demo fixtures as a network', () => {
   });
   it('returns nothing for a case record with no suspects', () => {
     expect(fixtureNetworks({ ...c, accounts: c.accounts.filter((a) => a.holderType === 'VICTIM') })).toEqual([]);
+  });
+});
+
+describe('links to other cases', () => {
+  const hits = [
+    { identifier: 'm1', kind: 'vpa', case_ids: ['C-2', 'C-3'] },
+    { identifier: 'atm', kind: 'account', case_ids: ['C-2'] },
+    { identifier: 'outsider@ybl', kind: 'vpa', case_ids: ['C-9'] }, // not in scope → ignored
+  ];
+  it('groups shared identifiers by case, biggest overlap first, scoped to the members', () => {
+    const links = crossCaseLinks(A.members, hits);
+    expect(links.map((l) => [l.caseId, l.items.length])).toEqual([['C-2', 2], ['C-3', 1]]);
+    expect(links[0].items[0].member?.id).toBe('m1');
+    expect(linkSentence(links[0])).toBe('1 UPI ID and 1 bank account');
+    expect(crossCaseLinks([A.members[0]], hits)).toEqual([]); // the victim alone shares nothing
+  });
+  it("uses a demo case record's own links as network-wide", () => {
+    const c = CANONICAL_CASES['CASE-2026-001'];
+    const h = fixtureCaseHits(c);
+    expect(h.length).toBe(c.syndicateLinks.length);
+    const links = crossCaseLinks([], h);
+    expect(links[0].caseId).toBe(c.syndicateLinks[0].linkedCaseId);
+    expect(linkSentence(links[0])).toMatch(/Wi-Fi router/);
   });
 });

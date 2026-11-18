@@ -8,6 +8,8 @@ import apiClient from '../../api/client';
 import { useCaseStore } from '../../store/useCaseStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { Button, Chip, EmptyState, PageHead, type ChipVariant } from '../ui';
+import type { NetworksResponse } from '../triage/triage';
+import { intakeLabel } from '../intake/intake';
 
 export type Lifecycle = 'INTAKE' | 'PROCESSING' | 'INVESTIGATING' | 'ACTION_PENDING' | 'COURT_READY' | 'CLOSED';
 
@@ -322,11 +324,31 @@ const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[] }>
     if (assignee.trim() !== (c.assignee ?? '')) patchCase.mutate({ assignee: assignee.trim() });
   };
   const stage = LIFECYCLE.findIndex((l) => l.key === c.lifecycle);
+  // Same query key as Triage / My Desk, so this is usually already cached.
+  const nets = useQuery({
+    queryKey: ['networks', c.case_id],
+    queryFn: async () => (await apiClient.get<NetworksResponse>(`/api/v1/cases/${encodeURIComponent(c.case_id)}/networks`)).data,
+    staleTime: 60_000,
+  });
+  const intake = nets.data ? intakeLabel(nets.data.networks) : null;
 
   return (
     <tr className="border-t border-[var(--line)]" data-testid="project-case-row">
       <td className="px-4 py-2 whitespace-nowrap">
         <div className="font-semibold text-[var(--fg-1)] font-mono">{c.case_id}</div>
+        {intake && (
+          <button
+            type="button"
+            onClick={() => {
+              navigate(c.case_id);
+              setView('triage');
+            }}
+            className="mt-0.5 block text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
+            data-testid="intake-label"
+          >
+            {intake}
+          </button>
+        )}
         <div className="flex gap-0.5 mt-1" title={`Stage ${stage + 1} of ${LIFECYCLE.length}`}>
           {LIFECYCLE.map((l, i) => (
             <span key={l.key} className={`h-1 w-4 rounded-full ${i <= stage ? 'bg-[var(--accent)]' : 'bg-[var(--surface-3)]'}`} />

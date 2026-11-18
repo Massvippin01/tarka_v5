@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ChevronRight, Copy, FileSpreadsheet, GitFork, Inbox, RotateCcw, Share2, UserCheck, Zap } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Copy, FileSpreadsheet, GitFork, Inbox, Layers, RotateCcw, Share2, UserCheck, Zap } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
 import { Button, Chip, EmptyState, PageHead, Skeleton, SourceNumber, type ChipVariant } from '../ui';
 import { buildDeskItems, type DeskItem, type DeskKind } from '../desk/desk';
 import { useDeskData } from '../desk/useDeskData';
 
 const KIND: Record<DeskKind, { label: string; hint: string; icon: React.ReactNode; variant: ChipVariant }> = {
+  intake: { label: 'Intake to review', hint: 'Bulk uploads where TARKA proposed cases that need your confirmation', icon: <Layers className="w-4 h-4" />, variant: 'flow' },
   action: { label: 'Action pending', hint: 'Case lifecycle is set to "Action pending"', icon: <Zap className="w-4 h-4" />, variant: 'urgent' },
   unsplit: { label: 'Mule network', hint: 'Suspected mules whose money trail is not yet a case of its own', icon: <GitFork className="w-4 h-4" />, variant: 'risk' },
   cross: { label: 'Seen in other cases', hint: 'Same UPI ID, phone or account found in another case you can access', icon: <Share2 className="w-4 h-4" />, variant: 'flow' },

@@ -329,8 +329,18 @@ class ResourceAdmissionController:
         estimated_mem = budget["estimated_memory_bytes"]
 
         safe_worker_mem = headroom["safe_headroom_bytes"] // max(1, permitted_concurrent_workers)
+        # Parsing streams in bounded memory; disk is what runs out: staging + sealed copy + derived rows ≈ 3× the file.
+        disk_root = IngestionJobManager.get_instance().base_dir
+        free_disk = shutil.disk_usage(disk_root if disk_root.exists() else Path(".")).free
+        needed_disk = 3 * file_size_bytes
 
-        if estimated_mem > headroom["safe_headroom_bytes"]:
+        if needed_disk > free_disk:
+            decision = AdmissionDecision.REJECT_UNSAFE
+            reason = (
+                f"Not enough disk space: this file needs about {needed_disk / 1e9:.1f} GB "
+                f"(upload, sealed copy and processed rows), {free_disk / 1e9:.1f} GB is free."
+            )
+        elif estimated_mem > headroom["safe_headroom_bytes"]:
             decision = AdmissionDecision.REJECT_UNSAFE
             reason = (
                 f"Estimated job memory ({estimated_mem / (1024*1024):.1f} MB) exceeds safe system "
@@ -430,6 +440,7 @@ class IngestionJob:
         self.checkpoints: List[int] = [0]
         self.analytics_summary: Dict[str, Any] = {}
         self.column_map: Optional[Dict[str, str]] = None  # investigator's {field: header name}, when set
+        self.processing: Optional[Dict[str, Any]] = None  # live step / rows / ETA after the upload finishes
 
     def to_dict(self) -> Dict[str, Any]:
         pct = 100.0 if self.total_size_bytes == 0 else min(100.0, (self.bytes_uploaded / self.total_size_bytes) * 100.0)
@@ -452,6 +463,7 @@ class IngestionJob:
             "error_message": self.error_message,
             "analytics_summary": self.analytics_summary,
             "elapsed_seconds": round(time.time() - self.start_time, 2),
+            "processing": self.processing,
             "intake_officer": self.intake_officer,
             "started_at": self.start_time,
         }
@@ -807,7 +819,39 @@ class IngestionJobManager:
                 if columns == "device":  # CDR / IPDR / bank login log → device_events
                     parse_summary = await asyncio.to_thread(ingest_device_csv, case_dir, job.job_id, sealed_target)
                 else:
-                    parse_summary = await asyncio.to_thread(DerivedStore(case_dir).ingest_bank_csv, job.job_id, sealed_target, columns)
+                    job.processing = {"step": "WAITING", "note": "Waiting for another file in this case to finish"}
+                    started = [0.0]
+
+                    def progress(rows: int, done: int) -> None:  # runs in the worker thread
+                        now = time.time()
+                        if not started[0]:
+                            started[0] = now
+                        elapsed = max(now - started[0], 1e-6)
+                        total = max(job.total_size_bytes, 1)
+                        rate = done / elapsed
+                        job.processing = {
+                            "step": "READING_ROWS",
+                            "rows": rows,
+                            "rows_per_sec": int(rows / elapsed) if rows else 0,
+                            "bytes_done": min(done, total),
+                            "bytes_total": total,
+                            "pct": round(min(99.0, 100 * done / total), 1),
+                            "eta_seconds": round((total - done) / rate, 1) if rate > 0 and done else None,
+                            "elapsed_seconds": round(elapsed, 1),
+                        }
+
+                    parse_summary = await asyncio.to_thread(
+                        DerivedStore(case_dir).ingest_bank_csv, job.job_id, sealed_target, columns, progress)
+                    read = parse_summary.get("rows_read", 0)
+                    job.processing = {**(job.processing or {}), "step": "FINDING_NETWORKS", "rows": read, "pct": 99.0,
+                                      "eta_seconds": None}
+                    try:  # warm the networks cache so the review board opens instantly; never fails the upload
+                        from app.services.ingestion.networks import case_networks  # local: networks imports this layer
+
+                        await asyncio.to_thread(case_networks, self.derived_dir, job.case_id)
+                    except Exception:
+                        logger.exception("Network warm-up failed for %s", job.case_id)
+                    job.processing = {**job.processing, "step": "DONE", "pct": 100.0}
 
             # Stage 7: Content Indexed (rows + identifiers are in the case's derived store)
             job.stage = IngestionStage.STAGE_7_CONTENT_INDEXED

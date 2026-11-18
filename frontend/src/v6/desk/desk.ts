@@ -1,6 +1,7 @@
 /** Pure helpers for My Desk (Act now inbox) and ⌘K identifier search. No I/O here. */
 import { formatInr } from '../../lib/formatInr';
 import type { FraudNetwork, NetworksResponse } from '../triage/triage';
+import { intakeLabel } from '../intake/intake';
 import type { MoneyFigure } from '../../selectors/caseSelectors';
 
 export interface DeskJob {
@@ -18,7 +19,7 @@ export interface DeskCase {
   networks?: NetworksResponse;
 }
 
-export type DeskKind = 'action' | 'unsplit' | 'cross' | 'identity' | 'mapping' | 'duplicate';
+export type DeskKind = 'intake' | 'action' | 'unsplit' | 'cross' | 'identity' | 'mapping' | 'duplicate';
 
 export interface DeskItem {
   id: string;
@@ -33,7 +34,7 @@ export interface DeskItem {
   figure?: MoneyFigure;
 }
 
-const ORDER: DeskKind[] = ['action', 'unsplit', 'cross', 'identity', 'mapping', 'duplicate'];
+const ORDER: DeskKind[] = ['intake', 'action', 'unsplit', 'cross', 'identity', 'mapping', 'duplicate'];
 const n = (count: number, one: string, many = `${one}s`) => `${count.toLocaleString('en-IN')} ${count === 1 ? one : many}`;
 const names = (xs: string[], max = 3) => xs.slice(0, max).join(', ') + (xs.length > max ? ` and ${xs.length - max} more` : '');
 
@@ -61,8 +62,14 @@ export function buildDeskItems(cases: DeskCase[]): DeskItem[] {
     }
     const net = c.networks;
     if (!net) continue;
+    const label = intakeLabel(net.networks);
+    if (label) {
+      items.push({ id: `${id}:intake`, kind: 'intake', caseId: id, view: 'triage', amount: 0, title: label,
+        detail: `Bulk upload in ${id} — confirm, edit or dismiss each proposed case.` });
+    }
     const hitIds = new Set(net.cross_case_hits.map((h) => h.identifier));
     for (const nw of net.networks) {
+      if (nw.proposal) continue; // holding-case gangs are covered by the intake item
       const mules = nw.members.filter((m) => m.role === 'MULE');
       // shortcut: the API has no "split" flag; a network counts as split once every mule already shows up in another case.
       if (!nw.mule_count || (mules.length && mules.every((m) => hitIds.has(m.id)))) continue;

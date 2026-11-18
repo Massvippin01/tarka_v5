@@ -1232,8 +1232,16 @@ async def get_case_bundle(
 
     from app.services.ingestion.projects_store import ProjectsStore
 
-    if ProjectsStore(IngestionJobManager.get_instance().base_dir).registered(case_id):
-        return uploaded_bundle(case_id)  # created in TARKA: no SQL case row exists
+    reg = ProjectsStore(IngestionJobManager.get_instance().base_dir).registered(case_id)
+    if reg:  # created in TARKA: no SQL case row exists
+        d = reg.get("details") or {}
+        return uploaded_bundle(case_id, {
+            "title": reg["title"],
+            "firNumber": d.get("fir_number", ""),
+            "policeStation": d.get("police_station", ""),
+            "complainantName": d.get("complainant_name", ""),
+            "claimedLossInr": d.get("claimed_loss_inr", 0),
+        })
 
     async with UnitOfWork() as uow:
         case = await uow.cases.get(case_id)

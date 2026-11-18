@@ -748,7 +748,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Multi-Case Action: Create New Workspace
   const createNewCaseWorkspace = useCallback(
     async (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">): Promise<string> => {
-      const newId = await CaseSyncBridge.getInstance().createCase(payload.title);
+      const newId = await CaseSyncBridge.getInstance().createCase(payload);
       const newWorkspace: CaseWorkspace = {
         ...payload,
         caseId: newId,

@@ -35,25 +35,38 @@ from app.services.voice_interpreter_service import VoiceInterpreterService
 router = APIRouter()
 
 
-@router.post("/benchmarks/run")
+def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
+    auth_service = AuthService.get_instance()
+    return auth_service.authenticate_token(authorization, strict=True)
+
+
+def _dev_only() -> None:
+    """Routes that seed or fake data exist only for local development; elsewhere they don't exist."""
+    from app.core.config import settings
+
+    if settings.APP_ENV != "development":
+        raise HTTPException(status_code=404, detail="Not found")
+
+
+@router.post("/benchmarks/run", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def run_empirical_benchmarks(concurrency: int = 1, runs: int = 10):
     bench = BenchmarkService.get_instance()
     return bench.run_suite(concurrency_tier=concurrency, runs=runs)
 
 
-@router.post("/benchmarks/dataset/generate")
+@router.post("/benchmarks/dataset/generate", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def generate_dataset_tier(tier: str = "TIER_A", seed: int = 12345):
     gen = DeterministicDatasetGenerator(seed=seed)
     return gen.generate_tier_dataset(tier=tier)
 
 
-@router.get("/graph/cluster-projection")
-def get_clustered_graph_projection(case_id: Optional[str] = "C102"):
+@router.get("/graph/cluster-projection", dependencies=[Depends(get_current_user)])
+def get_clustered_graph_projection(case_id: str):
     cps = ClusterProjectionService.get_instance()
     return cps.project_clustered_graph(case_id=case_id)
 
 
-@router.get("/ingestion/pipeline/status")
+@router.get("/ingestion/pipeline/status", dependencies=[Depends(get_current_user)])
 def get_ingestion_pipeline_status():
     pipeline = IngestionPipeline()
     cctns_res = pipeline.ingest_records(CCTNSAdapter(), limit=5)
@@ -64,11 +77,6 @@ def get_ingestion_pipeline_status():
         "cdr_pipeline": cdr_res,
         "dead_letter_queue_count": len(pipeline.dead_letter_queue),
     }
-
-
-def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
-    auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization, strict=True)
 
 
 @router.post("/auth/login", response_model=AuthTokenResponse)
@@ -110,8 +118,8 @@ def execute_voice_command(req: VoiceCommandRequest, user: UserIdentity = Depends
 
 
 @router.get("/events/stream")
-def stream_realtime_events(case_id: Optional[str] = "C102", user: UserIdentity = Depends(get_current_user)):
-    target_case = case_id or "C102"
+def stream_realtime_events(case_id: str, user: UserIdentity = Depends(get_current_user)):
+    target_case = case_id
     AuthService.get_instance().enforce_case_access(user, target_case)
     dispatcher = RealtimeDispatcher.get_instance()
     scope = EventSubscriptionScope(case_id=target_case)
@@ -132,10 +140,10 @@ def stream_realtime_events(case_id: Optional[str] = "C102", user: UserIdentity =
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
-@router.post("/events/simulate")
+@router.post("/events/simulate", dependencies=[Depends(_dev_only)])
 def simulate_realtime_event(
+    case_id: str,
     event_type: str = "EVIDENCE_ADDED",
-    case_id: str = "C102",
     user: UserIdentity = Depends(get_current_user),
 ):
     AuthService.get_instance().enforce_case_access(user, case_id)
@@ -156,7 +164,7 @@ def get_case_analytics_signals(case_id: str, user: UserIdentity = Depends(get_cu
     return engine.analyze_case(case_id)
 
 
-@router.get("/analytics/signals/entity/{entity_id}", response_model=AnalyticsResponse)
+@router.get("/analytics/signals/entity/{entity_id}", response_model=AnalyticsResponse, dependencies=[Depends(get_current_user)])
 def get_entity_analytics_signals(entity_id: str):
     engine = AnalyticalEngine()
     return engine.analyze_entity(entity_id)
@@ -210,7 +218,7 @@ class CopilotRequest(BaseModel):
     query: str
 
 
-@router.post("/seed-golden-slice")
+@router.post("/seed-golden-slice", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def seed_golden_slice():
     store = UnifiedStore.get_instance()
     scen = ScenarioGenerator.generate_golden_vertical_slice()
@@ -225,7 +233,7 @@ def seed_golden_slice():
     }
 
 
-@router.get("/scenarios")
+@router.get("/scenarios", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def list_scenarios():
     gen = ScenarioGenerator()
     scenarios = gen.generate_all_100_scenarios()
@@ -235,7 +243,7 @@ def list_scenarios():
     }
 
 
-@router.get("/relationship-inspector/{rel_id}")
+@router.get("/relationship-inspector/{rel_id}", dependencies=[Depends(get_current_user)])
 def inspect_relationship(rel_id: str):
     store = UnifiedStore.get_instance()
     explanation = store.get_relationship_explanation(rel_id)
@@ -288,7 +296,7 @@ def get_hypotheses(case_id: str, user: UserIdentity = Depends(get_current_user))
     }
 
 
-@router.get("/dossier/{entity_id}")
+@router.get("/dossier/{entity_id}", dependencies=[Depends(get_current_user)])
 def get_entity_dossier(entity_id: str):
     store = UnifiedStore.get_instance()
     if entity_id in store.persons:
@@ -345,14 +353,14 @@ def get_entity_dossier(entity_id: str):
     raise HTTPException(status_code=404, detail=f"Entity '{entity_id}' not found in canonical store.")
 
 
-@router.get("/path")
+@router.get("/path", dependencies=[Depends(get_current_user)])
 def find_shortest_path(source: str = Query(...), target: str = Query(...)):
     alg = GraphAlgorithms()
     linkage = alg.find_cross_case_linkages(source, target)
     return linkage
 
 
-@router.get("/k-hop/{node_id}")
+@router.get("/k-hop/{node_id}", dependencies=[Depends(get_current_user)])
 def get_k_hop(node_id: str, k: int = 2):
     store = UnifiedStore.get_instance()
     return store.get_k_hop(node_id, k=k)
@@ -410,7 +418,7 @@ def get_audit_logs(limit: int = 50, user: UserIdentity = Depends(get_current_use
     }
 
 
-@router.get("/quality")
+@router.get("/quality", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def get_data_quality_report():
     pipeline = IngestionPipeline()
     cctns_report = pipeline.ingest_records(CCTNSAdapter(), limit=5)
@@ -424,13 +432,13 @@ def get_data_quality_report():
     }
 
 
-@router.get("/benchmarks")
+@router.get("/benchmarks", dependencies=[Depends(get_current_user), Depends(_dev_only)])
 def run_benchmarks():
     bench = BenchmarkService.get_instance()
     return bench.run_suite(concurrency_tier=1, runs=5)
 
 
-@router.get("/search")
+@router.get("/search", dependencies=[Depends(get_current_user)])
 def search_entities(q: str = Query(...)):
     store = UnifiedStore.get_instance()
     return store.search_entities(q)

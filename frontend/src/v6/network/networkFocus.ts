@@ -16,14 +16,13 @@ export interface Focus {
 
 export const parseFocus = (search: string): Focus => {
   const p = new URLSearchParams(search);
-  const net = p.get('net');
-  return { net, acct: net ? p.get('acct') : null };
+  return { net: p.get('net'), acct: p.get('acct') };
 };
 
 /** Same URL with the focus replaced; other params (view, case, …) kept. */
 export function focusSearch(search: string, f: Focus): string {
   const p = new URLSearchParams(search);
-  for (const [k, v] of [['net', f.net], ['acct', f.net ? f.acct : null]] as const) {
+  for (const [k, v] of [['net', f.net], ['acct', f.acct]] as const) {
     if (v) p.set(k, v);
     else p.delete(k);
   }
@@ -33,8 +32,11 @@ export function focusSearch(search: string, f: Focus): string {
 
 /** Resolve the URL focus against the loaded networks; unknown ids fall back one level. */
 export function resolveFocus(networks: FraudNetwork[], f: Focus): { zoom: Zoom; network?: FraudNetwork; member?: NetworkMember } {
-  // A single network has nothing to choose between: open it.
-  const network = networks.find((n) => n.network_id === f.net) ?? (networks.length === 1 ? networks[0] : undefined);
+  // A single network has nothing to choose between: open it. An account alone (e.g. a link from another case) opens its network.
+  const network =
+    networks.find((n) => n.network_id === f.net) ??
+    (f.acct && !f.net ? networks.find((n) => n.members.some((m) => m.id === f.acct)) : undefined) ??
+    (networks.length === 1 ? networks[0] : undefined);
   if (!network) return { zoom: 'project' };
   const member = f.acct ? network.members.find((m) => m.id === f.acct) : undefined;
   return member ? { zoom: 'account', network, member } : { zoom: 'network', network };
@@ -227,4 +229,60 @@ export function fixtureNetworks(c: CanonicalCaseFixture): (FraudNetwork & Networ
       links: [...sums].map(([k, v]) => [...(k.split('\u0000') as [string, string]), v]),
     },
   ];
+}
+
+/* ---------- links to other cases ---------- */
+
+/** Plain name for an identifier kind; the technical term goes in the tooltip. */
+export const ID_KIND: Record<string, { label: string; tip?: string }> = {
+  vpa: { label: 'UPI ID' },
+  phone: { label: 'phone number' },
+  account: { label: 'bank account' },
+  ifsc: { label: 'bank branch', tip: 'IFSC code' },
+  bssid: { label: 'Wi-Fi router', tip: 'BSSID: hardware address of the Wi-Fi access point' },
+  ja4: { label: 'app / browser fingerprint', tip: 'JA4: TLS client fingerprint seen in bank sessions' },
+};
+export const idKindLabel = (k: string) => ID_KIND[k]?.label ?? k;
+
+export interface CaseLink {
+  caseId: string;
+  items: { identifier: string; kind: string; member?: NetworkMember }[];
+}
+
+/**
+ * Other cases sharing identifiers with these members, biggest overlap first. Server hits only count when they belong
+ * to a member in scope; case-record links (`network-wide`) describe the whole network and always count.
+ */
+export function crossCaseLinks(members: NetworkMember[], hits: (CrossCaseHit & { networkWide?: boolean })[]): CaseLink[] {
+  const by = new Map<string, CaseLink>();
+  for (const h of hits) {
+    const id = h.identifier.toLowerCase();
+    const member = members.find((m) => m.label.toLowerCase().includes(id));
+    if (!member && !h.networkWide) continue;
+    for (const c of h.case_ids) {
+      const link = by.get(c) ?? by.set(c, { caseId: c, items: [] }).get(c)!;
+      if (!link.items.some((x) => x.identifier === h.identifier)) link.items.push({ identifier: h.identifier, kind: h.kind, member });
+    }
+  }
+  return [...by.values()].sort((a, b) => b.items.length - a.items.length || a.caseId.localeCompare(b.caseId));
+}
+
+const ANCHOR_KIND: Record<string, string> = { WIFI_BSSID: 'bssid', JA4_TLS: 'ja4' };
+
+/** A demo case record's own links to other cases (shared Wi-Fi / app fingerprint), as network-wide hits. */
+export function fixtureCaseHits(c: CanonicalCaseFixture): (CrossCaseHit & { networkWide: true })[] {
+  return (c.syndicateLinks ?? []).map((l) => ({
+    identifier: l.sharedAnchorValue,
+    kind: ANCHOR_KIND[l.sharedAnchorType] ?? l.sharedAnchorType.toLowerCase(),
+    case_ids: [l.linkedCaseId],
+    networkWide: true as const,
+  }));
+}
+
+/** "shares 6 UPI IDs and 1 phone number with" */
+export function linkSentence(l: CaseLink): string {
+  const counts = new Map<string, number>();
+  for (const i of l.items) counts.set(i.kind, (counts.get(i.kind) ?? 0) + 1);
+  const parts = [...counts].map(([k, n]) => `${n.toLocaleString('en-IN')} ${idKindLabel(k)}${n === 1 ? '' : 's'}`);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0] ?? '';
 }

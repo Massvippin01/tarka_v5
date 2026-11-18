@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Inbox,
   Shield,
-  Home,
   LayoutDashboard,
   FolderKanban,
   FileSpreadsheet,
@@ -11,9 +10,7 @@ import {
   Network,
   Smartphone,
   Scale,
-  FlaskConical,
   ShieldCheck,
-  Zap,
   Settings,
   Activity,
   UserCheck,
@@ -25,6 +22,9 @@ import {
   MessageSquare,
   FileText,
   Lock,
+  Mic,
+  CalendarClock,
+  Gauge,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useCaseStore } from '../../store/useCaseStore';
@@ -72,7 +72,7 @@ const RailItem: React.FC<RailItemProps> = ({
     aria-current={active ? 'page' : undefined}
     data-testid={testId}
     className={cn(
-      'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E08244] overflow-hidden',
+      'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE] overflow-hidden',
       collapsed
         ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
         : cn(
@@ -80,17 +80,17 @@ const RailItem: React.FC<RailItemProps> = ({
             isSubItem && 'pl-7 py-1.5 text-[12px]'
           ),
       active
-        ? 'bg-gradient-to-r from-[#4A3830] to-[#3A2C26] text-[#FFFDF8] font-semibold border border-white/15 shadow-sm'
-        : 'text-[#D5CABE] hover:bg-[#342C28] hover:text-[#FFFDF8] border border-transparent'
+        ? 'bg-gradient-to-r from-[#1C3270] to-[#15265A] text-[#FFFFFF] font-semibold border border-white/15 shadow-sm'
+        : 'text-[#DEE5F2] hover:bg-[#0E1C46] hover:text-[#FFFFFF] border border-transparent'
     )}
   >
     {!collapsed && active && (
-      <span className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full bg-[#E08244] shadow-[0_0_8px_rgba(224,130,68,0.8)]" />
+      <span className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full bg-[#22D3EE] shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
     )}
     <span
       className={cn(
         'flex items-center justify-center size-4 shrink-0 transition-colors',
-        active ? 'text-[#F39A5D] font-bold' : 'text-[#A89C90] group-hover:text-[#FFFDF8]'
+        active ? 'text-[#67E8F9] font-bold' : 'text-[#A2B2D8] group-hover:text-[#FFFFFF]'
       )}
     >
       {icon}
@@ -98,7 +98,7 @@ const RailItem: React.FC<RailItemProps> = ({
     {!collapsed && <span className="truncate flex-1 leading-tight">{label}</span>}
     {!collapsed && badge && <span className="ml-auto shrink-0">{badge}</span>}
     {!collapsed && active && !badge && (
-      <span className="ml-auto size-2 rounded-full bg-[#E08244] shrink-0 shadow-[0_0_6px_rgba(224,130,68,0.8)]" />
+      <span className="ml-auto size-2 rounded-full bg-[#22D3EE] shrink-0 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
     )}
   </button>
 );
@@ -114,6 +114,13 @@ export const V6Rail: React.FC<V6RailProps> = ({
   const { toggleAskTarka } = useTarkaUiStore();
 
   const [toolsOpen, setToolsOpen] = useState(true);
+  const [labsOn, setLabsOn] = useState(() => {
+    try { return localStorage.getItem('tarka_labs') === '1'; } catch { return false; }
+  });
+  const toggleLabs = () => setLabsOn((on) => {
+    try { localStorage.setItem('tarka_labs', on ? '0' : '1'); } catch { /* private mode: session-only */ }
+    return !on;
+  });
 
   const caseId = activeCaseId || 'CASE-2026-001';
   const isCanonical = ['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(caseId);
@@ -232,7 +239,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
             type="button"
             onClick={() => setActiveView('home')}
             title="TARKA · Sovereign Cyber Intelligence"
-            className="size-9 rounded-xl flex items-center justify-center text-white shadow-md hover:scale-105 transition-transform bg-[#A85C2A]"
+            className="size-9 rounded-xl flex items-center justify-center text-white shadow-md hover:scale-105 transition-transform bg-[#2357F5]"
           >
             <Shield className="size-4.5 stroke-[2.2] text-white" />
           </button>
@@ -240,7 +247,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="size-7 rounded-lg text-[#A89C90] hover:text-[#FFFDF8] hover:bg-[#342C28] flex items-center justify-center transition-colors"
+              className="size-7 rounded-lg text-[#A2B2D8] hover:text-[#FFFFFF] hover:bg-[#0E1C46] flex items-center justify-center transition-colors"
               title="Expand sidebar"
             >
               <PanelLeftOpen className="size-4" />
@@ -256,10 +263,10 @@ export const V6Rail: React.FC<V6RailProps> = ({
               onClick={() => setActiveView('home')}
               title="TARKA · Home"
             >
-              <div className="size-7.5 rounded-lg flex items-center justify-center text-white bg-[#A85C2A] shadow-sm">
+              <div className="size-7.5 rounded-lg flex items-center justify-center text-white bg-[#2357F5] shadow-sm">
                 <Shield className="size-4 stroke-[2.2] text-white" />
               </div>
-              <span className="font-extrabold text-[15px] font-mono tracking-widest text-[#FFFDF8]">
+              <span className="font-extrabold text-[15px] font-mono tracking-widest text-[#FFFFFF]">
                 TARKA
               </span>
             </div>
@@ -267,7 +274,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="size-7 rounded-lg text-[#A89C90] hover:text-[#FFFDF8] hover:bg-[#342C28] flex items-center justify-center transition-colors"
+                className="size-7 rounded-lg text-[#A2B2D8] hover:text-[#FFFFFF] hover:bg-[#0E1C46] flex items-center justify-center transition-colors"
                 title="Collapse sidebar"
               >
                 <PanelLeftClose className="size-4" />
@@ -278,23 +285,23 @@ export const V6Rail: React.FC<V6RailProps> = ({
           {/* Officer Profile Card (Matching "Nova PRO" in Reference Screenshot) */}
           <div
             onClick={onOpenDemoUser}
-            className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-b from-[#2B2420] to-[#221C19] border border-white/10 shadow-inner hover:border-amber-600/40 transition-colors cursor-pointer group"
+            className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-b from-[#0B1840] to-[#071233] border border-white/10 shadow-inner hover:border-amber-600/40 transition-colors cursor-pointer group"
             title="Active Officer Profile · Click to switch"
           >
-            <div className="relative size-9 rounded-full bg-[#3D322B] border border-amber-600/30 flex items-center justify-center font-bold text-xs text-amber-200 shrink-0">
+            <div className="relative size-9 rounded-full bg-[#15265A] border border-amber-600/30 flex items-center justify-center font-bold text-xs text-amber-200 shrink-0">
               {initials}
-              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-400 border-2 border-[#221C19]" />
+              <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-400 border-2 border-[#071233]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-xs text-[#FFFDF8] truncate leading-tight group-hover:text-amber-200">
+                <span className="font-semibold text-xs text-[#FFFFFF] truncate leading-tight group-hover:text-amber-200">
                   {displayOfficerName.replace(/^Insp\.?\s+/i, '')}
                 </span>
                 <span className="text-[9.5px] font-extrabold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded-md">
                   PRO
                 </span>
               </div>
-              <div className="text-[10.5px] font-mono text-[#A89C90] truncate leading-tight mt-0.5">
+              <div className="text-[10.5px] font-mono text-[#A2B2D8] truncate leading-tight mt-0.5">
                 UID: 2026-IND-04
               </div>
             </div>
@@ -306,7 +313,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
       {!isCollapsed && !isCaseUnknown && (
         <div
           onClick={() => setActiveView('workspace')}
-          className="my-2 p-2.5 rounded-xl bg-[#231E1B] border border-white/10 hover:border-amber-600/30 transition-all cursor-pointer group space-y-1.5"
+          className="my-2 p-2.5 rounded-xl bg-[#09163A] border border-white/10 hover:border-amber-600/30 transition-all cursor-pointer group space-y-1.5"
           title={`Active Investigation: ${displayCaseId}`}
         >
           <div className="flex items-center justify-between gap-2 min-w-0">
@@ -333,10 +340,10 @@ export const V6Rail: React.FC<V6RailProps> = ({
                 : 'Active'}
             </span>
           </div>
-          <div className="text-[12px] font-semibold text-[#FFFDF8] truncate group-hover:text-amber-200">
+          <div className="text-[12px] font-semibold text-[#FFFFFF] truncate group-hover:text-amber-200">
             {victimName}
           </div>
-          <div className="pt-1 border-t border-white/10 flex items-center justify-between text-[10.5px] text-[#A89C90]">
+          <div className="pt-1 border-t border-white/10 flex items-center justify-between text-[10.5px] text-[#A2B2D8]">
             <span className="truncate">{displayTypology}</span>
             <span className="font-mono shrink-0">{displayFir}</span>
           </div>
@@ -345,7 +352,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* 2. Group: PRIMARY */}
       {!isCollapsed && (
-        <div className="px-2 pt-2.5 pb-1 text-[10.5px] font-mono font-bold text-[#8C7F73] uppercase tracking-wider">
+        <div className="px-2 pt-2.5 pb-1 text-[10.5px] font-mono font-bold text-[#8494BD] uppercase tracking-wider">
           Primary
         </div>
       )}
@@ -402,14 +409,14 @@ export const V6Rail: React.FC<V6RailProps> = ({
       {!isCollapsed && (
         <div
           onClick={() => setToolsOpen(!toolsOpen)}
-          className="flex items-center justify-between px-2 pt-3 pb-1 cursor-pointer select-none text-[#8C7F73] hover:text-[#FFFDF8] transition-colors"
+          className="flex items-center justify-between px-2 pt-3 pb-1 cursor-pointer select-none text-[#8494BD] hover:text-[#FFFFFF] transition-colors"
         >
           <span className="text-[10.5px] font-mono font-bold uppercase tracking-wider">
             This case
           </span>
           <div className="flex items-center gap-1">
             {currentStepIndex >= 0 && (
-              <span className="text-[10px] font-bold text-amber-300 bg-[#3B2F28] px-1.5 py-0.2 rounded-md">
+              <span className="text-[10px] font-bold text-amber-300 bg-[#15265A] px-1.5 py-0.2 rounded-md">
                 Step {activeStepNumber} of 6
               </span>
             )}
@@ -433,17 +440,17 @@ export const V6Rail: React.FC<V6RailProps> = ({
                 aria-label={s.label}
                 aria-current={isCurrent ? 'page' : undefined}
                 className={cn(
-                  'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E08244] overflow-hidden',
+                  'group relative flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#22D3EE] overflow-hidden',
                   isCollapsed
                     ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
                     : 'gap-2.5 px-2.5 py-1.5 rounded-xl text-left text-[12px] font-medium w-full',
                   isCurrent
-                    ? 'bg-gradient-to-r from-[#4A3830] to-[#3A2C26] text-[#FFFDF8] font-semibold border border-white/15 shadow-sm'
-                    : 'text-[#D5CABE] hover:bg-[#342C28] hover:text-[#FFFDF8] border border-transparent'
+                    ? 'bg-gradient-to-r from-[#1C3270] to-[#15265A] text-[#FFFFFF] font-semibold border border-white/15 shadow-sm'
+                    : 'text-[#DEE5F2] hover:bg-[#0E1C46] hover:text-[#FFFFFF] border border-transparent'
                 )}
               >
                 {!isCollapsed && isCurrent && (
-                  <span className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full bg-[#E08244] shadow-[0_0_8px_rgba(224,130,68,0.8)]" />
+                  <span className="absolute left-1 top-2 bottom-2 w-[3px] rounded-full bg-[#22D3EE] shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                 )}
                 <span
                   className={cn(
@@ -451,8 +458,8 @@ export const V6Rail: React.FC<V6RailProps> = ({
                     isDone
                       ? 'bg-[#287653] text-white border-[#287653]'
                       : isCurrent
-                      ? 'bg-[#E08244] text-white border-[#E08244]'
-                      : 'bg-[#342C28] text-[#8C7F73] border-white/10'
+                      ? 'bg-[#22D3EE] text-white border-[#22D3EE]'
+                      : 'bg-[#0E1C46] text-[#8494BD] border-white/10'
                   )}
                 >
                   {isDone ? <Check className="size-3 stroke-[3]" /> : s.num}
@@ -473,66 +480,74 @@ export const V6Rail: React.FC<V6RailProps> = ({
         </div>
       )}
 
-      {/* 4. Group: ADVANCED (orb home + labs) */}
+      {/* 4. Group: ADVANCED (voice, timeline, scale check; prototypes behind Labs) */}
       {!isCollapsed && (
-        <div className="px-2 pt-3 pb-1 text-[10.5px] font-mono font-bold text-[#8C7F73] uppercase tracking-wider">
-          Advanced
+        <div className="px-2 pt-3 pb-1 flex items-center justify-between">
+          <span className="text-[10.5px] font-mono font-bold text-[#8494BD] uppercase tracking-wider">Advanced</span>
+          <button
+            type="button"
+            onClick={toggleLabs}
+            aria-pressed={labsOn}
+            title="Labs: show prototype screens that are not ready for real cases"
+            className={cn(
+              'text-[10.5px] px-1.5 py-0.5 rounded-md border transition-colors',
+              labsOn ? 'text-[#22D3EE] border-[#22D3EE]/40 bg-[#22D3EE]/10' : 'text-[#8494BD] border-white/10 hover:text-white'
+            )}
+          >
+            Labs {labsOn ? 'on' : 'off'}
+          </button>
         </div>
       )}
       {isCollapsed && <div className="w-8 h-px bg-white/10 my-1.5 mx-auto" />}
 
       <div className="space-y-0.5">
         <RailItem
-          icon={<Home className="size-4" />}
-          label="Voice home (orb)"
+          icon={<Mic className="size-4" />}
+          label="Voice assistant"
           active={isCurrentView(['home'])}
           onClick={() => setActiveView('home')}
           collapsed={isCollapsed}
-          title="TARKA Particle Intelligence Home"
+          title="Ask about the active case by voice, in English or Indian languages"
           testId="rail-nav-home"
         />
 
         <RailItem
-          icon={<FlaskConical className="size-4" />}
-          label="Temporal Evidence Loom"
-          badge={
-            <span className="text-[10px] font-mono text-amber-200 bg-[#3B2F28] px-1.5 py-0.2 rounded-md">
-              Loom
-            </span>
-          }
+          icon={<CalendarClock className="size-4" />}
+          label="Case timeline"
           active={isCurrentView(['workstation'])}
           onClick={() => setActiveView('workstation')}
           collapsed={isCollapsed}
-          title="Temporal Evidence Loom Analysis"
+          title="Contact, money, complaint and police action for the active case on one clock"
+          testId="rail-nav-timeline"
         />
 
         <RailItem
-          icon={<Zap className="size-4" />}
-          label="Benchmark & Scale Lab"
-          badge={
-            <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/60 px-1.5 py-0.2 rounded-md border border-emerald-700/40">
-              10k/s
-            </span>
-          }
+          icon={<Gauge className="size-4" />}
+          label="Scale check"
           active={isCurrentView(['benchmarks', 'benchmark'])}
           onClick={() => setActiveView('benchmarks')}
           collapsed={isCollapsed}
-          title="Benchmarking & Scale Calibration"
+          title="Measured reading speed and mule-detection accuracy on synthetic test files"
+          testId="rail-nav-scale"
         />
 
-        <RailItem
-          icon={<ShieldCheck className="size-4" />}
-          label="Privacy & Cryptographic ZKP"
-          active={isCurrentView(['privacy', 'privacy-crypto'])}
-          onClick={() => setActiveView('privacy')}
-          collapsed={isCollapsed}
-          title="Private Set Intersection & Merkle Verification"
-        />
+        {(labsOn || isCurrentView(['privacy', 'privacy-crypto'])) && (
+          <RailItem
+            icon={<ShieldCheck className="size-4" />}
+            label="Private bank match"
+            badge={<span className="text-[10px] text-[#A2B2D8] border border-white/10 px-1.5 rounded-md">Labs</span>}
+            active={isCurrentView(['privacy', 'privacy-crypto'])}
+            onClick={() => setActiveView('privacy')}
+            collapsed={isCollapsed}
+            title="Prototype: check suspects against another bank without sharing full lists"
+            testId="rail-nav-privacy"
+          />
+        )}
       </div>
 
       {/* 5. Group: ADMINISTRATION */}
       {!isCollapsed && (
-        <div className="px-2 pt-3 pb-1 text-[10.5px] font-mono font-bold text-[#8C7F73] uppercase tracking-wider">
+        <div className="px-2 pt-3 pb-1 text-[10.5px] font-mono font-bold text-[#8494BD] uppercase tracking-wider">
           Administration
         </div>
       )}
@@ -566,7 +581,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
 
       {/* 6. Bottom Bulletin / Notice Card (Directly from Reference Image 3) */}
       {!isCollapsed && (
-        <div className="mt-4 p-3 rounded-xl bg-gradient-to-br from-[#2B231E] to-[#1C1714] border border-white/10 shadow-sm space-y-1.5">
+        <div className="mt-4 p-3 rounded-xl bg-gradient-to-br from-[#0B1840] to-[#050D29] border border-white/10 shadow-sm space-y-1.5">
           <div className="flex items-center gap-1.5 text-amber-400 text-[11px] font-bold font-mono uppercase tracking-wider">
             <Lock className="size-3" />
             <span>NOTICE</span>
@@ -594,30 +609,30 @@ export const V6Rail: React.FC<V6RailProps> = ({
           aria-label={`Officer profile: ${displayOfficerName}`}
           data-testid="sidebar-io-avatar"
           className={cn(
-            'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E08244]',
+            'group flex items-center transition-all duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#22D3EE]',
             isCollapsed
               ? 'justify-center p-1'
-              : 'gap-2.5 p-2 rounded-xl border border-white/10 bg-[#221C19] hover:bg-[#342C28] shadow-sm w-full text-left'
+              : 'gap-2.5 p-2 rounded-xl border border-white/10 bg-[#071233] hover:bg-[#0E1C46] shadow-sm w-full text-left'
           )}
         >
-          <div className="relative size-8 rounded-full bg-[#3D322B] border border-amber-600/30 flex items-center justify-center font-bold text-xs text-amber-200 shrink-0">
+          <div className="relative size-8 rounded-full bg-[#15265A] border border-amber-600/30 flex items-center justify-center font-bold text-xs text-amber-200 shrink-0">
             {initials}
-            <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-400 border border-[#221C19]" />
+            <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-400 border border-[#071233]" />
           </div>
 
           {!isCollapsed && (
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-xs text-[#FFFDF8] truncate leading-tight group-hover:text-amber-200">
+              <div className="font-semibold text-xs text-[#FFFFFF] truncate leading-tight group-hover:text-amber-200">
                 {displayOfficerName}
               </div>
-              <div className="text-[10.5px] text-[#A89C90] truncate mt-0.5 leading-tight">
+              <div className="text-[10.5px] text-[#A2B2D8] truncate mt-0.5 leading-tight">
                 {displayOfficerStation}
               </div>
             </div>
           )}
 
           {!isCollapsed && (
-            <UserCheck className="size-4 text-[#A89C90] group-hover:text-amber-200 shrink-0 ml-0.5" />
+            <UserCheck className="size-4 text-[#A2B2D8] group-hover:text-amber-200 shrink-0 ml-0.5" />
           )}
         </button>
       </div>

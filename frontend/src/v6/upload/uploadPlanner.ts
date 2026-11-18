@@ -51,6 +51,20 @@ export interface JobStatus {
   error_message?: string | null;
   sha256?: string | null;
   analytics_summary?: Record<string, any>;
+  /** Live row-reading progress after the upload finishes; null before that. */
+  processing?: Processing | null;
+}
+
+export interface Processing {
+  step: 'WAITING' | 'READING_ROWS' | 'FINDING_NETWORKS' | 'DONE';
+  note?: string;
+  rows?: number;
+  rows_per_sec?: number;
+  bytes_done?: number;
+  bytes_total?: number;
+  pct?: number;
+  eta_seconds?: number;
+  elapsed_seconds?: number;
 }
 
 /** Map a server job status onto the card state shown to the investigator. */

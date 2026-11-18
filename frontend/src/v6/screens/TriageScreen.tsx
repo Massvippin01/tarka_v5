@@ -17,6 +17,7 @@ import {
   type NetworkMember,
   type NetworksResponse,
 } from '../triage/triage';
+import { IntakeReviewBoard } from '../intake/IntakeReviewBoard';
 
 const errText = (e: unknown) => {
   if (axios.isAxiosError(e)) {
@@ -40,6 +41,8 @@ export const TriageScreen: React.FC = () => {
   });
   const networks = q.data?.networks ?? [];
   const totals = useMemo(() => triageTotals(networks), [networks]);
+  // A bulk-intake holding case: show the review board instead of the network cards.
+  if (networks.some((n) => n.proposal)) return <IntakeReviewBoard caseId={caseId} networks={networks} />;
 
   return (
     <div className="v6-enter space-y-4" data-testid="v6-triage">
@@ -166,14 +169,14 @@ const MemberRow: React.FC<{ m: NetworkMember }> = ({ m }) => {
 };
 
 const SplitForm: React.FC<{ caseId: string; n: FraudNetwork; index: number; onClose: () => void }> = ({ caseId, n, index, onClose }) => {
-  const [newId, setNewId] = useState(`${caseId}-N${index + 1}`.slice(0, 64));
+  const [title, setTitle] = useState(`${caseId} · network ${index + 1}`);
   const { setActiveCaseId } = useCaseStore();
-  const valid = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(newId);
+  const valid = title.trim().length > 0;
   const split = useMutation({
     mutationFn: async () =>
       (await apiClient.post<{ case_id: string; rows_copied: number }>(
         `/api/v1/cases/${encodeURIComponent(caseId)}/networks/${encodeURIComponent(n.network_id)}/split`,
-        { new_case_id: newId }
+        { title: title.trim() } // the server picks a fresh case id owned by the officer
       )).data,
     onSuccess: (r) => {
       toast.success(`Created ${r.case_id} with ${r.rows_copied.toLocaleString('en-IN')} rows`, {
@@ -193,11 +196,12 @@ const SplitForm: React.FC<{ caseId: string; n: FraudNetwork; index: number; onCl
     >
       <input
         autoFocus
-        value={newId}
-        onChange={(e) => setNewId(e.target.value)}
-        aria-label="New case ID"
-        title="Letters, numbers, - and _ only"
-        className={`flex-1 min-w-0 rounded-lg border px-2.5 py-1.5 text-[12.5px] font-mono bg-[var(--surface-2)] text-[var(--fg-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${valid ? 'border-[var(--line)]' : 'border-[var(--risk)]'}`}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        maxLength={200}
+        aria-label="New case title"
+        title="TARKA gives the new case its own ID"
+        className={`flex-1 min-w-0 rounded-lg border px-2.5 py-1.5 text-[12.5px] bg-[var(--surface-2)] text-[var(--fg-1)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${valid ? 'border-[var(--line)]' : 'border-[var(--risk)]'}`}
       />
       <Button type="button" size="sm" variant="ghost" onClick={onClose}>
         Cancel

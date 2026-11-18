@@ -34,7 +34,7 @@
 - 2026-11-01 — Investigation Premium UI/UX initiative: Elevate tactile feedback, micro-interactions, dynamic evidence tooltips, and high-fidelity typography.
 - 2026-11-01 — Four Taste & Polish Skills integrated:
   - `improve` (shadcn): Senior advisor audit, non-destructive enhancements, verified invariants.
-  - `frontend-design` (Anthropic): Visual identity grounded in subject matter (Indian cyber-forensics, judicial evidence, banking/telecom rails, air-gap), elimination of generic AI defaults.
+  - `frontend-design`: Visual identity grounded in subject matter (Indian cyber-forensics, judicial evidence, banking/telecom rails, air-gap), elimination of generic AI defaults.
   - `better-ui` (jakubkrehel): Exact interactive physics (`enabled:active:scale-[0.96]`, `transition-[background-color,border-color,box-shadow,transform] duration-150 ease-out`), optical alignment, zero `transition-all`.
   - `design-taste-frontend` (`taste-skill` v2): Anti-slop app screen rules (`references/app-screens.md`), color on data not chrome, KPIs as type not tiles, no ragged rows, `overscroll-behavior: contain`.
 

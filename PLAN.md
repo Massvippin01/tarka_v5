@@ -161,10 +161,20 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       Freezes sent → `PUT /cases/{id}/networks/{net}/status`, stored in projects.sqlite with a hash-chained audit log
       (`services/ingestion/network_decisions.py`, `GET …/history`); `GET …/networks` returns `triage` per network.
       Demo fixtures show as one network built from the case record (figures = Money screen). Selectors:
-      `v6/network/networkFocus.ts`. "Money networks" is the default Network tab; the old diagram is "Devices & links"
-      with plain-language chips. Screenshots: `docs/screenshots/fraud-network/`. Left: label collisions on the top
-      row of dense layers; the row copy for Make-a-case / Merge fails (409) above 200 members (decision still saved,
-      toast says so); frame rate not re-measured after the change.
+      `v6/network/networkFocus.ts`. "Money networks" is the default Network tab. Screenshots:
+      `docs/screenshots/fraud-network/`. Left: label collisions on the top row of dense layers; the row copy for
+      Make-a-case / Merge fails (409) above 200 members (decision still saved, toast says so); frame rate not
+      re-measured after the change.
+- [x] Network "Devices & links" tab (18 Nov, replaces the old demo diagram; v6 `FraudNetworkScreen.tsx` deleted):
+      scoped to the same `?net=`/`?acct=` focus. Shared phone / SIM / Wi-Fi / IP groups reuse the Devices page
+      (`deviceSelectors` + `ClusterGraph` + `SourceRowsDialog`; demo cases use their case-record device facts); every
+      Records number opens its rows; no device data → "Upload call records or bank login logs". "Other cases with the
+      same accounts" groups real `cross_case_hits` by case ("Shares 120 UPI IDs with CASE-X"; demo cases use their
+      record's own case links); Open / identifier chips jump to that case's network at the shared account (an `acct`
+      alone now resolves to its network). No waterfall / I4C / XML demo figures. `DevicesLinksView.tsx`,
+      `crossCaseLinks` + `fixtureCaseHits` in networkFocus.ts (tests in networkFocus.test.ts).
+      Left: "Seen" times truncate (full range in the tooltip); the device scope for a whole multi-gang case is the
+      whole case, not per network.
 - [x] People & Accounts page (17 Nov): role-grouped virtual table (Mules / Victims / Cash-out / Unclear; UPI, phone,
       account + IFSC, backend mule score + plain "why", network, other-FIR hits, money still in the account → ledger),
       "Are these the same person?" queue (Merge / Not same + reason), account dossier at `?acct=` zoom (also from ⌘K):
@@ -222,6 +232,49 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       rank members outside the list without a network id; old CaseActionsPanel + telecom/NPCI/I4C letters kept under
       "Other letters and case tasks" unchanged.
 - [ ] Not built (other pages): zoom levels + breadcrumb on the remaining screens; "what changed" after re-upload.
+
+## Bulk intake + speed (18 Nov 2026)
+- [x] Ingest speed: 1M-row statement end to end (upload → hash → seal → parse → index) 42 s → 8 s.
+      Parse+load alone 22 s → 7 s (date parsed once per distinct day, plain-number amount fast path,
+      WAL + synchronous=NORMAL, txns indexes dropped during a load and rebuilt once). One ingest at a time per case.
+      5 × 1 GB (≈70M rows) ≈ 9–10 min, down from ≈50 min (estimate from the 1M-row rate; not run yet).
+- [x] Files first, cases later: `POST /projects/intake` → project + holding case; `GET /cases/{id}/networks` adds a
+      `proposal` per network (NEW_CASE / ATTACH to a case sharing identifiers / MINOR); officer confirms with
+      `POST /cases/{id}/networks/create-cases` (never repeats a network; decisions audit-logged).
+- [x] Split: no 200-member limit; `new_case_id` optional (fresh case owned by the officer).
+- [x] Live processing progress on every job (`processing`: WAITING / READING_ROWS with rows, rows/s, pct, ETA /
+      FINDING_NETWORKS / DONE); networks warmed before DONE so the review board opens instantly.
+      Live 1M rows: read 7.6 s at ~150k rows/s, gangs found +5.6 s, ready at 14.2 s.
+- [x] Intake UI: Upload Center asks "Add to a case I know" vs "find them for me" (batch name optional, 3 parallel
+      chunked uploads into the holding case, one combined table with step chips Uploading → Checking → Reading rows →
+      Finding gangs → Ready, live rows / rows-per-second / % / time left per file from the job's `processing` field, and an
+      overall "N of M files ready · rows · about X left" (files are read one at a time, so their times add up); survives reloads).
+      When every file is done it opens the review board (Triage of a holding case = `v6/intake/IntakeReviewBoard.tsx`):
+      headline "N files · N gangs found · N new cases · N match existing cases · N minor", one table row per gang
+      (editable title, mules, victims, ₹, action chip with shared identifiers in the tooltip, Network link, dismiss with
+      reason), Create all / Create selected, a result summary with links and failures. Projects and My Desk show
+      "Intake — review N proposed cases" until every proposal is handled. Pure logic + tests in `v6/intake/intake.ts`.
+      Not done: merging two proposed gangs before creating them.
+- [x] Duplicate files stay unread on purpose (their gangs are already in that case); the row says "Already in <case>:
+      open that case". Triage's split now sends `{title}` and lets the server pick the new case id.
+- [x] Advanced section redesign (18 Nov). Voice assistant (was "Voice home (orb)"): calm orb, Start talking / Type a
+      question, plain prompt templates, active case only (no CASE-001 fallback, no fake engine statuses, unwired
+      language/provider toggles removed). Case timeline (was "Temporal Evidence Loom"): lanes Contact / Money / Complaint /
+      Police from the active case's timeline, or its transactions for uploaded cases (≤400 dots), plus measured gaps
+      (contact → loss, loss → complaint with golden-hour flag, loss → cash-out); `selectors/timelineSelectors.ts`.
+      Scale check (was "Benchmark & Scale Lab"): `GET/POST /api/v1/benchmarks/scale-runs` (`backend/app/api/scale_lab_api.py`)
+      runs `tools/validate_mule_scoring.py` (≤500k rows) and logs to `data/validation/scale_lab/runs.jsonl`; screen shows
+      only recorded runs, labelled synthetic; `selectors/benchmarkSelectors.ts`. Private bank match (was "Privacy &
+      Cryptographic ZKP"): honest prototype page behind a rail "Labs" toggle (`localStorage tarka_labs`), shows what the
+      active case would contribute; PSI/ZKP/Merkle/§63 moved to Technical details (`v6/ui/TechnicalDetails.tsx`).
+      Rail badges "Loom"/"10k/s" removed. Old v5 screens (BenchmarkLabScreen, PrivacyCryptoWorkbench,
+      ForensicWorkstationScreen) are no longer routed from v6; files kept for ?legacy=1.
+      Palette (user request + approval, 18 Nov): warm copper/ivory → royal blue accent (#2357F5 light / #3B7BFF dark), cyan
+      for highlights and glows, deep navy text and sidebar, blue-white surfaces, in `v6-tokens.css` (+8 files with
+      hard-coded hex); `--on-accent` for text on accent fills. Screenshots: `docs/screenshots/advanced/`.
+      Left: voice window still shows an invented fallback model list and a "100% … Verified" message
+      (`v6/voice/TarkaVoiceModal.tsx`); 1M-row runs can't be started from the screen (synchronous, capped).
+- [ ] Next for speed: parse the 5 files in parallel processes (each into its own staging file, merged per case).
 
 ## Phase 3 — Quality
 E2E upload 5 files → expected networks found. Cross-screen number-consistency tests. 5 GB perf benchmark.

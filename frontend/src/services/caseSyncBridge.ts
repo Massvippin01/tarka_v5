@@ -491,7 +491,7 @@ export class CaseSyncBridge {
         for (const c of await this.listRegisteredCases()) {
           if (!known.has(c.case_id)) {
             known.add(c.case_id);
-            mapped.push({ ...uploadOnlyWorkspace(c.case_id), title: c.title || "" });
+            mapped.push(registeredWorkspace(c));
           }
         }
         return mapped.length > 0 ? mapped : null;
@@ -502,9 +502,9 @@ export class CaseSyncBridge {
     }
   }
 
-  private async listRegisteredCases(): Promise<{ case_id: string; title?: string }[]> {
+  private async listRegisteredCases(): Promise<RegisteredCase[]> {
     try {
-      const res = await apiClient.get<{ case_id: string; title?: string }[]>(`/api/v1/projects/cases`, { timeout: 2500 });
+      const res = await apiClient.get<RegisteredCase[]>(`/api/v1/projects/cases`, { timeout: 2500 });
       return Array.isArray(res.data) ? res.data : [];
     } catch {
       return [];
@@ -512,8 +512,17 @@ export class CaseSyncBridge {
   }
 
   /** Open a new case on the backend; it issues the id and gives the creator access. */
-  public async createCase(title: string, projectId?: string): Promise<string> {
-    const res = await apiClient.post<{ case_id: string }>(`/api/v1/projects/cases`, { title, project_id: projectId ?? null });
+  public async createCase(c: Pick<CaseWorkspace, "title" | "firNumber" | "policeStation" | "ncrpAckNo" | "complainantName"
+    | "leadInvestigator" | "typology" | "priority" | "claimedLossInr">, projectId?: string): Promise<string> {
+    const res = await apiClient.post<{ case_id: string }>(`/api/v1/projects/cases`, {
+      title: c.title,
+      project_id: projectId ?? null,
+      details: {
+        fir_number: c.firNumber, police_station: c.policeStation, ncrp_ack_no: c.ncrpAckNo,
+        complainant_name: c.complainantName, lead_investigator: c.leadInvestigator,
+        typology: c.typology, priority: c.priority, claimed_loss_inr: c.claimedLossInr || 0,
+      },
+    });
     return res.data.case_id;
   }
 
@@ -1832,6 +1841,30 @@ export class CaseSyncBridge {
 }
 
 /** A case known only by id (from Projects): every figure comes from its bundle once loaded. */
+export interface RegisteredCase {
+  case_id: string;
+  title?: string;
+  details?: Partial<Record<"fir_number" | "police_station" | "ncrp_ack_no" | "complainant_name" | "lead_investigator"
+    | "typology" | "priority", string>> & { claimed_loss_inr?: number };
+}
+
+/** A case created in TARKA: what the officer typed, nothing invented (money still comes from uploads). */
+export function registeredWorkspace(c: RegisteredCase): CaseWorkspace {
+  const d = c.details ?? {};
+  return {
+    ...uploadOnlyWorkspace(c.case_id),
+    title: c.title || "",
+    firNumber: d.fir_number || "",
+    policeStation: d.police_station || "",
+    ncrpAckNo: d.ncrp_ack_no || "",
+    complainantName: d.complainant_name || "",
+    leadInvestigator: d.lead_investigator || "",
+    typology: (d.typology || "UNCLASSIFIED") as CaseWorkspace["typology"],
+    priority: (d.priority || uploadOnlyWorkspace(c.case_id).priority) as CaseWorkspace["priority"],
+    claimedLossInr: d.claimed_loss_inr || 0,
+  };
+}
+
 export function uploadOnlyWorkspace(caseId: string): CaseWorkspace {
   return {
     caseId,

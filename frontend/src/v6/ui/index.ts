@@ -17,3 +17,4 @@ export * from './HorizontalStepper';
 export * from './TarkaComponents';
 export * from './MassiveEvidenceIntakeModal';
 export * from './SourceNumber';
+export * from './TechnicalDetails';

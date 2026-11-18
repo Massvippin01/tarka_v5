@@ -178,10 +178,10 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
           sessionState === 'SPEAKING'
             ? '#287653' // Forest green
             : sessionState === 'LISTENING'
-            ? '#A85C2A' // Terracotta amber
+            ? '#2357F5' // Terracotta amber
             : sessionState === 'PROCESSING'
-            ? '#476D91' // Slate blue
-            : '#D5CABE';
+            ? '#0891B2' // Slate blue
+            : '#DEE5F2';
 
         ctx.beginPath();
         ctx.roundRect(x, y, barWidth, barHeight, 3);
@@ -281,7 +281,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Dimmed tactile backdrop */}
       <div
-        className="fixed inset-0 bg-[#292522]/70 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-[#0B1B4D]/70 backdrop-blur-xs transition-opacity"
         onClick={() => {
           handleInterrupt();
           onClose();
@@ -297,7 +297,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
         className="relative z-10 w-full max-w-4xl bg-[var(--surface-1)] rounded-2xl border border-[var(--line)] shadow-[-12px_16px_40px_rgba(41,37,34,0.22)] overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150"
       >
         {/* Hardware-styled Top Bezel */}
-        <div className="h-14 px-6 bg-[#292522] border-b border-[#3B332F] flex items-center justify-between text-[#FFFDF8]">
+        <div className="h-14 px-6 bg-[#0B1B4D] border-b border-[#14275E] flex items-center justify-between text-[#FFFFFF]">
           <div className="flex items-center gap-3">
             <div className="size-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white shadow-xs">
               <Radio className="size-4 animate-pulse" />
@@ -308,7 +308,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                 <span className="text-[10px] uppercase font-mono font-bold bg-[var(--safe)] text-white px-1.5 py-0.5 rounded">
                   {selectedProvider === 'OFFLINE_LOCAL' ? '100% Offline Local' : selectedProvider}
                 </span>
-                <span className="text-[10px] font-mono text-[#D5CABE] bg-[#3B332F] px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono text-[#DEE5F2] bg-[#14275E] px-1.5 py-0.5 rounded">
                   {caseId}
                 </span>
               </div>
@@ -319,12 +319,12 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-[#1E1B19] rounded-lg p-0.5 border border-[#49362E]">
+            <div className="flex items-center bg-[#1E1B19] rounded-lg p-0.5 border border-[#1B3478]">
               <button
                 type="button"
                 onClick={() => setActiveTab('station')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'station' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFDF8]'
+                  activeTab === 'station' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFFFF]'
                 }`}
               >
                 Station
@@ -333,7 +333,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                 type="button"
                 onClick={() => setActiveTab('models')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'models' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFDF8]'
+                  activeTab === 'models' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFFFF]'
                 }`}
               >
                 <HardDrive className="size-3" />
@@ -343,7 +343,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                 type="button"
                 onClick={() => setActiveTab('benchmark')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'benchmark' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFDF8]'
+                  activeTab === 'benchmark' ? 'bg-[var(--accent)] text-white' : 'text-[var(--fg-3)] hover:text-[#FFFFFF]'
                 }`}
               >
                 <Zap className="size-3" />
@@ -357,7 +357,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                 handleInterrupt();
                 onClose();
               }}
-              className="size-8 rounded-lg hover:bg-[#3B332F] text-[var(--fg-3)] hover:text-[#FFFDF8] flex items-center justify-center transition-colors cursor-pointer"
+              className="size-8 rounded-lg hover:bg-[#14275E] text-[var(--fg-3)] hover:text-[#FFFFFF] flex items-center justify-center transition-colors cursor-pointer"
               aria-label="Close voice station"
             >
               <X className="size-4" />
@@ -372,7 +372,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               {/* Provider Selector */}
               <div>
-                <label className="block text-[11px] font-bold text-[#655044] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[#2A4590] uppercase tracking-wider mb-1">
                   Speech Pipeline Provider
                 </label>
                 <select
@@ -389,7 +389,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
 
               {/* Speaker Persona Selector */}
               <div>
-                <label className="block text-[11px] font-bold text-[#655044] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[#2A4590] uppercase tracking-wider mb-1">
                   Investigative Speaker Persona
                 </label>
                 <select
@@ -407,7 +407,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
 
               {/* Language Selector */}
               <div>
-                <label className="block text-[11px] font-bold text-[#655044] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[#2A4590] uppercase tracking-wider mb-1">
                   Interrogation Language
                 </label>
                 <select
@@ -425,7 +425,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
 
               {/* Turn Mode Toggle */}
               <div>
-                <label className="block text-[11px] font-bold text-[#655044] uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-[#2A4590] uppercase tracking-wider mb-1">
                   Turn Mode
                 </label>
                 <button
@@ -434,7 +434,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                   className={`w-full text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
                     handsFreeMode
                       ? 'bg-[var(--safe)] text-white border-[var(--safe)]'
-                      : 'bg-[#F7F4EB] text-[#655044] border-[var(--line)]'
+                      : 'bg-[#F7F4EB] text-[#2A4590] border-[var(--line)]'
                   }`}
                 >
                   <Layers className="size-3.5" />
@@ -444,7 +444,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
             </div>
 
             {/* Central Waveform Display Panel */}
-            <TarkaInsetPanel className="p-5 flex flex-col items-center justify-center relative bg-[#1E1B19] border-[#49362E] rounded-xl shadow-inner min-h-[190px]">
+            <TarkaInsetPanel className="p-5 flex flex-col items-center justify-center relative bg-[#1E1B19] border-[#1B3478] rounded-xl shadow-inner min-h-[190px]">
               {/* Central HTML5 Audio Waveform Canvas */}
               <canvas
                 ref={canvasRef}
@@ -455,7 +455,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
 
               {/* Live Status Indicators */}
               <div className="mt-3 flex items-center gap-4 text-xs font-mono">
-                <span className="flex items-center gap-1.5 text-[#D5CABE]">
+                <span className="flex items-center gap-1.5 text-[#DEE5F2]">
                   <span
                     className={`size-2 rounded-full ${
                       sessionState === 'LISTENING'
@@ -464,7 +464,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                         ? 'bg-[var(--safe)] animate-pulse'
                         : sessionState === 'PROCESSING'
                         ? 'bg-[var(--flow)] animate-pulse'
-                        : 'bg-[#655044]'
+                        : 'bg-[#2A4590]'
                     }`}
                   />
                   STATE: <strong className="text-white">{sessionState}</strong>
@@ -472,13 +472,13 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
 
                 <span className="text-[var(--fg-3)]">·</span>
 
-                <span className="text-[#D5CABE]">
+                <span className="text-[#DEE5F2]">
                   AUDIO LEVEL: <strong className="text-white">{Math.round(telemetry.rmsEnergy * 100)}%</strong>
                 </span>
 
                 <span className="text-[var(--fg-3)]">·</span>
 
-                <span className="text-[#D5CABE]">
+                <span className="text-[#DEE5F2]">
                   NETWORKING:{' '}
                   <strong className="text-emerald-400">
                     {selectedProvider === 'OFFLINE_LOCAL' ? 'AIR-GAPPED OFFLINE' : 'ONLINE'}
@@ -563,7 +563,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                         <span className="text-[10px] font-mono font-bold bg-[var(--flow)]/15 text-[var(--flow)] border border-[var(--flow)]/30 px-1.5 py-0.5 rounded">
                           BSA §63 Verified
                         </span>
-                        <span className="text-[10px] font-mono text-[#655044] bg-white border border-[var(--line)] px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-mono text-[#2A4590] bg-white border border-[var(--line)] px-1.5 py-0.5 rounded">
                           LIBR Lien Active
                         </span>
                       </div>
@@ -583,7 +583,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-[var(--fg-1)]">OFFLINE MODEL MANAGEMENT & VERIFICATION</h3>
-                <p className="text-xs text-[#655044]">
+                <p className="text-xs text-[#2A4590]">
                   Inspect installed local speech recognition (ASR) and neural synthesis (TTS) models.
                 </p>
               </div>
@@ -617,11 +617,11 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs text-[var(--fg-1)]">{m.model_id}</span>
                       <TarkaStatus status="safe" label={m.status} />
-                      <span className="text-[10px] font-mono text-[#655044] bg-white px-2 py-0.5 rounded border border-[var(--line)]">
+                      <span className="text-[10px] font-mono text-[#2A4590] bg-white px-2 py-0.5 rounded border border-[var(--line)]">
                         {m.size_mb} MB
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#655044]">
+                    <p className="text-[11px] text-[#2A4590]">
                       <strong>Type:</strong> {m.type} · <strong>Location:</strong> {m.location}
                     </p>
                     <p className="text-[10px] font-mono text-[var(--fg-3)] truncate max-w-lg">
@@ -643,14 +643,14 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
           <div className="p-6 overflow-y-auto space-y-5 flex-1">
             <div>
               <h3 className="text-sm font-bold text-[var(--fg-1)]">SARVAM BENCHMARK VS FULLY LOCAL OFFLINE MODE</h3>
-              <p className="text-xs text-[#655044]">
+              <p className="text-xs text-[#2A4590]">
                 Comparative audit across latency, network independence, data privacy, and conversational responsiveness.
               </p>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-[var(--line)] bg-white shadow-xs">
               <table className="w-full text-xs text-left">
-                <thead className="bg-[#F7F4EB] text-[#655044] font-bold border-b border-[var(--line)]">
+                <thead className="bg-[#F7F4EB] text-[#2A4590] font-bold border-b border-[var(--line)]">
                   <tr>
                     <th className="p-3">Evaluation Dimension</th>
                     <th className="p-3 text-[var(--safe)]">TARKA Fully Local Offline Mode</th>
@@ -697,7 +697,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
               </table>
             </div>
 
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-xs text-[#655044] space-y-1">
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-xs text-[#2A4590] space-y-1">
               <div className="flex items-center gap-1.5 font-bold text-amber-900">
                 <AlertTriangle className="size-4 text-amber-600" />
                 Statutory Architecture Recommendation
@@ -711,7 +711,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
         )}
 
         {/* Modal Footer */}
-        <div className="h-12 px-6 bg-[#F7F4EB] border-t border-[var(--line)] flex items-center justify-between text-xs text-[#655044]">
+        <div className="h-12 px-6 bg-[#F7F4EB] border-t border-[var(--line)] flex items-center justify-between text-xs text-[#2A4590]">
           <div className="flex items-center gap-2">
             <Shield className="size-3.5 text-[var(--safe)]" />
             <span className="font-semibold text-[var(--safe)]">Offline Cryptographic Assurance:</span>

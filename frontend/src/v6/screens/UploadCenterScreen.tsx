@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -12,7 +12,6 @@ import {
   Play,
   RotateCcw,
   ShieldX,
-  UploadCloud,
   X,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,19 +20,12 @@ import { useCaseStore } from '../../store/useCaseStore';
 import { formatInr } from '../../lib/formatInr';
 import { Button, Chip, EmptyState, PageHead, type ChipVariant } from '../ui';
 import { useUploadStore, type UploadItem } from '../upload/useUploadStore';
-import { MAX_PARALLEL, formatBytes, formatEta, stateFromStatus, type CardState, type JobStatus } from '../upload/uploadPlanner';
+import { formatBytes, formatEta, stateFromStatus, type CardState, type JobStatus } from '../upload/uploadPlanner';
 import { ColumnMappingDialog } from '../upload/ColumnMappingDialog';
+import { DropZone } from '../upload/DropZone';
+import { STATE_LABEL } from '../upload/stateLabel';
+import { IntakeUpload, ModeChoice, useUploadMode } from '../intake/IntakeUpload';
 
-const STATE_LABEL: Record<CardState, { label: string; variant: ChipVariant; tip: string }> = {
-  queued: { label: 'Queued', variant: 'muted', tip: `Waiting for a free slot (${MAX_PARALLEL} files upload at once).` },
-  uploading: { label: 'Uploading', variant: 'flow', tip: 'Sending the file in 8 MB pieces.' },
-  paused: { label: 'Paused', variant: 'muted', tip: 'Upload stopped. It continues from the last saved piece.' },
-  verifying: { label: 'Verifying', variant: 'flow', tip: 'Server is checking the file type and computing its SHA-256 fingerprint.' },
-  processing: { label: 'Processing', variant: 'flow', tip: 'Reading rows and extracting accounts, UPI IDs and phone numbers.' },
-  ready: { label: 'Ready', variant: 'safe', tip: 'Evidence is sealed and its rows are available to this case.' },
-  attention: { label: 'Needs attention', variant: 'urgent', tip: 'The file is stored, but something needs your action.' },
-  rejected: { label: 'Rejected', variant: 'risk', tip: 'The server refused this file.' },
-};
 
 const IDENTIFIER_LABEL: Record<string, string> = {
   account: 'Bank accounts',
@@ -51,8 +43,7 @@ export const UploadCenterScreen: React.FC = () => {
   const { activeCaseId } = useCaseStore();
   const caseId = activeCaseId || 'CASE-2026-001';
   const { items, addFiles, hydrate } = useUploadStore();
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [mode, setMode] = useUploadMode();
 
   useEffect(() => {
     void hydrate(caseId);
@@ -68,67 +59,30 @@ export const UploadCenterScreen: React.FC = () => {
     return t;
   }, [list]);
 
-  const take = (files: FileList | null) => {
-    const arr = Array.from(files ?? []).filter((f) => f.size > 0 || f.type !== '');
-    if (arr.length) void addFiles(arr, caseId);
-  };
-
   return (
     <div className="v6-enter space-y-4" data-testid="v6-upload-center">
       <PageHead
         kicker="Evidence"
         title="Upload Center"
-        subtitle={`Files go into ${caseId}. Big files upload in 8 MB pieces and pick up where they stopped.`}
+        subtitle="Big files upload in 8 MB pieces and pick up where they stopped."
       />
 
-      {/* Drop zone */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Add evidence files"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          take(e.dataTransfer.files);
-        }}
-        className={[
-          'relative rounded-2xl border border-dashed px-6 py-9 text-center cursor-pointer select-none',
-          'backdrop-blur-md bg-[var(--surface-1)]/70 shadow-[var(--shadow)] transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
-          dragOver
-            ? 'border-[var(--accent)] bg-[var(--accent-bg)] scale-[1.005]'
-            : 'border-[var(--line-2)] hover:border-[var(--accent)]/60',
-        ].join(' ')}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          hidden
-          data-testid="upload-input"
-          onChange={(e) => {
-            take(e.target.files);
-            e.target.value = '';
-          }}
-        />
-        <div className="mx-auto mb-3 w-12 h-12 rounded-xl flex items-center justify-center bg-[var(--accent-bg)] text-[var(--accent)]">
-          <UploadCloud className="w-6 h-6" />
-        </div>
-        <div className="text-[15px] font-semibold text-[var(--fg-1)]">
-          Drop bank statements, call records or other evidence here
-        </div>
-        <div className="text-[12.5px] text-[var(--fg-3)] mt-1">
-          or <span className="text-[var(--accent)] font-semibold">browse your computer</span>. We look at the first 64 KB
-          before uploading so you can check the file.
-        </div>
-      </div>
+      <ModeChoice mode={mode} onChange={setMode} caseId={caseId} />
+
+      {mode === 'find' ? (
+        <IntakeUpload />
+      ) : (
+        <>
+      <DropZone
+        onFiles={(files) => void addFiles(files, caseId)}
+        title="Drop bank statements, call records or other evidence here"
+        hint={
+          <>
+            or <span className="text-[var(--accent)] font-semibold">browse your computer</span>. We look at the first 64 KB
+            before uploading so you can check the file.
+          </>
+        }
+      />
 
       {list.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap text-[12px] text-[var(--fg-2)]">
@@ -169,6 +123,8 @@ export const UploadCenterScreen: React.FC = () => {
       )}
 
       <PastJobs caseId={caseId} hideJobIds={list.map((i) => i.jobId).filter(Boolean) as string[]} />
+        </>
+      )}
     </div>
   );
 };

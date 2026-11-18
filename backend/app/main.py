@@ -267,6 +267,10 @@ app.include_router(
     tags=["Massive Evidence Ingestion & Admission"],
 )
 
+from app.api.scale_lab_api import router as scale_lab_router
+
+app.include_router(scale_lab_router, prefix="/api/v1/benchmarks", tags=["Scale Lab"])
+
 from app.api.projects_api import networks_router, router as projects_router
 
 app.include_router(projects_router, prefix="/api/v1/projects", tags=["Projects"])

@@ -110,14 +110,14 @@ export const HomeScreen: React.FC = () => {
         {/* Subtle background radial accent */}
         <div
           className="absolute -right-20 -top-20 size-72 rounded-full pointer-events-none opacity-20"
-          style={{ background: 'radial-gradient(circle, #A85C2A 0%, rgba(241,236,228,0) 70%)' }}
+          style={{ background: 'radial-gradient(circle, #2357F5 0%, rgba(241,236,228,0) 70%)' }}
         />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#49362E] text-[#FFFDF8] border border-[#655044] shadow-2xs">
-                <Shield className="size-3.5 text-[#EED9C7]" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#1B3478] text-[#FFFFFF] border border-[#2A4590] shadow-2xs">
+                <Shield className="size-3.5 text-[#E6EEFF]" />
                 FORENSIC COMMAND PLATFORM
               </span>
               <TarkaStatus status="safe" label="BSA §63 STATUTORY ENGINE ONLINE" />
@@ -249,7 +249,7 @@ export const HomeScreen: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="font-mono text-xs font-bold text-[#49362E] bg-[#F1ECE4] px-2.5 py-1 rounded-md border border-[var(--line)]">
+                    <span className="font-mono text-xs font-bold text-[#1B3478] bg-[#F4F7FD] px-2.5 py-1 rounded-md border border-[var(--line)]">
                       {c.id}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -291,7 +291,7 @@ export const HomeScreen: React.FC = () => {
                   </div>
                   <div className="pt-1.5 border-t border-[var(--line)] flex items-center justify-between text-[11.5px] text-[var(--fg-3)]">
                     <span>{c.evidenceCount} ledger entries</span>
-                    <span className="font-medium text-[#49362E]">{c.stage}</span>
+                    <span className="font-medium text-[#1B3478]">{c.stage}</span>
                   </div>
                 </TarkaInsetPanel>
 

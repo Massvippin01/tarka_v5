@@ -5,6 +5,7 @@ shortcut: a SQLite file beside the ingestion job table (single backend process);
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 import uuid
@@ -28,6 +29,11 @@ class ProjectsStore:
         self.path = base_dir / "projects.sqlite"
         with closing(sqlite3.connect(self.path)) as db:
             db.executescript(_SCHEMA)
+            if "details_json" not in {r[1] for r in db.execute("PRAGMA table_info(case_registry)")}:
+                db.execute("ALTER TABLE case_registry ADD COLUMN details_json TEXT")
+            if "owner_id" not in {r[1] for r in db.execute("PRAGMA table_info(projects)")}:
+                db.execute("ALTER TABLE projects ADD COLUMN owner_id TEXT")  # NULL for projects made before owners
+            db.commit()
 
     def _db(self) -> sqlite3.Connection:
         return sqlite3.connect(self.path)
@@ -35,14 +41,14 @@ class ProjectsStore:
     def list(self) -> List[Dict[str, Any]]:
         with closing(self._db()) as db:
             projects = db.execute(
-                "SELECT project_id, name, description, archived, created_at FROM projects ORDER BY created_at DESC"
+                "SELECT project_id, name, description, archived, created_at, owner_id FROM projects ORDER BY created_at DESC"
             ).fetchall()
             cases = db.execute("SELECT case_id, project_id, lifecycle, assignee FROM case_meta ORDER BY case_id").fetchall()
         out = []
-        for pid, name, desc, archived, created in projects:
+        for pid, name, desc, archived, created, owner in projects:
             out.append({
                 "project_id": pid, "name": name, "description": desc or "", "archived": bool(archived),
-                "created_at": created,
+                "created_at": created, "owner_id": owner,
                 "cases": [{"case_id": c, "lifecycle": lc, "assignee": a} for c, p, lc, a in cases if p == pid],
             })
         return out
@@ -50,13 +56,14 @@ class ProjectsStore:
     def get(self, project_id: str) -> Optional[Dict[str, Any]]:
         return next((p for p in self.list() if p["project_id"] == project_id), None)
 
-    def create(self, name: str, description: str = "") -> Dict[str, Any]:
+    def create(self, name: str, description: str = "", owner_id: Optional[str] = None) -> Dict[str, Any]:
         name = name.strip()
         if not name:
             raise ValueError("Project name is required.")
         pid = f"PRJ-{uuid.uuid4().hex[:8].upper()}"
         with closing(self._db()) as db:
-            db.execute("INSERT INTO projects VALUES (?,?,?,0,?)", (pid, name[:120], description[:2000], time.time()))
+            db.execute("INSERT INTO projects (project_id, name, description, archived, created_at, owner_id) "
+                       "VALUES (?,?,?,0,?,?)", (pid, name[:120], description[:2000], time.time(), owner_id))
             db.commit()
         return self.get(pid)
 
@@ -96,23 +103,26 @@ class ProjectsStore:
         return self.case_meta(case_id)
 
     # Cases created in TARKA (not seeded): the creator gets access; title shown in pickers.
-    def register_case(self, owner_id: str, title: str = "", project_id: Optional[str] = None) -> Dict[str, Any]:
+    def register_case(self, owner_id: str, title: str = "", project_id: Optional[str] = None,
+                      details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if project_id and not self.get(project_id):
             raise KeyError(project_id)
-        case_id = f"CASE-{time.strftime('%Y')}-{uuid.uuid4().hex[:6].upper()}"
+        case_id = f"CASE-{time.strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
         with closing(self._db()) as db:
-            db.execute("INSERT INTO case_registry VALUES (?,?,?,?)", (case_id, title.strip()[:160], owner_id, time.time()))
+            db.execute("INSERT INTO case_registry (case_id, title, owner_id, created_at, details_json) VALUES (?,?,?,?,?)",
+                       (case_id, title.strip()[:160], owner_id, time.time(), json.dumps(details or {})))
             db.commit()
         self.set_case(case_id, project_id, "INTAKE", link=bool(project_id))
         return self.registered(case_id)
 
     def registered(self, case_id: str) -> Optional[Dict[str, Any]]:
         with closing(self._db()) as db:
-            row = db.execute("SELECT case_id, title, owner_id, created_at FROM case_registry WHERE case_id = ?",
+            row = db.execute("SELECT case_id, title, owner_id, created_at, details_json FROM case_registry WHERE case_id = ?",
                              (case_id,)).fetchone()
         if not row:
             return None
-        return {"case_id": row[0], "title": row[1], "owner_id": row[2], "created_at": row[3], **{
+        return {"case_id": row[0], "title": row[1], "owner_id": row[2], "created_at": row[3],
+                "details": json.loads(row[4] or "{}"), **{
             k: v for k, v in self.case_meta(case_id).items() if k != "case_id"}}
 
     def all_cases(self) -> List[Dict[str, Any]]:

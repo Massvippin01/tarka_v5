@@ -343,7 +343,7 @@ def _sql_lookup(other_dbs: List[Tuple[str, Path]]) -> Lookup:
     return lookup
 
 
-def case_networks(derived_dir: Path, case_id: str) -> Dict[str, Any]:
+def case_networks(derived_dir: Path, case_id: str, max_members: Optional[int] = MAX_MEMBERS_SHOWN) -> Dict[str, Any]:
     case_dir = derived_dir / case_id
     if not (case_dir / "derived.sqlite").exists():
         return {"networks": [], "review_queue": [], "cross_case_hits": [], "parties_total": 0, "parties_outside_networks": 0}
@@ -352,7 +352,7 @@ def case_networks(derived_dir: Path, case_id: str) -> Dict[str, Any]:
               if d.is_dir() and d.name != case_id and (d / "derived.sqlite").exists()]
     store = VerdictStore(derived_dir.parent)  # projects.sqlite, beside the network decisions
     verdicts = {k: v["verdict"] for k, v in store.all(case_id, "account").items()}
-    result = analyze_store(DerivedStore(case_dir), _sql_lookup(others), verdicts=verdicts)
+    result = analyze_store(DerivedStore(case_dir), _sql_lookup(others), max_members=max_members, verdicts=verdicts)
     pairs = store.all(case_id, "pair")
     for item in result["review_queue"]:
         item["key"] = pair_key(item["a"], item["b"])

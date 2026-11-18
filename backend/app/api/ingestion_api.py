@@ -43,6 +43,16 @@ def _authorized_job(job_id: str, user: UserIdentity) -> IngestionJob:
     return job
 
 
+def _for_user(job: Dict[str, Any], user: UserIdentity) -> Dict[str, Any]:
+    """Job as this officer may see it: a duplicate's original is hidden when it sits in a case they can't open."""
+    dup = (job.get("analytics_summary") or {}).get("duplicate_of")
+    if dup and not AuthService.get_instance().validate_case_scope(user, dup.get("case_id", "")):
+        job = {**job, "analytics_summary": {**job["analytics_summary"],
+                                            "duplicate_of": {"job_id": None, "case_id": None, "filename": None, "hidden": True},
+                                            "note": "Already uploaded to a case you can't open."}}
+    return job
+
+
 def _checked_case_id(case_id: str) -> str:
     try:
         return validate_case_id(case_id)
@@ -167,7 +177,7 @@ async def upload_job_chunk(
     mgr = IngestionJobManager.get_instance()
     try:
         updated = await mgr.append_chunk(job_id=job_id, offset=offset, chunk_bytes=chunk_bytes)
-        return updated
+        return _for_user(updated, user)
     except KeyError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' not found.")
     except OverflowError:
@@ -185,7 +195,7 @@ async def get_job_status(
     user: UserIdentity = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Returns live 10-stage status, throughput, SHA-256 hash, and analytical summary."""
-    return _authorized_job(job_id, user).to_dict()
+    return _for_user(_authorized_job(job_id, user).to_dict(), user)
 
 
 @router.post("/jobs/{job_id}/pause", tags=["Massive Evidence Ingestion"])
@@ -251,7 +261,7 @@ async def list_jobs(
         in_project = ProjectsStore(mgr.base_dir).case_ids(project_id)
         case_ids = in_project if case_ids is None else case_ids & in_project
     auth = AuthService.get_instance()
-    return [j.to_dict() for j in mgr.list_jobs(case_ids) if auth.validate_case_scope(user, j.case_id)]
+    return [_for_user(j.to_dict(), user) for j in mgr.list_jobs(case_ids) if auth.validate_case_scope(user, j.case_id)]
 
 
 @router.post("/jobs/{job_id}/mapping", tags=["Massive Evidence Ingestion"])

@@ -27,7 +27,7 @@ export const AskTarkaDrawer: React.FC = () => {
     <>
       {/* Dimmed Backdrop */}
       <div
-        className="fixed inset-0 bg-[#292522]/60 backdrop-blur-xs z-40 transition-opacity"
+        className="fixed inset-0 bg-[#0B1B4D]/60 backdrop-blur-xs z-40 transition-opacity"
         onClick={() => setAskTarkaOpen(false)}
         aria-hidden="true"
       />

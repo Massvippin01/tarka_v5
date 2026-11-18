@@ -1,5 +1,6 @@
 /** Types and pure helpers for the Triage board (GET /cases/{id}/networks). No I/O here. */
 import { formatInr } from '../../lib/formatInr';
+import type { NetworkTriage } from '../network/networkFocus';
 
 export type MemberRole = 'VICTIM' | 'MULE' | 'CASH_OUT' | 'UNKNOWN';
 
@@ -34,6 +35,15 @@ export interface FraudNetwork {
   members: NetworkMember[];
   /** payer → payee money links between the listed members: [payer id, payee id, ₹]. Older servers omit it. */
   links?: [string, string, number][];
+  /** Investigator's decision on this network (PUT …/status). */
+  triage?: NetworkTriage;
+  /** Bulk intake: what TARKA suggests doing with this network (holding cases only). */
+  proposal?: {
+    action: 'NEW_CASE' | 'ATTACH' | 'MINOR';
+    suggested_title: string;
+    attach_case_id?: string;
+    shared_identifiers?: string[];
+  };
 }
 
 export interface ReviewItem {

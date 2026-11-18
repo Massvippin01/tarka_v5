@@ -40,9 +40,6 @@ const MoneyTrailScreen = lazy(() =>
   import('../screens/MoneyTrailScreen').then((m) => ({ default: m.MoneyTrailScreen }))
 );
 import { NetworkStep } from '../network/NetworkStep';
-const FraudNetworkScreen = lazy(() =>
-  import('../screens/FraudNetworkScreen').then((m) => ({ default: m.FraudNetworkScreen }))
-);
 const DeviceSimScreen = lazy(() =>
   import('../screens/DeviceSimScreen').then((m) => ({ default: m.DeviceSimScreen }))
 );
@@ -329,7 +326,7 @@ export const V6AppShell: React.FC = () => {
       case 'taint-engine':
         return <MoneyTrailScreen />;
       case 'network':
-        return <NetworkStep diagram={(viewSwitch) => <FraudNetworkScreen viewSwitch={viewSwitch} />} />;
+        return <NetworkStep />;
       case 'device':
       case 'handset-sim':
       case 'attribution':

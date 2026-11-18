@@ -114,7 +114,7 @@ export const TarkaButton = forwardRef<HTMLButtonElement, TarkaButtonProps>(
     };
 
     const variantClasses = {
-      primary: 'bg-[var(--accent)] text-[#FFFDF8] hover:bg-[var(--accent-hover)] border border-[#8D491E] shadow-xs active:translate-y-px',
+      primary: 'bg-[var(--accent)] text-[#FFFFFF] hover:bg-[var(--accent-hover)] border border-[#1A45CC] shadow-xs active:translate-y-px',
       secondary: 'bg-[var(--surface-1)] text-[var(--fg-1)] hover:bg-[var(--surface-2)] border border-[var(--line)] shadow-xs active:translate-y-px',
       tactile: 'tarka-button text-[var(--fg-1)] hover:bg-[var(--surface-2)]',
       destructive: 'bg-[var(--risk)] text-white hover:bg-[#992F29] border border-[#992F29] shadow-xs active:translate-y-px',
@@ -203,7 +203,7 @@ export const TarkaStatus: React.FC<TarkaStatusProps> = ({
     urgent: 'bg-[var(--urgent-bg)] text-[var(--urgent)] border-[#A66A17]/30',
     risk: 'bg-[var(--risk-bg)] text-[var(--risk)] border-[var(--risk)]/30',
     info: 'bg-[var(--flow-bg)] text-[var(--flow)] border-[var(--flow)]/30',
-    neutral: 'bg-[#F1ECE4] text-[var(--fg-2)] border-[var(--line)]',
+    neutral: 'bg-[#F4F7FD] text-[var(--fg-2)] border-[var(--line)]',
   };
 
   const dotColors = {
@@ -211,7 +211,7 @@ export const TarkaStatus: React.FC<TarkaStatusProps> = ({
     urgent: 'bg-[#A66A17] animate-pulse',
     risk: 'bg-[var(--risk)] animate-pulse',
     info: 'bg-[var(--flow)]',
-    neutral: 'bg-[#978B7F]',
+    neutral: 'bg-[#7D89A6]',
   };
 
   return (
@@ -329,7 +329,7 @@ export const TarkaModal: React.FC<TarkaModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Dimmed tactile backdrop */}
       <div
-        className="fixed inset-0 bg-[#292522]/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-[#0B1B4D]/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -405,7 +405,7 @@ export const TarkaDrawer: React.FC<TarkaDrawerProps> = ({
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#292522]/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-[#0B1B4D]/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />

@@ -1,14 +1,18 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { Network, Workflow } from 'lucide-react';
 import { PageHead, Skeleton } from '../ui';
+import { setFocus } from '../../lib/focusUrl';
+import { useCaseStore } from '../../store/useCaseStore';
+import { DevicesLinksView } from './DevicesLinksView';
 
 // sigma/WebGL only loads when the explorer tab is opened
 const NetworkExplorer = lazy(() => import('./NetworkExplorer'));
 
 type Tab = 'diagram' | 'explorer';
 
-/** "Network" step: the case diagram (FraudNetworkScreen) plus the WebGL explorer of every linked account. */
-export const NetworkStep: React.FC<{ diagram: (viewSwitch: React.ReactNode) => React.ReactNode }> = ({ diagram }) => {
+/** "Network" step: the money networks (WebGL explorer) and the device / other-case links of the same focus. */
+export const NetworkStep: React.FC = () => {
+  const { setActiveCaseId } = useCaseStore();
   const params = new URLSearchParams(window.location.search);
   // The money network is the default; the device/link diagram is the second tab.
   const [tab, setTab] = useState<Tab>(params.get('netview') === 'diagram' && !params.has('stress') ? 'diagram' : 'explorer');
@@ -43,15 +47,23 @@ export const NetworkStep: React.FC<{ diagram: (viewSwitch: React.ReactNode) => R
         ))}
       </div>
   );
+  // Another case's account: focus it there and show its money network (an account alone opens its network).
+  const openCase = (caseId: string, account: string | null) => {
+    setFocus({ networkId: null, account });
+    pick('explorer');
+    setActiveCaseId(caseId);
+  };
   // The switch sits in the page heading's action area, so the title stays first on the page.
-  return tab === 'diagram' ? (
-    <>{diagram(viewSwitch)}</>
-  ) : (
+  return (
     <div className="v6-enter space-y-3">
       <PageHead kicker="Step 4 · Network" title="Who is connected to whom?" actions={viewSwitch} />
+      {tab === 'diagram' ? (
+        <DevicesLinksView onOpenCase={openCase} />
+      ) : (
         <Suspense fallback={<Skeleton className="h-[calc(100vh-220px)] min-h-[480px] rounded-2xl" />}>
           <NetworkExplorer />
         </Suspense>
+      )}
     </div>
   );
 };

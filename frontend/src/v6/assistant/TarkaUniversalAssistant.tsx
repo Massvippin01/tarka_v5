@@ -393,7 +393,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
             <div
               className={`max-w-[90%] rounded-2xl p-4 transition-all ${
                 msg.sender === 'user'
-                  ? 'bg-[#49362E] text-[#FFFDF8] rounded-tr-xs shadow-xs'
+                  ? 'bg-[#1B3478] text-[#FFFFFF] rounded-tr-xs shadow-xs'
                   : 'tarka-panel bg-[var(--surface-1)] border border-[var(--line)] rounded-tl-xs shadow-sm space-y-3'
               }`}
             >
@@ -551,7 +551,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder={`Ask TARKA Assistant in ${SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.label || 'any language'}...`}
-              className="w-full text-[13px] bg-[var(--surface-2)] border border-[var(--line)] rounded-xl px-4 py-2.5 text-[var(--fg-1)] placeholder-[#978B7F] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
+              className="w-full text-[13px] bg-[var(--surface-2)] border border-[var(--line)] rounded-xl px-4 py-2.5 text-[var(--fg-1)] placeholder-[#7D89A6] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
             />
           </div>
 

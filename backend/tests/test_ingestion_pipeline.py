@@ -137,3 +137,53 @@ def test_large_file_bounded_memory(tmp_path):
     file_mb = path.stat().st_size / 1e6
     # Peak is set by one batch, not the file: must stay well under what loading all rows would take.
     assert peak / 1e6 < 50, f"peak {peak / 1e6:.0f} MB for a {file_mb:.0f} MB file"
+
+
+def test_fast_date_path_matches_full_parser():
+    """epoch_of (cached date + hand-parsed time) must equal the full parser, and reject bad times."""
+    from app.services.ingestion.derived_store import _DateParser
+
+    fast, slow = _DateParser(), _DateParser()
+    for d, t in [("22/09/2026", "09:14:22"), ("22/09/2026", "23:59"), ("2026-09-22", "00:00:01"),
+                 ("22-Sep-2026", "10:00:00"), ("2026-11-14T10:00:00", ""), ("22/09/2026", "9:5:7")]:
+        assert fast.epoch_of(d, t) == slow.epoch(f"{d} {t}".strip()), (d, t)
+    with pytest.raises(ValueError):
+        fast.epoch_of("22/09/2026", "25:00:00")
+
+
+def test_ingest_rebuilds_indexes_and_accepts_plain_amounts(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "s.csv"
+    path.write_text("txn_date,txn_time,payer,payee,amount\n22/09/2026,09:00:00,a@ybl,b@ybl,\"1,00,000.50\"\n"
+                    "22/09/2026,09:01:00,a@ybl,b@ybl,Rs. 250\n22/09/2026,09:02:00,a@ybl,b@ybl,inf\n", encoding="utf-8")
+    store = DerivedStore(tmp_path / "d")
+    s = store.ingest_bank_csv("J", path)
+    assert s["total_amount_inr"] == 100250.5  # "inf" is not a number: falls back to the cleaner, which finds none
+    names = {r[0] for r in sqlite3.connect(store.path).execute("SELECT name FROM sqlite_master WHERE type='index'")}
+    assert {"txns_ts", "txns_job"} <= names
+
+
+def test_processing_progress_is_reported(mgr):
+    """The job exposes live processing (step, rows, pct, ETA) and ends DONE with the networks cache warm."""
+    seen = []
+    orig = DerivedStore._load_bank_csv
+
+    def spy(self, job_id, path, columns=None, progress=None):
+        def tap(rows, done):
+            progress(rows, done)
+            seen.append(dict(mgr.jobs[job_id].processing))
+        return orig(self, job_id, path, columns, tap)
+
+    import app.services.ingestion.derived_store as ds
+    old_batch, ds.BATCH_ROWS = ds.BATCH_ROWS, 2
+    DerivedStore._load_bank_csv = spy
+    try:
+        job = _run_upload(mgr, CSV)
+    finally:
+        DerivedStore._load_bank_csv = orig
+        ds.BATCH_ROWS = old_batch
+    assert job.stage == IngestionStage.STAGE_10_EVIDENCE_AVAILABLE, job.error_message
+    assert seen and all(p["step"] == "READING_ROWS" for p in seen)
+    assert seen[-1]["rows"] >= 4 and 0 < seen[-1]["pct"] <= 99
+    assert job.to_dict()["processing"]["step"] == "DONE" and job.to_dict()["processing"]["pct"] == 100.0

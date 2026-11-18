@@ -246,7 +246,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-3xl rounded-2xl bg-[#EDE8E0] border border-[#C5BCB1] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-4 bg-[#231E1B] text-[#FFFDF8] flex items-center justify-between border-b border-white/10">
+        <div className="px-6 py-4 bg-[#09163A] text-[#FFFFFF] flex items-center justify-between border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="size-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white shadow-sm">
               <FileUp className="size-4.5" />
@@ -289,7 +289,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
           {!selectedFile ? (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-[#A89C90] hover:border-amber-600 rounded-2xl p-8 text-center cursor-pointer bg-white/40 hover:bg-white/70 transition-all group"
+              className="border-2 border-dashed border-[#A2B2D8] hover:border-amber-600 rounded-2xl p-8 text-center cursor-pointer bg-white/40 hover:bg-white/70 transition-all group"
             >
               <input
                 ref={fileInputRef}

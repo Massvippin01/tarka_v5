@@ -185,3 +185,89 @@ def test_unknown_case_still_forbidden(client):
 def test_explanations_use_indian_grouping():
     from app.services.ingestion.networks import inr
     assert [inr(x) for x in (999, 139450, 12393000)] == ["₹999", "₹1,39,450", "₹1,23,93,000"]
+
+
+SECOND_GANG_CSV = (
+    "txn_date,txn_time,payer,payee,amount,rrn\n"
+    "24/09/2026,10:00:00,victim3@ybl,mule.three@paytm,300000,11\n"
+    "24/09/2026,10:40:00,mule.three@paytm,mule.four@okaxis,290000,12\n"
+    "24/09/2026,12:00:00,mule.four@okaxis,WAZIRX CRYPTO,280000,13\n"
+).encode()
+
+
+def test_bulk_intake_proposes_and_creates_cases(client):
+    """Files first: holding case → proposals (attach to the matching case / new case) → officer confirms once."""
+    existing = client.post("/api/v1/projects/cases", json={"title": "Earlier FIR"}).json()["case_id"]
+    upload(client, b"txn_date,txn_time,payer,payee,amount\n20/09/2026,10:00:00,someone@okaxis,mule.two@ibl,5000\n",
+           case_id=existing, filename="earlier.csv")
+
+    intake = client.post("/api/v1/projects/intake", json={"name": "Raid files"}).json()
+    holding = intake["case_id"]
+    assert upload(client, GANG_CSV, case_id=holding, filename="a.csv")["stage"] == "EVIDENCE_AVAILABLE"
+    assert upload(client, SECOND_GANG_CSV, case_id=holding, filename="b.csv")["stage"] == "EVIDENCE_AVAILABLE"
+
+    nets = client.get(f"/api/v1/cases/{holding}/networks").json()["networks"]
+    by_action = {n["proposal"]["action"]: n for n in nets}
+    assert set(by_action) == {"ATTACH", "NEW_CASE"}
+    assert by_action["ATTACH"]["proposal"]["attach_case_id"] == existing
+    assert "mule.two@ibl" in by_action["ATTACH"]["proposal"]["shared_identifiers"]
+
+    ids = [n["network_id"] for n in nets]
+    r = client.post(f"/api/v1/cases/{holding}/networks/create-cases",
+                    json={"network_ids": ids, "titles": {by_action["NEW_CASE"]["network_id"]: "Crypto cash-out gang"}}).json()
+    assert r["failed"] == [] and len(r["created"]) == 1 and len(r["attached"]) == 1
+    new_case = r["created"][0]["case_id"]
+    assert r["created"][0]["title"] == "Crypto cash-out gang" and r["created"][0]["rows_copied"] == 3
+    assert r["attached"][0] == {"network_id": by_action["ATTACH"]["network_id"], "case_id": existing, "rows_copied": 4}
+
+    # The new case belongs to the intake project, is open to its creator, and has its own gang.
+    project = next(p for p in client.get("/api/v1/projects").json() if p["project_id"] == intake["project_id"])
+    assert {c["case_id"] for c in project["cases"]} >= {holding, new_case}
+    assert client.get(f"/api/v1/cases/{new_case}/networks").json()["networks"][0]["mule_count"] == 2
+
+    # Asking again never makes a second case.
+    again = client.post(f"/api/v1/cases/{holding}/networks/create-cases", json={"network_ids": ids}).json()
+    assert again["created"] == [] and len(again["failed"]) == 2
+
+
+def test_split_without_id_opens_a_fresh_case(client):
+    upload(client, GANG_CSV)
+    net = client.get(f"/api/v1/cases/{CASE}/networks").json()["networks"][0]
+    r = client.post(f"/api/v1/cases/{CASE}/networks/{net['network_id']}/split", json={"title": "Gang 1"})
+    assert r.status_code == 200, r.text
+    assert r.json()["case_id"].startswith("CASE-") and r.json()["rows_copied"] == 4
+
+
+def _as(user_key: str) -> dict:
+    return {"Authorization": f"Bearer {AuthService.get_instance().create_jwt_token(user_key)}"}
+
+
+def test_new_case_keeps_what_the_officer_typed(client):
+    r = client.post("/api/v1/projects/cases", json={"title": "Loan app fraud", "details": {
+        "fir_number": "FIR 412/2026", "police_station": "Sector 62 PS", "complainant_name": "Sunita R",
+        "claimed_loss_inr": 250000}}).json()
+    listed = {c["case_id"]: c for c in client.get("/api/v1/projects/cases").json()}[r["case_id"]]
+    assert listed["details"]["fir_number"] == "FIR 412/2026" and listed["details"]["claimed_loss_inr"] == 250000
+    b = client.get(f"/api/v1/cases/{r['case_id']}/bundle").json()
+    assert (b["firNumber"], b["policeStation"], b["complainantName"], b["claimedLossInr"]) == \
+        ("FIR 412/2026", "Sector 62 PS", "Sunita R", 250000)
+
+
+def test_only_creator_or_case_member_edits_a_project(client):
+    p = client.post("/api/v1/projects", json={"name": "Supervisor's op"}).json()
+    other = _as("INVESTIGATOR_DELHI")
+    assert client.patch(f"/api/v1/projects/{p['project_id']}", json={"archived": True}, headers=other).status_code == 403
+    assert client.post(f"/api/v1/projects/{p['project_id']}/cases", json={"case_id": CASE2}, headers=other).status_code == 403
+    assert client.patch(f"/api/v1/projects/{p['project_id']}", json={"name": "Renamed"}).json()["name"] == "Renamed"
+
+
+def test_duplicate_hides_a_case_you_cannot_open(client):
+    mine = client.post("/api/v1/projects/cases", json={"title": "Supervisor only"}).json()["case_id"]
+    upload(client, GANG_CSV, case_id=mine, filename="secret.csv")
+    other = _as("INVESTIGATOR_DELHI")
+    job = client.post("/api/v1/ingestion/jobs/create", headers=other,
+                      json={"case_id": CASE2, "filename": "copy.csv", "total_size_bytes": len(GANG_CSV)}).json()
+    r = client.put(f"/api/v1/ingestion/jobs/{job['job_id']}/chunk?offset=0", content=GANG_CSV, headers=other).json()
+    assert r["stage"] == "DUPLICATE"
+    assert r["analytics_summary"]["duplicate_of"] == {"job_id": None, "case_id": None, "filename": None, "hidden": True}
+    assert mine not in str(client.get(f"/api/v1/ingestion/jobs/{job['job_id']}/status", headers=other).json())
