@@ -18,6 +18,7 @@ import {
   type NetworksResponse,
 } from '../triage/triage';
 import { IntakeReviewBoard } from '../intake/IntakeReviewBoard';
+import { ExportButtons } from '../triage/ExportButtons';
 
 const errText = (e: unknown) => {
   if (axios.isAxiosError(e)) {
@@ -46,7 +47,8 @@ export const TriageScreen: React.FC = () => {
 
   return (
     <div className="v6-enter space-y-4" data-testid="v6-triage">
-      <PageHead kicker="Triage" title={q.data ? headlineText(totals) : 'Fraud networks'} subtitle={`Groups of linked accounts found in ${caseId}'s evidence, most mule-like first.`} />
+      <PageHead kicker="Triage" title={q.data ? headlineText(totals) : 'Fraud networks'} subtitle={`Groups of linked accounts found in ${caseId}'s evidence, most mule-like first.`}
+        actions={networks.length > 0 ? <ExportButtons caseId={caseId} /> : undefined} />
 
       {q.isLoading ? (
         <div className="grid md:grid-cols-2 gap-3">

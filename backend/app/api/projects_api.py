@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Optional
@@ -203,7 +204,9 @@ async def get_networks(case_id: str, user: UserIdentity = Depends(get_current_us
     decided = _decisions().all(case_id)
     for n in result["networks"]:
         n["triage"] = decided.get(n["network_id"]) or NetworkDecisionStore._blank(n["network_id"])
-    _add_proposals(case_id, result)
+    # Proposals belong to intake holding cases only; ordinary cases keep their normal triage view.
+    if ((_store().registered(case_id) or {}).get("details") or {}).get("holding"):
+        _add_proposals(case_id, result)
     return result
 
 
@@ -223,6 +226,9 @@ def _add_proposals(case_id: str, result: Dict[str, Any]) -> None:
     """
     # Other intake holding cases are temporary containers, never a case to add a gang to.
     holding = {c["case_id"] for c in _store().all_cases() if (c.get("details") or {}).get("holding")}
+    # Cases this one already filed its gangs into hold copies of those gangs: never propose "add to" them.
+    holding |= {d["target_case_id"] for d in _decisions().all(case_id).values()
+                if d.get("decision") == "MAKE_CASE" and d.get("target_case_id")}
     elsewhere = {(h["kind"], h["identifier"]): [c for c in h["case_ids"] if c not in holding]
                  for h in result["cross_case_hits"]}
     for n in result["networks"]:
@@ -258,6 +264,9 @@ async def create_cases_from_networks(case_id: str, req: CreateCasesRequest,
     project_id = store.case_meta(case_id)["project_id"]
     src = DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / case_id))
     created, attached, failed = [], [], []
+    wanted = [nid for nid in dict.fromkeys(req.network_ids) if nid in by_id]
+    # One scan of the holding case for every requested network (53 networks: 37 s -> a few seconds).
+    rows_of = src.rows_for_groups({nid: {m["id"] for m in by_id[nid]["members"]} for nid in wanted})
     for nid in dict.fromkeys(req.network_ids):
         n = by_id.get(nid)
         if not n:
@@ -267,18 +276,18 @@ async def create_cases_from_networks(case_id: str, req: CreateCasesRequest,
         if done["status"] == "CASE_OPENED":
             failed.append({"network_id": nid, "reason": f"Already a case: {done['target_case_id']}."})
             continue
-        keys, job = {m["id"] for m in n["members"]}, f"SPLIT-{case_id}-{nid}"
+        job = f"SPLIT-{case_id}-{nid}"
         try:
             if n["proposal"]["action"] == "ATTACH":
                 target = n["proposal"]["attach_case_id"]
-                rows = src.copy_subgraph(DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / target)), keys, job)
+                rows = src.copy_rows(DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / target)), rows_of[nid], job)
                 decisions.set(case_id, nid, user.user_id, decision="MERGE_FIR", target_case_id=target)
                 attached.append({"network_id": nid, "case_id": target, "rows_copied": rows})
             else:
                 title = (req.titles.get(nid) or "").strip()[:160] or n["proposal"]["suggested_title"]
                 new = store.register_case(user.user_id, title, project_id)
-                rows = src.copy_subgraph(DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / new["case_id"])),
-                                         keys, job)
+                rows = src.copy_rows(DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / new["case_id"])),
+                                     rows_of[nid], job)
                 store.set_case(new["case_id"], lifecycle="INVESTIGATING")
                 decisions.set(case_id, nid, user.user_id, decision="MAKE_CASE", target_case_id=new["case_id"])
                 created.append({"network_id": nid, "case_id": new["case_id"], "title": title, "rows_copied": rows})
@@ -338,3 +347,82 @@ async def split_network(case_id: str, network_id: str, req: SplitRequest,
         store.set_case(new_id, project_id, link=True)
     store.set_case(new_id, lifecycle="INVESTIGATING")
     return {"case_id": new_id, "rows_copied": rows, "project_id": project_id}
+
+
+_EXPORT_FORMATS = ("i2", "stix", "suspects")
+
+
+@networks_router.get("/{case_id}/export")
+async def export_case(case_id: str, format: str = "i2", user: UserIdentity = Depends(get_current_user)):
+    """Hand the case to other tools in formats they already import.
+
+    i2: entity-link CSV for i2 Analyst's Notebook / Maltego. stix: STIX 2.1 bundle of mule identifiers (CERT-In / I4C).
+    suspects: every suspected mule with its layer, score and reason, including layers beyond the first.
+    """
+    import csv
+    import io
+    import uuid
+    from datetime import datetime, timezone
+
+    from fastapi.responses import Response
+
+    from app.services.ingestion.networks import _ids
+
+    if format not in _EXPORT_FORMATS:
+        raise HTTPException(422, f"format must be one of {', '.join(_EXPORT_FORMATS)}")
+    case_id = _case(case_id, user)
+    nets = _visible_networks(case_id, user, max_members=None)["networks"]
+    role = {m["id"]: (m, n["network_id"]) for n in nets for m in n["members"]}
+    out = io.StringIO()
+
+    if format == "i2":
+        mgr = IngestionJobManager.get_instance()
+        flows = DerivedStore(ensure_inside(mgr.derived_dir, mgr.derived_dir / case_id)).rows_for_groups(
+            {n["network_id"]: {m["id"] for m in n["members"]} for n in nets})
+        agg: Dict[tuple, list] = {}
+        for nid, rows in flows.items():
+            for _line, ts, payer, payee, amount, _ref in rows:
+                a = agg.setdefault((payer.strip().lower(), payee.strip().lower(), nid), [payer, payee, 0.0, 0, ts])
+                a[2] += amount
+                a[3] += 1
+                a[4] = min(a[4], ts)
+        w = csv.writer(out)
+        w.writerow(["From", "From role", "To", "To role", "Amount (INR)", "Transactions", "First seen (UTC)", "Network"])
+        for (pk, qk, nid), (payer, payee, amount, count, first) in sorted(agg.items(), key=lambda kv: -kv[1][2]):
+            w.writerow([payer, role.get(pk, ({"role": ""},))[0]["role"], payee, role.get(qk, ({"role": ""},))[0]["role"],
+                        round(amount, 2), count, datetime.fromtimestamp(first, timezone.utc).isoformat(), nid])
+        media, ext = "text/csv", "csv"
+
+    elif format == "suspects":
+        w = csv.writer(out)
+        w.writerow(["Identifier", "Kind", "Layer (hops from victim)", "Mule score", "Still held (INR)", "Network",
+                    "Why flagged", "Case"])
+        for m, nid in sorted(role.values(), key=lambda mn: (-mn[0]["mule_score"], mn[0]["label"])):
+            if m["role"] == "MULE":
+                w.writerow([m["label"], m["kind"], m["hop"], m["mule_score"], m.get("held_inr", 0), nid, m["why"], case_id])
+        media, ext = "text/csv", "csv"
+
+    else:  # STIX 2.1: one indicator per mule identifier, all under one TARKA identity
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        ident = f"identity--{uuid.uuid5(uuid.NAMESPACE_URL, 'tarka')}"
+        objects = [{"type": "identity", "spec_version": "2.1", "id": ident, "created": now, "modified": now,
+                    "name": "TARKA", "identity_class": "system"}]
+        for m, nid in role.values():
+            if m["role"] != "MULE":
+                continue
+            for kind, value in sorted(_ids(m["label"])):
+                objects.append({
+                    "type": "indicator", "spec_version": "2.1",
+                    "id": f"indicator--{uuid.uuid5(uuid.NAMESPACE_URL, f'{case_id}/{kind}/{value}')}",
+                    "created": now, "modified": now, "created_by_ref": ident, "valid_from": now,
+                    "name": f"Suspected money mule {kind}: {value}",
+                    "description": f"{m['why']} (case {case_id}, network {nid}, layer {m['hop']})",
+                    "indicator_types": ["malicious-activity"], "pattern_type": "stix",
+                    "pattern": f"[user-account:user_id = '{value}']",
+                    "confidence": int(round(m["mule_score"] * 100)), "labels": ["money-mule", f"upi-{kind}"],
+                })
+        json.dump({"type": "bundle", "id": f"bundle--{uuid.uuid4()}", "objects": objects}, out, indent=1)
+        media, ext = "application/json", "json"
+
+    return Response(out.getvalue(), media_type=media,
+                    headers={"Content-Disposition": f'attachment; filename="{case_id}-{format}.{ext}"'})

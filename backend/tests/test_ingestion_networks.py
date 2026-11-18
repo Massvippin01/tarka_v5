@@ -287,3 +287,31 @@ def test_adding_a_gang_twice_never_double_counts(client):
         r = client.post(f"/api/v1/cases/{holding}/networks/create-cases", json={"network_ids": [gang["network_id"]]}).json()
         assert r["attached"][0]["case_id"] == existing and r["attached"][0]["rows_copied"] == 0
     assert client.get(f"/api/v1/cases/{existing}/bundle").json()["bookedLossInr"] == loss
+
+
+def test_filed_gang_is_not_proposed_into_its_own_new_case(client):
+    holding = client.post("/api/v1/projects/intake", json={"name": "Once"}).json()["case_id"]
+    upload(client, SECOND_GANG_CSV, case_id=holding, filename="g.csv")
+    net = client.get(f"/api/v1/cases/{holding}/networks").json()["networks"][0]
+    client.post(f"/api/v1/cases/{holding}/networks/create-cases", json={"network_ids": [net["network_id"]]})
+    after = client.get(f"/api/v1/cases/{holding}/networks").json()["networks"][0]
+    assert after["proposal"]["action"] == "NEW_CASE" and after["triage"]["status"] == "CASE_OPENED"
+
+
+def test_exports_for_other_tools(client):
+    import csv as _csv, io as _io, json as _json
+    upload(client, GANG_CSV)
+    i2 = list(_csv.reader(_io.StringIO(client.get(f"/api/v1/cases/{CASE}/export?format=i2").text)))
+    assert i2[0][0] == "From" and any(r[0] == "victim1@oksbi" and r[3] == "MULE" for r in i2[1:])
+    sus = list(_csv.DictReader(_io.StringIO(client.get(f"/api/v1/cases/{CASE}/export?format=suspects").text)))
+    assert {r["Identifier"] for r in sus} == {"mule.one@ybl", "mule.two@ibl"}
+    assert {r["Layer (hops from victim)"] for r in sus} == {"1", "2"}  # beyond layer 1, unlike the Registry today
+    stix = _json.loads(client.get(f"/api/v1/cases/{CASE}/export?format=stix").text)
+    patterns = {o["pattern"] for o in stix["objects"] if o["type"] == "indicator"}
+    assert "[user-account:user_id = 'mule.two@ibl']" in patterns and stix["type"] == "bundle"
+    assert client.get(f"/api/v1/cases/{CASE}/export?format=xml").status_code == 422
+
+
+def test_only_intake_holding_cases_carry_proposals(client):
+    upload(client, GANG_CSV)  # an ordinary case
+    assert all("proposal" not in n for n in client.get(f"/api/v1/cases/{CASE}/networks").json()["networks"])

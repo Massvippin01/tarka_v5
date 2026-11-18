@@ -392,15 +392,33 @@ class DerivedStore:
             ).fetchall()
         return [{"line": l, "raw": r, "reason": why} for l, r, why in rows]
 
+    def rows_for_groups(self, groups: Dict[str, set]) -> Dict[str, List[tuple]]:
+        """One pass over the case: each row whose payer and payee both belong to a group (lower(trim()) party keys).
+
+        A party can sit in several groups (a shared ATM); a row goes to every group holding both its ends.
+        """
+        owner: Dict[str, set] = defaultdict(set)
+        for gid, keys in groups.items():
+            for k in keys:
+                owner[k].add(gid)
+        out: Dict[str, List[tuple]] = {gid: [] for gid in groups}
+        with closing(self._connect()) as db:
+            cur = db.execute("SELECT line, ts, payer, payee, amount, ref FROM txns")
+            while batch := cur.fetchmany(50_000):
+                for row in batch:
+                    a, b = owner.get(row[2].strip().lower()), owner.get(row[3].strip().lower())
+                    if a and b:
+                        for gid in a & b:
+                            out[gid].append(row)  # bounded by the networks' size, not the case's
+        return out
+
     def copy_subgraph(self, target: "DerivedStore", keys: set, job_id: str) -> int:
         """Copy rows whose payer and payee (lower(trim()) keys) are both in `keys` into another case's store."""
-        with closing(self._connect()) as db:
-            db.execute("CREATE TEMP TABLE k (n TEXT PRIMARY KEY)")
-            db.executemany("INSERT INTO k VALUES (?)", [(n,) for n in keys])
-            rows = db.execute(
-                "SELECT line, ts, payer, payee, amount, ref FROM txns "
-                "WHERE lower(trim(payer)) IN (SELECT n FROM k) AND lower(trim(payee)) IN (SELECT n FROM k)"
-            ).fetchall()  # bounded by the network's size, not the case's
+        return self.copy_rows(target, self.rows_for_groups({"g": keys})["g"], job_id)
+
+    def copy_rows(self, target: "DerivedStore", rows: List[tuple], job_id: str) -> int:
+        """Write (line, ts, payer, payee, amount, ref) rows into another case, skipping ones it already holds."""
+        keys = {r[2].strip().lower() for r in rows} | {r[3].strip().lower() for r in rows}
         counts: Counter = Counter()
         for r in rows:
             counts[r[2]] += 1

@@ -315,7 +315,8 @@ def analyze_store(store: DerivedStore, lookup: Optional[Lookup] = None,
         else:
             db.execute(_FROM_ROWS.format(source="(SELECT payer, payee, amount, 1 AS cnt, ts AS fst, ts AS lst FROM txns)"))
             result = _run(db, None, max_members, verdicts)
-            db.execute("DELETE FROM analysis_cache")
+            # Drop results for older data only: the screen (top members) and full-list views share the same rows.
+            db.execute("DELETE FROM analysis_cache WHERE key NOT LIKE ?", (f"v{ANALYSIS_VERSION}:{count}:{last}:%",))
             db.execute("INSERT INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
             db.commit()
     # Cross-case hits depend on other cases, so they are never cached.
