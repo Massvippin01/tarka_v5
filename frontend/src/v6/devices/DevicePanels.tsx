@@ -3,7 +3,10 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FileSearch, X } from 'lucide-react';
 import { Skeleton } from '../ui';
-import { clusterGraph, KIND_META, type DeviceCluster, type DeviceRow } from '../../selectors/deviceSelectors';
+import { clusterGraph, KIND_META, type DeviceCluster, type DeviceKind, type DeviceRow } from '../../selectors/deviceSelectors';
+import { GlyphNode, type GlyphKind } from '../network/glyphs';
+
+const KIND_GLYPH: Record<DeviceKind, GlyphKind> = { imei: 'phone', imsi: 'sim', device_id: 'device', bssid: 'wifi', ip: 'ip' };
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -43,19 +46,30 @@ export const ClusterGraph: React.FC<{
         {g.ids.map((l, i) => (
           <g key={`${l.kind}:${l.value}`}>
             <title>{`${KIND_META[l.kind].label} — ${KIND_META[l.kind].tip}\n${l.value}`}</title>
-            <rect x={6} y={yId(i) - 11} width={L - 6} height={22} rx={11} fill="var(--surface-1)" stroke="var(--line-2)" />
-            <circle cx={L} cy={yId(i)} r={4} fill={KIND_META[l.kind].strength === 'weak' ? 'var(--fg-3)' : 'var(--accent)'} />
+            <rect x={6} y={yId(i) - 11} width={L - 22} height={22} rx={11} fill="var(--surface-1)" stroke="var(--line-2)" />
             <text x={16} y={yId(i) + 4} fontSize={11} fill="var(--fg-2)">
               <tspan fontWeight={600} fill="var(--fg-1)">{KIND_META[l.kind].short}</tspan>
-              <tspan className="v6-mono" dx={5}>{trunc(l.value, 17)}</tspan>
+              <tspan className="v6-mono" dx={5}>{trunc(l.value, 13)}</tspan>
             </text>
+            <g transform={`translate(${L} ${yId(i)})`}>
+              <GlyphNode
+                kind={KIND_GLYPH[l.kind]}
+                r={9}
+                fill={KIND_META[l.kind].strength === 'weak' ? 'var(--surface-2)' : 'var(--accent)'}
+                ink={KIND_META[l.kind].strength === 'weak' ? 'var(--fg-2)' : 'var(--surface-1)'}
+                stroke={KIND_META[l.kind].strength === 'weak' ? 'var(--fg-3)' : undefined}
+                dashed={KIND_META[l.kind].strength === 'weak'}
+              />
+            </g>
           </g>
         ))}
         {g.accounts.map((a, i) => (
           <g key={a} onClick={() => onAccount(a)} className="cursor-pointer" role="button" aria-label={`Open ${labelOf(a)}`}>
             <title>{`${labelOf(a)}${outside(a) ? ' — outside this network' : ''}`}</title>
-            <circle cx={R} cy={yAc(i)} r={5} fill={outside(a) ? 'var(--surface-1)' : 'var(--fg-1)'} stroke="var(--fg-1)" strokeWidth={1.2} />
-            <text x={R + 12} y={yAc(i) + 4} fontSize={11.5} fill={outside(a) ? 'var(--fg-3)' : 'var(--fg-1)'} fontWeight={500}>
+            <g transform={`translate(${R} ${yAc(i)})`}>
+              <GlyphNode kind="victim" r={8} fill={outside(a) ? 'var(--surface-1)' : 'var(--fg-1)'} ink={outside(a) ? 'var(--fg-3)' : 'var(--surface-1)'} stroke={outside(a) ? 'var(--fg-3)' : undefined} dashed={outside(a)} />
+            </g>
+            <text x={R + 14} y={yAc(i) + 4} fontSize={11.5} fill={outside(a) ? 'var(--fg-3)' : 'var(--fg-1)'} fontWeight={500}>
               {trunc(labelOf(a), 20)}
             </text>
           </g>

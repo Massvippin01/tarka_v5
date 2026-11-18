@@ -175,6 +175,19 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       `crossCaseLinks` + `fixtureCaseHits` in networkFocus.ts (tests in networkFocus.test.ts).
       Left: "Seen" times truncate (full range in the tooltip); the device scope for a whole multi-gang case is the
       whole case, not per network.
+- [x] Network graphs redrawn in SVG (18 Nov): gang/account view (`v6/network/NetworkSvg.tsx` GangSvg) and project bubbles
+      (ProjectBubbles, rows sized by ₹, label cell under each bubble) replace WebGL below 300 networks; WebGL stays for the
+      50k stress view (sparse labels, rest on hover). Labels go through `placeLabels()` in `graphLayout.ts` (greedy by
+      priority: beside the node → other side → above/below → nudged with a leader line → hidden; never on a node or
+      another label; drawn last on opaque pills so lines never cross text). Small gangs show every name; dense ones show
+      hubs, groups and hot mules first and reveal the rest on zoom / hover / keyboard focus. Columns fold to what fits at
+      ~28 px (max 30) into "+N more". One glyph set (`glyphs.tsx`: victim, mule L1/L2 by shade, cash-out, shop, bank,
+      phone, SIM, Wi-Fi, IP, app) also used by the Devices `ClusterGraph`; mule score = red ring; red dot = in other FIRs;
+      link width by ₹ with arrowheads and an amount pill on hover; route / selection dims the rest. Every node has a
+      title + aria-label, is focusable and opens with Enter. Account money figures show a placeholder while rows load
+      (was a misleading ₹0). Tests: `__tests__/graphLayout.test.ts`. Screenshots: `docs/screenshots/fraud-network/graph-*`.
+      Left: label width is estimated (not measured), so a very wide font could crowd a pill edge; pan/zoom is mouse +
+      buttons only (no pinch).
 - [x] People & Accounts page (17 Nov): role-grouped virtual table (Mules / Victims / Cash-out / Unclear; UPI, phone,
       account + IFSC, backend mule score + plain "why", network, other-FIR hits, money still in the account → ledger),
       "Are these the same person?" queue (Merge / Not same + reason), account dossier at `?acct=` zoom (also from ⌘K):

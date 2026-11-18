@@ -15,6 +15,8 @@ import type { NetworksResponse } from '../triage/triage';
 import { buildExplorerGraph, layerKey, layerOf, memberKey, mix, syntheticNetworks, victimToCashOutPath, type NodeAttrs, type Palette } from './networkGraph';
 import { STATUS_META, crossCaseByMember, fixtureNetworks, focusSearch, networkTotals, parseFocus, resolveFocus, statusOf, type Focus, type NetworkStatus } from './networkFocus';
 import { AccountPanel, CrossCaseBadge, DecisionBar, NetworkPanel, ProjectPanel, type Net } from './NetworkPanels';
+import { GangSvg, ProjectBubbles } from './NetworkSvg';
+import { GlyphNode } from './glyphs';
 
 const LAYER_CAP = 40; // accounts drawn per hop layer before the rest fold into "+N more"
 
@@ -158,7 +160,9 @@ export const NetworkExplorer: React.FC = () => {
   const hasData = nets.length > 0;
   const loading = !stress && (q.isLoading || (fixtureLoading && !q.data?.networks.length));
   // the canvas div only exists once the skeleton is gone, so mount sigma on that, not on data alone
-  const canvasReady = hasData && !loading;
+  // SVG (readable labels, glyphs) for gangs and up to 300 bubbles; WebGL only for the 50k stress view / huge cases
+  const useSvg = !stress && (zoom !== 'project' || nets.length <= 300);
+  const canvasReady = hasData && !loading && !useSvg;
   useEffect(() => {
     if (!container.current || !canvasReady) return;
     const s = new Sigma<NodeAttrs>(graph, container.current, {
@@ -170,6 +174,8 @@ export const NetworkExplorer: React.FC = () => {
       zIndex: true,
       stagePadding: 90, // room for labels right of the last column
       hideEdgesOnMove: graph.order > 20_000,
+      // huge graphs (stress view): only a sparse grid of labels, the rest on hover
+      ...(graph.order > 5_000 ? { labelDensity: 0.04, labelGridCellSize: 160, labelRenderedSizeThreshold: 14 } : {}),
       nodeReducer: (key, d) => {
         const { path: p, selectedKey: sel, neighbours: nb, look: t, hoverNet: hn, filter: f } = live.current;
         if (d.kind === 'bubble') {
@@ -436,9 +442,23 @@ export const NetworkExplorer: React.FC = () => {
       <div className={`grid grid-cols-[minmax(0,1fr)_340px] gap-3 ${network && !stress ? 'h-[calc(100vh-290px)]' : height} min-h-[480px]`}>
         <div className={`${glass} flex flex-col overflow-hidden`}>
           <div className="relative flex-1 min-h-0">
-            <div ref={container} className="absolute inset-0" aria-label={zoom === 'project' ? 'All money networks in this case' : `Accounts in ${network?.network_id}`} role="img" />
+            {!useSvg ? (
+              <div ref={container} className="absolute inset-0" aria-label={zoom === 'project' ? 'All money networks in this case' : `Accounts in ${network?.network_id}`} role="img" />
+            ) : zoom === 'project' ? (
+              <ProjectBubbles nets={nets} hoverNet={hoverNet} filter={filter} crossByNet={crossByNet} onOpen={(id) => go({ net: id, acct: null })} onHover={setHoverNet} />
+            ) : (
+              <GangSvg
+                network={network!}
+                expanded={expanded}
+                selectedId={member?.id ?? null}
+                route={path && network ? [...path.nodes].map((k) => k.slice(network.network_id.length + 1)) : null}
+                crossByMember={crossByMember}
+                onSelect={(id) => go({ net: network!.network_id, acct: id })}
+                onExpand={(layer) => setExpanded((e) => new Set(e).add(layerKey(network!.network_id, layer)))}
+              />
+            )}
           </div>
-          <Legend zoom={zoom} look={look} hasGroups={graph.someNode((_, a) => a.kind === 'group')} />
+          <Legend zoom={zoom} look={look} hasGroups={graph.someNode((_, a) => a.kind === 'group')} svg={useSvg} />
         </div>
 
         <aside className={`${glass} min-h-0 overflow-hidden`} aria-label="Details">
@@ -495,7 +515,16 @@ export const NetworkExplorer: React.FC = () => {
   );
 };
 
-const Legend: React.FC<{ zoom: string; look: Look; hasGroups: boolean }> = ({ zoom, look, hasGroups }) => (
+const GlyphKey: React.FC<{ label: string; tip?: string; children: React.ReactNode }> = ({ label, tip, children }) => (
+  <span className="flex items-center gap-1.5 whitespace-nowrap" title={tip}>
+    <svg width="22" height="22" viewBox="-11 -11 22 22" aria-hidden>
+      {children}
+    </svg>
+    {label}
+  </span>
+);
+
+const Legend: React.FC<{ zoom: string; look: Look; hasGroups: boolean; svg: boolean }> = ({ zoom, look, hasGroups, svg }) => (
   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--line)] px-4 py-2 text-[11px] text-[var(--fg-2)]">
     {zoom === 'project' ? (
       <>
@@ -504,7 +533,33 @@ const Legend: React.FC<{ zoom: string; look: Look; hasGroups: boolean }> = ({ zo
             <StatusDot key={s} color={look.status[s]} label={STATUS_META[s].label} />
           ))}
         </div>
-        <div className="text-[var(--fg-3)]">Bubble size = money victims paid in. Click a bubble to open the gang.</div>
+        <div className="text-[var(--fg-3)]">Bubble size = money victims paid in. Red dot = also in other FIRs. Click a bubble to open the gang.</div>
+      </>
+    ) : svg ? (
+      <>
+        <GlyphKey label="Victim">
+          <GlyphNode kind="victim" r={8} fill="var(--flow)" ink="var(--surface-1)" />
+        </GlyphKey>
+        <GlyphKey label="Mule, first layer" tip="Receives money straight from victims">
+          <GlyphNode kind="mule" r={8} fill="var(--accent)" ink="var(--surface-1)" />
+        </GlyphKey>
+        <GlyphKey label="Mule, deeper layer" tip="Receives money from other mules">
+          <GlyphNode kind="mule" r={8} fill="var(--fg-1)" ink="var(--surface-1)" />
+        </GlyphKey>
+        <GlyphKey label="Cash-out" tip="ATM, crypto desk or other point where money leaves the banks">
+          <GlyphNode kind="cashout" r={8} fill="var(--surface-2)" ink="var(--fg-2)" stroke="var(--fg-3)" />
+        </GlyphKey>
+        <GlyphKey label="Shop / shared account" tip="Used by many people, so it says little about the gang">
+          <GlyphNode kind="hub" r={8} fill="var(--surface-2)" ink="var(--fg-3)" stroke="var(--line-2)" dashed />
+        </GlyphKey>
+        <GlyphKey label="Mule score" tip="Red ring: how strongly the account behaves like a mule (money in and straight out, in a short burst)">
+          <circle r={9} fill="none" stroke="var(--line-2)" strokeWidth={2} />
+          <circle r={9} fill="none" stroke="var(--risk)" strokeWidth={2} strokeDasharray={`${2 * Math.PI * 9 * 0.7} 99`} transform="rotate(-90)" />
+        </GlyphKey>
+        <span className="text-[var(--fg-3)]">
+          Money flows left → right; thicker line = more ₹ (hover a line for the amount). Scroll to zoom for more names; hover a dot for its name.
+          {hasGroups ? ' Click “+N more” to show a whole column.' : ''}
+        </span>
       </>
     ) : (
       <>
@@ -516,9 +571,6 @@ const Legend: React.FC<{ zoom: string; look: Look; hasGroups: boolean }> = ({ zo
           <StatusDot color={look.palette.victim} label="victim" />
           <StatusDot color={look.palette.hub!} label="ATM / shop (shared by everyone)" />
           <StatusDot color={look.accent} label="route" />
-        </div>
-        <div className="text-[var(--fg-3)]">
-          Money flows left → right, one column per hop from the victim.{hasGroups ? ' Click a “+N more” dot to show the whole column.' : ''}
         </div>
       </>
     )}

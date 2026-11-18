@@ -11,7 +11,7 @@ import { formatInr } from '../../lib/formatInr';
 import { useCaseStore } from '../../store/useCaseStore';
 import type { CanonicalCaseFixture } from '../../fixtures/cases';
 import type { MoneyFigure } from '../../selectors/caseSelectors';
-import { Button, Chip, SourceNumber } from '../ui';
+import { Button, Chip, Skeleton, SourceNumber } from '../ui';
 import { ROLE_LABEL, rankMembers, type FraudNetwork, type MemberRole, type NetworkMember } from '../triage/triage';
 import {
   STATUS_META,
@@ -62,13 +62,20 @@ export const CrossCaseBadge: React.FC<{ cases: string[]; compact?: boolean }> = 
   ) : null;
 
 /** A labelled money figure; the number opens its source rows when the case data is loaded. */
-const Money: React.FC<{ label: string; hint: string; figure: MoneyFigure | null; total: number; tone?: string }> = ({ label, hint, figure, total, tone }) => (
+/** `total` null = the statement rows are still loading (never show a ₹0 that is not real). */
+const Money: React.FC<{ label: string; hint: string; figure: MoneyFigure | null; total: number | null; tone?: string }> = ({ label, hint, figure, total, tone }) => (
   <div className="min-w-0">
     <div className="text-[11.5px] text-[var(--fg-3)] truncate" title={hint}>
       {label}
     </div>
     <div className="text-[15px] font-semibold tabular-nums truncate" style={{ color: tone ? `var(${tone})` : 'var(--fg-1)' }}>
-      {figure ? <SourceNumber figure={figure}>{formatInr(total, { compact: true })}</SourceNumber> : formatInr(total, { compact: true })}
+      {total === null ? (
+        <Skeleton className="h-4 w-16 mt-1" />
+      ) : figure ? (
+        <SourceNumber figure={figure}>{formatInr(total, { compact: true })}</SourceNumber>
+      ) : (
+        formatInr(total, { compact: true })
+      )}
     </div>
   </div>
 );
@@ -325,8 +332,8 @@ export const AccountPanel: React.FC<{
         )}
         <p className="text-[12.5px] text-[var(--fg-2)] leading-relaxed">{m.why}</p>
         <div className="grid grid-cols-3 gap-2">
-          <Money label="Money in" hint="Every credit into this account in the statements" figure={inFig} total={inFig?.totalInr ?? 0} />
-          <Money label="Money out" hint="Every debit out of this account" figure={outFig} total={outFig?.totalInr ?? 0} />
+          <Money label="Money in" hint="Every credit into this account in the statements" figure={inFig} total={inFig ? inFig.totalInr : null} />
+          <Money label="Money out" hint="Every debit out of this account" figure={outFig} total={outFig ? outFig.totalInr : null} />
           <Money label="Still there" hint="What a debit freeze on this account could hold" figure={fig('held')} total={m.held_inr ?? 0} tone="--safe" />
         </div>
         <div className="text-[11.5px] text-[var(--fg-3)]">
