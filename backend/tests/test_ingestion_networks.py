@@ -271,3 +271,19 @@ def test_duplicate_hides_a_case_you_cannot_open(client):
     assert r["stage"] == "DUPLICATE"
     assert r["analytics_summary"]["duplicate_of"] == {"job_id": None, "case_id": None, "filename": None, "hidden": True}
     assert mine not in str(client.get(f"/api/v1/ingestion/jobs/{job['job_id']}/status", headers=other).json())
+
+
+def test_adding_a_gang_twice_never_double_counts(client):
+    """The same statement in two holding cases, both 'added to existing case': the money is counted once."""
+    existing = client.post("/api/v1/projects/cases", json={"title": "Original FIR"}).json()["case_id"]
+    upload(client, GANG_CSV, case_id=existing, filename="orig.csv")
+    loss = client.get(f"/api/v1/cases/{existing}/bundle").json()["bookedLossInr"]
+    for i in range(2):
+        holding = client.post("/api/v1/projects/intake", json={"name": f"Batch {i}"}).json()["case_id"]
+        copy = GANG_CSV + f"25/09/2026,10:00:00,other{i}@ybl,shop@okhdfc,10,X{i}\n".encode()  # not a byte duplicate
+        upload(client, copy, case_id=holding, filename=f"copy{i}.csv")
+        nets = client.get(f"/api/v1/cases/{holding}/networks").json()["networks"]
+        gang = next(n for n in nets if n["proposal"]["action"] == "ATTACH")
+        r = client.post(f"/api/v1/cases/{holding}/networks/create-cases", json={"network_ids": [gang["network_id"]]}).json()
+        assert r["attached"][0]["case_id"] == existing and r["attached"][0]["rows_copied"] == 0
+    assert client.get(f"/api/v1/cases/{existing}/bundle").json()["bookedLossInr"] == loss

@@ -156,7 +156,11 @@ class _DateParser:
 
 # One ingest at a time per case file: two writers would fight for SQLite's write lock while indexes rebuild.
 _CASE_LOCKS: Dict[str, threading.Lock] = defaultdict(threading.Lock)
-_BULK_DROPPED_INDEXES = ("txns_ts", "txns_job")
+_BULK_DROPPED_INDEXES = ("txns_ts", "txns_job", "txns_key")
+# A row of this job that the case already holds (same time, payer, payee, amount and reference): overlapping bank
+# statements (Jan–Mar, then Feb–Apr) are normal, and the same money must be counted once.
+_REPEATED_ROWS = ("FROM txns t WHERE t.job_id = ? AND EXISTS (SELECT 1 FROM txns o WHERE o.ts = t.ts AND "
+                  "o.payer = t.payer AND o.payee = t.payee AND o.amount = t.amount AND o.ref = t.ref AND o.rowid < t.rowid)")
 
 
 class DerivedStore:
@@ -196,10 +200,23 @@ class DerivedStore:
                     db.execute(f"DROP INDEX IF EXISTS {name}")
                 db.commit()
             try:
-                return self._load_bank_csv(job_id, csv_path, columns, progress)
+                summary = self._load_bank_csv(job_id, csv_path, columns, progress)
             finally:
                 with closing(self._connect()) as db:
                     db.executescript(_SCHEMA)  # rebuilds the dropped indexes, also after a failed load
+            repeated, repeated_amount = 0, 0.0
+            with closing(self._connect()) as db:
+                # First file in a case: nothing to overlap with, so skip the check (and its index) entirely.
+                # shortcut: exact repeats inside that first file are kept; collapse them too if banks send such files.
+                if db.execute("SELECT 1 FROM txns WHERE job_id <> ? LIMIT 1", (job_id,)).fetchone():
+                    db.execute("CREATE INDEX IF NOT EXISTS txns_key ON txns(ts, payer, payee, amount, ref)")
+                    found = db.execute(f"SELECT t.rowid, t.amount {_REPEATED_ROWS}", (job_id,)).fetchall()
+                    repeated, repeated_amount = len(found), sum(amount for _, amount in found)
+                    db.executemany("DELETE FROM txns WHERE rowid = ?", [(rowid,) for rowid, _ in found])
+                    db.commit()
+            summary["rows_already_in_case"] = repeated
+            summary["total_amount_inr"] = round(summary["total_amount_inr"] - repeated_amount, 2)
+            return summary
 
     def _load_bank_csv(self, job_id: str, csv_path: Path, columns: Optional[Dict[str, int]] = None,
                        progress: Optional[Callable[[int, int], None]] = None) -> Dict[str, Any]:
@@ -395,6 +412,15 @@ class DerivedStore:
         with closing(target._connect()) as db:
             for table in ("txns", "rejected", "identifiers"):
                 db.execute(f"DELETE FROM {table} WHERE job_id = ?", (job_id,))
+            # The target may already hold these transactions (same file uploaded there, or an earlier copy):
+            # copying them again would count the same money twice.
+            db.execute("CREATE TEMP TABLE k (n TEXT PRIMARY KEY)")
+            db.executemany("INSERT INTO k VALUES (?)", [(n,) for n in keys])
+            have = set(db.execute(
+                "SELECT ts, payer, payee, amount, ref FROM txns "
+                "WHERE lower(trim(payer)) IN (SELECT n FROM k) AND lower(trim(payee)) IN (SELECT n FROM k)"
+            ))
+            rows = [r for r in rows if r[1:] not in have]
             db.executemany("INSERT INTO txns VALUES (?,?,?,?,?,?,?)", [(job_id, *r) for r in rows])
             db.executemany("INSERT INTO identifiers VALUES (?,?,?,?)", [(job_id, k, v, n) for (k, v), n in ids.items()])
             db.commit()

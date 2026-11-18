@@ -187,3 +187,19 @@ def test_processing_progress_is_reported(mgr):
     assert seen and all(p["step"] == "READING_ROWS" for p in seen)
     assert seen[-1]["rows"] >= 4 and 0 < seen[-1]["pct"] <= 99
     assert job.to_dict()["processing"]["step"] == "DONE" and job.to_dict()["processing"]["pct"] == 100.0
+
+
+def test_overlapping_statements_count_each_transaction_once(tmp_path):
+    """Jan–Mar then Feb–Apr exports share rows: the shared ones are stored once and reported."""
+    head = "txn_date,txn_time,payer,payee,amount,rrn\n"
+    a = tmp_path / "jan_mar.csv"
+    b = tmp_path / "feb_apr.csv"
+    a.write_text(head + "10/01/2026,10:00:00,v@ybl,m@ybl,100,R1\n15/02/2026,10:00:00,v@ybl,m@ybl,200,R2\n", encoding="utf-8")
+    b.write_text(head + "15/02/2026,10:00:00,v@ybl,m@ybl,200,R2\n20/04/2026,10:00:00,v@ybl,m@ybl,300,R3\n", encoding="utf-8")
+    store = DerivedStore(tmp_path / "d")
+    store.ingest_bank_csv("A", a)
+    s = store.ingest_bank_csv("B", b)
+    assert s["rows_already_in_case"] == 1 and s["total_amount_inr"] == 300
+    import sqlite3
+    assert sqlite3.connect(store.path).execute("SELECT SUM(amount), COUNT(*) FROM txns").fetchone() == (600.0, 3)
+    assert store.ingest_bank_csv("B", b)["rows_already_in_case"] == 1  # re-running a job stays correct

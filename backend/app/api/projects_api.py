@@ -120,7 +120,7 @@ async def start_intake(req: IntakeRequest, user: UserIdentity = Depends(get_curr
     store = _store()
     project = store.create(name, "Files added before the cases were known; TARKA proposes the cases from them.",
                            user.user_id)
-    holding = store.register_case(user.user_id, f"{name} · all files", project["project_id"])
+    holding = store.register_case(user.user_id, f"{name} · all files", project["project_id"], {"holding": True})
     return {"project_id": project["project_id"], "case_id": holding["case_id"], "name": name}
 
 
@@ -221,7 +221,10 @@ def _add_proposals(case_id: str, result: Dict[str, Any]) -> None:
 
     Expects cross_case_hits already limited to cases the user can open.
     """
-    elsewhere = {(h["kind"], h["identifier"]): h["case_ids"] for h in result["cross_case_hits"]}
+    # Other intake holding cases are temporary containers, never a case to add a gang to.
+    holding = {c["case_id"] for c in _store().all_cases() if (c.get("details") or {}).get("holding")}
+    elsewhere = {(h["kind"], h["identifier"]): [c for c in h["case_ids"] if c not in holding]
+                 for h in result["cross_case_hits"]}
     for n in result["networks"]:
         shared, values = Counter(), defaultdict(set)
         for m in n["members"]:

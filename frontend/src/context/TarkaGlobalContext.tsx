@@ -648,7 +648,14 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Initial Sync from Backend Database
   useEffect(() => {
     let mounted = true;
-    CaseSyncBridge.getInstance().listCasesFromBackend().then((backendCases) => {
+    // The backend may still be starting (or restarting) when the app opens: keep trying, or uploaded cases
+    // would show "Case Not Found" until a manual reload.
+    const loadCases = (attempt: number): Promise<CaseWorkspace[] | null> =>
+      CaseSyncBridge.getInstance().listCasesFromBackend().then((cases) =>
+        cases || !mounted || attempt >= 10
+          ? cases
+          : new Promise((r) => setTimeout(r, 3000)).then(() => loadCases(attempt + 1)));
+    loadCases(1).then((backendCases) => {
       if (mounted && backendCases && backendCases.length > 0) {
         // Union by id: backend rows win, demo cases the backend doesn't list stay.
         setCaseWorkspaces((prev) => {

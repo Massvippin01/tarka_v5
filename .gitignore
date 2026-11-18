@@ -87,3 +87,4 @@ frontend/scratch/
 data/validation/
 # Local assistant notes (not part of the product)
 CLAUDE.md
+data/test_uploads/
