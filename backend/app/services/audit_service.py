@@ -143,6 +143,29 @@ class AuditService:
         self.audit_records.append(payload)
         return payload
 
+    def record_event(
+        self,
+        actor_id: str,
+        action: str,
+        resource_type: str,
+        resource_id: str,
+        case_id: str,
+        details: Optional[Dict[str, Any]] = None,
+        session_id: str = "SESSION-ADMIN-01",
+    ) -> Dict[str, Any]:
+        """Convenience method to record structured forensic actions into the tamper-evident hash chain."""
+        return self.log_event(
+            event_type=action,
+            actor_id=actor_id,
+            case_id=case_id,
+            action_details={
+                "resource_type": resource_type,
+                "resource_id": resource_id,
+                **(details or {}),
+            },
+            session_id=session_id,
+        )
+
     def get_audit_logs(self, limit: int = 50) -> List[Dict[str, Any]]:
         return self.audit_records[-limit:]
 

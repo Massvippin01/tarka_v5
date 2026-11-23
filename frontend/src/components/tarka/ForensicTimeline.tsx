@@ -48,7 +48,7 @@ export const ForensicTimeline: React.FC<ForensicTimelineProps> = ({
   });
 
   return (
-    <div className={`lg-table-wrapper ${className}`}>
+    <div className={`lg-table-wrapper ${className}`} data-testid="timeline-container">
       <div className="lg-table-header">
         <div>
           <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#F3F4F6", display: "flex", alignItems: "center", gap: "8px" }}>

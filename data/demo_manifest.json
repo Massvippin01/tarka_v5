@@ -1,0 +1,85 @@
+{
+  "manifest_version": "1.0.0",
+  "protocol": "SUTRAM 2026 / Section 63 BSA Digital Evidence Standard",
+  "dataset_name": "TARKA Sovereign Forensic Intelligence — Canonical Demonstration Dataset",
+  "generated_at_utc": "2026-11-22T09:15:00Z",
+  "case": {
+    "case_id": "upi_payment_discrepancy",
+    "title": "UPI Payment Discrepancy & Fraud Investigation",
+    "description": "Multi-source financial and digital forensic investigation reconciling bank statements, telecom CDR records, WhatsApp communications, and altered payment receipts.",
+    "jurisdiction": "DELHI",
+    "lead_examiner": "Senior Forensic Examiner A. Sharma",
+    "investigative_standard": "Section 63 Bharatiya Sakshya Adhiniyam 2023 (BSA)"
+  },
+  "ground_truth_artifacts": [
+    {
+      "artifact_id": "ART-001-DB791B3C",
+      "filename": "bank_statement.csv",
+      "tier": "T1_AUTHORITATIVE_INSTITUTIONAL",
+      "sha256": "db791b3c97ea80f08a47adba1bca100155b4e7233a7e584f7b6d194514be0dbb",
+      "role": "Double-entry banking transaction ledger showing ₹25,000 UPI debit with reference RRN 429108472910."
+    },
+    {
+      "artifact_id": "ART-002-39E1CA85",
+      "filename": "cdr_records.csv",
+      "tier": "T1_AUTHORITATIVE_INSTITUTIONAL",
+      "sha256": "39e1ca8578bca019d4538819230571bc8205f4102830ea517c24f654b9d0349a",
+      "role": "Telecom Call Detail Records proving cell tower triangulation at Connaught Place, New Delhi during transaction window."
+    },
+    {
+      "artifact_id": "ART-003-9A1B2C3D",
+      "filename": "whatsapp_chat.txt",
+      "tier": "T3_UNAUTHENTICATED_EXTERNAL",
+      "sha256": "9a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+      "role": "Exported WhatsApp chat log containing claim of ₹15,000 sent to merchant."
+    },
+    {
+      "artifact_id": "ART-004-BCCD4200",
+      "filename": "screenshot_claim.json",
+      "tier": "T3_UNAUTHENTICATED_EXTERNAL",
+      "sha256": "bccd420019283746554637281920394857615243342516273849506172839405",
+      "role": "Metadata and OCR triage payload claiming transaction amount of ₹15,000."
+    },
+    {
+      "artifact_id": "ART-005-EE112233",
+      "filename": "unverified_claim.json",
+      "tier": "T3_UNAUTHENTICATED_EXTERNAL",
+      "sha256": "ee112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+      "role": "Third-party customer dispute claim submitted without cryptographic signing."
+    },
+    {
+      "artifact_id": "ART-006-F06C36EE",
+      "filename": "payment_receipt_screenshot.png",
+      "tier": "T3_UNAUTHENTICATED_EXTERNAL",
+      "sha256": "f06c36ee74d03253bba70dd546b32524a806283b5443fa38f8f2e249110757a2",
+      "role": "Raw image bitstream of mobile payment receipt subjected to font metrics and metadata inspection."
+    }
+  ],
+  "forensic_ground_truth": {
+    "contradiction_id": "CONTRA-AMT-001",
+    "type": "AMOUNT_DISCREPANCY",
+    "tier_conflict": "T1 vs T3",
+    "substantive_values": {
+      "authoritative_t1_amount": 25000.0,
+      "unauthenticated_t3_amount": 15000.0,
+      "delta_discrepancy": 10000.0,
+      "currency": "INR"
+    },
+    "z3_smt_status": "UNSATISFIABLE_UNDER_CONJUNCTION",
+    "epistemic_guarantee": "Preserved without premature identity merge or automatic guilt classification."
+  },
+  "counterfactual_lab": {
+    "challenge_id": "CHLG-EXCLUDE-ART-004",
+    "excluded_artifacts": ["ART-004-BCCD4200"],
+    "expected_outcome": {
+      "finding_dissolved": "CONTRA-AMT-001",
+      "surviving_findings": 0,
+      "provenance_lineage_rewritten": true
+    }
+  },
+  "statutory_reporting": {
+    "statutory_section": "Section 63 BSA 2023 / Section 65B Indian Evidence Act",
+    "certificate_standard": "Tamper-evident cryptographic custody ledger with SHA-256 seal",
+    "admissibility_status": "COURT_ADMISSIBLE_CERTIFIED"
+  }
+}

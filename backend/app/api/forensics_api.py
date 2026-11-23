@@ -11,9 +11,12 @@ Strictly adheres to the SentinelX Wave 6 Engineering Constitution:
 
 from __future__ import annotations
 
+import json
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Response, UploadFile, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.adapters.tarka_forensics_adapter import TarkaForensicsAdapter
@@ -47,6 +50,8 @@ class ReportRequest(BaseModel):
     run_id: Optional[str] = None
     examiner_name: Optional[str] = "Forensic Officer"
     investigation_purpose: Optional[str] = "Statutory Digital Evidence Inspection"
+    fallback_to_baseline: Optional[bool] = False
+    fallback_reason: Optional[str] = None
 
 
 class ReviewActionRequest(BaseModel):
@@ -58,10 +63,20 @@ class ReviewActionRequest(BaseModel):
     target_type: Optional[str] = Field(None, description="'finding' or 'gap' (auto-detected if omitted)")
 
 
-
 class IngestFilesRequest(BaseModel):
     filenames: List[str] = Field(..., description="List of filenames staged in permitted directory to ingest")
     directory_alias: Optional[str] = Field("Downloads", description="Permitted directory alias: 'Downloads' or 'Staging'")
+
+
+class CreateCaseRequest(BaseModel):
+    case_id: Optional[str] = None
+    title: str = Field(..., min_length=3)
+    description: Optional[str] = ""
+    jurisdiction: Optional[str] = "IN_DELHI"
+
+
+class WebhookPayloadRequest(BaseModel):
+    entry: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class SessionRequest(BaseModel):
@@ -117,6 +132,39 @@ def list_forensic_cases(user: UserIdentity = Depends(get_current_user)) -> List[
     return [c for c in cases if auth_service.validate_case_scope(user, c.get("case_id", ""))]
 
 
+@router.post("/cases", tags=["Forensics Cases"], status_code=status.HTTP_201_CREATED)
+def create_forensic_case(
+    req: CreateCaseRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Creates a new isolated forensic case workspace and grants investigator access."""
+    auth_service = AuthService.get_instance()
+    case_id = req.case_id or f"case_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    case_data = adapter.create_case(
+        case_id=case_id,
+        title=req.title,
+        description=req.description or "",
+        investigator=user.display_name or user.user_id,
+    )
+    if user.scope and case_id not in user.scope.allowed_cases:
+        user.scope.allowed_cases.append(case_id)
+    for u in auth_service.users.values():
+        if u.user_id == user.user_id and u.scope and case_id not in u.scope.allowed_cases:
+            u.scope.allowed_cases.append(case_id)
+
+    from app.services.audit_service import AuditService
+    audit = AuditService.get_instance()
+    audit.record_event(
+        actor_id=user.user_id,
+        action="CREATE_FORENSIC_CASE",
+        resource_type="CASE",
+        resource_id=case_id,
+        case_id=case_id,
+        details={"title": req.title, "jurisdiction": req.jurisdiction},
+    )
+    return case_data
+
+
 @router.get("/cases/{case_id}", tags=["Forensics Cases"])
 def get_forensic_case(
     case_id: str,
@@ -142,7 +190,13 @@ def seed_synthetic_case(
     """Deterministically seeds the canonical SUTRAM 2026 digital fraud investigation case."""
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
-    return adapter.ensure_synthetic_case(case_id)
+    try:
+        return adapter.ensure_synthetic_case(case_id)
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        )
 
 
 @router.get("/cases/{case_id}/artifacts", tags=["Evidence Register"])
@@ -291,12 +345,20 @@ def generate_statutory_report(
     """Generates Section 63 Indian Evidence Act / BSA compliant report."""
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
-    return adapter.generate_report(
-        case_id=case_id,
-        run_id=req.run_id,
-        officer=req.examiner_name or "Forensic Officer",
-        reason=req.investigation_purpose or "Digital Evidence Audit",
-    )
+    try:
+        return adapter.generate_report(
+            case_id=case_id,
+            run_id=req.run_id,
+            officer=req.examiner_name or "Forensic Officer",
+            reason=req.investigation_purpose or "Digital Evidence Audit",
+            fallback_to_baseline=bool(req.fallback_to_baseline),
+            fallback_reason=req.fallback_reason,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.get("/cases/{case_id}/reports", tags=["Forensic Reporting"])
@@ -476,6 +538,237 @@ def list_examiner_reviews(
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
     return adapter.list_examiner_reviews(case_id)
+
+
+# --- Evidence Ingestion, Real-Time Orchestration & Phase 10 Payment Forensics ---
+
+@router.post("/cases/{case_id}/evidence/upload", tags=["Evidence Ingestion"], status_code=status.HTTP_201_CREATED)
+async def upload_case_evidence(
+    case_id: str,
+    file: UploadFile = File(...),
+    source_channel: str = Form("DIRECT_UPLOAD"),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Admits single evidence file, validates size/format, hashes, immutably stores, registers custody, and extracts observations."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    file_bytes = await file.read()
+    if len(file_bytes) == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Evidence file is empty.")
+
+    res = adapter.upload_evidence(
+        case_id=case_id,
+        filename=file.filename or "evidence.bin",
+        file_bytes=file_bytes,
+        source_channel=source_channel,
+        officer=user.display_name or user.user_id,
+    )
+
+    from app.services.audit_service import AuditService
+    audit = AuditService.get_instance()
+    audit.record_event(
+        actor_id=user.user_id,
+        action="EVIDENCE_ADMITTED",
+        resource_type="EVIDENCE",
+        resource_id=res["evidence"]["evidence_id"],
+        case_id=case_id,
+        details={
+            "filename": file.filename,
+            "sha256": res["evidence"]["sha256"],
+            "file_size": res["evidence"]["file_size"],
+            "is_duplicate": res["evidence"]["is_duplicate"],
+        },
+    )
+    return res
+
+
+@router.post("/cases/{case_id}/evidence/multimodal-upload", tags=["Evidence Ingestion"], status_code=status.HTTP_201_CREATED)
+async def upload_case_multimodal_evidence(
+    case_id: str,
+    files: List[UploadFile] = File(...),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Phase 10 Multimodal Gateway: Accepts multiple files (screenshots, bank statements, receipts, exports),
+    validates headers/magic bytes, defends against decompression bombs and path traversals,
+    writes to isolated storage tiers, registers custody ledger, and enqueues async forensic job.
+    """
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    if not files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No evidence files provided.")
+
+    file_tuples = []
+    for f in files:
+        b = await f.read()
+        if len(b) > 0:
+            file_tuples.append((f.filename or "evidence.bin", b))
+
+    if not file_tuples:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="All submitted evidence files were empty.")
+
+    try:
+        res = adapter.ingest_multimodal_batch(
+            case_id=case_id,
+            files=file_tuples,
+            officer=user.display_name or user.user_id,
+            user_id=user.user_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    from app.services.audit_service import AuditService
+    audit = AuditService.get_instance()
+    audit.record_event(
+        actor_id=user.user_id,
+        action="MULTIMODAL_EVIDENCE_INGESTED",
+        resource_type="CASE",
+        resource_id=case_id,
+        case_id=case_id,
+        details={
+            "job_id": res["job_id"],
+            "admitted_count": res["admitted_count"],
+            "total_submitted": res["total_submitted"],
+        },
+    )
+    return res
+
+
+@router.get("/cases/{case_id}/jobs/{job_id}", tags=["Evidence Ingestion"])
+def get_case_job(
+    case_id: str,
+    job_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Tracks status and progress of an asynchronous analysis job."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    job = adapter.get_job(case_id, job_id)
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' not found.")
+    return job
+
+
+@router.post("/cases/{case_id}/jobs/{job_id}/cancel", tags=["Evidence Ingestion"])
+def cancel_case_job(
+    case_id: str,
+    job_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Cancels an active or queued forensic processing job."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    success = adapter.cancel_job(case_id, job_id)
+    return {
+        "job_id": job_id,
+        "cancelled": success,
+        "status": "CANCELLED" if success else "NOT_FOUND_OR_COMPLETED",
+    }
+
+
+@router.get("/cases/{case_id}/events/stream", tags=["Evidence Ingestion"])
+async def stream_case_events(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+):
+    """
+    Server-Sent Events (SSE) endpoint providing real-time progressive forensic analysis updates.
+    Eliminates client-side polling and streams state transitions immediately.
+    """
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+
+    return StreamingResponse(
+        adapter.job_orchestrator.sse_event_stream(case_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.get("/cases/{case_id}/observations", tags=["Evidence Observations"])
+def list_case_observations(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Retrieves atomic forensic observations extracted from admitted case evidence."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    obs = adapter.list_observations(case_id)
+    return {
+        "case_id": case_id,
+        "observations_count": len(obs),
+        "observations": obs,
+    }
+
+
+@router.post("/cases/{case_id}/trace/reconcile", tags=["TRACE Financial Engine"])
+def reconcile_case_transactions(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Runs TRACE double-entry ledger balance reconciliation and receipt examination."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    return adapter.reconcile_finances(case_id)
+
+
+@router.post("/cases/{case_id}/whatsapp/webhook", tags=["WhatsApp Forensics Gateway"])
+def receive_whatsapp_webhook(
+    case_id: str,
+    payload: WebhookPayloadRequest,
+    x_hub_signature_256: Optional[str] = Header(None),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Receives and processes incoming WhatsApp webhook payloads."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    raw_payload_bytes = json.dumps(payload.model_dump()).encode("utf-8")
+    if not adapter.whatsapp_gateway.verify_webhook_signature(raw_payload_bytes, x_hub_signature_256):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid WhatsApp webhook signature.")
+
+    return adapter.whatsapp_gateway.process_webhook_payload(
+        payload=payload.model_dump(),
+        case_id=case_id,
+        investigator_id=user.user_id,
+    )
+
+
+@router.get("/cases/{case_id}/artifacts/{artifact_id}/examination", tags=["TRACE Payment Forensics"])
+def get_artifact_examination(
+    case_id: str,
+    artifact_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Executes deep TRACE visual and metadata forensics on a payment screenshot:
+    OCR polygon extraction, Error Level Analysis (ELA at Q=90), typography discontinuity, and metadata inspection.
+    """
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    try:
+        return adapter.examine_screenshot_artifact(case_id, artifact_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+
+@router.get("/cases/{case_id}/hypotheses", tags=["AEGIS Investigative Reasoning"])
+def get_competing_hypotheses(
+    case_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    Generates Analysis of Competing Hypotheses (ACH) matrix (H1 Digital Alteration, H2 Split Sequence, H3 Account Takeover)
+    and prioritized evidence gaps under Indian statutory regimes (BNSS 94/105, CrPC 91, IT Act 69).
+    """
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    return adapter.get_case_hypotheses(case_id)
 
 
 # --- Grounded SLM Assistant & Voice Integration ---

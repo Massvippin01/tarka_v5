@@ -1,0 +1,137 @@
+{
+  "benchmark": "TARKA-TXBENCH v1.0.0",
+  "evaluation_timestamp": "2026-11-23T05:59:38Z",
+  "total_cases_evaluated": 10,
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "confusion_matrix": {
+      "true_positives": 5,
+      "false_positives": 0,
+      "true_negatives": 5,
+      "false_negatives": 0
+    },
+    "amount_extraction_accuracy": 1.0,
+    "utr_extraction_accuracy": 1.0
+  },
+  "latency_ms": {
+    "p50": 57.49,
+    "p90": 163.55,
+    "p99": 163.55,
+    "mean": 65.74
+  },
+  "case_details": [
+    {
+      "case_id": "TXB-GEN-01",
+      "filename": "phonepe_genuine_25000.png",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "anomaly_score": 0.059,
+      "verdict": "NO_OVERT_MANIPULATION_DETECTED",
+      "latency_ms": 163.55,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-GEN-02",
+      "filename": "gpay_genuine_15000.png",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "anomaly_score": 0.081,
+      "verdict": "NO_OVERT_MANIPULATION_DETECTED",
+      "latency_ms": 52.31,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-GEN-03",
+      "filename": "paytm_genuine_5000.png",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "anomaly_score": 0.103,
+      "verdict": "NO_OVERT_MANIPULATION_DETECTED",
+      "latency_ms": 50.21,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-GEN-04",
+      "filename": "bhim_genuine_10000.png",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "anomaly_score": 0.094,
+      "verdict": "NO_OVERT_MANIPULATION_DETECTED",
+      "latency_ms": 51.4,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-GEN-05",
+      "filename": "cred_genuine_8500.png",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "anomaly_score": 0.039,
+      "verdict": "NO_OVERT_MANIPULATION_DETECTED",
+      "latency_ms": 59.41,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-TAM-01",
+      "filename": "phonepe_altered_amount_paste.png",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "anomaly_score": 0.385,
+      "verdict": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
+      "latency_ms": 57.49,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-TAM-02",
+      "filename": "gpay_fabricated_utr.png",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "anomaly_score": 0.42,
+      "verdict": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
+      "latency_ms": 53.4,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-TAM-03",
+      "filename": "paytm_resampling_artefacts.png",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "anomaly_score": 0.595,
+      "verdict": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
+      "latency_ms": 57.8,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-TAM-04",
+      "filename": "bhim_canva_watermarked.png",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "anomaly_score": 0.8500000000000001,
+      "verdict": "SUSPICIOUS_DIGITAL_MANIPULATION_INDICATORS",
+      "latency_ms": 54.04,
+      "amount_match": true,
+      "utr_match": true
+    },
+    {
+      "case_id": "TXB-TAM-05",
+      "filename": "cred_copy_move_timestamp.png",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "anomaly_score": 0.42,
+      "verdict": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
+      "latency_ms": 57.8,
+      "amount_match": true,
+      "utr_match": true
+    }
+  ]
+}

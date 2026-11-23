@@ -279,8 +279,9 @@ class TimelineReconstructionEngine:
             receiver = norm_vpa or fact.secondary_entity or "Merchant"
             rrn_str = f" (RRN {norm_rrn})" if norm_rrn else ""
             acc_str = f", A/c ...{identifiers.get('account_suffix')}" if identifiers.get("account_suffix") else ""
+            amt_display = f"₹{amt:,.2f}" if amt is not None else "an undetermined amount"
             description = (
-                f"Official bank ledger records debit of ₹{amt:,.2f} to {receiver}{rrn_str}{acc_str}. "
+                f"Official bank ledger records debit of {amt_display} to {receiver}{rrn_str}{acc_str}. "
                 f"Transaction authenticated via core banking gateway."
             )
             confidence = 0.99

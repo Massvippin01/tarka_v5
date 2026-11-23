@@ -1,0 +1,18 @@
+{
+  "job_id": "JOB-20261123054248-8538",
+  "case_id": "demo_phase10_test",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-20261123054248-4BF9EC46",
+    "ART-20261123054248-A074CB87"
+  ],
+  "status": "RECEIVED",
+  "current_stage": "RECEIVED",
+  "progress_percent": 5,
+  "partial_results": {},
+  "error_message": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T05:42:48.538680+00:00",
+  "updated_at_iso": "2026-11-23T05:42:48.538680+00:00"
+}

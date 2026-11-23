@@ -399,10 +399,11 @@ class CounterfactualEngine:
         bank_facts = [f for f in facts if f.kind == CanonicalFactKind.BANK_TRANSACTION]
         if bank_facts:
             bf = bank_facts[0]
+            amt_str = f"₹{bf.amount:,.2f}" if bf.amount is not None else "an undetermined amount"
             findings.append(
                 FindingSummary(
                     finding_id="FINDING-04",
-                    title=f"Bank transaction of ₹{bf.amount:,.2f} recorded in the supplied bank-statement record",
+                    title=f"Bank transaction of {amt_str} recorded in the supplied bank-statement record",
                     status="ACTIVE",
                     rule_id="SUPPLIED_BANK_STATEMENT_RECORD",
                     rule_name="Supplied Bank-Statement Record",

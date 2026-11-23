@@ -297,6 +297,64 @@ export const forensicsApi = {
     const res = await api.get("/system/status");
     return res.data;
   },
+
+  // --- Phase 10: Multimodal Payment Forensics & Real-Time Orchestration ---
+
+  uploadEvidence: async (caseId: string, file: File, sourceChannel: string = "DIRECT_UPLOAD") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("source_channel", sourceChannel);
+    const res = await api.post(`/cases/${caseId}/evidence/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  uploadMultimodalBatch: async (caseId: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+    const res = await api.post(`/cases/${caseId}/evidence/multimodal-upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  getJob: async (caseId: string, jobId: string) => {
+    const res = await api.get(`/cases/${caseId}/jobs/${jobId}`);
+    return res.data;
+  },
+
+  cancelJob: async (caseId: string, jobId: string) => {
+    const res = await api.post(`/cases/${caseId}/jobs/${jobId}/cancel`);
+    return res.data;
+  },
+
+  getEventStreamUrl: (caseId: string) => {
+    const token = sessionStorage.getItem("sentinelx_auth_token") || localStorage.getItem("sentinelx_auth_token");
+    return `/api/v1/forensics/cases/${caseId}/events/stream?token=${encodeURIComponent(token || "")}`;
+  },
+
+  getObservations: async (caseId: string) => {
+    const res = await api.get(`/cases/${caseId}/observations`);
+    return res.data;
+  },
+
+  reconcileTrace: async (caseId: string) => {
+    const res = await api.post(`/cases/${caseId}/trace/reconcile`);
+    return res.data;
+  },
+
+  getArtifactExamination: async (caseId: string, artifactId: string) => {
+    const res = await api.get(`/cases/${caseId}/artifacts/${artifactId}/examination`);
+    return res.data;
+  },
+
+  getHypotheses: async (caseId: string) => {
+    const res = await api.get(`/cases/${caseId}/hypotheses`);
+    return res.data;
+  },
 };
 
 

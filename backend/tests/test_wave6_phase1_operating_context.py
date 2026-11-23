@@ -14,8 +14,8 @@ from app.services.operating_context_service import OperatingContextService
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(auth_headers):
+    return TestClient(app, headers=auth_headers)
 
 
 @pytest.fixture

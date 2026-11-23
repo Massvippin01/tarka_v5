@@ -1,0 +1,18 @@
+{
+  "job_id": "JOB-20261123053948-8601",
+  "case_id": "CASE_LIFECYCLE",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-001",
+    "ART-002"
+  ],
+  "status": "VALIDATING",
+  "current_stage": "Validating Signatures",
+  "progress_percent": 25,
+  "partial_results": {},
+  "error_message": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T05:39:48.601978+00:00",
+  "updated_at_iso": "2026-11-23T05:39:48.609420+00:00"
+}

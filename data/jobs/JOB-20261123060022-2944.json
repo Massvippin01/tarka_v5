@@ -1,0 +1,20 @@
+{
+  "job_id": "JOB-20261123060022-2944",
+  "case_id": "CASE_LIFECYCLE_060022944691",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-001",
+    "ART-002"
+  ],
+  "status": "COMPLETED",
+  "current_stage": "Done",
+  "progress_percent": 100,
+  "partial_results": {
+    "items": 2
+  },
+  "error_message": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T06:00:22.944691+00:00",
+  "updated_at_iso": "2026-11-23T06:00:22.992590+00:00"
+}

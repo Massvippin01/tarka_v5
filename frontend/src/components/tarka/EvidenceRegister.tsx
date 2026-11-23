@@ -135,6 +135,7 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
                   transition: "background 0.15s ease",
                 }}
                 className="lg-table-row"
+                data-testid={`artifact-row-${art.artifact_id}`}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -205,6 +206,8 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
                   )}
 
                   <button
+                    id={`btn-verify-${art.artifact_id}`}
+                    data-testid={`btn-verify-${art.artifact_id}`}
                     onClick={(e) => handleVerify(e, art.artifact_id)}
                     disabled={isVerifying}
                     className="lg-btn lg-btn-secondary"

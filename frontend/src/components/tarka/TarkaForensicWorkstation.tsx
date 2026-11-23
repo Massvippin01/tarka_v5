@@ -25,6 +25,10 @@ import {
   Cpu,
   CheckCircle2,
   Sparkles,
+  Play,
+  UploadCloud,
+  Eye,
+  GitCompare,
 } from "lucide-react";
 import { forensicsApi } from "../../api/forensicsApi";
 import type { ArtifactIntake, ProvenanceDAG, CounterfactualComparison } from "../../types/forensics";
@@ -38,13 +42,20 @@ import { EvidenceIntakeModal } from "./EvidenceIntakeModal";
 import { SarvamVoiceModal } from "./SarvamVoiceModal";
 import { ForensicAssistantPanel } from "./ForensicAssistantPanel";
 import { TarkaMinimalLanding } from "./TarkaMinimalLanding";
+import { MultimodalInbox } from "./MultimodalInbox";
+import { VisualForensicsViewer } from "./VisualForensicsViewer";
+import { HypothesesWorkspace } from "./HypothesesWorkspace";
+import { DemoArrowOverlay, DemoDirectorModal, useDemoDirector } from "./demo";
 
 type WorkstationTab =
   | "landing"
   | "overview"
+  | "inbox"
   | "evidence"
+  | "visual"
   | "timeline"
   | "contradictions"
+  | "hypotheses"
   | "provenance"
   | "gaps"
   | "robustness"
@@ -57,11 +68,12 @@ export const TarkaForensicWorkstation: React.FC = () => {
   const [activeCaseId, setActiveCaseId] = useState<string>("upi_payment_discrepancy");
   const [cases, setCases] = useState<Array<{ case_id: string; title?: string; artifact_count?: number }>>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en-IN");
+  const [selectedVisualArtifactId, setSelectedVisualArtifactId] = useState<string>("");
   const getInitialTab = (): WorkstationTab => {
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search);
       const t = p.get("tab") || p.get("nav");
-      if (t && ["landing", "overview", "evidence", "timeline", "contradictions", "provenance", "gaps", "robustness", "reports", "system"].includes(t)) {
+      if (t && ["landing", "overview", "inbox", "evidence", "visual", "timeline", "contradictions", "hypotheses", "provenance", "gaps", "robustness", "reports", "system"].includes(t)) {
         return t as WorkstationTab;
       }
       if (p.get("view") === "workstation") {
@@ -86,7 +98,7 @@ export const TarkaForensicWorkstation: React.FC = () => {
     const onPopState = () => {
       const p = new URLSearchParams(window.location.search);
       const t = p.get("tab") || p.get("nav");
-      if (t && ["overview", "evidence", "timeline", "contradictions", "provenance", "gaps", "robustness", "reports", "system"].includes(t)) {
+      if (t && ["overview", "inbox", "evidence", "visual", "timeline", "contradictions", "hypotheses", "provenance", "gaps", "robustness", "reports", "system"].includes(t)) {
         setActiveTabState(t as WorkstationTab);
       }
     };
@@ -132,11 +144,26 @@ export const TarkaForensicWorkstation: React.FC = () => {
   const [runningChallenge, setRunningChallenge] = useState<boolean>(false);
   const [challengeResult, setChallengeResult] = useState<CounterfactualComparison | null>(null);
 
+  // Demo Director State
+  const [isDemoDirectorOpen, setIsDemoDirectorOpen] = useState<boolean>(false);
+
   // System & Health Status
   const [engineHealth, setEngineHealth] = useState<Record<string, unknown> | null>(null);
   const [sarvamStatus, setSarvamStatus] = useState<Record<string, unknown> | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<string>("INVESTIGATOR_DELHI");
+
+  const runRobustnessChallenge = useCallback(async () => {
+    try {
+      setRunningChallenge(true);
+      const res = await forensicsApi.runChallenge(activeCaseId, baselineRunId, selectedExclusions);
+      setChallengeResult(res);
+    } catch (e) {
+      console.error("Robustness run failed:", e);
+    } finally {
+      setRunningChallenge(false);
+    }
+  }, [activeCaseId, baselineRunId, selectedExclusions]);
 
   const loadCaseData = useCallback(async (caseId: string) => {
     try {
@@ -268,24 +295,41 @@ export const TarkaForensicWorkstation: React.FC = () => {
     }
   };
 
-  const runRobustnessChallenge = async () => {
-    try {
-      setRunningChallenge(true);
-      const res = await forensicsApi.runChallenge(activeCaseId, baselineRunId, selectedExclusions);
-      setChallengeResult(res);
-    } catch (e) {
-      console.error("Robustness run failed:", e);
-    } finally {
-      setRunningChallenge(false);
+  // Demo Director Orchestrator
+  const demo = useDemoDirector({
+    activeTab,
+    setActiveTab,
+    caseId: activeCaseId,
+    onRefreshCase: () => loadCaseData(activeCaseId),
+    onOpenReportModal: setIsReportOpen,
+    onExecuteRobustness: runRobustnessChallenge,
+  });
+
+  // URL auto-launch support (?demo=true / ?demo=start)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("demo") === "true" || p.get("demo") === "start") {
+        setIsDemoDirectorOpen(true);
+        demo.runPreflight().then((passed) => {
+          if (passed && p.get("autoplay") === "true") {
+            setIsDemoDirectorOpen(false);
+            demo.startDemo();
+          }
+        });
+      }
     }
-  };
+  }, []);
 
   const navItems: Array<{ id: WorkstationTab; label: string; icon: React.ReactNode; count?: number; badgeType?: "danger" | "warning" }> = [
     { id: "landing", label: "Voice Landing", icon: <Sparkles size={15} strokeWidth={1.75} /> },
     { id: "overview", label: "Overview", icon: <LayoutDashboard size={15} strokeWidth={1.75} /> },
+    { id: "inbox", label: "Multimodal Intake", icon: <UploadCloud size={15} strokeWidth={1.75} /> },
     { id: "evidence", label: "Evidence Ledger", icon: <Boxes size={15} strokeWidth={1.75} />, count: artifacts.length },
+    { id: "visual", label: "Visual TRACE (ELA)", icon: <Eye size={15} strokeWidth={1.75} /> },
     { id: "timeline", label: "Timeline", icon: <Clock size={15} strokeWidth={1.75} />, count: timelineEvents.length },
     { id: "contradictions", label: "Contradictions & MUS", icon: <Zap size={15} strokeWidth={1.75} />, count: contradictions.length, badgeType: contradictions.length > 0 ? "danger" : undefined },
+    { id: "hypotheses", label: "Competing Hypotheses", icon: <GitCompare size={15} strokeWidth={1.75} /> },
     { id: "provenance", label: "Provenance DAG", icon: <GitFork size={15} strokeWidth={1.75} /> },
     { id: "gaps", label: "Evidence Gaps", icon: <Search size={15} strokeWidth={1.75} />, count: gaps.length, badgeType: gaps.length > 0 ? "warning" : undefined },
     { id: "robustness", label: "Robustness Lab", icon: <FlaskConical size={15} strokeWidth={1.75} /> },
@@ -308,6 +352,7 @@ export const TarkaForensicWorkstation: React.FC = () => {
           onSelectCase={setActiveCaseId}
           cases={cases}
           reportCount={reportsList.length}
+          onOpenDemoDirector={() => setIsDemoDirectorOpen(true)}
         />
 
         <SarvamVoiceModal
@@ -328,6 +373,28 @@ export const TarkaForensicWorkstation: React.FC = () => {
           isOpen={isReportOpen}
           onClose={() => setIsReportOpen(false)}
           onReportGenerated={() => loadCaseData(activeCaseId)}
+        />
+
+        {/* Demo Director Guided Tour Overlay & Preflight Modal on Landing */}
+        {demo.currentScene && (demo.state === "RUNNING" || demo.state === "PAUSED") && (
+          <DemoArrowOverlay
+            scene={demo.currentScene}
+            sceneIndex={demo.currentSceneIndex}
+            totalScenes={demo.totalScenes}
+            controls={demo}
+          />
+        )}
+
+        <DemoDirectorModal
+          isOpen={isDemoDirectorOpen}
+          onClose={() => setIsDemoDirectorOpen(false)}
+          preflight={demo.preflight}
+          onRunPreflight={demo.runPreflight}
+          onStartDemo={async () => {
+            setIsDemoDirectorOpen(false);
+            await demo.startDemo();
+          }}
+          demoState={demo.state}
         />
       </div>
     );
@@ -392,8 +459,72 @@ export const TarkaForensicWorkstation: React.FC = () => {
           </div>
         </div>
 
+        {/* Dynamic Voice & Prompt Capsule (Center of Topbar - Phase 10 Skeuomorphic Spec) */}
+        <div className="dynamic-capsule-bar" style={{ minWidth: "360px", maxWidth: "460px", margin: "0 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: isVoiceOpen ? "#F43F5E" : "#3B82F6",
+                boxShadow: isVoiceOpen ? "0 0 10px #F43F5E" : "0 0 8px #3B82F6",
+              }}
+            />
+            <span style={{ fontSize: "11px", color: "#93C5FD", fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace" }}>TARKA</span>
+          </div>
+          <input
+            type="text"
+            placeholder="Inquire: 'Reconcile ₹25,000 receipt against bank statement'..."
+            className="capsule-prompt-input"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setIsVoiceOpen(true);
+              }
+            }}
+          />
+          <button
+            onClick={() => setIsVoiceOpen(true)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#60A5FA",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              padding: "2px",
+            }}
+            title="Open Ambient Voice Interrogation"
+          >
+            <Mic size={14} />
+          </button>
+        </div>
+
         {/* Global Workstation Action Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Autonomous Demo Director Button */}
+          <button
+            id="btn-autonomous-demo"
+            data-testid="btn-autonomous-demo-workstation"
+            onClick={() => setIsDemoDirectorOpen(true)}
+            className="lg-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "rgba(37, 99, 235, 0.25)",
+              border: "1px solid #3B82F6",
+              color: "#93C5FD",
+              fontWeight: 600,
+              fontSize: "11px",
+              padding: "5px 12px",
+            }}
+            title="Open TARKA Autonomous Demo Director"
+          >
+            <Play size={12} fill="#60A5FA" strokeWidth={0} />
+            <span>Autonomous Demo</span>
+          </button>
+
           {/* Voice Landing Button */}
           <button
             id="btn-voice-landing"
@@ -550,8 +681,41 @@ export const TarkaForensicWorkstation: React.FC = () => {
 
       {/* 2. Main Workspace Shell: Left Rail + Center Canvas + Right Inspector */}
       <div className="glass-workspace-shell lg-workspace-shell">
-        {/* Left Navigation Rail */}
-        <aside className={`glass-left-rail lg-left-rail ${isLeftRailCollapsed ? "collapsed" : ""}`}>
+        {/* Left Navigation Rail (Skeuomorphic & Curved 3D Glass - LUMEN Reference Spec) */}
+        <aside className={`glass-left-rail lg-left-rail ${isLeftRailCollapsed ? "collapsed" : ""} curved-glass-sidebar`} style={{ margin: "12px 0 12px 12px", height: "calc(100vh - 84px)" }}>
+          {!isLeftRailCollapsed && (
+            <div style={{ padding: "16px 14px 12px 14px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", marginBottom: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "14px",
+                    color: "#FFFFFF",
+                    boxShadow: "0 0 12px rgba(59, 130, 246, 0.5)",
+                  }}
+                >
+                  VI
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#FFFFFF" }}>Vikramaditya</span>
+                    <span className="lg-badge lg-badge-emerald" style={{ fontSize: "9px", padding: "1px 5px" }}>PRO</span>
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace" }}>
+                    UID: 604218935
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="lg-nav-list">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -577,8 +741,31 @@ export const TarkaForensicWorkstation: React.FC = () => {
             })}
           </div>
 
+          {/* Bulletin Notice Card (LUMEN Spec) */}
+          {!isLeftRailCollapsed && (
+            <div style={{ padding: "0 10px 10px 10px", marginTop: "auto" }}>
+              <div
+                style={{
+                  padding: "10px",
+                  borderRadius: "12px",
+                  backgroundColor: "rgba(30, 41, 59, 0.45)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: 700, color: "#93C5FD", marginBottom: "4px" }}>
+                  <ShieldCheck size={12} color="#60A5FA" />
+                  <span>LEGAL NOTICE</span>
+                </div>
+                <div style={{ fontSize: "10px", color: "#94A3B8", lineHeight: 1.35 }}>
+                  Section 63 BSA & Section 94 BNSS statutory rules strictly enforced.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Rail Collapse Toggle */}
-          <div style={{ paddingTop: "12px", borderTop: "1px solid var(--glass-border-subtle)" }}>
+          <div style={{ paddingTop: "8px", borderTop: "1px solid var(--glass-border-subtle)" }}>
             <button
               id="btn-collapse-rail"
               onClick={() => setIsLeftRailCollapsed((prev) => !prev)}
@@ -632,7 +819,11 @@ export const TarkaForensicWorkstation: React.FC = () => {
               {activeTab === "overview" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Executive Briefing Banner */}
-                  <div className="glass-panel lg-card" style={{ position: "relative", overflow: "hidden" }}>
+                  <div
+                    className="glass-panel lg-card"
+                    data-testid="workstation-statutory-banner"
+                    style={{ position: "relative", overflow: "hidden" }}
+                  >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -845,6 +1036,31 @@ export const TarkaForensicWorkstation: React.FC = () => {
                 </div>
               )}
 
+              {/* MULTIMODAL EVIDENCE INTAKE TAB (PHASE 10) */}
+              {activeTab === "inbox" && (
+                <MultimodalInbox
+                  caseId={activeCaseId}
+                  onEvidenceAdmitted={() => loadCaseData(activeCaseId)}
+                  onSelectArtifact={(aid) => {
+                    setSelectedVisualArtifactId(aid);
+                    setActiveTab("visual");
+                  }}
+                />
+              )}
+
+              {/* VISUAL FORENSICS & ELA VIEWER TAB (PHASE 10) */}
+              {activeTab === "visual" && (
+                <VisualForensicsViewer
+                  caseId={activeCaseId}
+                  artifactId={selectedVisualArtifactId}
+                />
+              )}
+
+              {/* COMPETING HYPOTHESES & GAPS TAB (PHASE 10) */}
+              {activeTab === "hypotheses" && (
+                <HypothesesWorkspace caseId={activeCaseId} />
+              )}
+
               {/* EVIDENCE LEDGER TAB */}
               {activeTab === "evidence" && (
                 <EvidenceRegister
@@ -885,7 +1101,7 @@ export const TarkaForensicWorkstation: React.FC = () => {
 
               {/* PROVENANCE DAG TAB */}
               {activeTab === "provenance" && (
-                <div>
+                <div data-testid="provenance-dag-container">
                   <div style={{ marginBottom: "16px" }}>
                     <p style={{ fontSize: "12px", color: "#9CA3AF", margin: 0 }}>
                       Bidirectional traceability connecting raw preserved bytes to facts, Z3 SMT constraints, and statutory findings.
@@ -986,6 +1202,8 @@ export const TarkaForensicWorkstation: React.FC = () => {
 
                       <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
                         <button
+                          id="btn-execute-challenge"
+                          data-testid="btn-execute-challenge"
                           onClick={runRobustnessChallenge}
                           disabled={runningChallenge}
                           className="lg-btn lg-btn-primary"
@@ -1308,6 +1526,37 @@ export const TarkaForensicWorkstation: React.FC = () => {
         </aside>
       </div>
 
+      {/* Floating Tactile Capsule Dock (Skeuomorphic Bottom Dock Spec) */}
+      <nav className="floating-capsule-dock" aria-label="Investigation Fast Dock">
+        {[
+          { id: "overview", label: "Overview" },
+          { id: "inbox", label: "Intake" },
+          { id: "evidence", label: "Evidence" },
+          { id: "visual", label: "Visual TRACE" },
+          { id: "timeline", label: "Timeline" },
+          { id: "contradictions", label: "Contradictions" },
+          { id: "hypotheses", label: "Hypotheses" },
+          { id: "reports", label: "Reports" },
+        ].map((dockItem) => (
+          <button
+            key={dockItem.id}
+            onClick={() => setActiveTab(dockItem.id as WorkstationTab)}
+            className={`floating-dock-item ${activeTab === dockItem.id ? "active" : ""}`}
+          >
+            <span>{dockItem.label}</span>
+          </button>
+        ))}
+        <button
+          onClick={() => setIsIntakeOpen(true)}
+          className="floating-dock-item"
+          style={{ color: "#60A5FA", borderLeft: "1px solid rgba(255, 255, 255, 0.14)", paddingLeft: "12px", marginLeft: "4px" }}
+          title="Quick Intake Multimodal Evidence"
+        >
+          <Plus size={13} />
+          <span>Ingest</span>
+        </button>
+      </nav>
+
       {/* Floating Modals */}
       <EvidenceIntakeModal
         caseId={activeCaseId}
@@ -1334,6 +1583,28 @@ export const TarkaForensicWorkstation: React.FC = () => {
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
         onReportGenerated={() => loadCaseData(activeCaseId)}
+      />
+
+      {/* Demo Director Guided Tour Overlay & Preflight Modal in Workstation */}
+      {demo.currentScene && (demo.state === "RUNNING" || demo.state === "PAUSED") && (
+        <DemoArrowOverlay
+          scene={demo.currentScene}
+          sceneIndex={demo.currentSceneIndex}
+          totalScenes={demo.totalScenes}
+          controls={demo}
+        />
+      )}
+
+      <DemoDirectorModal
+        isOpen={isDemoDirectorOpen}
+        onClose={() => setIsDemoDirectorOpen(false)}
+        preflight={demo.preflight}
+        onRunPreflight={demo.runPreflight}
+        onStartDemo={async () => {
+          setIsDemoDirectorOpen(false);
+          await demo.startDemo();
+        }}
+        demoState={demo.state}
       />
     </div>
   );

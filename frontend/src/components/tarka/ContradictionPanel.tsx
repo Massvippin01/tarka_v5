@@ -434,6 +434,7 @@ export const ContradictionPanel: React.FC<ContradictionPanelProps> = ({
             contradictions.map((c) => (
               <div
                 key={c.finding_id}
+                data-testid={c.finding_id.includes("AMT") ? "contradiction-card-CONTRA-AMT" : `contradiction-card-${c.finding_id}`}
                 className="p-4 rounded-lg border border-[#AF3F3A]/40 bg-[#AF3F3A]/5 hover:border-[#AF3F3A]/70 transition"
               >
                 <div className="flex items-start justify-between gap-4">

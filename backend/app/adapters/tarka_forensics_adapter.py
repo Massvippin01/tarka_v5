@@ -17,6 +17,7 @@ import io
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -46,6 +47,13 @@ from tarka.core.forensic_report import (
     ForensicReportPDFExporter,
 )
 from tarka.api.server import case_store, seed_demo_case_if_needed, FIXTURES_FRAUD_DIR
+from app.adapters.trace_engine import TraceEngine
+from app.adapters.aegis_gateway import AegisGateway
+from app.adapters.whatsapp_gateway import WhatsAppGateway
+from app.adapters.multimodal_evidence_gateway import MultimodalEvidenceGateway, IngestionSecurityError, IngestionQuarantineError
+from app.adapters.trace_payment_forensics import TracePaymentForensics
+from app.adapters.aegis_reasoning_engine import AegisReasoningEngine
+from app.services.forensic_job_orchestrator import ForensicJobOrchestrator, JobState
 
 
 class TarkaForensicsAdapter:
@@ -54,20 +62,69 @@ class TarkaForensicsAdapter:
     def __init__(self, store: Optional[CaseStore] = None):
         # Use shared case_store from server.py (or custom injected store)
         self.store = store or case_store
+        self.active_jobs: Dict[str, Dict[str, Any]] = {}
+        self.case_observations: Dict[str, List[Dict[str, Any]]] = {}
+        self.trace_engine = TraceEngine()
+        self.aegis_gateway = AegisGateway()
+        self.whatsapp_gateway = WhatsAppGateway()
+        self.multimodal_gw = MultimodalEvidenceGateway()
+        self.trace_payment_engine = TracePaymentForensics()
+        self.aegis_reasoning = AegisReasoningEngine()
+        self.job_orchestrator = ForensicJobOrchestrator.get_instance()
 
-    def ensure_synthetic_case(self, case_id: str = "upi_payment_discrepancy") -> Dict[str, Any]:
-        """Ensures the canonical SUTRAM 2026 synthetic case is seeded and ready."""
+    def ensure_synthetic_case(self, case_id: str = "upi_payment_discrepancy", allow_non_demo: bool = False) -> Dict[str, Any]:
+        """
+        Ensures the canonical SUTRAM 2026 synthetic case is seeded and ready.
+        PRODUCTION SAFETY: Synthetic evidence is strictly restricted to explicit demo/test cases.
+        Never inject synthetic fixtures into an actual investigator's case.
+        """
+        is_demo_target = (
+            case_id == "upi_payment_discrepancy"
+            or case_id.lower().startswith(("demo", "synthetic", "test", "case-phase9"))
+            or allow_non_demo
+        )
+        if not is_demo_target:
+            raise PermissionError(
+                f"Synthetic demo data injection is strictly forbidden in real investigative case '{case_id}'. "
+                "Synthetic seeding is restricted exclusively to designated demo/test workspaces."
+            )
         seed_demo_case_if_needed()
         case = self.store.get_case(case_id)
         if not case:
             case = self.store.create_case(
                 case_id=case_id,
-                title="UPI Payment Discrepancy",
-                description="Investigation of ₹25,000 digital payment discrepancy across chat, bank statement, telecom CDR, and claim receipts.",
+                title="[DEMO] UPI Payment Discrepancy",
+                description="[SYNTHETIC TEST ENVIRONMENT] Multi-source synthetic payment investigation dataset for benchmarking and demonstration.",
                 investigator="Forensic Officer",
             )
+        # Ensure artifacts are registered ONLY for designated demo/test case workspaces
+        existing_arts = self.store.list_artifacts(case_id)
+        if len(existing_arts) == 0 and FIXTURES_FRAUD_DIR.exists():
+            from tarka.core.models import TrustTier
+            tier_map = {
+                "bank_statement.csv": TrustTier.T1,
+                "cdr_records.csv": TrustTier.T1,
+                "whatsapp_chat.txt": TrustTier.T3,
+                "screenshot_claim.json": TrustTier.T3,
+                "unverified_claim.json": TrustTier.T3,
+                "payment_receipt_screenshot.png": TrustTier.T3,
+            }
+            for fname, tier in tier_map.items():
+                fpath = FIXTURES_FRAUD_DIR / fname
+                if fpath.exists():
+                    with open(fpath, "rb") as fp:
+                        b = fp.read()
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=b,
+                        source_tier=tier,
+                        intake_officer="Forensic Officer",
+                        intake_notes=f"[SYNTHETIC_DEMO_FIXTURE] Non-operational benchmark evidence: {fname}",
+                    )
         d = case.model_dump(mode="json")
         d["seeded"] = True
+        d["is_synthetic_demo"] = True
         return d
 
     def list_cases(self) -> List[Dict[str, Any]]:
@@ -405,13 +462,41 @@ class TarkaForensicsAdapter:
         run_id: Optional[str] = None,
         officer: str = "Lead Forensic Examiner",
         reason: str = "Statutory Digital Evidence Inspection",
+        fallback_to_baseline: bool = False,
+        fallback_reason: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Generates statutory Section 63 Indian Evidence Act / BSA compliant report with automatic PDF persistence."""
+        """
+        Generates statutory Section 63 Indian Evidence Act / BSA compliant report with automatic PDF persistence.
+        PRODUCTION SAFETY: Never silently fall back to baseline run. An invalid run_id must either be rejected
+        or require explicit audited fallback recorded in report metadata and the custody ledger.
+        """
         builder = ForensicReportBuilder(case_store=self.store)
         title = f"Statutory Forensic Audit: {reason} (Examiner: {officer})"
+        target_run_id = run_id or "baseline"
+        run_fallback_audit = None
+
+        if run_id and run_id != "baseline":
+            existing_run = self.store.get_analysis_run(case_id, run_id)
+            if not existing_run:
+                if not fallback_to_baseline:
+                    raise ValueError(
+                        f"Requested analysis run '{run_id}' not found in case '{case_id}'. "
+                        "To prevent misleading judicial certification, silent fallback is strictly disabled. "
+                        "Specify an existing run_id or provide explicit audited fallback authorization."
+                    )
+                # Explicit audited fallback
+                target_run_id = "baseline"
+                run_fallback_audit = {
+                    "requested_run_id": run_id,
+                    "fallback_run_id": "baseline",
+                    "reason": fallback_reason or "Requested analysis run not found; explicit audited fallback to baseline executed",
+                    "audited_at_iso": datetime.now(timezone.utc).isoformat(),
+                }
+                title += f" [AUDITED FALLBACK: {run_id} -> baseline]"
+
         report = builder.generate_report(
             case_id=case_id,
-            run_id=run_id or "baseline",
+            run_id=target_run_id,
             report_title=title,
         )
 
@@ -429,13 +514,17 @@ class TarkaForensicsAdapter:
 
         # Save report JSON metadata including PDF artifact hash
         report_dict = report.model_dump(mode="json")
+        report_dict["case_id"] = clean_case_id
         report_dict["report_id"] = clean_rep_id
+        report_dict["fingerprint"] = report.metadata.fingerprint
         report_dict["pdf_artifact_hash"] = pdf_hash
         report_dict["pdf_size_bytes"] = len(pdf_bytes)
         report_dict["status"] = "BSA_63_COMPLIANT"
         report_dict["examiner_name"] = officer
         report_dict["purpose"] = reason
         report_dict["available_formats"] = ["pdf", "html", "json"]
+        if run_fallback_audit:
+            report_dict["run_fallback_audit"] = run_fallback_audit
 
         with open(reports_dir / f"{clean_rep_id}.json", "w", encoding="utf-8") as f:
             json.dump(report_dict, f, indent=2)
@@ -443,12 +532,16 @@ class TarkaForensicsAdapter:
         # Log to tamper-evident custody ledger
         try:
             ledger = self.store.get_ledger(clean_case_id)
+            ledger_action = "GENERATE_STATUTORY_REPORT_WITH_FALLBACK" if run_fallback_audit else "GENERATE_STATUTORY_REPORT"
             ledger.append_action(
-                action="GENERATE_STATUTORY_REPORT",
+                action=ledger_action,
                 payload_data={
                     "report_id": report.metadata.report_id,
                     "fingerprint": report.metadata.fingerprint,
                     "pdf_hash": pdf_hash,
+                    "run_id": target_run_id,
+                    "requested_run_id": run_id,
+                    "fallback_audit": run_fallback_audit,
                     "examiner": officer,
                     "statutory_regime": "Section 63 BSA, 2023",
                 },
@@ -867,6 +960,378 @@ class TarkaForensicsAdapter:
                 "mode": "Content-Addressed Storage (CAS)",
                 "custody": "Tamper-Evident Append-Only Ledger",
             },
+        }
+
+    def create_case(
+        self,
+        case_id: str,
+        title: str,
+        description: str = "",
+        investigator: str = "Forensic Officer",
+    ) -> Dict[str, Any]:
+        """Creates a new isolated forensic case workspace."""
+        case = self.store.create_case(
+            case_id=case_id,
+            title=title,
+            description=description,
+            investigator=investigator,
+        )
+        return case.model_dump(mode="json")
+
+    def upload_evidence(
+        self,
+        case_id: str,
+        filename: str,
+        file_bytes: bytes,
+        source_channel: str = "DIRECT_UPLOAD",
+        officer: str = "Forensic Examiner",
+    ) -> Dict[str, Any]:
+        """Admits evidence, validates, hashes, stores immutably, registers custody, extracts observations, and creates analysis job."""
+        if len(file_bytes) == 0:
+            raise ValueError("Empty evidence file cannot be admitted.")
+        if len(file_bytes) > 100 * 1024 * 1024:
+            raise ValueError("File exceeds maximum allowable size (100MB).")
+
+        fname_lower = filename.lower()
+        tier = (
+            TrustTier.T1 if ("bank" in fname_lower or "cdr" in fname_lower)
+            else TrustTier.T3 if ("claim" in fname_lower or "screenshot" in fname_lower or "receipt" in fname_lower or "chat" in fname_lower)
+            else TrustTier.T2
+        )
+
+        art, is_dedup, dna = self.store.register_artifact(
+            case_id=case_id,
+            filename=filename,
+            file_bytes=file_bytes,
+            source_tier=tier,
+            intake_officer=officer,
+            intake_notes=f"Admitted via {source_channel}",
+        )
+
+        # Extract observations via TRACE if statement/receipt
+        new_obs: List[Dict[str, Any]] = []
+        if fname_lower.endswith(".csv") or "statement" in fname_lower:
+            try:
+                tx_records = self.trace_engine.parse_bank_statement_csv(file_bytes.decode("utf-8", errors="ignore"))
+                for tx in tx_records:
+                    obs = {
+                        "observation_id": f"OBS-{tx.tx_id}",
+                        "evidence_id": art.artifact_id,
+                        "case_id": case_id,
+                        "observation_type": "FINANCIAL_TRANSACTION",
+                        "extracted_value": tx.to_dict(),
+                        "extraction_method": "TRACE_CSV_PARSER",
+                        "confidence": 1.0,
+                        "human_verified": False,
+                    }
+                    new_obs.append(obs)
+            except Exception as e:
+                logger.warning(f"TRACE CSV extraction error: {e}")
+        elif fname_lower.endswith((".png", ".jpg", ".jpeg")) or "screenshot" in fname_lower or "receipt" in fname_lower:
+            try:
+                res = self.trace_engine.examine_screenshot_receipt(file_bytes, filename)
+                obs = {
+                    "observation_id": f"OBS-IMG-{art.artifact_id[:8]}",
+                    "evidence_id": art.artifact_id,
+                    "case_id": case_id,
+                    "observation_type": "IMAGE_EXIF",
+                    "extracted_value": res.get("extracted_fields", {}),
+                    "extraction_method": "TRACE_SCREENSHOT_PIPELINE",
+                    "confidence": 0.95,
+                    "human_verified": False,
+                }
+                new_obs.append(obs)
+            except Exception as e:
+                logger.warning(f"TRACE Screenshot extraction error: {e}")
+
+        if case_id not in self.case_observations:
+            self.case_observations[case_id] = []
+        self.case_observations[case_id].extend(new_obs)
+
+        # Create Analysis Job
+        job_id = f"JOB-{hashlib.sha256(f'{case_id}:{art.artifact_id}:{datetime.now(timezone.utc).isoformat()}'.encode()).hexdigest()[:12]}"
+        job = {
+            "job_id": job_id,
+            "case_id": case_id,
+            "evidence_ids": [art.artifact_id],
+            "engine": "TRACE",
+            "engine_version": "1.0.0",
+            "status": "COMPLETED",
+            "progress": 1.0,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "retry_count": 0,
+            "results_summary": {
+                "artifact_id": art.artifact_id,
+                "is_duplicate": is_dedup,
+                "observations_extracted": len(new_obs),
+            },
+        }
+        self.active_jobs[job_id] = job
+
+        evidence_payload = {
+            "evidence_id": art.artifact_id,
+            "case_id": case_id,
+            "original_filename": art.filename,
+            "media_type": "text/csv" if fname_lower.endswith(".csv") else "image/png" if fname_lower.endswith(".png") else "application/octet-stream",
+            "file_size": len(file_bytes),
+            "sha256": art.sha256,
+            "storage_reference": f"cas://sha256/{art.sha256}",
+            "source_channel": source_channel,
+            "submitted_by": officer,
+            "processing_status": "EXTRACTED" if new_obs else "VALIDATED",
+            "is_duplicate": is_dedup,
+        }
+
+        return {
+            "evidence": evidence_payload,
+            "analysis_job": job,
+            "observations_count": len(new_obs),
+        }
+
+    def get_job(self, case_id: str, job_id: str) -> Optional[Dict[str, Any]]:
+        # Check durable ForensicJobOrchestrator first
+        orch_job = self.job_orchestrator.get_job(job_id)
+        if orch_job:
+            return orch_job.to_dict()
+        return self.active_jobs.get(job_id)
+
+    def cancel_job(self, case_id: str, job_id: str) -> bool:
+        """Cancels an active analysis job."""
+        return self.job_orchestrator.cancel_job(job_id)
+
+    def ingest_multimodal_batch(
+        self,
+        case_id: str,
+        files: List[Tuple[str, bytes]],
+        officer: str = "Lead Forensic Examiner",
+        user_id: str = "INVESTIGATOR_DELHI",
+    ) -> Dict[str, Any]:
+        """
+        Phase 10: Ingests a multimodal batch of evidence (screenshots, bank statements, receipts, exports).
+        Enforces magic-bytes verification, bounds check (100MB/file, 500MB/batch), zip-slip and bomb defenses,
+        writes to isolated CAS tiers, registers tamper-evident custody ledger, dispatches async job,
+        and returns immediate acknowledgement.
+        """
+        # Ensure case exists
+        case = self.store.get_case(case_id)
+        if not case:
+            case = self.store.create_case(case_id=case_id, title=f"Investigation {case_id}", investigator=officer)
+
+        batch_items = [{"filename": fname, "content": fb} for fname, fb in files]
+        batch_res = self.multimodal_gw.ingest_batch(
+            case_id=case_id,
+            items=batch_items,
+            uploader_id=user_id,
+            source_channel="MULTIMODAL_PORTAL",
+        )
+        ingestion_results = batch_res.get("admitted_artifacts", [])
+        files_by_name = {fname: fb for fname, fb in files}
+
+        admitted_aids: List[str] = []
+        for item in ingestion_results:
+            aid = item["artifact_id"]
+            admitted_aids.append(aid)
+            fname = item["original_filename"]
+            fb = files_by_name.get(fname, b"")
+            # Register in CaseStore if missing
+            if not self.store.get_artifact(case_id, aid):
+                try:
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=fb,
+                        source_tier=TrustTier.T3 if item.get("file_type") == "IMAGE" else TrustTier.T1 if "statement" in fname.lower() else TrustTier.T2,
+                        intake_officer=officer,
+                        intake_notes=f"Multimodal Gateway Ingest: {item.get('file_type', 'EVIDENCE')}",
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to register artifact in case_store: {e}")
+
+        # Create asynchronous job via orchestrator
+        job = self.job_orchestrator.create_job(
+            case_id=case_id,
+            artifact_ids=admitted_aids,
+            created_by=user_id,
+        )
+
+        # Worker execution task
+        def run_worker_analysis(job_id_param: str):
+            try:
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.VALIDATING,
+                    stage_name="Cryptographic Validation & Format Integrity",
+                )
+                time.sleep(0.05)
+
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.PROCESSING,
+                    stage_name="Multimodal TRACE & Visual Forensic Pipeline",
+                )
+
+                job_results: Dict[str, Any] = {}
+                extracted_obs: List[Dict[str, Any]] = []
+
+                for item in ingestion_results:
+                    if item.get("status") in ("ADMITTED", "DUPLICATE_ACCEPTED"):
+                        aid = item["artifact_id"]
+                        fname = item.get("original_filename", "")
+                        fb = files_by_name.get(fname, item.get("file_bytes", b""))
+                        ftype = item.get("file_type", "")
+
+                        if ftype == "IMAGE":
+                            exam = self.trace_payment_engine.examine_screenshot(fb, fname)
+                            job_results[aid] = {
+                                "type": "IMAGE_EXAMINATION",
+                                "manipulation_score": exam["manipulation_analysis"]["composite_anomaly_score"],
+                                "classification": exam["manipulation_analysis"]["classification"],
+                                "extracted_fields": exam["ocr_analysis"].get("extracted_fields", {}),
+                                "discrepancies": exam["reconciliation_findings"],
+                            }
+                            # Add atomic observation
+                            extracted_obs.append({
+                                "observation_id": f"OBS-IMG-{aid[:8]}",
+                                "case_id": case_id,
+                                "artifact_id": aid,
+                                "observation_type": "VISUAL_EXAMINATION",
+                                "summary": f"Screenshot examined: anomaly score {exam['manipulation_analysis']['composite_anomaly_score']:.2f}",
+                                "confidence": 0.85,
+                                "human_verified": False,
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            })
+                        elif ftype in ("CSV", "BANK_STATEMENT"):
+                            cbs = self.trace_engine.parse_bank_statement_csv(fb.decode("utf-8", errors="ignore"))
+                            job_results[aid] = {
+                                "type": "BANK_STATEMENT",
+                                "transaction_count": len(cbs),
+                            }
+                            extracted_obs.append({
+                                "observation_id": f"OBS-CSV-{aid[:8]}",
+                                "case_id": case_id,
+                                "artifact_id": aid,
+                                "observation_type": "CBS_LEDGER",
+                                "summary": f"Bank statement parsed with {len(cbs)} transactions",
+                                "confidence": 0.98,
+                                "human_verified": False,
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                            })
+
+                if case_id not in self.case_observations:
+                    self.case_observations[case_id] = []
+                self.case_observations[case_id].extend(extracted_obs)
+
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.COMPLETED,
+                    stage_name="Analysis Finished",
+                    results_summary=job_results,
+                )
+            except Exception as exc:
+                logger.error(f"Error in job {job_id_param}: {exc}")
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.FAILED,
+                    stage_name="Job Execution Error",
+                    error_message=str(exc),
+                )
+
+        self.job_orchestrator.start_job_execution(job.job_id, run_worker_analysis)
+
+        return {
+            "case_id": case_id,
+            "status": "QUEUED",
+            "job_id": job.job_id,
+            "admitted_count": len(admitted_aids),
+            "total_submitted": len(files),
+            "artifacts": [
+                {
+                    "artifact_id": r["artifact_id"],
+                    "filename": r["original_filename"],
+                    "sha256": r["sha256"],
+                    "file_type": r["file_type"],
+                    "file_size": r["file_size"],
+                    "status": r["status"],
+                }
+                for r in ingestion_results
+            ],
+        }
+
+    def examine_screenshot_artifact(self, case_id: str, artifact_id: str) -> Dict[str, Any]:
+        """
+        Executes in-depth TRACE visual and forensic examination on a screenshot artifact.
+        Extracts OCR bounding boxes, performs ELA at Q=90, inspects metadata, checks typography.
+        """
+        content, _, art = self.get_artifact_bytes(case_id, artifact_id)
+        if not content:
+            raise KeyError(f"Artifact '{artifact_id}' not found in case '{case_id}'")
+        return self.trace_payment_engine.examine_screenshot(content, art.filename)
+
+    def get_case_hypotheses(self, case_id: str) -> Dict[str, Any]:
+        """
+        Invokes AEGIS reasoning engine to generate Analysis of Competing Hypotheses (ACH)
+        and prioritized evidence gaps for the case.
+        """
+        obs = self.list_observations(case_id)
+        discrepancies = []
+        try:
+            recon = self.reconcile_finances(case_id)
+            for f in recon.get("screenshot_findings", []):
+                discrepancies.append(f)
+        except Exception as e:
+            logger.warning(f"Could not load discrepancies for hypotheses: {e}")
+
+        hypotheses = self.aegis_reasoning.generate_hypotheses(case_id, obs, discrepancies)
+        
+        missing_items = [
+            {"evidence_type": "NPCI_CENTRAL_SWITCH_LOGS", "description": "Raw ISO 8583 switch logs for UTR verification", "authority": "BNSS Section 94"},
+            {"evidence_type": "BENEFICIARY_CORE_BANKING_CBS", "description": "Beneficiary bank account statement verifying credit entry", "authority": "CrPC Section 91"},
+            {"evidence_type": "SENDER_DEVICE_FORENSIC_IMAGE", "description": "Physical acquisition of sender smartphone for local app SQLite DB examination", "authority": "BNSS Section 105"},
+            {"evidence_type": "TELECOM_TOWER_DUMP_CDR", "description": "Cell site tower dump verifying proximity during disputed transaction window", "authority": "IT Act Section 69"},
+        ]
+        gaps = self.aegis_reasoning.prioritize_evidence_gaps(case_id, missing_items)
+
+        return {
+            "case_id": case_id,
+            "hypotheses_matrix": hypotheses,
+            "prioritized_evidence_gaps": gaps,
+            "discrepancies_evaluated": len(discrepancies),
+        }
+
+    def list_observations(self, case_id: str) -> List[Dict[str, Any]]:
+        return self.case_observations.get(case_id, [])
+
+    def reconcile_finances(self, case_id: str) -> Dict[str, Any]:
+        """Runs TRACE financial reconciliation on case observations and artifacts."""
+        artifacts = self.store.list_artifacts(case_id)
+        cbs_txs = []
+        screenshot_receipts = []
+
+        for a in artifacts:
+            try:
+                content, _, _ = self.get_artifact_bytes(case_id, a.artifact_id)
+                fname = a.filename.lower()
+                if fname.endswith(".csv") or "statement" in fname:
+                    cbs_txs.extend(self.trace_engine.parse_bank_statement_csv(content.decode("utf-8", errors="ignore")))
+                elif fname.endswith((".png", ".jpg", ".jpeg")) or "screenshot" in fname:
+                    screenshot_receipts.append((content, a.filename))
+            except Exception as e:
+                logger.warning(f"Error reading artifact {a.artifact_id} for reconciliation: {e}")
+
+        recon_result = self.trace_engine.reconcile_balance(cbs_txs)
+
+        screenshot_findings = []
+        for img_bytes, fname in screenshot_receipts:
+            res = self.trace_engine.examine_screenshot_receipt(img_bytes, fname, known_cbs_transactions=cbs_txs)
+            if res.get("discrepancy_finding"):
+                screenshot_findings.append(res["discrepancy_finding"])
+
+        return {
+            "case_id": case_id,
+            "reconciliation": recon_result.to_dict(),
+            "transaction_count": len(cbs_txs),
+            "screenshot_findings": screenshot_findings,
         }
 
 

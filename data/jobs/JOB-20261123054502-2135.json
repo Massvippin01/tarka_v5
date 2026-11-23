@@ -1,0 +1,18 @@
+{
+  "job_id": "JOB-20261123054502-2135",
+  "case_id": "demo_phase10_test",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-20261123054502-4BF9EC46",
+    "ART-20261123054502-A074CB87"
+  ],
+  "status": "FAILED",
+  "current_stage": "Job Execution Error",
+  "progress_percent": 100,
+  "partial_results": {},
+  "error_message": "name 'job' is not defined",
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T05:45:02.135328+00:00",
+  "updated_at_iso": "2026-11-23T05:45:02.137341+00:00"
+}

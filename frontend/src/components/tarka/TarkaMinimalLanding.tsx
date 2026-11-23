@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ShieldCheck,
   FileText,
+  Play,
 } from "lucide-react";
 import { TarkaParticleOrb, type OrbState } from "./TarkaParticleOrb";
 import { useTheme, type ThemeMode } from "../../context/ThemeContext";
@@ -25,6 +26,7 @@ interface TarkaMinimalLandingProps {
   onSelectCase: (caseId: string) => void;
   cases: Array<{ case_id: string; title?: string }>;
   reportCount?: number;
+  onOpenDemoDirector?: () => void;
 }
 
 export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
@@ -39,6 +41,7 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
   onSelectCase,
   cases,
   reportCount = 0,
+  onOpenDemoDirector,
 }) => {
   const { theme, setTheme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
@@ -224,6 +227,33 @@ export const TarkaMinimalLanding: React.FC<TarkaMinimalLandingProps> = ({
             <SlidersHorizontal size={14} />
             <span>Settings</span>
           </button>
+
+          {/* Autonomous Demo Walkthrough Button */}
+          {onOpenDemoDirector && (
+            <button
+              id="btn-autonomous-demo"
+              data-testid="btn-autonomous-demo-landing"
+              onClick={onOpenDemoDirector}
+              className="lg-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "12px",
+                fontWeight: 600,
+                padding: "7px 16px",
+                borderRadius: "var(--glass-radius-pill)",
+                backgroundColor: "rgba(37, 99, 235, 0.25)",
+                border: "1px solid #3B82F6",
+                color: "#93C5FD",
+                boxShadow: "0 0 15px rgba(59, 130, 246, 0.2)",
+              }}
+              title="Launch Uninterrupted Autonomous Zero-Mouse Demonstration"
+            >
+              <Play size={13} fill="#60A5FA" strokeWidth={0} />
+              <span>Autonomous Walkthrough</span>
+            </button>
+          )}
 
           {/* Direct Workstation Button */}
           <button

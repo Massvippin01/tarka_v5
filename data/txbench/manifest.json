@@ -1,0 +1,118 @@
+{
+  "benchmark_name": "TARKA-TXBENCH",
+  "version": "1.0.0",
+  "description": "Standardized Indian UPI Multimodal Forensic Evaluation Benchmark",
+  "scenarios_count": 10,
+  "cases": [
+    {
+      "id": "TXB-GEN-01",
+      "filename": "phonepe_genuine_25000.png",
+      "relative_path": "images/phonepe_genuine_25000.png",
+      "app": "PhonePe",
+      "tampered": false,
+      "ground_truth_label": "GENUINE",
+      "ground_truth_amount": 25000.0,
+      "ground_truth_utr": "412356789012",
+      "ground_truth_tampering": null
+    },
+    {
+      "id": "TXB-GEN-02",
+      "filename": "gpay_genuine_15000.png",
+      "relative_path": "images/gpay_genuine_15000.png",
+      "app": "Google Pay",
+      "tampered": false,
+      "ground_truth_label": "GENUINE",
+      "ground_truth_amount": 15000.0,
+      "ground_truth_utr": "412356789013",
+      "ground_truth_tampering": null
+    },
+    {
+      "id": "TXB-GEN-03",
+      "filename": "paytm_genuine_5000.png",
+      "relative_path": "images/paytm_genuine_5000.png",
+      "app": "Paytm",
+      "tampered": false,
+      "ground_truth_label": "GENUINE",
+      "ground_truth_amount": 5000.0,
+      "ground_truth_utr": "412356789014",
+      "ground_truth_tampering": null
+    },
+    {
+      "id": "TXB-GEN-04",
+      "filename": "bhim_genuine_10000.png",
+      "relative_path": "images/bhim_genuine_10000.png",
+      "app": "BHIM",
+      "tampered": false,
+      "ground_truth_label": "GENUINE",
+      "ground_truth_amount": 10000.0,
+      "ground_truth_utr": "412356789015",
+      "ground_truth_tampering": null
+    },
+    {
+      "id": "TXB-GEN-05",
+      "filename": "cred_genuine_8500.png",
+      "relative_path": "images/cred_genuine_8500.png",
+      "app": "CRED",
+      "tampered": false,
+      "ground_truth_label": "GENUINE",
+      "ground_truth_amount": 8500.0,
+      "ground_truth_utr": "412356789016",
+      "ground_truth_tampering": null
+    },
+    {
+      "id": "TXB-TAM-01",
+      "filename": "phonepe_altered_amount_paste.png",
+      "relative_path": "images/phonepe_altered_amount_paste.png",
+      "app": "PhonePe",
+      "tampered": true,
+      "ground_truth_label": "TAMPERED_AMOUNT_SPLICE",
+      "ground_truth_amount": 50000.0,
+      "ground_truth_utr": "412356789012",
+      "ground_truth_tampering": "AMOUNT_PASTE_SPLICE"
+    },
+    {
+      "id": "TXB-TAM-02",
+      "filename": "gpay_fabricated_utr.png",
+      "relative_path": "images/gpay_fabricated_utr.png",
+      "app": "Google Pay",
+      "tampered": true,
+      "ground_truth_label": "TAMPERED_UTR_REPLAY",
+      "ground_truth_amount": 25000.0,
+      "ground_truth_utr": "999999999999",
+      "ground_truth_tampering": "UTR_DIGITAL_EDIT"
+    },
+    {
+      "id": "TXB-TAM-03",
+      "filename": "paytm_resampling_artefacts.png",
+      "relative_path": "images/paytm_resampling_artefacts.png",
+      "app": "Paytm",
+      "tampered": true,
+      "ground_truth_label": "TAMPERED_RESAMPLING",
+      "ground_truth_amount": 75000.0,
+      "ground_truth_utr": "412356789014",
+      "ground_truth_tampering": "NEAREST_NEIGHBOR_RESAMPLE"
+    },
+    {
+      "id": "TXB-TAM-04",
+      "filename": "bhim_canva_watermarked.png",
+      "relative_path": "images/bhim_canva_watermarked.png",
+      "app": "BHIM",
+      "tampered": true,
+      "ground_truth_label": "TAMPERED_METADATA_TOOL",
+      "ground_truth_amount": 10000.0,
+      "ground_truth_utr": "412356789015",
+      "ground_truth_tampering": "CANVA_METADATA_INJECTION"
+    },
+    {
+      "id": "TXB-TAM-05",
+      "filename": "cred_copy_move_timestamp.png",
+      "relative_path": "images/cred_copy_move_timestamp.png",
+      "app": "CRED",
+      "tampered": true,
+      "ground_truth_label": "TAMPERED_TIMESTAMP_CLONE",
+      "ground_truth_amount": 8500.0,
+      "ground_truth_utr": "412356789016",
+      "ground_truth_tampering": "COPY_MOVE_CLONE"
+    }
+  ]
+}

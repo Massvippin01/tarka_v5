@@ -20,8 +20,8 @@ from app.services.command.ui_action_registry import UIActionRegistry
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(auth_headers):
+    return TestClient(app, headers=auth_headers)
 
 
 @pytest.fixture

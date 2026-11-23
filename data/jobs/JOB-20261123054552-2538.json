@@ -1,0 +1,18 @@
+{
+  "job_id": "JOB-20261123054552-2538",
+  "case_id": "demo_phase10_test",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-20261123054552-4BF9EC46",
+    "ART-20261123054552-A074CB87"
+  ],
+  "status": "PROCESSING",
+  "current_stage": "Multimodal TRACE & Visual Forensic Pipeline",
+  "progress_percent": 60,
+  "partial_results": {},
+  "error_message": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T05:45:52.538249+00:00",
+  "updated_at_iso": "2026-11-23T05:45:52.671555+00:00"
+}

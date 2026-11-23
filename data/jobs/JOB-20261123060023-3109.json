@@ -1,0 +1,110 @@
+{
+  "job_id": "JOB-20261123060023-3109",
+  "case_id": "demo_phase10_test",
+  "uploader_id": "INVESTIGATOR_DELHI",
+  "evidence_artifact_ids": [
+    "ART-20261123060023-4BF9EC46",
+    "ART-20261123060023-A074CB87"
+  ],
+  "status": "COMPLETED",
+  "current_stage": "Analysis Finished",
+  "progress_percent": 100,
+  "partial_results": {
+    "ART-20261123060023-4BF9EC46": {
+      "type": "IMAGE_EXAMINATION",
+      "manipulation_score": 0.038,
+      "classification": "NO_OVERT_MANIPULATION_DETECTED",
+      "extracted_fields": {
+        "amount": 15000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": null,
+        "vpa": null,
+        "utr_rrn": "202602148891",
+        "status": "UNKNOWN",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "amount": {
+            "raw_text": "Rs 15000",
+            "confidence": 0.98,
+            "polygon": {
+              "points": [
+                {
+                  "x": 0.65,
+                  "y": 0.16667
+                },
+                {
+                  "x": 0.95,
+                  "y": 0.16667
+                },
+                {
+                  "x": 0.95,
+                  "y": 0.21667
+                },
+                {
+                  "x": 0.65,
+                  "y": 0.21667
+                }
+              ],
+              "bbox": [
+                0.65,
+                0.16667,
+                0.95,
+                0.21667
+              ]
+            },
+            "engine": "TARKA_OCR_PPv4"
+          },
+          "utr_rrn": {
+            "raw_text": "Ref 202602148891",
+            "confidence": 0.99,
+            "polygon": {
+              "points": [
+                {
+                  "x": 0.975,
+                  "y": 0.16667
+                },
+                {
+                  "x": 1.0,
+                  "y": 0.16667
+                },
+                {
+                  "x": 1.0,
+                  "y": 0.21667
+                },
+                {
+                  "x": 0.975,
+                  "y": 0.21667
+                }
+              ],
+              "bbox": [
+                0.975,
+                0.16667,
+                1.0,
+                0.21667
+              ]
+            },
+            "engine": "TARKA_OCR_PPv4"
+          }
+        },
+        "ambiguities": []
+      },
+      "discrepancies": []
+    },
+    "ART-20261123060023-A074CB87": {
+      "type": "BANK_STATEMENT",
+      "transaction_count": 1
+    }
+  },
+  "error_message": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "created_at_iso": "2026-11-23T06:00:23.109513+00:00",
+  "updated_at_iso": "2026-11-23T06:00:23.344244+00:00"
+}
