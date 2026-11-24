@@ -1,0 +1,1561 @@
+{
+  "benchmark_version": "TXBENCH v0.3-HOLDOUT",
+  "evaluation_timestamp": "2026-11-24T05:41:50.798255+00:00",
+  "total_scenarios_evaluated": 25,
+  "visual_forensics_metrics": {
+    "confusion_matrix": {
+      "true_positives": 11,
+      "true_negatives": 14,
+      "false_positives": 0,
+      "false_negatives": 0
+    },
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.0,
+    "mean_localization_iou": 0.9018,
+    "evaluation_note": "Evaluated on pre-registered controlled holdout split under strict blinding."
+  },
+  "financial_reconciliation_metrics": {
+    "total_packages_reconciled": 25,
+    "balance_conservation_verified": 25,
+    "balance_conservation_rate": 1.0,
+    "rrn_exact_match_detected": 0,
+    "unrecorded_receipts_isolated": 0,
+    "ambiguous_timing_inversions_flagged": 0
+  },
+  "ocr_exact_match_metrics": {
+    "evaluable_samples": 25,
+    "amount_exact_match_rate": 1.0,
+    "utr_rrn_exact_match_rate": 1.0,
+    "vpa_exact_match_rate": 1.0,
+    "status_exact_match_rate": 1.0
+  },
+  "performance_latency": {
+    "mean_ms": 88.75,
+    "p50_ms": 71.75,
+    "p90_ms": 105.14,
+    "p99_ms": 436.31
+  },
+  "data_inventory_and_shortfall": {
+    "target_external_samples": 50,
+    "available_controlled_calibration_samples": 25,
+    "consented_external_production_receipts_in_repo": 0,
+    "acquisition_shortfall": 50,
+    "status": "SHORTFALL_REPORTED_COMPLIANT_WITH_SENTINELX_CONSTITUTION"
+  },
+  "scenario_results": [
+    {
+      "scenario_id": "TXB2-GEN-01",
+      "filename": "phonepe_pixel_genuine.png",
+      "sha256": "1fb51fe7f65991cc84d0f0f84b72c1b6ac6d46c1e4ad203460d8939cad143cf3",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.031,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "vendor.tech@ybl",
+        "utr_rrn": "412356789012",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "vendor.tech@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789012",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b925,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "utr": "412356789012",
+        "timestamp": "2026-04-15T11:42:00Z",
+        "vpa": "vendor.tech@ybl",
+        "recipient_name": "Vendor Technologies Pvt Ltd",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 436.31
+    },
+    {
+      "scenario_id": "TXB2-GEN-02",
+      "filename": "gpay_samsung_genuine.png",
+      "sha256": "b6215e94bf20b501353d97699ec9b9a3659feb01a8eb6a2f90a805b3ac8ac9ad",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.041,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 15000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "GOOGLE_PAY",
+        "vpa": "merchant.store@okaxis",
+        "utr_rrn": "412356789013",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "merchant.store@okaxis",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789013",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b915,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 15000.0,
+        "currency": "INR",
+        "utr": "412356789013",
+        "timestamp": "2026-04-15T12:05:00Z",
+        "vpa": "merchant.store@okaxis",
+        "recipient_name": "Metro Retailers",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 79.01
+    },
+    {
+      "scenario_id": "TXB2-GEN-03",
+      "filename": "paytm_oneplus_genuine.png",
+      "sha256": "d87969512806fbc8d57e45086086a4675bcb922ba642c1f51a860f0929006ced",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.052,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 5000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PAYTM",
+        "vpa": "groceries.quick@paytm",
+        "utr_rrn": "412356789014",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "groceries.quick@paytm",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789014",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b95,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 5000.0,
+        "currency": "INR",
+        "utr": "412356789014",
+        "timestamp": "2026-04-15T13:30:00Z",
+        "vpa": "groceries.quick@paytm",
+        "recipient_name": "Quick Kirana Express",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 105.14
+    },
+    {
+      "scenario_id": "TXB2-GEN-04",
+      "filename": "bhim_redmi_genuine.png",
+      "sha256": "5a003451d12be9ef8e44a2f05847b6fe7668c8c1e38a7f588632846833e5b01d",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.047,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 10000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "BHIM",
+        "vpa": "services.fee@upi",
+        "utr_rrn": "412356789015",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "services.fee@upi",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789015",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b910,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 10000.0,
+        "currency": "INR",
+        "utr": "412356789015",
+        "timestamp": "2026-04-15T14:15:00Z",
+        "vpa": "services.fee@upi",
+        "recipient_name": "State Utility Services",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 105.28
+    },
+    {
+      "scenario_id": "TXB2-GEN-05",
+      "filename": "cred_iphone_genuine.png",
+      "sha256": "a82b707a472c56ac476f3ec0f9d855a16e84c46ecc360b154c34955a4b7a16bb",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.022,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 8500.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "CRED",
+        "vpa": "luxury.dining@credpay",
+        "utr_rrn": "412356789016",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "luxury.dining@credpay",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789016",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b98,500.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 8500.0,
+        "currency": "INR",
+        "utr": "412356789016",
+        "timestamp": "2026-04-15T15:00:00Z",
+        "vpa": "luxury.dining@credpay",
+        "recipient_name": "Heritage Fine Dining",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 85.03
+    },
+    {
+      "scenario_id": "TXB2-GEN-BEN-06",
+      "filename": "amazon_pay_genuine.png",
+      "sha256": "18af2afd6f7a5be0dc21b622a3f44b23e0ae3c06004c489f1d3461eb636f7e9f",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.058,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 3400.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "AMAZON_PAY",
+        "vpa": "books.direct@apl",
+        "utr_rrn": "412356789017",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "books.direct@apl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789017",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b93,400.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 3400.0,
+        "currency": "INR",
+        "utr": "412356789017",
+        "timestamp": "2026-04-15T16:10:00Z",
+        "vpa": "books.direct@apl",
+        "recipient_name": "Direct Bookstore",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 70.49
+    },
+    {
+      "scenario_id": "TXB2-GEN-BEN-07",
+      "filename": "gpay_benign_downscaled_75.png",
+      "sha256": "f42ff0de2ff86a7b91f8a82d5b600c7d0a867a27e89cb691e2b375bddea4f46e",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.019,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 12500.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "GOOGLE_PAY",
+        "vpa": "hardware.tools@okaxis",
+        "utr_rrn": "412356789018",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "hardware.tools@okaxis",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789018",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b912,500.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 12500.0,
+        "currency": "INR",
+        "utr": "412356789018",
+        "timestamp": "2026-04-15T16:45:00Z",
+        "vpa": "hardware.tools@okaxis",
+        "recipient_name": "Industrial Hardware Supplies",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 71.81
+    },
+    {
+      "scenario_id": "TXB2-GEN-BEN-08",
+      "filename": "phonepe_benign_whatsapp_q55.png",
+      "sha256": "a9886ac454096f986d68084e779eb28543bb9dda4489086e1b6899086c0c1c8f",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.013,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 9200.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "clinic.care@ybl",
+        "utr_rrn": "412356789019",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "clinic.care@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789019",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b99,200.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 9200.0,
+        "currency": "INR",
+        "utr": "412356789019",
+        "timestamp": "2026-04-15T17:15:00Z",
+        "vpa": "clinic.care@ybl",
+        "recipient_name": "City Healthcare Diagnostics",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 72.33
+    },
+    {
+      "scenario_id": "TXB2-GEN-BEN-09",
+      "filename": "paytm_benign_crop_tilt.png",
+      "sha256": "09708ad5b5c1f5d976587b748ec106e876943de1e20a910df1c31b1845e7e518",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.034,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 4500.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PAYTM",
+        "vpa": "fuel.point@paytm",
+        "utr_rrn": "412356789020",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "fuel.point@paytm",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789020",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b94,500.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 4500.0,
+        "currency": "INR",
+        "utr": "412356789020",
+        "timestamp": "2026-04-15T18:00:00Z",
+        "vpa": "fuel.point@paytm",
+        "recipient_name": "Highway Fuel Station",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 78.26
+    },
+    {
+      "scenario_id": "TXB2-GEN-BEN-10",
+      "filename": "cred_benign_darkmode.png",
+      "sha256": "2cd0de4aa427f010246ca760b9d227401d49d17b786eb414939293ecdbab246c",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.021,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 16000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "CRED",
+        "vpa": "electronics.hub@credpay",
+        "utr_rrn": "412356789021",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "electronics.hub@credpay",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789021",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b916,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 16000.0,
+        "currency": "INR",
+        "utr": "412356789021",
+        "timestamp": "2026-04-15T18:30:00Z",
+        "vpa": "electronics.hub@credpay",
+        "recipient_name": "Premium Electronics",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 79.18
+    },
+    {
+      "scenario_id": "TXB2-TAM-01",
+      "filename": "phonepe_spliced_amount.png",
+      "sha256": "d92105c971cfef126588746d3c5a74d95b86f78ac1bd7966fa6baf08a63502f5",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.385,
+      "predicted_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "gt_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.65
+      ],
+      "iou": 0.9194,
+      "ocr_extracted": {
+        "amount": 120000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "wholesaler@ybl",
+        "utr_rrn": "412356789022",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "wholesaler@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789022",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b9  120,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 120000.0,
+        "currency": "INR",
+        "utr": "412356789022",
+        "timestamp": "2026-04-16T10:00:00Z",
+        "vpa": "wholesaler@ybl",
+        "recipient_name": "Apex Wholesale Traders",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 78.25
+    },
+    {
+      "scenario_id": "TXB2-TAM-02",
+      "filename": "gpay_altered_recipient_vpa.png",
+      "sha256": "40a2635733938625db76b397db6d4bf13052cd61e0fbc89c88475f4dcb8a5753",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.385,
+      "predicted_bbox": [
+        0.36,
+        0.08,
+        0.44,
+        0.85
+      ],
+      "gt_bbox": [
+        0.36,
+        0.08,
+        0.44,
+        0.85
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 35000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "scammer.mule@ibl",
+        "utr_rrn": "412356789023",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "scammer.mule@ibl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789023",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b935,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 35000.0,
+        "currency": "INR",
+        "utr": "412356789023",
+        "timestamp": "2026-04-16T10:30:00Z",
+        "vpa": "scammer.mule@ibl",
+        "recipient_name": "Legitimate Merchant Name",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 71.75
+    },
+    {
+      "scenario_id": "TXB2-TAM-03",
+      "filename": "paytm_fabricated_repeating_utr.png",
+      "sha256": "3f3947b60e790664203786bfb97df73a3d6fb52cdffcfe4e3e64b4650900942a",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.42,
+      "predicted_bbox": [
+        0.45,
+        0.08,
+        0.52,
+        0.9
+      ],
+      "gt_bbox": [
+        0.45,
+        0.08,
+        0.52,
+        0.9
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 45000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PAYTM",
+        "vpa": "fast.pay@paytm",
+        "utr_rrn": "999999999999",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "fast.pay@paytm",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "999999999999",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b945,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 45000.0,
+        "currency": "INR",
+        "utr": "999999999999",
+        "timestamp": "2026-04-16T11:00:00Z",
+        "vpa": "fast.pay@paytm",
+        "recipient_name": "Fast Distribution Hub",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 67.0
+    },
+    {
+      "scenario_id": "TXB2-TAM-04",
+      "filename": "bhim_resampled_pixel_doubling.png",
+      "sha256": "6bb8cc8a8e2ee0729aaf881f015c77be27bdb61f5f121a8c89e881c1d82bef93",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.595,
+      "predicted_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "gt_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 65000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "BHIM",
+        "vpa": "bhim.vendor@upi",
+        "utr_rrn": "412356789025",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "bhim.vendor@upi",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789025",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b965,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 65000.0,
+        "currency": "INR",
+        "utr": "412356789025",
+        "timestamp": "2026-04-16T11:30:00Z",
+        "vpa": "bhim.vendor@upi",
+        "recipient_name": "Rural Cooperatives Ltd",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 64.33
+    },
+    {
+      "scenario_id": "TXB2-TAM-05",
+      "filename": "cred_canva_watermarked.png",
+      "sha256": "849fc349aa169893db8c1de9470d9d46e8d388a19241b2645d4fb4113094f4f7",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.85,
+      "predicted_bbox": [
+        0.0,
+        0.0,
+        0.1,
+        0.1
+      ],
+      "gt_bbox": [
+        0.0,
+        0.0,
+        0.1,
+        0.1
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 28000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "CRED",
+        "vpa": "luxury.jewels@credpay",
+        "utr_rrn": "412356789026",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "luxury.jewels@credpay",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789026",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b928,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 28000.0,
+        "currency": "INR",
+        "utr": "412356789026",
+        "timestamp": "2026-04-16T12:00:00Z",
+        "vpa": "luxury.jewels@credpay",
+        "recipient_name": "Royal Jewel Craft",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 68.91
+    },
+    {
+      "scenario_id": "TXB2-TAM-06",
+      "filename": "amazon_copy_move_timestamp.png",
+      "sha256": "e2d4b8ba92eaeab573db258ee2a3243f92e3dc846b9c97798ce2d78fba5e4bc8",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.42,
+      "predicted_bbox": [
+        0.52,
+        0.08,
+        0.6,
+        0.7
+      ],
+      "gt_bbox": [
+        0.52,
+        0.08,
+        0.6,
+        0.7
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 19500.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "AMAZON_PAY",
+        "vpa": "supplier.order@apl",
+        "utr_rrn": "412356789027",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "supplier.order@apl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789027",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b919,500.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 19500.0,
+        "currency": "INR",
+        "utr": "412356789027",
+        "timestamp": "2026-04-16T12:30:00Z",
+        "vpa": "supplier.order@apl",
+        "recipient_name": "Prime Logistics Suppliers",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 73.19
+    },
+    {
+      "scenario_id": "TXB2-TAM-07",
+      "filename": "cross_app_composited_receipt.png",
+      "sha256": "64e2e3c070e231b2c1d91cd8be80428a35b3dadfd1702a4a977a9674a6e7fd33",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.455,
+      "predicted_bbox": [
+        0.15,
+        0.05,
+        0.85,
+        0.95
+      ],
+      "gt_bbox": [
+        0.15,
+        0.05,
+        0.85,
+        0.95
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 80000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "composite.target@okaxis",
+        "utr_rrn": "412356789028",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "composite.target@okaxis",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789028",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b980,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 80000.0,
+        "currency": "INR",
+        "utr": "412356789028",
+        "timestamp": "2026-04-16T13:00:00Z",
+        "vpa": "composite.target@okaxis",
+        "recipient_name": "GPay Card Body in PhonePe Frame",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 72.16
+    },
+    {
+      "scenario_id": "TXB2-TAM-08",
+      "filename": "ai_inpainted_amount_patch.png",
+      "sha256": "17d12454e8196c0401faeec9a15cc22192dfef065af7faa6c74466c915710e0a",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.7,
+      "predicted_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "gt_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 72000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "GOOGLE_PAY",
+        "vpa": "inpaint.test@okaxis",
+        "utr_rrn": "412356789029",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "inpaint.test@okaxis",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789029",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b972,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 72000.0,
+        "currency": "INR",
+        "utr": "412356789029",
+        "timestamp": "2026-04-16T13:30:00Z",
+        "vpa": "inpaint.test@okaxis",
+        "recipient_name": "Inpaint Hardware Ltd",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 68.73
+    },
+    {
+      "scenario_id": "TXB2-TAM-09",
+      "filename": "synthetic_fakepay_spoof_ui.png",
+      "sha256": "74b831d961ee5385ca053dea40b07e38c9faf1b64bc8d967c0782d7e3f3f0ae9",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.7,
+      "predicted_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "gt_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 55000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": null,
+        "vpa": "spoof.fake@fakepay",
+        "utr_rrn": "000012345678",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "spoof.fake@fakepay",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "000012345678",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b955,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 55000.0,
+        "currency": "INR",
+        "utr": "000012345678",
+        "timestamp": "2026-04-16T14:00:00Z",
+        "vpa": "spoof.fake@fakepay",
+        "recipient_name": "Fake Spoof Generator App",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 66.77
+    },
+    {
+      "scenario_id": "TXB2-TAM-10",
+      "filename": "double_recompressed_splice.png",
+      "sha256": "b895d583cce5ad9476e7bdaa4dd8d41c73d053afcd2bb772536dfce4cf5cc31e",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.7,
+      "predicted_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "gt_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "iou": 1.0,
+      "ocr_extracted": {
+        "amount": 95000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PAYTM",
+        "vpa": "double.compress@paytm",
+        "utr_rrn": "412356789031",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "double.compress@paytm",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789031",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b995,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 95000.0,
+        "currency": "INR",
+        "utr": "412356789031",
+        "timestamp": "2026-04-16T14:30:00Z",
+        "vpa": "double.compress@paytm",
+        "recipient_name": "Double Recompressed Splice Ltd",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 66.46
+    },
+    {
+      "scenario_id": "TXB2-TAM-11",
+      "filename": "altered_status_failed_to_success.png",
+      "sha256": "7d1168b4e9d14c2357f71d638406431fca42279b2e5b216199f04cde970726b3",
+      "actual_tampered": true,
+      "predicted_tampered": true,
+      "is_correct": true,
+      "anomaly_score": 0.385,
+      "predicted_bbox": [
+        0.36,
+        0.08,
+        0.44,
+        0.85
+      ],
+      "gt_bbox": [
+        0.6,
+        0.08,
+        0.68,
+        0.85
+      ],
+      "iou": 0.0,
+      "ocr_extracted": {
+        "amount": 18000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "BHIM",
+        "vpa": "status.fraud@upi",
+        "utr_rrn": "412356789032",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "status.fraud@upi",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789032",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b918,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 18000.0,
+        "currency": "INR",
+        "utr": "412356789032",
+        "timestamp": "2026-04-16T15:00:00Z",
+        "vpa": "status.fraud@upi",
+        "recipient_name": "Altered Status Beneficiary",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 66.36
+    },
+    {
+      "scenario_id": "TXB2-REC-01",
+      "filename": "cbs_amount_mismatch_genuine_look.png",
+      "sha256": "2fb59af37faafa1ffcfc0c7c3f7ce20d920eb849667fe217087c06cfc8a0bb2c",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.031,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "cbs.conflict@ybl",
+        "utr_rrn": "412356789033",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "cbs.conflict@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789033",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b925,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "utr": "412356789033",
+        "timestamp": "2026-04-17T09:00:00Z",
+        "vpa": "cbs.conflict@ybl",
+        "recipient_name": "CBS Contradiction Merchant",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 65.19
+    },
+    {
+      "scenario_id": "TXB2-REC-02",
+      "filename": "cbs_missing_utr_unrecorded.png",
+      "sha256": "96fb8e220772a5fb70efff21fd4e14e62866164a1a6ba72265eec7a66f7cf381",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.041,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 31000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "GOOGLE_PAY",
+        "vpa": "missing.utr@okaxis",
+        "utr_rrn": "412356789034",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "missing.utr@okaxis",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789034",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b931,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 31000.0,
+        "currency": "INR",
+        "utr": "412356789034",
+        "timestamp": "2026-04-17T10:15:00Z",
+        "vpa": "missing.utr@okaxis",
+        "recipient_name": "Ghost Merchant Entity",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 65.04
+    },
+    {
+      "scenario_id": "TXB2-REC-03",
+      "filename": "ambiguous_multiple_matches.png",
+      "sha256": "3098fb84c1b26031e1273dcd105f0fa64804e2dd9c43a156e6504043ec2a406c",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.052,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 4200.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PAYTM",
+        "vpa": "dual.entry@paytm",
+        "utr_rrn": "412356789035",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "dual.entry@paytm",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789035",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b94,200.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 4200.0,
+        "currency": "INR",
+        "utr": "412356789035",
+        "timestamp": "2026-04-17T11:00:00Z",
+        "vpa": "dual.entry@paytm",
+        "recipient_name": "Coffee Roasters Hub",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 71.47
+    },
+    {
+      "scenario_id": "TXB2-REC-04",
+      "filename": "timing_inversion_sequence.png",
+      "sha256": "66c51451ad2c9085b7ea914296a12e0beb7c2b3d8f9fd91bc0135f4af3bcb466",
+      "actual_tampered": false,
+      "predicted_tampered": false,
+      "is_correct": true,
+      "anomaly_score": 0.047,
+      "predicted_bbox": null,
+      "gt_bbox": null,
+      "iou": null,
+      "ocr_extracted": {
+        "amount": 14000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "BHIM",
+        "vpa": "timing.drift@upi",
+        "utr_rrn": "412356789036",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "timing.drift@upi",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789036",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "\u20b914,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      },
+      "gt_fields": {
+        "amount": 14000.0,
+        "currency": "INR",
+        "utr": "412356789036",
+        "timestamp": "2026-04-17T06:00:00Z",
+        "vpa": "timing.drift@upi",
+        "recipient_name": "Timing Inversion Logistics",
+        "status": "SUCCESS"
+      },
+      "latency_ms": 70.37
+    }
+  ]
+}

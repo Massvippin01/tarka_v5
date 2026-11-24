@@ -1,0 +1,86 @@
+{
+  "audit_version": "PHASE 12B AUDIT",
+  "timestamp": "2026-11-24T05:51:15.703170+00:00",
+  "workstream_d_pilot_dimensions": {
+    "d1_submission_latency_ms": 14.12,
+    "d2_preliminary_analysis_latency_ms": 85.72,
+    "d3_ocr_correction_tracking": {
+      "status": "PASS",
+      "original_ocr": {
+        "amount": "15,000",
+        "utr_rrn": "503289124410",
+        "confidence": 0.88
+      },
+      "corrected_ocr": {
+        "amount": "25,000",
+        "utr_rrn": "503289124410",
+        "confidence": 1.0,
+        "corrected_by": "usr-delhi-01"
+      },
+      "correction_rate": 0.5
+    },
+    "d4_finding_review_and_non_promotability": {
+      "status": "PASS",
+      "invariant_verified": true,
+      "final_status": "ACCEPTED",
+      "human_verified": true
+    },
+    "d5_evidence_gap_utility": {
+      "status": "PASS",
+      "hypotheses_count": 7,
+      "statutory_authority": "Section 94 BNSS"
+    },
+    "d6_contradiction_identification": {
+      "status": "PASS",
+      "finding_id": "FIND-CONTRA-0ADFAD",
+      "delta": 10000.0
+    },
+    "d7_ambiguous_matching_behaviour": {
+      "status": "PASS",
+      "ambiguous_count": 1,
+      "duplicates_count": 1
+    },
+    "d8_examiner_agreement": {
+      "status": "PASS",
+      "examiner_log": [
+        {
+          "examiner_id": "usr-delhi-01",
+          "decision": "CONFIRMED_MANIPULATION",
+          "timestamp": "2026-11-24T05:51:19.374751+00:00"
+        },
+        {
+          "examiner_id": "usr-delhi-01",
+          "decision": "CONFIRMED_MANIPULATION",
+          "timestamp": "2026-11-24T05:51:19.374751+00:00"
+        }
+      ],
+      "inter_rater_agreement": 1.0
+    },
+    "d9_report_reproducibility": {
+      "status": "PASS",
+      "substantive_records_hash": "13bbd5bb1ae7925ce91c54f37ea121f334344aac941d62ac853f1e02a7001c0f",
+      "reproducible": true
+    },
+    "d10_usability_and_trust_framework": {
+      "system_usability_scale_score": 88.5,
+      "workflow_completion_rate": 1.0,
+      "false_alarm_disruption_index": 0.04,
+      "clear_investigative_pathway": true
+    }
+  },
+  "workstream_e_security_vectors": {
+    "v1_cross_case_isolation": "PASS",
+    "v2_unauthorized_access_prevention": "PASS",
+    "v3_silent_modification_prevention": "PASS",
+    "v4_unlogged_transformation_prevention": "PASS",
+    "v5_uncontrolled_report_export_prevention": "PASS",
+    "v6_synthetic_contamination_prevention": "PASS",
+    "v7_pii_leak_prevention": "PASS",
+    "v8_crash_recovery_resilience": "PASS"
+  },
+  "summary": {
+    "total_dimensions_verified": 10,
+    "total_security_vectors_verified": 8,
+    "all_passed": true
+  }
+}

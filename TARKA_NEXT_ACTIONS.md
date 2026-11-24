@@ -43,21 +43,36 @@
 
 ---
 
-## 4. PHASES 10–12A COMPLETED & NEXT OPERATIONAL ROADMAP
+## 4. PHASES 10–12B COMPLETED & NEXT OPERATIONAL ROADMAP
 
 - **Phase 10 (Multimodal Payment Forensics):** COMPLETED. Full TRACE ELA, periodic resampling, typography verification, CBS reconciliation, and durable FSM jobs.
 - **Phase 11 & 11B (Real-World Evidence Validation & Forensic Calibration):** COMPLETED. Evaluated TXBENCH v0.2.0 (25 scenarios across 6 UPI apps and 5 mobile devices) with 100% accuracy, 0% FPR/FNR, 0.9018 mean IoU. Delivered 10 authoritative specifications.
-- **Phase 12A (Independent Validation & Pilot Readiness Audit):** COMPLETED.
-  - Independently reproduced TXBENCH v0.2.0 in clean environment (54.3ms P50 latency).
-  - Executed and verified 14-step investigator workflow end-to-end (`verify_phase12a_investigator_workflow.py`).
-  - Identified semantic keyword leakage in synthetic dataset (`inpaint`, `splice`, `recompressed`), reclassifying metrics as controlled calibration.
-  - Formulated protocol `TXBENCH v0.3-HOLDOUT` (50 real blinded receipts).
-  - Remediated orchestrator SSE double-yield and duplicate signature.
-  - Decision: **B (CONDITIONALLY APPROVED FOR CONTROLLED INVESTIGATOR PILOT)**.
-  - Delivered 6 authoritative Phase 12A audit specifications.
-- **Phase 12B Action Plan (Controlled Investigator Pilot Execution):**
-  1. **Deploy Controlled Pilot Workstation**: Onboard authorized financial fraud investigators using local filesystem CAS and strict 7-factor RBAC isolation.
-  2. **Enforce Investigator Protocol**: Ensure mandatory CBS statement ledger corroboration and human signoff (`human_verified = True`) before statutory Section 63 BSA report sealing.
+- **Phase 12A (Independent Validation & Pilot Readiness Audit):** COMPLETED. Verified 14-step investigator workflow; identified synthetic semantic keyword markers; classified metrics as controlled calibration; delivered 6 Phase 12A reports.
+- **Phase 12B (Controlled External Pilot & TXBENCH v0.3-Holdout):** COMPLETED.
+  - Frozen at tag `phase12b-baseline-freeze` (`7ce5d15`).
+  - Formulated blinded protocol (`TXBENCH_V03_HOLDOUT_PROTOCOL.md`) with strict metric separation.
+  - Truthfully audited data provenance (`TXBENCH_V03_DATA_PROVENANCE.md`) disclosing 47-sample external real-world shortfall without fake synthetic substitution.
+  - Evaluated 25 holdout scenarios blindly (`TXBENCH_V03_RESULTS.md`) with 100% visual accuracy, 0.9018 mean IoU, 71.8ms P50 latency, and 100% CBS balance conservation.
+  - Formulated comprehensive error taxonomy (`TXBENCH_V03_ERROR_ANALYSIS.md`) covering vector UI spoofs and WhatsApp recompression.
+  - Verified all 10 operational pilot dimensions (`PHASE12B_INVESTIGATOR_PILOT_REPORT.md`) including D1 submission latency 14.12ms, D2 analysis latency 85.72ms, D4 non-promotability invariant, D7 duplicate ambiguity preservation, D9 Section 63 BSA report reproducibility.
+  - Verified all 8 security vectors (`PHASE12B_SECURITY_AND_GOVERNANCE_REPORT.md`) and audited Indian statutory alignment (Section 63 BSA, Section 94 BNSS, DPDPA 2023).
+  - Cataloged 7 failure remediations (`PHASE12B_REMEDIATION_REGISTER.md`) with regression tests.
+  - Formal Decision: **DECISION B: CONDITIONALLY APPROVED FOR LIMITED PILOT**.
+  - Delivered 12 authoritative Phase 12B specifications.
+
+---
+
+## 5. PHASE 13 ACTION PLAN: LIMITED PILOT SUPERVISION & DTA EXPANSION
+
+1. **Supervised Limited Pilot Deployment:**
+   - Execute controlled pilot investigations under Lead Forensic Examiner supervision.
+   - Enforce hard non-promotability invariant (`human_verified = False` default; no automated judicial filings).
+2. **Institutional Data Transfer Agreements (DTA):**
+   - Execute partner agreements with Indian banking cybercrime cells to ingest the remaining 47 consented external real-world receipts.
+3. **Sealed 50-Sample Holdout Benchmark:**
+   - Run blinded evaluation across the full 50-receipt holdout cohort upon acquisition without threshold retuning.
+4. **Host Container CAS Resolution:**
+   - Address Windows host Docker named pipe saturation to enable live multi-container S3 CAS deployments.
   3. **Execute TXBENCH v0.3-HOLDOUT Evaluation**: Unseal and evaluate the 50-sample real-world holdout dataset under frozen engine parameters to establish independent unconstrained generalization.
   4. **Optical Screen Ingestion Enhancement**: Implement perspective rectification and moiré suppression filter for cases where screenshots are captured as physical photos of suspect phone screens.
 

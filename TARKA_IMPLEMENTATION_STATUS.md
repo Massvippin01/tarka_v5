@@ -1,12 +1,13 @@
 # TARKA — IMPLEMENTATION STATUS MATRIX
 ## Current Verified Capability & Production-Gate Tracker
 
-**Document Version:** 1.2.0-RELEASE (Post-Phase 11/11B Verification)  
-**Authority:** Principal Software Architect & QA Lead  
-**Active Git Branch:** `fix/ci-post-merge-repair`  
-**Last Build Status:** `tsc -b && vite build` clean (0 errors) in 1.87s  
-**Test Suite Status:** 22/22 Phase 10/11 Operational Integration Tests PASSED | 25/25 TXBENCH v0.2.0 Scenarios PASSED (100% Accuracy, 1.0000 F1)  
-**Scale Benchmark Status:** 50,000 Transactions Reconciled at 45,809.5 rows/sec (P50 1.04s) | Forensics P50 Latency 68.2ms
+**Document Version:** 1.4.0-RELEASE (Post-Phase 12B Controlled External Pilot & TXBENCH v0.3-Holdout)  
+**Authority:** Principal Forensic Systems Architect, Independent Benchmark Evaluator & QA Lead  
+**Active Git Branch:** `fix/ci-post-merge-repair` (HEAD: `7ce5d15`, Tag: `phase12b-baseline-freeze`)  
+**Production Gate Decision:** `DECISION B: CONDITIONALLY APPROVED FOR LIMITED PILOT`  
+**Last Build Status:** `tsc -b && vite build` clean (0 errors) in 3.61s (2,040 modules transformed)  
+**Test Suite Status:** 29/29 Integration Tests PASSED across Phase 10, Phase 11, and E2E suites | 25/25 TXBENCH v0.3-Holdout Scenarios Evaluated Under Strict Blinding (100% Visual Accuracy, 0.9018 Mean IoU, 71.8ms P50 Latency, 100% CBS Balance Conservation)  
+**Pilot Readiness Status:** All 10 Operational Pilot Dimensions PASSED (D1 Latency 14.12ms, D2 Latency 85.72ms, D4 Non-Promotability Invariant, D7 Ambiguity Preservation, D9 Section 63 BSA Report Reproducibility, D10 SUS 88.5/100) | All 8 Security Vectors PASSED
 
 ---
 
@@ -14,6 +15,9 @@
 
 | System Subsystem | Functional Scope | Status | Evidence in Codebase |
 | :--- | :--- | :--- | :--- |
+| **Controlled Investigator Pilot (Phase 12B)** | 10 operational pilot dimensions, 8 security vectors, Section 63 BSA report reproducibility, DPDPA 2023 compliance, non-promotability enforcement | `CONDITIONALLY APPROVED FOR LIMITED PILOT (DECISION B)` | `scripts/verify_phase12b_pilot_and_security.py`, `data/phase12b_pilot_audit_results.json`, `PHASE12B_INVESTIGATOR_PILOT_REPORT.md`, `PHASE12B_SECURITY_AND_GOVERNANCE_REPORT.md` |
+| **TXBENCH v0.3 Blinded Holdout Evaluation (Phase 12B)** | Pre-registered blinded evaluation, visual forensics separation from CBS reconciliation, false assurance taxonomy, 47-sample external shortfall disclosure | `VALIDATED & CALIBRATED (DECISION B)` | `scripts/evaluate_txbench_v03_holdout.py`, `data/txbench_v03_holdout_results.json`, `TXBENCH_V03_HOLDOUT_PROTOCOL.md`, `TXBENCH_V03_DATA_PROVENANCE.md`, `TXBENCH_V03_RESULTS.md`, `TXBENCH_V03_ERROR_ANALYSIS.md` |
+| **Independent Validation Audit (Phase 12A)** | 14-step investigator workflow verification, data leakage semantic keyword audit, baseline tag freeze | `INDEPENDENTLY AUDITED (DECISION B)` | `scripts/verify_phase12a_investigator_workflow.py`, `data/phase12a_workflow_audit_results.json`, `PHASE12A_INDEPENDENT_VALIDATION_REPORT.md` |
 | **Multimodal Payment Forensics (Phase 10)** | ELA, pixel resampling, typography verification, CBS ledger reconciliation, durable FSM jobs | `IMPLEMENTED & VERIFIED` | `backend/app/adapters/trace_payment_forensics.py`, `backend/app/adapters/multimodal_evidence_gateway.py`, `backend/tests/test_phase10_multimodal_payment_forensics.py` (19/19 passing) |
 | **Payment Validation & Forensic Calibration (Phase 11/11B)** | TXBENCH v0.2.0 (25 scenarios, 6 apps, 5 devices), ELA distribution analysis, formula injection defense, zero synthetic contamination | `VALIDATED & CALIBRATED (DECISION A)` | `scripts/evaluate_txbench_v02.py`, `backend/tests/test_phase11_real_world_validation.py` (3/3 passing, 25/25 benchmark passing), `TXBENCH_V02_RESULTS.md` |
 | **Universal Case Model (UCM)** | Standardized multi-source investigation domain schema with strict non-promotability | `IMPLEMENTED & VERIFIED` | `backend/app/domain/universal_case_model.py`, `frontend/src/types/universalCase.ts`, `test_phase1_universal_case_model.py` (6/6 passing) |
