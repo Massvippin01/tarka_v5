@@ -43,28 +43,28 @@
 
 ---
 
-## 4. PHASES 10–12C COMPLETED & OPERATIONAL ROADMAP
+## 4. PHASES 10–12D COMPLETED & OPERATIONAL ROADMAP
 
 - **Phase 10 (Multimodal Payment Forensics):** COMPLETED. Full TRACE ELA, periodic resampling, typography verification, CBS reconciliation, and durable FSM jobs.
 - **Phase 11 & 11B (Real-World Evidence Validation & Forensic Calibration):** COMPLETED. Evaluated TXBENCH v0.2.0 (25 scenarios across 6 UPI apps and 5 mobile devices) with 100% accuracy, 0% FPR/FNR, 0.9018 mean IoU. Delivered 10 authoritative specifications.
 - **Phase 12A (Independent Validation & Pilot Readiness Audit):** COMPLETED. Verified 14-step investigator workflow; identified synthetic semantic keyword markers; classified metrics as controlled calibration; delivered 6 Phase 12A reports.
 - **Phase 12B (Controlled External Pilot & TXBENCH v0.3-Holdout):** COMPLETED. Frozen at `phase12b-baseline-freeze` (`7ce5d15`); evaluated 25 scenarios blindly; verified all 10 operational pilot dimensions and 8 security vectors; published 12 authoritative specifications; Decision B rendered.
-- **Phase 12C (External Validation, Institutional Access & Pilot Activation):** COMPLETED.
-  - Formulated full reality audit in `PHASE12C_EXECUTION_REGISTER.md` distinguishing code truth, synthetic fixtures, live uploads, and DTA dependencies.
-  - Established lawful 47-sample acquisition programme in `TXBENCH_V03_ACQUISITION_PLAN.md` under DPDPA 2023.
-  - Authored 6-tier engagement roadmap in `TARKA_INSTITUTIONAL_PARTNERSHIP_STRATEGY.md` (FSLs, Cyber Cells, Banks, NPCI, NFSU, DSCI).
-  - Delivered executable 10-step demonstration harness `scripts/run_investigator_demo.py` and runbook `TARKA_INVESTIGATOR_DEMO_RUNBOOK.md`.
-  - Defined quantitative 11-dimension evaluation framework in `TARKA_PILOT_EVALUATION_FRAMEWORK.md`.
-  - Evaluated 4 commercial/cloud deployment models in `TARKA_DEPLOYMENT_MODEL_ANALYSIS.md`.
-  - Conducted qualified legal opinion covering BSA 63, BNSS 94, and ISO 27037 in `TARKA_LEGAL_GOVERNANCE_REVIEW.md`.
-  - Decision: **DECISION A: READY FOR INSTITUTIONAL DEMONSTRATIONS (CONDITIONALLY APPROVED FOR FIELD PILOT UPON DTA)**.
+- **Phase 12C (External Validation, Institutional Access & Pilot Activation):** COMPLETED. Delivered reality audit, lawful 47-sample acquisition plan, 6-tier institutional strategy, 10-act demonstration harness, quantitative pilot evaluation framework, deployment models analysis, and legal governance review. Decision A rendered.
+- **Phase 12D (First Institutional Demonstration & Design Partner Acquisition):** COMPLETED.
+  - Authored 5 authoritative institutional presentation collateral documents (`TARKA_INSTITUTIONAL_PRESENTATION.md`, `TARKA_ONE_PAGE_BRIEF.md`, `TARKA_TECHNICAL_CAPABILITY_STATEMENT.md`, `TARKA_DEMO_SCRIPT.md`, and `TARKA_OBJECTION_HANDLING.md`).
+  - Verified 10-act live synthetic demonstration harness (`scripts/run_investigator_demo.py`) with all 10 invariants passing in 6.2s.
+  - Profiled 10 genuine institutional candidate organizations across 4 priority sectors (Academic, FSL, Cybercrime, Bank FRM).
+  - Formulated zero-cost institutional design partner charter in `TARKA_DESIGN_PARTNER_OFFER.md` separating Model D synthetic research from Model A-C live casework pilots under DPDP Act 2023.
+  - Formulated 4 professional, non-deceptive outreach templates in `TARKA_INSTITUTIONAL_OUTREACH_TEMPLATES.md`.
+  - Created institutional outreach register (`PHASE12D_INSTITUTIONAL_OUTREACH_REGISTER.md`) with explicit status: `OUTREACH PREPARED / INITIATED, NOT INSTITUTIONALLY VALIDATED`.
+  - Gate Decision: **DECISION A: READY FOR INSTITUTIONAL DEMONSTRATIONS (OUTREACH PREPARED / INITIATED, NOT INSTITUTIONALLY VALIDATED)**.
 
 ---
 
 ## 5. PHASE 13 ACTION PLAN: INSTITUTIONAL BRIEFINGS & DTA EXECUTION
 
 1. **Conduct Institutional Stakeholder Demonstrations:**
-   - Execute executive walkthroughs using `TARKA_INVESTIGATOR_DEMO_RUNBOOK.md` and `scripts/run_investigator_demo.py` in synthetic demonstration mode (Model D).
+   - Execute executive walkthroughs using `TARKA_INVESTIGATOR_DEMO_RUNBOOK.md`, `TARKA_DEMO_SCRIPT.md`, and `scripts/run_investigator_demo.py` in synthetic demonstration mode (Model D).
 2. **Execute Bilateral Data Transfer Agreements (DTAs):**
    - Finalize partner DTAs with banking Fraud Risk Management units and state police cyber cells using `TXBENCH_V03_ACQUISITION_PLAN.md` templates.
 3. **Acquire & Ingest the 47 Real-World Holdout Receipts:**
