@@ -43,37 +43,33 @@
 
 ---
 
-## 4. PHASES 10–12B COMPLETED & NEXT OPERATIONAL ROADMAP
+## 4. PHASES 10–12C COMPLETED & OPERATIONAL ROADMAP
 
 - **Phase 10 (Multimodal Payment Forensics):** COMPLETED. Full TRACE ELA, periodic resampling, typography verification, CBS reconciliation, and durable FSM jobs.
 - **Phase 11 & 11B (Real-World Evidence Validation & Forensic Calibration):** COMPLETED. Evaluated TXBENCH v0.2.0 (25 scenarios across 6 UPI apps and 5 mobile devices) with 100% accuracy, 0% FPR/FNR, 0.9018 mean IoU. Delivered 10 authoritative specifications.
 - **Phase 12A (Independent Validation & Pilot Readiness Audit):** COMPLETED. Verified 14-step investigator workflow; identified synthetic semantic keyword markers; classified metrics as controlled calibration; delivered 6 Phase 12A reports.
-- **Phase 12B (Controlled External Pilot & TXBENCH v0.3-Holdout):** COMPLETED.
-  - Frozen at tag `phase12b-baseline-freeze` (`7ce5d15`).
-  - Formulated blinded protocol (`TXBENCH_V03_HOLDOUT_PROTOCOL.md`) with strict metric separation.
-  - Truthfully audited data provenance (`TXBENCH_V03_DATA_PROVENANCE.md`) disclosing 47-sample external real-world shortfall without fake synthetic substitution.
-  - Evaluated 25 holdout scenarios blindly (`TXBENCH_V03_RESULTS.md`) with 100% visual accuracy, 0.9018 mean IoU, 71.8ms P50 latency, and 100% CBS balance conservation.
-  - Formulated comprehensive error taxonomy (`TXBENCH_V03_ERROR_ANALYSIS.md`) covering vector UI spoofs and WhatsApp recompression.
-  - Verified all 10 operational pilot dimensions (`PHASE12B_INVESTIGATOR_PILOT_REPORT.md`) including D1 submission latency 14.12ms, D2 analysis latency 85.72ms, D4 non-promotability invariant, D7 duplicate ambiguity preservation, D9 Section 63 BSA report reproducibility.
-  - Verified all 8 security vectors (`PHASE12B_SECURITY_AND_GOVERNANCE_REPORT.md`) and audited Indian statutory alignment (Section 63 BSA, Section 94 BNSS, DPDPA 2023).
-  - Cataloged 7 failure remediations (`PHASE12B_REMEDIATION_REGISTER.md`) with regression tests.
-  - Formal Decision: **DECISION B: CONDITIONALLY APPROVED FOR LIMITED PILOT**.
-  - Delivered 12 authoritative Phase 12B specifications.
+- **Phase 12B (Controlled External Pilot & TXBENCH v0.3-Holdout):** COMPLETED. Frozen at `phase12b-baseline-freeze` (`7ce5d15`); evaluated 25 scenarios blindly; verified all 10 operational pilot dimensions and 8 security vectors; published 12 authoritative specifications; Decision B rendered.
+- **Phase 12C (External Validation, Institutional Access & Pilot Activation):** COMPLETED.
+  - Formulated full reality audit in `PHASE12C_EXECUTION_REGISTER.md` distinguishing code truth, synthetic fixtures, live uploads, and DTA dependencies.
+  - Established lawful 47-sample acquisition programme in `TXBENCH_V03_ACQUISITION_PLAN.md` under DPDPA 2023.
+  - Authored 6-tier engagement roadmap in `TARKA_INSTITUTIONAL_PARTNERSHIP_STRATEGY.md` (FSLs, Cyber Cells, Banks, NPCI, NFSU, DSCI).
+  - Delivered executable 10-step demonstration harness `scripts/run_investigator_demo.py` and runbook `TARKA_INVESTIGATOR_DEMO_RUNBOOK.md`.
+  - Defined quantitative 11-dimension evaluation framework in `TARKA_PILOT_EVALUATION_FRAMEWORK.md`.
+  - Evaluated 4 commercial/cloud deployment models in `TARKA_DEPLOYMENT_MODEL_ANALYSIS.md`.
+  - Conducted qualified legal opinion covering BSA 63, BNSS 94, and ISO 27037 in `TARKA_LEGAL_GOVERNANCE_REVIEW.md`.
+  - Decision: **DECISION A: READY FOR INSTITUTIONAL DEMONSTRATIONS (CONDITIONALLY APPROVED FOR FIELD PILOT UPON DTA)**.
 
 ---
 
-## 5. PHASE 13 ACTION PLAN: LIMITED PILOT SUPERVISION & DTA EXPANSION
+## 5. PHASE 13 ACTION PLAN: INSTITUTIONAL BRIEFINGS & DTA EXECUTION
 
-1. **Supervised Limited Pilot Deployment:**
-   - Execute controlled pilot investigations under Lead Forensic Examiner supervision.
-   - Enforce hard non-promotability invariant (`human_verified = False` default; no automated judicial filings).
-2. **Institutional Data Transfer Agreements (DTA):**
-   - Execute partner agreements with Indian banking cybercrime cells to ingest the remaining 47 consented external real-world receipts.
-3. **Sealed 50-Sample Holdout Benchmark:**
-   - Run blinded evaluation across the full 50-receipt holdout cohort upon acquisition without threshold retuning.
-4. **Host Container CAS Resolution:**
-   - Address Windows host Docker named pipe saturation to enable live multi-container S3 CAS deployments.
-  3. **Execute TXBENCH v0.3-HOLDOUT Evaluation**: Unseal and evaluate the 50-sample real-world holdout dataset under frozen engine parameters to establish independent unconstrained generalization.
-  4. **Optical Screen Ingestion Enhancement**: Implement perspective rectification and moiré suppression filter for cases where screenshots are captured as physical photos of suspect phone screens.
+1. **Conduct Institutional Stakeholder Demonstrations:**
+   - Execute executive walkthroughs using `TARKA_INVESTIGATOR_DEMO_RUNBOOK.md` and `scripts/run_investigator_demo.py` in synthetic demonstration mode (Model D).
+2. **Execute Bilateral Data Transfer Agreements (DTAs):**
+   - Finalize partner DTAs with banking Fraud Risk Management units and state police cyber cells using `TXBENCH_V03_ACQUISITION_PLAN.md` templates.
+3. **Acquire & Ingest the 47 Real-World Holdout Receipts:**
+   - Ingest, dual-adjudicate, and seal the 47 real-world receipts under the blinded protocol.
+4. **Deploy On-Premises Air-Gapped Pilot Workstation (Model A):**
+   - Provision dedicated workstation in partner laboratory under Lead Examiner supervision.
 
 
