@@ -6,13 +6,13 @@
     "ART-001",
     "ART-002"
   ],
-  "status": "VALIDATING",
-  "current_stage": "Validating Signatures",
+  "status": "REQUIRES_REVIEW",
+  "current_stage": "CRASH_RECOVERY_REQUIRED",
   "progress_percent": 25,
   "partial_results": {},
-  "error_message": null,
+  "error_message": "Job interrupted by service restart or host crash. Human review required.",
   "retry_count": 0,
   "max_retries": 3,
   "created_at_iso": "2026-11-23T05:39:48.601978+00:00",
-  "updated_at_iso": "2026-11-23T05:39:48.609420+00:00"
+  "updated_at_iso": "2026-11-24T05:51:19.430420+00:00"
 }
