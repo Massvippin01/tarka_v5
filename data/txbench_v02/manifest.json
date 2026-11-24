@@ -1,0 +1,919 @@
+{
+  "benchmark_name": "TARKA-TXBENCH",
+  "version": "0.2.0-STAGING",
+  "description": "Comprehensive Controlled Indian Digital Payment Forensic Benchmark",
+  "created_at_iso": "2026-11-23T11:45:00Z",
+  "scenarios_count": 25,
+  "splits": {
+    "negative_controls": 10,
+    "positive_tampered": 11,
+    "multi_source_conflicts": 4
+  },
+  "cases": [
+    {
+      "id": "TXB2-GEN-01",
+      "filename": "phonepe_pixel_genuine.png",
+      "relative_path": "images/phonepe_pixel_genuine.png",
+      "app": "PhonePe",
+      "template_version": "v3.24.1",
+      "device": {
+        "make": "Google",
+        "model": "Pixel 7",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 14"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "utr": "412356789012",
+        "timestamp": "2026-04-15T11:42:00Z",
+        "vpa": "vendor.tech@ybl",
+        "recipient_name": "Vendor Technologies Pvt Ltd",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "1fb51fe7f65991cc84d0f0f84b72c1b6ac6d46c1e4ad203460d8939cad143cf3",
+      "cbs_ledger_amount": 25000.0,
+      "cbs_clearing_time": "2026-04-15T11:42:00Z"
+    },
+    {
+      "id": "TXB2-GEN-02",
+      "filename": "gpay_samsung_genuine.png",
+      "relative_path": "images/gpay_samsung_genuine.png",
+      "app": "Google Pay",
+      "template_version": "v182.1.2",
+      "device": {
+        "make": "Samsung",
+        "model": "Galaxy S23",
+        "resolution": [
+          1080,
+          2340
+        ],
+        "os": "Android 14 OneUI 6"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 15000.0,
+        "currency": "INR",
+        "utr": "412356789013",
+        "timestamp": "2026-04-15T12:05:00Z",
+        "vpa": "merchant.store@okaxis",
+        "recipient_name": "Metro Retailers",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "b6215e94bf20b501353d97699ec9b9a3659feb01a8eb6a2f90a805b3ac8ac9ad",
+      "cbs_ledger_amount": 15000.0,
+      "cbs_clearing_time": "2026-04-15T12:05:00Z"
+    },
+    {
+      "id": "TXB2-GEN-03",
+      "filename": "paytm_oneplus_genuine.png",
+      "relative_path": "images/paytm_oneplus_genuine.png",
+      "app": "Paytm",
+      "template_version": "v10.15.0",
+      "device": {
+        "make": "OnePlus",
+        "model": "OnePlus 11",
+        "resolution": [
+          1440,
+          3216
+        ],
+        "os": "OxygenOS 13"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 5000.0,
+        "currency": "INR",
+        "utr": "412356789014",
+        "timestamp": "2026-04-15T13:30:00Z",
+        "vpa": "groceries.quick@paytm",
+        "recipient_name": "Quick Kirana Express",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "d87969512806fbc8d57e45086086a4675bcb922ba642c1f51a860f0929006ced",
+      "cbs_ledger_amount": 5000.0,
+      "cbs_clearing_time": "2026-04-15T13:30:00Z"
+    },
+    {
+      "id": "TXB2-GEN-04",
+      "filename": "bhim_redmi_genuine.png",
+      "relative_path": "images/bhim_redmi_genuine.png",
+      "app": "BHIM",
+      "template_version": "v2.0.4",
+      "device": {
+        "make": "Xiaomi",
+        "model": "Redmi Note 12",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "MIUI 14"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 10000.0,
+        "currency": "INR",
+        "utr": "412356789015",
+        "timestamp": "2026-04-15T14:15:00Z",
+        "vpa": "services.fee@upi",
+        "recipient_name": "State Utility Services",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "5a003451d12be9ef8e44a2f05847b6fe7668c8c1e38a7f588632846833e5b01d",
+      "cbs_ledger_amount": 10000.0,
+      "cbs_clearing_time": "2026-04-15T14:15:00Z"
+    },
+    {
+      "id": "TXB2-GEN-05",
+      "filename": "cred_iphone_genuine.png",
+      "relative_path": "images/cred_iphone_genuine.png",
+      "app": "CRED",
+      "template_version": "v4.55.0",
+      "device": {
+        "make": "Apple",
+        "model": "iPhone 14 Pro",
+        "resolution": [
+          1179,
+          2556
+        ],
+        "os": "iOS 17.2"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 8500.0,
+        "currency": "INR",
+        "utr": "412356789016",
+        "timestamp": "2026-04-15T15:00:00Z",
+        "vpa": "luxury.dining@credpay",
+        "recipient_name": "Heritage Fine Dining",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "a82b707a472c56ac476f3ec0f9d855a16e84c46ecc360b154c34955a4b7a16bb",
+      "cbs_ledger_amount": 8500.0,
+      "cbs_clearing_time": "2026-04-15T15:00:00Z"
+    },
+    {
+      "id": "TXB2-GEN-BEN-06",
+      "filename": "amazon_pay_genuine.png",
+      "relative_path": "images/amazon_pay_genuine.png",
+      "app": "Amazon Pay",
+      "template_version": "v24.2.0",
+      "device": {
+        "make": "Motorola",
+        "model": "Edge 40",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 13"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "TEMPLATE_VARIATION"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 3400.0,
+        "currency": "INR",
+        "utr": "412356789017",
+        "timestamp": "2026-04-15T16:10:00Z",
+        "vpa": "books.direct@apl",
+        "recipient_name": "Direct Bookstore",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "18af2afd6f7a5be0dc21b622a3f44b23e0ae3c06004c489f1d3461eb636f7e9f",
+      "cbs_ledger_amount": 3400.0,
+      "cbs_clearing_time": "2026-04-15T16:10:00Z"
+    },
+    {
+      "id": "TXB2-GEN-BEN-07",
+      "filename": "gpay_benign_downscaled_75.png",
+      "relative_path": "images/gpay_benign_downscaled_75.png",
+      "app": "Google Pay",
+      "template_version": "v182.1.2",
+      "device": {
+        "make": "Samsung",
+        "model": "Galaxy S23",
+        "resolution": [
+          810,
+          1755
+        ],
+        "os": "Android 14"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "BILINEAR_DOWNSCALE_75"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 12500.0,
+        "currency": "INR",
+        "utr": "412356789018",
+        "timestamp": "2026-04-15T16:45:00Z",
+        "vpa": "hardware.tools@okaxis",
+        "recipient_name": "Industrial Hardware Supplies",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "f42ff0de2ff86a7b91f8a82d5b600c7d0a867a27e89cb691e2b375bddea4f46e",
+      "cbs_ledger_amount": 12500.0,
+      "cbs_clearing_time": "2026-04-15T16:45:00Z"
+    },
+    {
+      "id": "TXB2-GEN-BEN-08",
+      "filename": "phonepe_benign_whatsapp_q55.png",
+      "relative_path": "images/phonepe_benign_whatsapp_q55.png",
+      "app": "PhonePe",
+      "template_version": "v3.24.1",
+      "device": {
+        "make": "Google",
+        "model": "Pixel 7",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 14"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "WHATSAPP_JPEG_RECOMPRESSION_Q55"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 9200.0,
+        "currency": "INR",
+        "utr": "412356789019",
+        "timestamp": "2026-04-15T17:15:00Z",
+        "vpa": "clinic.care@ybl",
+        "recipient_name": "City Healthcare Diagnostics",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "a9886ac454096f986d68084e779eb28543bb9dda4489086e1b6899086c0c1c8f",
+      "cbs_ledger_amount": 9200.0,
+      "cbs_clearing_time": "2026-04-15T17:15:00Z"
+    },
+    {
+      "id": "TXB2-GEN-BEN-09",
+      "filename": "paytm_benign_crop_tilt.png",
+      "relative_path": "images/paytm_benign_crop_tilt.png",
+      "app": "Paytm",
+      "template_version": "v10.15.0",
+      "device": {
+        "make": "OnePlus",
+        "model": "OnePlus 11",
+        "resolution": [
+          1000,
+          1500
+        ],
+        "os": "OxygenOS 13"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "RECEIPT_CARD_CROP_AND_1.5DEG_ROTATION"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 4500.0,
+        "currency": "INR",
+        "utr": "412356789020",
+        "timestamp": "2026-04-15T18:00:00Z",
+        "vpa": "fuel.point@paytm",
+        "recipient_name": "Highway Fuel Station",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "09708ad5b5c1f5d976587b748ec106e876943de1e20a910df1c31b1845e7e518",
+      "cbs_ledger_amount": 4500.0,
+      "cbs_clearing_time": "2026-04-15T18:00:00Z"
+    },
+    {
+      "id": "TXB2-GEN-BEN-10",
+      "filename": "cred_benign_darkmode.png",
+      "relative_path": "images/cred_benign_darkmode.png",
+      "app": "CRED",
+      "template_version": "v4.55.0",
+      "device": {
+        "make": "Apple",
+        "model": "iPhone 14 Pro",
+        "resolution": [
+          1179,
+          2556
+        ],
+        "os": "iOS 17.2"
+      },
+      "tampered": false,
+      "tampering_category": "NONE",
+      "benign_transformations": [
+        "DARK_MODE_HIGH_CONTRAST"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 16000.0,
+        "currency": "INR",
+        "utr": "412356789021",
+        "timestamp": "2026-04-15T18:30:00Z",
+        "vpa": "electronics.hub@credpay",
+        "recipient_name": "Premium Electronics",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "2cd0de4aa427f010246ca760b9d227401d49d17b786eb414939293ecdbab246c",
+      "cbs_ledger_amount": 16000.0,
+      "cbs_clearing_time": "2026-04-15T18:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-01",
+      "filename": "phonepe_spliced_amount.png",
+      "relative_path": "images/phonepe_spliced_amount.png",
+      "app": "PhonePe",
+      "template_version": "v3.24.1",
+      "device": {
+        "make": "Google",
+        "model": "Pixel 7",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 14"
+      },
+      "tampered": true,
+      "tampering_category": "AMOUNT_SPLICE_KERNING_GAP",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.65
+      ],
+      "ground_truth_fields": {
+        "amount": 120000.0,
+        "currency": "INR",
+        "utr": "412356789022",
+        "timestamp": "2026-04-16T10:00:00Z",
+        "vpa": "wholesaler@ybl",
+        "recipient_name": "Apex Wholesale Traders",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "d92105c971cfef126588746d3c5a74d95b86f78ac1bd7966fa6baf08a63502f5",
+      "cbs_ledger_amount": 120000.0,
+      "cbs_clearing_time": "2026-04-16T10:00:00Z"
+    },
+    {
+      "id": "TXB2-TAM-02",
+      "filename": "gpay_altered_recipient_vpa.png",
+      "relative_path": "images/gpay_altered_recipient_vpa.png",
+      "app": "Google Pay",
+      "template_version": "v182.1.2",
+      "device": {
+        "make": "Samsung",
+        "model": "Galaxy S23",
+        "resolution": [
+          1080,
+          2340
+        ],
+        "os": "Android 14"
+      },
+      "tampered": true,
+      "tampering_category": "RECIPIENT_VPA_ALTERATION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.36,
+        0.08,
+        0.44,
+        0.85
+      ],
+      "ground_truth_fields": {
+        "amount": 35000.0,
+        "currency": "INR",
+        "utr": "412356789023",
+        "timestamp": "2026-04-16T10:30:00Z",
+        "vpa": "scammer.mule@ibl",
+        "recipient_name": "Legitimate Merchant Name",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "40a2635733938625db76b397db6d4bf13052cd61e0fbc89c88475f4dcb8a5753",
+      "cbs_ledger_amount": 35000.0,
+      "cbs_clearing_time": "2026-04-16T10:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-03",
+      "filename": "paytm_fabricated_repeating_utr.png",
+      "relative_path": "images/paytm_fabricated_repeating_utr.png",
+      "app": "Paytm",
+      "template_version": "v10.15.0",
+      "device": {
+        "make": "OnePlus",
+        "model": "OnePlus 11",
+        "resolution": [
+          1440,
+          3216
+        ],
+        "os": "OxygenOS 13"
+      },
+      "tampered": true,
+      "tampering_category": "UTR_FABRICATION_REPEATING",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.45,
+        0.08,
+        0.52,
+        0.9
+      ],
+      "ground_truth_fields": {
+        "amount": 45000.0,
+        "currency": "INR",
+        "utr": "999999999999",
+        "timestamp": "2026-04-16T11:00:00Z",
+        "vpa": "fast.pay@paytm",
+        "recipient_name": "Fast Distribution Hub",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "3f3947b60e790664203786bfb97df73a3d6fb52cdffcfe4e3e64b4650900942a",
+      "cbs_ledger_amount": 45000.0,
+      "cbs_clearing_time": "2026-04-16T11:00:00Z"
+    },
+    {
+      "id": "TXB2-TAM-04",
+      "filename": "bhim_resampled_pixel_doubling.png",
+      "relative_path": "images/bhim_resampled_pixel_doubling.png",
+      "app": "BHIM",
+      "template_version": "v2.0.4",
+      "device": {
+        "make": "Xiaomi",
+        "model": "Redmi Note 12",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "MIUI 14"
+      },
+      "tampered": true,
+      "tampering_category": "NEAREST_NEIGHBOR_RESAMPLE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "ground_truth_fields": {
+        "amount": 65000.0,
+        "currency": "INR",
+        "utr": "412356789025",
+        "timestamp": "2026-04-16T11:30:00Z",
+        "vpa": "bhim.vendor@upi",
+        "recipient_name": "Rural Cooperatives Ltd",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "6bb8cc8a8e2ee0729aaf881f015c77be27bdb61f5f121a8c89e881c1d82bef93",
+      "cbs_ledger_amount": 65000.0,
+      "cbs_clearing_time": "2026-04-16T11:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-05",
+      "filename": "cred_canva_watermarked.png",
+      "relative_path": "images/cred_canva_watermarked.png",
+      "app": "CRED",
+      "template_version": "v4.55.0",
+      "device": {
+        "make": "Apple",
+        "model": "iPhone 14 Pro",
+        "resolution": [
+          1179,
+          2556
+        ],
+        "os": "iOS 17.2"
+      },
+      "tampered": true,
+      "tampering_category": "CANVA_METADATA_INJECTION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.0,
+        0.0,
+        0.1,
+        0.1
+      ],
+      "ground_truth_fields": {
+        "amount": 28000.0,
+        "currency": "INR",
+        "utr": "412356789026",
+        "timestamp": "2026-04-16T12:00:00Z",
+        "vpa": "luxury.jewels@credpay",
+        "recipient_name": "Royal Jewel Craft",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "849fc349aa169893db8c1de9470d9d46e8d388a19241b2645d4fb4113094f4f7",
+      "cbs_ledger_amount": 28000.0,
+      "cbs_clearing_time": "2026-04-16T12:00:00Z"
+    },
+    {
+      "id": "TXB2-TAM-06",
+      "filename": "amazon_copy_move_timestamp.png",
+      "relative_path": "images/amazon_copy_move_timestamp.png",
+      "app": "Amazon Pay",
+      "template_version": "v24.2.0",
+      "device": {
+        "make": "Motorola",
+        "model": "Edge 40",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 13"
+      },
+      "tampered": true,
+      "tampering_category": "COPY_MOVE_CLONE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.52,
+        0.08,
+        0.6,
+        0.7
+      ],
+      "ground_truth_fields": {
+        "amount": 19500.0,
+        "currency": "INR",
+        "utr": "412356789027",
+        "timestamp": "2026-04-16T12:30:00Z",
+        "vpa": "supplier.order@apl",
+        "recipient_name": "Prime Logistics Suppliers",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "e2d4b8ba92eaeab573db258ee2a3243f92e3dc846b9c97798ce2d78fba5e4bc8",
+      "cbs_ledger_amount": 19500.0,
+      "cbs_clearing_time": "2026-04-16T12:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-07",
+      "filename": "cross_app_composited_receipt.png",
+      "relative_path": "images/cross_app_composited_receipt.png",
+      "app": "PhonePe",
+      "template_version": "v3.24.1",
+      "device": {
+        "make": "Google",
+        "model": "Pixel 7",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 14"
+      },
+      "tampered": true,
+      "tampering_category": "CROSS_APP_COMPOSITING",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.15,
+        0.05,
+        0.85,
+        0.95
+      ],
+      "ground_truth_fields": {
+        "amount": 80000.0,
+        "currency": "INR",
+        "utr": "412356789028",
+        "timestamp": "2026-04-16T13:00:00Z",
+        "vpa": "composite.target@okaxis",
+        "recipient_name": "GPay Card Body in PhonePe Frame",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "64e2e3c070e231b2c1d91cd8be80428a35b3dadfd1702a4a977a9674a6e7fd33",
+      "cbs_ledger_amount": 80000.0,
+      "cbs_clearing_time": "2026-04-16T13:00:00Z"
+    },
+    {
+      "id": "TXB2-TAM-08",
+      "filename": "ai_inpainted_amount_patch.png",
+      "relative_path": "images/ai_inpainted_amount_patch.png",
+      "app": "Google Pay",
+      "template_version": "v182.1.2",
+      "device": {
+        "make": "Samsung",
+        "model": "Galaxy S23",
+        "resolution": [
+          1080,
+          2340
+        ],
+        "os": "Android 14"
+      },
+      "tampered": true,
+      "tampering_category": "AI_INPAINTED_PATCH",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "ground_truth_fields": {
+        "amount": 72000.0,
+        "currency": "INR",
+        "utr": "412356789029",
+        "timestamp": "2026-04-16T13:30:00Z",
+        "vpa": "inpaint.test@okaxis",
+        "recipient_name": "Inpaint Hardware Ltd",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "17d12454e8196c0401faeec9a15cc22192dfef065af7faa6c74466c915710e0a",
+      "cbs_ledger_amount": 72000.0,
+      "cbs_clearing_time": "2026-04-16T13:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-09",
+      "filename": "synthetic_fakepay_spoof_ui.png",
+      "relative_path": "images/synthetic_fakepay_spoof_ui.png",
+      "app": "FakePay",
+      "template_version": "v4.1.0-SPOOF",
+      "device": {
+        "make": "Unknown",
+        "model": "Emulator",
+        "resolution": [
+          1080,
+          1920
+        ],
+        "os": "Android 11"
+      },
+      "tampered": true,
+      "tampering_category": "SYNTHETIC_SPOOF_APP_UI",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "ground_truth_fields": {
+        "amount": 55000.0,
+        "currency": "INR",
+        "utr": "000012345678",
+        "timestamp": "2026-04-16T14:00:00Z",
+        "vpa": "spoof.fake@fakepay",
+        "recipient_name": "Fake Spoof Generator App",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "74b831d961ee5385ca053dea40b07e38c9faf1b64bc8d967c0782d7e3f3f0ae9",
+      "cbs_ledger_amount": 55000.0,
+      "cbs_clearing_time": "2026-04-16T14:00:00Z"
+    },
+    {
+      "id": "TXB2-TAM-10",
+      "filename": "double_recompressed_splice.png",
+      "relative_path": "images/double_recompressed_splice.png",
+      "app": "Paytm",
+      "template_version": "v10.15.0",
+      "device": {
+        "make": "OnePlus",
+        "model": "OnePlus 11",
+        "resolution": [
+          1440,
+          3216
+        ],
+        "os": "OxygenOS 13"
+      },
+      "tampered": true,
+      "tampering_category": "DOUBLE_RECOMPRESSION_SPLICE",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.22,
+        0.08,
+        0.32,
+        0.7
+      ],
+      "ground_truth_fields": {
+        "amount": 95000.0,
+        "currency": "INR",
+        "utr": "412356789031",
+        "timestamp": "2026-04-16T14:30:00Z",
+        "vpa": "double.compress@paytm",
+        "recipient_name": "Double Recompressed Splice Ltd",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "b895d583cce5ad9476e7bdaa4dd8d41c73d053afcd2bb772536dfce4cf5cc31e",
+      "cbs_ledger_amount": 95000.0,
+      "cbs_clearing_time": "2026-04-16T14:30:00Z"
+    },
+    {
+      "id": "TXB2-TAM-11",
+      "filename": "altered_status_failed_to_success.png",
+      "relative_path": "images/altered_status_failed_to_success.png",
+      "app": "BHIM",
+      "template_version": "v2.0.4",
+      "device": {
+        "make": "Xiaomi",
+        "model": "Redmi Note 12",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "MIUI 14"
+      },
+      "tampered": true,
+      "tampering_category": "STATUS_BANNER_ALTERATION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": [
+        0.6,
+        0.08,
+        0.68,
+        0.85
+      ],
+      "ground_truth_fields": {
+        "amount": 18000.0,
+        "currency": "INR",
+        "utr": "412356789032",
+        "timestamp": "2026-04-16T15:00:00Z",
+        "vpa": "status.fraud@upi",
+        "recipient_name": "Altered Status Beneficiary",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "7d1168b4e9d14c2357f71d638406431fca42279b2e5b216199f04cde970726b3",
+      "cbs_ledger_amount": 18000.0,
+      "cbs_clearing_time": "2026-04-16T15:00:00Z"
+    },
+    {
+      "id": "TXB2-REC-01",
+      "filename": "cbs_amount_mismatch_genuine_look.png",
+      "relative_path": "images/cbs_amount_mismatch_genuine_look.png",
+      "app": "PhonePe",
+      "template_version": "v3.24.1",
+      "device": {
+        "make": "Google",
+        "model": "Pixel 7",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "Android 14"
+      },
+      "tampered": false,
+      "tampering_category": "CBS_FINANCIAL_AMOUNT_CONTRADICTION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "utr": "412356789033",
+        "timestamp": "2026-04-17T09:00:00Z",
+        "vpa": "cbs.conflict@ybl",
+        "recipient_name": "CBS Contradiction Merchant",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "2fb59af37faafa1ffcfc0c7c3f7ce20d920eb849667fe217087c06cfc8a0bb2c",
+      "cbs_ledger_amount": 5000.0,
+      "cbs_clearing_time": "2026-04-17T09:00:00Z"
+    },
+    {
+      "id": "TXB2-REC-02",
+      "filename": "cbs_missing_utr_unrecorded.png",
+      "relative_path": "images/cbs_missing_utr_unrecorded.png",
+      "app": "Google Pay",
+      "template_version": "v182.1.2",
+      "device": {
+        "make": "Samsung",
+        "model": "Galaxy S23",
+        "resolution": [
+          1080,
+          2340
+        ],
+        "os": "Android 14"
+      },
+      "tampered": false,
+      "tampering_category": "CBS_MISSING_TRANSACTION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 31000.0,
+        "currency": "INR",
+        "utr": "412356789034",
+        "timestamp": "2026-04-17T10:15:00Z",
+        "vpa": "missing.utr@okaxis",
+        "recipient_name": "Ghost Merchant Entity",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "96fb8e220772a5fb70efff21fd4e14e62866164a1a6ba72265eec7a66f7cf381",
+      "cbs_ledger_amount": null,
+      "cbs_clearing_time": "2026-04-17T10:15:00Z"
+    },
+    {
+      "id": "TXB2-REC-03",
+      "filename": "ambiguous_multiple_matches.png",
+      "relative_path": "images/ambiguous_multiple_matches.png",
+      "app": "Paytm",
+      "template_version": "v10.15.0",
+      "device": {
+        "make": "OnePlus",
+        "model": "OnePlus 11",
+        "resolution": [
+          1440,
+          3216
+        ],
+        "os": "OxygenOS 13"
+      },
+      "tampered": false,
+      "tampering_category": "AMBIGUOUS_MULTIPLE_CANDIDATES",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 4200.0,
+        "currency": "INR",
+        "utr": "412356789035",
+        "timestamp": "2026-04-17T11:00:00Z",
+        "vpa": "dual.entry@paytm",
+        "recipient_name": "Coffee Roasters Hub",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "3098fb84c1b26031e1273dcd105f0fa64804e2dd9c43a156e6504043ec2a406c",
+      "cbs_ledger_amount": 4200.0,
+      "cbs_clearing_time": "2026-04-17T11:00:00Z"
+    },
+    {
+      "id": "TXB2-REC-04",
+      "filename": "timing_inversion_sequence.png",
+      "relative_path": "images/timing_inversion_sequence.png",
+      "app": "BHIM",
+      "template_version": "v2.0.4",
+      "device": {
+        "make": "Xiaomi",
+        "model": "Redmi Note 12",
+        "resolution": [
+          1080,
+          2400
+        ],
+        "os": "MIUI 14"
+      },
+      "tampered": false,
+      "tampering_category": "TEMPORAL_SEQUENCE_INVERSION",
+      "benign_transformations": [
+        "NONE"
+      ],
+      "manipulated_region_bbox": null,
+      "ground_truth_fields": {
+        "amount": 14000.0,
+        "currency": "INR",
+        "utr": "412356789036",
+        "timestamp": "2026-04-17T06:00:00Z",
+        "vpa": "timing.drift@upi",
+        "recipient_name": "Timing Inversion Logistics",
+        "status": "SUCCESS"
+      },
+      "sha256_original": "66c51451ad2c9085b7ea914296a12e0beb7c2b3d8f9fd91bc0135f4af3bcb466",
+      "cbs_ledger_amount": 14000.0,
+      "cbs_clearing_time": "2026-04-17T10:30:00Z"
+    }
+  ]
+}

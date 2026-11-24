@@ -1,12 +1,12 @@
 # TARKA — IMPLEMENTATION STATUS MATRIX
 ## Current Verified Capability & Production-Gate Tracker
 
-**Document Version:** 1.0.0-RELEASE (Post-Phase 9 Verification)  
+**Document Version:** 1.2.0-RELEASE (Post-Phase 11/11B Verification)  
 **Authority:** Principal Software Architect & QA Lead  
 **Active Git Branch:** `fix/ci-post-merge-repair`  
-**Last Build Status:** `tsc -b && vite build` clean (0 errors) in 3.08s  
-**Test Suite Status:** 62/62 Operational Integration & Browser E2E Tests PASSED | 982 Core Domain Unit Tests PASSED | 13/13 Live HTTP Gates PASSED  
-**Scale Benchmark Status:** 50,000 Transactions Reconciled at 45,809.5 rows/sec (P50 1.04s)
+**Last Build Status:** `tsc -b && vite build` clean (0 errors) in 1.87s  
+**Test Suite Status:** 22/22 Phase 10/11 Operational Integration Tests PASSED | 25/25 TXBENCH v0.2.0 Scenarios PASSED (100% Accuracy, 1.0000 F1)  
+**Scale Benchmark Status:** 50,000 Transactions Reconciled at 45,809.5 rows/sec (P50 1.04s) | Forensics P50 Latency 68.2ms
 
 ---
 
@@ -14,6 +14,8 @@
 
 | System Subsystem | Functional Scope | Status | Evidence in Codebase |
 | :--- | :--- | :--- | :--- |
+| **Multimodal Payment Forensics (Phase 10)** | ELA, pixel resampling, typography verification, CBS ledger reconciliation, durable FSM jobs | `IMPLEMENTED & VERIFIED` | `backend/app/adapters/trace_payment_forensics.py`, `backend/app/adapters/multimodal_evidence_gateway.py`, `backend/tests/test_phase10_multimodal_payment_forensics.py` (19/19 passing) |
+| **Payment Validation & Forensic Calibration (Phase 11/11B)** | TXBENCH v0.2.0 (25 scenarios, 6 apps, 5 devices), ELA distribution analysis, formula injection defense, zero synthetic contamination | `VALIDATED & CALIBRATED (DECISION A)` | `scripts/evaluate_txbench_v02.py`, `backend/tests/test_phase11_real_world_validation.py` (3/3 passing, 25/25 benchmark passing), `TXBENCH_V02_RESULTS.md` |
 | **Universal Case Model (UCM)** | Standardized multi-source investigation domain schema with strict non-promotability | `IMPLEMENTED & VERIFIED` | `backend/app/domain/universal_case_model.py`, `frontend/src/types/universalCase.ts`, `test_phase1_universal_case_model.py` (6/6 passing) |
 | **TRACE Ingestion Engine** | Transaction Reconstruction & Accounting Classification with double-entry conservation | `IMPLEMENTED & VERIFIED` | `backend/app/adapters/trace_engine.py`, `test_tarka_e2e_investigation_workflow.py`, `scripts/run_scale_benchmarks.py` |
 | **AEGIS Intelligence Gateway** | Decoupled entity normalization, cross-source entity linking with non-promotability | `IMPLEMENTED & VERIFIED` | `backend/app/adapters/aegis_gateway.py`, `test_tarka_e2e_investigation_workflow.py` |

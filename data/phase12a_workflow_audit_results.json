@@ -1,0 +1,86 @@
+[
+  {
+    "step": 1,
+    "name": "Investigator Authentication",
+    "status": "PASS",
+    "detail": "Authenticated user usr-delhi-01 (INVESTIGATOR_DELHI) with role INVESTIGATOR and valid HMAC-SHA256 JWT."
+  },
+  {
+    "step": 2,
+    "name": "Case Creation",
+    "status": "PASS",
+    "detail": "Created UniversalCase CASE-PILOT-85C31D01 in ACTIVE status with lead investigator usr-delhi-01."
+  },
+  {
+    "step": 3,
+    "name": "Evidence Submission",
+    "status": "PASS",
+    "detail": "Admitted CBS CSV (198 bytes) and PNG receipt (9506 bytes)."
+  },
+  {
+    "step": 4,
+    "name": "Original-Byte Preservation & CAS Immutability",
+    "status": "PASS",
+    "detail": "Exact SHA-256 read-back bitstream verification verified for CSV (db28dd95b1fc...) and PNG (8716a9102250...)."
+  },
+  {
+    "step": 5,
+    "name": "Asynchronous Processing & FSM Durability",
+    "status": "PASS",
+    "detail": "FSM transitioned QUEUED -> PROCESSING -> COMPLETED across 4 stages. Atomic persistence and 4 durable SSE events logged."
+  },
+  {
+    "step": 6,
+    "name": "OCR and Transaction Field Extraction",
+    "status": "PASS",
+    "detail": "Extracted Amount=\u20b915000.0, RRN=202602148891, VPA=merchant@okhdfcbank, Status=SUCCESS."
+  },
+  {
+    "step": 7,
+    "name": "TRACE Visual & Structural Examination",
+    "status": "PASS",
+    "detail": "ELA mean error=0.208, Resampling=False, Typo anomalies=0. Invariant verified: ELA does not declare manipulation alone."
+  },
+  {
+    "step": 8,
+    "name": "CBS Reconciliation & Balance Conservation",
+    "status": "PASS",
+    "detail": "Balance conservation verified ($50k - $25k = $25k). Isolated exact contradiction: Bank debit \u20b925k vs Receipt claim \u20b915k (\u0394=\u20b910k under UTR 202602148891)."
+  },
+  {
+    "step": 9,
+    "name": "AEGIS Reasoning & Evidence Gaps",
+    "status": "PASS",
+    "detail": "Generated 7 competing hypotheses. Registered investigator custom hypothesis HYP-CUSTOM-01. Formulated 2 prioritized statutory evidence gaps (authority: Section 94 BNSS)."
+  },
+  {
+    "step": 10,
+    "name": "Timeline & Contradiction Review",
+    "status": "PASS",
+    "detail": "Created UniversalFinding FIND-CONTRA-07A5B4. Non-promotability invariant verified: human_verified remains FALSE."
+  },
+  {
+    "step": 11,
+    "name": "Human Investigator Decision",
+    "status": "PASS",
+    "detail": "Investigator usr-delhi-01 reviewed finding FIND-CONTRA-07A5B4, promoted status to ACCEPTED, and attached signed examiner notes."
+  },
+  {
+    "step": 12,
+    "name": "Statutory Report Generation (\u00a7 63 BSA)",
+    "status": "PASS",
+    "detail": "Generated Section 63 BSA certificate. Substantive content SHA-256 seal: 6c537f6a9c54033fa800af3a50a02941e8f3a56610ea87f04b8f6c114ca8a5c1. Persisted in CAS."
+  },
+  {
+    "step": 13,
+    "name": "Audit & Provenance Verification",
+    "status": "PASS",
+    "detail": "Verified unbroken audit trail of 6 events terminating in cryptographic root 25d6ddaea54d8b77..."
+  },
+  {
+    "step": 14,
+    "name": "Case Export, Closure & Reopening",
+    "status": "PASS",
+    "detail": "Exported case package (2164 bytes, SHA-256: 40bbd9471d80...). Roundtrip deserialization verified bitstream equality."
+  }
+]

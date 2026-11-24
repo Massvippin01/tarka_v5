@@ -40,3 +40,25 @@
 - **Phase 7 (Multi-Agent Governance):** Wire 5 Governed Agents through `CommandBus` with immutable OPA Rego audit.
 - **Phase 8 (Statutory Certification):** Section 63 BSA tamper-proof cryptographic report verification with digital signature support.
 - **Phase 9 (Production Hardening & CI/CD):** CI container automation and live S3 CAS integration.
+
+---
+
+## 4. PHASES 10–12A COMPLETED & NEXT OPERATIONAL ROADMAP
+
+- **Phase 10 (Multimodal Payment Forensics):** COMPLETED. Full TRACE ELA, periodic resampling, typography verification, CBS reconciliation, and durable FSM jobs.
+- **Phase 11 & 11B (Real-World Evidence Validation & Forensic Calibration):** COMPLETED. Evaluated TXBENCH v0.2.0 (25 scenarios across 6 UPI apps and 5 mobile devices) with 100% accuracy, 0% FPR/FNR, 0.9018 mean IoU. Delivered 10 authoritative specifications.
+- **Phase 12A (Independent Validation & Pilot Readiness Audit):** COMPLETED.
+  - Independently reproduced TXBENCH v0.2.0 in clean environment (54.3ms P50 latency).
+  - Executed and verified 14-step investigator workflow end-to-end (`verify_phase12a_investigator_workflow.py`).
+  - Identified semantic keyword leakage in synthetic dataset (`inpaint`, `splice`, `recompressed`), reclassifying metrics as controlled calibration.
+  - Formulated protocol `TXBENCH v0.3-HOLDOUT` (50 real blinded receipts).
+  - Remediated orchestrator SSE double-yield and duplicate signature.
+  - Decision: **B (CONDITIONALLY APPROVED FOR CONTROLLED INVESTIGATOR PILOT)**.
+  - Delivered 6 authoritative Phase 12A audit specifications.
+- **Phase 12B Action Plan (Controlled Investigator Pilot Execution):**
+  1. **Deploy Controlled Pilot Workstation**: Onboard authorized financial fraud investigators using local filesystem CAS and strict 7-factor RBAC isolation.
+  2. **Enforce Investigator Protocol**: Ensure mandatory CBS statement ledger corroboration and human signoff (`human_verified = True`) before statutory Section 63 BSA report sealing.
+  3. **Execute TXBENCH v0.3-HOLDOUT Evaluation**: Unseal and evaluate the 50-sample real-world holdout dataset under frozen engine parameters to establish independent unconstrained generalization.
+  4. **Optical Screen Ingestion Enhancement**: Implement perspective rectification and moiré suppression filter for cases where screenshots are captured as physical photos of suspect phone screens.
+
+

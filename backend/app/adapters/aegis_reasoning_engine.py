@@ -76,7 +76,38 @@ class AegisReasoningEngine:
     """
 
     def __init__(self):
-        pass
+        self.custom_hypotheses: Dict[str, List[CompetingHypothesis]] = {}
+
+    def register_custom_hypothesis(
+        self,
+        case_id: str,
+        title: str,
+        description: str,
+        supporting_observations: Optional[List[Dict[str, Any]]] = None,
+        contradictory_observations: Optional[List[Dict[str, Any]]] = None,
+        missing_evidence: Optional[List[str]] = None,
+        assumptions: Optional[List[str]] = None,
+        alternative_explanations: Optional[List[str]] = None,
+        recommended_checks: Optional[List[str]] = None,
+        epistemic_plausibility: str = "INVESTIGATOR_DEFINED",
+    ) -> CompetingHypothesis:
+        """Allows authorized human investigators to formulate and register custom competing hypotheses."""
+        hid = f"HYP-CUSTOM-{len(self.custom_hypotheses.get(case_id, [])) + 1:02d}"
+        hyp = CompetingHypothesis(
+            hypothesis_id=hid,
+            title=title,
+            description=description,
+            supporting_observations=supporting_observations or [],
+            contradictory_observations=contradictory_observations or [],
+            missing_evidence=missing_evidence or [],
+            assumptions=assumptions or [],
+            alternative_explanations=alternative_explanations or [],
+            recommended_discriminative_checks=recommended_checks or [],
+            epistemic_plausibility=epistemic_plausibility,
+            human_verified=True,
+        )
+        self.custom_hypotheses.setdefault(case_id, []).append(hyp)
+        return hyp
 
     # =========================================================================
     # 1. IDENTIFIER NORMALIZATION & VALIDATION
@@ -304,7 +335,131 @@ class AegisReasoningEngine:
             human_verified=False,
         )
 
-        hypotheses.extend([h1, h2, h3])
+        # H4: Synthetic / Spoof Application UI Generation
+        h4 = CompetingHypothesis(
+            hypothesis_id="HYP-04",
+            title="Synthetic Spoof Payment Interface (FakePay / Simulator UI)",
+            description=(
+                f"The submitted payment receipt was generated using an offline fake payment simulator (FakePay) "
+                f"and was never transmitted over the NPCI UPI switch or acquiring bank gateway."
+            ),
+            supporting_observations=[
+                {"evidence": "cbs_statement", "detail": f"Reference number {rrn} is completely absent from Core Banking clearing records."},
+                {"evidence": "trace_layout", "detail": "Interface typography and layout mismatch official NPCI specifications."},
+            ],
+            contradictory_observations=[],
+            missing_evidence=[
+                "Device application package extraction checking for com.fakepay or spoof APK signatures.",
+                "NPCI central switch transaction log query.",
+            ],
+            assumptions=[
+                "Perpetrator utilized a client-side Android prank or spoof application.",
+            ],
+            alternative_explanations=[
+                "Transaction was routed through an unlisted third-party PPI wallet rather than bank UPI.",
+            ],
+            recommended_discriminative_checks=[
+                f"Query NPCI for existence of global transaction reference {rrn}.",
+                "Inspect device package manager (pm list packages) for fake payment generators.",
+            ],
+            epistemic_plausibility="PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+            human_verified=False,
+        )
+
+        # H5: Core Banking Auto-Reversal or Clearing Settlement Reversal
+        h5 = CompetingHypothesis(
+            hypothesis_id="HYP-05",
+            title="Core Banking Auto-Reversal or Clearing Settlement Refund",
+            description=(
+                f"Debit occurred at the payer bank but timed out at the beneficiary acquiring core, "
+                f"resulting in an automatic credit reversal under NPCI settlement guidelines."
+            ),
+            supporting_observations=[
+                {"evidence": "bank_statement.csv", "detail": "Matching credit reversal detected within 24-48 hours of transaction."},
+            ],
+            contradictory_observations=[
+                {"evidence": "disputed_receipt", "detail": "Screenshot shows final status 'SUCCESS' without reversal annotation."},
+            ],
+            missing_evidence=[
+                "NPCI Dispute Management System (DMS) chargeback / reversal record.",
+                "Beneficiary bank statement reflecting inward credit rejection.",
+            ],
+            assumptions=[
+                "Beneficiary CBS timeout caused automatic reverse clearing.",
+            ],
+            alternative_explanations=[
+                "Merchant initiated manual refund outside the UPI protocol.",
+            ],
+            recommended_discriminative_checks=[
+                "Inspect statement credit entries within 48 hours for REV/RET/REFUND descriptors.",
+                "Issue Section 94 BNSS inquiry to acquiring bank regarding RRN settlement status.",
+            ],
+            epistemic_plausibility="PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+            human_verified=False,
+        )
+
+        # H6: Benign Telecom Latency or App Display Lag
+        h6 = CompetingHypothesis(
+            hypothesis_id="HYP-06",
+            title="Benign Telecom Latency or App Display Lag (No Fraud)",
+            description=(
+                f"The discrepancy is attributable to transient network latency or mobile app UI delay, "
+                f"where the receipt captured a temporary pending/intermediate state."
+            ),
+            supporting_observations=[
+                {"evidence": "telecom_cdr", "detail": "Low signal strength or cell handoff during transaction window."},
+            ],
+            contradictory_observations=[
+                {"evidence": "trace_ela", "detail": "Absence of digital manipulation if screenshot is authentic."},
+            ],
+            missing_evidence=[
+                "UPI App client-side diagnostic log file.",
+            ],
+            assumptions=[
+                "App UI displayed provisional confirmation prior to receiving gateway ACK.",
+            ],
+            alternative_explanations=[],
+            recommended_discriminative_checks=[
+                "Correlate exact device clock against network time protocol (NTP) server.",
+            ],
+            epistemic_plausibility="POSSIBLE_LOW_EVIDENTIARY_SUPPORT",
+            human_verified=False,
+        )
+
+        # H_UNKNOWN: Insufficient Corroborating Evidence / Unresolved Uncertainty
+        h_unknown = CompetingHypothesis(
+            hypothesis_id="HYP-UNKNOWN",
+            title="Unresolved / Insufficient Corroborating Evidence",
+            description=(
+                "Available digital artifacts are insufficient to establish a conclusive evidentiary finding. "
+                "Epistemic uncertainty must be maintained pending statutory evidence acquisition."
+            ),
+            supporting_observations=[
+                {"evidence": "case_integrity", "detail": "Key corroborating sources (NPCI switch logs, device extraction) remain unacquired."},
+            ],
+            contradictory_observations=[],
+            missing_evidence=[
+                "Authoritative Core Banking statement.",
+                "Original uncompressed mobile screenshot bitstream.",
+                "Cellular network IPDR logs.",
+            ],
+            assumptions=[],
+            alternative_explanations=[
+                "Independent third-party technical failure or intermediary spoofing.",
+            ],
+            recommended_discriminative_checks=[
+                "Execute prioritized statutory evidence acquisition under Section 94 BNSS / Section 91 CrPC.",
+            ],
+            epistemic_plausibility="PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+            human_verified=False,
+        )
+
+        hypotheses.extend([h1, h2, h3, h4, h5, h6, h_unknown])
+
+        # Include any registered custom hypotheses for this case
+        if case_id in self.custom_hypotheses:
+            hypotheses.extend(self.custom_hypotheses[case_id])
+
         return hypotheses
 
     def generate_hypotheses(

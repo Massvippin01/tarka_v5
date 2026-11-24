@@ -98,11 +98,14 @@ class ForensicJobOrchestrator:
                 logger.warning(f"Failed to load job {jfile}: {e}")
 
     def _persist_job(self, job: ForensicJob):
-        """Persists job record to durable JSON storage."""
+        """Persists job record to durable JSON storage with atomic rename."""
         try:
             path = self.persistence_dir / f"{job.job_id}.json"
-            with open(path, "w", encoding="utf-8") as f:
+            temp_path = self.persistence_dir / f"{job.job_id}.tmp"
+            with open(temp_path, "w", encoding="utf-8") as f:
                 f.write(job.model_dump_json(indent=2))
+            import os
+            os.replace(temp_path, path)
         except Exception as e:
             logger.error(f"Failed to persist job {job.job_id}: {e}")
 
@@ -205,12 +208,12 @@ class ForensicJobOrchestrator:
         self._notify_subscribers(job)
 
     def _notify_subscribers(self, job: ForensicJob):
-        """Sends asynchronous SSE update payload to active case connections."""
-        queues = self.subscribers.get(job.case_id, [])
-        if not queues:
-            return
-
+        """Sends asynchronous SSE update payload to active case connections and persists event log."""
+        # 1. Persist event to case event log for replay
+        event_file = self.persistence_dir / f"{job.case_id}_events.jsonl"
+        event_id = int(time.time() * 1000)
         event_payload = {
+            "id": event_id,
             "type": "FORENSIC_JOB_PROGRESS",
             "job_id": job.job_id,
             "case_id": job.case_id,
@@ -221,6 +224,16 @@ class ForensicJobOrchestrator:
             "error_message": job.error_message,
             "timestamp": job.updated_at_iso,
         }
+        try:
+            with open(event_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(event_payload) + "\n")
+        except Exception as e:
+            logger.warning(f"Failed to persist event log for case {job.case_id}: {e}")
+
+        # 2. Dispatch to live subscriber queues
+        queues = self.subscribers.get(job.case_id, [])
+        if not queues:
+            return
 
         dead_queues = []
         for q in queues:
@@ -233,8 +246,26 @@ class ForensicJobOrchestrator:
             if dq in queues:
                 queues.remove(dq)
 
-    async def sse_event_stream(self, case_id: str) -> AsyncGenerator[str, None]:
-        """Async generator yielding Server-Sent Events (SSE) for real-time frontend consumption."""
+    async def sse_event_stream(self, case_id: str, last_event_id: Optional[str] = None) -> AsyncGenerator[str, None]:
+        """
+        Async generator yielding Server-Sent Events (SSE) for real-time frontend consumption.
+        Supports event replay if last_event_id is provided.
+        """
+        # Replay persisted events if client reconnected with Last-Event-ID
+        if last_event_id:
+            event_file = self.persistence_dir / f"{case_id}_events.jsonl"
+            if event_file.exists():
+                try:
+                    last_id = int(last_event_id)
+                    with open(event_file, "r", encoding="utf-8") as f:
+                        for line in f:
+                            if line.strip():
+                                evt = json.loads(line)
+                                if evt.get("id", 0) > last_id:
+                                    yield f"id: {evt['id']}\nevent: {evt.get('type')}\ndata: {json.dumps(evt)}\n\n"
+                except Exception as e:
+                    logger.warning(f"Error replaying events for {case_id}: {e}")
+
         queue: asyncio.Queue = asyncio.Queue(maxsize=100)
         if case_id not in self.subscribers:
             self.subscribers[case_id] = []
@@ -247,12 +278,29 @@ class ForensicJobOrchestrator:
 
             while True:
                 data = await queue.get()
-                yield f"data: {json.dumps(data)}\n\n"
+                eid = data.get("id", "")
+                etype = data.get("type", "message")
+                yield f"id: {eid}\nevent: {etype}\ndata: {json.dumps(data)}\n\n"
         except asyncio.CancelledError:
             pass
         finally:
             if case_id in self.subscribers and queue in self.subscribers[case_id]:
                 self.subscribers[case_id].remove(queue)
+
+    def recover_crashed_jobs(self) -> List[str]:
+        """Scans in-memory and persisted jobs, transitioning interrupted jobs to REQUIRES_REVIEW."""
+        recovered = []
+        for jid, job in self.jobs.items():
+            if job.status in [JobState.PROCESSING, JobState.VALIDATING, JobState.QUEUED]:
+                self.update_job_stage(
+                    job_id=jid,
+                    status=JobState.REQUIRES_REVIEW,
+                    stage="CRASH_RECOVERY_REQUIRED",
+                    progress=job.progress_percent,
+                    error="Job interrupted by service restart or host crash. Human review required.",
+                )
+                recovered.append(jid)
+        return recovered
 
     def cancel_job(self, job_id: str, reason: str = "Investigator cancelled") -> Optional[ForensicJob]:
         """Halts an active job and sets status to CANCELLED."""

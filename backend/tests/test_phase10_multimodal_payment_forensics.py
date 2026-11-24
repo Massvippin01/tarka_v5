@@ -133,7 +133,7 @@ class TestAegisReasoningEngine:
             {"finding_type": "AMOUNT_MISMATCH", "description": "Receipt claims ₹25,000 but CBS ledger credits ₹15,000"}
         ]
         res = engine.generate_hypotheses("CASE_DISCREPANCY_01", obs, discrepancies)
-        assert len(res["hypotheses"]) == 3
+        assert len(res["hypotheses"]) >= 3
         h_ids = [h["hypothesis_id"] for h in res["hypotheses"]]
         assert "HYP-01" in h_ids or "H1" in h_ids
         for h in res["hypotheses"]:

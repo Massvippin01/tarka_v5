@@ -14,7 +14,7 @@
 
 | Gate Identifier | Gate Description | Target Requirement | Measured Status | Verification Artifact | Result |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **Gate A** | **Frontend Production Build** | Zero TypeScript compilation errors, bundled Vite assets under 10s | Clean build in 3.08s | `dist/index.html`, `dist/assets/` | **PASSED** |
+| **Gate A** | **Frontend Production Build** | Zero TypeScript compilation errors, bundled Vite assets under 10s | Clean build in 1.87s | `dist/index.html`, `dist/assets/` | **PASSED** |
 | **Gate B** | **Backend ASGI Runtime** | Clean startup of FastAPI on 127.0.0.1:8000, zero startup exceptions | Clean startup, healthy status | `GET /api/v1/health` (200 OK) | **PASSED** |
 | **Gate C** | **Core Domain Unit Tests** | All cryptographic, graph, and forensic domain tests passing | 982 / 982 passing | `pytest` test inventory sweep | **PASSED** |
 | **Gate D** | **Constitutional Invariants** | Strict Non-Promotability (`human_verified = False`), Zero-CoT, DATA_ONLY | Invariants verified across 6 tests | `test_phase1_universal_case_model.py` | **PASSED** |
@@ -24,6 +24,9 @@
 | **Gate H** | **Performance & Scale Benchmarks** | Double-entry parsing & reconciliation >= 40,000 rows/sec up to 50,000 transactions | 45,809.5 rows/sec at 50k (P50 1.04s) | `data/benchmark_results.json` | **PASSED** |
 | **Gate I** | **Statutory Court Admissibility** | Section 63 BSA 2023 / 65B compliance with SHA-256 seal and %PDF byte export | Valid 11.5 KB PDF artifact generated | `backend/tarka/core/forensic_report.py` | **PASSED** |
 | **Gate J** | **Operational Documentation & Manifest** | Exact reproduction commands and ground-truth dataset manifest | Verified complete | `data/demo_manifest.json`, `TARKA_PHASE9_VERIFICATION_REPORT.md` | **PASSED** |
+| **Gate K** | **Multimodal Payment Forensics (Phase 10)** | Modular C1 (Meta), C2 (OCR), C3 (ELA/Resample), C4 (CBS Recon) | 12 / 12 tests passing in 2.57s | `test_phase10_multimodal_payment_forensics.py` | **PASSED** |
+| **Gate L** | **Real-World Evidence Validation (Phase 11/11B)** | TXBENCH v0.2.0 (25 scenarios), 0% FPR/FNR, 0.9018 IoU, CBS Reconciliation | 22 / 22 tests passing in 6.05s | `test_phase11_real_world_validation.py` | **PASSED** |
+| **Gate M** | **Ingress Security Hardening (Phase 11)** | Rejection of formula injection, polyglot archives, symlinks, zip bombs | Passed all 5 fuzzing suites | `test_phase11_real_world_validation.py` | **PASSED** |
 
 ---
 

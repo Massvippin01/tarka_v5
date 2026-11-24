@@ -115,6 +115,7 @@ class MultimodalEvidenceGateway:
                 )
 
         # Disguised HTML / script tags in images
+        # Disguised HTML / script tags in images or PDFs
         lower_header = header.lower()
         if (
             b"<script" in lower_header
@@ -127,6 +128,45 @@ class MultimodalEvidenceGateway:
                     f"Disguised script payload detected in '{filename}'. "
                     "Non-executable evidence cannot contain embedded active script directives."
                 )
+
+        # 3b. Polyglot & Appended Payload Detection
+        ext = Path(filename).suffix.lower()
+        if ext == ".png" and header.startswith(b"\x89PNG\r\n\x1a\n"):
+            # Check for appended ZIP archive (PNG/ZIP polyglot)
+            stream.seek(0)
+            full_sample = stream.read(min(total_size, 2 * 1024 * 1024))
+            stream.seek(0)
+            iend_pos = full_sample.find(b"IEND\xaeB`\x82")
+            if iend_pos != -1 and b"PK\x03\x04" in full_sample[iend_pos + 8:]:
+                raise IngestionSecurityError(
+                    f"Polyglot payload detected in '{filename}': ZIP archive appended after PNG IEND chunk."
+                )
+
+        if ext == ".pdf" and header.startswith(b"%PDF"):
+            stream.seek(0)
+            pdf_sample = stream.read(min(total_size, 512 * 1024))
+            stream.seek(0)
+            lower_pdf = pdf_sample.lower()
+            if b"/javascript" in lower_pdf or b"/launch" in lower_pdf:
+                raise IngestionSecurityError(
+                    f"Active executable directive (/JavaScript or /Launch) detected in PDF '{filename}'."
+                )
+
+        # 3c. Spreadsheet Formula Injection (CSV / TSV)
+        if ext in [".csv", ".tsv", ".txt"]:
+            stream.seek(0)
+            csv_sample = stream.read(min(total_size, 64 * 1024))
+            stream.seek(0)
+            csv_text = csv_sample.decode("utf-8", errors="ignore")
+            for line in csv_text.splitlines()[:50]:
+                for cell in line.split(","):
+                    c = cell.strip().strip('"').strip("'")
+                    if c and c[0] in ["=", "+", "-", "@", "|"]:
+                        lower_c = c.lower()
+                        if any(danger in lower_c for danger in ["cmd", "powershell", "certutil", "cscript", "mshta", "rundll32", "dde", "exec"]):
+                            raise IngestionSecurityError(
+                                f"Formula injection / DDE command detected in tabular evidence '{filename}': cell '{c[:25]}...'"
+                            )
 
         # 4. Safe MIME detection via magic bytes
         detected_mime = "application/octet-stream"
@@ -208,6 +248,20 @@ class MultimodalEvidenceGateway:
                         raise IngestionSecurityError(
                             f"Archive traversal attack detected in '{archive_name}' entry: '{name}'. "
                             "Extraction rejected."
+                        )
+
+                    # 2b. Symbolic Link Defense
+                    if ((info.external_attr >> 16) & 0o120000) == 0o120000:
+                        raise IngestionSecurityError(
+                            f"Symbolic link detected in archive '{archive_name}': '{name}'. "
+                            "Symlinks are prohibited in evidence archives."
+                        )
+
+                    # 2c. Nested Archive Defense
+                    if Path(name).suffix.lower() in [".zip", ".tar", ".gz", ".7z", ".rar", ".bz2"]:
+                        raise IngestionSecurityError(
+                            f"Nested archive detected in '{archive_name}': '{name}'. "
+                            "Recursive archives are prohibited under SentinelX Rule 4."
                         )
 
                     # 3. Decompression bomb ratio check

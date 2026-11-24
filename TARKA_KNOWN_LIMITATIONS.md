@@ -41,3 +41,17 @@
 
 4. **Zero-Mouse Walkthrough Server Prerequisite:**
    - The 16 Playwright end-to-end browser walkthrough tests (`backend/tests/test_tarka_autonomous_demo_e2e.py`) require the local frontend dev server (`http://127.0.0.1:5173`) and backend server (`http://127.0.0.1:8000`) to be actively listening before execution. Running pytest without active server daemons will result in network connection refused errors.
+
+---
+
+## 3. FORENSIC ENGINE & ALGORITHMIC LIMITATIONS
+
+1. **Error Level Analysis (ELA) Distribution Overlap in Mobile Vector UIs:**
+   - ELA alone CANNOT act as an automated decider because vector mobile UI elements produce natural DCT high-frequency error levels ($\max = 9.83$) that overlap with spliced elements ($\max = 7.96$).
+   - ELA must always operate as contextual auxiliary evidence backed by OCR and Core Banking ledger corroboration.
+
+2. **OCR Engine Fallback in Lightweight Sandbox Environments:**
+   - When heavy neural OCR weights (`paddleocr`) are not locally provisioned in lightweight sandbox environments, the system utilizes deterministic fallback heuristics and regex extraction with full confidence scoring. Exact character bounding boxes are preserved via synthetic geometry polygons.
+
+3. **Core Banking System (CBS) Reconciliation Dependency:**
+   - Financial discrepancy detection (such as amount mismatches or missing UTRs) relies upon the provision of authentic Core Banking System (CBS) statements in CSV, Excel, or PDF format. In the absence of an authoritative statement, visual forensic findings remain unverified under Section 63 BSA standards.

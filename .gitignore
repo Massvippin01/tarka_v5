@@ -44,3 +44,5 @@ backend/data/cases/upi_payment_discrepancy/**
 backend/data/staging/
 data/storage/
 backend/data/storage/
+data/jobs/
+backend/data/jobs/
