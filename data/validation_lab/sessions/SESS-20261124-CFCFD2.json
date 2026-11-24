@@ -1,0 +1,19 @@
+{
+  "session_id": "SESS-20261124-CFCFD2",
+  "session_name": "Repro_Sess_1_T07",
+  "mode": "CONTROLLED_EVALUATION",
+  "examiner_id": "FOUNDER_VALIDATOR",
+  "created_at": "2026-11-24T15:52:48.693339+00:00",
+  "status": "ACTIVE",
+  "notes": "",
+  "test_case_ids": [
+    "TEST-T07-CB5C4E"
+  ],
+  "evidence_ids": [],
+  "total_tests": 1,
+  "passed_tests": 1,
+  "failed_tests": 0,
+  "inconclusive_tests": 0,
+  "blocked_tests": 0,
+  "not_implemented_tests": 0
+}

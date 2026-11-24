@@ -1,0 +1,46 @@
+{
+  "test_id": "TEST-P02-0668FB",
+  "session_id": "SESS-20261124-0C4446",
+  "case_id": "CASE-P02",
+  "test_category": "PLATFORM",
+  "scenario_id": "P02",
+  "scenario_description": "Disguised Executable Binary (MZ / ELF)",
+  "engine": "EVIDENCE_GATEWAY",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "malware_disguised.png": "28e2143a896316d17d25fb38a0ffa014bf47d38e28af1ac2a4b1149b5bbb9dac"
+  },
+  "ground_truth_manifest_id": "GT-P02",
+  "expected_behaviour": "Rejects via magic bytes; raises IngestionSecurityError; logs security audit event.",
+  "execution_status": "PASSED",
+  "actual_output": {
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:46:06.036249+00:00",
+      "assertions_checked": [],
+      "assertion_failures": [],
+      "metrics": {}
+    }
+  },
+  "intermediate_observations": [],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 0.028899999961140566,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "NOT_APPLICABLE",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P02-0668FB",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:46:06.034957+00:00",
+      "duration_ms": 0.028899999961140566,
+      "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "status": "PASSED",
+      "confusion": "NOT_APPLICABLE"
+    }
+  ],
+  "created_at": "2026-11-24T15:46:06.027423+00:00",
+  "executed_at": "2026-11-24T15:46:06.034957+00:00"
+}

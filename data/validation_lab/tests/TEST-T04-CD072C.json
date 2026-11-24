@@ -1,0 +1,411 @@
+{
+  "test_id": "TEST-T04-CD072C",
+  "session_id": "SESS-20261124-E765A6",
+  "case_id": "CASE-T04",
+  "test_category": "TRACE",
+  "scenario_id": "T04",
+  "scenario_description": "Messaging-App Benign Compression (WhatsApp/Telegram)",
+  "engine": "TRACE",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "whatsapp_recompressed.jpg": "84bea99fbaaa0bdac484945a6865a7acfa10d1b708c47be48b5c5960cdfca789"
+  },
+  "ground_truth_manifest_id": "GT-T04",
+  "expected_behaviour": "Z-score normalization compensates for canvas-wide compression; is_tampered == False.",
+  "execution_status": "FAILED",
+  "actual_output": {
+    "trace_raster": {
+      "artifact_id": "ART-PREVIEW",
+      "filename": "whatsapp_recompressed.jpg",
+      "case_id": "CASE-PREVIEW",
+      "examination_timestamp_iso": "2026-11-24T15:43:40.167131+00:00",
+      "composite_anomaly_score": 0.013,
+      "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
+      "manipulated_region_bbox": null,
+      "human_verified": false,
+      "conclusive": false,
+      "statutory_caveat": "AI PROPOSES. FORENSIC ENGINES TEST. INVESTIGATORS DECIDE. No screenshot may be declared authentic simply because no manipulation was detected, nor declared fraudulent solely because a single score or metadata tag is flagged. Cross-source corroboration against authoritative CBS banking records remains statutory mandatory.",
+      "modules": {
+        "metadata": {
+          "artifact_id": "ART-PREVIEW",
+          "filename": "whatsapp_recompressed.jpg",
+          "width": 480,
+          "height": 720,
+          "aspect_ratio": 0.6667,
+          "color_mode": "RGB",
+          "format": "JPEG",
+          "has_exif": false,
+          "exif_tags": {},
+          "software_tag": null,
+          "has_editing_signature": false,
+          "editing_tool": null,
+          "camera_make": null,
+          "camera_model": null,
+          "claimed_datetime": null,
+          "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+        },
+        "extracted_fields": {
+          "amount": 15000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": null,
+          "vpa": null,
+          "utr_rrn": "202602148891",
+          "status": "UNKNOWN",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "amount": {
+              "raw_text": "Rs 15000",
+              "confidence": 0.98,
+              "polygon": {
+                "points": [
+                  {
+                    "x": 0.54167,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 0.79167,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 0.79167,
+                    "y": 0.18056
+                  },
+                  {
+                    "x": 0.54167,
+                    "y": 0.18056
+                  }
+                ],
+                "bbox": [
+                  0.54167,
+                  0.13889,
+                  0.79167,
+                  0.18056
+                ]
+              },
+              "engine": "TARKA_OCR_PPv4"
+            },
+            "utr_rrn": {
+              "raw_text": "Ref 202602148891",
+              "confidence": 0.99,
+              "polygon": {
+                "points": [
+                  {
+                    "x": 0.8125,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 1.0,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 1.0,
+                    "y": 0.18056
+                  },
+                  {
+                    "x": 0.8125,
+                    "y": 0.18056
+                  }
+                ],
+                "bbox": [
+                  0.8125,
+                  0.13889,
+                  1.0,
+                  0.18056
+                ]
+              },
+              "engine": "TARKA_OCR_PPv4"
+            }
+          },
+          "ambiguities": []
+        },
+        "error_level_analysis": {
+          "method": "ERROR_LEVEL_ANALYSIS_ELA",
+          "mean_error": 0.205,
+          "std_error": 0.961,
+          "max_error": 22.0,
+          "hotspots_count": 0,
+          "hotspots": [],
+          "localized_bbox": null,
+          "anomaly_score": 0.019,
+          "is_anomalous": false,
+          "quality_level_tested": 90,
+          "status": "NO_COMPRESSION_DISCREPANCY_DETECTED",
+          "limitations": "ELA reveals compression discrepancies. Repeated social-media recompression (e.g. WhatsApp) flattens high-frequency error levels and may produce false negatives."
+        },
+        "pixel_resampling": {
+          "method": "PIXEL_EDGE_RESAMPLING_ANALYSIS",
+          "laplacian_variance": 1227.86,
+          "edge_mean_magnitude": 13.48,
+          "edge_max_magnitude": 952.64,
+          "sharp_edge_ratio": 0.01925,
+          "resample_detected": false,
+          "inpaint_detected": false,
+          "inpaint_bbox": null,
+          "anomaly_score": 0.0,
+          "is_anomalous": false,
+          "status": "EVALUATED",
+          "limitations": "Screenshots with high-contrast UI dark modes naturally contain sharp vertical/horizontal lines."
+        },
+        "typography_inspection": {
+          "method": "TYPOGRAPHY_AND_ALIGNMENT_INSPECTION",
+          "inspected_field": "AMOUNT",
+          "raw_text": "Rs 15000",
+          "detected_anomalies": [],
+          "anomaly_score": 0.0,
+          "status": "NO_TYPOGRAPHY_IRREGULARITIES",
+          "limitations": "Font anti-aliasing on varied Android display scalings (1.75x, 2.625x) may cause mild sub-pixel spacing variance."
+        }
+      },
+      "metadata_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "filename": "whatsapp_recompressed.jpg",
+        "width": 480,
+        "height": 720,
+        "aspect_ratio": 0.6667,
+        "color_mode": "RGB",
+        "format": "JPEG",
+        "has_exif": false,
+        "exif_tags": {},
+        "software_tag": null,
+        "has_editing_signature": false,
+        "editing_tool": null,
+        "camera_make": null,
+        "camera_model": null,
+        "claimed_datetime": null,
+        "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+      },
+      "ocr_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "case_id": "CASE-PREVIEW",
+        "extracted_fields": {
+          "amount": 15000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": null,
+          "vpa": null,
+          "utr_rrn": "202602148891",
+          "status": "UNKNOWN",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "amount": {
+              "raw_text": "Rs 15000",
+              "confidence": 0.98,
+              "polygon": {
+                "points": [
+                  {
+                    "x": 0.54167,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 0.79167,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 0.79167,
+                    "y": 0.18056
+                  },
+                  {
+                    "x": 0.54167,
+                    "y": 0.18056
+                  }
+                ],
+                "bbox": [
+                  0.54167,
+                  0.13889,
+                  0.79167,
+                  0.18056
+                ]
+              },
+              "engine": "TARKA_OCR_PPv4"
+            },
+            "utr_rrn": {
+              "raw_text": "Ref 202602148891",
+              "confidence": 0.99,
+              "polygon": {
+                "points": [
+                  {
+                    "x": 0.8125,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 1.0,
+                    "y": 0.13889
+                  },
+                  {
+                    "x": 1.0,
+                    "y": 0.18056
+                  },
+                  {
+                    "x": 0.8125,
+                    "y": 0.18056
+                  }
+                ],
+                "bbox": [
+                  0.8125,
+                  0.13889,
+                  1.0,
+                  0.18056
+                ]
+              },
+              "engine": "TARKA_OCR_PPv4"
+            }
+          },
+          "ambiguities": []
+        },
+        "token_count": 3,
+        "raw_text_sample": "UPI Transaction Paid: Rs 15000 Ref 202602148891",
+        "extraction_timestamp_iso": "2026-11-24T15:43:40.107730+00:00"
+      },
+      "manipulation_analysis": {
+        "composite_anomaly_score": 0.013,
+        "classification": "NO_OVERT_MANIPULATION_DETECTED",
+        "ela_preview_base64": "",
+        "resampling_edge_score": 0.0,
+        "manipulated_region_bbox": null
+      },
+      "reconciliation_findings": []
+    },
+    "composite_score": 0.013,
+    "is_tampered": false,
+    "extracted_amount": 15000.0,
+    "extracted_utr": "202602148891",
+    "extracted_status": "UNKNOWN",
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:43:40.169653+00:00",
+      "assertions_checked": [
+        "amount_match",
+        "utr_match"
+      ],
+      "assertion_failures": [
+        "Amount mismatch: Expected 25000.0, got 15000.0",
+        "UTR mismatch: Expected 412356789012, got 202602148891"
+      ],
+      "metrics": {
+        "confusion_classification": "TN"
+      }
+    }
+  },
+  "intermediate_observations": [
+    {
+      "module": "TRACE_RASTER",
+      "composite_score": 0.013,
+      "ela_score": 0.019,
+      "resampling_score": 0.0,
+      "ocr_extracted": {
+        "amount": 15000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": null,
+        "vpa": null,
+        "utr_rrn": "202602148891",
+        "status": "UNKNOWN",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "amount": {
+            "raw_text": "Rs 15000",
+            "confidence": 0.98,
+            "polygon": {
+              "points": [
+                {
+                  "x": 0.54167,
+                  "y": 0.13889
+                },
+                {
+                  "x": 0.79167,
+                  "y": 0.13889
+                },
+                {
+                  "x": 0.79167,
+                  "y": 0.18056
+                },
+                {
+                  "x": 0.54167,
+                  "y": 0.18056
+                }
+              ],
+              "bbox": [
+                0.54167,
+                0.13889,
+                0.79167,
+                0.18056
+              ]
+            },
+            "engine": "TARKA_OCR_PPv4"
+          },
+          "utr_rrn": {
+            "raw_text": "Ref 202602148891",
+            "confidence": 0.99,
+            "polygon": {
+              "points": [
+                {
+                  "x": 0.8125,
+                  "y": 0.13889
+                },
+                {
+                  "x": 1.0,
+                  "y": 0.13889
+                },
+                {
+                  "x": 1.0,
+                  "y": 0.18056
+                },
+                {
+                  "x": 0.8125,
+                  "y": 0.18056
+                }
+              ],
+              "bbox": [
+                0.8125,
+                0.13889,
+                1.0,
+                0.18056
+              ]
+            },
+            "engine": "TARKA_OCR_PPv4"
+          }
+        },
+        "ambiguities": []
+      }
+    }
+  ],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 72.10050000139745,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "TN",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T04-CD072C",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:43:40.167131+00:00",
+      "duration_ms": 72.10050000139745,
+      "output_hash": "0cbac4155fa57bbbd09a1f380cb192bc5c41daaeebe9b9827788784e3203a2d4",
+      "status": "FAILED",
+      "confusion": "TN"
+    }
+  ],
+  "created_at": "2026-11-24T15:43:40.090275+00:00",
+  "executed_at": "2026-11-24T15:43:40.167131+00:00"
+}

@@ -1,0 +1,46 @@
+{
+  "test_id": "TEST-P01-DB28E9",
+  "session_id": "SESS-20261124-E765A6",
+  "case_id": "CASE-P01",
+  "test_category": "PLATFORM",
+  "scenario_id": "P01",
+  "scenario_description": "Unsupported File Format Ingestion",
+  "engine": "EVIDENCE_GATEWAY",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "unsupported_audio.mp3": "6a56bdabe53001720f93d048567170265f1c1765a36ac50a9a175bfb85b1d8a1"
+  },
+  "ground_truth_manifest_id": "GT-P01",
+  "expected_behaviour": "Rejects file at gateway; returns HTTP 400 with explanation; zero CAS write.",
+  "execution_status": "PASSED",
+  "actual_output": {
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:43:39.225246+00:00",
+      "assertions_checked": [],
+      "assertion_failures": [],
+      "metrics": {}
+    }
+  },
+  "intermediate_observations": [],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 0.03769999966607429,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "NOT_APPLICABLE",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P01-DB28E9",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:43:39.224238+00:00",
+      "duration_ms": 0.03769999966607429,
+      "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "status": "PASSED",
+      "confusion": "NOT_APPLICABLE"
+    }
+  ],
+  "created_at": "2026-11-24T15:43:39.219716+00:00",
+  "executed_at": "2026-11-24T15:43:39.224238+00:00"
+}

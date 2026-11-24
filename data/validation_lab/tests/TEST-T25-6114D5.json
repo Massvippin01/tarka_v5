@@ -1,0 +1,264 @@
+{
+  "test_id": "TEST-T25-6114D5",
+  "session_id": "SESS-20261124-E765A6",
+  "case_id": "CASE-T25",
+  "test_category": "TRACE",
+  "scenario_id": "T25",
+  "scenario_description": "Unusual but Genuine Visual Template",
+  "engine": "TRACE",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "t25_benign.png": "3dbc9f50898703020d424b16d5f069a2130ff959eec82dcedcb066580618d06e"
+  },
+  "ground_truth_manifest_id": "GT-T25",
+  "expected_behaviour": "Extracts fields correctly without flagging valid branding as tampering.",
+  "execution_status": "PASSED",
+  "actual_output": {
+    "trace_raster": {
+      "artifact_id": "ART-PREVIEW",
+      "filename": "t25_benign.png",
+      "case_id": "CASE-PREVIEW",
+      "examination_timestamp_iso": "2026-11-24T15:43:42.433052+00:00",
+      "composite_anomaly_score": 0.029,
+      "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
+      "manipulated_region_bbox": null,
+      "human_verified": false,
+      "conclusive": false,
+      "statutory_caveat": "AI PROPOSES. FORENSIC ENGINES TEST. INVESTIGATORS DECIDE. No screenshot may be declared authentic simply because no manipulation was detected, nor declared fraudulent solely because a single score or metadata tag is flagged. Cross-source corroboration against authoritative CBS banking records remains statutory mandatory.",
+      "modules": {
+        "metadata": {
+          "artifact_id": "ART-PREVIEW",
+          "filename": "t25_benign.png",
+          "width": 480,
+          "height": 720,
+          "aspect_ratio": 0.6667,
+          "color_mode": "RGB",
+          "format": "PNG",
+          "has_exif": false,
+          "exif_tags": {},
+          "software_tag": null,
+          "has_editing_signature": false,
+          "editing_tool": null,
+          "camera_make": null,
+          "camera_model": null,
+          "claimed_datetime": null,
+          "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+        },
+        "extracted_fields": {
+          "amount": 25000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": "PHONEPE",
+          "vpa": "merchant@ybl",
+          "utr_rrn": "412356789012",
+          "status": "SUCCESS",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "vpa": {
+              "raw_text": "merchant@ybl",
+              "confidence": 0.88,
+              "engine": "HEURISTIC_REGEX_VPA"
+            },
+            "utr_rrn": {
+              "raw_text": "412356789012",
+              "confidence": 0.85,
+              "engine": "HEURISTIC_REGEX_RRN"
+            },
+            "amount": {
+              "raw_text": "₹25,000.00",
+              "confidence": 0.9,
+              "engine": "HEURISTIC_REGEX_AMOUNT"
+            }
+          },
+          "ambiguities": []
+        },
+        "error_level_analysis": {
+          "method": "ERROR_LEVEL_ANALYSIS_ELA",
+          "mean_error": 0.406,
+          "std_error": 2.109,
+          "max_error": 83.0,
+          "hotspots_count": 0,
+          "hotspots": [],
+          "localized_bbox": null,
+          "anomaly_score": 0.042,
+          "is_anomalous": false,
+          "quality_level_tested": 90,
+          "status": "NO_COMPRESSION_DISCREPANCY_DETECTED",
+          "limitations": "ELA reveals compression discrepancies. Repeated social-media recompression (e.g. WhatsApp) flattens high-frequency error levels and may produce false negatives."
+        },
+        "pixel_resampling": {
+          "method": "PIXEL_EDGE_RESAMPLING_ANALYSIS",
+          "laplacian_variance": 1262.76,
+          "edge_mean_magnitude": 12.77,
+          "edge_max_magnitude": 953.92,
+          "sharp_edge_ratio": 0.01948,
+          "resample_detected": false,
+          "inpaint_detected": false,
+          "inpaint_bbox": null,
+          "anomaly_score": 0.0,
+          "is_anomalous": false,
+          "status": "EVALUATED",
+          "limitations": "Screenshots with high-contrast UI dark modes naturally contain sharp vertical/horizontal lines."
+        },
+        "typography_inspection": {
+          "method": "TYPOGRAPHY_AND_ALIGNMENT_INSPECTION",
+          "inspected_field": "AMOUNT",
+          "raw_text": "₹25,000.00",
+          "detected_anomalies": [],
+          "anomaly_score": 0.0,
+          "status": "NO_TYPOGRAPHY_IRREGULARITIES",
+          "limitations": "Font anti-aliasing on varied Android display scalings (1.75x, 2.625x) may cause mild sub-pixel spacing variance."
+        }
+      },
+      "metadata_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "filename": "t25_benign.png",
+        "width": 480,
+        "height": 720,
+        "aspect_ratio": 0.6667,
+        "color_mode": "RGB",
+        "format": "PNG",
+        "has_exif": false,
+        "exif_tags": {},
+        "software_tag": null,
+        "has_editing_signature": false,
+        "editing_tool": null,
+        "camera_make": null,
+        "camera_model": null,
+        "claimed_datetime": null,
+        "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+      },
+      "ocr_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "case_id": "CASE-PREVIEW",
+        "extracted_fields": {
+          "amount": 25000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": "PHONEPE",
+          "vpa": "merchant@ybl",
+          "utr_rrn": "412356789012",
+          "status": "SUCCESS",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "vpa": {
+              "raw_text": "merchant@ybl",
+              "confidence": 0.88,
+              "engine": "HEURISTIC_REGEX_VPA"
+            },
+            "utr_rrn": {
+              "raw_text": "412356789012",
+              "confidence": 0.85,
+              "engine": "HEURISTIC_REGEX_RRN"
+            },
+            "amount": {
+              "raw_text": "₹25,000.00",
+              "confidence": 0.9,
+              "engine": "HEURISTIC_REGEX_AMOUNT"
+            }
+          },
+          "ambiguities": []
+        },
+        "token_count": 5,
+        "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: ₹25,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
+        "extraction_timestamp_iso": "2026-11-24T15:43:42.374251+00:00"
+      },
+      "manipulation_analysis": {
+        "composite_anomaly_score": 0.029,
+        "classification": "NO_OVERT_MANIPULATION_DETECTED",
+        "ela_preview_base64": "",
+        "resampling_edge_score": 0.0,
+        "manipulated_region_bbox": null
+      },
+      "reconciliation_findings": []
+    },
+    "composite_score": 0.029,
+    "is_tampered": false,
+    "extracted_amount": 25000.0,
+    "extracted_utr": "412356789012",
+    "extracted_status": "SUCCESS",
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:43:42.436634+00:00",
+      "assertions_checked": [],
+      "assertion_failures": [],
+      "metrics": {
+        "confusion_classification": "TN"
+      }
+    }
+  },
+  "intermediate_observations": [
+    {
+      "module": "TRACE_RASTER",
+      "composite_score": 0.029,
+      "ela_score": 0.042,
+      "resampling_score": 0.0,
+      "ocr_extracted": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "merchant@ybl",
+        "utr_rrn": "412356789012",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "merchant@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789012",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "₹25,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      }
+    }
+  ],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 81.83699999972305,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "TN",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T25-6114D5",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:43:42.433052+00:00",
+      "duration_ms": 81.83699999972305,
+      "output_hash": "a6d9e3ecf815ed8008afc508e8abfe2e63e6b3c59529bb421333ca96ac938a01",
+      "status": "PASSED",
+      "confusion": "TN"
+    }
+  ],
+  "created_at": "2026-11-24T15:43:42.345210+00:00",
+  "executed_at": "2026-11-24T15:43:42.433052+00:00"
+}

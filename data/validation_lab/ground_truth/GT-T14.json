@@ -1,0 +1,20 @@
+{
+  "manifest_id": "GT-T14",
+  "scenario_id": "T14",
+  "scenario_title": "Conflicting UTRs",
+  "description": "Receipt UTR differs from bank narration UTR.",
+  "category": "TRACE",
+  "is_manipulated": null,
+  "expected_amount": null,
+  "expected_utr": null,
+  "expected_status": null,
+  "expected_sender_vpa": null,
+  "expected_recipient_vpa": null,
+  "expected_discrepancy_delta": null,
+  "expected_reconciliation_verdict": null,
+  "expected_hypotheses_ranked": null,
+  "expected_statutory_notices": null,
+  "manipulated_region_bounding_boxes": null,
+  "failure_assertions": [],
+  "created_at": "2026-11-24T15:46:03.709982+00:00"
+}

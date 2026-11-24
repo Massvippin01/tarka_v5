@@ -9,8 +9,9 @@ import { ProvenanceDAGView } from "../components/graphs/ProvenanceDAGView";
 import { ChallengeDiffCard } from "../components/tarka/ChallengeDiffCard";
 import { ForensicAssistantPanel } from "../components/tarka/ForensicAssistantPanel";
 import { ForensicReportModal } from "../components/tarka/ForensicReportModal";
+import { FounderValidationLab } from "../components/tarka/validation/FounderValidationLab";
 
-type WorkspaceTab = "evidence" | "timeline" | "contradictions" | "robustness" | "provenance";
+type WorkspaceTab = "evidence" | "timeline" | "contradictions" | "robustness" | "provenance" | "validation";
 
 interface ForensicCaseItem {
   case_id: string;
@@ -465,6 +466,26 @@ export const ForensicWorkspacePage: React.FC = () => {
         >
           PROVENANCE DAG
         </button>
+
+        <button
+          onClick={() => setActiveTab("validation")}
+          style={{
+            padding: "10px 16px",
+            fontSize: "12px",
+            fontWeight: 700,
+            border: "none",
+            borderBottom: activeTab === "validation" ? "3px solid #AF3F3A" : "3px solid transparent",
+            backgroundColor: activeTab === "validation" ? "#FAF8F3" : "transparent",
+            cursor: "pointer",
+            color: activeTab === "validation" ? "#AF3F3A" : "#666",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#AF3F3A" }}></span>
+          FOUNDER VALIDATION LAB (49)
+        </button>
       </div>
 
       {/* Main Workspace Body & Assistant Split Layout */}
@@ -795,6 +816,10 @@ export const ForensicWorkspacePage: React.FC = () => {
                   dag={provenanceDag}
                   onSelectNode={(nodeId) => console.log("Selected DAG node:", nodeId)}
                 />
+              )}
+
+              {activeTab === "validation" && (
+                <FounderValidationLab />
               )}
             </>
           )}

@@ -1,0 +1,50 @@
+[
+  {
+    "scenario_id": "T01",
+    "hash_run_1": "e2587dc6f3d68cb8d61e1ac3e668545a5ab87baafa936a6edfecf7d69879050d",
+    "hash_run_2": "e2587dc6f3d68cb8d61e1ac3e668545a5ab87baafa936a6edfecf7d69879050d",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  },
+  {
+    "scenario_id": "T02",
+    "hash_run_1": "303b4deb1663be1f615efcecc275afc32a155e18c591aabc51a17a2b798e55f0",
+    "hash_run_2": "303b4deb1663be1f615efcecc275afc32a155e18c591aabc51a17a2b798e55f0",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  },
+  {
+    "scenario_id": "T07",
+    "hash_run_1": "a99ebbae92972f23e305409cbcaff66be9138ed77b54259468a681eb475f4d35",
+    "hash_run_2": "a99ebbae92972f23e305409cbcaff66be9138ed77b54259468a681eb475f4d35",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  },
+  {
+    "scenario_id": "T08",
+    "hash_run_1": "4e083c6cbeb1ffb6691aa7a0922c7ced96804e1f76c253e759ad7904e3a0e8f8",
+    "hash_run_2": "4e083c6cbeb1ffb6691aa7a0922c7ced96804e1f76c253e759ad7904e3a0e8f8",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  },
+  {
+    "scenario_id": "A01",
+    "hash_run_1": "4756ee70139458feb72a0801667febac03c8fa9d97b7f8890afeb998c0f1932e",
+    "hash_run_2": "4756ee70139458feb72a0801667febac03c8fa9d97b7f8890afeb998c0f1932e",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  },
+  {
+    "scenario_id": "P02",
+    "hash_run_1": "c94ba19ca812ba19bd56e84b0a5362b2d6514f9f10d0eca8889cab5e0a815bc8",
+    "hash_run_2": "c94ba19ca812ba19bd56e84b0a5362b2d6514f9f10d0eca8889cab5e0a815bc8",
+    "deterministic_match": true,
+    "status_run_1": "PASSED",
+    "status_run_2": "PASSED"
+  }
+]

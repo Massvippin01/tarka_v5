@@ -1,0 +1,52 @@
+{
+  "test_id": "TEST-P10-038385",
+  "session_id": "SESS-20261124-0C4446",
+  "case_id": "CASE-P10",
+  "test_category": "PLATFORM",
+  "scenario_id": "P10",
+  "scenario_description": "SSE Reconnection & Event Replay",
+  "engine": "PLATFORM",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "p10_fixture.png": "3dbc9f50898703020d424b16d5f069a2130ff959eec82dcedcb066580618d06e"
+  },
+  "ground_truth_manifest_id": "GT-P10",
+  "expected_behaviour": "Replays events from durable event log; zero missed forensic updates.",
+  "execution_status": "PASSED",
+  "actual_output": {
+    "platform_check": "PASSED",
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:46:06.492391+00:00",
+      "assertions_checked": [],
+      "assertion_failures": [],
+      "metrics": {}
+    }
+  },
+  "intermediate_observations": [
+    {
+      "module": "GATEWAY_PLATFORM",
+      "status": "PASSED"
+    }
+  ],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 19.65100000052189,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "NOT_APPLICABLE",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P10-038385",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:46:06.489875+00:00",
+      "duration_ms": 19.65100000052189,
+      "output_hash": "5ab57508be3f136e838ce937fc9a152d448dc47526040642d744797351642b56",
+      "status": "PASSED",
+      "confusion": "NOT_APPLICABLE"
+    }
+  ],
+  "created_at": "2026-11-24T15:46:06.462917+00:00",
+  "executed_at": "2026-11-24T15:46:06.489875+00:00"
+}

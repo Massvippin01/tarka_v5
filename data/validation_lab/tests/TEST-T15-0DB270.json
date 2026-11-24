@@ -1,0 +1,504 @@
+{
+  "test_id": "TEST-T15-0DB270",
+  "session_id": "SESS-20261124-E765A6",
+  "case_id": "CASE-T15",
+  "test_category": "TRACE",
+  "scenario_id": "T15",
+  "scenario_description": "Transaction vs Settlement Clock Skew",
+  "engine": "FULL_WORKFLOW",
+  "evidence_file_ids": [],
+  "original_file_hashes": {
+    "settlement_skew_receipt.png": "3dbc9f50898703020d424b16d5f069a2130ff959eec82dcedcb066580618d06e"
+  },
+  "ground_truth_manifest_id": "GT-T15",
+  "expected_behaviour": "Tolerates clock domain shift within configured window without false tampering flag.",
+  "execution_status": "PASSED",
+  "actual_output": {
+    "trace_raster": {
+      "artifact_id": "ART-PREVIEW",
+      "filename": "settlement_skew_receipt.png",
+      "case_id": "CASE-PREVIEW",
+      "examination_timestamp_iso": "2026-11-24T15:43:41.195239+00:00",
+      "composite_anomaly_score": 0.029,
+      "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
+      "manipulated_region_bbox": null,
+      "human_verified": false,
+      "conclusive": false,
+      "statutory_caveat": "AI PROPOSES. FORENSIC ENGINES TEST. INVESTIGATORS DECIDE. No screenshot may be declared authentic simply because no manipulation was detected, nor declared fraudulent solely because a single score or metadata tag is flagged. Cross-source corroboration against authoritative CBS banking records remains statutory mandatory.",
+      "modules": {
+        "metadata": {
+          "artifact_id": "ART-PREVIEW",
+          "filename": "settlement_skew_receipt.png",
+          "width": 480,
+          "height": 720,
+          "aspect_ratio": 0.6667,
+          "color_mode": "RGB",
+          "format": "PNG",
+          "has_exif": false,
+          "exif_tags": {},
+          "software_tag": null,
+          "has_editing_signature": false,
+          "editing_tool": null,
+          "camera_make": null,
+          "camera_model": null,
+          "claimed_datetime": null,
+          "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+        },
+        "extracted_fields": {
+          "amount": 25000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": "PHONEPE",
+          "vpa": "merchant@ybl",
+          "utr_rrn": "412356789012",
+          "status": "SUCCESS",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "vpa": {
+              "raw_text": "merchant@ybl",
+              "confidence": 0.88,
+              "engine": "HEURISTIC_REGEX_VPA"
+            },
+            "utr_rrn": {
+              "raw_text": "412356789012",
+              "confidence": 0.85,
+              "engine": "HEURISTIC_REGEX_RRN"
+            },
+            "amount": {
+              "raw_text": "₹25,000.00",
+              "confidence": 0.9,
+              "engine": "HEURISTIC_REGEX_AMOUNT"
+            }
+          },
+          "ambiguities": []
+        },
+        "error_level_analysis": {
+          "method": "ERROR_LEVEL_ANALYSIS_ELA",
+          "mean_error": 0.406,
+          "std_error": 2.109,
+          "max_error": 83.0,
+          "hotspots_count": 0,
+          "hotspots": [],
+          "localized_bbox": null,
+          "anomaly_score": 0.042,
+          "is_anomalous": false,
+          "quality_level_tested": 90,
+          "status": "NO_COMPRESSION_DISCREPANCY_DETECTED",
+          "limitations": "ELA reveals compression discrepancies. Repeated social-media recompression (e.g. WhatsApp) flattens high-frequency error levels and may produce false negatives."
+        },
+        "pixel_resampling": {
+          "method": "PIXEL_EDGE_RESAMPLING_ANALYSIS",
+          "laplacian_variance": 1262.76,
+          "edge_mean_magnitude": 12.77,
+          "edge_max_magnitude": 953.92,
+          "sharp_edge_ratio": 0.01948,
+          "resample_detected": false,
+          "inpaint_detected": false,
+          "inpaint_bbox": null,
+          "anomaly_score": 0.0,
+          "is_anomalous": false,
+          "status": "EVALUATED",
+          "limitations": "Screenshots with high-contrast UI dark modes naturally contain sharp vertical/horizontal lines."
+        },
+        "typography_inspection": {
+          "method": "TYPOGRAPHY_AND_ALIGNMENT_INSPECTION",
+          "inspected_field": "AMOUNT",
+          "raw_text": "₹25,000.00",
+          "detected_anomalies": [],
+          "anomaly_score": 0.0,
+          "status": "NO_TYPOGRAPHY_IRREGULARITIES",
+          "limitations": "Font anti-aliasing on varied Android display scalings (1.75x, 2.625x) may cause mild sub-pixel spacing variance."
+        }
+      },
+      "metadata_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "filename": "settlement_skew_receipt.png",
+        "width": 480,
+        "height": 720,
+        "aspect_ratio": 0.6667,
+        "color_mode": "RGB",
+        "format": "PNG",
+        "has_exif": false,
+        "exif_tags": {},
+        "software_tag": null,
+        "has_editing_signature": false,
+        "editing_tool": null,
+        "camera_make": null,
+        "camera_model": null,
+        "claimed_datetime": null,
+        "forensic_notice": "Absence of EXIF tags is standard in chat/app screenshots (due to mobile OS privacy stripping) and does not independently establish fraudulent manipulation."
+      },
+      "ocr_analysis": {
+        "artifact_id": "ART-PREVIEW",
+        "case_id": "CASE-PREVIEW",
+        "extracted_fields": {
+          "amount": 25000.0,
+          "currency": "INR",
+          "transaction_date": null,
+          "transaction_time": null,
+          "sender_name": null,
+          "recipient_name": null,
+          "merchant_name": null,
+          "bank_name": null,
+          "upi_app": "PHONEPE",
+          "vpa": "merchant@ybl",
+          "utr_rrn": "412356789012",
+          "status": "SUCCESS",
+          "payment_method": "UPI",
+          "masked_account": null,
+          "field_provenance": {
+            "vpa": {
+              "raw_text": "merchant@ybl",
+              "confidence": 0.88,
+              "engine": "HEURISTIC_REGEX_VPA"
+            },
+            "utr_rrn": {
+              "raw_text": "412356789012",
+              "confidence": 0.85,
+              "engine": "HEURISTIC_REGEX_RRN"
+            },
+            "amount": {
+              "raw_text": "₹25,000.00",
+              "confidence": 0.9,
+              "engine": "HEURISTIC_REGEX_AMOUNT"
+            }
+          },
+          "ambiguities": []
+        },
+        "token_count": 5,
+        "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: ₹25,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
+        "extraction_timestamp_iso": "2026-11-24T15:43:41.137675+00:00"
+      },
+      "manipulation_analysis": {
+        "composite_anomaly_score": 0.029,
+        "classification": "NO_OVERT_MANIPULATION_DETECTED",
+        "ela_preview_base64": "",
+        "resampling_edge_score": 0.0,
+        "manipulated_region_bbox": null
+      },
+      "reconciliation_findings": []
+    },
+    "composite_score": 0.029,
+    "is_tampered": false,
+    "extracted_amount": 25000.0,
+    "extracted_utr": "412356789012",
+    "extracted_status": "SUCCESS",
+    "aegis_hypotheses": {
+      "case_id": "TEST-T15-0DB270",
+      "hypotheses": [
+        {
+          "hypothesis_id": "HYP-01",
+          "title": "Digital Receipt Alteration (Fabricated or Edited Amount)",
+          "description": "Disputed payment screenshot was digitally altered to display ₹15,000.00 instead of the actual ₹25,000.00 debited from the bank account.",
+          "supporting_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Official Core Banking record reflects debit of ₹25,000.00 under RRN 202602148891."
+            },
+            {
+              "evidence": "trace_ela",
+              "detail": "Error Level Analysis detected localized compression hotspots around amount bounding box."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "whatsapp_chat.txt",
+              "detail": "Payer text message claims: 'Sent Rs 15,000.00 as agreed'."
+            }
+          ],
+          "missing_evidence": [
+            "Server-side UPI Switch (NPCI) raw switch transaction message payload.",
+            "Original uncompressed mobile screenshot directly extracted from device storage (DCIM/Screenshots)."
+          ],
+          "assumptions": [
+            "Core banking statement from Axis Bank accurately records all cleared debits.",
+            "Disputed screenshot originated from the same transaction as RRN 202602148891."
+          ],
+          "alternative_explanations": [
+            "Payer genuinely believed amount was ₹15,000 due to third-party merchant split."
+          ],
+          "recommended_discriminative_checks": [
+            "Issue Section 91 CrPC / Section 94 BNSS notice to NPCI requesting switch response for RRN 202602148891.",
+            "Inspect mobile device filesystem timestamps and file size for original PNG/JPEG screenshot."
+          ],
+          "epistemic_plausibility": "HIGH_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.5
+        },
+        {
+          "hypothesis_id": "HYP-02",
+          "title": "Split Transaction Sequence (Partial Settlement)",
+          "description": "The payment of ₹25,000.00 represents one part of a multi-leg or split transfer, where the ₹15,000.00 screenshot corresponds to a distinct concurrent payment leg.",
+          "supporting_observations": [
+            {
+              "evidence": "whatsapp_chat.txt",
+              "detail": "Chat discussion references partial advance payment."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Bank statement records only a single transfer under reference 202602148891."
+            }
+          ],
+          "missing_evidence": [
+            "Secondary bank statement or credit card statement from alternate account.",
+            "Merchant ledger reflecting pending balance of ₹10,000."
+          ],
+          "assumptions": [
+            "Payer maintains multiple bank accounts or UPI applications."
+          ],
+          "alternative_explanations": [
+            "Payer sent screenshot from an older or uncompleted test transaction."
+          ],
+          "recommended_discriminative_checks": [
+            "Request 30-day comprehensive banking statement across all accounts held by payer.",
+            "Query recipient merchant payment gateway for secondary settled UTRs on transaction date."
+          ],
+          "epistemic_plausibility": "COMPETING_UNVERIFIED",
+          "human_verified": false,
+          "plausibility_score": 0.5
+        },
+        {
+          "hypothesis_id": "HYP-03",
+          "title": "Account Takeover or Unauthorized Debit Inflation",
+          "description": "Payer initiated a transfer for ₹15,000.00, but malicious software or session takeover manipulated the API payload to execute a ₹25,000.00 transfer.",
+          "supporting_observations": [
+            {
+              "evidence": "cdr_records.csv",
+              "detail": "Concurrent mobile data session detected near transaction timestamp."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "UPI PIN authentication authenticated successfully without chargeback report."
+            }
+          ],
+          "missing_evidence": [
+            "Device forensic extraction dump (Cellebrite / Oxygen) inspecting running background services.",
+            "Telecom IPDR logs checking concurrent active data sessions and destination IP addresses."
+          ],
+          "assumptions": [
+            "Payer device may host unvetted third-party remote administration apps (AnyDesk, TeamViewer, QuickSupport)."
+          ],
+          "alternative_explanations": [
+            "Payer made a typographical entry error entering 25000 instead of 15000."
+          ],
+          "recommended_discriminative_checks": [
+            "Conduct physical forensic triage of payer handset inspecting installed package list and accessibility permissions.",
+            "Request IPDR logs from Airtel/Jio for source IP correlation during UPI PIN entry."
+          ],
+          "epistemic_plausibility": "POSSIBLE_LOW_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.35
+        },
+        {
+          "hypothesis_id": "HYP-04",
+          "title": "Synthetic Spoof Payment Interface (FakePay / Simulator UI)",
+          "description": "The submitted payment receipt was generated using an offline fake payment simulator (FakePay) and was never transmitted over the NPCI UPI switch or acquiring bank gateway.",
+          "supporting_observations": [
+            {
+              "evidence": "cbs_statement",
+              "detail": "Reference number 202602148891 is completely absent from Core Banking clearing records."
+            },
+            {
+              "evidence": "trace_layout",
+              "detail": "Interface typography and layout mismatch official NPCI specifications."
+            }
+          ],
+          "contradictory_observations": [],
+          "missing_evidence": [
+            "Device application package extraction checking for com.fakepay or spoof APK signatures.",
+            "NPCI central switch transaction log query."
+          ],
+          "assumptions": [
+            "Perpetrator utilized a client-side Android prank or spoof application."
+          ],
+          "alternative_explanations": [
+            "Transaction was routed through an unlisted third-party PPI wallet rather than bank UPI."
+          ],
+          "recommended_discriminative_checks": [
+            "Query NPCI for existence of global transaction reference 202602148891.",
+            "Inspect device package manager (pm list packages) for fake payment generators."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        },
+        {
+          "hypothesis_id": "HYP-05",
+          "title": "Core Banking Auto-Reversal or Clearing Settlement Refund",
+          "description": "Debit occurred at the payer bank but timed out at the beneficiary acquiring core, resulting in an automatic credit reversal under NPCI settlement guidelines.",
+          "supporting_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Matching credit reversal detected within 24-48 hours of transaction."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "disputed_receipt",
+              "detail": "Screenshot shows final status 'SUCCESS' without reversal annotation."
+            }
+          ],
+          "missing_evidence": [
+            "NPCI Dispute Management System (DMS) chargeback / reversal record.",
+            "Beneficiary bank statement reflecting inward credit rejection."
+          ],
+          "assumptions": [
+            "Beneficiary CBS timeout caused automatic reverse clearing."
+          ],
+          "alternative_explanations": [
+            "Merchant initiated manual refund outside the UPI protocol."
+          ],
+          "recommended_discriminative_checks": [
+            "Inspect statement credit entries within 48 hours for REV/RET/REFUND descriptors.",
+            "Issue Section 94 BNSS inquiry to acquiring bank regarding RRN settlement status."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        },
+        {
+          "hypothesis_id": "HYP-06",
+          "title": "Benign Telecom Latency or App Display Lag (No Fraud)",
+          "description": "The discrepancy is attributable to transient network latency or mobile app UI delay, where the receipt captured a temporary pending/intermediate state.",
+          "supporting_observations": [
+            {
+              "evidence": "telecom_cdr",
+              "detail": "Low signal strength or cell handoff during transaction window."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "trace_ela",
+              "detail": "Absence of digital manipulation if screenshot is authentic."
+            }
+          ],
+          "missing_evidence": [
+            "UPI App client-side diagnostic log file."
+          ],
+          "assumptions": [
+            "App UI displayed provisional confirmation prior to receiving gateway ACK."
+          ],
+          "alternative_explanations": [],
+          "recommended_discriminative_checks": [
+            "Correlate exact device clock against network time protocol (NTP) server."
+          ],
+          "epistemic_plausibility": "POSSIBLE_LOW_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.35
+        },
+        {
+          "hypothesis_id": "HYP-UNKNOWN",
+          "title": "Unresolved / Insufficient Corroborating Evidence",
+          "description": "Available digital artifacts are insufficient to establish a conclusive evidentiary finding. Epistemic uncertainty must be maintained pending statutory evidence acquisition.",
+          "supporting_observations": [
+            {
+              "evidence": "case_integrity",
+              "detail": "Key corroborating sources (NPCI switch logs, device extraction) remain unacquired."
+            }
+          ],
+          "contradictory_observations": [],
+          "missing_evidence": [
+            "Authoritative Core Banking statement.",
+            "Original uncompressed mobile screenshot bitstream.",
+            "Cellular network IPDR logs."
+          ],
+          "assumptions": [],
+          "alternative_explanations": [
+            "Independent third-party technical failure or intermediary spoofing."
+          ],
+          "recommended_discriminative_checks": [
+            "Execute prioritized statutory evidence acquisition under Section 94 BNSS / Section 91 CrPC."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        }
+      ],
+      "generated_at_iso": "2026-11-24T15:43:41.195239+00:00"
+    },
+    "evaluation_details": {
+      "evaluated_at": "2026-11-24T15:43:41.202246+00:00",
+      "assertions_checked": [],
+      "assertion_failures": [],
+      "metrics": {}
+    }
+  },
+  "intermediate_observations": [
+    {
+      "module": "TRACE_RASTER",
+      "composite_score": 0.029,
+      "ela_score": 0.042,
+      "resampling_score": 0.0,
+      "ocr_extracted": {
+        "amount": 25000.0,
+        "currency": "INR",
+        "transaction_date": null,
+        "transaction_time": null,
+        "sender_name": null,
+        "recipient_name": null,
+        "merchant_name": null,
+        "bank_name": null,
+        "upi_app": "PHONEPE",
+        "vpa": "merchant@ybl",
+        "utr_rrn": "412356789012",
+        "status": "SUCCESS",
+        "payment_method": "UPI",
+        "masked_account": null,
+        "field_provenance": {
+          "vpa": {
+            "raw_text": "merchant@ybl",
+            "confidence": 0.88,
+            "engine": "HEURISTIC_REGEX_VPA"
+          },
+          "utr_rrn": {
+            "raw_text": "412356789012",
+            "confidence": 0.85,
+            "engine": "HEURISTIC_REGEX_RRN"
+          },
+          "amount": {
+            "raw_text": "₹25,000.00",
+            "confidence": 0.9,
+            "engine": "HEURISTIC_REGEX_AMOUNT"
+          }
+        },
+        "ambiguities": []
+      }
+    },
+    {
+      "module": "AEGIS_REASONING",
+      "hypotheses_count": 7,
+      "gaps_count": 0
+    }
+  ],
+  "engine_version": "tarka-engine-v2.0",
+  "config_version": "config-sutram-2026-v1",
+  "processing_duration_ms": 84.031700000196,
+  "findings": [],
+  "confidence": 0.0,
+  "uncertainty": 0.0,
+  "confusion_classification": "NOT_APPLICABLE",
+  "examiner_notes": "",
+  "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T15-0DB270",
+  "audit_events": [
+    {
+      "action": "TEST_CASE_EXECUTED",
+      "timestamp": "2026-11-24T15:43:41.195239+00:00",
+      "duration_ms": 84.031700000196,
+      "output_hash": "f1a9aa756ced97dc17ba9f20bacd1562c7fe33ea4664db582ebeed9b421fb22d",
+      "status": "PASSED",
+      "confusion": "NOT_APPLICABLE"
+    }
+  ],
+  "created_at": "2026-11-24T15:43:41.107491+00:00",
+  "executed_at": "2026-11-24T15:43:41.195239+00:00"
+}

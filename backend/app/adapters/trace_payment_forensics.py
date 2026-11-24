@@ -217,7 +217,10 @@ class TracePaymentForensics:
                     pil_img.info.get("TARKA_RECEIPT_TEXT")
                     or pil_img.info.get("Description")
                     or pil_img.info.get("Comment")
+                    or pil_img.info.get("comment")
                 )
+                if isinstance(meta_txt, bytes):
+                    meta_txt = meta_txt.decode("utf-8", errors="replace")
                 if meta_txt:
                     raw_text_corpus = str(meta_txt)
                     for idx, line in enumerate(raw_text_corpus.splitlines()):

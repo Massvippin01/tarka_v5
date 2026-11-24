@@ -1,0 +1,244 @@
+{
+  "test_id": "TEST-A12-3C8917",
+  "output_hash": "9faa8da6237effb45cefc74d6d5262f6ce7520c2499f780ba158f7f29f53811d",
+  "timestamp": "2026-11-24T15:43:39.204493+00:00",
+  "actual_output": {
+    "aegis_hypotheses": {
+      "case_id": "TEST-A12-3C8917",
+      "hypotheses": [
+        {
+          "hypothesis_id": "HYP-01",
+          "title": "Digital Receipt Alteration (Fabricated or Edited Amount)",
+          "description": "Disputed payment screenshot was digitally altered to display \u20b915,000.00 instead of the actual \u20b925,000.00 debited from the bank account.",
+          "supporting_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Official Core Banking record reflects debit of \u20b925,000.00 under RRN 202602148891."
+            },
+            {
+              "evidence": "trace_ela",
+              "detail": "Error Level Analysis detected localized compression hotspots around amount bounding box."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "whatsapp_chat.txt",
+              "detail": "Payer text message claims: 'Sent Rs 15,000.00 as agreed'."
+            }
+          ],
+          "missing_evidence": [
+            "Server-side UPI Switch (NPCI) raw switch transaction message payload.",
+            "Original uncompressed mobile screenshot directly extracted from device storage (DCIM/Screenshots)."
+          ],
+          "assumptions": [
+            "Core banking statement from Axis Bank accurately records all cleared debits.",
+            "Disputed screenshot originated from the same transaction as RRN 202602148891."
+          ],
+          "alternative_explanations": [
+            "Payer genuinely believed amount was \u20b915,000 due to third-party merchant split."
+          ],
+          "recommended_discriminative_checks": [
+            "Issue Section 91 CrPC / Section 94 BNSS notice to NPCI requesting switch response for RRN 202602148891.",
+            "Inspect mobile device filesystem timestamps and file size for original PNG/JPEG screenshot."
+          ],
+          "epistemic_plausibility": "HIGH_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.5
+        },
+        {
+          "hypothesis_id": "HYP-02",
+          "title": "Split Transaction Sequence (Partial Settlement)",
+          "description": "The payment of \u20b925,000.00 represents one part of a multi-leg or split transfer, where the \u20b915,000.00 screenshot corresponds to a distinct concurrent payment leg.",
+          "supporting_observations": [
+            {
+              "evidence": "whatsapp_chat.txt",
+              "detail": "Chat discussion references partial advance payment."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Bank statement records only a single transfer under reference 202602148891."
+            }
+          ],
+          "missing_evidence": [
+            "Secondary bank statement or credit card statement from alternate account.",
+            "Merchant ledger reflecting pending balance of \u20b910,000."
+          ],
+          "assumptions": [
+            "Payer maintains multiple bank accounts or UPI applications."
+          ],
+          "alternative_explanations": [
+            "Payer sent screenshot from an older or uncompleted test transaction."
+          ],
+          "recommended_discriminative_checks": [
+            "Request 30-day comprehensive banking statement across all accounts held by payer.",
+            "Query recipient merchant payment gateway for secondary settled UTRs on transaction date."
+          ],
+          "epistemic_plausibility": "COMPETING_UNVERIFIED",
+          "human_verified": false,
+          "plausibility_score": 0.5
+        },
+        {
+          "hypothesis_id": "HYP-03",
+          "title": "Account Takeover or Unauthorized Debit Inflation",
+          "description": "Payer initiated a transfer for \u20b915,000.00, but malicious software or session takeover manipulated the API payload to execute a \u20b925,000.00 transfer.",
+          "supporting_observations": [
+            {
+              "evidence": "cdr_records.csv",
+              "detail": "Concurrent mobile data session detected near transaction timestamp."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "UPI PIN authentication authenticated successfully without chargeback report."
+            }
+          ],
+          "missing_evidence": [
+            "Device forensic extraction dump (Cellebrite / Oxygen) inspecting running background services.",
+            "Telecom IPDR logs checking concurrent active data sessions and destination IP addresses."
+          ],
+          "assumptions": [
+            "Payer device may host unvetted third-party remote administration apps (AnyDesk, TeamViewer, QuickSupport)."
+          ],
+          "alternative_explanations": [
+            "Payer made a typographical entry error entering 25000 instead of 15000."
+          ],
+          "recommended_discriminative_checks": [
+            "Conduct physical forensic triage of payer handset inspecting installed package list and accessibility permissions.",
+            "Request IPDR logs from Airtel/Jio for source IP correlation during UPI PIN entry."
+          ],
+          "epistemic_plausibility": "POSSIBLE_LOW_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.35
+        },
+        {
+          "hypothesis_id": "HYP-04",
+          "title": "Synthetic Spoof Payment Interface (FakePay / Simulator UI)",
+          "description": "The submitted payment receipt was generated using an offline fake payment simulator (FakePay) and was never transmitted over the NPCI UPI switch or acquiring bank gateway.",
+          "supporting_observations": [
+            {
+              "evidence": "cbs_statement",
+              "detail": "Reference number 202602148891 is completely absent from Core Banking clearing records."
+            },
+            {
+              "evidence": "trace_layout",
+              "detail": "Interface typography and layout mismatch official NPCI specifications."
+            }
+          ],
+          "contradictory_observations": [],
+          "missing_evidence": [
+            "Device application package extraction checking for com.fakepay or spoof APK signatures.",
+            "NPCI central switch transaction log query."
+          ],
+          "assumptions": [
+            "Perpetrator utilized a client-side Android prank or spoof application."
+          ],
+          "alternative_explanations": [
+            "Transaction was routed through an unlisted third-party PPI wallet rather than bank UPI."
+          ],
+          "recommended_discriminative_checks": [
+            "Query NPCI for existence of global transaction reference 202602148891.",
+            "Inspect device package manager (pm list packages) for fake payment generators."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        },
+        {
+          "hypothesis_id": "HYP-05",
+          "title": "Core Banking Auto-Reversal or Clearing Settlement Refund",
+          "description": "Debit occurred at the payer bank but timed out at the beneficiary acquiring core, resulting in an automatic credit reversal under NPCI settlement guidelines.",
+          "supporting_observations": [
+            {
+              "evidence": "bank_statement.csv",
+              "detail": "Matching credit reversal detected within 24-48 hours of transaction."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "disputed_receipt",
+              "detail": "Screenshot shows final status 'SUCCESS' without reversal annotation."
+            }
+          ],
+          "missing_evidence": [
+            "NPCI Dispute Management System (DMS) chargeback / reversal record.",
+            "Beneficiary bank statement reflecting inward credit rejection."
+          ],
+          "assumptions": [
+            "Beneficiary CBS timeout caused automatic reverse clearing."
+          ],
+          "alternative_explanations": [
+            "Merchant initiated manual refund outside the UPI protocol."
+          ],
+          "recommended_discriminative_checks": [
+            "Inspect statement credit entries within 48 hours for REV/RET/REFUND descriptors.",
+            "Issue Section 94 BNSS inquiry to acquiring bank regarding RRN settlement status."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        },
+        {
+          "hypothesis_id": "HYP-06",
+          "title": "Benign Telecom Latency or App Display Lag (No Fraud)",
+          "description": "The discrepancy is attributable to transient network latency or mobile app UI delay, where the receipt captured a temporary pending/intermediate state.",
+          "supporting_observations": [
+            {
+              "evidence": "telecom_cdr",
+              "detail": "Low signal strength or cell handoff during transaction window."
+            }
+          ],
+          "contradictory_observations": [
+            {
+              "evidence": "trace_ela",
+              "detail": "Absence of digital manipulation if screenshot is authentic."
+            }
+          ],
+          "missing_evidence": [
+            "UPI App client-side diagnostic log file."
+          ],
+          "assumptions": [
+            "App UI displayed provisional confirmation prior to receiving gateway ACK."
+          ],
+          "alternative_explanations": [],
+          "recommended_discriminative_checks": [
+            "Correlate exact device clock against network time protocol (NTP) server."
+          ],
+          "epistemic_plausibility": "POSSIBLE_LOW_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.35
+        },
+        {
+          "hypothesis_id": "HYP-UNKNOWN",
+          "title": "Unresolved / Insufficient Corroborating Evidence",
+          "description": "Available digital artifacts are insufficient to establish a conclusive evidentiary finding. Epistemic uncertainty must be maintained pending statutory evidence acquisition.",
+          "supporting_observations": [
+            {
+              "evidence": "case_integrity",
+              "detail": "Key corroborating sources (NPCI switch logs, device extraction) remain unacquired."
+            }
+          ],
+          "contradictory_observations": [],
+          "missing_evidence": [
+            "Authoritative Core Banking statement.",
+            "Original uncompressed mobile screenshot bitstream.",
+            "Cellular network IPDR logs."
+          ],
+          "assumptions": [],
+          "alternative_explanations": [
+            "Independent third-party technical failure or intermediary spoofing."
+          ],
+          "recommended_discriminative_checks": [
+            "Execute prioritized statutory evidence acquisition under Section 94 BNSS / Section 91 CrPC."
+          ],
+          "epistemic_plausibility": "PLAUSIBLE_MODERATE_EVIDENTIARY_SUPPORT",
+          "human_verified": false,
+          "plausibility_score": 0.65
+        }
+      ],
+      "generated_at_iso": "2026-11-24T15:43:39.204493+00:00"
+    }
+  }
+}
