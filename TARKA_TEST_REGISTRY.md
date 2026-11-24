@@ -14,6 +14,7 @@
 
 | Test Suite File | Domain Scope | Tests | Passed | Failed/Error | Classification | Verified Note |
 | :--- | :--- | :---: | :---: | :---: | :--- | :--- |
+| `run_phase14_load_test.py` | Phase 14 Universal Ingestion & Load | 6 (Gates A–F) | 6 | 0 | `OPERATIONAL & VERIFIED` | Gates A-F: HTTP 500 fix, 100MB stream (117MB/s, 0.1MB RAM delta), SSE replay, discrepancy, tus 409 conflict, anti-malware |
 | `test_phase10_multimodal_payment_forensics.py` | Multimodal Forensics & FSM | 12 | 12 | 0 | `IMPLEMENTED & VERIFIED` | Gateway, ELA, ACH, FSM, Cancel, Invariant checks |
 | `test_phase1_universal_case_model.py` | UCM & Invariant Guarantees | 6 | 6 | 0 | `IMPLEMENTED & VERIFIED` | Non-promotability, CAS hashing, Audit chain |
 | `test_tarka_e2e_investigation_workflow.py` | Full Investigation Lifecycle | 7 | 7 | 0 | `IMPLEMENTED & VERIFIED` | TRACE, AEGIS, WhatsApp, BSA 63, RBAC 403 |

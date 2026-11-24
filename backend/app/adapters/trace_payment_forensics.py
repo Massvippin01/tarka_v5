@@ -480,8 +480,11 @@ class TracePaymentForensics:
             # Detect periodic nearest-neighbor resampling (pixel-doubling)
             resample_detected = False
             if img.shape[0] > 64 and img.shape[1] > 64:
-                diff_rows = float(np.mean(np.abs(img[::2, :] - img[1::2, :])))
-                diff_cols = float(np.mean(np.abs(img[:, ::2] - img[:, 1::2])))
+                # Ensure even dimensions for pairing adjacent rows and columns
+                even_h = (img.shape[0] // 2) * 2
+                even_w = (img.shape[1] // 2) * 2
+                diff_rows = float(np.mean(np.abs(img[0:even_h:2, :even_w] - img[1:even_h:2, :even_w])))
+                diff_cols = float(np.mean(np.abs(img[:even_h, 0:even_w:2] - img[:even_h, 1:even_w:2])))
                 if (diff_rows < 0.25 or diff_cols < 0.25) and lap_var > 10.0:
                     resample_detected = True
 

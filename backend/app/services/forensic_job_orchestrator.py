@@ -29,7 +29,11 @@ logger = logging.getLogger("sentinelx.job_orchestrator")
 
 
 class JobState(str, Enum):
+    CREATED = "CREATED"
     RECEIVED = "RECEIVED"
+    UPLOADING = "UPLOADING"
+    UPLOAD_PAUSED = "UPLOAD_PAUSED"
+    UPLOAD_FAILED = "UPLOAD_FAILED"
     VALIDATING = "VALIDATING"
     REGISTERED = "REGISTERED"
     QUEUED = "QUEUED"
@@ -37,6 +41,7 @@ class JobState(str, Enum):
     PARTIALLY_ANALYSED = "PARTIALLY_ANALYSED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCEL_REQUESTED = "CANCEL_REQUESTED"
     CANCELLED = "CANCELLED"
     REQUIRES_REVIEW = "REQUIRES_REVIEW"
 
@@ -144,6 +149,7 @@ class ForensicJobOrchestrator:
         )
         self.jobs[job_id] = job
         self._persist_job(job)
+        self._notify_subscribers(job)
         return job
 
     def update_job_state(
@@ -156,13 +162,19 @@ class ForensicJobOrchestrator:
     ):
         """Convenience method to transition job state with default progression percentages."""
         progress_map = {
+            JobState.CREATED: 2,
+            JobState.UPLOADING: 10,
+            JobState.UPLOAD_PAUSED: 10,
+            JobState.UPLOAD_FAILED: 10,
             JobState.RECEIVED: 5,
             JobState.VALIDATING: 25,
+            JobState.REGISTERED: 20,
             JobState.QUEUED: 15,
             JobState.PROCESSING: 60,
             JobState.PARTIALLY_ANALYSED: 80,
             JobState.COMPLETED: 100,
             JobState.FAILED: 100,
+            JobState.CANCEL_REQUESTED: 95,
             JobState.CANCELLED: 100,
             JobState.REQUIRES_REVIEW: 50,
         }
@@ -286,6 +298,24 @@ class ForensicJobOrchestrator:
         finally:
             if case_id in self.subscribers and queue in self.subscribers[case_id]:
                 self.subscribers[case_id].remove(queue)
+
+    def get_case_event_journal(self, case_id: str) -> List[Dict[str, Any]]:
+        """Reads persisted event journal for a case."""
+        event_file = self.persistence_dir / f"{case_id}_events.jsonl"
+        events = []
+        if event_file.exists():
+            with open(event_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        try:
+                            events.append(json.loads(line))
+                        except Exception:
+                            pass
+        return events
+
+    def get_events_since(self, case_id: str, last_event_id: int) -> List[Dict[str, Any]]:
+        """Returns events with event ID greater than last_event_id."""
+        return [ev for ev in self.get_case_event_journal(case_id) if ev.get("id", 0) > last_event_id]
 
     def recover_crashed_jobs(self) -> List[str]:
         """Scans in-memory and persisted jobs, transitioning interrupted jobs to REQUIRES_REVIEW."""

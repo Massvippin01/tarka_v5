@@ -51,6 +51,7 @@ from app.adapters.trace_engine import TraceEngine
 from app.adapters.aegis_gateway import AegisGateway
 from app.adapters.whatsapp_gateway import WhatsAppGateway
 from app.adapters.multimodal_evidence_gateway import MultimodalEvidenceGateway, IngestionSecurityError, IngestionQuarantineError
+from app.adapters.universal_evidence_gateway import UniversalEvidenceGateway, OffsetMismatchError
 from app.adapters.trace_payment_forensics import TracePaymentForensics
 from app.adapters.aegis_reasoning_engine import AegisReasoningEngine
 from app.services.forensic_job_orchestrator import ForensicJobOrchestrator, JobState
@@ -67,7 +68,8 @@ class TarkaForensicsAdapter:
         self.trace_engine = TraceEngine()
         self.aegis_gateway = AegisGateway()
         self.whatsapp_gateway = WhatsAppGateway()
-        self.multimodal_gw = MultimodalEvidenceGateway()
+        self.universal_gw = UniversalEvidenceGateway()
+        self.multimodal_gw = self.universal_gw
         self.trace_payment_engine = TracePaymentForensics()
         self.aegis_reasoning = AegisReasoningEngine()
         self.job_orchestrator = ForensicJobOrchestrator.get_instance()
@@ -1258,15 +1260,325 @@ class TarkaForensicsAdapter:
             ],
         }
 
+    def ingest_streaming_batch(
+        self,
+        case_id: str,
+        files: List[Tuple[str, BinaryIO]],
+        officer: str = "Lead Forensic Examiner",
+        user_id: str = "INVESTIGATOR_DELHI",
+        tz: str = "Asia/Kolkata",
+    ) -> Dict[str, Any]:
+        """
+        Phase 14 Universal Ingestion: Streams incoming evidence files of arbitrary size
+        (from 1KB up to multi-gigabytes) directly into CAS storage tiers with bounded memory,
+        validates magic bytes and signatures, registers canonical artifacts, and dispatches
+        asynchronous background job.
+        """
+        case = self.store.get_case(case_id)
+        if not case:
+            case = self.store.create_case(case_id=case_id, title=f"Investigation {case_id}", investigator=officer)
+
+        admitted_manifests: List[Dict[str, Any]] = []
+        admitted_aids: List[str] = []
+        source_summaries: List[Dict[str, Any]] = []
+        warnings: List[str] = []
+
+        from tarka.core.models import TrustTier
+
+        for fname, stream in files:
+            try:
+                manifest = self.universal_gw.stream_incoming_file_to_cas(
+                    case_id=case_id,
+                    filename=fname,
+                    stream=stream,
+                    uploader_id=user_id,
+                    source_channel="UNIVERSAL_INTAKE",
+                )
+                aid = manifest["artifact_id"]
+                admitted_aids.append(aid)
+                admitted_manifests.append(manifest)
+
+                # Register in canonical CaseStore
+                file_path = self.store.get_case_dir(case_id) / manifest["storage_path"]
+                if file_path.exists():
+                    with open(file_path, "rb") as fp:
+                        raw_bytes = fp.read(min(10 * 1024 * 1024, file_path.stat().st_size))
+                else:
+                    raw_bytes = b""
+
+                tier = (
+                    TrustTier.T3 if manifest["file_type"] == "IMAGE"
+                    else TrustTier.T1 if "statement" in fname.lower()
+                    else TrustTier.T2
+                )
+                try:
+                    self.store.register_artifact(
+                        case_id=case_id,
+                        filename=fname,
+                        file_bytes=raw_bytes,
+                        source_tier=tier,
+                        intake_officer=officer,
+                        intake_notes=f"Universal Ingest: {manifest['file_type']}",
+                    )
+                except Exception as reg_exc:
+                    logger.debug(f"Note on CaseStore registration: {reg_exc}")
+
+                source_summaries.append({
+                    "filename": fname,
+                    "sha256": manifest["sha256"],
+                    "size_bytes": manifest["file_size_bytes"],
+                    "parsed_facts_count": 1 if manifest["status"] == "PARSED" else 0,
+                    "rejected_rows_count": 0,
+                    "parser_type": manifest.get("parse_summary", {}).get("parser_id", "UniversalGateway"),
+                    "is_date_ambiguous": False,
+                })
+            except Exception as exc:
+                logger.error(f"Failed to ingest file '{fname}': {exc}")
+                warnings.append(f"File '{fname}' ingestion failed: {exc}")
+
+        if not admitted_aids:
+            if warnings:
+                raise IngestionSecurityError("; ".join(warnings))
+            raise IngestionSecurityError("No valid evidence files could be admitted.")
+
+        # Create asynchronous job via orchestrator
+        job = self.job_orchestrator.create_job(
+            case_id=case_id,
+            artifact_ids=admitted_aids,
+            created_by=user_id,
+        )
+
+        # Worker execution
+        def run_worker_analysis(job_id_param: str):
+            try:
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.VALIDATING,
+                    stage_name="Cryptographic Validation & Format Integrity",
+                )
+                time.sleep(0.05)
+
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.PROCESSING,
+                    stage_name="Multimodal TRACE & Visual Forensic Pipeline",
+                )
+
+                job_results: Dict[str, Any] = {}
+                extracted_obs: List[Dict[str, Any]] = []
+
+                for item in admitted_manifests:
+                    aid = item["artifact_id"]
+                    fname = item["filename"]
+                    ftype = item["file_type"]
+                    file_path = self.store.get_case_dir(case_id) / item["storage_path"]
+
+                    if ftype == "IMAGE" and file_path.exists():
+                        with open(file_path, "rb") as fp:
+                            img_b = fp.read()
+                        exam = self.trace_payment_engine.examine_screenshot(img_b, fname, artifact_id=aid, case_id=case_id)
+                        job_results[aid] = {
+                            "type": "IMAGE_EXAMINATION",
+                            "manipulation_score": exam["manipulation_analysis"]["composite_anomaly_score"],
+                            "classification": exam["manipulation_analysis"]["classification"],
+                            "extracted_fields": exam["ocr_analysis"].get("extracted_fields", {}),
+                            "discrepancies": exam.get("reconciliation_findings", []),
+                        }
+                        extracted_obs.append({
+                            "observation_id": f"OBS-IMG-{aid[:8]}",
+                            "case_id": case_id,
+                            "artifact_id": aid,
+                            "observation_type": "VISUAL_EXAMINATION",
+                            "summary": f"Screenshot examined: anomaly score {exam['manipulation_analysis']['composite_anomaly_score']:.2f}",
+                            "confidence": 0.85,
+                            "human_verified": False,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
+                    elif ftype in ("CSV", "BANK_STATEMENT") and file_path.exists():
+                        with open(file_path, "rb") as fp:
+                            csv_b = fp.read()
+                        cbs = self.trace_engine.parse_bank_statement_csv(csv_b.decode("utf-8", errors="ignore"))
+                        job_results[aid] = {
+                            "type": "BANK_STATEMENT",
+                            "transaction_count": len(cbs),
+                        }
+                        extracted_obs.append({
+                            "observation_id": f"OBS-CSV-{aid[:8]}",
+                            "case_id": case_id,
+                            "artifact_id": aid,
+                            "observation_type": "CBS_LEDGER",
+                            "summary": f"Bank statement parsed with {len(cbs)} transactions",
+                            "confidence": 0.98,
+                            "human_verified": False,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
+                    else:
+                        parse_info = item.get("parse_summary", {})
+                        job_results[aid] = {
+                            "type": ftype,
+                            "status": item["status"],
+                            "parse_summary": parse_info,
+                        }
+
+                if case_id not in self.case_observations:
+                    self.case_observations[case_id] = []
+                self.case_observations[case_id].extend(extracted_obs)
+
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.COMPLETED,
+                    stage_name="Analysis Finished",
+                    results_summary=job_results,
+                )
+            except Exception as exc:
+                logger.error(f"Error in job {job_id_param}: {exc}")
+                self.job_orchestrator.update_job_state(
+                    job_id_param,
+                    JobState.FAILED,
+                    stage_name="Job Execution Error",
+                    error_message=str(exc),
+                )
+
+        self.job_orchestrator.start_job_execution(job.job_id, run_worker_analysis)
+
+        return {
+            "case_id": case_id,
+            "status": "QUEUED",
+            "job_id": job.job_id,
+            "admitted_count": len(admitted_aids),
+            "total_submitted": len(files),
+            "artifacts": [
+                {
+                    "artifact_id": m["artifact_id"],
+                    "filename": m["filename"],
+                    "sha256": m["sha256"],
+                    "file_type": m["file_type"],
+                    "file_size": m["file_size_bytes"],
+                    "status": m["status"],
+                }
+                for m in admitted_manifests
+            ],
+            "admitted_artifacts": admitted_manifests,
+            "source_files_summary": source_summaries,
+            "source_files": source_summaries,
+            "total_facts_parsed": len(admitted_manifests),
+            "total_rejected_rows": 0,
+            "rejected_rows": [],
+            "warnings": warnings,
+        }
+
+    def create_upload_session(
+        self,
+        case_id: str,
+        filename: str,
+        total_size_bytes: int,
+        mime_type: Optional[str] = None,
+        user_id: str = "INVESTIGATOR_DELHI",
+        notes: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Creates a resumable chunked upload session for large files up to multiple gigabytes."""
+        return self.universal_gw.session_manager.create_session(
+            case_id=case_id,
+            filename=filename,
+            total_size_bytes=total_size_bytes,
+            mime_type=mime_type,
+            uploader_id=user_id,
+            notes=notes,
+        )
+
+    def append_upload_chunk(
+        self,
+        session_id: str,
+        chunk_data: bytes,
+        offset: int,
+    ) -> Dict[str, Any]:
+        """Appends a chunk at the verified byte offset."""
+        sess = self.universal_gw.session_manager.append_chunk(session_id, chunk_data, offset)
+        if sess["accepted_offset"] == sess["total_size_bytes"]:
+            manifest = self.universal_gw.finalize_upload_session(session_id)
+            sess["artifact"] = manifest
+
+            # Also register in CaseStore
+            case_id = sess["case_id"]
+            file_path = self.store.get_case_dir(case_id) / manifest["storage_path"]
+            raw_bytes = b""
+            if file_path.exists():
+                with open(file_path, "rb") as fp:
+                    raw_bytes = fp.read(min(10 * 1024 * 1024, file_path.stat().st_size))
+
+            from tarka.core.models import TrustTier
+            tier = TrustTier.T3 if manifest["file_type"] == "IMAGE" else TrustTier.T2
+            try:
+                self.store.register_artifact(
+                    case_id=case_id,
+                    filename=manifest["filename"],
+                    file_bytes=raw_bytes,
+                    source_tier=tier,
+                    intake_officer=sess["uploader_id"],
+                    intake_notes=f"Chunked Upload Complete: {manifest['file_type']}",
+                )
+            except Exception as e:
+                logger.debug(f"CaseStore chunked register note: {e}")
+
+            # Enqueue background job
+            job = self.job_orchestrator.create_job(
+                case_id=case_id,
+                artifact_ids=[manifest["artifact_id"]],
+                created_by=sess["uploader_id"],
+            )
+            sess["job_id"] = job.job_id
+        return sess
+
+    def get_upload_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        return self.universal_gw.session_manager.get_session(session_id)
+
+    def cancel_upload_session(self, session_id: str) -> bool:
+        return self.universal_gw.session_manager.cancel_session(session_id)
+
     def examine_screenshot_artifact(self, case_id: str, artifact_id: str) -> Dict[str, Any]:
         """
         Executes in-depth TRACE visual and forensic examination on a screenshot artifact.
         Extracts OCR bounding boxes, performs ELA at Q=90, inspects metadata, checks typography.
         """
-        content, _, art = self.get_artifact_bytes(case_id, artifact_id)
+        content, mime_type, filename = self.get_artifact_bytes(case_id, artifact_id)
         if not content:
             raise KeyError(f"Artifact '{artifact_id}' not found in case '{case_id}'")
-        return self.trace_payment_engine.examine_screenshot(content, art.filename)
+
+        fname_lower = filename.lower()
+        is_image = (
+            (mime_type and mime_type.startswith("image/"))
+            or fname_lower.endswith((".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp", ".gif", ".heic"))
+        )
+        if not is_image:
+            return {
+                "artifact_id": artifact_id,
+                "filename": filename,
+                "case_id": case_id,
+                "media_type": mime_type or "application/octet-stream",
+                "is_image": False,
+                "examination_status": "SKIPPED_NON_IMAGE",
+                "composite_anomaly_score": 0.0,
+                "preliminary_assessment": "NON_IMAGE_EVIDENCE",
+                "message": f"Artifact '{filename}' is non-raster evidence; pixel manipulation examination skipped.",
+                "modules": {
+                    "metadata": {"filename": filename, "media_type": mime_type},
+                    "extracted_fields": {},
+                    "error_level_analysis": {"skipped": True},
+                    "pixel_resampling": {"skipped": True},
+                    "typography_inspection": {"skipped": True},
+                },
+                "ocr_analysis": {"extracted_fields": {}, "tokens": []},
+                "manipulation_analysis": {
+                    "composite_anomaly_score": 0.0,
+                    "classification": "NON_IMAGE_EVIDENCE",
+                    "ela_preview_base64": "",
+                    "resampling_edge_score": 0.0,
+                    "manipulated_region_bbox": None,
+                },
+                "reconciliation_findings": [],
+            }
+
+        return self.trace_payment_engine.examine_screenshot(content, filename, artifact_id=artifact_id, case_id=case_id)
 
     def get_case_hypotheses(self, case_id: str) -> Dict[str, Any]:
         """
@@ -1312,20 +1624,77 @@ class TarkaForensicsAdapter:
             try:
                 content, _, _ = self.get_artifact_bytes(case_id, a.artifact_id)
                 fname = a.filename.lower()
-                if fname.endswith(".csv") or "statement" in fname:
+                # Parse bank statements only (exclude CDRs, WhatsApp logs, etc.)
+                if (fname.endswith(".csv") and "statement" in fname) or ("bank" in fname and fname.endswith(".csv")):
                     cbs_txs.extend(self.trace_engine.parse_bank_statement_csv(content.decode("utf-8", errors="ignore")))
-                elif fname.endswith((".png", ".jpg", ".jpeg")) or "screenshot" in fname:
-                    screenshot_receipts.append((content, a.filename))
+                elif fname.endswith((".png", ".jpg", ".jpeg", ".webp", ".tiff", ".bmp")) and not fname.endswith((".json", ".txt", ".csv")):
+                    screenshot_receipts.append((content, a.filename, a.artifact_id))
             except Exception as e:
                 logger.warning(f"Error reading artifact {a.artifact_id} for reconciliation: {e}")
 
         recon_result = self.trace_engine.reconcile_balance(cbs_txs)
 
         screenshot_findings = []
-        for img_bytes, fname in screenshot_receipts:
-            res = self.trace_engine.examine_screenshot_receipt(img_bytes, fname, known_cbs_transactions=cbs_txs)
-            if res.get("discrepancy_finding"):
-                screenshot_findings.append(res["discrepancy_finding"])
+        for img_bytes, fname, aid in screenshot_receipts:
+            try:
+                exam = self.trace_payment_engine.examine_payment_screenshot(
+                    img_bytes, filename=fname, artifact_id=aid, case_id=case_id
+                )
+                ocr_fields = exam.get("ocr_analysis", {}).get("extracted_fields", {})
+                scr_amt = ocr_fields.get("amount")
+                utr = ocr_fields.get("utr_rrn")
+                upi_app = ocr_fields.get("upi_app")
+
+                if scr_amt is not None and cbs_txs:
+                    # Check for exact or close amount match in CBS transactions
+                    matching_cbs = [tx for tx in cbs_txs if abs(float(tx.amount) - float(scr_amt)) < 0.01]
+                    if not matching_cbs:
+                        screenshot_findings.append({
+                            "finding_type": "UNRECONCILED_PAYMENT_DISCREPANCY",
+                            "severity": "HIGH",
+                            "title": f"Payment Receipt Unmatched in Bank Ledger: {fname}",
+                            "description": (
+                                f"Screenshot {fname} claims a payment of ₹{float(scr_amt):,.2f} via {upi_app or 'UPI'} "
+                                f"(UTR: {utr or 'N/A'}), but no corresponding entry of ₹{float(scr_amt):,.2f} "
+                                f"exists in the provided Core Banking statement."
+                            ),
+                            "screenshot_amount": float(scr_amt),
+                            "utr": utr,
+                            "filename": fname,
+                            "artifact_id": aid,
+                            "statutory_caveat": (
+                                "AI PROPOSES. FORENSIC ENGINES TEST. INVESTIGATORS DECIDE. "
+                                "An unmatched screenshot indicates an unrecorded entry, settlement delay, "
+                                "or fabricated receipt; request NPCI ISO 8583 switch logs under BNSS Section 94 "
+                                "to verify settlement before drawing investigative conclusions."
+                            ),
+                        })
+                    else:
+                        screenshot_findings.append({
+                            "finding_type": "RECONCILED_PAYMENT",
+                            "severity": "INFO",
+                            "title": f"Payment Receipt Reconciled: {fname}",
+                            "description": f"Receipt for ₹{float(scr_amt):,.2f} matches Core Banking entry {matching_cbs[0].tx_id}.",
+                            "screenshot_amount": float(scr_amt),
+                            "utr": utr,
+                            "filename": fname,
+                            "artifact_id": aid,
+                        })
+                elif scr_amt is None and fname.endswith((".jpg", ".jpeg", ".png")):
+                    # Informal document or non-payment image
+                    screenshot_findings.append({
+                        "finding_type": "INFORMAL_EVIDENCE_RECORD",
+                        "severity": "INFO",
+                        "title": f"Informal Document: {fname}",
+                        "description": (
+                            f"Evidence file '{fname}' does not contain recognized structured transaction fields. "
+                            "Treated as informal contextual evidence."
+                        ),
+                        "filename": fname,
+                        "artifact_id": aid,
+                    })
+            except Exception as exc:
+                logger.warning(f"Error examining screenshot {fname} for reconciliation: {exc}")
 
         return {
             "case_id": case_id,

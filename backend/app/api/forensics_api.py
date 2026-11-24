@@ -15,7 +15,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -29,13 +29,18 @@ router = APIRouter()
 adapter = TarkaForensicsAdapter()
 
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
+def get_current_user(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None),
+) -> UserIdentity:
     """Enforces strict SentinelX 7-factor RBAC authentication.
     
     Rejects missing or invalid credentials with HTTP 401 UNAUTHORIZED.
+    Supports Authorization header and ?token= query parameter (for browser EventSource).
     """
     auth_service = AuthService.get_instance()
-    return auth_service.authenticate_token(authorization, strict=True)
+    effective_token = authorization or (f"Bearer {token}" if token else None)
+    return auth_service.authenticate_token(effective_token, strict=True)
 
 
 # --- Request & Response Models ---
@@ -417,7 +422,7 @@ def export_statutory_report(
 
 
 
-@router.post("/cases/{case_id}/ingest", tags=["Evidence Ingestion"])
+@router.post("/cases/{case_id}/ingest", tags=["Evidence Ingestion"], status_code=status.HTTP_201_CREATED)
 async def ingest_case_evidence(
     case_id: str,
     files: List[UploadFile] = File(...),
@@ -428,14 +433,40 @@ async def ingest_case_evidence(
     """Ingests raw forensic evidence files into the authorized case workspace."""
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
-    from tarka.api.server import ingest_evidence_files
-    res = await ingest_evidence_files(
-        files=files,
-        tz=tz,
+    if not files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No evidence files provided.")
+
+    file_tuples = []
+    for f in files:
+        file_tuples.append((f.filename or "evidence.bin", f.file))
+
+    try:
+        res = adapter.ingest_streaming_batch(
+            case_id=case_id,
+            files=file_tuples,
+            officer=user.display_name or user.user_id,
+            user_id=user.user_id,
+            tz=tz,
+        )
+    except Exception as exc:
+        logger.error(f"Ingestion failed for case {case_id}: {exc}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    from app.services.audit_service import AuditService
+    audit = AuditService.get_instance()
+    audit.record_event(
+        actor_id=user.user_id,
+        action="EVIDENCE_INGESTED",
+        resource_type="CASE",
+        resource_id=case_id,
         case_id=case_id,
-        append_to_custody=append_to_custody,
+        details={
+            "job_id": res.get("job_id"),
+            "admitted_count": res.get("admitted_count"),
+            "total_submitted": res.get("total_submitted"),
+        },
     )
-    return res.model_dump() if hasattr(res, "model_dump") else res
+    return res
 
 
 # --- Finding Explainability, Provenance & Examiner Review ---
@@ -589,26 +620,19 @@ async def upload_case_multimodal_evidence(
     user: UserIdentity = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
-    Phase 10 Multimodal Gateway: Accepts multiple files (screenshots, bank statements, receipts, exports),
-    validates headers/magic bytes, defends against decompression bombs and path traversals,
-    writes to isolated storage tiers, registers custody ledger, and enqueues async forensic job.
+    Phase 14 Multimodal Streaming Gateway: Accepts multiple files of any size,
+    streams bytes directly to CAS tiers with bounded memory, calculates streaming SHA-256,
+    defends against malware and decompression bombs, registers custody, and dispatches async job.
     """
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No evidence files provided.")
 
-    file_tuples = []
-    for f in files:
-        b = await f.read()
-        if len(b) > 0:
-            file_tuples.append((f.filename or "evidence.bin", b))
-
-    if not file_tuples:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="All submitted evidence files were empty.")
+    file_tuples = [(f.filename or "evidence.bin", f.file) for f in files]
 
     try:
-        res = adapter.ingest_multimodal_batch(
+        res = adapter.ingest_streaming_batch(
             case_id=case_id,
             files=file_tuples,
             officer=user.display_name or user.user_id,
@@ -669,17 +693,19 @@ def cancel_case_job(
 @router.get("/cases/{case_id}/events/stream", tags=["Evidence Ingestion"])
 async def stream_case_events(
     case_id: str,
+    last_event_id: Optional[str] = Header(None, alias="Last-Event-ID"),
     user: UserIdentity = Depends(get_current_user),
 ):
     """
     Server-Sent Events (SSE) endpoint providing real-time progressive forensic analysis updates.
     Eliminates client-side polling and streams state transitions immediately.
+    Supports authenticated EventSource connections and event replay via Last-Event-ID.
     """
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
 
     return StreamingResponse(
-        adapter.job_orchestrator.sse_event_stream(case_id),
+        adapter.job_orchestrator.sse_event_stream(case_id, last_event_id=last_event_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -687,6 +713,95 @@ async def stream_case_events(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# --- Chunked Resumable Upload Endpoints (Tus 1.0.0 Compatible) ---
+
+class CreateUploadSessionRequest(BaseModel):
+    filename: str
+    total_size_bytes: int
+    mime_type: Optional[str] = "application/octet-stream"
+    notes: Optional[str] = None
+
+
+@router.post("/cases/{case_id}/evidence/upload-sessions", tags=["Chunked Ingestion"], status_code=status.HTTP_201_CREATED)
+def create_upload_session_endpoint(
+    case_id: str,
+    req: CreateUploadSessionRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Initializes a new resumable chunked upload session for large evidence files (MB to GB scale)."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    try:
+        return adapter.create_upload_session(
+            case_id=case_id,
+            filename=req.filename,
+            total_size_bytes=req.total_size_bytes,
+            mime_type=req.mime_type,
+            user_id=user.user_id,
+            notes=req.notes,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.patch("/cases/{case_id}/evidence/upload-sessions/{session_id}", tags=["Chunked Ingestion"])
+@router.post("/cases/{case_id}/evidence/upload-sessions/{session_id}/chunks", tags=["Chunked Ingestion"])
+async def upload_evidence_chunk_endpoint(
+    case_id: str,
+    session_id: str,
+    request: Request,
+    upload_offset: int = Header(..., alias="Upload-Offset"),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Appends an incoming chunk at the verified byte offset."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    from app.adapters.universal_evidence_gateway import OffsetMismatchError
+
+    chunk_bytes = await request.body()
+    try:
+        sess = adapter.append_upload_chunk(session_id, chunk_bytes, offset=upload_offset)
+        return sess
+    except OffsetMismatchError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Offset mismatch: expected {exc.expected_offset}, received {exc.received_offset}",
+            headers={"Upload-Offset": str(exc.expected_offset)},
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get("/cases/{case_id}/evidence/upload-sessions/{session_id}", tags=["Chunked Ingestion"])
+def get_upload_session_status_endpoint(
+    case_id: str,
+    session_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Queries upload session state for pause/resume."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    sess = adapter.get_upload_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Upload session '{session_id}' not found.")
+    return sess
+
+
+@router.delete("/cases/{case_id}/evidence/upload-sessions/{session_id}", tags=["Chunked Ingestion"])
+def cancel_upload_session_endpoint(
+    case_id: str,
+    session_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Cancels and purges an incomplete upload session."""
+    auth_service = AuthService.get_instance()
+    auth_service.enforce_case_access(user, case_id)
+    cancelled = adapter.cancel_upload_session(session_id)
+    return {"session_id": session_id, "cancelled": cancelled}
 
 
 @router.get("/cases/{case_id}/observations", tags=["Evidence Observations"])

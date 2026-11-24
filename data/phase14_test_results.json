@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-11-24T22:43:21Z",
+  "all_passed": true,
+  "gates": {
+    "gate_a": {
+      "gate": "GATE_A",
+      "passed": true,
+      "artifacts": [
+        {
+          "artifact_id": "ART-007-6592F125",
+          "filename": "1000270702.png",
+          "anomaly_score": 0.015,
+          "status": "NO_OVERT_MANIPULATION_DETECTED",
+          "ocr_status": "UNKNOWN",
+          "amount": null,
+          "utr": null
+        },
+        {
+          "artifact_id": "ART-008-359E2C3B",
+          "filename": "1000270703.png",
+          "anomaly_score": 0.083,
+          "status": "NO_OVERT_MANIPULATION_DETECTED",
+          "ocr_status": "SUCCESS",
+          "amount": 1495.0,
+          "utr": "632413615889"
+        },
+        {
+          "artifact_id": "ART-009-46AF2983",
+          "filename": "1000270698.jpg",
+          "anomaly_score": 0.008,
+          "status": "NO_OVERT_MANIPULATION_DETECTED",
+          "ocr_status": "UNKNOWN",
+          "amount": null,
+          "utr": null
+        },
+        {
+          "artifact_id": "ART-010-D586D8E7",
+          "filename": "1000270701.jpg",
+          "anomaly_score": 0.213,
+          "status": "NO_OVERT_MANIPULATION_DETECTED",
+          "ocr_status": "SUCCESS",
+          "amount": 1495.0,
+          "utr": "632413615889"
+        }
+      ]
+    },
+    "gate_b": {
+      "gate": "GATE_B",
+      "passed": true,
+      "size_bytes": 104857600,
+      "throughput_mb_s": 117.63,
+      "mem_delta_mb": 0.13
+    },
+    "gate_c": {
+      "gate": "GATE_C",
+      "passed": true,
+      "journal_count": 11,
+      "replayed_count": 10
+    },
+    "gate_d": {
+      "gate": "GATE_D",
+      "passed": true,
+      "findings_count": 5
+    },
+    "gate_e": {
+      "gate": "GATE_E",
+      "passed": true,
+      "conflict_caught": true,
+      "sha_match": true,
+      "artifact_id": "ART-20261124171321-3AF2DD2B"
+    },
+    "gate_f": {
+      "gate": "GATE_F",
+      "passed": true,
+      "formula_blocked": true,
+      "slip_trapped": true,
+      "poly_safe": true
+    }
+  }
+}

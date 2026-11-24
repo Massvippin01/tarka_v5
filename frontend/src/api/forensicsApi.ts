@@ -336,6 +336,36 @@ export const forensicsApi = {
     return `/api/v1/forensics/cases/${caseId}/events/stream?token=${encodeURIComponent(token || "")}`;
   },
 
+  createUploadSession: async (caseId: string, filename: string, totalSizeBytes: number, mimeType?: string, notes?: string) => {
+    const res = await api.post(`/cases/${caseId}/evidence/upload-sessions`, {
+      filename,
+      total_size_bytes: totalSizeBytes,
+      mime_type: mimeType,
+      notes,
+    });
+    return res.data;
+  },
+
+  uploadChunk: async (caseId: string, sessionId: string, chunk: Blob, offset: number) => {
+    const res = await api.patch(`/cases/${caseId}/evidence/upload-sessions/${sessionId}`, chunk, {
+      headers: {
+        "Content-Type": "application/offset+octet-stream",
+        "Upload-Offset": offset.toString(),
+      },
+    });
+    return res.data;
+  },
+
+  getUploadSessionStatus: async (caseId: string, sessionId: string) => {
+    const res = await api.get(`/cases/${caseId}/evidence/upload-sessions/${sessionId}`);
+    return res.data;
+  },
+
+  cancelUploadSession: async (caseId: string, sessionId: string) => {
+    const res = await api.delete(`/cases/${caseId}/evidence/upload-sessions/${sessionId}`);
+    return res.data;
+  },
+
   getObservations: async (caseId: string) => {
     const res = await api.get(`/cases/${caseId}/observations`);
     return res.data;
