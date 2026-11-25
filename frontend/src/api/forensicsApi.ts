@@ -190,6 +190,8 @@ export const forensicsApi = {
       notes?: string;
       scope?: string;
       target_type?: string;
+      correction_payload?: Record<string, unknown>;
+      correction_basis?: string;
     }
   ) => {
     const res = await api.post(`/cases/${caseId}/reviews`, req);

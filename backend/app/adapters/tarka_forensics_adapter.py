@@ -682,10 +682,63 @@ class TarkaForensicsAdapter:
         notes: Optional[str] = None,
         scope: Optional[str] = None,
         target_type: Optional[str] = None,
+        correction_payload: Optional[Dict[str, Any]] = None,
+        correction_basis: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Records an authorized examiner statutory review action into the tamper-evident custody ledger."""
+        """
+        Records an authorized examiner statutory review action into the tamper-evident custody ledger.
+        Maintains the Non-Overwriting Invariant: human corrections never destroy or overwrite
+        the original machine extraction, but preserve both side-by-side with full provenance.
+        """
+        is_obs = (target_type == "observation") or target_id.startswith("OBS-")
         is_gap = (target_type == "gap") or target_id.startswith("GAP-")
-        if is_gap:
+
+        if is_obs:
+            reviews_dir = self.store.get_case_dir(case_id) / "reviews"
+            reviews_dir.mkdir(parents=True, exist_ok=True)
+            obs_reviews_file = reviews_dir / "observation_reviews.json"
+            obs_reviews = {}
+            if obs_reviews_file.exists():
+                try:
+                    with open(obs_reviews_file, "r", encoding="utf-8") as fp:
+                        obs_reviews = json.load(fp)
+                except Exception:
+                    obs_reviews = {}
+
+            # Locate observation in active case memory
+            case_obs_list = self.case_observations.get(case_id, [])
+            target_obs = next((o for o in case_obs_list if o.get("observation_id") == target_id), None)
+            orig_machine_val = target_obs.get("extracted_value") if target_obs else None
+
+            record = {
+                "case_id": case_id,
+                "observation_id": target_id,
+                "verification_status": decision,
+                "human_verified": (decision.upper() == "VERIFIED"),
+                "original_machine_output": orig_machine_val,
+                "human_correction": correction_payload,
+                "correction_basis": correction_basis or notes or "Examiner manual validation",
+                "notes": notes,
+                "reviewed_by": reviewed_by,
+                "reviewed_at_iso": datetime.now(timezone.utc).isoformat(),
+            }
+            obs_reviews[target_id] = record
+            with open(obs_reviews_file, "w", encoding="utf-8") as fp:
+                json.dump(obs_reviews, fp, indent=2)
+
+            # Update observation in memory while preserving immutable machine output
+            if target_obs:
+                if "original_machine_output" not in target_obs:
+                    target_obs["original_machine_output"] = target_obs.get("extracted_value")
+                target_obs["verification_status"] = decision
+                target_obs["human_verified"] = (decision.upper() == "VERIFIED")
+                if correction_payload:
+                    target_obs["human_correction"] = correction_payload
+                    target_obs["correction_basis"] = correction_basis or notes
+                target_obs["reviewed_by"] = reviewed_by
+                target_obs["reviewed_at_iso"] = record["reviewed_at_iso"]
+
+        elif is_gap:
             record = self.store.save_gap_review(
                 case_id=case_id,
                 gap_id=target_id,
@@ -705,11 +758,22 @@ class TarkaForensicsAdapter:
         return record
 
     def list_examiner_reviews(self, case_id: str) -> Dict[str, Any]:
-        """Retrieves all examiner reviews for contradiction findings and evidence gaps."""
+        """Retrieves all examiner reviews for contradiction findings, evidence gaps, and observations."""
+        reviews_dir = self.store.get_case_dir(case_id) / "reviews"
+        obs_reviews = {}
+        obs_reviews_file = reviews_dir / "observation_reviews.json"
+        if obs_reviews_file.exists():
+            try:
+                with open(obs_reviews_file, "r", encoding="utf-8") as fp:
+                    obs_reviews = json.load(fp)
+            except Exception:
+                obs_reviews = {}
+
         return {
             "case_id": case_id,
             "finding_reviews": self.store.get_finding_reviews(case_id),
             "gap_reviews": self.store.get_gap_reviews(case_id),
+            "observation_reviews": obs_reviews,
         }
 
     # -----------------------------------------------------------------------

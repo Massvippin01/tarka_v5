@@ -1,0 +1,65 @@
+{
+  "case_id": "upi_payment_discrepancy",
+  "verified_at_iso": "2026-11-25T04:43:37Z",
+  "all_passed": true,
+  "evidence_records": [
+    {
+      "filename": "1000270701.jpg",
+      "role": "Mobile UPI Payment Screenshot (Google Pay \u20b91,495)",
+      "evidence_id": "ART-007-D586D8E7",
+      "file_size_bytes": 50708,
+      "detected_mime": "image/jpeg",
+      "client_sha256": "d586d8e7f23fdb150a923ced78465d577572822bec8855b020063dd3fa0db09a",
+      "cas_sha256": "d586d8e7f23fdb150a923ced78465d577572822bec8855b020063dd3fa0db09a",
+      "sha256_match": true,
+      "bitstream_verified": true,
+      "upload_duration_ms": 753.04,
+      "job_id": "JOB-39c1ba23d5b7",
+      "initial_job_status": "COMPLETED"
+    },
+    {
+      "filename": "1000270698.jpg",
+      "role": "Handwritten Bill Photo (Moto G64 5G camera, Sambandam Cycles)",
+      "evidence_id": "ART-008-46AF2983",
+      "file_size_bytes": 1322572,
+      "detected_mime": "image/jpeg",
+      "client_sha256": "46af2983f6efb3c53b3a5b6f766d475e6bb4c3cac01e8c741c657df1d11cd210",
+      "cas_sha256": "46af2983f6efb3c53b3a5b6f766d475e6bb4c3cac01e8c741c657df1d11cd210",
+      "sha256_match": true,
+      "bitstream_verified": true,
+      "upload_duration_ms": 189.96,
+      "job_id": "JOB-6fd396fe8cf7",
+      "initial_job_status": "COMPLETED"
+    },
+    {
+      "filename": "1000270702.png",
+      "role": "Handwritten Bill High-Res Scan (Sambandam Cycles Mandaveli)",
+      "evidence_id": "ART-009-6592F125",
+      "file_size_bytes": 4754869,
+      "detected_mime": "image/png",
+      "client_sha256": "6592f125bc6f5aa3fd257bc104dea48a942e416410db845826c99e4ea34ea78e",
+      "cas_sha256": "6592f125bc6f5aa3fd257bc104dea48a942e416410db845826c99e4ea34ea78e",
+      "sha256_match": true,
+      "bitstream_verified": true,
+      "upload_duration_ms": 412.6,
+      "job_id": "JOB-6762d7be09bc",
+      "initial_job_status": "COMPLETED"
+    },
+    {
+      "filename": "1000270703.png",
+      "role": "Designed Comparison Infographic (Screenshot vs Statement)",
+      "evidence_id": "ART-010-359E2C3B",
+      "file_size_bytes": 4720055,
+      "detected_mime": "image/png",
+      "client_sha256": "359e2c3ba48791272021be2d30a34cc78201ad7da7348f1d117865b66c635ba7",
+      "cas_sha256": "359e2c3ba48791272021be2d30a34cc78201ad7da7348f1d117865b66c635ba7",
+      "sha256_match": true,
+      "bitstream_verified": true,
+      "upload_duration_ms": 328.4,
+      "job_id": "JOB-3fc07354b702",
+      "initial_job_status": "COMPLETED"
+    }
+  ],
+  "sse_events_count": 1,
+  "total_case_artifacts": 10
+}

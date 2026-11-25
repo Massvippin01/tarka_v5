@@ -88,6 +88,8 @@ class OCRExtractor:
         # Inspect and validate image with Pillow
         try:
             with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                from PIL import ImageOps
+                pil_img = ImageOps.exif_transpose(pil_img) or pil_img
                 img_width, img_height = pil_img.size
                 img_format = pil_img.format or "PNG"
                 # Convert to RGB if palette/RGBA

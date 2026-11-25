@@ -60,12 +60,14 @@ class ReportRequest(BaseModel):
 
 
 class ReviewActionRequest(BaseModel):
-    target_id: str = Field(..., description="Finding ID or Gap ID being reviewed")
-    decision: str = Field(..., description="RESOLVE, ACCEPT, REJECT, MARK_UNREADABLE, CONFIRM_ABSENT, or CORRECT")
+    target_id: str = Field(..., description="Finding ID, Gap ID, or Observation ID being reviewed")
+    decision: str = Field(..., description="RESOLVE, ACCEPT, REJECT, MARK_UNREADABLE, CONFIRM_ABSENT, CORRECT, VERIFIED, DISPUTED, or UNVERIFIED")
     reviewed_by: Optional[str] = Field(None, description="Examiner ID / Name (defaults to authenticated user)")
     notes: Optional[str] = Field(None, description="Investigator rationale and observational evidence")
     scope: Optional[str] = Field(None, description="Mandatory examination scope when decision is CONFIRM_ABSENT")
-    target_type: Optional[str] = Field(None, description="'finding' or 'gap' (auto-detected if omitted)")
+    target_type: Optional[str] = Field(None, description="'finding', 'gap', or 'observation' (auto-detected if omitted)")
+    correction_payload: Optional[Dict[str, Any]] = Field(None, description="Examiner correction dictionary while preserving original extraction")
+    correction_basis: Optional[str] = Field(None, description="Factual basis for correction (e.g. manual visual inspection)")
 
 
 class IngestFilesRequest(BaseModel):
@@ -533,7 +535,10 @@ def record_examiner_review(
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
 
-    valid_decisions = {"RESOLVE", "ACCEPT", "REJECT", "MARK_UNREADABLE", "CONFIRM_ABSENT", "CORRECT"}
+    valid_decisions = {
+        "RESOLVE", "ACCEPT", "REJECT", "MARK_UNREADABLE", "CONFIRM_ABSENT", "CORRECT",
+        "VERIFIED", "DISPUTED", "UNVERIFIED"
+    }
     decision_norm = req.decision.strip().upper()
     if decision_norm not in valid_decisions:
         raise HTTPException(
@@ -557,6 +562,8 @@ def record_examiner_review(
         notes=req.notes,
         scope=req.scope,
         target_type=req.target_type,
+        correction_payload=req.correction_payload,
+        correction_basis=req.correction_basis,
     )
 
 
