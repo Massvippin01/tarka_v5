@@ -13,7 +13,7 @@ import { useCaseStore } from '../../store/useCaseStore';
 import { useBundleCaseStore } from '../../store/useBundleCaseStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { getCanonicalCase } from '../../fixtures/cases';
-import { selectCaseActionFinancials } from '../../selectors/actionSelectors';
+import { selectGoldenHour } from '../../lib/goldenHour';
 import { ProgressRing } from '../ui/ProgressRing';
 import { Button } from '../ui/Button';
 import { CaseStatusControl } from '../../components/tarka/cases/CaseStatusControl';
@@ -41,13 +41,9 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const caseId = activeCaseId || 'CASE-2026-001';
   const canonicalCase = getCanonicalCase(caseId);
   useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
-  const financials = selectCaseActionFinancials(caseId);
-
-  // Golden hour format
-  const ghMins = financials.goldenHourRemainingMins;
-  const ghHours = Math.floor(ghMins / 60);
-  const ghMinsRemainder = ghMins % 60;
-  const ghText = ghMins <= 0 ? 'Expired' : `${ghHours > 0 ? `${ghHours}h ` : ''}${ghMinsRemainder}m`;
+  const gh = selectGoldenHour(caseId); // same function the sidebar case card uses
+  const ghMins = gh.mins;
+  const ghText = gh.text;
   const ghPercent = Math.max(0, Math.min(100, (ghMins / 180) * 100));
 
   const isCaseUnknown =
