@@ -1,5 +1,6 @@
 import type { FreezeAction } from '../../selectors/caseSelectors';
 import { formatInr } from '../../lib/formatInr';
+import { upiHandleOf } from '../../lib/upiHandles';
 
 export type NoticeStatus = 'SENT' | 'ACKNOWLEDGED' | 'FROZEN' | 'RELEASED' | 'REFUSED';
 
@@ -39,9 +40,10 @@ export interface BankKey {
 export function bankKeyOf(r: { ifsc: string; bank: string; holderName: string; accountMasked: string }): BankKey {
   const ifsc = (r.ifsc || '').trim().toUpperCase();
   if (IFSC.test(ifsc)) return { key: ifsc.slice(0, 4), label: r.bank || `Bank code ${ifsc.slice(0, 4)}`, known: true };
-  const handle = /@([a-z0-9._-]+)\s*$/i.exec(r.holderName) ?? /@([a-z0-9._-]+)\s*$/i.exec(r.accountMasked);
+  const handle = upiHandleOf(r.holderName) ?? upiHandleOf(r.accountMasked);
+  if (handle?.bank) return { key: `@${handle.handle}`.slice(0, 11), label: handle.bank, known: true };
   if (handle) {
-    const h = `@${handle[1].toLowerCase()}`;
+    const h = `@${handle.handle}`;
     return { key: h.slice(0, 11), label: `UPI handle ${h} (bank not known)`, known: false };
   }
   if (r.bank) return { key: r.bank.trim().slice(0, 11).toUpperCase(), label: r.bank, known: true };

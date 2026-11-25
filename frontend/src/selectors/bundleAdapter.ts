@@ -4,7 +4,7 @@
  * Built-in demo fixtures pass through untouched, so screens never branch on where data came from.
  */
 import { useQueries, useQuery } from "@tanstack/react-query";
-import apiClient from "../api/client";
+import { fetchNetworks, fetchRawBundle } from "../api/caseQueries";
 import { CANONICAL_CASES, type CanonicalCaseAccount, type CanonicalCaseFixture, type CanonicalCaseTransaction } from "../fixtures/cases";
 import { useBundleCaseStore } from "../store/useBundleCaseStore";
 
@@ -180,13 +180,9 @@ export function bundleToCaseFixture(bundle: BackendBundle, networks?: BackendNet
 
 /** Fetch bundle + network roles and register the mapped case so resolveCase()/findCase() see it. */
 export async function loadBundleCase(caseId: string): Promise<CanonicalCaseFixture> {
-  const id = encodeURIComponent(caseId);
   const [bundle, networks] = await Promise.all([
-    apiClient.get<BackendBundle>(`/api/v1/cases/${id}/bundle`).then((r) => r.data),
-    apiClient
-      .get<BackendNetworks>(`/api/v1/cases/${id}/networks`)
-      .then((r) => r.data)
-      .catch(() => null), // roles are optional; the graph still renders without them
+    fetchRawBundle<BackendBundle>(caseId),
+    fetchNetworks<BackendNetworks>(caseId).catch(() => null), // roles are optional; the graph still renders without them
   ]);
   const fixture = bundleToCaseFixture({ ...bundle, caseId }, networks);
   useBundleCaseStore.getState().put(fixture);

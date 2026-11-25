@@ -17,6 +17,7 @@ import { selectGoldenHour } from '../../lib/goldenHour';
 import { ProgressRing } from '../ui/ProgressRing';
 import { Button } from '../ui/Button';
 import { CaseStatusControl } from '../../components/tarka/cases/CaseStatusControl';
+import { ProjectLifecyclePill, useProjectLifecycle } from './ProjectLifecyclePill';
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useV6Theme } from './useV6Theme';
 import { NotificationCenterPopover } from '../../components/tarka/notifications/NotificationCenterPopover';
@@ -39,6 +40,7 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const { toggleAskTarka, setIntelligenceBriefOpen } = useTarkaUiStore();
 
   const caseId = activeCaseId || 'CASE-2026-001';
+  const lifecycle = useProjectLifecycle(caseId);
   const canonicalCase = getCanonicalCase(caseId);
   useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
   const gh = selectGoldenHour(caseId); // same function the sidebar case card uses
@@ -119,11 +121,15 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
 
       {/* Interactive Case Lifecycle Status Control */}
       <div className="shrink-0">
-        <CaseStatusControl
-          caseId={caseId}
-          currentStatus={(activeCase as any)?.status || 'INVESTIGATING'}
-          isArchived={activeCase && (activeCase as any).status === 'ARCHIVED'}
-        />
+        {lifecycle && (activeCase as any)?.status !== 'ARCHIVED' ? (
+          <ProjectLifecyclePill caseId={caseId} lifecycle={lifecycle} />
+        ) : (
+          <CaseStatusControl
+            caseId={caseId}
+            currentStatus={(activeCase as any)?.status || 'INVESTIGATING'}
+            isArchived={activeCase && (activeCase as any).status === 'ARCHIVED'}
+          />
+        )}
       </div>
 
       {/* Quick Search / Command Palette Trigger */}

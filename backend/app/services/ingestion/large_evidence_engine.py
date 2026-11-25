@@ -551,6 +551,7 @@ class IngestionJobManager:
             db.commit()
 
     SYSTEM_ACTOR = "TARKA (automatic)"
+    _SEAL_ACTIONS = {"Evidence sealed", "Sealed in evidence store", "Fingerprint taken"}
 
     def _custody(self, job: IngestionJob, action: str, detail: str = "", actor: Optional[str] = None) -> None:
         with closing(sqlite3.connect(self._db_path)) as db:
@@ -566,8 +567,13 @@ class IngestionJobManager:
                 "SELECT job_id, ts, actor, action, detail FROM custody WHERE case_id=? ORDER BY ts, rowid", (case_id,)
             ).fetchall()
         logged = {r[0] for r in rows}
-        events = [{"job_id": j, "ts": ts, "actor": a, "action": act, "detail": d, "reconstructed": False}
-                  for j, ts, a, act, d in rows]
+        events, seen = [], set()
+        for j, ts, a, act, d in rows:
+            # The same file (same fingerprint) sealed again under the same job is a re-upload, not a second seal.
+            if act in self._SEAL_ACTIONS and (j, act, d) in seen:
+                act, d = "Duplicate re-upload", f"identical file already sealed; {d}"
+            seen.add((j, act, d))
+            events.append({"job_id": j, "ts": ts, "actor": a, "action": act, "detail": d, "reconstructed": False})
         for job in self.list_jobs({case_id}):
             if job.job_id in logged:
                 continue

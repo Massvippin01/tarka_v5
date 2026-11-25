@@ -101,12 +101,12 @@ class NcrpTextImportRequest(BaseModel):
 
 
 @router.get("")
-async def list_projects(user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
+def list_projects(user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     return [_visible(p, user) for p in _store().list()]
 
 
 @router.post("")
-async def create_project(req: ProjectCreate, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def create_project(req: ProjectCreate, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         return _store().create(req.name, req.description, user.user_id)
     except ValueError as e:
@@ -132,7 +132,7 @@ class NewCase(BaseModel):
 
 
 @router.post("/intake")
-async def start_intake(req: IntakeRequest, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def start_intake(req: IntakeRequest, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Files first, cases later: a new project plus a holding case to upload everything into."""
     name = req.name.strip() or f"Intake {time.strftime('%d %b %Y, %H:%M')}"
     store = _store()
@@ -143,7 +143,7 @@ async def start_intake(req: IntakeRequest, user: UserIdentity = Depends(get_curr
 
 
 @router.post("/cases")
-async def create_case(req: NewCase, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def create_case(req: NewCase, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Open a new case; the creator gets access to it."""
     try:
         return _store().register_case(user.user_id, req.title, req.project_id, req.details.model_dump())
@@ -152,7 +152,7 @@ async def create_case(req: NewCase, user: UserIdentity = Depends(get_current_use
 
 
 @router.get("/cases")
-async def list_cases(user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
+def list_cases(user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     """Every case the user can open: registered cases, project members and cases with uploads."""
     auth = AuthService.get_instance()
     known = {c["case_id"]: c for c in _store().all_cases()}
@@ -164,7 +164,7 @@ async def list_cases(user: UserIdentity = Depends(get_current_user)) -> List[Dic
 
 
 @router.patch("/cases/{case_id}")
-async def patch_case(case_id: str, req: CasePatch, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def patch_case(case_id: str, req: CasePatch, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     try:
         return _store().set_case(_case(case_id, user), lifecycle=req.lifecycle, assignee=req.assignee)
     except ValueError as e:
@@ -203,7 +203,7 @@ async def post_case_handover(case_id: str, req: HandoverRequest,
 
 
 @router.get("/{project_id}")
-async def get_project(project_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def get_project(project_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     p = _store().get(project_id)
     if not p:
         raise HTTPException(404, f"Project '{project_id}' not found.")
@@ -224,7 +224,7 @@ def _editable_project(project_id: str, user: UserIdentity) -> Dict[str, Any]:
 
 
 @router.patch("/{project_id}")
-async def patch_project(project_id: str, req: ProjectPatch, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def patch_project(project_id: str, req: ProjectPatch, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     _editable_project(project_id, user)
     try:
         return _visible(_store().update(project_id, req.name, req.description, req.archived), user)
@@ -235,7 +235,7 @@ async def patch_project(project_id: str, req: ProjectPatch, user: UserIdentity =
 
 
 @router.post("/{project_id}/cases")
-async def link_case(project_id: str, req: CaseLink, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def link_case(project_id: str, req: CaseLink, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Link a case to this project (moves it if it was in another)."""
     _editable_project(project_id, user)
     try:
@@ -245,7 +245,7 @@ async def link_case(project_id: str, req: CaseLink, user: UserIdentity = Depends
 
 
 @networks_router.get("/{case_id}/networks")
-async def get_networks(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+def get_networks(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Networks (connected money flows) with mule scores, hop distance, review queue and cross-case hits."""
     case_id = _case(case_id, user)
     result = _visible_networks(case_id, user, max_members=MAX_MEMBERS_SHOWN)  # names only cases the user may see
@@ -300,7 +300,7 @@ def _add_proposals(case_id: str, result: Dict[str, Any]) -> None:
 
 
 @networks_router.post("/{case_id}/networks/create-cases")
-async def create_cases_from_networks(case_id: str, req: CreateCasesRequest,
+def create_cases_from_networks(case_id: str, req: CreateCasesRequest,
                                      user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Officer-confirmed: turn proposed networks into cases (or add them to the matching case). Never repeats one."""
     case_id = _case(case_id, user)
@@ -385,7 +385,7 @@ async def list_network_members(
 
 
 @networks_router.put("/{case_id}/networks/{network_id}/status")
-async def set_network_status(case_id: str, network_id: str, req: NetworkDecision,
+def set_network_status(case_id: str, network_id: str, req: NetworkDecision,
                              user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Record the investigator's decision / status for one network (audit-logged, hash-chained)."""
     case_id = _case(case_id, user)
@@ -405,13 +405,13 @@ async def set_network_status(case_id: str, network_id: str, req: NetworkDecision
 
 
 @networks_router.get("/{case_id}/networks/{network_id}/history")
-async def network_status_history(case_id: str, network_id: str,
+def network_status_history(case_id: str, network_id: str,
                                  user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     return _decisions().history(_case(case_id, user), network_id)
 
 
 @networks_router.post("/{case_id}/networks/{network_id}/split")
-async def split_network(case_id: str, network_id: str, req: SplitRequest,
+def split_network(case_id: str, network_id: str, req: SplitRequest,
                         user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Copy one network's transactions into a new linked case (same project, lifecycle Investigating)."""
     mgr = IngestionJobManager.get_instance()
@@ -441,7 +441,7 @@ _EXPORT_FORMATS = ("i2", "stix", "suspects")
 
 
 @networks_router.get("/{case_id}/export")
-async def export_case(case_id: str, format: str = "i2", user: UserIdentity = Depends(get_current_user)):
+def export_case(case_id: str, format: str = "i2", user: UserIdentity = Depends(get_current_user)):
     """Hand the case to other tools in formats they already import.
 
     i2: entity-link CSV for i2 Analyst's Notebook / Maltego. stix: STIX 2.1 bundle of mule identifiers (CERT-In / I4C).
