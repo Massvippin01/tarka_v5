@@ -74,7 +74,7 @@ const RailItem: React.FC<RailItemProps> = ({ icon, label, count, active, onClick
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
       collapsed ? 'size-9 justify-center mx-auto' : 'w-full gap-2.5 h-8 px-2.5 text-left text-[12.5px]',
       active
-        ? 'bg-[var(--glass-3)] border-[var(--line-2)] text-[var(--fg-1)] font-semibold shadow-sm'
+        ? 'v6-rail-active text-[var(--fg-1)] font-semibold'
         : 'border-transparent text-[var(--fg-2)] font-medium hover:bg-[var(--glass-2)] hover:text-[var(--fg-1)]'
     )}
   >
@@ -213,7 +213,7 @@ export const V6Rail: React.FC<V6RailProps> = ({ isCollapsed = false, onToggleCol
 
         {/* Focus: Project > Case > Network */}
         {!isCollapsed && !isCaseUnknown && (
-          <div className="v6-glass rounded-xl p-2.5 mt-3 mb-1 shrink-0 space-y-1.5" data-testid="rail-focus">
+          <div className="v6-rail-focus rounded-xl p-2.5 mt-3 mb-1 shrink-0 space-y-1.5" data-testid="rail-focus">
             <div className="flex items-center gap-1 text-[10.5px] text-[var(--fg-3)] min-w-0" aria-label="Focus">
               {c.project && (
                 <>
