@@ -197,18 +197,20 @@ class ForensicJobOrchestrator:
         self,
         job_id: str,
         status: JobState,
-        stage: str,
-        progress: int,
+        stage: Optional[str] = None,
+        progress: int = 0,
         partial_data: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None,
+        stage_name: Optional[str] = None,
     ):
         """Updates job progression state and broadcasts SSE event to case subscribers."""
         job = self.jobs.get(job_id)
         if not job:
             return
 
+        effective_stage = stage_name or stage or status.value
         job.status = status
-        job.current_stage = stage
+        job.current_stage = effective_stage
         job.progress_percent = min(100, max(0, progress))
         job.updated_at_iso = datetime.now(timezone.utc).isoformat()
         if partial_data:

@@ -1,0 +1,62 @@
+[
+  {
+    "filename": "bench_small.png",
+    "size_bytes": 10248,
+    "size_mb": 0.01,
+    "sha256": "6c040d1a415010d7162d3d0319b35729bb35447143b9d79fffbdd737fc89cf33",
+    "status_code": 201,
+    "duration_seconds": 1.946,
+    "throughput_mb_s": 0.01,
+    "response_sample": "{\"case_id\":\"upi_payment_discrepancy\",\"status\":\"QUEUED\",\"job_id\":\"JOB-20261124175623-3288\",\"admitted_count\":1,\"total_submitted\":1,\"artifacts\":[{\"artifact_id\":\"ART-20261124175622-6C040D1A\",\"filename\":\"bench_small.png\",\"sha256\":\"6c040d1a415010d7162d3d0319b35729bb35447143b9d79fffbdd737fc89cf33\",\"file_ty",
+    "memory_delta_mb": 4.18,
+    "error": null
+  },
+  {
+    "filename": "bench_10mb.bin",
+    "size_bytes": 10485760,
+    "size_mb": 10.0,
+    "sha256": "07d939e83a2f3d907b97cee6be8cab80056436cfba5d94f370170873e2c6e3a8",
+    "status_code": 201,
+    "duration_seconds": 0.479,
+    "throughput_mb_s": 20.89,
+    "response_sample": "{\"case_id\":\"upi_payment_discrepancy\",\"status\":\"QUEUED\",\"job_id\":\"JOB-20261124175624-4050\",\"admitted_count\":1,\"total_submitted\":1,\"artifacts\":[{\"artifact_id\":\"ART-20261124175623-07D939E8\",\"filename\":\"bench_10mb.bin\",\"sha256\":\"07d939e83a2f3d907b97cee6be8cab80056436cfba5d94f370170873e2c6e3a8\",\"file_typ",
+    "memory_delta_mb": 0.0,
+    "error": null
+  },
+  {
+    "filename": "bench_100mb.bin",
+    "size_bytes": 104857600,
+    "size_mb": 100.0,
+    "sha256": "118dc26811a958c64c0e38eeb95459b1b020ee55da4596620b07c7637b16ec8f",
+    "status_code": 201,
+    "duration_seconds": 3.304,
+    "throughput_mb_s": 30.27,
+    "response_sample": "{\"case_id\":\"upi_payment_discrepancy\",\"status\":\"QUEUED\",\"job_id\":\"JOB-20261124175628-8379\",\"admitted_count\":1,\"total_submitted\":1,\"artifacts\":[{\"artifact_id\":\"ART-20261124175628-118DC268\",\"filename\":\"bench_100mb.bin\",\"sha256\":\"118dc26811a958c64c0e38eeb95459b1b020ee55da4596620b07c7637b16ec8f\",\"file_ty",
+    "memory_delta_mb": -0.61,
+    "error": null
+  },
+  {
+    "filename": "bench_500mb.bin",
+    "size_bytes": 524288000,
+    "size_mb": 500.0,
+    "sha256": "d2ee2ba53d0c76120976c852e91132dd8712855369c443ee01f9eb79f840053b",
+    "status_code": 201,
+    "duration_seconds": 30.493,
+    "throughput_mb_s": 16.4,
+    "response_sample": "{\"case_id\":\"upi_payment_discrepancy\",\"status\":\"QUEUED\",\"job_id\":\"JOB-20261124175706-6560\",\"admitted_count\":1,\"total_submitted\":1,\"artifacts\":[{\"artifact_id\":\"ART-20261124175705-D2EE2BA5\",\"filename\":\"bench_500mb.bin\",\"sha256\":\"d2ee2ba53d0c76120976c852e91132dd8712855369c443ee01f9eb79f840053b\",\"file_ty",
+    "memory_delta_mb": 3.63,
+    "error": null
+  },
+  {
+    "filename": "bench_1gb.bin",
+    "size_bytes": 1073741824,
+    "size_mb": 1024.0,
+    "sha256": "40eac1b857a6aa5cbf5c7d2fe33c987cc94dfce06112d02c1e53eacdaf93abd0",
+    "status_code": 0,
+    "duration_seconds": 10.715,
+    "throughput_mb_s": 95.56,
+    "response_sample": "URLError: <urlopen error [WinError 10055] An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full>",
+    "memory_delta_mb": -521.25,
+    "error": "URLError: <urlopen error [WinError 10055] An operation on a socket could not be performed because the system lacked sufficient buffer space or because a queue was full>"
+  }
+]

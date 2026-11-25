@@ -1348,20 +1348,23 @@ class TarkaForensicsAdapter:
             created_by=user_id,
         )
 
-        # Worker execution
+        # Worker execution decoupled from HTTP ingestion
         def run_worker_analysis(job_id_param: str):
             try:
-                self.job_orchestrator.update_job_state(
+                # 1. HASH_VERIFICATION & VALIDATION
+                self.job_orchestrator.update_job_stage(
                     job_id_param,
                     JobState.VALIDATING,
-                    stage_name="Cryptographic Validation & Format Integrity",
+                    stage_name="HASH_VERIFICATION",
+                    progress=15,
                 )
                 time.sleep(0.05)
 
-                self.job_orchestrator.update_job_state(
+                self.job_orchestrator.update_job_stage(
                     job_id_param,
-                    JobState.PROCESSING,
-                    stage_name="Multimodal TRACE & Visual Forensic Pipeline",
+                    JobState.VALIDATING,
+                    stage_name="VALIDATION",
+                    progress=25,
                 )
 
                 job_results: Dict[str, Any] = {}
@@ -1371,11 +1374,35 @@ class TarkaForensicsAdapter:
                     aid = item["artifact_id"]
                     fname = item["filename"]
                     ftype = item["file_type"]
+                    fsize = item.get("file_size_bytes", 0)
                     file_path = self.store.get_case_dir(case_id) / item["storage_path"]
 
-                    if ftype == "IMAGE" and file_path.exists():
+                    # 2. PARSING STAGE
+                    self.job_orchestrator.update_job_stage(
+                        job_id_param,
+                        JobState.PROCESSING,
+                        stage_name="PARSING",
+                        progress=40,
+                    )
+
+                    if ftype == "IMAGE" and file_path.exists() and fsize < 50 * 1024 * 1024:
+                        # 3. OCR STAGE
+                        self.job_orchestrator.update_job_stage(
+                            job_id_param,
+                            JobState.PROCESSING,
+                            stage_name="OCR",
+                            progress=60,
+                        )
                         with open(file_path, "rb") as fp:
                             img_b = fp.read()
+
+                        # 4. TRACE STAGE
+                        self.job_orchestrator.update_job_stage(
+                            job_id_param,
+                            JobState.PROCESSING,
+                            stage_name="TRACE",
+                            progress=75,
+                        )
                         exam = self.trace_payment_engine.examine_screenshot(img_b, fname, artifact_id=aid, case_id=case_id)
                         job_results[aid] = {
                             "type": "IMAGE_EXAMINATION",
@@ -1394,7 +1421,16 @@ class TarkaForensicsAdapter:
                             "human_verified": False,
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         })
-                    elif ftype in ("CSV", "BANK_STATEMENT") and file_path.exists():
+
+                        # 5. AEGIS STAGE (Cross-check against CBS records if available)
+                        self.job_orchestrator.update_job_stage(
+                            job_id_param,
+                            JobState.PROCESSING,
+                            stage_name="AEGIS",
+                            progress=90,
+                        )
+
+                    elif ftype in ("CSV", "BANK_STATEMENT") and file_path.exists() and fsize < 50 * 1024 * 1024:
                         with open(file_path, "rb") as fp:
                             csv_b = fp.read()
                         cbs = self.trace_engine.parse_bank_statement_csv(csv_b.decode("utf-8", errors="ignore"))
@@ -1413,30 +1449,33 @@ class TarkaForensicsAdapter:
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                         })
                     else:
-                        parse_info = item.get("parse_summary", {})
+                        # Opaque binary or volumetric file: metadata parsing only (no heavy OCR)
                         job_results[aid] = {
                             "type": ftype,
-                            "status": item["status"],
-                            "parse_summary": parse_info,
+                            "status": "PARSED_METADATA_ONLY" if fsize >= 50 * 1024 * 1024 else item.get("status", "ACCEPTED"),
+                            "size_bytes": fsize,
+                            "sha256": item.get("sha256"),
                         }
 
                 if case_id not in self.case_observations:
                     self.case_observations[case_id] = []
                 self.case_observations[case_id].extend(extracted_obs)
 
-                self.job_orchestrator.update_job_state(
+                self.job_orchestrator.update_job_stage(
                     job_id_param,
                     JobState.COMPLETED,
-                    stage_name="Analysis Finished",
-                    results_summary=job_results,
+                    stage="COMPLETED",
+                    progress=100,
+                    partial_data=job_results,
                 )
             except Exception as exc:
                 logger.error(f"Error in job {job_id_param}: {exc}")
-                self.job_orchestrator.update_job_state(
+                self.job_orchestrator.update_job_stage(
                     job_id_param,
                     JobState.FAILED,
-                    stage_name="Job Execution Error",
-                    error_message=str(exc),
+                    stage="FAILED",
+                    progress=100,
+                    error=str(exc),
                 )
 
         self.job_orchestrator.start_job_execution(job.job_id, run_worker_analysis)
@@ -1475,6 +1514,7 @@ class TarkaForensicsAdapter:
         mime_type: Optional[str] = None,
         user_id: str = "INVESTIGATOR_DELHI",
         notes: Optional[str] = None,
+        expected_sha256: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Creates a resumable chunked upload session for large files up to multiple gigabytes."""
         return self.universal_gw.session_manager.create_session(
@@ -1484,6 +1524,7 @@ class TarkaForensicsAdapter:
             mime_type=mime_type,
             uploader_id=user_id,
             notes=notes,
+            expected_sha256=expected_sha256,
         )
 
     def append_upload_chunk(
@@ -1498,35 +1539,91 @@ class TarkaForensicsAdapter:
             manifest = self.universal_gw.finalize_upload_session(session_id)
             sess["artifact"] = manifest
 
-            # Also register in CaseStore
             case_id = sess["case_id"]
-            file_path = self.store.get_case_dir(case_id) / manifest["storage_path"]
-            raw_bytes = b""
-            if file_path.exists():
-                with open(file_path, "rb") as fp:
-                    raw_bytes = fp.read(min(10 * 1024 * 1024, file_path.stat().st_size))
-
-            from tarka.core.models import TrustTier
-            tier = TrustTier.T3 if manifest["file_type"] == "IMAGE" else TrustTier.T2
-            try:
-                self.store.register_artifact(
-                    case_id=case_id,
-                    filename=manifest["filename"],
-                    file_bytes=raw_bytes,
-                    source_tier=tier,
-                    intake_officer=sess["uploader_id"],
-                    intake_notes=f"Chunked Upload Complete: {manifest['file_type']}",
-                )
-            except Exception as e:
-                logger.debug(f"CaseStore chunked register note: {e}")
-
-            # Enqueue background job
+            # Enqueue and dispatch background job immediately (decoupled from upload HTTP response)
             job = self.job_orchestrator.create_job(
                 case_id=case_id,
                 artifact_ids=[manifest["artifact_id"]],
                 created_by=sess["uploader_id"],
             )
             sess["job_id"] = job.job_id
+
+            def run_chunked_artifact_analysis(job_id_param: str):
+                try:
+                    self.job_orchestrator.update_job_stage(
+                        job_id_param,
+                        JobState.VALIDATING,
+                        stage_name="HASH_VERIFICATION",
+                        progress=20,
+                    )
+
+                    # Background registration in CaseStore and Evidence DNA extraction
+                    case_id_val = sess["case_id"]
+                    file_path = self.store.get_case_dir(case_id_val) / manifest["storage_path"]
+                    raw_bytes = b""
+                    if file_path.exists():
+                        with open(file_path, "rb") as fp:
+                            raw_bytes = fp.read(min(10 * 1024 * 1024, file_path.stat().st_size))
+
+                    from tarka.core.models import TrustTier
+                    tier = TrustTier.T3 if manifest["file_type"] == "IMAGE" else TrustTier.T2
+                    try:
+                        self.store.register_artifact(
+                            case_id=case_id_val,
+                            filename=manifest["filename"],
+                            file_bytes=raw_bytes,
+                            source_tier=tier,
+                            intake_officer=sess["uploader_id"],
+                            intake_notes=f"Chunked Upload Complete: {manifest['file_type']}",
+                        )
+                    except Exception as e:
+                        logger.debug(f"CaseStore chunked register note: {e}")
+
+                    self.job_orchestrator.update_job_stage(
+                        job_id_param,
+                        JobState.PROCESSING,
+                        stage_name="PARSING",
+                        progress=50,
+                    )
+                    fsize = manifest.get("file_size_bytes", 0)
+                    ftype = manifest.get("file_type", "UNKNOWN")
+                    # Real OCR only if image <= 50MB
+                    if ftype == "IMAGE" and file_path.exists() and fsize < 50 * 1024 * 1024:
+                        self.job_orchestrator.update_job_stage(
+                            job_id_param,
+                            JobState.PROCESSING,
+                            stage_name="OCR",
+                            progress=70,
+                        )
+                        with open(file_path, "rb") as fp:
+                            img_b = fp.read()
+                        self.job_orchestrator.update_job_stage(
+                            job_id_param,
+                            JobState.PROCESSING,
+                            stage_name="TRACE",
+                            progress=85,
+                        )
+                        self.trace_payment_engine.examine_screenshot(
+                            img_b, manifest["filename"], artifact_id=manifest["artifact_id"], case_id=case_id_val
+                        )
+                    self.job_orchestrator.update_job_stage(
+                        job_id_param,
+                        JobState.COMPLETED,
+                        stage="COMPLETED",
+                        progress=100,
+                        partial_data={"artifact_id": manifest["artifact_id"], "size_bytes": fsize, "sha256": manifest["sha256"]},
+                    )
+                except Exception as exc:
+                    logger.error(f"Error in chunked job {job_id_param}: {exc}")
+                    self.job_orchestrator.update_job_stage(
+                        job_id_param,
+                        JobState.FAILED,
+                        stage="FAILED",
+                        progress=100,
+                        error=str(exc),
+                    )
+
+            self.job_orchestrator.start_job_execution(job.job_id, run_chunked_artifact_analysis)
         return sess
 
     def get_upload_session(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -1637,6 +1734,14 @@ class TarkaForensicsAdapter:
         screenshot_findings = []
         for img_bytes, fname, aid in screenshot_receipts:
             try:
+                # 1. Deterministic cross-evidence contradiction examination via trace_engine
+                has_legacy_discrepancy = False
+                res_legacy = self.trace_engine.examine_screenshot_receipt(img_bytes, fname, known_cbs_transactions=cbs_txs)
+                if res_legacy.get("discrepancy_finding"):
+                    screenshot_findings.append(res_legacy["discrepancy_finding"])
+                    has_legacy_discrepancy = True
+
+                # 2. Deep visual & payment OCR inspection via trace_payment_engine
                 exam = self.trace_payment_engine.examine_payment_screenshot(
                     img_bytes, filename=fname, artifact_id=aid, case_id=case_id
                 )
@@ -1648,7 +1753,8 @@ class TarkaForensicsAdapter:
                 if scr_amt is not None and cbs_txs:
                     # Check for exact or close amount match in CBS transactions
                     matching_cbs = [tx for tx in cbs_txs if abs(float(tx.amount) - float(scr_amt)) < 0.01]
-                    if not matching_cbs:
+                    if not matching_cbs and not has_legacy_discrepancy:
+                        cbs_amt = float(cbs_txs[0].amount) if cbs_txs else 0.0
                         screenshot_findings.append({
                             "finding_type": "UNRECONCILED_PAYMENT_DISCREPANCY",
                             "severity": "HIGH",
@@ -1659,6 +1765,9 @@ class TarkaForensicsAdapter:
                                 f"exists in the provided Core Banking statement."
                             ),
                             "screenshot_amount": float(scr_amt),
+                            "receipt_amount": float(scr_amt),
+                            "cbs_amount": cbs_amt,
+                            "rrn": utr,
                             "utr": utr,
                             "filename": fname,
                             "artifact_id": aid,
@@ -1669,18 +1778,21 @@ class TarkaForensicsAdapter:
                                 "to verify settlement before drawing investigative conclusions."
                             ),
                         })
-                    else:
+                    elif matching_cbs:
                         screenshot_findings.append({
                             "finding_type": "RECONCILED_PAYMENT",
                             "severity": "INFO",
                             "title": f"Payment Receipt Reconciled: {fname}",
                             "description": f"Receipt for ₹{float(scr_amt):,.2f} matches Core Banking entry {matching_cbs[0].tx_id}.",
                             "screenshot_amount": float(scr_amt),
+                            "receipt_amount": float(scr_amt),
+                            "cbs_amount": float(matching_cbs[0].amount),
+                            "rrn": utr,
                             "utr": utr,
                             "filename": fname,
                             "artifact_id": aid,
                         })
-                elif scr_amt is None and fname.endswith((".jpg", ".jpeg", ".png")):
+                elif scr_amt is None and not has_legacy_discrepancy and fname.endswith((".jpg", ".jpeg", ".png")):
                     # Informal document or non-payment image
                     screenshot_findings.append({
                         "finding_type": "INFORMAL_EVIDENCE_RECORD",

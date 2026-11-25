@@ -182,13 +182,42 @@ export const EvidenceRegister: React.FC<EvidenceRegisterProps> = ({
     if (stagedFiles.length === 0) return;
     setIsUploading(true);
     setUploadError(null);
-    setUploadProgress(15);
-    setUploadStatusMsg("Streaming evidence bitstreams to CAS...");
+    setUploadProgress(5);
+    setUploadStatusMsg("Preparing evidence intake...");
+
+    const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB per chunk
 
     try {
-      const res = await forensicsApi.ingestEvidenceFiles(caseId, stagedFiles, "Asia/Kolkata");
+      let admittedCount = 0;
+      for (let i = 0; i < stagedFiles.length; i++) {
+        const file = stagedFiles[i];
+        if (file.size > 10 * 1024 * 1024) {
+          // Large file (> 10MB): Resumable chunked upload protocol
+          setUploadStatusMsg(`Creating resumable session for ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+          const session = await forensicsApi.createUploadSession(caseId, file.name, file.size, file.type || "application/octet-stream");
+          const sessionId = session.session_id;
+
+          let offset = 0;
+          while (offset < file.size) {
+            const chunk = file.slice(offset, offset + CHUNK_SIZE);
+            const pct = Math.round(((offset + chunk.size) / file.size) * 100);
+            setUploadProgress(pct);
+            setUploadStatusMsg(`Uploading ${file.name}: ${pct}% (${(offset / (1024 * 1024)).toFixed(1)} / ${(file.size / (1024 * 1024)).toFixed(1)} MB)...`);
+
+            await forensicsApi.uploadChunk(caseId, sessionId, chunk, offset);
+            offset += chunk.size;
+          }
+          admittedCount++;
+        } else {
+          // Small file (<= 10MB): Direct streaming intake
+          setUploadStatusMsg(`Streaming ${file.name} to CAS...`);
+          await forensicsApi.ingestEvidenceFiles(caseId, [file], "Asia/Kolkata");
+          admittedCount++;
+        }
+      }
+
       setUploadProgress(100);
-      setUploadStatusMsg(`Successfully admitted ${res.admitted_count || stagedFiles.length} evidence artifact(s).`);
+      setUploadStatusMsg(`Successfully admitted ${admittedCount} evidence artifact(s) into CAS.`);
       setStagedFiles([]);
       onRefresh?.();
       setTimeout(() => {

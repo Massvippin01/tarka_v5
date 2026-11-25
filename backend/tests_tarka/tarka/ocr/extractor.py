@@ -40,22 +40,31 @@ class OCRExtractor:
     def __init__(self, preferred_engine: str = "PaddleOCR"):
         self.preferred_engine = preferred_engine
         self._paddle_ocr = None
+        self._rapid_ocr = None
         self._init_paddle_engine()
 
     def _init_paddle_engine(self):
-        """Initializes PaddleOCR engine lazily or safely."""
+        """Initializes PaddleOCR or RapidOCR engine safely."""
         try:
             from paddleocr import PaddleOCR
-            # Initialize with English language and mobile detection
             self._paddle_ocr = PaddleOCR(
                 ocr_version="PP-OCRv4",
                 lang="en",
                 use_textline_orientation=True,
             )
             logger.info("PaddleOCR engine initialized successfully.")
+            return
         except Exception as exc:
-            logger.warning(f"PaddleOCR engine initialization notice: {exc}")
+            logger.info(f"PaddleOCR not available, trying RapidOCR: {exc}")
             self._paddle_ocr = None
+
+        try:
+            from rapidocr_onnxruntime import RapidOCR
+            self._rapid_ocr = RapidOCR()
+            logger.info("RapidOCR (ONNX) engine initialized successfully.")
+        except Exception as exc:
+            logger.warning(f"Neither PaddleOCR nor RapidOCR available: {exc}")
+            self._rapid_ocr = None
 
     def extract_from_bytes(
         self,
@@ -96,10 +105,9 @@ class OCRExtractor:
         engine_name = "PaddleOCR"
         engine_version = "3.7.0"
 
-        # 1. Execute PaddleOCR
+        # 1. Execute PaddleOCR or RapidOCR
         if self._paddle_ocr is not None:
             try:
-                # Save temporarily or pass PIL / ndarray
                 import numpy as np
                 img_np = np.array(rgb_img)
                 res = self._paddle_ocr.predict(img_np)
@@ -110,7 +118,6 @@ class OCRExtractor:
                     rec_polys = raw_dict.get("rec_polys", [])
 
                     for idx, (text, score, poly) in enumerate(zip(rec_texts, rec_scores, rec_polys)):
-                        # Poly is typically 4x2 array: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
                         raw_coords = poly.tolist() if hasattr(poly, "tolist") else list(poly)
                         norm_poly = validate_and_normalize_coordinates(
                             coords=raw_coords,
@@ -132,6 +139,36 @@ class OCRExtractor:
                         )
             except Exception as exc:
                 logger.error(f"PaddleOCR inference exception: {exc}")
+        elif self._rapid_ocr is not None:
+            try:
+                import numpy as np
+                img_np = np.array(rgb_img)
+                res, _ = self._rapid_ocr(img_np)
+                engine_name = "RapidOCR"
+                engine_version = "1.4.4"
+                if res:
+                    for idx, (poly, text, score) in enumerate(res):
+                        raw_coords = poly.tolist() if hasattr(poly, "tolist") else list(poly)
+                        norm_poly = validate_and_normalize_coordinates(
+                            coords=raw_coords,
+                            img_width=img_width,
+                            img_height=img_height,
+                        )
+                        tok_id = f"tok_{artifact_id}_{idx + 1}"
+                        tokens.append(
+                            OCRToken(
+                                token_id=tok_id,
+                                artifact_id=artifact_id,
+                                run_id=run_id,
+                                text=str(text).strip(),
+                                confidence=round(float(score), 4),
+                                polygon=norm_poly,
+                                line_index=idx,
+                                token_index=0,
+                            )
+                        )
+            except Exception as exc:
+                logger.error(f"RapidOCR inference exception: {exc}")
         else:
             # Deterministic pure-Python OCR fallback when PaddleOCR C++ binaries are not present
             fallback_items = []

@@ -47,7 +47,7 @@ def extract_candidate_financial_fields(
     for tok in tokens:
         raw = tok.text
         # Look for explicit amount indications: currency symbol or 'Rs' or standalone numbers formatted as currency
-        if any(c in raw for c in ("₹", "Rs", "INR")) or re.search(r"\b\d{1,3}(?:,\d{3})+\b", raw):
+        if any(c in raw for c in ("₹", "Rs", "INR", "?")) or re.search(r"\b\d{1,3}(?:,\d{3})+\b", raw):
             amount_val = parse_monetary_amount(raw)
             if amount_val is not None:
                 cand_id = f"cand_amt_{artifact_id}_{len(candidates)+1}"

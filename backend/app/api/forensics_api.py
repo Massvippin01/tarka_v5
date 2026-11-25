@@ -16,7 +16,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, Response, UploadFile, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.adapters.tarka_forensics_adapter import TarkaForensicsAdapter
@@ -659,6 +659,7 @@ async def upload_case_multimodal_evidence(
 
 
 @router.get("/cases/{case_id}/jobs/{job_id}", tags=["Evidence Ingestion"])
+@router.get("/cases/{case_id}/evidence/jobs/{job_id}", tags=["Evidence Ingestion"])
 def get_case_job(
     case_id: str,
     job_id: str,
@@ -722,6 +723,7 @@ class CreateUploadSessionRequest(BaseModel):
     total_size_bytes: int
     mime_type: Optional[str] = "application/octet-stream"
     notes: Optional[str] = None
+    expected_sha256: Optional[str] = None
 
 
 @router.post("/cases/{case_id}/evidence/upload-sessions", tags=["Chunked Ingestion"], status_code=status.HTTP_201_CREATED)
@@ -729,18 +731,29 @@ def create_upload_session_endpoint(
     case_id: str,
     req: CreateUploadSessionRequest,
     user: UserIdentity = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> Response:
     """Initializes a new resumable chunked upload session for large evidence files (MB to GB scale)."""
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
     try:
-        return adapter.create_upload_session(
+        sess = adapter.create_upload_session(
             case_id=case_id,
             filename=req.filename,
             total_size_bytes=req.total_size_bytes,
             mime_type=req.mime_type,
             user_id=user.user_id,
             notes=req.notes,
+            expected_sha256=req.expected_sha256,
+        )
+        sess_id = sess["session_id"]
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content=sess,
+            headers={
+                "Location": f"/api/v1/forensics/cases/{case_id}/evidence/upload-sessions/{sess_id}",
+                "Upload-Offset": "0",
+                "Tus-Resumable": "1.0.0",
+            },
         )
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
@@ -754,7 +767,7 @@ async def upload_evidence_chunk_endpoint(
     request: Request,
     upload_offset: int = Header(..., alias="Upload-Offset"),
     user: UserIdentity = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> Response:
     """Appends an incoming chunk at the verified byte offset."""
     auth_service = AuthService.get_instance()
     auth_service.enforce_case_access(user, case_id)
@@ -763,12 +776,28 @@ async def upload_evidence_chunk_endpoint(
     chunk_bytes = await request.body()
     try:
         sess = adapter.append_upload_chunk(session_id, chunk_bytes, offset=upload_offset)
-        return sess
+        if sess["status"] == "COMPLETED":
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content=sess,
+                headers={
+                    "Upload-Offset": str(sess["total_size_bytes"]),
+                    "Tus-Resumable": "1.0.0",
+                },
+            )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=sess,
+            headers={
+                "Upload-Offset": str(sess["accepted_offset"]),
+                "Tus-Resumable": "1.0.0",
+            },
+        )
     except OffsetMismatchError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Offset mismatch: expected {exc.expected_offset}, received {exc.received_offset}",
-            headers={"Upload-Offset": str(exc.expected_offset)},
+            headers={"Upload-Offset": str(exc.expected_offset), "Tus-Resumable": "1.0.0"},
         )
     except KeyError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

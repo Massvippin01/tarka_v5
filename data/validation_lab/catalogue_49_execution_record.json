@@ -1,10 +1,10 @@
 {
-  "session_id": "SESS-20261124-0C4446",
+  "session_id": "SESS-20261124-67A1DE",
   "session_name": "49-Scenario Catalogue Full Verification Run",
   "mode": "CONTROLLED_EVALUATION",
   "examiner_id": "FOUNDER_VALIDATOR",
-  "created_at": "2026-11-24T15:46:04.715660+00:00",
-  "exported_at": "2026-11-24T15:46:11.276766+00:00",
+  "created_at": "2026-11-24T16:03:22.473614+00:00",
+  "exported_at": "2026-11-24T16:03:31.783855+00:00",
   "summary": {
     "total_tests": 49,
     "passed_tests": 49,
@@ -29,17 +29,17 @@
   },
   "operational_metrics": {
     "sample_count": 49,
-    "p50_ms": 54.4,
-    "p95_ms": 177.25,
-    "p99_ms": 420.6,
+    "p50_ms": 43.13,
+    "p95_ms": 182.45,
+    "p99_ms": 535.63,
     "min_ms": 0.03,
-    "max_ms": 420.6,
-    "mean_ms": 68.09
+    "max_ms": 535.63,
+    "mean_ms": 78.64
   },
   "test_cases": [
     {
-      "test_id": "TEST-T25-B25342",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T25-177F4C",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T25",
       "test_category": "TRACE",
       "scenario_id": "T25",
@@ -57,7 +57,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t25_benign.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:11.175406+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:31.455056+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -212,7 +212,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:11.115086+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:31.360135+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -229,7 +229,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:11.180272+00:00",
+          "evaluated_at": "2026-11-24T16:03:31.458069+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -281,29 +281,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 86.48449999964214,
+      "processing_duration_ms": 164.19350000069244,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T25-B25342",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T25-177F4C",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:11.175406+00:00",
-          "duration_ms": 86.48449999964214,
-          "output_hash": "aaec66f083b2101cd3931549bb43aadba43a5fb4d05cecd07a8e4053900921eb",
+          "timestamp": "2026-11-24T16:03:31.455056+00:00",
+          "duration_ms": 164.19350000069244,
+          "output_hash": "190f5f9a046e80c2aec2055c4dff5dd41d9930a09b63311170eccf36fd800248",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:11.083504+00:00",
-      "executed_at": "2026-11-24T15:46:11.175406+00:00"
+      "created_at": "2026-11-24T16:03:31.272635+00:00",
+      "executed_at": "2026-11-24T16:03:31.455056+00:00"
     },
     {
-      "test_id": "TEST-T24-F9AA4C",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T24-E91614",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T24",
       "test_category": "TRACE",
       "scenario_id": "T24",
@@ -321,7 +321,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t24_benign.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:11.016280+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:30.988018+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -476,7 +476,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:10.950901+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:30.878176+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -493,7 +493,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:11.020276+00:00",
+          "evaluated_at": "2026-11-24T16:03:30.991222+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -545,29 +545,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 91.40969999862136,
+      "processing_duration_ms": 182.44919999960985,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T24-F9AA4C",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T24-E91614",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:11.016280+00:00",
-          "duration_ms": 91.40969999862136,
-          "output_hash": "fd9fcfaa6fefeac7b10ec63ac1b76731e43bf6e3d5689c5cfb31200bb67a64de",
+          "timestamp": "2026-11-24T16:03:30.988018+00:00",
+          "duration_ms": 182.44919999960985,
+          "output_hash": "5c747640bf0d51fb22d24ebec77070a87dd1c3f047dd9ab99188ca9589a27c6a",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:10.920414+00:00",
-      "executed_at": "2026-11-24T15:46:11.016280+00:00"
+      "created_at": "2026-11-24T16:03:30.789586+00:00",
+      "executed_at": "2026-11-24T16:03:30.988018+00:00"
     },
     {
-      "test_id": "TEST-T23-E0F318",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T23-6E75C0",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T23",
       "test_category": "TRACE",
       "scenario_id": "T23",
@@ -585,7 +585,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t23_benign.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:10.868469+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:30.540733+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -740,7 +740,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:10.807219+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:30.143555+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -757,7 +757,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:10.873297+00:00",
+          "evaluated_at": "2026-11-24T16:03:30.556847+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -809,29 +809,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 84.04719999998633,
+      "processing_duration_ms": 500.63029999910214,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T23-E0F318",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T23-6E75C0",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:10.868469+00:00",
-          "duration_ms": 84.04719999998633,
-          "output_hash": "dc4edebc7dfce02be28ba48a43b76c07ec8ece1c9bb8c2eb96d77432c31a9b63",
+          "timestamp": "2026-11-24T16:03:30.540733+00:00",
+          "duration_ms": 500.63029999910214,
+          "output_hash": "9256f1bafb14486db2d26cd751c2f17b415ae919ee25427f0b122da4a116c91d",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:10.778132+00:00",
-      "executed_at": "2026-11-24T15:46:10.868469+00:00"
+      "created_at": "2026-11-24T16:03:30.035375+00:00",
+      "executed_at": "2026-11-24T16:03:30.540733+00:00"
     },
     {
-      "test_id": "TEST-T22-99067F",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T22-4FF5A0",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T22",
       "test_category": "TRACE",
       "scenario_id": "T22",
@@ -849,7 +849,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t22_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:10.720432+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:29.939680+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -1014,7 +1014,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:10.652163+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:29.870120+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -1036,7 +1036,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:10.725525+00:00",
+          "evaluated_at": "2026-11-24T16:03:29.945226+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -1088,29 +1088,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 102.067600000737,
+      "processing_duration_ms": 99.62710000036168,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T22-99067F",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T22-4FF5A0",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:10.720432+00:00",
-          "duration_ms": 102.067600000737,
-          "output_hash": "eae44afa67cabc545d61227a4a9f20a28374140262c732e35155a5f67dea9828",
+          "timestamp": "2026-11-24T16:03:29.939680+00:00",
+          "duration_ms": 99.62710000036168,
+          "output_hash": "c448e3b7285170b3b0024ab937962fc03a8f4b6048a69b7a88d8d9e38ac518da",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:10.610995+00:00",
-      "executed_at": "2026-11-24T15:46:10.720432+00:00"
+      "created_at": "2026-11-24T16:03:29.832629+00:00",
+      "executed_at": "2026-11-24T16:03:29.939680+00:00"
     },
     {
-      "test_id": "TEST-T21-4DCD2F",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T21-E62094",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T21",
       "test_category": "TRACE",
       "scenario_id": "T21",
@@ -1128,7 +1128,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t21_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:10.518877+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:29.696392+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -1293,7 +1293,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:10.409822+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:29.613610+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -1315,7 +1315,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:10.524918+00:00",
+          "evaluated_at": "2026-11-24T16:03:29.703401+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -1367,29 +1367,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 164.82139999970968,
+      "processing_duration_ms": 112.23949999839533,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T21-4DCD2F",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T21-E62094",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:10.518877+00:00",
-          "duration_ms": 164.82139999970968,
-          "output_hash": "3a668252f7cca4792e0dc1cf02ad99f5ece8e45a915f18287b07e803ccbe5a1a",
+          "timestamp": "2026-11-24T16:03:29.696392+00:00",
+          "duration_ms": 112.23949999839533,
+          "output_hash": "02654b42313b55839ca9d3abfbf48ca7fe9fb030a5405874c3819d325cc3dee8",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:10.334213+00:00",
-      "executed_at": "2026-11-24T15:46:10.518877+00:00"
+      "created_at": "2026-11-24T16:03:29.578031+00:00",
+      "executed_at": "2026-11-24T16:03:29.696392+00:00"
     },
     {
-      "test_id": "TEST-T20-0134BF",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T20-FF81DB",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T20",
       "test_category": "TRACE",
       "scenario_id": "T20",
@@ -1407,7 +1407,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t20_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:10.135113+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:29.459721+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -1572,7 +1572,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:09.992882+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:29.382095+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -1594,7 +1594,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:10.149667+00:00",
+          "evaluated_at": "2026-11-24T16:03:29.467453+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -1646,29 +1646,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 199.2845999993733,
+      "processing_duration_ms": 111.03949999960605,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T20-0134BF",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T20-FF81DB",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:10.135113+00:00",
-          "duration_ms": 199.2845999993733,
-          "output_hash": "40e26c8bd8f29c9b7fe745feb6afd11aea92a7efed9e69c5d72f5ccac60e4b04",
+          "timestamp": "2026-11-24T16:03:29.459721+00:00",
+          "duration_ms": 111.03949999960605,
+          "output_hash": "a439496f63e955f110e05519822e3d54851374b8a930f9f2321b625229d44230",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:09.922547+00:00",
-      "executed_at": "2026-11-24T15:46:10.135113+00:00"
+      "created_at": "2026-11-24T16:03:29.342552+00:00",
+      "executed_at": "2026-11-24T16:03:29.459721+00:00"
     },
     {
-      "test_id": "TEST-T19-1F0F64",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T19-8B58AA",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T19",
       "test_category": "TRACE",
       "scenario_id": "T19",
@@ -1686,7 +1686,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t19_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:09.824480+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:29.225148+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -1851,7 +1851,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:09.743632+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:29.159260+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -1873,7 +1873,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:09.827992+00:00",
+          "evaluated_at": "2026-11-24T16:03:29.233874+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -1925,29 +1925,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 108.28600000058941,
+      "processing_duration_ms": 129.94529999923543,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T19-1F0F64",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T19-8B58AA",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:09.824480+00:00",
-          "duration_ms": 108.28600000058941,
-          "output_hash": "c3552d5291c27905a37d9e2e95dc2b69ac86e924d9f5e3db0cec22679d913268",
+          "timestamp": "2026-11-24T16:03:29.225148+00:00",
+          "duration_ms": 129.94529999923543,
+          "output_hash": "bcc7e7dd584b91a9c0bf3a9c2f3504b973f4174c6e5899215e50b32d2e2b50ad",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:09.708687+00:00",
-      "executed_at": "2026-11-24T15:46:09.824480+00:00"
+      "created_at": "2026-11-24T16:03:29.083714+00:00",
+      "executed_at": "2026-11-24T16:03:29.225148+00:00"
     },
     {
-      "test_id": "TEST-T18-EB0F6C",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T18-9D6E52",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T18",
       "test_category": "TRACE",
       "scenario_id": "T18",
@@ -1965,7 +1965,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t18_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:09.588269+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:28.841059+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -2130,7 +2130,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:09.491048+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:28.781984+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -2152,7 +2152,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:09.609776+00:00",
+          "evaluated_at": "2026-11-24T16:03:28.847992+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -2204,29 +2204,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 136.92810000065947,
+      "processing_duration_ms": 84.29889999933948,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T18-EB0F6C",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T18-9D6E52",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:09.588269+00:00",
-          "duration_ms": 136.92810000065947,
-          "output_hash": "24b867473a76e4eed0f454031e07e3912edea01c22bf2029031a9c1b3155931e",
+          "timestamp": "2026-11-24T16:03:28.841059+00:00",
+          "duration_ms": 84.29889999933948,
+          "output_hash": "4dd4709ac2167eaa5f99c8e4e26ca0e33d3d339ab5aa561b44476475234ef683",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:09.445723+00:00",
-      "executed_at": "2026-11-24T15:46:09.588269+00:00"
+      "created_at": "2026-11-24T16:03:28.752709+00:00",
+      "executed_at": "2026-11-24T16:03:28.841059+00:00"
     },
     {
-      "test_id": "TEST-T17-FDA9C8",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T17-E1ECB9",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T17",
       "test_category": "TRACE",
       "scenario_id": "T17",
@@ -2244,7 +2244,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "t17_tampered.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:09.390142+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:28.667097+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -2409,7 +2409,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b935,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:09.306695+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:28.603143+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -2431,7 +2431,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:09.394654+00:00",
+          "evaluated_at": "2026-11-24T16:03:28.672082+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -2483,29 +2483,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 115.729499999361,
+      "processing_duration_ms": 91.29890000076557,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T17-FDA9C8",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T17-E1ECB9",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:09.390142+00:00",
-          "duration_ms": 115.729499999361,
-          "output_hash": "f704df9111086ca26b7fac0447d2d0bd43ff15f7b14013255bea8c24fe2d1c99",
+          "timestamp": "2026-11-24T16:03:28.667180+00:00",
+          "duration_ms": 91.29890000076557,
+          "output_hash": "d0e620addcd794f90e73cfcc8e7047e7939b0f90eed8a16da5a9b14e3fa6ada1",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:09.269578+00:00",
-      "executed_at": "2026-11-24T15:46:09.390142+00:00"
+      "created_at": "2026-11-24T16:03:28.571375+00:00",
+      "executed_at": "2026-11-24T16:03:28.667180+00:00"
     },
     {
-      "test_id": "TEST-T16-883D1B",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T16-6B3EC3",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T16",
       "test_category": "TRACE",
       "scenario_id": "T16",
@@ -2523,7 +2523,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "currency_norm_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:09.209887+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:28.453542+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -2678,7 +2678,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: Rs. 25000\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:09.141151+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:28.370056+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -2695,7 +2695,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:09.212397+00:00",
+          "evaluated_at": "2026-11-24T16:03:28.457062+00:00",
           "assertions_checked": [
             "amount_match"
           ],
@@ -2747,29 +2747,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 98.12910000073316,
+      "processing_duration_ms": 118.61160000080417,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T16-883D1B",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T16-6B3EC3",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:09.209887+00:00",
-          "duration_ms": 98.12910000073316,
-          "output_hash": "c49d6e3d3dce607d6f81b0203c71b2339703467663b3e1f51d4c2fe5d4a232d5",
+          "timestamp": "2026-11-24T16:03:28.453542+00:00",
+          "duration_ms": 118.61160000080417,
+          "output_hash": "1e79d49fe067c997f496b68691a54d45df58625e899bbf39cb260df3e7b21245",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:09.105040+00:00",
-      "executed_at": "2026-11-24T15:46:09.209887+00:00"
+      "created_at": "2026-11-24T16:03:28.325426+00:00",
+      "executed_at": "2026-11-24T16:03:28.453542+00:00"
     },
     {
-      "test_id": "TEST-T15-D55F36",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T15-683DFF",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T15",
       "test_category": "TRACE",
       "scenario_id": "T15",
@@ -2787,7 +2787,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "settlement_skew_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:09.023659+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:28.222969+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -2942,7 +2942,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:08.902893+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:28.153000+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -2959,7 +2959,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "aegis_hypotheses": {
-          "case_id": "TEST-T15-D55F36",
+          "case_id": "TEST-T15-683DFF",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -3193,10 +3193,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:09.023659+00:00"
+          "generated_at_iso": "2026-11-24T16:03:28.222969+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:09.028669+00:00",
+          "evaluated_at": "2026-11-24T16:03:28.229485+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -3251,29 +3251,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 177.2471999993286,
+      "processing_duration_ms": 102.14149999956135,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T15-D55F36",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T15-683DFF",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:09.023659+00:00",
-          "duration_ms": 177.2471999993286,
-          "output_hash": "51ffb31966a2cb954d61e47f6f88348ad5464eb0273e65fe7cd520fc26cdec0f",
+          "timestamp": "2026-11-24T16:03:28.222969+00:00",
+          "duration_ms": 102.14149999956135,
+          "output_hash": "9ba92d5bcba593f052dc1640ebcc5ee62d734c7a45c7ffa8a6bf3235c7c10275",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.840162+00:00",
-      "executed_at": "2026-11-24T15:46:09.023659+00:00"
+      "created_at": "2026-11-24T16:03:28.115500+00:00",
+      "executed_at": "2026-11-24T16:03:28.222969+00:00"
     },
     {
-      "test_id": "TEST-T14-18DB75",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T14-5661A7",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T14",
       "test_category": "TRACE",
       "scenario_id": "T14",
@@ -3292,7 +3292,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:08.747338+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:28.015145+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -3447,7 +3447,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:08.690533+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:27.937204+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -3515,11 +3515,11 @@
             "details": []
           },
           "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 Section 63",
-          "reconciled_at_iso": "2026-11-24T15:46:08.747338+00:00"
+          "reconciled_at_iso": "2026-11-24T16:03:28.015145+00:00"
         },
         "discrepancy_delta": 0.0,
         "aegis_hypotheses": {
-          "case_id": "TEST-T14-18DB75",
+          "case_id": "TEST-T14-5661A7",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -3753,10 +3753,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.748343+00:00"
+          "generated_at_iso": "2026-11-24T16:03:28.016475+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.754869+00:00",
+          "evaluated_at": "2026-11-24T16:03:28.020498+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -3823,29 +3823,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 78.52740000089398,
+      "processing_duration_ms": 113.31729999983509,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T14-18DB75",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T14-5661A7",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.748343+00:00",
-          "duration_ms": 78.52740000089398,
-          "output_hash": "2b8a0d4230723c6373b1594ef0b44fefa849df218475ffb2c8603b997bcff613",
+          "timestamp": "2026-11-24T16:03:28.016475+00:00",
+          "duration_ms": 113.31729999983509,
+          "output_hash": "c2b6c2ab9d384508841b76b9c5aeea59d30b8b88feddd1beafbf36a10ac2340e",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.660060+00:00",
-      "executed_at": "2026-11-24T15:46:08.748343+00:00"
+      "created_at": "2026-11-24T16:03:27.896067+00:00",
+      "executed_at": "2026-11-24T16:03:28.016475+00:00"
     },
     {
-      "test_id": "TEST-T13-800A47",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T13-0117DE",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T13",
       "test_category": "TRACE",
       "scenario_id": "T13",
@@ -3900,7 +3900,7 @@
           }
         },
         "aegis_hypotheses": {
-          "case_id": "TEST-T13-800A47",
+          "case_id": "TEST-T13-0117DE",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -4134,10 +4134,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.612468+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.795447+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.616481+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.799098+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -4157,29 +4157,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.4424999988259515,
+      "processing_duration_ms": 0.2762000003713183,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T13-800A47",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T13-0117DE",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.612468+00:00",
-          "duration_ms": 0.4424999988259515,
-          "output_hash": "8f972c12418ae4c8728eeb881fd02c70e9a7b1fb304469f1070a8f45f52abc25",
+          "timestamp": "2026-11-24T16:03:27.795447+00:00",
+          "duration_ms": 0.2762000003713183,
+          "output_hash": "00b250d19a0913821eb2b7830fa570a2642d7e32e4fca5889a7f944c3ea9c0b0",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.607855+00:00",
-      "executed_at": "2026-11-24T15:46:08.612468+00:00"
+      "created_at": "2026-11-24T16:03:27.788122+00:00",
+      "executed_at": "2026-11-24T16:03:27.795447+00:00"
     },
     {
-      "test_id": "TEST-T12-5FAFD9",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T12-8A2685",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T12",
       "test_category": "TRACE",
       "scenario_id": "T12",
@@ -4198,7 +4198,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:08.553147+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:27.708061+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -4353,7 +4353,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:08.489652+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:27.642521+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -4441,11 +4441,11 @@
             "details": []
           },
           "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 Section 63",
-          "reconciled_at_iso": "2026-11-24T15:46:08.553147+00:00"
+          "reconciled_at_iso": "2026-11-24T16:03:27.709058+00:00"
         },
         "discrepancy_delta": 0.0,
         "aegis_hypotheses": {
-          "case_id": "TEST-T12-5FAFD9",
+          "case_id": "TEST-T12-8A2685",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -4679,10 +4679,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.553147+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.709058+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.559281+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.716341+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -4749,29 +4749,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 97.6637000003393,
+      "processing_duration_ms": 88.52789999946253,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T12-5FAFD9",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T12-8A2685",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.553147+00:00",
-          "duration_ms": 97.6637000003393,
-          "output_hash": "abdbbfac85326e10a371f72fe0ea2a3b1a91ea922eddd7c8ab9cf2ac71b0a02a",
+          "timestamp": "2026-11-24T16:03:27.709058+00:00",
+          "duration_ms": 88.52789999946253,
+          "output_hash": "a13072cc3c3f1f56df29f09703509b1768de435276dc6e1d594853f1a9c91bec",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.446663+00:00",
-      "executed_at": "2026-11-24T15:46:08.553147+00:00"
+      "created_at": "2026-11-24T16:03:27.612889+00:00",
+      "executed_at": "2026-11-24T16:03:27.709058+00:00"
     },
     {
-      "test_id": "TEST-T11-847930",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T11-295CAB",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T11",
       "test_category": "TRACE",
       "scenario_id": "T11",
@@ -4816,7 +4816,7 @@
           }
         },
         "aegis_hypotheses": {
-          "case_id": "TEST-T11-847930",
+          "case_id": "TEST-T11-295CAB",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -5050,10 +5050,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.385933+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.524780+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.388930+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.533205+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -5073,29 +5073,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.3569000000425149,
+      "processing_duration_ms": 0.27549999867915176,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T11-847930",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T11-295CAB",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.385933+00:00",
-          "duration_ms": 0.3569000000425149,
-          "output_hash": "db5ccabece1f6553ede89c6754c1e41069d767e68f737ce4d762f2d949268f76",
+          "timestamp": "2026-11-24T16:03:27.524780+00:00",
+          "duration_ms": 0.27549999867915176,
+          "output_hash": "a45177ddffafa653f87187a93bfa13a54292b0508659236fb14ad712d055e538",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.378406+00:00",
-      "executed_at": "2026-11-24T15:46:08.385933+00:00"
+      "created_at": "2026-11-24T16:03:27.524780+00:00",
+      "executed_at": "2026-11-24T16:03:27.524780+00:00"
     },
     {
-      "test_id": "TEST-T10-693B25",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T10-7F4EE3",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T10",
       "test_category": "TRACE",
       "scenario_id": "T10",
@@ -5140,7 +5140,7 @@
           }
         },
         "aegis_hypotheses": {
-          "case_id": "TEST-T10-693B25",
+          "case_id": "TEST-T10-7F4EE3",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -5374,10 +5374,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.318632+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.434780+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.323675+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.438189+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -5397,29 +5397,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.959099999818136,
+      "processing_duration_ms": 0.2942000010079937,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T10-693B25",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T10-7F4EE3",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.318632+00:00",
-          "duration_ms": 0.959099999818136,
-          "output_hash": "6298c233909ad51ad23964b690ca4c63ef32c3df2b16d21247fc95b98589d19a",
+          "timestamp": "2026-11-24T16:03:27.434780+00:00",
+          "duration_ms": 0.2942000010079937,
+          "output_hash": "53305c15a50d5d561606a2bc0218fe097c1f63b8ea7271de0b2d5ab580a41045",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.309298+00:00",
-      "executed_at": "2026-11-24T15:46:08.318632+00:00"
+      "created_at": "2026-11-24T16:03:27.429779+00:00",
+      "executed_at": "2026-11-24T16:03:27.434780+00:00"
     },
     {
-      "test_id": "TEST-T09-692E1B",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T09-872F08",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T09",
       "test_category": "TRACE",
       "scenario_id": "T09",
@@ -5438,7 +5438,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:08.257470+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:27.352497+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -5593,7 +5593,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:08.189770+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:27.283644+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -5661,11 +5661,11 @@
             "details": []
           },
           "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 Section 63",
-          "reconciled_at_iso": "2026-11-24T15:46:08.258468+00:00"
+          "reconciled_at_iso": "2026-11-24T16:03:27.352497+00:00"
         },
         "discrepancy_delta": 0.0,
         "aegis_hypotheses": {
-          "case_id": "TEST-T09-692E1B",
+          "case_id": "TEST-T09-872F08",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -5899,10 +5899,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.258468+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.352497+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.262981+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.356050+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -5969,29 +5969,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 90.75360000133514,
+      "processing_duration_ms": 94.62809999968158,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T09-692E1B",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T09-872F08",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.258468+00:00",
-          "duration_ms": 90.75360000133514,
-          "output_hash": "cc989d813d13b76442f0dcc4830511472d5269784987c734e2a0c3d7a441b4c6",
+          "timestamp": "2026-11-24T16:03:27.352497+00:00",
+          "duration_ms": 94.62809999968158,
+          "output_hash": "72cba41b733936dd3259720ed292b87864506edadb5f04cb51f8922efefce7d7",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.159563+00:00",
-      "executed_at": "2026-11-24T15:46:08.258468+00:00"
+      "created_at": "2026-11-24T16:03:27.251345+00:00",
+      "executed_at": "2026-11-24T16:03:27.352497+00:00"
     },
     {
-      "test_id": "TEST-T08-EE49D5",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T08-14622B",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T08",
       "test_category": "TRACE",
       "scenario_id": "T08",
@@ -6010,7 +6010,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:08.117214+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:27.171692+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -6175,7 +6175,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b915,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:08.055063+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:27.090205+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -6251,11 +6251,11 @@
             "details": []
           },
           "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 Section 63",
-          "reconciled_at_iso": "2026-11-24T15:46:08.117214+00:00"
+          "reconciled_at_iso": "2026-11-24T16:03:27.171692+00:00"
         },
         "discrepancy_delta": 10000.0,
         "aegis_hypotheses": {
-          "case_id": "TEST-T08-EE49D5",
+          "case_id": "TEST-T08-14622B",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -6489,10 +6489,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:08.117214+00:00"
+          "generated_at_iso": "2026-11-24T16:03:27.171692+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:08.120732+00:00",
+          "evaluated_at": "2026-11-24T16:03:27.177843+00:00",
           "assertions_checked": [
             "reconciliation_delta"
           ],
@@ -6563,29 +6563,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 85.38020000014512,
+      "processing_duration_ms": 113.14780000066094,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T08-EE49D5",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T08-14622B",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:08.117214+00:00",
-          "duration_ms": 85.38020000014512,
-          "output_hash": "0fcbdea1609792c05198c01ead6a3e95e239d34d69b27c12623ac97563c6ae84",
+          "timestamp": "2026-11-24T16:03:27.171692+00:00",
+          "duration_ms": 113.14780000066094,
+          "output_hash": "b791f86007f2b1b35f654cc7cc388ce952feb7c5c814d249bc76aa1ee60cbf49",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:08.023295+00:00",
-      "executed_at": "2026-11-24T15:46:08.117214+00:00"
+      "created_at": "2026-11-24T16:03:27.052336+00:00",
+      "executed_at": "2026-11-24T16:03:27.171692+00:00"
     },
     {
-      "test_id": "TEST-T07-F57CBF",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T07-EBA01E",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T07",
       "test_category": "TRACE",
       "scenario_id": "T07",
@@ -6604,7 +6604,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.978896+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.950178+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -6759,7 +6759,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.917840+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.875567+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -6827,11 +6827,11 @@
             "details": []
           },
           "statutory_compliance": "Bharatiya Sakshya Adhiniyam, 2023 Section 63",
-          "reconciled_at_iso": "2026-11-24T15:46:07.978896+00:00"
+          "reconciled_at_iso": "2026-11-24T16:03:26.953173+00:00"
         },
         "discrepancy_delta": 0.0,
         "aegis_hypotheses": {
-          "case_id": "TEST-T07-F57CBF",
+          "case_id": "TEST-T07-EBA01E",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -7065,10 +7065,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:07.978896+00:00"
+          "generated_at_iso": "2026-11-24T16:03:26.954173+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.983419+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.957702+00:00",
           "assertions_checked": [
             "amount_match",
             "utr_match",
@@ -7141,29 +7141,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 85.37880000039877,
+      "processing_duration_ms": 108.59259999961068,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T07-F57CBF",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T07-EBA01E",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.978896+00:00",
-          "duration_ms": 85.37880000039877,
-          "output_hash": "b5b272ef03cd811b8f31f1d3950927261aa5e39e5967284dca40081e1614b1a4",
+          "timestamp": "2026-11-24T16:03:26.954173+00:00",
+          "duration_ms": 108.59259999961068,
+          "output_hash": "fd91a8504e6a14a52af5a644c5cd37b02f18b9319040a10170683412f53786ef",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.886784+00:00",
-      "executed_at": "2026-11-24T15:46:07.978896+00:00"
+      "created_at": "2026-11-24T16:03:26.839305+00:00",
+      "executed_at": "2026-11-24T16:03:26.954173+00:00"
     },
     {
-      "test_id": "TEST-T06-D2BA1B",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T06-BFC75D",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T06",
       "test_category": "TRACE",
       "scenario_id": "T06",
@@ -7181,7 +7181,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "conflicting_status_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.843421+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.757826+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -7346,7 +7346,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: FAILED\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.783995+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.696116+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -7368,7 +7368,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.845879+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.762575+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -7420,29 +7420,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 85.75749999909021,
+      "processing_duration_ms": 94.07589999864285,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T06-D2BA1B",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T06-BFC75D",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.843421+00:00",
-          "duration_ms": 85.75749999909021,
-          "output_hash": "7950fdb5ead1c2a0a53f148327e652f20bab471fb2e4357c99cabc8d14e57a56",
+          "timestamp": "2026-11-24T16:03:26.757826+00:00",
+          "duration_ms": 94.07589999864285,
+          "output_hash": "a954bc75f8d9d6584f63a05de1472886844bc823c3cf16bd431fd4c49b3deed8",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.750499+00:00",
-      "executed_at": "2026-11-24T15:46:07.843421+00:00"
+      "created_at": "2026-11-24T16:03:26.656834+00:00",
+      "executed_at": "2026-11-24T16:03:26.757826+00:00"
     },
     {
-      "test_id": "TEST-T05-45A871",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T05-EA558D",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T05",
       "test_category": "TRACE",
       "scenario_id": "T05",
@@ -7460,7 +7460,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "blurred_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.706079+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.577006+00:00",
           "composite_anomaly_score": 0.006,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -7615,7 +7615,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.644047+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.516617+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.006,
@@ -7632,7 +7632,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.708720+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.583140+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {
@@ -7684,29 +7684,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 115.2382000000216,
+      "processing_duration_ms": 118.62239999936719,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T05-45A871",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T05-EA558D",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.706079+00:00",
-          "duration_ms": 115.2382000000216,
-          "output_hash": "19af3d6b6bbef879dbc8d6c1e3f3495454ea5f4eddba03daff412a2accf0389b",
+          "timestamp": "2026-11-24T16:03:26.577006+00:00",
+          "duration_ms": 118.62239999936719,
+          "output_hash": "26ed7dc5a5849cc8bb70b0f711bcd8f6323f2e81f6492e0064a0260c1be3c14e",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.587447+00:00",
-      "executed_at": "2026-11-24T15:46:07.706079+00:00"
+      "created_at": "2026-11-24T16:03:26.452655+00:00",
+      "executed_at": "2026-11-24T16:03:26.577006+00:00"
     },
     {
-      "test_id": "TEST-T04-08132F",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T04-0CC949",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T04",
       "test_category": "TRACE",
       "scenario_id": "T04",
@@ -7724,7 +7724,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "whatsapp_recompressed.jpg",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.549647+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.375527+00:00",
           "composite_anomaly_score": 0.013,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -7879,7 +7879,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.486532+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.306638+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.013,
@@ -7896,7 +7896,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.552169+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.377605+00:00",
           "assertions_checked": [
             "amount_match",
             "utr_match"
@@ -7951,29 +7951,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 71.93460000053165,
+      "processing_duration_ms": 76.37319999957981,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T04-08132F",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T04-0CC949",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.549647+00:00",
-          "duration_ms": 71.93460000053165,
-          "output_hash": "df93c578fb501b468c6f23dce27e832a6a02897f17bf07952e0ac1f2379a9c60",
+          "timestamp": "2026-11-24T16:03:26.375527+00:00",
+          "duration_ms": 76.37319999957981,
+          "output_hash": "74e63a3de952ee6a4a036d472c5e7a68b49c3c376325452901d843ac6df43521",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.474011+00:00",
-      "executed_at": "2026-11-24T15:46:07.549647+00:00"
+      "created_at": "2026-11-24T16:03:26.290214+00:00",
+      "executed_at": "2026-11-24T16:03:26.375527+00:00"
     },
     {
-      "test_id": "TEST-T03-708742",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T03-95F5E1",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T03",
       "test_category": "TRACE",
       "scenario_id": "T03",
@@ -7991,7 +7991,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "cropped_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.432918+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.218211+00:00",
           "composite_anomaly_score": 0.036,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -8146,7 +8146,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.396337+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.175414+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.036,
@@ -8163,7 +8163,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.435939+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.220489+00:00",
           "assertions_checked": [
             "amount_match",
             "utr_match"
@@ -8218,29 +8218,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 54.4012999998813,
+      "processing_duration_ms": 60.34480000016629,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T03-708742",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T03-95F5E1",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.432918+00:00",
-          "duration_ms": 54.4012999998813,
-          "output_hash": "ee1338a41e797b8c5baf3dd12a5cfa336e4708850a4afdae793b59ebe0a71aa8",
+          "timestamp": "2026-11-24T16:03:26.218211+00:00",
+          "duration_ms": 60.34480000016629,
+          "output_hash": "e93ef461ebfe819be69b45b8433971032fcf41307e67b0d12c3780888b53b1f0",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.373635+00:00",
-      "executed_at": "2026-11-24T15:46:07.432918+00:00"
+      "created_at": "2026-11-24T16:03:26.153229+00:00",
+      "executed_at": "2026-11-24T16:03:26.218211+00:00"
     },
     {
-      "test_id": "TEST-T02-3DE752",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T02-83B2CD",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T02",
       "test_category": "TRACE",
       "scenario_id": "T02",
@@ -8258,7 +8258,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "altered_amount_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.296070+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:26.083956+00:00",
           "composite_anomaly_score": 0.455,
           "preliminary_assessment": "POSSIBLE_COMPRESSION_OR_LAYOUT_ANOMALIES",
           "manipulated_region_bbox": [
@@ -8423,7 +8423,7 @@
             },
             "token_count": 6,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b950,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\nsplice altered inpaint\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.224397+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:26.009144+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.455,
@@ -8445,7 +8445,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.305582+00:00",
+          "evaluated_at": "2026-11-24T16:03:26.086557+00:00",
           "assertions_checked": [
             "amount_match",
             "utr_match"
@@ -8500,29 +8500,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 102.74410000056378,
+      "processing_duration_ms": 98.43550000005052,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TP",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T02-3DE752",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T02-83B2CD",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.296070+00:00",
-          "duration_ms": 102.74410000056378,
-          "output_hash": "066f495dfdd5d4249da4e06c3c6e3a9a83e9ddf40d87ec1e5cb2c87c585764f1",
+          "timestamp": "2026-11-24T16:03:26.083956+00:00",
+          "duration_ms": 98.43550000005052,
+          "output_hash": "8896c8894856cbec66e37ca6c4690d6a255a0b183dfc29cce2df0c41ff54270d",
           "status": "PASSED",
           "confusion": "TP"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.185410+00:00",
-      "executed_at": "2026-11-24T15:46:07.296070+00:00"
+      "created_at": "2026-11-24T16:03:25.977555+00:00",
+      "executed_at": "2026-11-24T16:03:26.083956+00:00"
     },
     {
-      "test_id": "TEST-T01-D22496",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-T01-FBD2B7",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-T01",
       "test_category": "TRACE",
       "scenario_id": "T01",
@@ -8540,7 +8540,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "genuine_receipt.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.136653+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:25.903627+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -8695,7 +8695,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:07.076561+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:25.838153+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -8712,7 +8712,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.138651+00:00",
+          "evaluated_at": "2026-11-24T16:03:25.909492+00:00",
           "assertions_checked": [
             "amount_match",
             "utr_match"
@@ -8767,29 +8767,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 82.2608999988006,
+      "processing_duration_ms": 88.97169999909238,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "TN",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T01-D22496",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-T01-FBD2B7",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.136653+00:00",
-          "duration_ms": 82.2608999988006,
-          "output_hash": "fc0313bd8c827d1d0bafd81b446ff987ba6a0779da487019bee58ab3bc89c036",
+          "timestamp": "2026-11-24T16:03:25.903627+00:00",
+          "duration_ms": 88.97169999909238,
+          "output_hash": "13a553c2013ea9fd4911a4a4c891dff65c7dc2011720b7c0fb5dec5a8a167e59",
           "status": "PASSED",
           "confusion": "TN"
         }
       ],
-      "created_at": "2026-11-24T15:46:07.049928+00:00",
-      "executed_at": "2026-11-24T15:46:07.136653+00:00"
+      "created_at": "2026-11-24T16:03:25.810205+00:00",
+      "executed_at": "2026-11-24T16:03:25.903627+00:00"
     },
     {
-      "test_id": "TEST-P12-970FF1",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P12-943BE1",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P12",
       "test_category": "PLATFORM",
       "scenario_id": "P12",
@@ -8807,7 +8807,7 @@
           "artifact_id": "ART-PREVIEW",
           "filename": "p12_fixture.png",
           "case_id": "CASE-PREVIEW",
-          "examination_timestamp_iso": "2026-11-24T15:46:07.011052+00:00",
+          "examination_timestamp_iso": "2026-11-24T16:03:25.742215+00:00",
           "composite_anomaly_score": 0.029,
           "preliminary_assessment": "NO_OVERT_MANIPULATION_DETECTED",
           "manipulated_region_bbox": null,
@@ -8962,7 +8962,7 @@
             },
             "token_count": 5,
             "raw_text_sample": "PhonePe Payment Confirmation Successful\nPaid to: Merchant Services Pvt Ltd (merchant@ybl)\nAmount: \u20b925,000.00\nUTR / Ref No: 412356789012\nTransaction Status: SUCCESS\n",
-            "extraction_timestamp_iso": "2026-11-24T15:46:06.616648+00:00"
+            "extraction_timestamp_iso": "2026-11-24T16:03:25.237051+00:00"
           },
           "manipulation_analysis": {
             "composite_anomaly_score": 0.029,
@@ -8979,7 +8979,7 @@
         "extracted_utr": "412356789012",
         "extracted_status": "SUCCESS",
         "aegis_hypotheses": {
-          "case_id": "TEST-P12-970FF1",
+          "case_id": "TEST-P12-943BE1",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -9213,10 +9213,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:07.011052+00:00"
+          "generated_at_iso": "2026-11-24T16:03:25.743304+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:07.015569+00:00",
+          "evaluated_at": "2026-11-24T16:03:25.746805+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9271,29 +9271,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 420.59510000035516,
+      "processing_duration_ms": 535.6267000006483,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P12-970FF1",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P12-943BE1",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:07.011052+00:00",
-          "duration_ms": 420.59510000035516,
-          "output_hash": "897de745c8aa13ea4bc202987138f57617a9f4e57ca88f9d2d9c4658629f8a38",
+          "timestamp": "2026-11-24T16:03:25.743304+00:00",
+          "duration_ms": 535.6267000006483,
+          "output_hash": "926e08890aef89fc6fdf6df106f0ec5ad574e8adc6c3cc8772bfd987c4568786",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.587017+00:00",
-      "executed_at": "2026-11-24T15:46:07.011052+00:00"
+      "created_at": "2026-11-24T16:03:25.201150+00:00",
+      "executed_at": "2026-11-24T16:03:25.743304+00:00"
     },
     {
-      "test_id": "TEST-P11-A68A21",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P11-BEDFD9",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P11",
       "test_category": "PLATFORM",
       "scenario_id": "P11",
@@ -9308,7 +9308,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.552316+00:00",
+          "evaluated_at": "2026-11-24T16:03:25.121091+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9317,29 +9317,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 21.135900000444963,
+      "processing_duration_ms": 32.64569999919331,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P11-A68A21",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P11-BEDFD9",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.550803+00:00",
-          "duration_ms": 21.135900000444963,
+          "timestamp": "2026-11-24T16:03:25.119091+00:00",
+          "duration_ms": 32.64569999919331,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.525480+00:00",
-      "executed_at": "2026-11-24T15:46:06.550803+00:00"
+      "created_at": "2026-11-24T16:03:25.078606+00:00",
+      "executed_at": "2026-11-24T16:03:25.119091+00:00"
     },
     {
-      "test_id": "TEST-P10-038385",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P10-23AB04",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P10",
       "test_category": "PLATFORM",
       "scenario_id": "P10",
@@ -9355,7 +9355,7 @@
       "actual_output": {
         "platform_check": "PASSED",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.492391+00:00",
+          "evaluated_at": "2026-11-24T16:03:25.002113+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9369,29 +9369,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 19.65100000052189,
+      "processing_duration_ms": 20.484799999394454,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P10-038385",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P10-23AB04",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.489875+00:00",
-          "duration_ms": 19.65100000052189,
+          "timestamp": "2026-11-24T16:03:24.997103+00:00",
+          "duration_ms": 20.484799999394454,
           "output_hash": "5ab57508be3f136e838ce937fc9a152d448dc47526040642d744797351642b56",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.462917+00:00",
-      "executed_at": "2026-11-24T15:46:06.489875+00:00"
+      "created_at": "2026-11-24T16:03:24.972166+00:00",
+      "executed_at": "2026-11-24T16:03:24.997103+00:00"
     },
     {
-      "test_id": "TEST-P09-888499",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P09-328487",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P09",
       "test_category": "PLATFORM",
       "scenario_id": "P09",
@@ -9407,7 +9407,7 @@
       "actual_output": {
         "platform_check": "PASSED",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.423760+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.889160+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9421,29 +9421,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 20.332000000053085,
+      "processing_duration_ms": 19.68470000065281,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P09-888499",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P09-328487",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.422752+00:00",
-          "duration_ms": 20.332000000053085,
+          "timestamp": "2026-11-24T16:03:24.886996+00:00",
+          "duration_ms": 19.68470000065281,
           "output_hash": "5ab57508be3f136e838ce937fc9a152d448dc47526040642d744797351642b56",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.395923+00:00",
-      "executed_at": "2026-11-24T15:46:06.422752+00:00"
+      "created_at": "2026-11-24T16:03:24.860563+00:00",
+      "executed_at": "2026-11-24T16:03:24.886996+00:00"
     },
     {
-      "test_id": "TEST-P08-C1AC30",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P08-041ADC",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P08",
       "test_category": "PLATFORM",
       "scenario_id": "P08",
@@ -9459,7 +9459,7 @@
       "actual_output": {
         "platform_check": "PASSED",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.362243+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.788524+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9473,29 +9473,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 19.17200000025332,
+      "processing_duration_ms": 22.869899999932386,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P08-C1AC30",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P08-041ADC",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.360737+00:00",
-          "duration_ms": 19.17200000025332,
+          "timestamp": "2026-11-24T16:03:24.785667+00:00",
+          "duration_ms": 22.869899999932386,
           "output_hash": "5ab57508be3f136e838ce937fc9a152d448dc47526040642d744797351642b56",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.335019+00:00",
-      "executed_at": "2026-11-24T15:46:06.360737+00:00"
+      "created_at": "2026-11-24T16:03:24.758424+00:00",
+      "executed_at": "2026-11-24T16:03:24.785667+00:00"
     },
     {
-      "test_id": "TEST-P07-54BBF5",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P07-1BB963",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P07",
       "test_category": "PLATFORM",
       "scenario_id": "P07",
@@ -9511,7 +9511,7 @@
       "actual_output": {
         "platform_check": "PASSED",
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.295381+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.686028+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9525,29 +9525,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 18.846400000256835,
+      "processing_duration_ms": 28.790000000299187,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P07-54BBF5",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P07-1BB963",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.293367+00:00",
-          "duration_ms": 18.846400000256835,
+          "timestamp": "2026-11-24T16:03:24.679500+00:00",
+          "duration_ms": 28.790000000299187,
           "output_hash": "5ab57508be3f136e838ce937fc9a152d448dc47526040642d744797351642b56",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.270817+00:00",
-      "executed_at": "2026-11-24T15:46:06.293367+00:00"
+      "created_at": "2026-11-24T16:03:24.643403+00:00",
+      "executed_at": "2026-11-24T16:03:24.679500+00:00"
     },
     {
-      "test_id": "TEST-P06-8809AD",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P06-46055D",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P06",
       "test_category": "PLATFORM",
       "scenario_id": "P06",
@@ -9562,7 +9562,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.239305+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.571981+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9571,29 +9571,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 21.30070000021078,
+      "processing_duration_ms": 24.859300001480733,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P06-8809AD",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P06-46055D",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.236259+00:00",
-          "duration_ms": 21.30070000021078,
+          "timestamp": "2026-11-24T16:03:24.569977+00:00",
+          "duration_ms": 24.859300001480733,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.209470+00:00",
-      "executed_at": "2026-11-24T15:46:06.236259+00:00"
+      "created_at": "2026-11-24T16:03:24.540102+00:00",
+      "executed_at": "2026-11-24T16:03:24.569977+00:00"
     },
     {
-      "test_id": "TEST-P05-9811B8",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P05-A2EDC0",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P05",
       "test_category": "PLATFORM",
       "scenario_id": "P05",
@@ -9608,7 +9608,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.177826+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.458012+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9617,29 +9617,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 19.315300000016578,
+      "processing_duration_ms": 20.435500000530737,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P05-9811B8",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P05-A2EDC0",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.175339+00:00",
-          "duration_ms": 19.315300000016578,
+          "timestamp": "2026-11-24T16:03:24.455991+00:00",
+          "duration_ms": 20.435500000530737,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.152167+00:00",
-      "executed_at": "2026-11-24T15:46:06.175339+00:00"
+      "created_at": "2026-11-24T16:03:24.430015+00:00",
+      "executed_at": "2026-11-24T16:03:24.455991+00:00"
     },
     {
-      "test_id": "TEST-P04-327856",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P04-8A96A2",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P04",
       "test_category": "PLATFORM",
       "scenario_id": "P04",
@@ -9654,7 +9654,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.117337+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.348958+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9663,29 +9663,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 4.323299999668961,
+      "processing_duration_ms": 3.698300000905874,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P04-327856",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P04-8A96A2",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.115338+00:00",
-          "duration_ms": 4.323299999668961,
+          "timestamp": "2026-11-24T16:03:24.345941+00:00",
+          "duration_ms": 3.698300000905874,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.106769+00:00",
-      "executed_at": "2026-11-24T15:46:06.115338+00:00"
+      "created_at": "2026-11-24T16:03:24.334775+00:00",
+      "executed_at": "2026-11-24T16:03:24.345941+00:00"
     },
     {
-      "test_id": "TEST-P03-6D0451",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P03-CE04D6",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P03",
       "test_category": "PLATFORM",
       "scenario_id": "P03",
@@ -9700,7 +9700,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.072992+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.259022+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9709,29 +9709,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.02930000118794851,
+      "processing_duration_ms": 0.026100000468431972,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P03-6D0451",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P03-CE04D6",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.072201+00:00",
-          "duration_ms": 0.02930000118794851,
+          "timestamp": "2026-11-24T16:03:24.258057+00:00",
+          "duration_ms": 0.026100000468431972,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.068122+00:00",
-      "executed_at": "2026-11-24T15:46:06.072201+00:00"
+      "created_at": "2026-11-24T16:03:24.251131+00:00",
+      "executed_at": "2026-11-24T16:03:24.258057+00:00"
     },
     {
-      "test_id": "TEST-P02-0668FB",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P02-802AD5",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P02",
       "test_category": "PLATFORM",
       "scenario_id": "P02",
@@ -9746,7 +9746,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:06.036249+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.173806+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9755,29 +9755,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.028899999961140566,
+      "processing_duration_ms": 0.03680000008898787,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P02-0668FB",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P02-802AD5",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:06.034957+00:00",
-          "duration_ms": 0.028899999961140566,
+          "timestamp": "2026-11-24T16:03:24.171807+00:00",
+          "duration_ms": 0.03680000008898787,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:06.027423+00:00",
-      "executed_at": "2026-11-24T15:46:06.034957+00:00"
+      "created_at": "2026-11-24T16:03:24.159752+00:00",
+      "executed_at": "2026-11-24T16:03:24.171807+00:00"
     },
     {
-      "test_id": "TEST-P01-DD36C9",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-P01-2B68B9",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-P01",
       "test_category": "PLATFORM",
       "scenario_id": "P01",
@@ -9792,7 +9792,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.994376+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.082235+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -9801,29 +9801,29 @@
       "intermediate_observations": [],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 0.028700000257231295,
+      "processing_duration_ms": 0.028199998268974014,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P01-DD36C9",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-P01-2B68B9",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.992367+00:00",
-          "duration_ms": 0.028700000257231295,
+          "timestamp": "2026-11-24T16:03:24.078831+00:00",
+          "duration_ms": 0.028199998268974014,
           "output_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.988857+00:00",
-      "executed_at": "2026-11-24T15:46:05.992367+00:00"
+      "created_at": "2026-11-24T16:03:24.072053+00:00",
+      "executed_at": "2026-11-24T16:03:24.078831+00:00"
     },
     {
-      "test_id": "TEST-A12-F26378",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A12-30734D",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A12",
       "test_category": "AEGIS",
       "scenario_id": "A12",
@@ -9838,7 +9838,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A12-F26378",
+          "case_id": "TEST-A12-30734D",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -10072,10 +10072,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.954876+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.996409+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.957805+00:00",
+          "evaluated_at": "2026-11-24T16:03:24.001411+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -10090,29 +10090,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 21.521799999391078,
+      "processing_duration_ms": 20.45689999977185,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A12-F26378",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A12-30734D",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.955873+00:00",
-          "duration_ms": 21.521799999391078,
-          "output_hash": "6874f150454d847af803d9635465af720b4e6a721a267730f3b697e5445ad6cb",
+          "timestamp": "2026-11-24T16:03:23.996409+00:00",
+          "duration_ms": 20.45689999977185,
+          "output_hash": "fabc397332edc2091ebe6aeaa680a334058ba37141ccfa4a8b886a553b7fb0b9",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.922936+00:00",
-      "executed_at": "2026-11-24T15:46:05.955873+00:00"
+      "created_at": "2026-11-24T16:03:23.970047+00:00",
+      "executed_at": "2026-11-24T16:03:23.996409+00:00"
     },
     {
-      "test_id": "TEST-A11-35B5AB",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A11-579BC4",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A11",
       "test_category": "AEGIS",
       "scenario_id": "A11",
@@ -10127,7 +10127,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A11-35B5AB",
+          "case_id": "TEST-A11-579BC4",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -10361,10 +10361,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.882578+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.870995+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.885589+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.876522+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -10379,29 +10379,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 23.143100001107086,
+      "processing_duration_ms": 32.17840000070282,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A11-35B5AB",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A11-579BC4",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.882578+00:00",
-          "duration_ms": 23.143100001107086,
-          "output_hash": "6427eca0ec2b13a82a96f96f80c31ac5b74e8f9a7ce9b08c04cdc5be807f84c5",
+          "timestamp": "2026-11-24T16:03:23.870995+00:00",
+          "duration_ms": 32.17840000070282,
+          "output_hash": "0fa6cd5139ffcc8588b5bb99a76a56db34cdbf51265283c20f0a963d4094a0cc",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.856164+00:00",
-      "executed_at": "2026-11-24T15:46:05.882578+00:00"
+      "created_at": "2026-11-24T16:03:23.830367+00:00",
+      "executed_at": "2026-11-24T16:03:23.870995+00:00"
     },
     {
-      "test_id": "TEST-A10-C2EA7F",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A10-86FF40",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A10",
       "test_category": "AEGIS",
       "scenario_id": "A10",
@@ -10416,7 +10416,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A10-C2EA7F",
+          "case_id": "TEST-A10-86FF40",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -10650,10 +10650,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.807788+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.727419+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.810478+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.733416+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -10668,29 +10668,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 34.072300000843825,
+      "processing_duration_ms": 26.569199999357807,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A10-C2EA7F",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A10-86FF40",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.807788+00:00",
-          "duration_ms": 34.072300000843825,
-          "output_hash": "85da2ea22b6650fd28f5bc628f8a5feb04b97901c0a39ad7d8b5e36fd1c7ebf2",
+          "timestamp": "2026-11-24T16:03:23.727419+00:00",
+          "duration_ms": 26.569199999357807,
+          "output_hash": "2076c54c8a8f1883137fe5c9c54aa0a14045bfc38ba890ac38dee5c6907626c5",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.762658+00:00",
-      "executed_at": "2026-11-24T15:46:05.807788+00:00"
+      "created_at": "2026-11-24T16:03:23.696899+00:00",
+      "executed_at": "2026-11-24T16:03:23.727419+00:00"
     },
     {
-      "test_id": "TEST-A09-B002D4",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A09-D736DF",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A09",
       "test_category": "AEGIS",
       "scenario_id": "A09",
@@ -10705,7 +10705,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A09-B002D4",
+          "case_id": "TEST-A09-D736DF",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -10939,10 +10939,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.695487+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.601921+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.702490+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.604705+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -10957,29 +10957,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 40.89639999983774,
+      "processing_duration_ms": 23.50770000157354,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A09-B002D4",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A09-D736DF",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.695487+00:00",
-          "duration_ms": 40.89639999983774,
-          "output_hash": "c7bad35f279bb7b5b7fbaa4caade98b1062e7ff792ab773d780b84203e7cee68",
+          "timestamp": "2026-11-24T16:03:23.601921+00:00",
+          "duration_ms": 23.50770000157354,
+          "output_hash": "0c0b6e11e2ea7eae680578c3a965318c8c1261715d685d4d9e68553ba3298e93",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.640727+00:00",
-      "executed_at": "2026-11-24T15:46:05.695487+00:00"
+      "created_at": "2026-11-24T16:03:23.566677+00:00",
+      "executed_at": "2026-11-24T16:03:23.601921+00:00"
     },
     {
-      "test_id": "TEST-A08-1F0A6D",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A08-3E8C44",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A08",
       "test_category": "AEGIS",
       "scenario_id": "A08",
@@ -10994,7 +10994,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A08-1F0A6D",
+          "case_id": "TEST-A08-3E8C44",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -11228,10 +11228,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.573284+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.490268+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.576585+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.492930+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -11246,29 +11246,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 30.324600000312785,
+      "processing_duration_ms": 20.941299999321927,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A08-1F0A6D",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A08-3E8C44",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.573284+00:00",
-          "duration_ms": 30.324600000312785,
-          "output_hash": "57b6ee3100702a4802179b2d3ecaeef0e7adb9ebbfc0e40e4a67f28c8ab3cf33",
+          "timestamp": "2026-11-24T16:03:23.490268+00:00",
+          "duration_ms": 20.941299999321927,
+          "output_hash": "2adc01805c29903f765b0e924a79ffa951797511937baee84d9e8e7d74f240f5",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.537254+00:00",
-      "executed_at": "2026-11-24T15:46:05.573284+00:00"
+      "created_at": "2026-11-24T16:03:23.463659+00:00",
+      "executed_at": "2026-11-24T16:03:23.490268+00:00"
     },
     {
-      "test_id": "TEST-A07-06B3DC",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A07-F039EB",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A07",
       "test_category": "AEGIS",
       "scenario_id": "A07",
@@ -11283,7 +11283,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A07-06B3DC",
+          "case_id": "TEST-A07-F039EB",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -11517,10 +11517,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.488943+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.367598+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.492448+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.372600+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -11535,29 +11535,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 26.525600000240956,
+      "processing_duration_ms": 43.12669999853824,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A07-06B3DC",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A07-F039EB",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.488943+00:00",
-          "duration_ms": 26.525600000240956,
-          "output_hash": "981bb7117762ce263a949ce65b2290d20cfa441cf68cce150e8b69b698db4f11",
+          "timestamp": "2026-11-24T16:03:23.367598+00:00",
+          "duration_ms": 43.12669999853824,
+          "output_hash": "bcfe29fb733e524ba32f1beb002c143f2b4f5a6bcf9488ae8115ea6dfe48f895",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.456487+00:00",
-      "executed_at": "2026-11-24T15:46:05.488943+00:00"
+      "created_at": "2026-11-24T16:03:23.313502+00:00",
+      "executed_at": "2026-11-24T16:03:23.367598+00:00"
     },
     {
-      "test_id": "TEST-A06-3FA16C",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A06-5B51AF",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A06",
       "test_category": "AEGIS",
       "scenario_id": "A06",
@@ -11572,7 +11572,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A06-3FA16C",
+          "case_id": "TEST-A06-5B51AF",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -11806,10 +11806,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.404291+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.225124+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.408302+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.228132+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -11824,29 +11824,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 28.287799999816343,
+      "processing_duration_ms": 20.453400000405964,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A06-3FA16C",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A06-5B51AF",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.404291+00:00",
-          "duration_ms": 28.287799999816343,
-          "output_hash": "1ea4b59b46e3160e0006091c43a8d721cb3ba2de781035e236cf21348a48963e",
+          "timestamp": "2026-11-24T16:03:23.225124+00:00",
+          "duration_ms": 20.453400000405964,
+          "output_hash": "b60ffd6e57b858584abdb4f42a75b6071c97b7d1ce2c4228f73cadbe598627b6",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.372444+00:00",
-      "executed_at": "2026-11-24T15:46:05.404291+00:00"
+      "created_at": "2026-11-24T16:03:23.200461+00:00",
+      "executed_at": "2026-11-24T16:03:23.225124+00:00"
     },
     {
-      "test_id": "TEST-A05-30335B",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A05-CA71DB",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A05",
       "test_category": "AEGIS",
       "scenario_id": "A05",
@@ -11861,7 +11861,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A05-30335B",
+          "case_id": "TEST-A05-CA71DB",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -12095,10 +12095,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.339784+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.125391+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.342292+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.128214+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -12113,29 +12113,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 21.89129999896977,
+      "processing_duration_ms": 23.3193999993091,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A05-30335B",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A05-CA71DB",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.339784+00:00",
-          "duration_ms": 21.89129999896977,
-          "output_hash": "1b419fa46553f73ba9d3a0b066f30374d61356053f7d1bafc252fd0f4b37837b",
+          "timestamp": "2026-11-24T16:03:23.125391+00:00",
+          "duration_ms": 23.3193999993091,
+          "output_hash": "38a24dd06264a42bb9f0c144ce89f22358c5dbd9b40b7974b0aaa88043e7a0c3",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.311167+00:00",
-      "executed_at": "2026-11-24T15:46:05.339784+00:00"
+      "created_at": "2026-11-24T16:03:23.095803+00:00",
+      "executed_at": "2026-11-24T16:03:23.125391+00:00"
     },
     {
-      "test_id": "TEST-A04-B3AC22",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A04-C35423",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A04",
       "test_category": "AEGIS",
       "scenario_id": "A04",
@@ -12150,7 +12150,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A04-B3AC22",
+          "case_id": "TEST-A04-C35423",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -12384,10 +12384,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.259579+00:00"
+          "generated_at_iso": "2026-11-24T16:03:23.012914+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.263086+00:00",
+          "evaluated_at": "2026-11-24T16:03:23.020498+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -12402,29 +12402,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 29.901800000516232,
+      "processing_duration_ms": 22.781100000429433,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A04-B3AC22",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A04-C35423",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.259579+00:00",
-          "duration_ms": 29.901800000516232,
-          "output_hash": "d19b285024292b67a3c0bd338592cf4075cb14af781475945c50feab98e117cd",
+          "timestamp": "2026-11-24T16:03:23.012914+00:00",
+          "duration_ms": 22.781100000429433,
+          "output_hash": "17fc82f1256f6580b8d26b8a755f259bcd852d36fa8039048b370c0c20c5af79",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.217922+00:00",
-      "executed_at": "2026-11-24T15:46:05.259579+00:00"
+      "created_at": "2026-11-24T16:03:22.984922+00:00",
+      "executed_at": "2026-11-24T16:03:23.012914+00:00"
     },
     {
-      "test_id": "TEST-A03-79FE6D",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A03-EDB7BA",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A03",
       "test_category": "AEGIS",
       "scenario_id": "A03",
@@ -12439,7 +12439,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A03-79FE6D",
+          "case_id": "TEST-A03-EDB7BA",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -12673,10 +12673,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:05.135114+00:00"
+          "generated_at_iso": "2026-11-24T16:03:22.895455+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.151095+00:00",
+          "evaluated_at": "2026-11-24T16:03:22.901476+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -12691,29 +12691,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 59.34569999953965,
+      "processing_duration_ms": 21.55500000117172,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A03-79FE6D",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A03-EDB7BA",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:05.135114+00:00",
-          "duration_ms": 59.34569999953965,
-          "output_hash": "ae48dfbdc450bbec105e9a94f6e3b0848e046d43457f0a6870ff48750904530e",
+          "timestamp": "2026-11-24T16:03:22.895455+00:00",
+          "duration_ms": 21.55500000117172,
+          "output_hash": "5372de16ec6bc96cac6799c81f56d63272a1041739e307af2de8810f5cb90b56",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:05.069115+00:00",
-      "executed_at": "2026-11-24T15:46:05.135114+00:00"
+      "created_at": "2026-11-24T16:03:22.866413+00:00",
+      "executed_at": "2026-11-24T16:03:22.895455+00:00"
     },
     {
-      "test_id": "TEST-A02-7DD3C2",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A02-876D92",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A02",
       "test_category": "AEGIS",
       "scenario_id": "A02",
@@ -12728,7 +12728,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A02-7DD3C2",
+          "case_id": "TEST-A02-876D92",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -12962,10 +12962,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:04.994829+00:00"
+          "generated_at_iso": "2026-11-24T16:03:22.799902+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:05.004355+00:00",
+          "evaluated_at": "2026-11-24T16:03:22.802771+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -12980,29 +12980,29 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 27.564699999857112,
+      "processing_duration_ms": 29.78129999974044,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A02-7DD3C2",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A02-876D92",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:04.994829+00:00",
-          "duration_ms": 27.564699999857112,
-          "output_hash": "cb4c73cb97897cee071f5197356ba7cda3b22f422fe263d71b90646ccf110e3b",
+          "timestamp": "2026-11-24T16:03:22.799902+00:00",
+          "duration_ms": 29.78129999974044,
+          "output_hash": "b83224fb67bb61c0d4c05ecdedcbc523e09ec00776d0157e01de8ce580720385",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:04.959882+00:00",
-      "executed_at": "2026-11-24T15:46:04.994829+00:00"
+      "created_at": "2026-11-24T16:03:22.760533+00:00",
+      "executed_at": "2026-11-24T16:03:22.799902+00:00"
     },
     {
-      "test_id": "TEST-A01-5DEE18",
-      "session_id": "SESS-20261124-0C4446",
+      "test_id": "TEST-A01-FA4786",
+      "session_id": "SESS-20261124-67A1DE",
       "case_id": "CASE-A01",
       "test_category": "AEGIS",
       "scenario_id": "A01",
@@ -13017,7 +13017,7 @@
       "execution_status": "PASSED",
       "actual_output": {
         "aegis_hypotheses": {
-          "case_id": "TEST-A01-5DEE18",
+          "case_id": "TEST-A01-FA4786",
           "hypotheses": [
             {
               "hypothesis_id": "HYP-01",
@@ -13251,10 +13251,10 @@
               "plausibility_score": 0.65
             }
           ],
-          "generated_at_iso": "2026-11-24T15:46:04.865664+00:00"
+          "generated_at_iso": "2026-11-24T16:03:22.595669+00:00"
         },
         "evaluation_details": {
-          "evaluated_at": "2026-11-24T15:46:04.869662+00:00",
+          "evaluated_at": "2026-11-24T16:03:22.600683+00:00",
           "assertions_checked": [],
           "assertion_failures": [],
           "metrics": {}
@@ -13269,25 +13269,25 @@
       ],
       "engine_version": "tarka-engine-v2.0",
       "config_version": "config-sutram-2026-v1",
-      "processing_duration_ms": 111.93710000043211,
+      "processing_duration_ms": 107.35399999975925,
       "findings": [],
       "confidence": 0.0,
       "uncertainty": 0.0,
       "confusion_classification": "NOT_APPLICABLE",
       "examiner_notes": "",
-      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A01-5DEE18",
+      "reproduction_instructions": "python scripts/reproduce_test_case.py --test_id TEST-A01-FA4786",
       "audit_events": [
         {
           "action": "TEST_CASE_EXECUTED",
-          "timestamp": "2026-11-24T15:46:04.865664+00:00",
-          "duration_ms": 111.93710000043211,
-          "output_hash": "4def8bf56be7c67399bfa3ffb10872283f2d7084d4332180f1e44f1241e715fc",
+          "timestamp": "2026-11-24T16:03:22.595669+00:00",
+          "duration_ms": 107.35399999975925,
+          "output_hash": "514a5c45e9c9ca2d4553a8b43a4689222934d7f8d14e2505a0034a746f782331",
           "status": "PASSED",
           "confusion": "NOT_APPLICABLE"
         }
       ],
-      "created_at": "2026-11-24T15:46:04.734492+00:00",
-      "executed_at": "2026-11-24T15:46:04.865664+00:00"
+      "created_at": "2026-11-24T16:03:22.482871+00:00",
+      "executed_at": "2026-11-24T16:03:22.595669+00:00"
     }
   ]
 }

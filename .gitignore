@@ -46,3 +46,12 @@ data/storage/
 backend/data/storage/
 data/jobs/
 backend/data/jobs/
+data/upload_sessions/
+backend/data/upload_sessions/
+data/validation_corpus/
+data/validation_lab/frozen_runs/
+data/validation_lab/sessions/
+data/validation_lab/reports/
+data/validation_lab/tests/
+
+

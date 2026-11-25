@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-24T22:43:21Z",
+  "timestamp": "2026-11-25T09:38:34Z",
   "all_passed": true,
   "gates": {
     "gate_a": {
@@ -48,26 +48,26 @@
       "gate": "GATE_B",
       "passed": true,
       "size_bytes": 104857600,
-      "throughput_mb_s": 117.63,
+      "throughput_mb_s": 131.52,
       "mem_delta_mb": 0.13
     },
     "gate_c": {
       "gate": "GATE_C",
       "passed": true,
-      "journal_count": 11,
-      "replayed_count": 10
+      "journal_count": 15,
+      "replayed_count": 14
     },
     "gate_d": {
       "gate": "GATE_D",
       "passed": true,
-      "findings_count": 5
+      "findings_count": 6
     },
     "gate_e": {
       "gate": "GATE_E",
       "passed": true,
       "conflict_caught": true,
       "sha_match": true,
-      "artifact_id": "ART-20261124171321-3AF2DD2B"
+      "artifact_id": "ART-20261125040834-3AF2DD2B"
     },
     "gate_f": {
       "gate": "GATE_F",

@@ -90,8 +90,10 @@ class UploadSessionManager:
         uploader_id: str = "OFFICER_IN_CHARGE",
         source_channel: str = "CHUNKED_PORTAL",
         notes: Optional[str] = None,
+        expected_sha256: Optional[str] = None,
+        chunk_size_bytes: int = 8 * 1024 * 1024,
     ) -> Dict[str, Any]:
-        """Creates a new resumable chunked upload session."""
+        """Creates a new resumable chunked upload session supporting up to multi-gigabytes."""
         if total_size_bytes <= 0:
             raise ValueError("Total size must be greater than 0 bytes.")
         if total_size_bytes > DEFAULT_MAX_STREAMING_BYTES:
@@ -114,9 +116,12 @@ class UploadSessionManager:
             "filename": clean_filename,
             "total_size_bytes": total_size_bytes,
             "accepted_offset": 0,
+            "bytes_uploaded": 0,
+            "chunk_size_bytes": chunk_size_bytes,
             "mime_type": mime_type or "application/octet-stream",
             "uploader_id": uploader_id,
             "source_channel": source_channel,
+            "expected_sha256": expected_sha256.lower() if expected_sha256 else None,
             "notes": notes or "",
             "status": "UPLOADING",
             "part_file_path": str(part_path),
@@ -132,15 +137,25 @@ class UploadSessionManager:
         chunk_data: bytes,
         offset: int,
     ) -> Dict[str, Any]:
-        """Appends an incoming byte chunk at the verified offset."""
+        """Appends an incoming byte chunk at the verified offset with duplicate protection."""
         if session_id not in self.sessions:
             raise KeyError(f"Upload session '{session_id}' not found.")
 
         sess = self.sessions[session_id]
+        if sess["status"] == "COMPLETED":
+            return sess
+
         if sess["status"] not in ["UPLOADING", "UPLOAD_PAUSED"]:
             raise ValueError(f"Session '{session_id}' is in state '{sess['status']}'; cannot accept chunks.")
 
         expected = sess["accepted_offset"]
+        chunk_len = len(chunk_data)
+
+        # Duplicate re-transmission protection: if client re-sent the same chunk
+        if offset == expected - chunk_len and chunk_len > 0:
+            logger.info(f"Duplicate chunk at offset {offset} received for session {session_id}; ignoring.")
+            return sess
+
         if offset != expected:
             raise OffsetMismatchError(expected_offset=expected, received_offset=offset)
 
@@ -148,10 +163,28 @@ class UploadSessionManager:
         with open(part_path, "ab") as fp:
             fp.write(chunk_data)
 
-        sess["accepted_offset"] += len(chunk_data)
+        sess["accepted_offset"] += chunk_len
+        sess["bytes_uploaded"] = sess["accepted_offset"]
         sess["updated_at_iso"] = datetime.now(timezone.utc).isoformat()
         self._save_session(sess)
         return sess
+
+    def cleanup_expired_sessions(self, max_age_seconds: int = 86400) -> int:
+        """Purges stale incomplete upload sessions older than max_age_seconds."""
+        now = time.time()
+        purged = 0
+        for sess_id, meta in list(self.sessions.items()):
+            if meta["status"] != "COMPLETED":
+                created_iso = meta.get("created_at_iso")
+                if created_iso:
+                    try:
+                        created_t = datetime.fromisoformat(created_iso).timestamp()
+                        if now - created_t > max_age_seconds:
+                            self.cancel_session(sess_id)
+                            purged += 1
+                    except Exception:
+                        pass
+        return purged
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         return self.sessions.get(session_id)
@@ -334,11 +367,10 @@ class UniversalEvidenceGateway(MultimodalEvidenceGateway):
         elif ext in [".mp4", ".mov", ".mkv", ".webm"]:
             file_type = "VIDEO"
 
-        # 6. Parse evidence structured facts if parser available
-        parse_result = self.parser_registry.parse_file(final_dest)
+        # 6. Decoupled Ingestion: Ingestion strictly admits and registers bytes into CAS under Rule 4 (DATA_ONLY).
+        # Semantic parsing, OCR, and forensic examination are strictly decoupled from the HTTP request
+        # and dispatched to asynchronous background workers.
         status = "ACCEPTED"
-        if parse_result.get("status") == "PARSED":
-            status = "PARSED"
 
         # 7. Write immutable artifact manifest
         manifest = {
@@ -356,9 +388,9 @@ class UniversalEvidenceGateway(MultimodalEvidenceGateway):
             "notes": notes or "",
             "acquisition_timestamp_iso": datetime.now(timezone.utc).isoformat(),
             "parse_summary": {
-                "parser_id": parse_result.get("parser"),
-                "status": parse_result.get("status"),
-                "format": parse_result.get("format"),
+                "parser_id": "DECOUPLED_PENDING_WORKER",
+                "status": "ACCEPTED",
+                "format": file_type,
             },
         }
 
@@ -372,6 +404,10 @@ class UniversalEvidenceGateway(MultimodalEvidenceGateway):
         sess = self.session_manager.get_session(session_id)
         if not sess:
             raise KeyError(f"Upload session '{session_id}' not found.")
+
+        # Idempotent return if already finalized
+        if sess["status"] == "COMPLETED" and sess.get("artifact"):
+            return sess["artifact"]
 
         if sess["accepted_offset"] != sess["total_size_bytes"]:
             raise ValueError(
@@ -390,11 +426,13 @@ class UniversalEvidenceGateway(MultimodalEvidenceGateway):
                 uploader_id=sess["uploader_id"],
                 source_channel=sess["source_channel"],
                 notes=sess.get("notes", ""),
+                expected_sha256=sess.get("expected_sha256"),
             )
 
         sess["status"] = "COMPLETED"
         sess["artifact_id"] = manifest["artifact_id"]
         sess["sha256"] = manifest["sha256"]
+        sess["artifact"] = manifest
         self.session_manager._save_session(sess)
 
         # Cleanup temporary part file
