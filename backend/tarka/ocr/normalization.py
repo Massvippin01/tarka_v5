@@ -110,7 +110,8 @@ def normalize_whitespace(text: str) -> str:
 def parse_monetary_amount(text: str) -> Optional[float]:
     """Extracts numeric monetary amount from text like 'Rs 15,000', '₹15000.00', 'INR 15,000', '?1,495'."""
     cleaned = text.replace("₹", " ").replace("Rs.", " ").replace("Rs", " ").replace("INR", " ").replace("?", " ")
-    match = re.search(r"\b(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\b", cleaned)
+    # Indian grouping (2,96,000 / 12,34,567) first, then Western (296,000), then plain digits.
+    match = re.search(r"\b(?:\d{1,2}(?:,\d{2})+,\d{3}|\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\b", cleaned)
     if match:
         num_str = match.group(0).replace(",", "")
         try:
