@@ -95,10 +95,29 @@ class FormatSignatureValidator:
         "xlsx": [b"PK\x03\x04"],
         "png": [b"\x89PNG\r\n\x1a\n"],
         "jpeg": [b"\xff\xd8\xff"],
+        "gif": [b"GIF87a", b"GIF89a"],
+        "bmp": [b"BM"],
+        "tiff": [b"II*\x00", b"MM\x00*"],
         "wav": [b"RIFF"],
         "mp3": [b"ID3", b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"],
+        "flac": [b"fLaC"],
+        "ogg": [b"OggS"],
+        "mkv": [b"\x1a\x45\xdf\xa3"],
+        "7z": [b"7z\xbc\xaf\x27\x1c"],
+        "gz": [b"\x1f\x8b"],
         "pcap": [b"\xd4\xc3\xb2\xa1", b"\xa1\xb2\xc3\xd4", b"\n\r\r\n"],
     }
+
+    MALICIOUS_SIGNATURES: List[Tuple[bytes, str]] = [
+        (b"MZ", "Windows PE executable / DLL"),
+        (b"\x7fELF", "Linux ELF executable / shared object"),
+        (b"\xca\xfe\xba\xbe", "Mach-O / Java universal binary"),
+        (b"\xce\xfa\xed\xfe", "Mach-O 32-bit binary"),
+        (b"\xcf\xfa\xed\xfe", "Mach-O 64-bit binary"),
+        (b"#!/bin/sh", "Unix shell script"),
+        (b"#!/bin/bash", "Bash shell script"),
+        (b"#!/usr/bin/env", "Script interpreter shebang"),
+    ]
 
     @classmethod
     def validate_signature(cls, filename: str, header_bytes: bytes) -> Tuple[bool, str, str]:
@@ -111,20 +130,45 @@ class FormatSignatureValidator:
 
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
+        # Reject executable / script payloads regardless of extension (Rule 4: DATA_ONLY)
+        for sig, desc in cls.MALICIOUS_SIGNATURES:
+            if header_bytes.startswith(sig):
+                return False, "malicious_executable", f"Malicious or executable payload rejected ({desc})."
+
+        lower_hdr = header_bytes.lower()
+        if (b"<script" in lower_hdr or b"<iframe" in lower_hdr or b"javascript:" in lower_hdr) and ext in (
+            "png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff", "tif", "pdf", "csv", "tsv", "xlsx"
+        ):
+            return False, "disguised_script", f"Disguised active script directive detected in '{filename}'."
+
+        # WebP: RIFF....WEBP
+        if header_bytes.startswith(b"RIFF") and len(header_bytes) >= 12 and header_bytes[8:12] == b"WEBP":
+            return True, "webp", "Magic bytes match WEBP image signature."
+
+        # MP4 / MOV / M4A: ISO Base Media File Format ('ftyp' at byte 4)
+        if len(header_bytes) >= 12 and header_bytes[4:8] == b"ftyp":
+            fmt = ext if ext in ("mp4", "mov", "m4a") else "mp4"
+            return True, fmt, f"Magic bytes match ISO BMFF ({fmt.upper()}) container."
+
         # Binary signature checks
         for fmt, sigs in cls.MAGIC_SIGNATURES.items():
             if any(header_bytes.startswith(sig) for sig in sigs):
                 if ext in ("docx", "xlsx", "zip") and fmt in ("zip", "docx", "xlsx"):
-                    return True, ext or "zip", f"Verified ZIP-container container format for {ext.upper()}."
+                    return True, ext or "zip", f"Verified ZIP-container format for {ext.upper()}."
                 if ext == fmt:
                     return True, fmt, f"Magic bytes match expected {fmt.upper()} signature."
                 if ext in ("jpg", "jpeg") and fmt == "jpeg":
                     return True, "jpeg", "Magic bytes match JPEG signature."
-                # Valid signature, but extension differs slightly
+                if ext in ("tif", "tiff") and fmt == "tiff":
+                    return True, "tiff", "Magic bytes match TIFF signature."
+                if ext in ("webm", "mkv") and fmt == "mkv":
+                    return True, ext, f"Magic bytes match {ext.upper()} signature."
+                if ext in ("gz", "gzip") and fmt == "gz":
+                    return True, "gz", "Magic bytes match GZIP signature."
                 return True, fmt, f"Detected authentic {fmt.upper()} payload with extension .{ext}."
 
-        # Plain text formats: CSV, JSON, XML, TXT, LOG
-        if ext in ("csv", "txt", "log", "json", "xml"):
+        # Plain text formats: CSV, TSV, JSON, XML, TXT, LOG, RTF
+        if ext in ("csv", "tsv", "txt", "log", "json", "xml", "rtf"):
             try:
                 sample = header_bytes[:512].decode("utf-8", errors="strict")
                 if ext == "json":
@@ -134,15 +178,47 @@ class FormatSignatureValidator:
                 elif ext == "xml":
                     if sample.strip().startswith(("<", "<?xml")):
                         return True, "xml", "Header verified as valid XML payload."
+                elif ext == "rtf" and sample.lstrip().startswith("{\\rtf"):
+                    return True, "rtf", "Header verified as RTF document."
                 return True, ext, f"Header verified as valid UTF-8 plain text for {ext.upper()}."
             except UnicodeDecodeError:
                 return False, "binary_unknown", f"File .{ext} claimed to be plain text, but contains non-UTF-8 binary data."
 
         # Default fallback for forensic raw images / dumps
-        if ext in ("raw", "dd", "bin", "eml", "mbox"):
+        if ext in ("raw", "dd", "bin", "eml", "mbox", "tar", "aac", "xls"):
             return True, ext, f"Accepted under raw forensic stream policy for .{ext}."
 
         return False, "unsupported", f"Unrecognized or unsupported file format signature for file '{filename}'."
+
+    @classmethod
+    def validate_file_security(cls, file_path: Path, detected_fmt: str) -> Tuple[bool, str]:
+        """Deep security checks on staged file: PNG/ZIP polyglots, PDF active scripts, CSV formula injection."""
+        try:
+            size = file_path.stat().st_size
+            if detected_fmt == "png":
+                with open(file_path, "rb") as fp:
+                    sample = fp.read(min(size, 2 * 1024 * 1024))
+                iend_pos = sample.find(b"IEND\xaeB`\x82")
+                if iend_pos != -1 and b"PK\x03\x04" in sample[iend_pos + 8 :]:
+                    return False, "Polyglot payload detected: ZIP archive appended after PNG IEND chunk."
+            elif detected_fmt == "pdf":
+                with open(file_path, "rb") as fp:
+                    sample = fp.read(min(size, 512 * 1024)).lower()
+                if b"/javascript" in sample or b"/launch" in sample:
+                    return False, "Active executable directive (/JavaScript or /Launch) detected in PDF."
+            elif detected_fmt in ("csv", "tsv"):
+                with open(file_path, "rb") as fp:
+                    sample = fp.read(min(size, 64 * 1024)).decode("utf-8", errors="ignore")
+                for line in sample.splitlines()[:50]:
+                    for cell in line.split("\t" if detected_fmt == "tsv" else ","):
+                        c = cell.strip().strip('"').strip("'")
+                        if c and c[0] in ("=", "+", "-", "@", "|"):
+                            lc = c.lower()
+                            if any(d in lc for d in ("cmd", "powershell", "certutil", "cscript", "mshta", "rundll32", "dde", "exec")):
+                                return False, f"Formula injection / DDE command detected in tabular cell '{c[:25]}'."
+        except Exception as exc:
+            return False, f"Security scan failed: {exc}"
+        return True, "OK"
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -747,6 +823,15 @@ class IngestionJobManager:
                 logger.error(f"Job {job.job_id} failed stage 3: {msg}")
                 return
 
+            sec_ok, sec_msg = await asyncio.to_thread(
+                FormatSignatureValidator.validate_file_security, job.staging_path, detected_fmt
+            )
+            if not sec_ok:
+                job.stage = IngestionStage.REJECTED
+                job.error_message = f"Security validation failed: {sec_msg}"
+                logger.error(f"Job {job.job_id} failed security scan: {sec_msg}")
+                return
+
             # If zip archive, perform quarantine audit
             if detected_fmt in ("zip", "docx", "xlsx"):
                 safe, arc_msg, arc_telemetry = ArchiveSafetyQuarantine.audit_archive_file(job.staging_path)
@@ -796,13 +881,32 @@ class IngestionJobManager:
                 "chunk_count": len(job.hasher.chunk_manifest),
             }
 
-            # Stage 6: Content Extracted. Only tabular text has a parser today.
+            # Stage 6: Content Extracted via tabular streaming + FormatParserRegistry + TRACE OCR forensics
             job.stage = IngestionStage.STAGE_6_CONTENT_EXTRACTED
             parse_summary: Dict[str, Any] = {
                 "parser": None,
                 "note": f"No parser for .{detected_fmt} files yet; stored as evidence only.",
             }
-            if detected_fmt in ("csv", "txt"):
+            case_dir = ensure_inside(self.derived_dir, self.derived_dir / job.case_id)
+            handled_whatsapp = False
+            if detected_fmt == "txt":
+                def _maybe_whatsapp() -> Optional[Dict[str, Any]]:
+                    from app.adapters.whatsapp_parser import looks_like_whatsapp_export, parse_whatsapp_export
+
+                    with open(sealed_target, "r", encoding="utf-8", errors="replace") as fp:
+                        head_txt = fp.read(16384)
+                    if not looks_like_whatsapp_export(head_txt):
+                        return None
+                    full_txt = sealed_target.read_text(encoding="utf-8", errors="replace")
+                    parsed_wa = parse_whatsapp_export(full_txt, filename=job.filename)
+                    return DerivedStore(case_dir).ingest_whatsapp_export(job.job_id, parsed_wa)
+
+                wa_summary = await asyncio.to_thread(_maybe_whatsapp)
+                if wa_summary is not None:
+                    parse_summary = wa_summary
+                    handled_whatsapp = True
+
+            if not handled_whatsapp and detected_fmt in ("csv", "txt", "tsv"):
                 headers = await asyncio.to_thread(read_header, sealed_target)
                 template = None if job.column_map else self.template_for(headers)
                 names = job.column_map or (template["columns"] if template else None)
@@ -821,7 +925,6 @@ class IngestionJobManager:
                         "note": "Columns not recognised. Map the date and amount columns to continue.",
                     }
                     return
-                case_dir = ensure_inside(self.derived_dir, self.derived_dir / job.case_id)
                 if columns == "device":  # CDR / IPDR / bank login log → device_events
                     parse_summary = await asyncio.to_thread(ingest_device_csv, case_dir, job.job_id, sealed_target)
                 else:
@@ -858,6 +961,155 @@ class IngestionJobManager:
                     except Exception:
                         logger.exception("Network warm-up failed for %s", job.case_id)
                     job.processing = {**job.processing, "step": "DONE", "pct": 100.0}
+            elif detected_fmt in ("png", "jpeg", "webp", "tiff", "bmp", "gif"):
+                def _run_image_forensics() -> Dict[str, Any]:
+                    from app.adapters.format_parser_registry import FormatParserRegistry
+                    from app.adapters.trace_payment_forensics import TracePaymentForensics
+
+                    parsed = FormatParserRegistry.get_instance().parse_file(sealed_target)
+                    img_bytes = sealed_target.read_bytes()
+                    exam = TracePaymentForensics().examine_payment_screenshot(
+                        img_bytes, filename=job.filename, artifact_id=artifact_id, case_id=job.case_id
+                    )
+                    job_names = {j.job_id: j.filename for j in self.list_jobs({job.case_id})}
+                    saved = DerivedStore(case_dir).save_receipt_forensics(
+                        job.job_id, artifact_id, job.filename, exam, job_names=job_names
+                    )
+                    fields = saved["extracted_fields"]
+                    ident_counts: Dict[str, int] = {}
+                    if fields.get("vpa"):
+                        ident_counts["vpa"] = 1
+                    if fields.get("utr_rrn"):
+                        ident_counts["utr"] = 1
+                    return {
+                        "parser": "payment_receipt",
+                        "format": "IMAGE",
+                        "parser_status": parsed.get("status", "PARSED"),
+                        "dimensions": parsed.get("dimensions"),
+                        "exif_present": (exam.get("metadata_analysis") or {}).get("exif_present", False),
+                        "ocr_token_count": (exam.get("ocr_analysis") or {}).get("token_count", 0),
+                        "ocr_engine": (exam.get("ocr_analysis") or {}).get("engine"),
+                        "extracted_fields": {k: v for k, v in fields.items() if k not in ("field_provenance", "ambiguities")},
+                        "composite_anomaly_score": saved["composite_anomaly_score"],
+                        "preliminary_assessment": saved["preliminary_assessment"],
+                        "reconciliation": saved["reconciliation"],
+                        "identifiers_by_kind": ident_counts,
+                    }
+
+                parse_summary = await asyncio.to_thread(_run_image_forensics)
+            elif detected_fmt == "pdf":
+                def _run_pdf_forensics() -> Dict[str, Any]:
+                    from app.adapters.format_parser_registry import FormatParserRegistry
+                    from app.adapters.trace_payment_forensics import TracePaymentForensics
+
+                    parsed = FormatParserRegistry.get_instance().parse_file(sealed_target)
+                    text_preview = parsed.get("extracted_text_preview") or ""
+                    out: Dict[str, Any] = {
+                        "parser": parsed.get("parser", "pdf_forensic_parser"),
+                        "parser_status": parsed.get("status", "PARSED"),
+                        "format": "PDF",
+                        "page_count": parsed.get("page_count", 0),
+                        "total_extracted_characters": parsed.get("total_extracted_characters", 0),
+                        "metadata": parsed.get("metadata", {}),
+                    }
+                    # If PDF is scanned/image-only or contains payment receipt cues, run OCR & reconciliation
+                    has_payment_cues = any(
+                        kw in text_preview.lower()
+                        for kw in ("upi", "utr", "rrn", "paid to", "payment", "₹", "rs.", "inr", "@")
+                    )
+                    exam: Optional[Dict[str, Any]] = None
+                    if parsed.get("total_extracted_characters", 0) < 40:
+                        try:
+                            import pypdfium2 as pdfium
+
+                            pdf_doc = pdfium.PdfDocument(str(sealed_target))
+                            if len(pdf_doc) > 0:
+                                bmp = pdf_doc[0].render(scale=2.0)
+                                pil_page = bmp.to_pil()
+                                buf = io.BytesIO()
+                                pil_page.save(buf, format="PNG")
+                                exam = TracePaymentForensics().examine_payment_screenshot(
+                                    buf.getvalue(), filename=job.filename, artifact_id=artifact_id, case_id=job.case_id
+                                )
+                        except Exception as pdf_img_exc:
+                            logger.debug("PDF page render OCR skipped for %s: %s", job.filename, pdf_img_exc)
+                    elif has_payment_cues:
+                        # Extract payment fields from PDF text without running image-only ELA
+                        import re as _re
+                        amt_m = _re.search(r"(?:₹|Rs\.?|INR)\s*([0-9,]+(?:\.[0-9]{1,2})?)", text_preview)
+                        rrn_m = _re.search(r"\b(\d{12})\b", text_preview)
+                        vpa_m = _re.search(r"\b([a-zA-Z0-9.\-_]{2,64}@[a-zA-Z]{2,32})\b", text_preview)
+                        d_m = _re.search(r"\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\b", text_preview)
+                        t_m = _re.search(r"\b(\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:AM|PM))?)\b", text_preview, _re.IGNORECASE)
+                        fields = {
+                            "amount": float(amt_m.group(1).replace(",", "")) if amt_m else None,
+                            "currency": "INR",
+                            "utr_rrn": rrn_m.group(1) if rrn_m else None,
+                            "vpa": vpa_m.group(1).lower() if vpa_m else None,
+                            "transaction_date": d_m.group(1) if d_m else None,
+                            "transaction_time": t_m.group(1) if t_m else None,
+                            "upi_app": None,
+                            "status": "UNKNOWN",
+                        }
+                        if any(fields.get(k) is not None for k in ("amount", "utr_rrn", "vpa")):
+                            exam = {
+                                "artifact_id": artifact_id,
+                                "filename": job.filename,
+                                "case_id": job.case_id,
+                                "composite_anomaly_score": 0.0,
+                                "preliminary_assessment": "PDF text extracted — needs examiner review",
+                                "metadata_analysis": {"format": "PDF", "exif_present": False, "pdf_metadata": parsed.get("metadata", {})},
+                                "ocr_analysis": {
+                                    "engine": "pypdf",
+                                    "extracted_fields": fields,
+                                    "token_count": len(text_preview.split()),
+                                    "bounding_polygons": [],
+                                    "raw_text_sample": text_preview[:1000],
+                                },
+                                "manipulation_analysis": {
+                                    "composite_anomaly_score": 0.0,
+                                    "classification": "PDF text extracted — needs examiner review",
+                                    "ela_preview_base64": "",
+                                    "resampling_edge_score": 0.0,
+                                },
+                            }
+                    if exam is not None:
+                        job_names = {j.job_id: j.filename for j in self.list_jobs({job.case_id})}
+                        saved = DerivedStore(case_dir).save_receipt_forensics(
+                            job.job_id, artifact_id, job.filename, exam, job_names=job_names
+                        )
+                        out["parser"] = "pdf_forensics"
+                        out["extracted_fields"] = {
+                            k: v for k, v in saved["extracted_fields"].items() if k not in ("field_provenance", "ambiguities")
+                        }
+                        out["composite_anomaly_score"] = saved["composite_anomaly_score"]
+                        out["preliminary_assessment"] = saved["preliminary_assessment"]
+                        out["reconciliation"] = saved["reconciliation"]
+                    return out
+
+                parse_summary = await asyncio.to_thread(_run_pdf_forensics)
+            elif not handled_whatsapp:
+                def _run_registry_parser() -> Dict[str, Any]:
+                    from app.adapters.format_parser_registry import FormatParserRegistry
+
+                    parsed = FormatParserRegistry.get_instance().parse_file(sealed_target)
+                    p_status = parsed.get("status", "PARSED")
+                    summary_out: Dict[str, Any] = {
+                        "parser": parsed.get("parser"),
+                        "parser_status": p_status,
+                        "format": parsed.get("format"),
+                        "warnings": parsed.get("warnings", []),
+                    }
+                    if p_status == "PARSER_NOT_AVAILABLE":
+                        summary_out["note"] = parsed.get("message") or f"No semantic parser for .{detected_fmt}; stored as evidence."
+                    for k in ("total_rows", "headers", "formulas_detected", "sheet_names",
+                              "entry_count", "total_uncompressed_bytes", "has_path_traversal",
+                              "character_count", "media_type", "duration_seconds", "sample_rate_hz"):
+                        if k in parsed:
+                            summary_out[k] = parsed[k]
+                    return summary_out
+
+                parse_summary = await asyncio.to_thread(_run_registry_parser)
 
             # Stage 7: Content Indexed (rows + identifiers are in the case's derived store)
             job.stage = IngestionStage.STAGE_7_CONTENT_INDEXED
@@ -868,7 +1120,7 @@ class IngestionJobManager:
 
             # Stage 9: Results Validated. Every non-empty data row is either accepted or rejected.
             job.stage = IngestionStage.STAGE_9_RESULTS_VALIDATED
-            if parse_summary.get("parser"):
+            if parse_summary.get("parser") in ("bank_upi", "device_log"):
                 accounted = parse_summary["rows_accepted"] + parse_summary["rows_rejected"]
                 if accounted != parse_summary["rows_read"]:
                     raise RuntimeError(f"Row count mismatch: read {parse_summary['rows_read']}, accounted {accounted}.")

@@ -29,10 +29,13 @@ RUN pip install --prefix=/install/deps --no-warn-script-location -r requirements
 # Stage 2: Minimal Non-Root Production Runtime
 FROM python:3.12-slim-bookworm AS runner
 
-# Install only minimal runtime shared libraries (libpq for postgres, curl for healthchecks)
+# Install minimal runtime shared libraries (libpq for postgres, curl for healthchecks, libgl1/libglib2.0-0/libgomp1 for OpenCV + RapidOCR)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libpq5 \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create unprivileged application user and group
