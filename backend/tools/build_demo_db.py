@@ -51,7 +51,7 @@ async def _upload(mgr, case_id: str, path: Path) -> str:
 def upload_ocr_files(data_dir: Path, case_id: str) -> list[str]:
     from app.services.ingestion.large_evidence_engine import IngestionJobManager
 
-    files = sorted(f for f in (ROOT / "demo_evidence_files" / "ocr").rglob("*") if f.is_file())
+    files = sorted(f for f in (ROOT / "demo_evidence_files" / "ocr").rglob("*") if f.is_file() and f.suffix.lower() != ".md")
     mgr = IngestionJobManager(base_dir=data_dir)
 
     async def run():
