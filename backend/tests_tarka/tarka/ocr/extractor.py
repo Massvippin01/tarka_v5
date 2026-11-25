@@ -174,52 +174,9 @@ class OCRExtractor:
             except Exception as exc:
                 logger.error(f"RapidOCR inference exception: {exc}")
         else:
-            # Deterministic pure-Python OCR fallback when PaddleOCR C++ binaries are not present
-            fallback_items = []
-            if img_width == 720 and img_height == 1280:
-                fallback_items = [
-                    ("Payment Successful", 0.98, [[50.0, 80.0], [400.0, 80.0], [400.0, 130.0], [50.0, 130.0]]),
-                    ("₹15,000", 0.99, [[100.0, 200.0], [350.0, 200.0], [350.0, 260.0], [100.0, 260.0]]),
-                    ("Paid to", 0.96, [[50.0, 300.0], [150.0, 300.0], [150.0, 330.0], [50.0, 330.0]]),
-                    ("merchant.pay@okaxis", 0.97, [[160.0, 300.0], [520.0, 300.0], [520.0, 330.0], [160.0, 330.0]]),
-                    ("UPI Ref No", 0.95, [[50.0, 380.0], [160.0, 380.0], [160.0, 410.0], [50.0, 410.0]]),
-                    ("202602148891", 0.99, [[170.0, 380.0], [450.0, 380.0], [450.0, 410.0], [170.0, 410.0]]),
-                    ("Date", 0.95, [[50.0, 450.0], [120.0, 450.0], [120.0, 480.0], [50.0, 480.0]]),
-                    ("14/02/2026 10:20:00", 0.96, [[130.0, 450.0], [450.0, 450.0], [450.0, 480.0], [130.0, 480.0]]),
-                    ("Transaction ID", 0.95, [[50.0, 520.0], [220.0, 520.0], [220.0, 550.0], [50.0, 550.0]]),
-                    ("UPI/202602148891", 0.96, [[230.0, 520.0], [500.0, 520.0], [500.0, 550.0], [230.0, 550.0]]),
-                    ("Status", 0.95, [[50.0, 590.0], [130.0, 590.0], [130.0, 620.0], [50.0, 620.0]]),
-                    ("SUCCESS", 0.98, [[140.0, 590.0], [260.0, 590.0], [260.0, 620.0], [140.0, 620.0]]),
-                    ("Banking Name", 0.94, [[50.0, 660.0], [220.0, 660.0], [220.0, 690.0], [50.0, 690.0]]),
-                    ("Merchant Stores Ltd", 0.95, [[230.0, 660.0], [550.0, 660.0], [550.0, 690.0], [230.0, 690.0]]),
-                    ("Verified Digital Receipt", 0.92, [[100.0, 730.0], [450.0, 730.0], [450.0, 760.0], [100.0, 760.0]]),
-                    ("UPI 2.0 Core", 0.91, [[50.0, 800.0], [200.0, 800.0], [200.0, 830.0], [50.0, 830.0]]),
-                ]
-            else:
-                fallback_items = [
-                    ("UPI Transaction Paid:", 0.97, [[50.0, 100.0], [250.0, 100.0], [250.0, 130.0], [50.0, 130.0]]),
-                    ("Rs 15000", 0.98, [[260.0, 100.0], [380.0, 100.0], [380.0, 130.0], [260.0, 130.0]]),
-                    ("Ref 202602148891", 0.99, [[390.0, 100.0], [550.0, 100.0], [550.0, 130.0], [390.0, 130.0]]),
-                ]
-            for idx, (text, score, poly) in enumerate(fallback_items):
-                norm_poly = validate_and_normalize_coordinates(
-                    coords=poly,
-                    img_width=img_width,
-                    img_height=img_height,
-                )
-                tok_id = f"tok_{artifact_id}_{idx + 1}"
-                tokens.append(
-                    OCRToken(
-                        token_id=tok_id,
-                        artifact_id=artifact_id,
-                        run_id=run_id,
-                        text=str(text).strip(),
-                        confidence=round(float(score), 4),
-                        polygon=norm_poly,
-                        line_index=idx,
-                        token_index=0,
-                    )
-                )
+            # No engine installed: return no tokens. Never invent text.
+            engine_name = "NONE"
+            engine_version = "OCR engine not available"
 
         # 2. Extract Candidate Financial Fields
         candidates = extract_candidate_financial_fields(

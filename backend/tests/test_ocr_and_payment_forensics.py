@@ -226,7 +226,7 @@ def test_whatsapp_export_parser_extracts_identifiers():
 
 def test_receipt_and_bank_csv_reconcile_both_upload_orders(isolated_mgr):
     case_id = "CASE-2026-001"
-    png_bytes = _make_receipt_png("₹25,000", "412356789012", "rahul@okaxis", embed_text=True)
+    png_bytes = _make_receipt_png("₹25,000", "412356789012", "rahul@okaxis")
     csv_mismatch = (
         "txn_date,txn_time,payer,payee,amount,rrn\n"
         "15/04/2026,11:42:00,victim@oksbi,rahul@okaxis,15000.00,412356789012\n"

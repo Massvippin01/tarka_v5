@@ -59,10 +59,11 @@ interface InventoryProps {
   files: EvidenceFile[];
   onShowRejected: (f: EvidenceFile) => void;
   onShowFileRows: (f: EvidenceFile) => void;
+  onShowOcr?: (f: EvidenceFile) => void;
   onOpenUpload: () => void;
 }
 
-export const EvidenceInventory: React.FC<InventoryProps> = ({ files, onShowRejected, onShowFileRows, onOpenUpload }) => (
+export const EvidenceInventory: React.FC<InventoryProps> = ({ files, onShowRejected, onShowFileRows, onShowOcr, onOpenUpload }) => (
   <div className="overflow-x-auto">
     <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
       <colgroup>
@@ -91,6 +92,11 @@ export const EvidenceInventory: React.FC<InventoryProps> = ({ files, onShowRejec
             </td>
             <td className="border-b border-[var(--line)] px-3 py-2.5">
               <StatusPill status={f.status} />
+              {f.canOcr && onShowOcr && (
+                <button type="button" onClick={() => onShowOcr(f)} title="See the text read from this file, compared with the bank statement" className="mt-1 block text-[12px] font-semibold text-[var(--accent)] hover:underline">
+                  OCR view
+                </button>
+              )}
               {f.status === 'NEEDS_MAPPING' && (
                 <button type="button" onClick={onOpenUpload} className="mt-1 block text-[12px] font-semibold text-[var(--accent)] hover:underline">
                   Map columns

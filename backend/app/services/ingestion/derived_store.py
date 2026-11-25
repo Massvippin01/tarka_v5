@@ -555,6 +555,15 @@ class DerivedStore:
         utr_rrn = str(fields.get("utr_rrn") or "").strip() or None
         raw_amt = fields.get("amount")
         amount = float(raw_amt) if raw_amt is not None else None
+        if utr_rrn is None and amount is None:
+            return {
+                "reconciliation_status": "NOT_ENOUGH_DETAIL",
+                "match_type": "NONE",
+                "matched_row": None,
+                "discrepancy": None,
+                "summary": "No amount or reference number could be read, so nothing to compare with the statement.",
+                "reconciled_at_iso": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
         has_txns, candidates = self._candidate_bank_rows(db, utr_rrn, amount, job_names=job_names)
         if not has_txns:
             return TracePaymentForensics(ocr_extractor=False).reconcile_against_derived_rows(fields, [])

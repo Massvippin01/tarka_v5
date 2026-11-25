@@ -19,7 +19,7 @@ import hashlib
 import io
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -212,41 +212,8 @@ class TracePaymentForensics:
         bounding_polygons: List[Dict[str, Any]] = []
         engine_used = "NONE"
 
-        # 1. Check explicit embedded text metadata if present
-        try:
-            with Image.open(io.BytesIO(image_bytes)) as pil_img:
-                meta_txt = (
-                    pil_img.info.get("TARKA_RECEIPT_TEXT")
-                    or pil_img.info.get("Description")
-                    or pil_img.info.get("Comment")
-                    or pil_img.info.get("comment")
-                )
-                if isinstance(meta_txt, bytes):
-                    meta_txt = meta_txt.decode("utf-8", errors="replace")
-                if meta_txt:
-                    raw_text_corpus = str(meta_txt)
-                    engine_used = "IMAGE_TEXT_METADATA"
-                    for idx, line in enumerate(raw_text_corpus.splitlines()):
-                        if line.strip():
-                            ymin = min(90.0, idx * 10.0)
-                            ymax = min(100.0, (idx + 1) * 10.0)
-                            tokens_serialized.append({
-                                "token_id": f"tok_meta_{idx}",
-                                "text": line.strip(),
-                                "confidence": 0.99,
-                                "bbox": [0.1, ymin / 100.0, 0.9, ymax / 100.0],
-                            })
-                            bounding_polygons.append({
-                                "field_name": f"line_{idx + 1}",
-                                "text": line.strip(),
-                                "confidence": 0.99,
-                                "polygon": [10.0, ymin, 90.0, ymax],
-                            })
-        except Exception:
-            pass
-
         # 2. Run OCRExtractor (PaddleOCR -> RapidOCR -> graceful fallback)
-        if not raw_text_corpus and self.ocr_extractor:
+        if self.ocr_extractor:
             try:
                 ocr_res = self.ocr_extractor.extract_from_bytes(image_bytes, artifact_id, case_id)
                 engine_used = f"{ocr_res.engine_name} {ocr_res.engine_version}".strip()
@@ -333,12 +300,11 @@ class TracePaymentForensics:
 
         # 3. Heuristic enrichment from extracted OCR text (never inventing missing data)
         app_signatures = [
-            ("PHONEPE", ["phonepe", "ybl", "ibl", "axl"]),
-            ("GOOGLE_PAY", ["google pay", "gpay", "okaxis", "okhdfcbank", "oksbi", "okicici"]),
-            ("PAYTM", ["paytm", "paytm payments bank"]),
-            ("BHIM", ["bhim", "upi bhim"]),
-            ("CRED", ["cred", "cred pay"]),
-            ("AMAZON_PAY", ["amazon pay", "apl"]),
+            ("PHONEPE", ["phonepe"]),
+            ("GOOGLE_PAY", ["google pay", "gpay"]),
+            ("PAYTM", ["paytm"]),
+            ("BHIM", ["bhim"]),
+            ("AMAZON_PAY", ["amazon pay"]),
         ]
         text_lower = raw_text_corpus.lower()
         for app_name, keywords in app_signatures:
@@ -404,10 +370,20 @@ class TracePaymentForensics:
         if acct_match:
             extracted_fields["masked_account"] = f"XXXX{acct_match.group(1)}"
 
+        # Several different 12-digit references = a statement page, not one receipt: do not guess which row.
+        if len(set(re.findall(r"\b\d{12}\b", raw_text_corpus))) > 1:
+            for k in ("amount", "utr_rrn", "vpa", "transaction_date", "transaction_time"):
+                extracted_fields[k] = None
+            extracted_fields["field_provenance"] = {}
+            extracted_fields["ambiguities"].append(
+                "Several different reference numbers on this page. It looks like a statement, not a single receipt, so no payment fields were taken."
+            )
+
         return {
             "artifact_id": artifact_id,
             "case_id": case_id,
             "engine": engine_used,
+            "ocr_status": "OCR engine not available" if engine_used.startswith("NONE") else "OK",
             "extracted_fields": extracted_fields,
             "tokens": tokens_serialized,
             "bounding_polygons": bounding_polygons,
@@ -718,12 +694,6 @@ class TracePaymentForensics:
             manipulated_bbox = ela_res["localized_bbox"]
         elif resample_res.get("inpaint_bbox"):
             manipulated_bbox = resample_res["inpaint_bbox"]
-        elif typo_res.get("detected_anomalies"):
-            manipulated_bbox = [0.20, 0.08, 0.35, 0.75]
-        elif resample_res.get("resample_detected"):
-            manipulated_bbox = [0.0, 0.0, 1.0, 1.0]
-        elif meta_res.get("has_editing_signature"):
-            manipulated_bbox = [0.0, 0.0, 0.10, 0.10]
 
         findings: List[Dict[str, Any]] = []
         if ela_res.get("is_anomalous"):
@@ -832,6 +802,16 @@ class TracePaymentForensics:
                 "reconciled_at_iso": datetime.now(timezone.utc).isoformat(),
             }
 
+        receipt_ts: Optional[float] = None
+        if receipt_fields.get("transaction_date") and receipt_fields.get("transaction_time"):
+            try:
+                from dateutil import parser as _dp
+
+                _dt = _dp.parse(f"{receipt_fields['transaction_date']} {receipt_fields['transaction_time']}", dayfirst=True)
+                receipt_ts = _dt.replace(tzinfo=_dt.tzinfo or timezone(timedelta(hours=5, minutes=30))).timestamp()
+            except Exception:
+                receipt_ts = None  # unreadable time: fall back to amount-only (flagged for review)
+
         exact_rrn_matches: List[Dict[str, Any]] = []
         amount_matches: List[Dict[str, Any]] = []
 
@@ -842,6 +822,9 @@ class TracePaymentForensics:
             if receipt_rrn and (receipt_rrn in row_ref or receipt_rrn in row_parties):
                 exact_rrn_matches.append(row)
             elif receipt_amt is not None and abs(row_amt - receipt_amt) < 0.01:
+                # With a readable receipt date/time, only accept statement rows within 15 minutes of it.
+                if receipt_ts is not None and row.get("ts") is not None and abs(float(row["ts"]) - receipt_ts) > 900:
+                    continue
                 amount_matches.append(row)
 
         if len(exact_rrn_matches) == 1:
