@@ -55,29 +55,41 @@ export function noticeOverdue(n: FreezeNotice, nowMs: number): Overdue {
   return null;
 }
 
-const STATUS_WEIGHT: Record<QueueRow['status'], number> = { NOT_SENT: 1, REFUSED: 0.9, SENT: 0.5, ACKNOWLEDGED: 0.3, FROZEN: 0 };
+const STATUS_WEIGHT: Record<QueueRow['status'], number> = { NOT_SENT: 1, REFUSED: 0.9, SENT: 0.5, ACKNOWLEDGED: 0.3, FROZEN: 0, RELEASED: 0 };
 
 export interface RankedRow extends QueueRow {
   bankKey: BankKey;
   networkId: string | null;
   /** 0..1: how pressing this account is, apart from its amount. */
   urgency: number;
-  /** recoverable ₹ × urgency: the sort key. */
+  /** Held ₹ × retention likelihood (decays with hours since last outflow). */
+  freezeValueInr: number;
+  retentionLikelihood: number;
+  hoursSinceLastOutflow: number;
+  /** freezeValueInr × noticeStatusWeight: the sort key. */
   score: number;
+  formula: string;
   why: string;
 }
 
 /**
- * Freeze rows for the scope, ranked by recoverable ₹ × urgency.
- * Urgency = where the notice stands (not sent > refused > overdue > waiting > acknowledged > frozen)
- *         × freshness (1 / (1 + days between this account's last movement and the newest movement in scope)):
- * a mule that moved money recently is likelier to empty out next.
+ * Freeze rows for the scope, ranked by Freeze Value (money still held × likelihood still there) × notice status.
+ * Likelihood decays exponentially with a 24h half-life since last outflow: P = 0.5^(hours / 24).
  */
 export function rankActionQueue(rows: QueueRow[], scope: ActionScope, nowMs: number): RankedRow[] {
-  const member = new Map<string, { net: string; lastTs: number | null }>();
+  const member = new Map<
+    string,
+    { net: string; lastTs: number | null; freezeVal?: number; likelihood?: number; hrs?: number }
+  >();
   for (const n of scope.networks)
     for (const m of n.members) {
-      const v = { net: n.network_id, lastTs: m.last_ts ?? null };
+      const v = {
+        net: n.network_id,
+        lastTs: m.last_ts ?? null,
+        freezeVal: m.freeze_value_inr,
+        likelihood: m.retention_likelihood,
+        hrs: m.hours_since_last_outflow,
+      };
       member.set(partyKey(m.label), v);
       member.set(partyKey(m.id), v);
     }
@@ -88,15 +100,45 @@ export function rankActionQueue(rows: QueueRow[], scope: ActionScope, nowMs: num
       const m = member.get(partyKey(r.holderName));
       const overdue = r.notice ? noticeOverdue(r.notice, nowMs) : null;
       const statusW = overdue ? Math.min(0.8, STATUS_WEIGHT[r.status] + 0.3) : STATUS_WEIGHT[r.status];
-      const staleDays = m?.lastTs && newest ? Math.max(0, (newest - m.lastTs) / 86400) : 0;
-      const fresh = 1 / (1 + staleDays);
-      const urgency = statusW * fresh;
+      const staleHours =
+        m?.hrs != null
+          ? m.hrs
+          : m?.lastTs && newest
+            ? Math.max(0, (newest - m.lastTs) / 3600)
+            : 0;
+      const likelihood =
+        r.status === 'FROZEN' || r.status === 'RELEASED'
+          ? 0
+          : m?.likelihood != null
+            ? m.likelihood
+            : Math.max(0.01, Math.min(1, 0.5 ** (staleHours / 24)));
+      const freezeValueInr =
+        r.status === 'FROZEN' || r.status === 'RELEASED'
+          ? 0
+          : m?.freezeVal != null
+            ? m.freezeVal
+            : Math.round(r.recoverableInr * likelihood * 100) / 100;
+      const urgency = statusW * likelihood;
       const stand =
         r.status === 'NOT_SENT' ? 'No notice sent yet' : r.status === 'REFUSED' ? 'Bank refused: re-issue or escalate'
         : overdue === 'ack' ? 'Bank has not acknowledged in 2 h' : overdue === 'outcome' ? 'Bank has not confirmed the hold in 24 h'
-        : r.status === 'SENT' ? 'Waiting for the bank' : r.status === 'ACKNOWLEDGED' ? 'Bank acknowledged' : 'Frozen';
-      const activity = m?.lastTs ? (staleDays < 0.05 ? 'moved money most recently' : `last moved money ${staleDays.toFixed(1)} days before the newest movement`) : 'no activity time in the data';
-      return { ...r, bankKey: bankKeyOf(r), networkId: m?.net ?? null, urgency, score: r.recoverableInr * urgency, why: `${stand}; ${activity}.` };
+        : r.status === 'SENT' ? 'Waiting for the bank' : r.status === 'ACKNOWLEDGED' ? 'Bank acknowledged' : r.status === 'RELEASED' ? 'Released' : 'Frozen';
+      const activity = m?.lastTs || m?.hrs != null
+        ? (staleHours < 1 ? 'last outflow < 1 h ago' : `last outflow ${staleHours.toFixed(1)} h ago`)
+        : 'no activity time in the data';
+      const formula = `Freeze value = Held ₹ × 0.5^(hours since last outflow / 24) = ₹${Math.round(r.recoverableInr).toLocaleString('en-IN')} × ${Math.round(likelihood * 100)}% = ₹${Math.round(freezeValueInr).toLocaleString('en-IN')}`;
+      return {
+        ...r,
+        bankKey: bankKeyOf(r),
+        networkId: m?.net ?? null,
+        urgency,
+        freezeValueInr,
+        retentionLikelihood: likelihood,
+        hoursSinceLastOutflow: staleHours,
+        score: freezeValueInr * statusW,
+        formula,
+        why: `${stand}; ${activity}.`,
+      };
     })
     .sort((a, b) => b.score - a.score || b.recoverableInr - a.recoverableInr || a.nodeId.localeCompare(b.nodeId));
 }

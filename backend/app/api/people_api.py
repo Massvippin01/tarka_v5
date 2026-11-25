@@ -53,9 +53,23 @@ async def set_account_verdict(case_id: str, req: AccountVerdict,
     if not any(m["id"] == key for n in _networks(case_id)["networks"] for m in n["members"]):
         raise HTTPException(404, f"Account '{req.account}' is not in any network of {case_id}.")
     try:
-        return _store().set(case_id, "account", key, user.user_id, req.verdict, req.reason)
+        store = _store()
+        out = store.set(case_id, "account", key, user.user_id, req.verdict, req.reason)
+        tuned = store.maybe_retune()
+        if tuned:
+            out["model_retuned"] = tuned
+        out["scoring_meta"] = store.active_weights()
+        return out
     except ValueError as e:
         raise HTTPException(422, str(e))
+
+
+@router.get("/{case_id}/weights/history")
+async def scoring_weights_history(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    """Current active scoring weights and audit log of LogisticRegression re-tunes."""
+    _case(case_id, user)
+    store = _store()
+    return {"active": store.active_weights(), "history": store.tune_history()}
 
 
 @router.get("/{case_id}/accounts/history")

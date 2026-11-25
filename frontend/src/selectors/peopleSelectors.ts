@@ -10,7 +10,7 @@ import { selectAccountFlows } from './caseSelectors';
 
 export type Verdict = 'CONFIRMED_MULE' | 'NOT_MULE';
 export type PairVerdict = 'MERGE' | 'NOT_SAME';
-export type RoleGroup = MemberRole; // VICTIM | MULE | CASH_OUT | UNKNOWN
+export type RoleGroup = Exclude<MemberRole, 'CONTROLLER_GROUP'>; // VICTIM | MULE | CASH_OUT | UNKNOWN
 
 export const ROLE_GROUPS: { role: RoleGroup; label: string; help: string }[] = [
   { role: 'MULE', label: 'Mules', help: 'Accounts that received victims’ money and passed most of it on quickly.' },
@@ -42,6 +42,11 @@ export interface PersonRow {
   outInr: number;
   /** Still in the account: what a freeze can catch (0 for a "Not a mule" verdict). */
   heldInr: number;
+  freezeValueInr?: number;
+  retentionLikelihood?: number;
+  hoursSinceLastOutflow?: number;
+  controllerId?: string | null;
+  controllerSummary?: string | null;
   firstTs: number | null;
   lastTs: number | null;
   hop: number | null;
@@ -82,6 +87,8 @@ export function peopleFromNetworks(res: NetworksResponse | null | undefined): Pe
   const byKey = new Map<string, PersonRow>();
   for (const n of res.networks) {
     for (const m of n.members) {
+      if (m.role === 'CONTROLLER_GROUP') continue;
+      const role: RoleGroup = m.role;
       const key = partyKey(m.id || m.label);
       const seen = byKey.get(key);
       if (seen) {
@@ -91,7 +98,7 @@ export function peopleFromNetworks(res: NetworksResponse | null | undefined): Pe
       byKey.set(key, {
         key,
         label: m.label,
-        role: m.role,
+        role,
         ids: extractIdentifiers(m.label),
         muleScore: m.mule_score,
         why: m.why,
@@ -100,6 +107,11 @@ export function peopleFromNetworks(res: NetworksResponse | null | undefined): Pe
         inInr: m.in_inr ?? 0,
         outInr: m.out_inr ?? 0,
         heldInr: m.held_inr ?? 0,
+        freezeValueInr: m.freeze_value_inr,
+        retentionLikelihood: m.retention_likelihood,
+        hoursSinceLastOutflow: m.hours_since_last_outflow,
+        controllerId: m.controller_id ?? null,
+        controllerSummary: m.controller_summary ?? null,
         firstTs: m.first_ts ?? null,
         lastTs: m.last_ts ?? null,
         hop: m.hop,
@@ -206,7 +218,7 @@ export function sortPeople(rows: PersonRow[]): PersonRow[] {
 }
 
 export function roleCounts(rows: PersonRow[]): Record<RoleGroup | 'ALL', number> {
-  const c = { ALL: rows.length, MULE: 0, VICTIM: 0, CASH_OUT: 0, UNKNOWN: 0 };
+  const c: Record<RoleGroup | 'ALL', number> = { ALL: rows.length, MULE: 0, VICTIM: 0, CASH_OUT: 0, UNKNOWN: 0 };
   for (const r of rows) c[r.role] += 1;
   return c;
 }

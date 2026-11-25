@@ -25,6 +25,7 @@ export const STATUS_LABEL: Record<QueueRow['status'], string> = {
   SENT: 'Waiting for bank',
   ACKNOWLEDGED: 'Bank acknowledged',
   FROZEN: 'Frozen',
+  RELEASED: 'Released',
   REFUSED: 'Rejected',
 };
 const STATUS_CHIP: Record<QueueRow['status'], ChipVariant> = {
@@ -32,6 +33,7 @@ const STATUS_CHIP: Record<QueueRow['status'], ChipVariant> = {
   SENT: 'flow',
   ACKNOWLEDGED: 'flow',
   FROZEN: 'frozen',
+  RELEASED: 'safe',
   REFUSED: 'risk',
 };
 
@@ -181,8 +183,8 @@ export const FreezeQueuePanel: React.FC<{ data: ActionData; fixture: CanonicalCa
             <span>Account (rank)</span>
             <span>Bank</span>
             <span className="text-right">Still recoverable</span>
-            <Tip text="How pressing this account is, apart from its amount: whether a notice is out or overdue, and how recently the account moved money. Rank = recoverable ₹ × urgency.">
-              <span tabIndex={0} className="cursor-help">Urgency</span>
+            <Tip text="Freeze value = Money still held × Likelihood still there (decays exponentially with a 24 h half-life since last outflow). Rank = Freeze value × notice status.">
+              <span tabIndex={0} className="cursor-help">Freeze value / Urgency</span>
             </Tip>
             <span>Status</span>
           </div>
@@ -236,12 +238,14 @@ export const FreezeQueuePanel: React.FC<{ data: ActionData; fixture: CanonicalCa
                       </div>
                       <SectionTag section={r.section} />
                     </div>
-                    <Tip text={r.why}>
-                      <span tabIndex={0} className="flex items-center gap-1.5 cursor-help" aria-label={`Urgency ${Math.round(r.urgency * 100)} of 100. ${r.why}`}>
-                        <span className="h-1.5 w-10 rounded-full bg-[var(--line)] overflow-hidden">
-                          <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.max(4, (r.score / maxScore) * 100)}%` }} />
+                    <Tip text={<div className="space-y-1"><div>{r.formula}</div><div className="text-[var(--fg-3)]">{r.why}</div></div>}>
+                      <span tabIndex={0} className="flex flex-col gap-0.5 cursor-help" aria-label={`${r.formula}. ${r.why}`}>
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-10 rounded-full bg-[var(--line)] overflow-hidden">
+                            <span className="block h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.max(4, (r.score / maxScore) * 100)}%` }} />
+                          </span>
+                          <span className="text-[11px] tabular-nums text-[var(--fg-2)]">{formatInr(r.freezeValueInr, { compact: true })}</span>
                         </span>
-                        <span className="text-[11px] tabular-nums text-[var(--fg-3)]">{Math.round(r.urgency * 100)}</span>
                       </span>
                     </Tip>
                     <span className="min-w-0">
@@ -316,34 +320,108 @@ ${ctx.officer}, ${ctx.policeStation}`;
 export const NoticeList: React.FC<{ data: ActionData }> = ({ data }) => {
   const { notices, allRows, ctx, advance, remind, now, loading, noticesError } = data;
   const [freezing, setFreezing] = useState<{ id: string; amount: string } | null>(null);
+  const [releasing, setReleasing] = useState<{ id: string; note: string } | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'bank'>('list');
   const total = (n: FreezeNotice) => allRows.filter((r) => n.accountIds.includes(r.nodeId)).reduce((s, r) => s + r.amountInr, 0);
   const text = (n: FreezeNotice) => {
     const g = groupByBank(allRows.filter((r) => n.accountIds.includes(r.nodeId)))[0];
     return g ? buildBankNotice(ctx, { ...g, bank: n.bank }, n.referenceNo, new Date(n.sentAt)) : '';
   };
   const overdueFirst = [...notices].sort((a, b) => Number(!!noticeOverdue(b, now)) - Number(!!noticeOverdue(a, now)));
+  const byBank = useMemo(() => {
+    const m = new Map<string, { bank: string; items: FreezeNotice[]; askedInr: number; frozenInr: number; overdueCount: number }>();
+    for (const n of overdueFirst) {
+      const key = n.bank || 'Unknown bank';
+      const entry = m.get(key) ?? { bank: key, items: [], askedInr: 0, frozenInr: 0, overdueCount: 0 };
+      entry.items.push(n);
+      const asked = total(n);
+      entry.askedInr += asked;
+      if (n.status === 'FROZEN' || n.status === 'RELEASED') entry.frozenInr += n.frozenInr ?? asked;
+      if (noticeOverdue(n, now)) entry.overdueCount += 1;
+      m.set(key, entry);
+    }
+    return [...m.values()].sort((a, b) => b.overdueCount - a.overdueCount || b.askedInr - a.askedInr);
+  }, [overdueFirst, now, allRows]);
   const btn = 'inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2 py-1 text-[12px] text-[var(--fg-2)] hover:bg-[var(--hover)] disabled:opacity-50';
 
   return (
-    <section className="v6-glass rounded-2xl p-4 space-y-3" aria-labelledby="nl-title" id="notices">
-      <h3 id="nl-title" className="text-[15px] font-semibold text-[var(--fg-1)]">Notices sent to banks</h3>
+    <section className="v6-glass rounded-2xl p-4 space-y-3" aria-labelledby="nl-title" id="notices" data-testid="v6-notice-list">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 id="nl-title" className="text-[15px] font-semibold text-[var(--fg-1)]">Notices sent to banks</h3>
+        {notices.length > 0 && (
+          <div role="tablist" aria-label="Bank notice grouping" className="inline-flex rounded-lg border border-[var(--line)] bg-[var(--glass-1)] p-0.5 text-[11.5px]">
+            <button type="button" role="tab" aria-selected={viewMode === 'list'} onClick={() => setViewMode('list')} className={clsx('rounded-md px-2.5 py-1 font-medium', viewMode === 'list' ? 'bg-[var(--surface-1)] text-[var(--accent)] shadow-xs' : 'text-[var(--fg-3)]')}>
+              All notices ({notices.length})
+            </button>
+            <button type="button" role="tab" aria-selected={viewMode === 'bank'} onClick={() => setViewMode('bank')} className={clsx('rounded-md px-2.5 py-1 font-medium', viewMode === 'bank' ? 'bg-[var(--surface-1)] text-[var(--accent)] shadow-xs' : 'text-[var(--fg-3)]')}>
+              Per bank ({byBank.length})
+            </button>
+          </div>
+        )}
+      </div>
       {loading ? (
         <div className="space-y-2"><Skeleton height={64} /><Skeleton height={64} /></div>
       ) : notices.length === 0 ? (
         <p className="rounded-xl border border-dashed border-[var(--line-2)] px-3 py-5 text-center text-[12.5px] text-[var(--fg-3)]">
           {noticesError ? 'Notice history is unavailable right now.' : 'No notices yet. Tick accounts in the freeze queue and prepare one notice per bank.'}
         </p>
+      ) : viewMode === 'bank' ? (
+        <ul className="space-y-2.5" data-testid="per-bank-notices">
+          {byBank.map((b) => (
+            <li key={b.bank} className="rounded-xl border border-[var(--line)] bg-[var(--glass-1)] p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-[13.5px] font-semibold text-[var(--fg-1)]">{b.bank}</div>
+                  <div className="text-[11.5px] text-[var(--fg-3)] tabular-nums">
+                    {b.items.length} notice{b.items.length === 1 ? '' : 's'} · asked {formatInr(b.askedInr)} · held/frozen {formatInr(b.frozenInr)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {b.overdueCount > 0 && <Chip variant="urgent">{b.overdueCount} overdue</Chip>}
+                  {(['SENT', 'ACKNOWLEDGED', 'FROZEN', 'RELEASED', 'REFUSED'] as NoticeStatus[]).map((st) => {
+                    const c = b.items.filter((x) => x.status === st).length;
+                    return c > 0 ? <Chip key={st} variant={STATUS_CHIP[st]}>{c} {STATUS_LABEL[st]}</Chip> : null;
+                  })}
+                </div>
+              </div>
+              <div className="space-y-1.5 border-t border-[var(--line)] pt-2">
+                {b.items.map((n) => (
+                  <div key={n.id} className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                    <span className="font-mono text-[var(--fg-2)] truncate">{n.referenceNo}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Chip variant={STATUS_CHIP[n.status]}>{STATUS_LABEL[n.status]}</Chip>
+                      {n.status === 'SENT' && (
+                        <button type="button" className={btn} onClick={() => advance.mutate({ id: n.id, status: 'ACKNOWLEDGED' })}>Acknowledged</button>
+                      )}
+                      {(n.status === 'SENT' || n.status === 'ACKNOWLEDGED') && (
+                        <button type="button" className={btn} onClick={() => advance.mutate({ id: n.id, status: 'FROZEN', frozenInr: Math.round(total(n)) })}>Freeze full ₹</button>
+                      )}
+                      {n.status === 'FROZEN' && (
+                        <button type="button" className={btn} onClick={() => advance.mutate({ id: n.id, status: 'RELEASED', note: 'Released per court order' })}>Release</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
       ) : (
         <ul className="space-y-2">
           {overdueFirst.map((n) => {
             const overdue = noticeOverdue(n, now);
             const busy = (advance.isPending && advance.variables?.id === n.id) || (remind.isPending && remind.variables === n.id);
-            const next: NoticeStatus[] = n.status === 'SENT' ? ['ACKNOWLEDGED', 'FROZEN', 'REFUSED'] : n.status === 'ACKNOWLEDGED' ? ['FROZEN', 'REFUSED'] : [];
+            const next: NoticeStatus[] =
+              n.status === 'SENT' ? ['ACKNOWLEDGED', 'FROZEN', 'REFUSED']
+              : n.status === 'ACKNOWLEDGED' ? ['FROZEN', 'REFUSED']
+              : n.status === 'FROZEN' ? ['RELEASED']
+              : [];
             const asked = total(n);
             const steps: [string, string | null | undefined][] = [
               ['Sent', n.sentAt],
               ['Acknowledged', n.acknowledgedAt],
               [n.status === 'REFUSED' ? 'Rejected' : 'Frozen', n.status === 'REFUSED' ? n.refusedAt : n.frozenAt],
+              ...(n.status === 'FROZEN' || n.status === 'RELEASED' ? [['Released', n.releasedAt] as [string, string | null | undefined]] : []),
             ];
             return (
               <li key={n.id} className={clsx('rounded-xl border bg-[var(--glass-1)] p-3', overdue ? 'border-[var(--urgent)]' : 'border-[var(--line)]')}>
@@ -388,7 +466,7 @@ export const NoticeList: React.FC<{ data: ActionData }> = ({ data }) => {
                   </div>
                 </div>
 
-                <ol className="mt-2.5 grid grid-cols-3 gap-2" aria-label="Notice progress">
+                <ol className={clsx('mt-2.5 grid gap-2', steps.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')} aria-label="Notice progress">
                   {steps.map(([label, at]) => (
                     <li key={label} className={clsx('rounded-lg px-2 py-1.5 text-[11.5px]', at ? 'bg-[var(--surface-2)] text-[var(--fg-1)]' : 'border border-dashed border-[var(--line)] text-[var(--fg-3)]')}>
                       <div className="font-semibold">{label}</div>
@@ -396,6 +474,7 @@ export const NoticeList: React.FC<{ data: ActionData }> = ({ data }) => {
                     </li>
                   ))}
                 </ol>
+                {n.note && <p className="mt-1.5 text-[11.5px] text-[var(--fg-2)]">Note: {n.note}</p>}
 
                 {next.length > 0 && (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -422,23 +501,49 @@ export const NoticeList: React.FC<{ data: ActionData }> = ({ data }) => {
                         <button type="submit" disabled={busy} className="rounded-lg bg-[var(--accent)] px-2 py-1 text-[12px] font-semibold text-white disabled:opacity-60">Save</button>
                         <button type="button" onClick={() => setFreezing(null)} className="text-[12px] text-[var(--fg-3)] hover:underline">Cancel</button>
                       </form>
+                    ) : releasing?.id === n.id ? (
+                      <form
+                        className="flex flex-wrap items-center gap-1.5"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          advance.mutate({ id: n.id, status: 'RELEASED', note: releasing.note || 'Released per order' }, { onSuccess: () => setReleasing(null) });
+                        }}
+                      >
+                        <label className="text-[12px] text-[var(--fg-2)]" htmlFor={`rel-${n.id}`}>Release note</label>
+                        <input
+                          id={`rel-${n.id}`}
+                          autoFocus
+                          value={releasing.note}
+                          onChange={(e) => setReleasing({ id: n.id, note: e.target.value })}
+                          placeholder="e.g. Magistrate release order"
+                          className="w-48 rounded-md border border-[var(--line)] bg-[var(--surface-1)] px-2 py-1 text-[12px] outline-none focus:border-[var(--accent)]"
+                        />
+                        <button type="submit" disabled={busy} className="rounded-lg bg-[var(--accent)] px-2 py-1 text-[12px] font-semibold text-white disabled:opacity-60">Confirm release</button>
+                        <button type="button" onClick={() => setReleasing(null)} className="text-[12px] text-[var(--fg-3)] hover:underline">Cancel</button>
+                      </form>
                     ) : (
                       next.map((s) => (
                         <button
                           key={s}
                           type="button"
                           disabled={busy}
-                          onClick={() => (s === 'FROZEN' ? setFreezing({ id: n.id, amount: String(Math.round(asked)) }) : advance.mutate({ id: n.id, status: s }))}
+                          onClick={() =>
+                            s === 'FROZEN'
+                              ? setFreezing({ id: n.id, amount: String(Math.round(asked)) })
+                              : s === 'RELEASED'
+                                ? setReleasing({ id: n.id, note: '' })
+                                : advance.mutate({ id: n.id, status: s })
+                          }
                           className={clsx(
                             'rounded-lg border px-2 py-1 text-[12px] font-medium disabled:opacity-60',
                             s === 'REFUSED'
                               ? 'border-[var(--line)] text-[var(--risk)] hover:bg-[var(--color-risk-bg)]'
-                              : s === 'FROZEN'
+                              : s === 'FROZEN' || s === 'RELEASED'
                                 ? 'border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--color-flow-bg)]'
                                 : 'border-[var(--line)] text-[var(--fg-2)] hover:bg-[var(--hover)]',
                           )}
                         >
-                          {s === 'ACKNOWLEDGED' ? 'Acknowledged' : s === 'FROZEN' ? 'Money frozen…' : 'Rejected'}
+                          {s === 'ACKNOWLEDGED' ? 'Acknowledged' : s === 'FROZEN' ? 'Money frozen…' : s === 'RELEASED' ? 'Released…' : 'Rejected'}
                         </button>
                       ))
                     )}

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Ban, Check, Copy, FolderPlus, GitMerge, Route, Search, Snowflake, Users } from 'lucide-react';
+import { Ban, Check, ChevronLeft, ChevronRight, Copy, FolderPlus, GitMerge, Route, Search, Smartphone, Snowflake, Users } from 'lucide-react';
 import clsx from 'clsx';
 import apiClient from '../../api/client';
 import { formatInr } from '../../lib/formatInr';
@@ -12,7 +12,7 @@ import { useCaseStore } from '../../store/useCaseStore';
 import type { CanonicalCaseFixture } from '../../fixtures/cases';
 import type { MoneyFigure } from '../../selectors/caseSelectors';
 import { Button, Chip, Skeleton, SourceNumber } from '../ui';
-import { ROLE_LABEL, rankMembers, type FraudNetwork, type MemberRole, type NetworkMember } from '../triage/triage';
+import { ROLE_LABEL, rankMembers, type ControllerGroup, type FraudNetwork, type MemberRole, type NetworkMember, type VictimTrace } from '../triage/triage';
 import {
   STATUS_META,
   STATUS_ORDER,
@@ -199,29 +199,144 @@ const ROLE_TABS: [MemberRole | 'HUB', string][] = [
   ['HUB', 'ATMs & shops'],
 ];
 
+const ControllersCard: React.FC<{ controllers: ControllerGroup[]; onAccount: (id: string) => void }> = ({ controllers, onAccount }) => {
+  const [openRows, setOpenRows] = useState<string | null>(null);
+  if (!controllers.length) return null;
+  return (
+    <div className="px-4 py-3 border-b border-[var(--line)] space-y-2" data-testid="network-controllers-card">
+      <div className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-[var(--fg-3)]">
+        <Smartphone className="w-3.5 h-3.5 text-[var(--accent)]" /> Controller attribution
+      </div>
+      {controllers.map((cg) => (
+        <div key={cg.controller_id} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/70 p-2.5 space-y-1.5">
+          <div className="text-[12.5px] font-semibold text-[var(--fg-1)]">{cg.summary}</div>
+          <div className="flex flex-wrap gap-1">
+            {cg.devices.map((d) => (
+              <span
+                key={`${d.kind}:${d.value}`}
+                title={`${d.kind.toUpperCase()} seen across ${d.accounts.length} accounts (${d.events} log events)`}
+                className="inline-flex items-center gap-1 rounded-md bg-[var(--accent-bg)] text-[var(--accent)] px-1.5 py-0.5 v6-mono text-[10.5px] font-medium"
+              >
+                {d.kind.toUpperCase()}: {d.value}
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {cg.accounts.slice(0, 6).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => onAccount(a)}
+                className="rounded px-1.5 py-0.5 bg-[var(--glass-1)] border border-[var(--line)] v6-mono text-[10.5px] text-[var(--fg-2)] hover:text-[var(--accent)] hover:border-[var(--accent)]"
+              >
+                {a}
+              </button>
+            ))}
+            {cg.accounts.length > 6 && (
+              <span className="text-[10.5px] text-[var(--fg-3)] self-center">+{cg.accounts.length - 6} more</span>
+            )}
+          </div>
+          {cg.evidence_rows.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setOpenRows(openRows === cg.controller_id ? null : cg.controller_id)}
+                className="text-[11px] font-medium text-[var(--accent)] hover:underline"
+              >
+                {openRows === cg.controller_id ? 'Hide' : 'Show'} device evidence rows ({cg.evidence_rows.length})
+              </button>
+              {openRows === cg.controller_id && (
+                <ul className="mt-1.5 max-h-28 overflow-y-auto space-y-1 text-[10.5px] v6-mono text-[var(--fg-2)]">
+                  {cg.evidence_rows.slice(0, 8).map((ev, idx) => (
+                    <li key={idx} className="truncate" title={`${ev.job_id} line ${ev.line}`}>
+                      {ev.account} · {ev.kind}={ev.value} · line {ev.line}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TracesSummaryCard: React.FC<{ traces: VictimTrace[] }> = ({ traces }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (!traces.length) return null;
+  return (
+    <div className="px-4 py-2.5 border-b border-[var(--line)] space-y-1.5" data-testid="network-traces-card">
+      <div className="flex items-center justify-between">
+        <span className="text-[11.5px] font-semibold uppercase tracking-wide text-[var(--fg-3)]">Time-aware money paths</span>
+        <button type="button" onClick={() => setExpanded((x) => !x)} className="text-[11px] font-medium text-[var(--accent)] hover:underline">
+          {expanded ? 'Collapse' : `Show paths (${traces.length})`}
+        </button>
+      </div>
+      {expanded && (
+        <div className="space-y-2 max-h-56 overflow-y-auto pt-1">
+          {traces.slice(0, 6).map((vt) => (
+            <div key={vt.victim_id} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/60 p-2 space-y-1 text-[11px]">
+              <div className="flex items-center justify-between font-semibold text-[var(--fg-1)]">
+                <span className="truncate v6-mono">{vt.victim_label}</span>
+                <span className="tabular-nums">{formatInr(vt.paid_in_inr, { compact: true })}</span>
+              </div>
+              {vt.paths.slice(0, 3).map((p, idx) => (
+                <div key={idx} className="text-[var(--fg-2)] leading-snug">
+                  <span className="v6-mono break-all">{p.hop_labels.join(' → ')}</span>{' '}
+                  <span className="font-semibold tabular-nums text-[var(--fg-1)]">({formatInr(p.amount_inr, { compact: true })})</span>{' '}
+                  <span className="text-[var(--fg-3)]">· {p.outcome === 'HELD' ? 'still held' : p.outcome === 'CASHED_OUT' ? 'cashed out' : 'moved elsewhere'}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const NetworkPanel: React.FC<{
   n: Net;
+  caseId?: string;
   fixture: CanonicalCaseFixture | null;
   crossByMember: Map<string, string[]>;
   pathNote: string | null;
   pathOn: boolean;
+  selectedSubgroupId?: string | null;
+  onSubgroup?: (id: string | null) => void;
   onPath: () => void;
   onAccount: (id: string) => void;
-}> = ({ n, fixture, crossByMember, pathNote, pathOn, onPath, onAccount }) => {
+}> = ({ n, caseId, fixture, crossByMember, pathNote, pathOn, selectedSubgroupId, onSubgroup, onPath, onAccount }) => {
   const [tab, setTab] = useState<MemberRole | 'HUB'>('MULE');
-  const list = useMemo(() => rankMembers(n.members.filter((m) => (tab === 'HUB' ? isHub(m) : m.role === tab))), [n, tab]);
+  const [pageOffset, setPageOffset] = useState(0);
+  const pageSize = 50;
+  const pagedQ = useQuery({
+    queryKey: ['network-members-page', caseId, n.network_id, selectedSubgroupId ?? '', pageOffset],
+    queryFn: async () =>
+      (
+        await apiClient.get<{ total: number; items: NetworkMember[] }>(
+          `/api/v1/cases/${encodeURIComponent(caseId!)}/networks/${encodeURIComponent(n.network_id)}/members`,
+          { params: { offset: pageOffset, limit: pageSize, ...(selectedSubgroupId ? { subgroup_id: selectedSubgroupId } : {}) } },
+        )
+      ).data,
+    enabled: !!caseId && (n.member_count > n.members.length || !!selectedSubgroupId),
+  });
+
+  const sourceMembers = pagedQ.data?.items ?? n.members;
+  const list = useMemo(() => rankMembers(sourceMembers.filter((m) => (tab === 'HUB' ? isHub(m) : m.role === tab))), [sourceMembers, tab]);
   const figs = useMemo(
     () => (fixture ? { paidIn: networkFigure(fixture, n, 'paidIn'), cashedOut: networkFigure(fixture, n, 'cashedOut'), recoverable: networkFigure(fixture, n, 'recoverable') } : null),
     [fixture, n],
   );
   const fig = (k: 'paidIn' | 'cashedOut' | 'recoverable') => figs?.[k] ?? null;
-  const tabCount = (t: MemberRole | 'HUB') => (t === 'MULE' ? n.mule_count : t === 'VICTIM' ? n.victim_count : n.members.filter(isHub).length);
+  const tabCount = (t: MemberRole | 'HUB') => (t === 'MULE' ? n.mule_count : t === 'VICTIM' ? n.victim_count : sourceMembers.filter(isHub).length);
   return (
     <div className="flex flex-col min-h-0 h-full" data-testid="network-panel-network">
       <div className="px-4 pt-4 pb-3 border-b border-[var(--line)] space-y-3">
         <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
           <Money label="Paid in by victims" hint="Money victims sent into this network" figure={fig('paidIn')} total={n.amount_inr || 0} />
-          <Money label="Still in mule accounts" hint="What a debit freeze could still hold" figure={fig('recoverable')} total={n.recoverable_inr || 0} tone="--safe" />
+          <Money label="Still in mule accounts" hint="What a debit freeze could still hold (LIBR)" figure={fig('recoverable')} total={n.recoverable_inr || 0} tone="--safe" />
           <Money label="Already cashed out" hint="Withdrawn at ATMs, crypto or other cash-out points" figure={fig('cashedOut')} total={n.cashed_out_inr || 0} tone="--risk" />
           <Money label="Not yet traced" hint="Left the mules to accounts not in these statements" figure={null} total={n.unaccounted_inr || 0} />
         </div>
@@ -230,6 +345,20 @@ export const NetworkPanel: React.FC<{
         </Button>
         {pathNote && <p className={clsx('text-[12px]', pathOn ? 'text-[var(--accent)] font-medium' : 'text-[var(--fg-3)]')}>{pathNote}</p>}
       </div>
+      <ControllersCard controllers={n.controllers ?? []} onAccount={onAccount} />
+      <TracesSummaryCard traces={n.traces ?? []} />
+      {!!n.subgroups?.length && onSubgroup && (
+        <div className="px-4 py-2 border-b border-[var(--line)] flex items-center justify-between gap-2 text-[11.5px]">
+          <span className="text-[var(--fg-2)] truncate">
+            {selectedSubgroupId ? `Sub-group: ${selectedSubgroupId}` : `${n.subgroups.length} sub-groups detected`}
+          </span>
+          {selectedSubgroupId && (
+            <button type="button" onClick={() => { setPageOffset(0); onSubgroup(null); }} className="text-[var(--accent)] font-medium hover:underline">
+              All sub-groups
+            </button>
+          )}
+        </div>
+      )}
       <div role="tablist" aria-label="Accounts in this network" className="flex gap-1 px-3 pt-2.5">
         {ROLE_TABS.map(([t, label]) => (
           <button
@@ -266,10 +395,32 @@ export const NetworkPanel: React.FC<{
           </li>
         ))}
       </ol>
-      {n.member_count > n.members.length && (
-        <p className="px-4 py-2 text-[11px] text-[var(--fg-3)] border-t border-[var(--line)]">
-          Showing the {n0(n.members.length)} most mule-like of {n0(n.member_count)} accounts.
-        </p>
+      {(n.member_count > n.members.length || !!selectedSubgroupId) && (pagedQ.data?.total ?? n.member_count) > pageSize && (
+        <div className="px-4 py-2 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--fg-3)]">
+          <span>
+            {pageOffset + 1}–{Math.min(pageOffset + pageSize, pagedQ.data?.total ?? n.member_count)} of {n0(pagedQ.data?.total ?? n.member_count)}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={pageOffset === 0}
+              onClick={() => setPageOffset((o) => Math.max(0, o - pageSize))}
+              className="p-1 rounded hover:bg-[var(--hover)] disabled:opacity-40"
+              aria-label="Previous members page"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              disabled={pageOffset + pageSize >= (pagedQ.data?.total ?? n.member_count)}
+              onClick={() => setPageOffset((o) => o + pageSize)}
+              className="p-1 rounded hover:bg-[var(--hover)] disabled:opacity-40"
+              aria-label="Next members page"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -296,13 +447,18 @@ export const AccountPanel: React.FC<{
   crossCases: string[];
   links: { into: number; out: number };
   onPathThrough: () => void;
-}> = ({ m, n, fixture, crossCases, links, onPathThrough }) => {
+  onAccount?: (id: string) => void;
+}> = ({ m, n, fixture, crossCases, links, onPathThrough, onAccount }) => {
   const { setActiveView } = useCaseStore();
   const role = ROLE_LABEL[m.role];
   const fig = (k: 'in' | 'out' | 'held') => (fixture ? memberFigure(fixture, m, k) : null);
   const inFig = fig('in');
   const outFig = fig('out');
   const pct = Math.round((m.mule_score ?? 0) * 100);
+  const ctrl = (n.controllers ?? []).find((cg) => cg.accounts.includes(m.id));
+  const myPaths = (n.traces ?? []).flatMap((vt) =>
+    vt.paths.filter((p) => p.hops.includes(m.id)),
+  );
   return (
     <div className="flex flex-col min-h-0 h-full overflow-y-auto" data-testid="network-panel-account">
       <div className="px-4 pt-4 pb-3 space-y-2.5 border-b border-[var(--line)]">
@@ -339,6 +495,45 @@ export const AccountPanel: React.FC<{
         <div className="text-[11.5px] text-[var(--fg-3)]">
           Paid by {plural(links.into, 'account')} · paid {plural(links.out, 'account')} in this network
         </div>
+        {ctrl && (
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/70 p-2.5 space-y-1.5" data-testid="account-panel-controller">
+            <div className="text-[12px] font-semibold text-[var(--fg-1)] flex items-center gap-1.5">
+              <Smartphone className="w-3.5 h-3.5 text-[var(--accent)]" /> {ctrl.summary}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {ctrl.devices.map((d) => (
+                <span key={`${d.kind}:${d.value}`} className="rounded bg-[var(--accent-bg)] text-[var(--accent)] px-1.5 py-0.5 v6-mono text-[10.5px]">
+                  {d.kind.toUpperCase()}: {d.value}
+                </span>
+              ))}
+            </div>
+            {onAccount && (
+              <div className="flex flex-wrap gap-1">
+                {ctrl.accounts.filter((a) => a !== m.id).slice(0, 5).map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => onAccount(a)}
+                    className="rounded px-1.5 py-0.5 bg-[var(--glass-1)] border border-[var(--line)] v6-mono text-[10.5px] text-[var(--fg-2)] hover:text-[var(--accent)]"
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {myPaths.length > 0 && (
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/60 p-2.5 space-y-1 text-[11px]" data-testid="account-panel-paths">
+            <div className="font-semibold text-[var(--fg-1)]">Victim money paths through this account</div>
+            {myPaths.slice(0, 3).map((p, idx) => (
+              <div key={idx} className="text-[var(--fg-2)]">
+                <span className="v6-mono break-all">{p.hop_labels.join(' → ')}</span>{' '}
+                <span className="font-semibold tabular-nums">({formatInr(p.amount_inr, { compact: true })})</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="px-4 py-3 grid gap-2">
         <Button size="sm" variant="default" onClick={onPathThrough} className="justify-start">

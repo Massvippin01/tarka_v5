@@ -66,6 +66,12 @@ function heldRows(c: CanonicalCaseFixture, names: Set<string>, label: string, to
   return { label, totalInr, rows };
 }
 
+interface ProjectSummary {
+  project_id: string;
+  name: string;
+  cases: { case_id: string; lifecycle: string | null; assignee: string | null }[];
+}
+
 export function useActionData(fixture: CanonicalCaseFixture) {
   const caseId = fixture.caseId;
   const qc = useQueryClient();
@@ -80,6 +86,10 @@ export function useActionData(fixture: CanonicalCaseFixture) {
   const custodyQ = useQuery({
     queryKey: ['custody', caseId, 'actions'],
     queryFn: async () => (await apiClient.get<CustodyEvent[]>(`/api/v1/ingestion/cases/${enc(caseId)}/custody`)).data,
+  });
+  const projectsQ = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => (await apiClient.get<ProjectSummary[]>('/api/v1/projects')).data,
   });
 
   const fromServer = (netsQ.data?.networks.length ?? 0) > 0;
@@ -148,23 +158,23 @@ export function useActionData(fixture: CanonicalCaseFixture) {
     const base: ReportFigure[] =
       scope.level === 'account' && member
         ? [
-            { id: 'F1', label: 'moneyIn', figure: memberFigure(fixture, member, 'in') },
-            { id: 'F2', label: 'moneyOut', figure: memberFigure(fixture, member, 'out') },
-            { id: 'F3', label: 'held', figure: memberFigure(fixture, member, 'held') },
-          ]
+          { id: 'F1', label: 'moneyIn', figure: memberFigure(fixture, member, 'in') },
+          { id: 'F2', label: 'moneyOut', figure: memberFigure(fixture, member, 'out') },
+          { id: 'F3', label: 'held', figure: memberFigure(fixture, member, 'held') },
+        ]
         : n
           ? [
-              { id: 'F1', label: 'paidIn', figure: networkFigure(fixture, n, 'paidIn') },
-              { id: 'F2', label: 'cashedOut', figure: networkFigure(fixture, n, 'cashedOut') },
-              { id: 'F3', label: 'recoverable', figure: networkFigure(fixture, n, 'recoverable') },
-              { id: 'F4', label: 'unaccounted', figure: { label: `Not yet traced in ${n.network_id}`, totalInr: n.unaccounted_inr || 0, rows: [] } },
-            ]
+            { id: 'F1', label: 'paidIn', figure: networkFigure(fixture, n, 'paidIn') },
+            { id: 'F2', label: 'cashedOut', figure: networkFigure(fixture, n, 'cashedOut') },
+            { id: 'F3', label: 'recoverable', figure: networkFigure(fixture, n, 'recoverable') },
+            { id: 'F4', label: 'unaccounted', figure: { label: `Not yet traced in ${n.network_id}`, totalInr: n.unaccounted_inr || 0, rows: [] } },
+          ]
           : [
-              { id: 'F1', label: 'paidIn', figure: selectMoneyFigure(fixture, 'loss') },
-              { id: 'F2', label: 'cashedOut', figure: selectMoneyFigure(fixture, 'cashout') },
-              { id: 'F3', label: 'recoverable', figure: selectMoneyFigure(fixture, 'recoverable') },
-              { id: 'F4', label: 'unaccounted', figure: { label: 'Not yet traced', totalInr: fin.unaccountedInr, rows: [] } },
-            ];
+            { id: 'F1', label: 'paidIn', figure: selectMoneyFigure(fixture, 'loss') },
+            { id: 'F2', label: 'cashedOut', figure: selectMoneyFigure(fixture, 'cashout') },
+            { id: 'F3', label: 'recoverable', figure: selectMoneyFigure(fixture, 'recoverable') },
+            { id: 'F4', label: 'unaccounted', figure: { label: 'Not yet traced', totalInr: fin.unaccountedInr, rows: [] } },
+          ];
     const asked = rows.filter((r) => r.status !== 'NOT_SENT');
     const frozen = rows.filter((r) => r.status === 'FROZEN');
     return [
@@ -220,14 +230,33 @@ export function useActionData(fixture: CanonicalCaseFixture) {
   });
 
   const advance = useMutation({
-    mutationFn: async (v: { id: string; status: NoticeStatus; frozenInr?: number | null }) =>
-      (await apiClient.patch<{ notices: FreezeNotice[] }>(`/api/v1/cases/${enc(caseId)}/freeze-notices/${enc(v.id)}`, v.frozenInr == null ? { status: v.status } : v)).data,
+    mutationFn: async (v: { id: string; status: NoticeStatus; frozenInr?: number | null; note?: string | null }) =>
+      (
+        await apiClient.patch<{ notices: FreezeNotice[] }>(`/api/v1/cases/${enc(caseId)}/freeze-notices/${enc(v.id)}`, {
+          status: v.status,
+          ...(v.frozenInr != null ? { frozenInr: v.frozenInr } : {}),
+          ...(v.note ? { note: v.note } : {}),
+        })
+      ).data,
     onSuccess: (d, v) => {
       setNotices(d);
-      toast.success(v.status === 'FROZEN' ? 'Freeze recorded' : v.status === 'REFUSED' ? 'Refusal recorded' : 'Acknowledgement recorded');
+      toast.success(
+        v.status === 'FROZEN'
+          ? 'Freeze recorded'
+          : v.status === 'RELEASED'
+            ? 'Release recorded'
+            : v.status === 'REFUSED'
+              ? 'Refusal recorded'
+              : 'Acknowledgement recorded',
+      );
     },
     onError: (e) => toast.error(`Not saved: ${errMsg(e)}`),
   });
+
+  const activeProject = useMemo(
+    () => (projectsQ.data ?? []).find((p) => p.cases.some((c) => c.case_id === caseId)) ?? null,
+    [projectsQ.data, caseId],
+  );
 
   const remind = useMutation({
     mutationFn: async (id: string) => (await apiClient.post<{ notices: FreezeNotice[] }>(`/api/v1/cases/${enc(caseId)}/freeze-notices/${enc(id)}/reminders`)).data,
@@ -253,6 +282,7 @@ export function useActionData(fixture: CanonicalCaseFixture) {
     networksReady,
     evidence,
     figures,
+    activeProject,
     groupByBank,
     issue,
     advance,

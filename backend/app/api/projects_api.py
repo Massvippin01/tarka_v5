@@ -7,7 +7,7 @@ import time
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.api.ingestion_api import _checked_case_id, get_current_user
@@ -83,6 +83,23 @@ def _decisions() -> NetworkDecisionStore:
     return NetworkDecisionStore(IngestionJobManager.get_instance().base_dir)
 
 
+def _ncrp() -> "NcrpComplaintStore":
+    from app.services.ingestion.ncrp_complaints import NcrpComplaintStore
+
+    return NcrpComplaintStore(IngestionJobManager.get_instance().base_dir)
+
+
+class HandoverRequest(BaseModel):
+    to_officer: str = Field(..., min_length=1, max_length=120)
+    note: str = Field("", max_length=500)
+    network_id: Optional[str] = Field(None, max_length=80)
+
+
+class NcrpTextImportRequest(BaseModel):
+    csv_text: str = Field(..., min_length=1, max_length=5_000_000)
+    case_id: Optional[str] = None
+
+
 @router.get("")
 async def list_projects(user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     return [_visible(p, user) for p in _store().list()]
@@ -152,6 +169,37 @@ async def patch_case(case_id: str, req: CasePatch, user: UserIdentity = Depends(
         return _store().set_case(_case(case_id, user), lifecycle=req.lifecycle, assignee=req.assignee)
     except ValueError as e:
         raise HTTPException(422, str(e))
+
+
+@router.get("/cases/{case_id}/handover")
+async def get_case_handover(case_id: str, network_id: Optional[str] = None,
+                            user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    cid = _case(case_id, user)
+    store = _store()
+    meta = store.case_meta(cid)
+    return {
+        "case_id": cid,
+        "assignee": meta.get("assignee"),
+        "network_assignees": store.network_assignees(cid),
+        "history": store.handover_history(cid, network_id=network_id),
+    }
+
+
+@router.post("/cases/{case_id}/handover")
+async def post_case_handover(case_id: str, req: HandoverRequest,
+                             user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    cid = _case(case_id, user)
+    store = _store()
+    try:
+        res = store.handover(cid, req.to_officer, user.user_id, note=req.note, network_id=req.network_id)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {
+        "case_id": cid,
+        "assignee": store.case_meta(cid).get("assignee"),
+        "network_assignees": store.network_assignees(cid),
+        **res,
+    }
 
 
 @router.get("/{project_id}")
@@ -296,6 +344,46 @@ async def create_cases_from_networks(case_id: str, req: CreateCasesRequest,
     return {"created": created, "attached": attached, "failed": failed}
 
 
+@networks_router.get("/{case_id}/attribution")
+async def get_attribution(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    """Controller attribution groups (shared handsets, SIMs, Wi-Fi BSSIDs, IPs) per network."""
+    case_id = _case(case_id, user)
+    result = _visible_networks(case_id, user, max_members=None)
+    controllers = []
+    for n in result["networks"]:
+        for cg in n.get("controllers") or []:
+            controllers.append({"network_id": n["network_id"], **cg})
+    return {"case_id": case_id, "controllers": controllers, "networks_count": len(result["networks"])}
+
+
+@networks_router.get("/{case_id}/networks/{network_id}/members")
+async def list_network_members(
+    case_id: str,
+    network_id: str,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    subgroup_id: Optional[str] = Query(None, max_length=80),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Paged members of one network (optionally filtered to a Louvain subgroup)."""
+    case_id = _case(case_id, user)
+    result = _visible_networks(case_id, user, max_members=None)
+    net = next((n for n in result["networks"] if n["network_id"] == network_id), None)
+    if net is None:
+        raise HTTPException(404, f"Network '{network_id}' not found in {case_id}.")
+    members = net["members"]
+    if subgroup_id:
+        members = [m for m in members if m.get("subgroup_id") == subgroup_id]
+    return {
+        "network_id": network_id,
+        "subgroup_id": subgroup_id,
+        "total": len(members),
+        "offset": offset,
+        "limit": limit,
+        "items": members[offset : offset + limit],
+    }
+
+
 @networks_router.put("/{case_id}/networks/{network_id}/status")
 async def set_network_status(case_id: str, network_id: str, req: NetworkDecision,
                              user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
@@ -426,3 +514,113 @@ async def export_case(case_id: str, format: str = "i2", user: UserIdentity = Dep
 
     return Response(out.getvalue(), media_type=media,
                     headers={"Content-Disposition": f'attachment; filename="{case_id}-{format}.{ext}"'})
+
+
+def _import_ncrp_rows(raw_csv: str | bytes, *, project_id: Optional[str], target_cases: List[str], actor: str) -> Dict[str, Any]:
+    from app.services.ingestion.ncrp_complaints import match_complaint_to_case, parse_ncrp_csv
+
+    parsed = parse_ncrp_csv(raw_csv)
+    if not parsed:
+        raise HTTPException(422, "The NCRP CSV contains no complaint rows.")
+    mgr = IngestionJobManager.get_instance()
+    net_cache: Dict[str, Dict[str, Any]] = {}
+    for cid in target_cases:
+        try:
+            net_cache[cid] = case_networks(mgr.derived_dir, cid, max_members=None)
+        except Exception:
+            net_cache[cid] = {"networks": []}
+
+    enriched: List[Dict[str, Any]] = []
+    store = _store()
+    for row in parsed:
+        best: Optional[Dict[str, Any]] = None
+        best_cid = target_cases[0]
+        last_unmatched: Optional[Dict[str, Any]] = None
+        for cid in target_cases:
+            res = match_complaint_to_case(mgr.derived_dir, cid, row, net_cache.get(cid))
+            if res["status"] == "MATCHED":
+                best = res
+                best_cid = cid
+                break
+            last_unmatched = res
+        outcome = best or last_unmatched or {
+            "status": "UNMATCHED",
+            "match_reason": "No target case available to match against.",
+            "matched_account": None,
+            "matched_network_id": None,
+            "matched_txns": [],
+        }
+        enriched.append({**row, **outcome, "case_id": best_cid})
+
+    # Persist grouped by matched/default case_id and update victim record on matched cases
+    saved_all: List[Dict[str, Any]] = []
+    ncrp_store = _ncrp()
+    by_case: Dict[str, List[Dict[str, Any]]] = {}
+    for item in enriched:
+        by_case.setdefault(item["case_id"], []).append(item)
+    for cid, items in by_case.items():
+        saved = ncrp_store.save_batch(project_id=project_id, case_id=cid, items=items, imported_by=actor)
+        saved_all.extend(saved)
+        for it in items:
+            if it["status"] == "MATCHED":
+                store.merge_ncrp_details(cid, it)
+        if not any(it["status"] == "MATCHED" for it in items) and len(target_cases) == 1:
+            # Attach explicitly imported single-case complaint context without inventing absent fields
+            store.merge_ncrp_details(cid, items[0])
+
+    matched_count = sum(1 for x in saved_all if x["status"] == "MATCHED")
+    return {
+        "imported": len(saved_all),
+        "matched_count": matched_count,
+        "unmatched_count": len(saved_all) - matched_count,
+        "complaints": saved_all,
+    }
+
+
+@router.post("/{project_id}/ncrp-import")
+async def import_ncrp_project(
+    project_id: str,
+    req: NcrpTextImportRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    proj = _visible(_editable_project(project_id, user), user)
+    cases = [c["case_id"] for c in proj["cases"]]
+    if req.case_id:
+        cid = _case(req.case_id, user)
+        cases = [cid]
+    elif not cases:
+        created = _store().register_case(user.user_id, f"{proj['name']} · NCRP intake", project_id, {})
+        cases = [created["case_id"]]
+    return _import_ncrp_rows(req.csv_text, project_id=project_id, target_cases=cases, actor=user.user_id)
+
+
+@router.get("/{project_id}/ncrp-complaints")
+async def list_ncrp_project(project_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    p = _store().get(project_id)
+    if not p:
+        raise HTTPException(404, f"Project '{project_id}' not found.")
+    _visible(p, user)
+    return {"project_id": project_id, "complaints": _ncrp().list_for_project(project_id)}
+
+
+@networks_router.post("/{case_id}/ncrp-import")
+async def import_ncrp_case(
+    case_id: str,
+    req: NcrpTextImportRequest,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    cid = _case(case_id, user)
+    meta = _store().case_meta(cid)
+    res = _import_ncrp_rows(req.csv_text, project_id=meta.get("project_id"), target_cases=[cid], actor=user.user_id)
+    return {**res, "golden_hour": _ncrp().golden_hour_status(cid)}
+
+
+@networks_router.get("/{case_id}/ncrp-complaints")
+async def list_ncrp_case(case_id: str, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
+    cid = _case(case_id, user)
+    ncrp_store = _ncrp()
+    return {
+        "case_id": cid,
+        "complaints": ncrp_store.list_for_case(cid),
+        "golden_hour": ncrp_store.golden_hour_status(cid),
+    }

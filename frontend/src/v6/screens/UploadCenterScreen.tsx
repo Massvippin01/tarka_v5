@@ -25,6 +25,9 @@ import { ColumnMappingDialog } from '../upload/ColumnMappingDialog';
 import { DropZone } from '../upload/DropZone';
 import { STATE_LABEL } from '../upload/stateLabel';
 import { IntakeUpload, ModeChoice, useUploadMode } from '../intake/IntakeUpload';
+import { NcrpImportPanel } from '../components/NcrpImportPanel';
+import { GoldenHourClockBar } from '../components/GoldenHourClockBar';
+import { useCaseFixture } from '../../selectors/bundleAdapter';
 
 
 const IDENTIFIER_LABEL: Record<string, string> = {
@@ -44,6 +47,7 @@ export const UploadCenterScreen: React.FC = () => {
   const caseId = activeCaseId || 'CASE-2026-001';
   const { items, addFiles, hydrate } = useUploadStore();
   const [mode, setMode] = useUploadMode();
+  const { fixture } = useCaseFixture(caseId);
 
   useEffect(() => {
     void hydrate(caseId);
@@ -68,6 +72,8 @@ export const UploadCenterScreen: React.FC = () => {
       />
 
       <ModeChoice mode={mode} onChange={setMode} caseId={caseId} />
+      <GoldenHourClockBar goldenHour={fixture?.goldenHour} />
+      <NcrpImportPanel caseId={caseId} />
 
       {mode === 'find' ? (
         <IntakeUpload />

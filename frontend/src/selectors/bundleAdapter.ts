@@ -26,8 +26,12 @@ export interface BackendBundleEdge {
 export interface BackendBundle {
   caseId: string;
   firNumber?: string;
+  ncrpAckNo?: string;
   policeStation?: string;
   complainantName?: string;
+  complainantAccount?: string;
+  complainantPhone?: string;
+  typology?: string;
   claimedLossInr?: number;
   bookedLossInr?: number;
   recoverableLibrInr?: number;
@@ -37,6 +41,8 @@ export interface BackendBundle {
   unaccountedInr?: number;
   title?: string;
   dataSource?: "UPLOADED";
+  complaintTs?: number | null;
+  goldenHour?: CanonicalCaseFixture["goldenHour"];
   nodes: BackendBundleNode[];
   edges: BackendBundleEdge[];
 }
@@ -125,11 +131,17 @@ export function bundleToCaseFixture(bundle: BackendBundle, networks?: BackendNet
   const bookedLossInr = uploaded ? bundle.bookedLossInr ?? 0 : victimOutflow || bundle.bookedLossInr || 0;
   const victim = accounts.find((a) => a.holderType === "VICTIM");
 
+  const victimAcct = bundle.complainantAccount || victim?.accountMasked || "";
+  const remainingMins =
+    bundle.goldenHour?.active && bundle.goldenHour.started_at
+      ? Math.max(0, Math.round(180 - (Date.now() / 1000 - bundle.goldenHour.started_at) / 60))
+      : 0;
+
   return {
     caseId: bundle.caseId,
-    firNumber: bundle.firNumber ?? "",
+    firNumber: bundle.firNumber ?? bundle.ncrpAckNo ?? "",
     policeStation: bundle.policeStation ?? "",
-    ncrpAckNo: "",
+    ncrpAckNo: bundle.ncrpAckNo ?? "",
     title: bundle.title ?? "",
     typology: "UNCLASSIFIED",
     priority: "HIGH_SYNDICATE",
@@ -137,10 +149,10 @@ export function bundleToCaseFixture(bundle: BackendBundle, networks?: BackendNet
     leadInvestigator: "",
     complainant: {
       name: bundle.complainantName || victim?.holderName || "",
-      phone: "",
+      phone: bundle.complainantPhone ?? "",
       bank: "",
-      accountMasked: victim?.accountMasked ?? "",
-      accountNumber: victim?.accountNumber ?? "",
+      accountMasked: victimAcct,
+      accountNumber: bundle.complainantAccount || victim?.accountNumber || "",
       ifsc: "",
       panMasked: "",
       openingBalance: 0,
@@ -156,12 +168,13 @@ export function bundleToCaseFixture(bundle: BackendBundle, networks?: BackendNet
       unrecoverableCashoutInr: uploaded
         ? bundle.cashedOutInr ?? 0
         : Math.min(cashedOut, Math.max(0, bookedLossInr - (bundle.recoverableLibrInr ?? 0))),
-      goldenHourRemainingMins: 0,
+      goldenHourRemainingMins: remainingMins,
     },
     accounts,
     transactions,
     timelineEvents: [],
     syndicateLinks: [],
+    goldenHour: bundle.goldenHour,
   };
 }
 

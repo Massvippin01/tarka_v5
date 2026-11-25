@@ -10,6 +10,8 @@ import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { Button, Chip, EmptyState, PageHead, type ChipVariant } from '../ui';
 import type { NetworksResponse } from '../triage/triage';
 import { intakeLabel } from '../intake/intake';
+import { NcrpImportPanel } from '../components/NcrpImportPanel';
+import { HandoverPanel } from '../components/HandoverPanel';
 
 export type Lifecycle = 'INTAKE' | 'PROCESSING' | 'INVESTIGATING' | 'ACTION_PENDING' | 'COURT_READY' | 'CLOSED';
 
@@ -121,9 +123,9 @@ export const ProjectsScreen: React.FC = () => {
         />
       ) : (
         <div className="space-y-3">
-          {projects.map((p) => (
+          {projects.map((p, idx) => (
             <motion.div key={p.project_id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
-              <ProjectCard project={p} all={q.data ?? []} />
+              <ProjectCard project={p} all={q.data ?? []} defaultOpenNcrp={idx === 0} />
             </motion.div>
           ))}
         </div>
@@ -169,10 +171,12 @@ const NewProjectForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const ProjectCard: React.FC<{ project: Project; all: Project[] }> = ({ project: p, all }) => {
+const ProjectCard: React.FC<{ project: Project; all: Project[]; defaultOpenNcrp?: boolean }> = ({ project: p, all, defaultOpenNcrp = false }) => {
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(p.name);
   const [linkId, setLinkId] = useState('');
+  const [handoverCaseId, setHandoverCaseId] = useState<string | null>(null);
+  const [showNcrp, setShowNcrp] = useState(defaultOpenNcrp);
   const { caseWorkspaces } = useTarkaGlobal();
 
   const patchProject = useProjectMutation(
@@ -272,10 +276,25 @@ const ProjectCard: React.FC<{ project: Project; all: Project[] }> = ({ project: 
             </thead>
             <tbody>
               {p.cases.map((c) => (
-                <CaseRow key={c.case_id} c={c} project={p} others={others} />
+                <CaseRow key={c.case_id} c={c} project={p} others={others} isTop={defaultOpenNcrp} onHandover={() => setHandoverCaseId(handoverCaseId === c.case_id ? null : c.case_id)} />
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!p.archived && (
+        <div className="border-t border-[var(--line)] p-3 space-y-3">
+          {handoverCaseId && (
+            <HandoverPanel caseId={handoverCaseId} />
+          )}
+          {showNcrp ? (
+            <NcrpImportPanel projectId={p.project_id} title="Project NCRP complaint import" />
+          ) : (
+            <Button size="sm" variant="ghost" onClick={() => setShowNcrp(true)}>
+              NCRP complaint import
+            </Button>
+          )}
         </div>
       )}
 
@@ -308,8 +327,9 @@ const ProjectCard: React.FC<{ project: Project; all: Project[] }> = ({ project: 
   );
 };
 
-const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[] }> = ({ c, project, others }) => {
+const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[]; isTop?: boolean; onHandover: () => void }> = ({ c, project, others, isTop = false, onHandover }) => {
   const [assignee, setAssignee] = useState(c.assignee ?? '');
+  const activeCaseId = useCaseStore((s) => s.activeCaseId);
   const navigate = useCaseStore((s) => s.setActiveCaseId);
   const setView = useCaseStore((s) => s.setActiveView);
   const patchCase = useProjectMutation(
@@ -324,11 +344,12 @@ const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[] }>
     if (assignee.trim() !== (c.assignee ?? '')) patchCase.mutate({ assignee: assignee.trim() });
   };
   const stage = LIFECYCLE.findIndex((l) => l.key === c.lifecycle);
-  // Same query key as Triage / My Desk, so this is usually already cached.
+  // Same query key as Triage / My Desk; limit eager background prefetch to top/active case so large archives load fast.
   const nets = useQuery({
     queryKey: ['networks', c.case_id],
     queryFn: async () => (await apiClient.get<NetworksResponse>(`/api/v1/cases/${encodeURIComponent(c.case_id)}/networks`)).data,
     staleTime: 60_000,
+    enabled: (isTop && project.cases.length <= 12) || c.case_id === activeCaseId,
   });
   const intake = nets.data ? intakeLabel(nets.data.networks) : null;
 
@@ -403,7 +424,10 @@ const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[] }>
           ))}
         </select>
       </td>
-      <td className="px-4 py-2 text-right whitespace-nowrap">
+      <td className="px-4 py-2 text-right whitespace-nowrap space-x-1">
+        <Button size="sm" variant="ghost" onClick={onHandover} title="Assign or hand over case with note and audit history" data-testid={`handover-${c.case_id}`}>
+          Handover
+        </Button>
         <Button
           size="sm"
           variant="ghost"

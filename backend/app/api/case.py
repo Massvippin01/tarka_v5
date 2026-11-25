@@ -1161,16 +1161,29 @@ def uploaded_bundle(case_id: str, record: Optional[Dict[str, Any]] = None) -> Op
 
     None when TARKA knows nothing about the case (no registry entry, no uploads, no DB row).
     """
+    from app.services.ingestion.ncrp_complaints import NcrpComplaintStore
     from app.services.ingestion.networks import case_networks
     from app.services.ingestion.projects_store import ProjectsStore
 
     mgr = IngestionJobManager.get_instance()
     reg = ProjectsStore(mgr.base_dir).registered(case_id)
+    ncrp_store = NcrpComplaintStore(mgr.base_dir)
+    complaints = ncrp_store.list_for_case(case_id)
     jobs = [j for j in mgr.list_jobs({case_id}) if not j.is_cancelled]
-    if record is None and reg is None and not jobs:
+    if record is None and reg is None and not jobs and not complaints:
         return None
     record = record or {}
-    nets = case_networks(mgr.derived_dir, case_id)["networks"]
+    nets_payload = case_networks(mgr.derived_dir, case_id)
+    nets = nets_payload["networks"]
+    completed_jobs = [j for j in jobs if j.stage.value == "EVIDENCE_AVAILABLE"]
+    if completed_jobs:
+        ncrp_store.mark_golden_step(case_id, "uploaded_at")
+    if nets:
+        ncrp_store.mark_golden_step(case_id, "traced_at")
+        if any(m["role"] == "MULE" for n in nets for m in n["members"]):
+            ncrp_store.mark_golden_step(case_id, "mules_found_at")
+    lead_complaint = next((c for c in complaints if c["status"] == "MATCHED"), complaints[0] if complaints else None)
+    gh_status = ncrp_store.golden_hour_status(case_id)
     mule_keys = {m["id"] for n in nets for m in n["members"] if m["role"] == "MULE"}
     # Only money touching a suspected mule: victims' ordinary spending is not part of the fraud trail.
     # shortcut: 5,000 flows cap (≈300 gangs); page by network for bigger cases.
@@ -1194,10 +1207,17 @@ def uploaded_bundle(case_id: str, record: Optional[Dict[str, Any]] = None) -> Op
     return {
         "caseId": case_id,
         "title": record.get("title") or (reg or {}).get("title") or "",
-        "firNumber": record.get("firNumber", ""),
+        "firNumber": record.get("firNumber") or (lead_complaint["ack_no"] if lead_complaint else ""),
+        "ncrpAckNo": record.get("ncrpAckNo") or (lead_complaint["ack_no"] if lead_complaint else ""),
         "policeStation": record.get("policeStation", ""),
-        "complainantName": record.get("complainantName", ""),
-        "claimedLossInr": record.get("claimedLossInr", 0),
+        "complainantName": record.get("complainantName") or (lead_complaint["victim_name"] if lead_complaint else ""),
+        "complainantAccount": record.get("complainantAccount") or (lead_complaint.get("matched_account") or lead_complaint.get("account_vpa") if lead_complaint else ""),
+        "complainantPhone": record.get("complainantPhone") or (lead_complaint["phone"] if lead_complaint else ""),
+        "typology": record.get("typology") or (lead_complaint["typology"] if lead_complaint else ""),
+        "claimedLossInr": record.get("claimedLossInr") or (lead_complaint["amount_inr"] if lead_complaint and lead_complaint.get("amount_inr") else 0),
+        "complaintTs": (lead_complaint["complaint_ts"] if lead_complaint else None),
+        "goldenHour": gh_status,
+        "ncrpComplaints": complaints,
         # Money from uploaded rows: victims → suspected mules. cashed out + recoverable + unaccounted = booked loss.
         "bookedLossInr": total("amount_inr"),
         "recoverableLibrInr": total("recoverable_inr"),

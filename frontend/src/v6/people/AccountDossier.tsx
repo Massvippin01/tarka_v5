@@ -13,7 +13,7 @@ import { Button, Skeleton } from '../ui';
 import { fmtIst } from '../evidence/EvidenceRegister';
 import { ROLE_TONE, ScoreBar, VerdictTag } from './PeopleTable';
 import { ReasonDialog } from './ReviewQueue';
-import { useAccountFreeze, useAccountTimeline, useAccountVerdict, useDeviceIds, useVerdictHistory } from './usePeopleData';
+import { useAccountFreeze, useAccountTimeline, useAccountVerdict, useDeviceIds, useNetworks, useVerdictHistory } from './usePeopleData';
 
 const VERDICT_WORD = { CONFIRMED_MULE: 'Confirmed mule', NOT_MULE: 'Not a mule' } as const;
 
@@ -56,6 +56,22 @@ export const AccountDossier: React.FC<Props> = ({ caseId, fixture, row, accountP
   const device = useMemo(() => selectAccountFlows(fixture).find((a) => partyKey(a.holderName) === partyKey(label)), [fixture, label]);
   // Uploaded login / device logs win; demo cases carry IMEI / Wi-Fi in the case record.
   const uploaded = useDeviceIds(caseId, !demo).get(partyKey(label));
+  const netsQ = useNetworks(caseId);
+  const controllerGroup = useMemo(() => {
+    const key = partyKey(label);
+    for (const n of netsQ.data?.networks ?? []) {
+      const hit = (n.controllers ?? []).find((cg) => cg.accounts.includes(key));
+      if (hit) return hit;
+    }
+    return null;
+  }, [netsQ.data, label]);
+  const moneyPaths = useMemo(() => {
+    const key = partyKey(label);
+    return (netsQ.data?.networks ?? [])
+      .flatMap((n) => n.traces ?? [])
+      .flatMap((vt) => vt.paths.filter((p) => p.hops.includes(key)))
+      .slice(0, 6);
+  }, [netsQ.data, label]);
   const ids = (list: string[] | undefined, fallback?: string) => (list?.length ? list.join(', ') : fallback);
   const imei = ids(uploaded?.imei, device?.deviceImei);
   const sim = ids(uploaded?.imsi);
@@ -157,6 +173,79 @@ export const AccountDossier: React.FC<Props> = ({ caseId, fixture, row, accountP
               ))}
             </ul>
           </section>
+
+          {controllerGroup && (
+            <section className="v6-glass rounded-2xl p-4 space-y-2.5" data-testid="dossier-controller-attribution">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-[14px] font-[650] text-[var(--fg-1)] flex items-center gap-1.5">
+                  <Smartphone className="h-4 w-4 text-[var(--accent)]" /> Controller attribution
+                </h3>
+                <span className="rounded-md bg-[var(--accent-bg)] text-[var(--accent)] px-2 py-0.5 text-[11px] font-semibold">
+                  CONTROLLER_GROUP
+                </span>
+              </div>
+              <p className="text-[13px] font-medium text-[var(--fg-1)]">{controllerGroup.summary}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {controllerGroup.devices.map((d) => (
+                  <span
+                    key={`${d.kind}:${d.value}`}
+                    title={`${d.kind.toUpperCase()} shared across ${d.accounts.length} accounts (${d.events} device events)`}
+                    className="rounded-md border border-[var(--line)] bg-[var(--surface-2)] px-2 py-0.5 v6-mono text-[11.5px] text-[var(--fg-1)]"
+                  >
+                    {d.kind.toUpperCase()}: {d.value}
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {controllerGroup.accounts.map((acct) => (
+                  <button
+                    key={acct}
+                    type="button"
+                    onClick={() => setFocus({ networkId: null, account: acct })}
+                    className={clsx(
+                      'rounded-md px-2 py-0.5 v6-mono text-[11.5px] border transition-colors',
+                      acct === row.key
+                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                        : 'bg-[var(--surface-2)] text-[var(--fg-2)] border-[var(--line)] hover:text-[var(--accent)]',
+                    )}
+                  >
+                    {acct}
+                  </button>
+                ))}
+              </div>
+              {controllerGroup.evidence_rows.length > 0 && (
+                <div className="border-t border-[var(--line)] pt-2">
+                  <div className="text-[11.5px] font-medium text-[var(--fg-3)] mb-1">Device sighting evidence</div>
+                  <ul className="max-h-28 overflow-y-auto space-y-0.5 text-[11px] v6-mono text-[var(--fg-2)]">
+                    {controllerGroup.evidence_rows.slice(0, 6).map((ev, i) => (
+                      <li key={i}>
+                        {fmtIst(ev.ts)} · {ev.account} · {ev.kind}={ev.value} (line {ev.line})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {moneyPaths.length > 0 && (
+            <section className="v6-glass rounded-2xl p-4 space-y-2" data-testid="dossier-money-paths">
+              <h3 className="text-[14px] font-[650] text-[var(--fg-1)]">Time-aware victim money paths</h3>
+              <ul className="space-y-1.5 text-[12.5px]">
+                {moneyPaths.map((p, idx) => (
+                  <li key={idx} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)]/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                    <span className="v6-mono text-[var(--fg-1)] break-all">{p.hop_labels.join(' → ')}</span>
+                    <span className="font-semibold tabular-nums text-[var(--fg-1)]">
+                      {formatInr(p.amount_inr)} ·{' '}
+                      <span className="font-normal text-[var(--fg-3)]">
+                        {p.outcome === 'HELD' ? 'still held' : p.outcome === 'CASHED_OUT' ? 'cashed out' : 'moved elsewhere'}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Timeline */}
           <section className="v6-glass rounded-2xl">

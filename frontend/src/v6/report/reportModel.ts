@@ -6,7 +6,32 @@ import type { MoneyFigure } from '../../selectors/caseSelectors';
 import type { ChecklistItem, RankedRow } from '../freeze/actionPlan';
 import { t, untranslated, HINDI_REVIEWED, UNTRANSLATED_MARK, type Lang, type TKey } from './reportI18n';
 
-export type ReportScope = 'account' | 'network' | 'case';
+export type ReportScope = 'account' | 'network' | 'case' | 'project';
+
+export interface ReportMoneyPath {
+  victim: string;
+  path: string[];
+  amountInr: number;
+  outcome: string;
+  heldInr: number;
+}
+
+export interface ReportControllerEvidence {
+  networkId: string;
+  controllerId: string;
+  sharedIdentifiers: string;
+  accounts: string[];
+  reason: string;
+}
+
+export interface ReportProjectCase {
+  caseId: string;
+  title: string;
+  stage: string;
+  assignee: string;
+  bookedInr: number;
+  recoverableInr: number;
+}
 
 export interface ReportFigure {
   id: string;
@@ -26,6 +51,9 @@ export interface ReportInput {
   queue: RankedRow[];
   checklist: ChecklistItem[];
   evidence: { name: string; sha256: string }[];
+  moneyPaths?: ReportMoneyPath[];
+  controllers?: ReportControllerEvidence[];
+  projectCases?: ReportProjectCase[];
   generatedAt: Date;
   fmt: (inr: number) => string;
 }
@@ -43,7 +71,51 @@ export const ROWS_PER_FIGURE = 300;
 
 export function buildReport(i: ReportInput, lang: Lang): ReportSection[] {
   const L = (k: TKey) => t(k, lang);
-  const scopeLabel = L(i.scope === 'case' ? 'scopeCase' : i.scope === 'network' ? 'scopeNetwork' : 'scopeAccount');
+  const scopeLabel = L(
+    i.scope === 'project' ? 'scopeProject' : i.scope === 'case' ? 'scopeCase' : i.scope === 'network' ? 'scopeNetwork' : 'scopeAccount',
+  );
+  const extraSections: ReportSection[] = [];
+  if (i.scope === 'project' && i.projectCases?.length) {
+    extraSections.push({
+      id: 'project-cases',
+      title: L('projectCases'),
+      head: [L('case'), L('caseStage'), L('officerAssigned'), L('paidIn'), L('recoverable')],
+      rows: i.projectCases.map((pc) => [
+        pc.title ? `${pc.caseId} (${pc.title})` : pc.caseId,
+        untranslated(pc.stage || 'INTAKE', lang),
+        pc.assignee || '—',
+        i.fmt(pc.bookedInr),
+        i.fmt(pc.recoverableInr),
+      ]),
+    });
+  }
+  if (i.moneyPaths?.length) {
+    extraSections.push({
+      id: 'money-paths',
+      title: L('moneyPaths'),
+      head: [L('victim'), L('hopPath'), L('amount'), L('pathOutcome'), L('held')],
+      rows: i.moneyPaths.slice(0, 120).map((mp) => [
+        mp.victim,
+        mp.path.join(' → '),
+        i.fmt(mp.amountInr),
+        untranslated(mp.outcome, lang),
+        i.fmt(mp.heldInr),
+      ]),
+    });
+  }
+  if (i.controllers?.length) {
+    extraSections.push({
+      id: 'controllers',
+      title: L('controllers'),
+      head: [L('controllerGroup'), L('deviceIdentifiers'), L('mulesCount'), L('reason')],
+      rows: i.controllers.slice(0, 120).map((c) => [
+        `${c.controllerId} (${c.networkId})`,
+        c.sharedIdentifiers,
+        `${c.accounts.length}: ${c.accounts.slice(0, 6).join(', ')}${c.accounts.length > 6 ? ` +${c.accounts.length - 6}` : ''}`,
+        untranslated(c.reason, lang),
+      ]),
+    });
+  }
   const sections: ReportSection[] = [
     {
       id: 'header',
@@ -65,6 +137,7 @@ export function buildReport(i: ReportInput, lang: Lang): ReportSection[] {
       head: ['#', '', L('amount')],
       rows: i.figures.map((f) => [f.id, `${L(f.label)}`, i.fmt(f.figure.totalInr)]),
     },
+    ...extraSections,
     {
       id: 'notices',
       title: L('freezeNotices'),

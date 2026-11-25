@@ -289,6 +289,29 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       (`v6/voice/TarkaVoiceModal.tsx`); 1M-row runs can't be started from the screen (synchronous, capped).
 - [ ] Next for speed: parse the 5 files in parallel processes (each into its own staging file, merged per case).
 
+## Engine Upgrade — Attribution, Time-Aware Tracing, Credibility (25 Nov 2026)
+- [x] **Controller attribution** (`device_store.py` + `networks.py`): links mules sharing IMEI / IMSI / device_id / BSSID / IP (excluding `> 25` accounts = carrier NAT / public Wi-Fi), emits `CONTROLLER_GROUP` objects + plain summaries (`"These 14 mule accounts are operated from 2 phones"`) with device sighting source rows on `GET /cases/{id}/networks` and `GET /cases/{id}/attribution`. Surfaced on v6 Network page + Account Dossier.
+- [x] **Time-aware forward LIBR tracing** (`networks.py` `_trace_time_aware`): enforces chronological flow conservation (`debit` before any victim credit arrives carries zero victim taint and drops from victim hops/paths; clean credits withdrawn first under LIBR). Outputs per-victim hop-by-hop paths and `where_now` (`HELD` / `CASHED_OUT` / `MOVED_OTHER`).
+- [x] **Slow / dormant 72 h sliding burst** (`networks.py` `_best_72h_window`): single-pass streaming daily buckets + exact two-pointer 72 h window catch dormant-then-burst mules (`quiet >= 30 days`) while preserving `1.0` precision on salary-then-rent look-alikes.
+- [x] **Structuring / layering signals**: `below_limit_structuring` (`₹9.9k`/`₹49.9k`/`₹99.9k`/`₹1.99L`/`₹4.99L`), `near_identical_splits`, `rapid_fan_out` (`<= 20 min`), `round_amounts` — each adds weighted score contribution + plain-English `why`.
+- [x] **Freeze value**: per-account `held_inr × 0.5^(hours_since_last_outflow / 24)` (`freeze_value_inr`, `retention_likelihood`). Freeze queue ranked by `freezeValueInr × noticeUrgency` with formula tooltip in `FreezeQueuePanel.tsx`.
+- [x] **Giant-network sub-groups**: Louvain (`networkx.community.louvain_communities`) for `> 200` member networks, rendered as clickable sub-group bubbles (`SubgroupBubbles`) with paged `/cases/{id}/networks/{net_id}/members`.
+- [x] **Verdict-based Logistic Regression**: `VerdictStore` records account feature vectors and re-fits `sklearn.linear_model.LogisticRegression` when `>= 30` verdicts (both classes) exist, logging every re-tune in `model_tune_log` and showing `"weights last tuned on N verdicts"`.
+- [x] **Independent credibility & scale**:
+  - Extended `validate_mule_scoring.py --extended` (50k rows, 10 gangs + dormant + structuring + controllers + NAT noise + time-impossible control): precision `1.0`, recall `0.989`, dormant recall `1.0`, structuring recall `1.0`, controller attribution `24/24` (`0` NAT noise), time-impossible link rejected = `true`.
+  - 1M-row / 50-gang uncached `analyze_store` (`bench_1m.json` in `data/validation/independent/`): `13.25 s` (vs `~8.8 s` baseline on this laptop), precision `0.939`, recall `1.0`.
+  - Added `backend/tools/benchmark_amlworld.py` for IBM AMLworld (NeurIPS 2023, `IBM/AML-Data`, Kaggle `ealtman2019/ibm-transactions-for-anti-money-laundering-aml`, CDLA-Sharing-1.0; schema test passing; full Kaggle CSV run pending local download).
+
+## Golden-Hour Workflow & Demo Package (25 Nov 2026)
+- [x] **NCRP complaint import** (`ncrp_complaints.py` + `NcrpImportPanel.tsx`): parses NCRP CSVs (ack no., victim name, phone, account/VPA, amount, date/time, typology) with zero invented fields, matches deterministically against ingested `derived.sqlite` transactions (`±72h` window + amount tolerance + phone/device lookup), surfaces explicit unmatched reasons, and attaches the complaint as the case's victim record (`uploaded_bundle` + `ProjectsStore.merge_ncrp_details`).
+- [x] **Golden-hour mode** (`golden_hour_steps` + `V6Topbar.tsx` + `GoldenHourClockBar.tsx`): live clock from complaint start tracking each milestone (`Complaint received → Statements ingested → Money traced → Mules identified → Freeze notices drafted`) against the `< 5 min` containment target.
+- [x] **Bank reply loop** (`freeze_notices_api.py` + `FreezeQueuePanel.tsx`): full notice lifecycle `SENT → ACKNOWLEDGED → FROZEN (₹) → RELEASED / REFUSED` with release notes, overdue SLA badges/reminders, and a toggleable `Per bank` grouped response view.
+- [x] **Case & network handover** (`projects_store.py` + `HandoverPanel.tsx`): assigns cases or individual networks to officers with handover notes and an append-only SHA-256 hash-chained history timeline (`who changed what, when`).
+- [x] **Court report (`EN` + `HI`, Project scope)** (`reportModel.ts` + `reportI18n.ts` + `ReportBuilder.tsx`): enables `Project` scope alongside `Account / Network / Case`, includes project case table, time-aware money paths, `CONTROLLER_GROUP` device attribution evidence, freeze summary, evidence SHA-256s, and source rows per figure with chained SHA-256 sealing and PDF export.
+- [x] **Repeatable 1M-row / 50-gang demo package**:
+  - `backend/tools/seed_golden_hour_demo.py`: single-command deterministic generator + ingester (`1,000,000` rows in `12.73 s` / `78,555 rows/s`, `19.97 s` network analysis, `62` networks, `NET-7E008CEA` showing *"These 14 mule accounts are operated from 2 phones"*, `2/3` matched NCRP complaints).
+  - [`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md) + [`docs/DELIVERABLES.md`](docs/DELIVERABLES.md) + 6 verified E2E screenshots in `docs/demo/` across two clean Playwright browser passes.
+
 ## Phase 3 — Quality
 E2E upload 5 files → expected networks found. Cross-screen number-consistency tests. 5 GB perf benchmark.
 Audit log. `/ponytail:ponytail-audit` and fix "Must fix".

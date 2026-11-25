@@ -29,14 +29,78 @@ const Marked: React.FC<{ text: string }> = ({ text }) => {
 };
 
 export const ReportBuilder: React.FC<{ data: ActionData }> = ({ data }) => {
-  const { scope, ctx } = data;
-  const levelScope: ReportScope = scope.level === 'account' ? 'account' : scope.level === 'network' ? 'network' : 'case';
+  const { scope, ctx, activeProject } = data;
+  const [projectView, setProjectView] = useState(false);
+  const effectiveProject = projectView && scope.level === 'project';
+  const levelScope: ReportScope =
+    scope.level === 'account' ? 'account' : scope.level === 'network' ? 'network' : effectiveProject ? 'project' : 'case';
   const [lang, setLang] = useState<Lang>('en');
   const [chain, setChain] = useState<ChainLink[] | null>(null);
   const [generatedAt] = useState(() => new Date());
 
   const scopeName =
-    scope.level === 'account' ? `${scope.account}${scope.network ? ` (${scope.network.network_id})` : ''}` : scope.network ? scope.network.network_id : ctx.caseId;
+    scope.level === 'account'
+      ? `${scope.account}${scope.network ? ` (${scope.network.network_id})` : ''}`
+      : scope.network
+        ? scope.network.network_id
+        : effectiveProject && activeProject
+          ? activeProject.name
+          : ctx.caseId;
+
+  const moneyPaths = useMemo(
+    () =>
+      scope.networks.flatMap((n) =>
+        (n.traces ?? []).flatMap((vt) =>
+          (vt.paths ?? []).map((p) => ({
+            victim: vt.victim_label,
+            path: p.hop_labels,
+            amountInr: p.amount_inr,
+            outcome: p.outcome === 'HELD' ? 'Still held in account' : p.outcome === 'CASHED_OUT' ? 'Cashed out / ATM' : 'Moved elsewhere',
+            heldInr: p.outcome === 'HELD' ? p.amount_inr : 0,
+          })),
+        ),
+      ),
+    [scope.networks],
+  );
+
+  const controllers = useMemo(
+    () =>
+      scope.networks.flatMap((n) =>
+        (n.controllers ?? []).map((cg) => ({
+          networkId: n.network_id,
+          controllerId: cg.controller_id,
+          sharedIdentifiers: cg.devices.map((d) => `${d.kind.toUpperCase()}:${d.value}`).join(', '),
+          accounts: cg.accounts,
+          reason: cg.summary,
+        })),
+      ),
+    [scope.networks],
+  );
+
+  const projectCases = useMemo(() => {
+    if (!effectiveProject) return undefined;
+    if (!activeProject?.cases?.length) {
+      return [
+        {
+          caseId: ctx.caseId,
+          title: '',
+          stage: 'ACTIVE',
+          assignee: ctx.officer || '—',
+          bookedInr: data.figures.find((f) => f.label === 'paidIn')?.figure.totalInr ?? 0,
+          recoverableInr: data.figures.find((f) => f.label === 'recoverable')?.figure.totalInr ?? 0,
+        },
+      ];
+    }
+    return activeProject.cases.map((c) => ({
+      caseId: c.case_id,
+      title: c.case_id === ctx.caseId ? 'Active case' : '',
+      stage: c.lifecycle ?? 'INTAKE',
+      assignee: c.assignee ?? '—',
+      bookedInr: c.case_id === ctx.caseId ? (data.figures.find((f) => f.label === 'paidIn')?.figure.totalInr ?? 0) : 0,
+      recoverableInr: c.case_id === ctx.caseId ? (data.figures.find((f) => f.label === 'recoverable')?.figure.totalInr ?? 0) : 0,
+    }));
+  }, [effectiveProject, activeProject, ctx.caseId, ctx.officer, data.figures]);
+
   const sections = useMemo(
     () =>
       buildReport(
@@ -52,12 +116,15 @@ export const ReportBuilder: React.FC<{ data: ActionData }> = ({ data }) => {
           queue: data.rows,
           checklist: data.checklist,
           evidence: data.evidence,
+          moneyPaths,
+          controllers,
+          projectCases,
           generatedAt,
           fmt: (v) => formatInr(v),
         },
         lang,
       ),
-    [ctx, levelScope, scopeName, data.figures, data.rows, data.checklist, data.evidence, generatedAt, lang],
+    [ctx, levelScope, scopeName, data.figures, data.rows, data.checklist, data.evidence, moneyPaths, controllers, projectCases, generatedAt, lang],
   );
 
   useEffect(() => {
@@ -83,11 +150,11 @@ export const ReportBuilder: React.FC<{ data: ActionData }> = ({ data }) => {
     setTimeout(() => w.print(), 300);
   };
 
-  const scopes: { id: ReportScope | 'project'; label: string; on: boolean; tip: string }[] = [
-    { id: 'account', label: 'Account', on: scope.level === 'account', tip: 'Pick one account on the Network or People page, then come back.' },
-    { id: 'network', label: 'Network', on: scope.level === 'network', tip: 'Pick one network from the breadcrumb above.' },
-    { id: 'case', label: 'Case', on: scope.level === 'project', tip: 'Every network in this case.' },
-    { id: 'project', label: 'Project', on: false, tip: 'Reports across several cases of a project are not built yet. Make one report per case.' },
+  const scopes: { id: ReportScope; label: string; on: boolean; tip: string }[] = [
+    { id: 'account', label: 'Account', on: levelScope === 'account', tip: 'Pick one account on the Network or People page, then come back.' },
+    { id: 'network', label: 'Network', on: levelScope === 'network', tip: 'Pick one network from the breadcrumb above.' },
+    { id: 'case', label: 'Case', on: levelScope === 'case', tip: 'Every network in this case.' },
+    { id: 'project', label: 'Project', on: levelScope === 'project', tip: 'Project-wide summary across linked cases, paths, controllers, and SHA-256 evidence.' },
   ];
   const final = chain?.at(-1)?.hash;
   const hiMissing = missingHindi().length;
@@ -118,12 +185,19 @@ export const ReportBuilder: React.FC<{ data: ActionData }> = ({ data }) => {
                 type="button"
                 role="radio"
                 aria-checked={s.on}
-                aria-disabled={s.id === 'project'}
                 onClick={() => {
-                  if (s.id === 'case') setFocus({ networkId: null, account: null });
-                  else if (s.id === 'network' && scope.network) setFocus({ networkId: scope.network.network_id, account: null });
+                  if (s.id === 'project') {
+                    setProjectView(true);
+                    setFocus({ networkId: null, account: null });
+                  } else if (s.id === 'case') {
+                    setProjectView(false);
+                    setFocus({ networkId: null, account: null });
+                  } else if (s.id === 'network' && scope.network) {
+                    setProjectView(false);
+                    setFocus({ networkId: scope.network.network_id, account: null });
+                  }
                 }}
-                className={clsx(seg, s.on ? 'bg-[var(--surface-1)] text-[var(--accent)] shadow-xs' : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]', s.id === 'project' && 'cursor-not-allowed opacity-50')}
+                className={clsx(seg, s.on ? 'bg-[var(--surface-1)] text-[var(--accent)] shadow-xs' : 'text-[var(--fg-3)] hover:text-[var(--fg-2)]')}
               >
                 {s.label}
               </button>
@@ -183,7 +257,10 @@ export const ReportBuilder: React.FC<{ data: ActionData }> = ({ data }) => {
                 )}
                 {s.note && <p className="mt-1 text-[11.5px] italic text-[#52525b]"><Marked text={s.note} /></p>}
                 <p className="mt-1 font-mono text-[10px] text-[#a1a1aa] truncate" title={chain?.find((c) => c.id === s.id)?.hash}>
-                  {chain ? `SHA-256 ${chain.find((c) => c.id === s.id)?.hash}` : 'Sealing…'}
+                  {(() => {
+                    const secHash = chain?.find((c) => c.id === s.id)?.hash;
+                    return secHash ? `SHA-256 ${secHash}` : 'Sealing…';
+                  })()}
                 </p>
               </section>
             );

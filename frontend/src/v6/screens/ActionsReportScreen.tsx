@@ -14,6 +14,8 @@ import { FreezeQueuePanel, NoticeList } from '../freeze/FreezeQueuePanel';
 import { CourtChecklist, ProgressHeader } from '../freeze/ActionSummary';
 import { useActionData } from '../freeze/useActionData';
 import { ReportBuilder } from '../report/ReportBuilder';
+import { GoldenHourClockBar } from '../components/GoldenHourClockBar';
+import { HandoverPanel } from '../components/HandoverPanel';
 
 export interface ActionsReportScreenProps {
   initialTab?: 'actions' | 'report' | 'dossier';
@@ -120,6 +122,7 @@ const ActionsReportScreenInner: React.FC<ActionsReportScreenProps & ActiveCasePr
       )}
 
       <ProgressHeader data={data} />
+      <GoldenHourClockBar goldenHour={fixture.goldenHour} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-4">
@@ -135,6 +138,7 @@ const ActionsReportScreenInner: React.FC<ActionsReportScreenProps & ActiveCasePr
         <aside className="min-w-0 space-y-4">
           <div className="xl:sticky xl:top-4 space-y-4">
             <CourtChecklist data={data} />
+            <HandoverPanel caseId={fixture.caseId} networkId={focus.networkId} />
             <OtherLetters fixture={fixture} />
           </div>
         </aside>

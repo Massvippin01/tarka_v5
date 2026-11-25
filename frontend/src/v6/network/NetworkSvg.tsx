@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize, Minus, Plus } from 'lucide-react';
 import { formatInr } from '../../lib/formatInr';
-import type { NetworkMember } from '../triage/triage';
+import type { NetworkMember, NetworkSubgroup } from '../triage/triage';
 import { GlyphNode, type GlyphKind } from './glyphs';
 import { LABEL_FONT, LABEL_H, bubbleRows, layeredLayout, placeLabels, truncate, type LabelRequest } from './graphLayout';
 import { STATUS_META, crossCaseText, statusOf, type NetworkStatus } from './networkFocus';
@@ -87,7 +87,9 @@ export const GangSvg: React.FC<{
   const cap = Math.max(6, Math.min(30, Math.floor((H - 52) / ROW) - 1));
   const lay = useMemo(() => layeredLayout(network, cap, expanded), [network, expanded, cap]);
   // reset the camera for a new network
-  useEffect(() => setView({ k: 1, tx: 0, ty: 0 }), [network.network_id]);
+  useEffect(() => {
+    setView({ k: 1, tx: 0, ty: 0 });
+  }, [network.network_id]);
 
   // small gangs: every name fits, so show them all; dense ones reveal low-priority names as you zoom
   const dense = lay.nodes.length > 40;
@@ -342,7 +344,9 @@ export const ProjectBubbles: React.FC<{
   const { slots, height } = useMemo(() => bubbleRows(nets.map((n) => ({ id: n.network_id, amount: n.amount_inr || 0 })), Math.max(320, W - 16)), [nets, W]);
   const hovered = useRef<SVGGElement | null>(null);
   // the list on the right hovers a bubble: keep it in view
-  useEffect(() => hovered.current?.scrollIntoView?.({ block: 'nearest' }), [hoverNet]);
+  useEffect(() => {
+    hovered.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [hoverNet]);
   return (
     <div ref={wrap} className="absolute inset-0 overflow-y-auto" data-testid="project-bubbles">
       {W > 0 && (
@@ -390,6 +394,64 @@ export const ProjectBubbles: React.FC<{
                 <text y={s.r + 30} textAnchor="middle" fontSize={11} fill="var(--fg-3)">
                   {s.r < 24 ? `${formatInr(n.amount_inr || 0, { compact: true })} · ` : ''}
                   {n.mule_count} mules
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    </div>
+  );
+};
+
+/* ---------------- subgroup bubbles (>200 member giant networks) ---------------- */
+
+export const SubgroupBubbles: React.FC<{
+  subgroups: NetworkSubgroup[];
+  selectedSubgroupId: string | null;
+  onSelect: (id: string) => void;
+}> = ({ subgroups, selectedSubgroupId, onSelect }) => {
+  const [wrap, { w: W, h: H }] = useSize<HTMLDivElement>();
+  const byId = useMemo(() => new Map(subgroups.map((s) => [s.subgroup_id, s])), [subgroups]);
+  const { slots, height } = useMemo(
+    () => bubbleRows(subgroups.map((s) => ({ id: s.subgroup_id, amount: s.amount_inr || s.held_inr || s.member_count })), Math.max(320, W - 16)),
+    [subgroups, W],
+  );
+  return (
+    <div ref={wrap} className="absolute inset-0 overflow-y-auto" data-testid="subgroup-bubbles">
+      {W > 0 && (
+        <svg width={W} height={Math.max(H, height)} role="list" aria-label={`${subgroups.length} sub-groups detected inside this network`}>
+          {slots.map((s) => {
+            const sg = byId.get(s.id)!;
+            const hot = selectedSubgroupId === s.id;
+            const name = truncate(sg.label, Math.max(8, Math.floor(s.cell / 7.2)));
+            const tip = `${sg.subgroup_id} (${sg.label}): ${sg.member_count} accounts (${sg.mule_count} mules, ${sg.victim_count} victims), ${formatInr(sg.amount_inr, { compact: true })}`;
+            return (
+              <g
+                key={s.id}
+                transform={`translate(${s.x + 8} ${s.y})`}
+                role="listitem button"
+                tabIndex={0}
+                aria-label={tip}
+                className="cursor-pointer outline-none [&:focus-visible>circle.ring]:stroke-[var(--accent)]"
+                onClick={() => onSelect(s.id)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect(s.id))}
+              >
+                <title>{tip}</title>
+                <circle className="ring" r={s.r + 5} fill="none" stroke={hot ? 'var(--accent)' : 'transparent'} strokeWidth={2} />
+                <circle r={s.r} fill="color-mix(in srgb, var(--accent) 16%, var(--surface-1))" stroke="var(--accent)" strokeWidth={hot ? 3 : 2} />
+                {s.r >= 24 ? (
+                  <text y={4} textAnchor="middle" fontSize={s.r >= 34 ? 12.5 : 10.5} fontWeight={650} fill="var(--fg-1)" className="tabular-nums">
+                    {formatInr(sg.amount_inr || sg.held_inr, { compact: true })}
+                  </text>
+                ) : (
+                  <circle r={3} fill="var(--accent)" />
+                )}
+                <text y={s.r + 16} textAnchor="middle" fontSize={11.5} fontWeight={600} fill="var(--fg-1)" className="v6-mono">
+                  {name}
+                </text>
+                <text y={s.r + 30} textAnchor="middle" fontSize={11} fill="var(--fg-3)">
+                  {sg.mule_count} mules · {sg.member_count} accts
                 </text>
               </g>
             );

@@ -26,15 +26,17 @@ from app.services.ingestion.large_evidence_engine import IngestionJobManager
 
 router = APIRouter()
 
-NoticeStatus = Literal["SENT", "ACKNOWLEDGED", "FROZEN", "REFUSED"]
-# Allowed forward moves; a bank may freeze or refuse without a separate acknowledgement.
+NoticeStatus = Literal["SENT", "ACKNOWLEDGED", "FROZEN", "RELEASED", "REFUSED"]
+# Allowed forward moves; a bank may freeze or refuse without a separate acknowledgement,
+# and a frozen account can later be released on magistrate order or settlement.
 TRANSITIONS: Dict[str, set] = {
     "SENT": {"ACKNOWLEDGED", "FROZEN", "REFUSED"},
     "ACKNOWLEDGED": {"FROZEN", "REFUSED"},
-    "FROZEN": set(),
+    "FROZEN": {"RELEASED"},
+    "RELEASED": set(),
     "REFUSED": set(),
 }
-STAMP = {"ACKNOWLEDGED": "acknowledgedAt", "FROZEN": "frozenAt", "REFUSED": "refusedAt"}
+STAMP = {"ACKNOWLEDGED": "acknowledgedAt", "FROZEN": "frozenAt", "RELEASED": "releasedAt", "REFUSED": "refusedAt"}
 
 
 class NoticeDraft(BaseModel):
@@ -54,6 +56,7 @@ class NoticeStatusRequest(BaseModel):
     status: NoticeStatus
     # What the bank says it actually froze (may be less than asked); only with FROZEN.
     frozenInr: float | None = Field(None, ge=0, le=1e12)
+    note: str | None = Field(None, max_length=500)
 
 
 _SCHEMA = """
@@ -163,8 +166,10 @@ async def issue_freeze_notices(case_id: str, payload: IssueNoticesRequest, user:
                 "sentAt": now,
                 "acknowledgedAt": None,
                 "frozenAt": None,
+                "releasedAt": None,
                 "refusedAt": None,
                 "frozenInr": None,
+                "note": None,
                 "reminders": [],
                 "issuedBy": user.user_id,
             }
@@ -172,6 +177,12 @@ async def issue_freeze_notices(case_id: str, payload: IssueNoticesRequest, user:
             created.append(rec)
         await store.save(notices, "FREEZE_NOTICES_ISSUED", store.case_id,
                          {"notices": [{"id": n["id"], "bank": n["bank"], "accountIds": n["accountIds"]} for n in created]})
+        try:
+            from app.services.ingestion.large_evidence_engine import IngestionJobManager
+            from app.services.ingestion.ncrp_complaints import NcrpComplaintStore
+            NcrpComplaintStore(IngestionJobManager.get_instance().base_dir).mark_golden_step(store.case_id, "freeze_drafted_at")
+        except Exception:
+            pass
         return {"caseId": store.case_id, "created": created, "notices": notices}
 
 
@@ -198,8 +209,10 @@ async def update_freeze_notice(case_id: str, notice_id: str, payload: NoticeStat
         target[STAMP[payload.status]] = datetime.now(timezone.utc).isoformat()
         if payload.frozenInr is not None:
             target["frozenInr"] = payload.frozenInr
+        if payload.note is not None and payload.note.strip():
+            target["note"] = payload.note.strip()
         await store.save(notices, "FREEZE_NOTICE_STATUS", notice_id,
-                         {"notice_id": notice_id, "before": before, "after": payload.status, "frozenInr": payload.frozenInr})
+                         {"notice_id": notice_id, "before": before, "after": payload.status, "frozenInr": payload.frozenInr, "note": target.get("note")})
         return {"caseId": store.case_id, "notice": target, "notices": notices}
 
 

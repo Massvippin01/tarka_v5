@@ -144,6 +144,124 @@ def ingest_device_csv(case_dir: Path, job_id: str, csv_path: Path) -> Dict[str, 
 _SIM_EVENT = re.compile(r"sim|swap|port|imsi|reissue", re.I)
 
 
+def device_clusters_from_db(
+    db: sqlite3.Connection,
+    common_limit: Optional[int] = None,
+    include_evidence: bool = True,
+    evidence_per_cluster: int = 25,
+) -> Dict[str, Any]:
+    """Build shared-identifier clusters from an open derived.sqlite connection.
+
+    Excludes identifiers seen on more than `common_limit` accounts (carrier NAT / public Wi-Fi).
+    """
+    limit_val = COMMON_LIMIT if common_limit is None else common_limit
+    empty = {
+        "has_device_data": False,
+        "events_total": 0,
+        "accounts_total": 0,
+        "clusters": [],
+        "common_identifiers": [],
+        "per_acct": {},
+    }
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE name='device_events'").fetchone():
+        return empty
+    total = db.execute("SELECT COUNT(*) FROM device_events").fetchone()[0]
+    if not total:
+        return empty
+
+    holders: Dict[tuple, Dict[str, Any]] = {}
+    per_acct: Dict[str, Dict[str, Any]] = {}
+    for k in DEVICE_KINDS:
+        q = f"SELECT {k}, acct, MAX(phone), COUNT(*), MIN(ts), MAX(ts) FROM device_events WHERE {k} IS NOT NULL GROUP BY {k}, acct"
+        for val, acct, phone, n, t0, t1 in db.execute(q):
+            h = holders.setdefault((k, val), {"kind": k, "value": val, "accounts": [], "events": 0, "first_ts": t0, "last_ts": t1})
+            h["accounts"].append(acct)
+            h["events"] += n
+            h["first_ts"], h["last_ts"] = min(h["first_ts"], t0), max(h["last_ts"], t1)
+            a = per_acct.setdefault(acct, {"key": acct, "phone": phone or None, "identifiers": {kk: [] for kk in DEVICE_KINDS}})
+            a["identifiers"][k].append(val)
+    for acct, n, t0, t1 in db.execute("SELECT acct, COUNT(*), MIN(ts), MAX(ts) FROM device_events GROUP BY acct"):
+        per_acct[acct].update(events=n, first_ts=t0, last_ts=t1)
+
+    shared = [h for h in holders.values() if 1 < len(h["accounts"]) <= limit_val]
+    common = [
+        {**{k: v for k, v in h.items() if k != "accounts"}, "account_count": len(h["accounts"])}
+        for h in holders.values()
+        if len(h["accounts"]) > limit_val
+    ]
+
+    parent: Dict[str, str] = {}
+
+    def find(x: str) -> str:
+        while parent.setdefault(x, x) != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for h in shared:
+        for other in h["accounts"][1:]:
+            parent[find(other)] = find(h["accounts"][0])
+    groups: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"accounts": set(), "links": []})
+    for h in shared:
+        g = groups[find(h["accounts"][0])]
+        g["accounts"].update(h["accounts"])
+        g["links"].append(h)
+
+    clusters = []
+    for g in groups.values():
+        accts = sorted(g["accounts"])
+        links = sorted(g["links"], key=lambda l: (DEVICE_KINDS.index(l["kind"]), -len(l["accounts"])))
+        hw_links = [l for l in links if l["kind"] in ("imei", "device_id")]
+        distinct_devices = len({(l["kind"], l["value"]) for l in hw_links}) if hw_links else len({(l["kind"], l["value"]) for l in links})
+        ev_rows: List[Dict[str, Any]] = []
+        if include_evidence and links:
+            seen_ev = set()
+            for l in links:
+                if len(ev_rows) >= evidence_per_cluster:
+                    break
+                cur = db.execute(
+                    f"SELECT job_id, line, ts, acct, event FROM device_events WHERE {l['kind']} = ? ORDER BY ts, line LIMIT ?",
+                    (l["value"], evidence_per_cluster),
+                )
+                for jid, line, ts, acct, ev in cur:
+                    sig = (jid, line, acct, l["kind"], l["value"])
+                    if sig in seen_ev:
+                        continue
+                    seen_ev.add(sig)
+                    ev_rows.append({
+                        "job_id": jid,
+                        "line": line,
+                        "ts": ts,
+                        "account": acct,
+                        "kind": l["kind"],
+                        "value": l["value"],
+                        "event": ev,
+                    })
+                    if len(ev_rows) >= evidence_per_cluster:
+                        break
+        clusters.append({
+            "accounts": accts,
+            "links": [{**l, "accounts": sorted(l["accounts"])} for l in links],
+            # strongest evidence first: same handset / SIM beats same IP
+            "strongest_kind": links[0]["kind"],
+            "device_count": distinct_devices,
+            "events": sum(per_acct[a]["events"] for a in accts),
+            "evidence_rows": ev_rows,
+        })
+    clusters.sort(key=lambda c: (DEVICE_KINDS.index(c["strongest_kind"]) > 2, -len(c["accounts"]), c["accounts"][0]))
+    for i, c in enumerate(clusters):
+        c["cluster_id"] = f"DC-{i + 1:03d}"  # readable ids in display order
+
+    return {
+        "has_device_data": True,
+        "events_total": total,
+        "accounts_total": len(per_acct),
+        "clusters": clusters,
+        "common_identifiers": sorted(common, key=lambda c: -c["account_count"])[:50],
+        "per_acct": per_acct,
+    }
+
+
 def case_devices(case_dir: Path, account: Optional[str] = None, kind: Optional[str] = None,
                  value: Optional[str] = None, limit: int = 500) -> Dict[str, Any]:
     """Shared-identifier clusters, SIM changes and (optionally) the source rows for one account or identifier."""
@@ -153,62 +271,13 @@ def case_devices(case_dir: Path, account: Optional[str] = None, kind: Optional[s
     if not path.exists():
         return empty
     with closing(sqlite3.connect(path)) as db:
-        if not db.execute("SELECT 1 FROM sqlite_master WHERE name='device_events'").fetchone():
+        clustered = device_clusters_from_db(db, common_limit=COMMON_LIMIT, include_evidence=True)
+        if not clustered["has_device_data"]:
             return empty
-        total = db.execute("SELECT COUNT(*) FROM device_events").fetchone()[0]
-        if not total:
-            return empty
-
-        # value → accounts, with counts and time span
-        holders: Dict[tuple, Dict[str, Any]] = {}
-        per_acct: Dict[str, Dict[str, Any]] = {}
-        for k in DEVICE_KINDS:
-            q = f"SELECT {k}, acct, MAX(phone), COUNT(*), MIN(ts), MAX(ts) FROM device_events WHERE {k} IS NOT NULL GROUP BY {k}, acct"
-            for val, acct, phone, n, t0, t1 in db.execute(q):
-                h = holders.setdefault((k, val), {"kind": k, "value": val, "accounts": [], "events": 0, "first_ts": t0, "last_ts": t1})
-                h["accounts"].append(acct)
-                h["events"] += n
-                h["first_ts"], h["last_ts"] = min(h["first_ts"], t0), max(h["last_ts"], t1)
-                a = per_acct.setdefault(acct, {"key": acct, "phone": phone or None, "identifiers": {kk: [] for kk in DEVICE_KINDS}})
-                a["identifiers"][k].append(val)
-        for acct, n, t0, t1 in db.execute("SELECT acct, COUNT(*), MIN(ts), MAX(ts) FROM device_events GROUP BY acct"):
-            per_acct[acct].update(events=n, first_ts=t0, last_ts=t1)
-
-        shared = [h for h in holders.values() if 1 < len(h["accounts"]) <= COMMON_LIMIT]
-        common = [{**{k: v for k, v in h.items() if k != "accounts"}, "account_count": len(h["accounts"])}
-                  for h in holders.values() if len(h["accounts"]) > COMMON_LIMIT]
-
-        # union-find over accounts joined by a shared identifier
-        parent: Dict[str, str] = {}
-
-        def find(x: str) -> str:
-            while parent.setdefault(x, x) != x:
-                parent[x] = parent[parent[x]]
-                x = parent[x]
-            return x
-
-        for h in shared:
-            for other in h["accounts"][1:]:
-                parent[find(other)] = find(h["accounts"][0])
-        groups: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"accounts": set(), "links": []})
-        for h in shared:
-            g = groups[find(h["accounts"][0])]
-            g["accounts"].update(h["accounts"])
-            g["links"].append(h)
-        clusters = []
-        for g in groups.values():
-            accts = sorted(g["accounts"])
-            links = sorted(g["links"], key=lambda l: (DEVICE_KINDS.index(l["kind"]), -len(l["accounts"])))
-            clusters.append({
-                "accounts": accts,
-                "links": [{**l, "accounts": sorted(l["accounts"])} for l in links],
-                # strongest evidence first: same handset / SIM beats same IP
-                "strongest_kind": links[0]["kind"],
-                "events": sum(per_acct[a]["events"] for a in accts),
-            })
-        clusters.sort(key=lambda c: (DEVICE_KINDS.index(c["strongest_kind"]) > 2, -len(c["accounts"]), c["accounts"][0]))
-        for i, c in enumerate(clusters):
-            c["cluster_id"] = f"DC-{i + 1:03d}"  # readable ids in display order
+        total = clustered["events_total"]
+        per_acct = clustered["per_acct"]
+        clusters = clustered["clusters"]
+        common = clustered["common_identifiers"]
 
         # SIM changes: an account's IMSI changes, or the log itself says SIM swap / port
         sim_changes: List[Dict[str, Any]] = []
@@ -240,7 +309,7 @@ def case_devices(case_dir: Path, account: Optional[str] = None, kind: Optional[s
         "events_total": total,
         "accounts_total": len(per_acct),
         "clusters": clusters,
-        "common_identifiers": sorted(common, key=lambda c: -c["account_count"])[:50],
+        "common_identifiers": common,
         "sim_changes": sim_changes[:limit],
         "sim_changes_total": len(sim_changes),
         # shortcut: every account's identifiers in one payload; page it past ~20k accounts.

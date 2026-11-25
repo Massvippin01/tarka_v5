@@ -15,7 +15,7 @@ import type { NetworksResponse } from '../triage/triage';
 import { buildExplorerGraph, layerKey, layerOf, memberKey, mix, syntheticNetworks, victimToCashOutPath, type NodeAttrs, type Palette } from './networkGraph';
 import { STATUS_META, crossCaseByMember, fixtureNetworks, focusSearch, networkTotals, parseFocus, resolveFocus, statusOf, type Focus, type NetworkStatus } from './networkFocus';
 import { AccountPanel, CrossCaseBadge, DecisionBar, NetworkPanel, ProjectPanel, type Net } from './NetworkPanels';
-import { GangSvg, ProjectBubbles } from './NetworkSvg';
+import { GangSvg, ProjectBubbles, SubgroupBubbles } from './NetworkSvg';
 import { GlyphNode } from './glyphs';
 
 const LAYER_CAP = 40; // accounts drawn per hop layer before the rest fold into "+N more"
@@ -121,6 +121,8 @@ export const NetworkExplorer: React.FC = () => {
   const [filter, setFilter] = useState<NetworkStatus | null>(null);
   const [hoverNet, setHoverNet] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [selectedSubgroup, setSelectedSubgroup] = useState<string | null>(null);
+  const [showSubgroups, setShowSubgroups] = useState(true);
   const [path, setPath] = useState<{ nodes: Set<string>; edges: Set<string> } | null>(null);
   const [pathNote, setPathNote] = useState<string | null>(null);
   const [fps, setFps] = useState<string | null>(null);
@@ -132,6 +134,8 @@ export const NetworkExplorer: React.FC = () => {
     setPath(null);
     setPathNote(null);
     setExpanded(new Set());
+    setSelectedSubgroup(null);
+    setShowSubgroups(true);
   }, [caseId, network?.network_id]);
 
   const graph = useMemo(() => {
@@ -425,6 +429,27 @@ export const NetworkExplorer: React.FC = () => {
           </span>
         )}
         {network && <CrossCaseBadge cases={crossByNet.get(network.network_id) ?? []} />}
+        {q.data?.scoring_meta?.label && (
+          <span
+            className="text-[11px] rounded-full border border-[var(--line)] px-2 py-0.5 text-[var(--fg-3)] bg-[var(--surface-2)]/70"
+            title="Scoring weights are updated automatically via logistic regression once 30+ investigator verdicts are recorded"
+            data-testid="scoring-meta-badge"
+          >
+            {q.data.scoring_meta.label}
+          </span>
+        )}
+        {zoom === 'network' && !!network?.subgroups?.length && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (selectedSubgroup) setSelectedSubgroup(null);
+              setShowSubgroups((v) => !v);
+            }}
+          >
+            {showSubgroups ? 'Show gang graph' : `Show ${network.subgroups.length} sub-groups`}
+          </Button>
+        )}
         {stress > 0 && (
           <Button size="sm" variant="ghost" onClick={measureFps} title="Zoom and rotate for 3 seconds and count frames">
             <Gauge className="w-3.5 h-3.5 mr-1" /> {fps ?? 'Measure frame rate'}
@@ -446,9 +471,22 @@ export const NetworkExplorer: React.FC = () => {
               <div ref={container} className="absolute inset-0" aria-label={zoom === 'project' ? 'All money networks in this case' : `Accounts in ${network?.network_id}`} role="img" />
             ) : zoom === 'project' ? (
               <ProjectBubbles nets={nets} hoverNet={hoverNet} filter={filter} crossByNet={crossByNet} onOpen={(id) => go({ net: id, acct: null })} onHover={setHoverNet} />
+            ) : zoom === 'network' && network?.subgroups?.length && showSubgroups ? (
+              <SubgroupBubbles
+                subgroups={network.subgroups}
+                selectedSubgroupId={selectedSubgroup}
+                onSelect={(sgId) => {
+                  setSelectedSubgroup(sgId);
+                  setShowSubgroups(false);
+                }}
+              />
             ) : (
               <GangSvg
-                network={network!}
+                network={
+                  selectedSubgroup && network
+                    ? { ...network, members: network.members.filter((m) => m.subgroup_id === selectedSubgroup) }
+                    : network!
+                }
                 expanded={expanded}
                 selectedId={member?.id ?? null}
                 route={path && network ? [...path.nodes].map((k) => k.slice(network.network_id.length + 1)) : null}
@@ -486,10 +524,16 @@ export const NetworkExplorer: React.FC = () => {
               {zoom === 'network' && network && (
                 <NetworkPanel
                   n={network}
+                  caseId={fromServer ? caseId : undefined}
                   fixture={fixture}
                   crossByMember={crossByMember}
                   pathNote={pathNote}
                   pathOn={!!path}
+                  selectedSubgroupId={selectedSubgroup}
+                  onSubgroup={(sgId) => {
+                    setSelectedSubgroup(sgId);
+                    if (!sgId && network.subgroups?.length) setShowSubgroups(true);
+                  }}
                   onPath={() => showPath()}
                   onAccount={(id) => go({ net: network.network_id, acct: id })}
                 />
@@ -505,6 +549,7 @@ export const NetworkExplorer: React.FC = () => {
                     out: new Set((network.links ?? []).filter((l) => l[0] === member.id).map((l) => l[1])).size,
                   }}
                   onPathThrough={() => showPath(member.id)}
+                  onAccount={(id) => go({ net: network.network_id, acct: id })}
                 />
               )}
             </motion.div>

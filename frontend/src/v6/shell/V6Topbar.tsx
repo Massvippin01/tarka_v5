@@ -40,15 +40,31 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
 
   const caseId = activeCaseId || 'CASE-2026-001';
   const canonicalCase = getCanonicalCase(caseId);
-  useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
+  const bundleCase = useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
   const financials = selectCaseActionFinancials(caseId);
+  const [tickSec, setTickSec] = React.useState(() => Math.floor(Date.now() / 1000));
+  const ghClock = bundleCase?.goldenHour;
+  React.useEffect(() => {
+    if (!ghClock?.active || ghClock.total_elapsed_secs != null) return;
+    const id = window.setInterval(() => setTickSec(Math.floor(Date.now() / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [ghClock?.active, ghClock?.total_elapsed_secs]);
 
   // Golden hour format
   const ghMins = financials.goldenHourRemainingMins;
   const ghHours = Math.floor(ghMins / 60);
   const ghMinsRemainder = ghMins % 60;
-  const ghText = ghMins <= 0 ? 'Expired' : `${ghHours > 0 ? `${ghHours}h ` : ''}${ghMinsRemainder}m`;
-  const ghPercent = Math.max(0, Math.min(100, (ghMins / 180) * 100));
+  const wfElapsedSec = ghClock?.active
+    ? ghClock.total_elapsed_secs ?? (ghClock.started_at ? Math.max(0, tickSec - ghClock.started_at) : 0)
+    : null;
+  const wfText =
+    wfElapsedSec != null
+      ? `${String(Math.floor(wfElapsedSec / 60)).padStart(2, '0')}:${String(Math.floor(wfElapsedSec % 60)).padStart(2, '0')}`
+      : null;
+  const ghText = wfText ?? (ghMins <= 0 ? 'Expired' : `${ghHours > 0 ? `${ghHours}h ` : ''}${ghMinsRemainder}m`);
+  const ghPercent = ghClock?.active
+    ? Math.max(5, Math.min(100, ((wfElapsedSec ?? 0) / ((ghClock.target_mins || 5) * 60)) * 100))
+    : Math.max(0, Math.min(100, (ghMins / 180) * 100));
 
   const isCaseUnknown =
     Boolean(activeCaseId) &&

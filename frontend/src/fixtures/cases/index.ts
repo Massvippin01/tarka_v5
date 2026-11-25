@@ -98,6 +98,22 @@ export interface CanonicalSyndicateLink {
   sharedAnchorValue: string;
 }
 
+export interface GoldenHourStep {
+  key: string;
+  label: string;
+  at: number | null;
+  elapsed_secs: number | null;
+}
+
+export interface GoldenHourClock {
+  active: boolean;
+  complaint_ts: number | null;
+  started_at: number | null;
+  target_mins: number;
+  total_elapsed_secs?: number | null;
+  steps: GoldenHourStep[];
+}
+
 export interface CanonicalCaseFixture {
   caseId: string;
   firNumber: string;
@@ -115,6 +131,7 @@ export interface CanonicalCaseFixture {
   transactions: CanonicalCaseTransaction[];
   timelineEvents: CanonicalTimelineEvent[];
   syndicateLinks: CanonicalSyndicateLink[];
+  goldenHour?: GoldenHourClock;
 }
 
 export const CANONICAL_CASES: Record<string, CanonicalCaseFixture> = {

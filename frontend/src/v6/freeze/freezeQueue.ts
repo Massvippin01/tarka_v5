@@ -1,7 +1,7 @@
 import type { FreezeAction } from '../../selectors/caseSelectors';
 import { formatInr } from '../../lib/formatInr';
 
-export type NoticeStatus = 'SENT' | 'ACKNOWLEDGED' | 'FROZEN' | 'REFUSED';
+export type NoticeStatus = 'SENT' | 'ACKNOWLEDGED' | 'FROZEN' | 'RELEASED' | 'REFUSED';
 
 export interface FreezeNotice {
   id: string;
@@ -14,9 +14,11 @@ export interface FreezeNotice {
   sentAt: string;
   acknowledgedAt: string | null;
   frozenAt: string | null;
+  releasedAt?: string | null;
   refusedAt: string | null;
   /** Amount the bank reported holding (may be less than asked); null = the amounts asked for. */
   frozenInr?: number | null;
+  note?: string | null;
   reminders?: string[];
   networkId?: string | null;
 }
@@ -55,7 +57,7 @@ export interface QueueRow extends FreezeAction {
   notice: FreezeNotice | null;
 }
 
-const STATUS_ORDER: Record<QueueRow['status'], number> = { NOT_SENT: 0, REFUSED: 1, SENT: 2, ACKNOWLEDGED: 3, FROZEN: 4 };
+const STATUS_ORDER: Record<QueueRow['status'], number> = { NOT_SENT: 0, REFUSED: 1, SENT: 2, ACKNOWLEDGED: 3, FROZEN: 4, RELEASED: 5 };
 
 /**
  * Accounts holding the victim's money, most urgent first.
@@ -74,7 +76,7 @@ export function rankFreezeQueue(freezes: FreezeAction[], notices: FreezeNotice[]
     .map((f) => {
       const notice = latest.get(f.nodeId) ?? null;
       const status = notice?.status ?? 'NOT_SENT';
-      return { ...f, section: f.kind === 'MERCHANT_LIEN' ? '106' : '107', recoverableInr: status === 'FROZEN' ? 0 : f.amountInr, status, notice };
+      return { ...f, section: f.kind === 'MERCHANT_LIEN' ? '106' : '107', recoverableInr: status === 'FROZEN' || status === 'RELEASED' ? 0 : f.amountInr, status, notice };
     });
   const live = goldenHourMins > 0;
   return rows.sort((a, b) => {
