@@ -34,3 +34,4 @@ In strict adherence to Rule 1 (Repository Truth) and Rule 9 (Production Readines
 1. **Never Determine Guilt or Innocence:** TARKA will never output a determination that a named individual is "guilty", "a fraudster", or "an innocent victim".
 2. **Never Automatically Merge Identities:** Proximity in graph embeddings or matching VPAs will never trigger an autonomous identity merge.
 3. **Never Overwrite Raw Evidence:** Machine observations and examiner corrections never modify or overwrite raw CAS evidence bytes.
+

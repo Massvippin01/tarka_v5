@@ -55,3 +55,4 @@ When evaluated across the 25 controlled calibration scenarios and holdout benchm
 
 1. **OCR on Low-Contrast Carbon Paper:** Automated OCR confidence drops on faded physical ink; preserved in `PHASE14_2_FALSE_NEGATIVE_REGISTER.md` and routed to the Gate 5 Examiner Review interface.
 2. **Statutory Gaps:** Unmatched payment receipts cannot be definitively proven fraudulent without external NPCI ISO 8583 switch logs. TARKA models this limitation explicitly through hypothesis `HYP-UNKNOWN`.
+

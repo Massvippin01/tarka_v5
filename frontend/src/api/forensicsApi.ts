@@ -387,6 +387,14 @@ export const forensicsApi = {
     const res = await api.get(`/cases/${caseId}/hypotheses`);
     return res.data;
   },
+
+  loadDemoPack: async (caseId: string = "upi_payment_discrepancy", packName?: string) => {
+    return { status: "DEMO_PACK_LOADED", case_id: caseId, pack_name: packName };
+  },
+
+  resetCaseClean: async (caseId: string = "upi_payment_discrepancy") => {
+    return { status: "CASE_RESET_CLEAN", case_id: caseId };
+  },
 };
 
 

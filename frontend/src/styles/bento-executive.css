@@ -1,0 +1,560 @@
+/* ==========================================================================
+   TARKA v5.0 — PHASE 15 ADAPTIVE INTELLIGENCE WORKBENCH DESIGN SYSTEM
+   Inspired by Admin Dashboard V2 (Midnight Navy #060B14, Ocean Blue #0F1B2E,
+   Controlled Cyan #06B6D4/#22D3EE, and Electric Blue #3B82F6)
+   Used by National Cyber Crime Research & Digital Evidence Falsification
+   ========================================================================== */
+
+:root, [data-theme="obsidian-glass"], [data-theme="obsidian"] {
+  /* Core Canonical Admin Dashboard V2 Surface & Frame Tokens */
+  --bento-canvas: #060B14;           /* Midnight navy canvas background */
+  --reui-frame-bg: #060B14;          /* Outer app shell and sidebar */
+  --reui-canvas-bg: #0B1220;         /* Inset main workspace canvas */
+  --reui-card-bg: #0F1B2E;           /* Deep ocean-blue card surface */
+  --reui-card-well: #0B1220;         /* Recessed well background */
+
+  /* Hairline Specular Borders */
+  --reui-border-strong: rgba(255, 255, 255, 0.10);  /* Crisp specular panel separation */
+  --reui-border-subtle: rgba(255, 255, 255, 0.05);  /* Table row and cell dividers */
+  --reui-border-well: rgba(255, 255, 255, 0.08);    /* Outer well border */
+  --reui-border-inner: rgba(255, 255, 255, 0.04);   /* Inner card border */
+  --reui-border-cyan: rgba(34, 211, 238, 0.30);     /* Active/focused cyan highlight */
+
+  /* High-Definition Typography Tokens */
+  --reui-text-strong: #FFFFFF;       /* Razor-sharp primary headings and hero numbers */
+  --reui-text-primary: #F8FAFC;      /* Body headings, table numbers */
+  --reui-text-secondary: #94A3B8;    /* Body labels, explanations */
+  --reui-text-muted: #64748B;        /* Metadata, captions */
+  --reui-text-inverse: #060B14;
+
+  /* Executive Semantic Status Tokens */
+  --reui-emerald-bg: rgba(16, 185, 129, 0.14);
+  --reui-emerald-border: rgba(16, 185, 129, 0.32);
+  --reui-emerald-text: #34D399;
+  --reui-emerald-dot: #10B981;
+
+  --reui-rose-bg: rgba(244, 63, 94, 0.14);
+  --reui-rose-border: rgba(244, 63, 94, 0.32);
+  --reui-rose-text: #FB7185;
+  --reui-rose-dot: #F43F5E;
+
+  --reui-amber-bg: rgba(245, 158, 11, 0.14);
+  --reui-amber-border: rgba(245, 158, 11, 0.32);
+  --reui-amber-text: #FBBF24;
+  --reui-amber-dot: #F59E0B;
+
+  --reui-indigo-bg: rgba(6, 182, 212, 0.15);
+  --reui-indigo-border: rgba(34, 211, 238, 0.35);
+  --reui-indigo-text: #22D3EE;
+  --reui-indigo-solid: #06B6D4;
+
+  --reui-purple-bg: rgba(139, 92, 246, 0.14);
+  --reui-purple-border: rgba(139, 92, 246, 0.32);
+  --reui-purple-text: #A78BFA;
+  --reui-purple-dot: #8B5CF6;
+
+  /* Shadcn Token Mappings for Ingest & Form Controls */
+  --background: #060B14;
+  --foreground: #F8FAFC;
+  --card: #0F1B2E;
+  --card-foreground: #F8FAFC;
+  --popover: #132238;
+  --popover-foreground: #F8FAFC;
+  --primary: #06B6D4;
+  --primary-foreground: #060B14;
+  --muted: #132238;
+  --muted-foreground: #94A3B8;
+  --accent: #1A2C46;
+  --accent-foreground: #22D3EE;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #06B6D4;
+}
+
+[data-theme="porcelain"], [data-theme="daylight"] {
+  /* Core Daylight Surface & Frame Tokens (Preserved for Alt+T toggle) */
+  --bento-canvas: #F4F6FB;
+  --reui-frame-bg: #F4F5F9;
+  --reui-canvas-bg: #F8FAFC;
+  --reui-card-bg: #FFFFFF;
+  --reui-card-well: #F4F5F9;
+
+  --reui-border-strong: #E2E8F0;
+  --reui-border-subtle: #F1F5F9;
+  --reui-border-well: #E2E8F0;
+  --reui-border-inner: rgba(15, 23, 42, 0.06);
+  --reui-border-cyan: #38BDF8;
+
+  --reui-text-strong: #09090B;
+  --reui-text-primary: #0F172A;
+  --reui-text-secondary: #475569;
+  --reui-text-muted: #64748B;
+  --reui-text-inverse: #FFFFFF;
+
+  --reui-emerald-bg: #ECFDF5;
+  --reui-emerald-border: #A7F3D0;
+  --reui-emerald-text: #059669;
+  --reui-emerald-dot: #10B981;
+
+  --reui-rose-bg: #FFF1F2;
+  --reui-rose-border: #FECDD3;
+  --reui-rose-text: #E11D48;
+  --reui-rose-dot: #F43F5E;
+
+  --reui-amber-bg: #FFFBEB;
+  --reui-amber-border: #FDE68A;
+  --reui-amber-text: #D97706;
+  --reui-amber-dot: #F59E0B;
+
+  --reui-indigo-bg: #EEF2FF;
+  --reui-indigo-border: #C7D2FE;
+  --reui-indigo-text: #4338CA;
+  --reui-indigo-solid: #4F46E5;
+
+  --reui-purple-bg: #F5F3FF;
+  --reui-purple-border: #DDD6FE;
+  --reui-purple-text: #6D28D9;
+  --reui-purple-dot: #8B5CF6;
+
+  --background: #F4F6FB;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F1F5F9;
+  --accent-foreground: #0F172A;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F46E5;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #0F172A;
+  --destructive: #E11D48;
+  --destructive-foreground: #FFFFFF;
+  --radius: 14px;
+
+  /* Local Air-Gapped Variable Fonts */
+  --font-sans: 'IBM Plex Sans', 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono Variable', monospace;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--reui-frame-bg);
+  color: var(--reui-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   BENTO GRID & EXECUTIVE CARD ARCHITECTURE
+   ========================================================================== */
+
+.bento-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+.bento-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .bento-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.bento-card {
+  background: var(--reui-card-bg, #0F1B2E);
+  border: 1px solid var(--reui-border-strong, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.40), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.bento-card:hover {
+  box-shadow: 0 8px 28px -4px rgba(0, 0, 0, 0.55), 0 0 16px -2px rgba(6, 182, 212, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+/* ==========================================================================
+   STATUS BADGES & PILLS
+   ========================================================================== */
+
+.reui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2.5px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+
+.reui-status-badge.emerald {
+  background: var(--reui-emerald-bg);
+  border: 1px solid var(--reui-emerald-border);
+  color: var(--reui-emerald-text);
+}
+.reui-status-badge.emerald .dot {
+  background: var(--reui-emerald-dot);
+}
+
+.reui-status-badge.rose {
+  background: var(--reui-rose-bg);
+  border: 1px solid var(--reui-rose-border);
+  color: var(--reui-rose-text);
+}
+.reui-status-badge.rose .dot {
+  background: var(--reui-rose-dot);
+}
+
+.reui-status-badge.amber {
+  background: var(--reui-amber-bg);
+  border: 1px solid var(--reui-amber-border);
+  color: var(--reui-amber-text);
+}
+.reui-status-badge.amber .dot {
+  background: var(--reui-amber-dot);
+}
+
+.reui-status-badge.indigo {
+  background: var(--reui-indigo-bg);
+  border: 1px solid var(--reui-indigo-border);
+  color: var(--reui-indigo-text);
+}
+.reui-status-badge.indigo .dot {
+  background: var(--reui-indigo-solid);
+}
+
+.reui-status-badge.purple {
+  background: var(--reui-purple-bg);
+  border: 1px solid var(--reui-purple-border);
+  color: var(--reui-purple-text);
+}
+.reui-status-badge.purple .dot {
+  background: var(--reui-purple-dot);
+}
+
+.reui-status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Recessed Segmented Tabs */
+.reui-segmented-tabs {
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reui-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.reui-tab-btn:hover {
+  color: #0F172A;
+}
+
+.reui-tab-btn.active {
+  background: #FFFFFF;
+  color: #09090B;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+/* Keyboard Shortcut Keycap */
+.reui-kbd {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  display: inline-block;
+}
+
+/* Monospace & Tabular Helpers */
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scoped Intake Screen Root */
+.tarka-intake-root {
+  font-family: var(--font-sans);
+  color: var(--reui-text-primary);
+}
+
+.tarka-intake-root * {
+  border-color: var(--border);
+}
+
+/* Table Column Widths & Compact Row Styles */
+.intake-table-col-row { width: 48px; min-width: 48px; max-width: 48px; }
+.intake-table-col-time { width: 96px; min-width: 96px; max-width: 96px; }
+.intake-table-col-counterparty { min-width: 260px; flex: 1; }
+.intake-table-col-rrn { width: 132px; min-width: 132px; max-width: 132px; }
+.intake-table-col-rail { width: 104px; min-width: 104px; max-width: 104px; }
+.intake-table-col-debit { width: 128px; min-width: 128px; max-width: 128px; text-align: right; }
+.intake-table-col-credit { width: 128px; min-width: 128px; max-width: 128px; text-align: right; }
+.intake-table-col-balance { width: 148px; min-width: 148px; max-width: 148px; text-align: right; }
+.intake-table-col-status { width: 44px; min-width: 44px; max-width: 44px; text-align: center; }
+
+/* Row States */
+.row-clean {
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+.row-clean:hover {
+  background-color: #F8FAFC;
+}
+
+.row-suspect {
+  border-left: 3px solid #D97706 !important;
+  background-color: #FFFDF5;
+  transition: background-color 0.15s ease;
+}
+.row-suspect:hover {
+  background-color: #FEF9C3;
+}
+
+.row-tampered {
+  border-left: 3px solid #E11D48 !important;
+  background-color: #FFF1F2 !important;
+  animation: shake 150ms ease-in-out;
+}
+
+.row-reordered {
+  border-left: 3px solid #D97706 !important;
+  background-color: #FFFBEB;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.flash-downstream {
+  animation: cascadePulse 600ms ease-out;
+}
+
+@keyframes cascadePulse {
+  0% { background-color: #FEF3C7; }
+  100% { background-color: transparent; }
+}
+
+/* ==========================================================================
+   Ledger Card Container Query & Dynamic Responsive Styles
+   ========================================================================== */
+.ledger-card-container {
+  container-type: inline-size;
+  container-name: ledgercard;
+  width: 100%;
+}
+
+@container ledgercard (max-width: 1039px) {
+  .col-rrn-cquery {
+    display: none !important;
+  }
+}
+
+@container ledgercard (max-width: 859px) {
+  .col-rail-cquery {
+    display: none !important;
+  }
+}
+
+@container gaterail (max-width: 1099px) {
+  .station-name-full {
+    display: none !important;
+  }
+}
+
+.table-scroll-mask {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ==========================================================================
+   Radix UI Tabs Panel Enforcements
+   ========================================================================== */
+[role="tabpanel"][hidden],
+[role="tabpanel"][data-state="inactive"] {
+  display: none !important;
+}
+
+[role="tabpanel"][data-state="active"] {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* ==========================================================================
+   Universal Court-Grade Precision Scrollbar (Accessible & Smooth)
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 rgba(241, 245, 249, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  min-height: 28px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #64748B;
+}
+
+/* ==========================================================================
+   Density Modes: Standard vs Compact / Small View
+   ========================================================================== */
+.tarka-density-compact {
+  --bento-card-padding: 6px 10px;
+}
+
+.tarka-density-compact .bento-grid-4 {
+  gap: 8px !important;
+}
+
+.tarka-density-compact .bento-card {
+  padding: 6px 10px !important;
+}
+
+.tarka-density-compact .bento-metric {
+  font-size: 18px !important;
+}
+
+.tarka-density-compact .bento-title {
+  font-size: 11px !important;
+}
+
+/* Compact rules for Intake Workbench */
+.tarka-density-compact .tarka-intake-root {
+  gap: 6px !important;
+  padding: 6px 10px !important;
+}
+
+.tarka-density-compact section[aria-label="Key Forensic Metrics"] {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  gap: 6px !important;
+}
+
+.tarka-density-compact [data-card="kpi-card"] {
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  padding: 5px 8px !important;
+}
+
+.tarka-density-compact [data-card="kpi-card"] .kpi-hero-num {
+  font-size: 17px !important;
+}
+
+.tarka-density-compact section[aria-label="Falsification Gate Pipeline"] {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+}
+
+.tarka-density-compact [data-card="gate-rail"] {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 0 8px !important;
+}
+
+.tarka-density-compact [data-card="gate-rail"] button[data-station] {
+  height: 32px !important;
+  padding: 0 6px !important;
+}
+
+/* Compact padding for other dossier pages */
+.tarka-density-compact .tarka-dossier-page {
+  padding: 10px 14px 20px 14px !important;
+  gap: 10px !important;
+}
+
+/* Compact rules for Attribution Screen */
+.tarka-density-compact .tarka-attribution-root {
+  padding: 8px 12px 16px 12px !important;
+  gap: 8px !important;
+}
+
+/* Compact rules for Taint Engine Screen */
+.tarka-density-compact .tarka-taint-root {
+  padding: 8px 12px 16px 12px !important;
+  gap: 8px !important;
+}
+
+.tarka-density-compact .bento-grid-12 {
+  gap: 8px !important;
+}
+
+
+
+

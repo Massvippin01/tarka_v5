@@ -89,6 +89,22 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
     }
   };
 
+  const handleLoadDemoPack = async (packName: string) => {
+    try {
+      setIsUploading(true);
+      setErrorMessage(null);
+      const res = await forensicsApi.loadDemoPack(caseId, packName);
+      setIngestResult(res as IngestResult);
+      onIngestSuccess();
+    } catch (err: unknown) {
+      console.error("Failed to load demo pack:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage("Failed to load demo pack: " + msg);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const resetIntake = () => {
     setSelectedFiles([]);
     setIngestResult(null);
@@ -109,7 +125,8 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                 fontWeight: 700,
                 padding: "3px 8px",
                 borderRadius: "4px",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "var(--font-mono)",
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               DATA-ONLY INTAKE
@@ -119,7 +136,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                 Forensic Evidence Intake & Line-Conservation Ingest
               </h2>
               <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "2px" }}>
-                Target Case: <code style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#60A5FA" }}>{caseId}</code>
+                Target Case: <code style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "#60A5FA" }}>{caseId}</code>
               </div>
             </div>
           </div>
@@ -160,6 +177,66 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
 
           {!ingestResult ? (
             <>
+              {/* Quick Demo Evidence Pack Selection */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "rgba(37, 99, 235, 0.12)",
+                  border: "1px solid rgba(59, 130, 246, 0.3)",
+                  borderRadius: "6px",
+                  padding: "10px 14px",
+                  gap: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#93C5FD", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>⚡ 1-CLICK DEMO EVIDENCE PACKAGES</span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "2px" }}>
+                    Files staged in <code>demo_evidence_files/</code> or load directly:
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => handleLoadDemoPack("case-1")}
+                    disabled={isUploading}
+                    style={{
+                      backgroundColor: "#1E293B",
+                      border: "1px solid #3B82F6",
+                      color: "#60A5FA",
+                      borderRadius: "4px",
+                      padding: "6px 10px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      cursor: isUploading ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Load Case 1 (UPI ₹25k vs ₹15k)
+                  </button>
+                  <button
+                    onClick={() => handleLoadDemoPack("case-2")}
+                    disabled={isUploading}
+                    style={{
+                      backgroundColor: "#1E293B",
+                      border: "1px solid #8B5CF6",
+                      color: "#C4B5FD",
+                      borderRadius: "4px",
+                      padding: "6px 10px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      cursor: isUploading ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Load Case 2 (Digital Arrest ₹1.5L vs ₹50k)
+                  </button>
+                </div>
+              </div>
+
               {/* Dropzone */}
               <div
                 onDragOver={(e) => e.preventDefault()}
@@ -168,7 +245,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                 style={{
                   border: "2px dashed rgba(59, 130, 246, 0.4)",
                   borderRadius: "8px",
-                  padding: "40px 20px",
+                  padding: "36px 20px",
                   textAlign: "center",
                   backgroundColor: "rgba(30, 41, 59, 0.25)",
                   cursor: "pointer",
@@ -192,7 +269,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                 <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "6px" }}>
                   Supported formats: Bank/UPI CSVs, Telco CDR CSVs, WhatsApp Exports (.txt), Claims JSON, Tower Coordinates, and EXIF Photos.
                 </div>
-                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "6px", fontFamily: "'IBM Plex Mono', monospace" }}>
+                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "6px", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
                   Strict Byte-Conservation • Non-Destructive SHA-256 Hashing • Custody Ledger Preservation
                 </div>
               </div>
@@ -212,7 +289,8 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                     color: "#F3F4F6",
                     padding: "6px 12px",
                     fontSize: "12px",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "var(--font-mono)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30) - Standard Indian Jurisdiction</option>
@@ -248,7 +326,7 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                           <span style={{ fontWeight: 500, color: "#E5E7EB", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {file.name}
                           </span>
-                          <span style={{ color: "#6B7280", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px" }}>
+                          <span style={{ color: "#6B7280", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "11px" }}>
                             ({(file.size / 1024).toFixed(1)} KB)
                           </span>
                         </div>
@@ -337,13 +415,14 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                           backgroundColor: "#1E222D",
                           color: "#60A5FA",
                           fontSize: "11px",
-                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontFamily: "var(--font-mono)",
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         {src.parser_type}
                       </span>
                     </div>
-                    <div style={{ marginTop: "4px", fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#9CA3AF", wordBreak: "break-all" }}>
+                    <div style={{ marginTop: "4px", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: "11px", color: "#9CA3AF", wordBreak: "break-all" }}>
                       SHA-256: <span style={{ color: "#A7F3D0" }}>{src.sha256}</span>
                     </div>
                     <div style={{ marginTop: "4px", fontSize: "11px", color: "#6B7280" }}>
@@ -373,7 +452,8 @@ export const EvidenceIntakeModal: React.FC<EvidenceIntakeModalProps> = ({
                           backgroundColor: "rgba(239, 68, 68, 0.08)",
                           borderLeft: "3px solid #EF4444",
                           fontSize: "11px",
-                          fontFamily: "'IBM Plex Mono', monospace",
+                          fontFamily: "var(--font-mono)",
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         <div style={{ color: "#FCA5A5" }}>

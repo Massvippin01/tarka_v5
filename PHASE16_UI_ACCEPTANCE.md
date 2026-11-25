@@ -41,3 +41,4 @@ In accordance with Non-Negotiable Rule 3:
 - **Worker Stage Updates:** Live updates for `HASH_VERIFICATION` (15%), `VALIDATION` (25%), `PARSING` (40%), `OCR` (60%), `TRACE` (75%), `AEGIS` (90%), and `COMPLETED` (100%).
 - **Reconnection Handling:** Auto-reconnect with exponential backoff on network interrupt.
 - **Truthful Loading States:** No fake completion; UI displays real job states with genuine progress.
+

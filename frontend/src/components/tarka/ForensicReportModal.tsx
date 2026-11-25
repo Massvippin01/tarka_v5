@@ -190,15 +190,15 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                   margin: 0,
                   fontSize: "18px",
                   fontWeight: 600,
-                  fontFamily: "'IBM Plex Serif', Georgia, serif",
+                  fontFamily: "var(--font-sans)",
                   color: "#FFFFFF",
                 }}
               >
                 Forensic Audit & Statutory Admissibility Report
               </h2>
               <div style={{ fontSize: "12px", color: "#9CA3AF", marginTop: "2px" }}>
-                Case: <code style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#60A5FA" }}>{caseId}</code> • Run:{" "}
-                <code style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#A7F3D0" }}>{runId || "baseline"}</code>
+                Case: <code style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "#60A5FA" }}>{caseId}</code> • Run:{" "}
+                <code style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", color: "#A7F3D0" }}>{runId || "baseline"}</code>
               </div>
             </div>
           </div>
@@ -310,7 +310,7 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                         fontSize: "15px",
                         color: "#34D399",
                         fontWeight: 600,
-                        fontFamily: '"IBM Plex Serif", Georgia, serif',
+                        fontFamily: "var(--font-sans)",
                       }}
                     >
                       Section 63 (Bharatiya Sakshya Adhiniyam, 2023) Electronic Record Certificate
@@ -324,7 +324,8 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                   <div
                     style={{
                       textAlign: "right",
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "var(--font-mono)",
+                      fontVariantNumeric: "tabular-nums",
                       fontSize: "11px",
                       color: "#9CA3AF",
                     }}
@@ -356,7 +357,7 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                     style={{
                       margin: "0 0 12px 0",
                       fontSize: "14px",
-                      fontFamily: '"IBM Plex Serif", Georgia, serif',
+                      fontFamily: "var(--font-sans)",
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
                       color: "#FFFFFF",
@@ -396,7 +397,7 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                   style={{
                     margin: "0 0 12px 0",
                     fontSize: "14px",
-                    fontFamily: '"IBM Plex Serif", Georgia, serif',
+                    fontFamily: "var(--font-sans)",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
                     color: "#FFFFFF",
@@ -418,7 +419,7 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                     <tbody>
                       {(report.artifact_manifest || []).map((item: ReportArtifactManifestItem, idx: number) => (
                         <tr key={idx} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                          <td style={{ padding: "10px 8px", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: "#F3F4F6" }}>
+                          <td style={{ padding: "10px 8px", fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#F3F4F6" }}>
                             {item.artifact_id}
                           </td>
                           <td style={{ padding: "10px 8px", color: "#E5E7EB" }}>
@@ -432,7 +433,8 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                           <td
                             style={{
                               padding: "10px 8px",
-                              fontFamily: "'IBM Plex Mono', monospace",
+                              fontFamily: "var(--font-mono)",
+                              fontVariantNumeric: "tabular-nums",
                               fontSize: "11px",
                               color: "#9CA3AF",
                               maxWidth: "240px",
@@ -460,7 +462,7 @@ export const ForensicReportModal: React.FC<ForensicReportModalProps> = ({
                   style={{
                     margin: "0 0 10px 0",
                     fontSize: "14px",
-                    fontFamily: '"IBM Plex Serif", Georgia, serif',
+                    fontFamily: "var(--font-sans)",
                     color: "#FFFFFF",
                   }}
                 >

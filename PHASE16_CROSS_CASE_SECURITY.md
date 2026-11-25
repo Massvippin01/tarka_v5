@@ -39,3 +39,4 @@ A comprehensive multi-case security matrix was tested with deliberately overlapp
 - `POST /api/v1/forensics/auth/session`: Issues cryptographically signed HS256 JWT tokens containing role, jurisdiction, and permitted case scopes.
 - `AuthService.enforce_case_access()`: Validates token expiration, user role, and tenancy assignment prior to any evidence or case operation.
 - `AuditService.record_event()`: Preserves immutable hash-chained audit records in `UniversalAuditEvent` format for every ingestion, export, review, and query action.
+

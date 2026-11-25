@@ -67,3 +67,4 @@ In compliance with Rule 5 of the SentinelX Engineering Constitution:
 - Every unreconciled finding carries a mandatory warning:  
   > *"AI PROPOSES. FORENSIC ENGINES TEST. INVESTIGATORS DECIDE. An unmatched screenshot indicates an unrecorded entry, settlement delay, or fabricated receipt; request NPCI ISO 8583 switch logs under BNSS Section 94 to verify settlement before drawing investigative conclusions."*
 - Prohibits automated determination of guilt or fraud.
+

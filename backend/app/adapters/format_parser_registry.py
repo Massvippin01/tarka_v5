@@ -274,6 +274,125 @@ class DocumentParser(BaseParser):
         return res
 
 
+class PresentationParser(BaseParser):
+    """Forensic presentation parser for PPTX and ODP files extracting slide text safely."""
+    parser_id = "presentation_forensic_parser"
+    version = "1.0.0"
+    supported_extensions = [".pptx", ".odp"]
+    supported_mimes = [
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.oasis.opendocument.presentation",
+    ]
+
+    def parse(self, file_path: Path, max_bytes: int = 100 * 1024 * 1024) -> Dict[str, Any]:
+        ext = file_path.suffix.lower()
+        res: Dict[str, Any] = {
+            "parser": self.parser_id,
+            "version": self.version,
+            "status": "PARSED",
+            "format": "PRESENTATION",
+            "slide_count": 0,
+            "text_preview": "",
+            "character_count": 0,
+            "warnings": [],
+        }
+        try:
+            if ext == ".pptx":
+                with zipfile.ZipFile(file_path, "r") as zf:
+                    slide_files = sorted([n for n in zf.namelist() if n.startswith("ppt/slides/slide") and n.endswith(".xml")])
+                    res["slide_count"] = len(slide_files)
+                    collected_texts = []
+                    for sfile in slide_files[:50]:
+                        xml_bytes = zf.read(sfile)
+                        tree = ET.fromstring(xml_bytes)
+                        for node in tree.iter():
+                            if node.tag.endswith("}t") and node.text:
+                                collected_texts.append(node.text)
+                    full_text = " ".join(collected_texts)
+                    res["character_count"] = len(full_text)
+                    res["text_preview"] = full_text[:4000]
+                    if len(slide_files) > 50:
+                        res["warnings"].append(f"Bounded parsing: parsed 50 of {len(slide_files)} slides.")
+            elif ext == ".odp":
+                with zipfile.ZipFile(file_path, "r") as zf:
+                    if "content.xml" in zf.namelist():
+                        xml_bytes = zf.read("content.xml")
+                        tree = ET.fromstring(xml_bytes)
+                        texts = [node.text for node in tree.iter() if node.text and node.text.strip()]
+                        full_text = " ".join(texts)
+                        res["character_count"] = len(full_text)
+                        res["text_preview"] = full_text[:4000]
+        except Exception as exc:
+            res["status"] = "PARSE_ERROR"
+            res["error"] = str(exc)
+        return res
+
+
+class EmailParser(BaseParser):
+    """Forensic email message parser extracting headers, routing, and message body safely."""
+    parser_id = "email_forensic_parser"
+    version = "1.0.0"
+    supported_extensions = [".eml", ".msg"]
+    supported_mimes = ["message/rfc822", "application/vnd.ms-outlook"]
+
+    def parse(self, file_path: Path, max_bytes: int = 100 * 1024 * 1024) -> Dict[str, Any]:
+        import email
+        from email import policy
+        res: Dict[str, Any] = {
+            "parser": self.parser_id,
+            "version": self.version,
+            "status": "PARSED",
+            "format": "EMAIL",
+            "headers": {},
+            "subject": "",
+            "from": "",
+            "to": "",
+            "date": "",
+            "body_preview": "",
+            "attachments_count": 0,
+            "attachment_names": [],
+            "warnings": [],
+        }
+        try:
+            with open(file_path, "rb") as fp:
+                msg = email.message_from_binary_file(fp, policy=policy.default)
+            res["subject"] = str(msg.get("subject", ""))
+            res["from"] = str(msg.get("from", ""))
+            res["to"] = str(msg.get("to", ""))
+            res["date"] = str(msg.get("date", ""))
+            for header_name in ["message-id", "reply-to", "cc", "received"]:
+                if header_name in msg:
+                    res["headers"][header_name] = str(msg.get(header_name, ""))
+
+            # Extract body safely
+            body = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    content_type = part.get_content_type()
+                    content_disp = str(part.get("Content-Disposition", ""))
+                    if "attachment" in content_disp:
+                        fname = part.get_filename() or "unnamed_attachment"
+                        res["attachments_count"] += 1
+                        res["attachment_names"].append(fname)
+                    elif content_type == "text/plain" and not body:
+                        try:
+                            body = part.get_content()
+                        except Exception:
+                            body = str(part.get_payload(decode=True))
+            else:
+                try:
+                    body = msg.get_content()
+                except Exception:
+                    body = str(msg.get_payload(decode=True))
+
+            res["body_preview"] = (body or "")[:4000]
+            res["character_count"] = len(body or "")
+        except Exception as exc:
+            res["status"] = "PARSE_ERROR"
+            res["error"] = str(exc)
+        return res
+
+
 class ArchiveParser(BaseParser):
     """Forensic archive parser safely enumerating entries and hashes with bomb defense."""
     parser_id = "archive_forensic_parser"
@@ -416,6 +535,8 @@ class FormatParserRegistry:
             PDFParser(),
             SpreadsheetParser(),
             DocumentParser(),
+            PresentationParser(),
+            EmailParser(),
             ArchiveParser(),
             AudioVideoParser(),
             OpaqueBinaryParser(),

@@ -80,3 +80,4 @@ An investigator is presented with a disputed retail transaction from Sambandam C
 - **Action:** Click **"Verify Report"** in the UI to confirm the report's SHA-256 digital seal matches the ledger.
 - **Closing Voiceover:**
   > *"This concludes the complete end-to-end investigative workflow of TARKA × SENTINELX — from raw evidence ingestion to court-admissible statutory report generation."*
+

@@ -91,3 +91,4 @@ Every evidence item admitted into TARKA retains permanent cryptographic provenan
 3. **Independent Reproducibility:**
    - The entire investigation package can be recomputed from raw CAS bytes.
    - Verified via `test_tarka_e2e_investigation_workflow.py::test_05_statutory_section_63_bsa_report_generation`.
+

@@ -3,6 +3,8 @@ import type { ProvenanceDAG, DAGNode } from "../../types/forensics";
 
 interface ProvenanceDAGViewProps {
   dag: ProvenanceDAG | null;
+  caseId?: string;
+  embedded?: boolean;
   selectedNodeId?: string;
   onSelectNode?: (nodeId: string) => void;
   className?: string;
