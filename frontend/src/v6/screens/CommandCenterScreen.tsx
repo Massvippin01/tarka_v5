@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsFetching } from '@tanstack/react-query';
 import {
   Clock,
   IndianRupee,
@@ -27,6 +28,7 @@ import { useCaseWorkbenchStore } from '../../store/useCaseWorkbenchStore';
 import {
   selectDashboardFinancials,
   selectActNowQueue,
+  selectNeedsDataCases,
   selectIndiaMuleFlows,
   selectTypologyDistribution,
   selectTopBanksByMules,
@@ -91,6 +93,9 @@ export const CommandCenterScreen: React.FC = () => {
   const actNowQueue = useMemo(() => {
     return selectActNowQueue(caseWorkspaces);
   }, [caseWorkspaces]);
+  const needsDataCount = useMemo(() => selectNeedsDataCases(caseWorkspaces).length, [caseWorkspaces]);
+  // Portfolio totals fill in as each case's bundle arrives; say so instead of showing a partial sum as final.
+  const bundlesLoading = useIsFetching({ queryKey: ['case'] }) > 0;
 
   const typologyData = useMemo(() => {
     return selectTypologyDistribution(caseWorkspaces);
@@ -367,7 +372,7 @@ export const CommandCenterScreen: React.FC = () => {
               figure={portfolioFigs.loss}
               icon={<IndianRupee className="w-3.5 h-3.5 text-[var(--risk)]" />}
               iconClass="bg-[var(--risk-bg)]"
-              foot={<span className="text-[var(--fg-3)] text-xs">across {dashboardMetrics.totalCases} FIRs</span>}
+              foot={<span className="text-[var(--fg-3)] text-xs">across {dashboardMetrics.totalCases} FIRs{bundlesLoading ? ' · still loading cases…' : ''}</span>}
             />
 
             <KpiCard
@@ -578,6 +583,11 @@ export const CommandCenterScreen: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {needsDataCount > 0 && (
+                    <div className="px-1 pt-1 text-[12px] text-[var(--fg-3)]" data-testid="act-now-needs-data">
+                      Needs data: {needsDataCount} {needsDataCount === 1 ? 'case has' : 'cases have'} no amounts yet (see All cases).
+                    </div>
+                  )}
                 </div>
               </Card>
 

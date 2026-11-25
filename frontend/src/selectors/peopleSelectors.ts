@@ -199,10 +199,10 @@ export function filterPeople(rows: PersonRow[], f: PeopleFilter): PersonRow[] {
   );
 }
 
-/** Mules first by score, then everyone else; stable by label. */
+/** Accounts also seen in other FIRs first (so the "Other FIRs" column is not hidden below the fold), then mules by score; stable by label. */
 export function sortPeople(rows: PersonRow[]): PersonRow[] {
   const order: Record<RoleGroup, number> = { MULE: 0, CASH_OUT: 1, UNKNOWN: 2, VICTIM: 3 };
-  return [...rows].sort((a, b) => order[a.role] - order[b.role] || (b.muleScore ?? 0) - (a.muleScore ?? 0) || a.label.localeCompare(b.label));
+  return [...rows].sort((a, b) => Number(!!b.otherCases.length) - Number(!!a.otherCases.length) || order[a.role] - order[b.role] || (b.muleScore ?? 0) - (a.muleScore ?? 0) || a.label.localeCompare(b.label));
 }
 
 export function roleCounts(rows: PersonRow[]): Record<RoleGroup | 'ALL', number> {

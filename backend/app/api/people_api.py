@@ -45,7 +45,7 @@ def _networks(case_id: str) -> Dict[str, Any]:
 
 
 @router.put("/{case_id}/accounts/verdict")
-async def set_account_verdict(case_id: str, req: AccountVerdict,
+def set_account_verdict(case_id: str, req: AccountVerdict,
                               user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Confirm mule / Not a mule (reason required). Network totals are recomputed with the verdict."""
     case_id = _case(case_id, user)
@@ -59,13 +59,13 @@ async def set_account_verdict(case_id: str, req: AccountVerdict,
 
 
 @router.get("/{case_id}/accounts/history")
-async def account_verdict_history(case_id: str, account: str = Query(..., max_length=500),
+def account_verdict_history(case_id: str, account: str = Query(..., max_length=500),
                                   user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     return _store().history(_case(case_id, user), "account", party_key(account))
 
 
 @router.put("/{case_id}/review/verdict")
-async def set_pair_verdict(case_id: str, req: PairVerdict,
+def set_pair_verdict(case_id: str, req: PairVerdict,
                            user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Merge / Not same on a probable same-person pair from the review queue (reason required for Not same)."""
     case_id = _case(case_id, user)

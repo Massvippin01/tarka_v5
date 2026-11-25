@@ -15,6 +15,7 @@ import { useFocus } from '../../lib/focusUrl';
 import { partyKey } from '../../selectors/peopleSelectors';
 import { fixtureNetworks, memberFigure, networkFigure } from '../network/networkFocus';
 import type { NetworksResponse } from '../triage/triage';
+import { useProjectCase } from '../shell/ProjectLifecyclePill';
 import { useFreezeNotices } from './FreezeQueuePanel';
 import { groupByBank, noticeReference, rankFreezeQueue, type BankGroup, type FreezeNotice, type NoticeCaseContext, type NoticeStatus } from './freezeQueue';
 import {
@@ -76,6 +77,7 @@ export function useActionData(fixture: CanonicalCaseFixture) {
     queryKey: ['networks', caseId],
     queryFn: async () => (await apiClient.get<NetworksResponse>(`/api/v1/cases/${enc(caseId)}/networks`)).data,
   });
+  const projectCase = useProjectCase(caseId);
   const noticesQ = useFreezeNotices(caseId);
   const custodyQ = useQuery({
     queryKey: ['custody', caseId, 'actions'],
@@ -178,7 +180,7 @@ export function useActionData(fixture: CanonicalCaseFixture) {
     caseId,
     firNumber: fixture.firNumber,
     policeStation: fixture.policeStation,
-    officer: fixture.leadInvestigator,
+    officer: projectCase?.assignee || fixture.leadInvestigator, // the case assignee (Projects) wins
     complainantName: fixture.complainant.name,
     complainantAccount: fixture.complainant.accountMasked,
   };

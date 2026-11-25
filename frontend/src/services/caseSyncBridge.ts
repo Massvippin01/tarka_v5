@@ -8,6 +8,7 @@
  */
 
 import apiClient from "../api/client";
+import { fetchRawBundle } from "../api/caseQueries";
 import type { CaseWorkspace } from "../context/TarkaGlobalContext";
 import {
   reconstruct5FileInvestigation,
@@ -323,11 +324,9 @@ export class CaseSyncBridge {
    */
   public async getCaseBundle(caseId: string, caseMetadata?: CaseWorkspace): Promise<ReconstructedInvestigation> {
     try {
-      const res = await apiClient.get(`/api/v1/cases/${caseId}/bundle`, {
-        timeout: 2500,
-      });
-      if (res.data && res.data.nodes && res.data.nodes.length > 0) {
-        const raw = res.data;
+      const data = await fetchRawBundle(caseId);
+      if (data && data.nodes && data.nodes.length > 0) {
+        const raw = data;
         const nodeMap: Record<string, any> = {};
         const normalizedNodes: ReconstructedNode[] = (raw.nodes || []).map((n: any) => {
           const nodeObj: ReconstructedNode = {

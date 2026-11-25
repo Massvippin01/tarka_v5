@@ -7,20 +7,13 @@ import { Archive, ArchiveRestore, FolderKanban, FolderPlus, Link2, Network, Penc
 import apiClient from '../../api/client';
 import { useCaseStore } from '../../store/useCaseStore';
 import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
-import { Button, Chip, EmptyState, PageHead, type ChipVariant } from '../ui';
+import { Button, Chip, EmptyState, PageHead } from '../ui';
 import type { NetworksResponse } from '../triage/triage';
 import { intakeLabel } from '../intake/intake';
 
-export type Lifecycle = 'INTAKE' | 'PROCESSING' | 'INVESTIGATING' | 'ACTION_PENDING' | 'COURT_READY' | 'CLOSED';
-
-export const LIFECYCLE: { key: Lifecycle; label: string; variant: ChipVariant }[] = [
-  { key: 'INTAKE', label: 'Intake', variant: 'muted' },
-  { key: 'PROCESSING', label: 'Processing', variant: 'flow' },
-  { key: 'INVESTIGATING', label: 'Investigating', variant: 'flow' },
-  { key: 'ACTION_PENDING', label: 'Action pending', variant: 'urgent' },
-  { key: 'COURT_READY', label: 'Court ready', variant: 'safe' },
-  { key: 'CLOSED', label: 'Closed', variant: 'muted' },
-];
+import { LIFECYCLE, type Lifecycle } from './lifecycle';
+export { LIFECYCLE };
+export type { Lifecycle };
 
 interface ProjectCase {
   case_id: string;
@@ -55,6 +48,7 @@ function useProjectMutation<T>(fn: (v: T) => Promise<unknown>, success?: (v: T) 
     mutationFn: fn,
     onSuccess: (_d, v) => {
       void qc.invalidateQueries({ queryKey: ['projects'] });
+      void qc.invalidateQueries({ queryKey: ['projects-cases'] }); // topbar stage reads this
       const msg = success?.(v);
       if (msg) toast.success(msg);
     },

@@ -125,6 +125,12 @@ export function selectDashboardFinancials(cases: CaseWorkspace[]): DashboardFina
   };
 }
 
+/** Open cases the Act-now queue leaves out because they hold no amounts yet (see selectActNowQueue). */
+export function selectNeedsDataCases(cases: CaseWorkspace[]): CaseWorkspace[] {
+  const queued = new Set(selectActNowQueue(cases).map((i) => i.caseId));
+  return cases.filter((c) => c.status !== "CLOSED" && c.status !== "ARCHIVED" && !queued.has(c.caseId));
+}
+
 /**
  * Derives the priority "Act Now" queue sorted by urgency (remaining SLA and recoverable value).
  */
@@ -149,6 +155,9 @@ export function selectActNowQueue(cases: CaseWorkspace[]): ActNowQueueItem[] {
     } else if (fin.isFullyFrozen) {
       urgentTitle = "Generate Certified BSA §63 Electronic Evidence Report";
     }
+
+    // Nothing to act on yet (no money, no clock): listed under "Needs data" instead of the queue.
+    if (recoverable <= 0 && sla <= 0) return;
 
     items.push({
       caseId: c.caseId,

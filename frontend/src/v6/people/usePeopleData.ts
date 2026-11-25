@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import type { CanonicalCaseFixture } from '../../fixtures/cases';
 import { bundleCaseQueryKey } from '../../selectors/bundleAdapter';
+import { rawBundleKey } from '../../api/caseQueries';
 import type { NetworksResponse } from '../triage/triage';
 import type { PairVerdict, Verdict } from '../../selectors/peopleSelectors';
 import { EMPTY_FILTERS, filterFixtureLedger, type LedgerRow } from '../../selectors/evidenceSelectors';
@@ -32,6 +33,7 @@ function useRefreshTotals(caseId: string) {
   return () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: ['networks', caseId] }),
+      qc.invalidateQueries({ queryKey: rawBundleKey(caseId) }), // before the fixture query re-reads it
       qc.invalidateQueries({ queryKey: bundleCaseQueryKey(caseId) }),
       qc.invalidateQueries({ queryKey: ['account-verdict-history', caseId] }),
     ]);

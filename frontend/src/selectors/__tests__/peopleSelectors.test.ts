@@ -56,7 +56,7 @@ describe('peopleSelectors', () => {
     expect(filterPeople(rows, { role: 'MULE', query: '', networkId: null }).map((r) => r.key)).toEqual(['m1@ybl', '9876543210@paytm']);
     expect(filterPeople(rows, { role: 'ALL', query: '', networkId: 'NET-A' })).toHaveLength(3);
     expect(filterPeople(rows, { role: 'ALL', query: '98765', networkId: null }).map((r) => r.key)).toEqual(['9876543210@paytm']);
-    expect(sortPeople(rows).map((r) => r.key).slice(0, 2)).toEqual(['m1@ybl', '9876543210@paytm']);
+    expect(sortPeople(rows).map((r) => r.key).slice(0, 2)).toEqual(['9876543210@paytm', 'm1@ybl']); // FIR hit first, then by score
   });
 
   it('review queue: plain words, undecided first, keys stable', () => {
