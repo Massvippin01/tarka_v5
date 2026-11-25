@@ -1,15 +1,20 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import {
-  Shield,
-  ChevronDown,
-  Search,
-  Plus,
-  Zap,
-  Check,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Shield, ChevronDown, Search, Plus, Pin, FolderKanban } from "lucide-react";
+import apiClient from "../../api/client";
 import type { CaseWorkspace } from "../../context/TarkaGlobalContext";
-import { STATUS_LABELS } from "../../types/caseLifecycle";
+import { useStationSummary } from "../../selectors/bundleAdapter";
+import { selectCaseActionFinancials } from "../../selectors/actionSelectors";
+import { selectGoldenHour, formatGoldenHour } from "../../lib/goldenHour";
+import { formatInrCompact } from "../../lib/formatInr";
+import { useCaseStore } from "../../store/useCaseStore";
+import { LIFECYCLE } from "../../v6/screens/lifecycle";
+import { Chip } from "../../v6/ui";
+import {
+  buildSwitcherCases, goldenLabel, highlightParts, readIds, visibleGroups, writeIds,
+  type ProjectInput, type RegisteredRow, type SwitcherCase, type SwitcherTab,
+} from "../../lib/caseSwitcherModel";
 
 interface UpgradedCaseSwitcherProps {
   activeCase: CaseWorkspace | undefined;
@@ -19,6 +24,22 @@ interface UpgradedCaseSwitcherProps {
   onOpenNewCase: () => void;
   trigger?: React.ReactNode;
 }
+
+const RECENT_KEY = "tarka.caseSwitcher.recent";
+const PINNED_KEY = "tarka.caseSwitcher.pinned";
+const TABS: { id: SwitcherTab; label: string }[] = [
+  { id: "ALL", label: "All" },
+  { id: "RECENT", label: "Recent" },
+  { id: "PINNED", label: "Pinned" },
+];
+
+const Mark: React.FC<{ text: string; q: string }> = ({ text, q }) => (
+  <>
+    {highlightParts(text, q).map((p, i) =>
+      p.hit ? <mark key={i} className="cs-mark">{p.text}</mark> : <React.Fragment key={i}>{p.text}</React.Fragment>
+    )}
+  </>
+);
 
 export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
   activeCase,
@@ -30,62 +51,159 @@ export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSection, setSelectedSection] = useState<"ALL" | "RECENT" | "PINNED" | "MY">("ALL");
+  const [tab, setTab] = useState<SwitcherTab>("ALL");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
-
+  const [recent, setRecent] = useState<string[]>(() => readIds(RECENT_KEY));
+  const [pinned, setPinned] = useState<string[]>(() => readIds(PINNED_KEY));
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const setActiveView = useCaseStore((s) => s.setActiveView);
+
+  const summaryQuery = useStationSummary();
+  const registeredQuery = useQuery({
+    queryKey: ["projects-cases"],
+    queryFn: async () => (await apiClient.get<RegisteredRow[]>("/api/v1/projects/cases")).data,
+    staleTime: 30_000,
+  });
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => (await apiClient.get<ProjectInput[]>("/api/v1/projects")).data,
+    staleTime: 30_000,
+  });
+  const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
+
+  const allCases = useMemo(
+    () =>
+      buildSwitcherCases({
+        workspaces: caseWorkspaces,
+        registered: registeredQuery.data ?? [],
+        projects,
+        summary: summaryQuery.data?.cases ?? [],
+        sampleFigures: (id) => {
+          const f = selectCaseActionFinancials(id);
+          return { lossInr: f.bookedLossInr, freezableInr: f.pendingFreezeInr };
+        },
+        // Summary minutes only for cases that have no demo fixture; everything else uses the shared selector.
+        golden: (id, mins) => (mins === undefined ? selectGoldenHour(id) : formatGoldenHour(mins)),
+      }),
+    [caseWorkspaces, registeredQuery.data, projects, summaryQuery.data]
+  );
+
+  const groups = useMemo(
+    () => visibleGroups(allCases, projects, tab, searchQuery, recent, pinned),
+    [allCases, projects, tab, searchQuery, recent, pinned]
+  );
+  const flat = useMemo(() => groups.flatMap((g) => g.cases), [groups]);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 50);
-      setHighlightedIndex(0);
+      setTab("ALL");
     } else {
       setSearchQuery("");
     }
   }, [isOpen]);
 
-  const filteredCases = useMemo(() => {
-    return caseWorkspaces.filter((c) => {
-      // Section filter
-      if (selectedSection === "PINNED") {
-        const isPinned = c.priority === "CRITICAL_GOLDEN_HOUR" || c.goldenHourRemainingMins > 0;
-        if (!isPinned) return false;
-      } else if (selectedSection === "MY") {
-        const isMine = (c.leadInvestigator || "").includes("Sharma") || (c.leadInvestigator || "").includes("Insp");
-        if (!isMine) return false;
-      }
+  useEffect(() => setHighlightedIndex(0), [searchQuery, tab, isOpen]);
 
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        c.caseId.toLowerCase().includes(q) ||
-        c.firNumber.toLowerCase().includes(q) ||
-        (c.ncrpAckNo && c.ncrpAckNo.toLowerCase().includes(q)) ||
-        c.title.toLowerCase().includes(q) ||
-        c.complainantName.toLowerCase().includes(q) ||
-        (c.leadInvestigator && c.leadInvestigator.toLowerCase().includes(q))
-      );
-    });
-  }, [caseWorkspaces, searchQuery, selectedSection]);
+  useEffect(() => {
+    listRef.current?.querySelector<HTMLElement>(`[data-flat-index="${highlightedIndex}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [highlightedIndex]);
+
+  const choose = useCallback(
+    (caseId: string) => {
+      const next = [caseId, ...recent.filter((x) => x !== caseId)].slice(0, 8);
+      setRecent(next);
+      writeIds(RECENT_KEY, next);
+      onSelectCase(caseId);
+      setIsOpen(false);
+    },
+    [recent, onSelectCase]
+  );
+
+  const togglePin = (caseId: string) => {
+    const next = pinned.includes(caseId) ? pinned.filter((x) => x !== caseId) : [...pinned, caseId];
+    setPinned(next);
+    writeIds(PINNED_KEY, next);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const n = Math.max(1, flat.length);
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % Math.max(1, filteredCases.length));
+      setHighlightedIndex((p) => (p + 1) % n);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightedIndex((prev) => (prev - 1 + filteredCases.length) % Math.max(1, filteredCases.length));
+      setHighlightedIndex((p) => (p - 1 + n) % n);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const target = filteredCases[highlightedIndex];
-      if (target) {
-        onSelectCase(target.caseId);
-        setIsOpen(false);
-      }
+      if (flat[highlightedIndex]) choose(flat[highlightedIndex].caseId);
     } else if (e.key === "Escape") {
       setIsOpen(false);
     }
   };
+
+  const lifecycleOf = (c: SwitcherCase) => LIFECYCLE.find((l) => l.key === c.lifecycle);
+
+  const renderRow = (c: SwitcherCase, idx: number) => {
+    const isCurrent = c.caseId === activeCaseId;
+    const isHot = idx === highlightedIndex;
+    const life = lifecycleOf(c);
+    const isPinned = pinned.includes(c.caseId);
+    const f = c.figures;
+    const facts = [
+      f.lossInr !== undefined && `${formatInrCompact(f.lossInr)} lost`,
+      f.freezableInr !== undefined && `${formatInrCompact(f.freezableInr)} still freezable`,
+      f.mules !== undefined && `${f.mules} mules`,
+      f.networks !== undefined && `${f.networks} networks`,
+    ].filter(Boolean) as string[];
+    return (
+      <div
+        key={c.caseId}
+        role="option"
+        aria-selected={isCurrent}
+        data-case-option={c.caseId}
+        data-flat-index={idx}
+        onClick={() => choose(c.caseId)}
+        onMouseEnter={() => setHighlightedIndex(idx)}
+        className={`cs-row ${isCurrent ? "cs-row-active" : ""} ${isHot && !isCurrent ? "cs-row-hot" : ""}`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="cs-name" title={c.complainant || c.title}>
+            <Mark text={c.complainant || c.title || "Complainant not recorded"} q={searchQuery} />
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {life && <Chip variant={isCurrent ? "muted" : life.variant} className="cs-pill">{life.label}</Chip>}
+            <button
+              type="button"
+              aria-label={isPinned ? "Unpin case" : "Pin case"}
+              aria-pressed={isPinned}
+              onClick={(e) => { e.stopPropagation(); togglePin(c.caseId); }}
+              className={`cs-pin ${isPinned ? "on" : ""}`}
+            >
+              <Pin size={12} />
+            </button>
+          </div>
+        </div>
+        <div className="cs-meta">
+          <Mark text={c.caseId} q={searchQuery} />
+          {c.fir && <> · <Mark text={c.fir} q={searchQuery} /></>}
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {c.typology && <span className="cs-type">{c.typology}</span>}
+          {c.title && c.title !== c.complainant && (
+            <span className="cs-title" title={c.title}><Mark text={c.title} q={searchQuery} /></span>
+          )}
+          <span className={`cs-golden ${c.golden.expired ? "expired" : ""}`} title="Golden hour">
+            {goldenLabel(c.golden)}
+          </span>
+        </div>
+        {facts.length > 0 && <div className="cs-facts">{facts.join(" · ")}</div>}
+      </div>
+    );
+  };
+
+  let runningIndex = 0;
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -112,159 +230,77 @@ export const UpgradedCaseSwitcher: React.FC<UpgradedCaseSwitcherProps> = ({
         <Popover.Content
           align="start"
           sideOffset={8}
-          alignOffset={0}
           onKeyDown={handleKeyDown}
-          className="w-[450px] max-w-[94vw] bg-white border border-[var(--line)] rounded-xl shadow-2xl p-2.5 z-[1000] flex flex-col gap-2 text-[var(--fg-1)] font-sans animate-in fade-in-0 zoom-in-95 duration-100"
+          className="cs-pop w-[440px] max-w-[94vw] z-[1000] flex flex-col gap-2 p-2.5 font-sans"
         >
-          {/* Header & Section Filter Tabs */}
-          <div className="flex items-center justify-between pb-1.5 border-b border-[var(--line)]">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-[12px] font-bold text-[var(--fg-1)] uppercase tracking-wider">
-                Switch Case
-              </span>
-              <span className="text-[10.5px] font-mono font-semibold text-zinc-500 bg-zinc-100 px-1.5 py-0.2 rounded-full">
-                {filteredCases.length}
-              </span>
+              <span className="text-[13px] font-semibold text-[var(--fg-1)]">Cases</span>
+              <span className="cs-count">{flat.length}</span>
             </div>
-
-            <div className="inline-flex items-center gap-0.5 bg-[#f4f4f5] p-0.5 rounded-lg shrink-0">
-              {[
-                { id: "ALL", label: "All" },
-                { id: "RECENT", label: "Recent" },
-                { id: "PINNED", label: "Pinned" },
-                { id: "MY", label: "My Cases" },
-              ].map((sec) => (
+            <div className="cs-tabs" role="tablist">
+              {TABS.map((t) => (
                 <button
-                  key={sec.id}
+                  key={t.id}
                   type="button"
-                  onClick={() => setSelectedSection(sec.id as any)}
-                  className={`border-none rounded-md px-2 py-0.5 text-[11px] whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedSection === sec.id
-                      ? "bg-white text-[var(--accent)] font-bold shadow-2xs"
-                      : "bg-transparent text-[var(--muted)] font-medium hover:text-[var(--fg-1)]"
-                  }`}
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`cs-tab ${tab === t.id ? "on" : ""}`}
                 >
-                  {sec.label}
+                  {t.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Search Box */}
           <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[var(--fg-3)] absolute left-2.5 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Case, FIR, victim, phone..."
-              className="w-full pl-8 pr-12 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] text-[12px] text-[var(--fg-1)] placeholder:text-zinc-400 outline-none focus:border-[var(--accent)] focus:bg-white transition-colors box-border"
+              placeholder="Search case id, FIR, complainant, title, project"
+              className="cs-search"
             />
-            <span className="absolute right-2 text-[9.5px] font-mono font-semibold text-zinc-400 bg-zinc-200/60 px-1.5 py-0.5 rounded pointer-events-none">
-              ESC
-            </span>
+            <span className="cs-esc">ESC</span>
           </div>
 
-          {/* Case Items List */}
-          <div className="flex flex-col gap-1 max-h-[340px] overflow-y-auto pr-0.5">
-            {filteredCases.length === 0 ? (
-              <div className="py-6 text-center text-[var(--muted)] text-[12px]">
-                No cases matching "{searchQuery}"
+          <div ref={listRef} role="listbox" className="cs-list">
+            {flat.length === 0 ? (
+              <div className="py-6 text-center text-[var(--fg-3)] text-[12px]">
+                {searchQuery ? `No cases matching "${searchQuery}"` : tab === "ALL" ? "No cases yet" : tab === "RECENT" ? "No cases opened yet" : "No pinned cases"}
               </div>
             ) : (
-              filteredCases.map((cw, idx) => {
-                const isCurrent = cw.caseId === activeCaseId;
-                const isHighlighted = idx === highlightedIndex;
-                const statusKey = ((cw as any).status || "INVESTIGATING").toUpperCase();
-                const statusMeta = STATUS_LABELS[statusKey] || STATUS_LABELS.INVESTIGATING;
-
-                return (
-                  <div
-                    key={cw.caseId}
-                    data-case-option={cw.caseId}
-                    onClick={() => {
-                      onSelectCase(cw.caseId);
-                      setIsOpen(false);
-                    }}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
-                    className={`relative flex flex-col gap-0.5 p-2 px-2.5 rounded-lg border transition-all cursor-pointer ${
-                      isCurrent
-                        ? "bg-blue-50/90 border-blue-300 ring-1 ring-blue-200 pl-3.5"
-                        : isHighlighted
-                        ? "bg-[#f4f4f5] border-[var(--line-strong)]"
-                        : "bg-white hover:bg-[#fafafa] border-[var(--line)]"
-                    }`}
-                  >
-                    {isCurrent && (
-                      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-[#2563EB]" />
-                    )}
-
-                    {/* Top Row: Case ID, Victim, Status Badge, Golden Hour */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className={`text-[12px] font-bold font-mono ${isCurrent ? "text-[var(--accent)]" : "text-zinc-900"}`}>
-                          {cw.caseId}
-                        </span>
-                        <span className="text-zinc-300">·</span>
-                        <span className="text-[12px] font-bold text-zinc-800 truncate">
-                          {cw.complainantName || "Victim Unspecified"}
-                        </span>
-                        <span className="text-zinc-400 text-[11px] font-mono shrink-0">
-                          ({cw.firNumber})
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span
-                          style={{
-                            backgroundColor: statusMeta.bg,
-                            color: statusMeta.text,
-                            borderColor: statusMeta.border,
-                          }}
-                          className="text-[10px] font-bold px-1.5 py-0.2 rounded border uppercase tracking-wider"
-                        >
-                          {statusMeta.label}
-                        </span>
-
-                        {cw.goldenHourRemainingMins > 0 ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
-                            <Zap size={10} className="text-amber-600" />
-                            <span>{cw.goldenHourRemainingMins}m</span>
-                          </span>
-                        ) : isCurrent ? (
-                          <Check size={13} className="text-emerald-600 shrink-0 stroke-[2.5]" />
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {/* Bottom Row: Typology Pill & Title */}
-                    <div className="flex items-center gap-1.5 text-[11.5px] text-zinc-500">
-                      <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-600 uppercase tracking-tight shrink-0">
-                        {(cw.typology || "").replace(/_/g, " ")}
-                      </span>
-                      <span className="truncate flex-1 text-[11px] text-zinc-500">
-                        {cw.title || "Uploaded statements"}
-                      </span>
-                    </div>
+              groups.map((g) => (
+                <div key={g.key} className="flex flex-col gap-1">
+                  <div className="cs-group">
+                    <span className="truncate">{g.label}</span>
+                    {g.key === "sample" && <span className="cs-sample">Sample</span>}
                   </div>
-                );
-              })
+                  {g.cases.map((c) => renderRow(c, runningIndex++))}
+                </div>
+              ))
             )}
           </div>
 
-          {/* Bottom Bar: Register New Case Action */}
-          <div className="pt-1.5 border-t border-[var(--line)]">
+          <div className="flex items-center gap-2 pt-2 border-t border-[var(--line)]">
             <button
               type="button"
-              onClick={() => {
-                onOpenNewCase();
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[var(--accent)] hover:bg-blue-700 text-white text-[12px] font-semibold shadow-xs transition-colors cursor-pointer border-none"
+              onClick={() => { onOpenNewCase(); setIsOpen(false); }}
+              className="cs-new"
             >
               <Plus size={13} />
-              <span>Register New Case Workspace</span>
+              <span>New case</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveView("projects"); setIsOpen(false); }}
+              className="cs-link"
+            >
+              <FolderKanban size={13} />
+              <span>Open projects</span>
             </button>
           </div>
         </Popover.Content>
