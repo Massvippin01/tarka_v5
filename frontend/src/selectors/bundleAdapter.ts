@@ -3,7 +3,8 @@
  * statements) into the CanonicalCaseFixture shape every selector already consumes.
  * Built-in demo fixtures pass through untouched, so screens never branch on where data came from.
  */
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../api/client";
 import { fetchNetworks, fetchRawBundle } from "../api/caseQueries";
 import { CANONICAL_CASES, type CanonicalCaseAccount, type CanonicalCaseFixture, type CanonicalCaseTransaction } from "../fixtures/cases";
 import { useBundleCaseStore } from "../store/useBundleCaseStore";
@@ -206,14 +207,60 @@ export function useCaseFixture(caseId: string | null | undefined) {
   return { fixture: seeded ?? q.data ?? null, isLoading: !seeded && q.isLoading, error: seeded ? null : q.error };
 }
 
-/** Portfolio views: load every listed case that has no demo fixture, so its totals come from its own bundle. */
-export function useBundleCases(caseIds: string[]): Record<string, CanonicalCaseFixture> {
-  useQueries({
-    queries: caseIds
-      .filter((id) => !CANONICAL_CASES[id])
-      .map((id) => ({ queryKey: bundleCaseQueryKey(id), queryFn: () => loadBundleCase(id), staleTime: 30_000, retry: false })),
+/** One row of GET /api/v1/station/summary (see backend station_summary.py). */
+export interface StationSummaryRow {
+  caseId: string;
+  complainantName: string;
+  claimedLossInr: number;
+  bookedLossInr: number;
+  recoverableInr: number;
+  cashedOutInr: number;
+  frozenInr: number;
+  mules: number;
+  networks: number;
+  crossCaseHits: number;
+  goldenHour: { active: boolean; remainingMins: number; expired: boolean };
+  analysis: "ready" | "pending" | "none";
+}
+
+export interface StationSummary {
+  cases: StationSummaryRow[];
+  totals: Record<string, number>;
+}
+
+/** The one query behind the Station overview: every case's figures in a single request (not a bundle + networks per case). */
+export const stationSummaryKey = ["station", "summary"] as const;
+
+export function useStationSummary() {
+  return useQuery({
+    queryKey: stationSummaryKey,
+    queryFn: async () => (await apiClient.get<StationSummary>("/api/v1/station/summary")).data,
+    staleTime: 30_000,
+    retry: false,
   });
-  return useBundleCaseStore((s) => s.cases);
+}
+
+/** Rows for cases without a demo fixture take the backend's figures; demo cases keep their fixture numbers. */
+export function withSummaryFigures<W extends { caseId: string; complainantName: string; bookedLossInr: number; claimedLossInr: number; recoverableInr: number }>(
+  workspaces: W[],
+  summary: StationSummary | undefined
+): W[] {
+  if (!summary) return workspaces;
+  const byCase = new Map(summary.cases.map((r) => [r.caseId, r]));
+  return workspaces.map((w) => {
+    const r = !CANONICAL_CASES[w.caseId] ? byCase.get(w.caseId) : undefined;
+    if (!r) return w;
+    return {
+      ...w,
+      complainantName: w.complainantName || r.complainantName,
+      bookedLossInr: r.bookedLossInr,
+      claimedLossInr: r.claimedLossInr || w.claimedLossInr,
+      recoverableInr: r.recoverableInr,
+      frozenAmountInr: r.frozenInr,
+      goldenHourRemainingMins: r.goldenHour.remainingMins,
+      accountsCount: r.mules,
+    };
+  });
 }
 
 /** Workspace rows for uploaded-data cases take their figures from the bundle (the record's own fields stay for demo cases). */

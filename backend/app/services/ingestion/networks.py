@@ -31,6 +31,7 @@ from app.services.ingestion.account_verdicts import (
     pair_key,
 )
 from app.services.ingestion.derived_store import DerivedStore, extract_identifiers
+from app.services.ingestion.identifier_index import IdentifierIndex
 from app.services.ingestion.device_store import DEVICE_KINDS, device_clusters_from_db
 
 CASH_OUT_RE = re.compile(r"\b(atm|cash|withdraw\w*|crypto|usdt|binance|wazirx|gold|pos)\b", re.I)
@@ -1198,8 +1199,11 @@ def analyze_store(
     feature_weights: Optional[Dict[str, float]] = None,
     model_intercept: Optional[float] = None,
     scoring_meta: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
-    """Run on a case's derived.sqlite; cached until txns, device_events, verdicts, or model weights change."""
+    cache_only: bool = False,
+) -> Optional[Dict[str, Any]]:
+    """Run on a case's derived.sqlite; cached until txns, device_events, verdicts, or model weights change.
+
+    cache_only: return None instead of running the analysis when nothing is cached for the current data."""
     with closing(sqlite3.connect(store.path)) as db:
         db.execute("CREATE TABLE IF NOT EXISTS analysis_cache (key TEXT PRIMARY KEY, result TEXT)")
         count, last = db.execute("SELECT COUNT(*), MAX(rowid) FROM txns").fetchone()
@@ -1214,6 +1218,8 @@ def analyze_store(
         hit = db.execute("SELECT result FROM analysis_cache WHERE key = ?", (key,)).fetchone()
         if hit:
             result = json.loads(hit[0])
+        elif cache_only:
+            return None
         else:
             dev = device_clusters_from_db(db, include_evidence=True)
             db.execute(_FROM_ROWS.format(source="(SELECT payer, payee, amount, 1 AS cnt, ts AS fst, ts AS lst FROM txns)"))
@@ -1245,6 +1251,7 @@ def analyze_store(
 
 
 def _sql_lookup(other_dbs: List[Tuple[str, Path]]) -> Lookup:
+    """Reference scan of every other case's derived.sqlite (the pre-index behaviour; tests compare against it)."""
     def lookup(mine: set) -> Dict[tuple, List[str]]:
         found: Dict[tuple, List[str]] = defaultdict(list)
         for case_id, path in other_dbs:
@@ -1260,7 +1267,13 @@ def _sql_lookup(other_dbs: List[Tuple[str, Path]]) -> Lookup:
     return lookup
 
 
-def case_networks(derived_dir: Path, case_id: str, max_members: Optional[int] = MAX_MEMBERS_SHOWN) -> Dict[str, Any]:
+def _indexed_lookup(derived_dir: Path, case_id: str) -> Lookup:
+    index = IdentifierIndex(derived_dir)
+    return lambda mine: index.lookup(mine, case_id)
+
+
+def case_networks(derived_dir: Path, case_id: str, max_members: Optional[int] = MAX_MEMBERS_SHOWN,
+                  cache_only: bool = False, lookup: Optional[Lookup] = None) -> Optional[Dict[str, Any]]:
     case_dir = derived_dir / case_id
     if not (case_dir / "derived.sqlite").exists():
         return {
@@ -1271,17 +1284,12 @@ def case_networks(derived_dir: Path, case_id: str, max_members: Optional[int] = 
             "parties_outside_networks": 0,
             "scoring_meta": {"mode": "default", "verdicts_used": 0, "label": "default weights (0/30 verdicts)"},
         }
-    others = [
-        (d.name, d / "derived.sqlite")
-        for d in derived_dir.iterdir()
-        if d.is_dir() and d.name != case_id and (d / "derived.sqlite").exists()
-    ]
     store = VerdictStore(derived_dir.parent)  # projects.sqlite, beside the network decisions
     verdicts = {k: v["verdict"] for k, v in store.all(case_id, "account").items()}
     active_model = store.active_weights()
     result = analyze_store(
         DerivedStore(case_dir),
-        _sql_lookup(others),
+        lookup or _indexed_lookup(derived_dir, case_id),
         max_members=max_members,
         verdicts=verdicts,
         feature_weights=active_model["weights"],
@@ -1292,7 +1300,10 @@ def case_networks(derived_dir: Path, case_id: str, max_members: Optional[int] = 
             "last_tuned_at": active_model.get("last_tuned_at"),
             "label": active_model["label"],
         },
+        cache_only=cache_only,
     )
+    if result is None:
+        return None
     snap = result.pop("_features_snapshot", None)
     if snap:
         store.save_features(case_id, snap)

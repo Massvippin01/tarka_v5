@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bundleToCaseFixture, loadBundleCase, withBundleFigures, type BackendBundle, type BackendNetworks } from "../bundleAdapter";
+import { bundleToCaseFixture, loadBundleCase, withBundleFigures, withSummaryFigures, type StationSummary, type BackendBundle, type BackendNetworks } from "../bundleAdapter";
 import { selectAccountFlows, selectFinancialSummary, resolveCase } from "../caseSelectors";
 import { CANONICAL_CASES, findCase, getCanonicalCase } from "../../fixtures/cases";
 import { useBundleCaseStore } from "../../store/useBundleCaseStore";
@@ -127,6 +127,29 @@ describe("Command Center headline", () => {
     expect(after.totalReportedLossInr).toBe(before.totalReportedLossInr + 50000);
     expect(after.totalRecoverableInr).toBe(before.totalRecoverableInr);
     expect(rows.at(-1)).toMatchObject({ caseId: "C201", bookedLossInr: 50000, complainantName: "victim1@okaxis" });
+  });
+});
+
+describe("Station summary", () => {
+  const summary: StationSummary = {
+    totals: {},
+    cases: [{
+      caseId: "C201", complainantName: "victim1@okaxis", claimedLossInr: 0, bookedLossInr: 50000, recoverableInr: 20000, cashedOutInr: 30000,
+      frozenInr: 5000, mules: 3, networks: 1, crossCaseHits: 0, analysis: "ready", goldenHour: { active: true, remainingMins: 42, expired: false },
+    }],
+  };
+
+  it("feeds the portfolio totals and act-now figures of uploaded cases from one response, leaving demo cases alone", () => {
+    const base = [...INITIAL_CASE_WORKSPACES, uploadOnlyWorkspace("C201")];
+    const rows = withSummaryFigures(base, summary);
+    expect(rows.slice(0, -1)).toEqual(INITIAL_CASE_WORKSPACES);
+    expect(rows.at(-1)).toMatchObject({ bookedLossInr: 50000, recoverableInr: 20000, frozenAmountInr: 5000, goldenHourRemainingMins: 42, accountsCount: 3 });
+    const before = selectDashboardFinancials(INITIAL_CASE_WORKSPACES);
+    const after = selectDashboardFinancials(rows);
+    expect(after.totalReportedLossInr).toBe(before.totalReportedLossInr + 50000);
+    expect(after.totalFrozenInr).toBe(before.totalFrozenInr + 5000);
+    expect(after.goldenHourActiveCount).toBe(before.goldenHourActiveCount + 1);
+    expect(withSummaryFigures(base, undefined)).toBe(base);
   });
 });
 

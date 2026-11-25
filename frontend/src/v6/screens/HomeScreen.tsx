@@ -25,7 +25,7 @@ import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { buildCaseBundleFromFixture, findCase } from '../../fixtures/cases';
-import { useBundleCases, withBundleFigures } from '../../selectors/bundleAdapter';
+import { useStationSummary, withSummaryFigures } from '../../selectors/bundleAdapter';
 import { formatInr, formatGoldenHour, pctOf } from '../../lib/formatInr';
 import { selectCaseCard, selectRecentActivity, selectFinancialSummary } from '../../selectors/caseSelectors';
 import { selectDashboardFinancials } from '../../selectors/dashboardSelectors';
@@ -40,9 +40,9 @@ import {
 export const HomeScreen: React.FC = () => {
   const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
   const { caseWorkspaces: listedWorkspaces, openNewCaseModal, openEvidenceModal } = useTarkaGlobal();
-  // Cases with no demo fixture load their uploaded data; a new array identity re-runs every memo below when it lands.
-  const bundleCases = useBundleCases(listedWorkspaces.map((w) => w.caseId));
-  const caseWorkspaces = useMemo(() => withBundleFigures(listedWorkspaces, bundleCases), [listedWorkspaces, bundleCases]);
+  // Uploaded-data cases take their figures from one station summary request (no per-case bundle/networks fetch).
+  const summaryQuery = useStationSummary();
+  const caseWorkspaces = useMemo(() => withSummaryFigures(listedWorkspaces, summaryQuery.data), [listedWorkspaces, summaryQuery.data]);
   const { setCommandPaletteOpen, toggleAskTarka, setVoiceModalOpen, setAskTarkaOpen } = useTarkaUiStore();
   const { profile, station } = useSettingsStore();
 
