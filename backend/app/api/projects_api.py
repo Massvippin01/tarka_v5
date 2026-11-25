@@ -123,6 +123,7 @@ class CaseDetails(BaseModel):
     typology: str = Field("", max_length=60)
     priority: str = Field("", max_length=40)
     claimed_loss_inr: float = Field(0, ge=0, le=1e12)
+    complaint_received_at: Optional[float] = Field(None, ge=0)  # Unix seconds; starts the golden-hour clock
 
 
 class NewCase(BaseModel):
@@ -146,9 +147,12 @@ def start_intake(req: IntakeRequest, user: UserIdentity = Depends(get_current_us
 def create_case(req: NewCase, user: UserIdentity = Depends(get_current_user)) -> Dict[str, Any]:
     """Open a new case; the creator gets access to it."""
     try:
-        return _store().register_case(user.user_id, req.title, req.project_id, req.details.model_dump())
+        case = _store().register_case(user.user_id, req.title, req.project_id, req.details.model_dump())
     except KeyError:
         raise HTTPException(404, f"Project '{req.project_id}' not found.")
+    if req.details.complaint_received_at:
+        _ncrp().mark_golden_step(case["case_id"], "complaint_received_at", at=req.details.complaint_received_at)
+    return case
 
 
 @router.get("/cases")

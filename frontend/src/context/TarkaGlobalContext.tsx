@@ -58,7 +58,7 @@ export interface CaseWorkspace {
   commercialShieldedInr: number;
   frozenAmountInr?: number;
   goldenHourRemainingMins: number; // 0 if expired/escalated, 1-180 if active
-  priority: "CRITICAL_GOLDEN_HOUR" | "HIGH_SYNDICATE" | "COURT_FILING_READY";
+  priority: "CRITICAL_GOLDEN_HOUR" | "HIGH_SYNDICATE" | "COURT_FILING_READY" | "NORMAL";
   status?: string;
   incidentDate?: string;
   created_at?: string;
@@ -122,7 +122,7 @@ interface TarkaGlobalContextType {
   caseWorkspaces: CaseWorkspace[];
   setCaseWorkspaces: React.Dispatch<React.SetStateAction<CaseWorkspace[]>>;
   selectCaseWorkspace: (caseId: string, navigateToStage?: ActiveRoute) => void;
-  createNewCaseWorkspace: (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">) => Promise<string>;
+  createNewCaseWorkspace: (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">, opts?: { projectId?: string; complaintReceivedAt?: number }) => Promise<string>;
   registerDiscoveredCase: (workspace: CaseWorkspace) => void;
   ingestArtifactToCase: (caseId: string, artifact: IngestedArtifact) => void;
   removeQuarantinedArtifact: (caseId: string, artifactId: string) => void;
@@ -754,8 +754,8 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Multi-Case Action: Create New Workspace
   const createNewCaseWorkspace = useCallback(
-    async (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">): Promise<string> => {
-      const newId = await CaseSyncBridge.getInstance().createCase(payload);
+    async (payload: Omit<CaseWorkspace, "caseId" | "artifacts" | "gatesPassed" | "gatesHalted">, opts?: { projectId?: string; complaintReceivedAt?: number }): Promise<string> => {
+      const newId = await CaseSyncBridge.getInstance().createCase(payload, opts?.projectId, opts?.complaintReceivedAt);
       const newWorkspace: CaseWorkspace = {
         ...payload,
         caseId: newId,

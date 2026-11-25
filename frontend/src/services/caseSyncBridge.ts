@@ -512,7 +512,8 @@ export class CaseSyncBridge {
 
   /** Open a new case on the backend; it issues the id and gives the creator access. */
   public async createCase(c: Pick<CaseWorkspace, "title" | "firNumber" | "policeStation" | "ncrpAckNo" | "complainantName"
-    | "leadInvestigator" | "typology" | "priority" | "claimedLossInr">, projectId?: string): Promise<string> {
+    | "leadInvestigator" | "typology" | "priority" | "claimedLossInr">, projectId?: string,
+    complaintReceivedAt?: number): Promise<string> {
     const res = await apiClient.post<{ case_id: string }>(`/api/v1/projects/cases`, {
       title: c.title,
       project_id: projectId ?? null,
@@ -520,6 +521,7 @@ export class CaseSyncBridge {
         fir_number: c.firNumber, police_station: c.policeStation, ncrp_ack_no: c.ncrpAckNo,
         complainant_name: c.complainantName, lead_investigator: c.leadInvestigator,
         typology: c.typology, priority: c.priority, claimed_loss_inr: c.claimedLossInr || 0,
+        complaint_received_at: complaintReceivedAt ?? null,
       },
     });
     return res.data.case_id;

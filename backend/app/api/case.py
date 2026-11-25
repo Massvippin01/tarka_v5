@@ -174,18 +174,9 @@ async def create_case(
             meta["station_id"] = request.station_id
         if request.claimed_loss_inr is not None:
             meta["claimed_loss_inr"] = request.claimed_loss_inr
-        elif "claimed_loss_inr" not in meta:
-            meta["claimed_loss_inr"] = 250000.0
         if request.booked_loss_inr is not None:
             meta["booked_loss_inr"] = request.booked_loss_inr
-        elif "booked_loss_inr" not in meta:
-            meta["booked_loss_inr"] = 250000.0
-        if "recoverable_inr" not in meta:
-            meta["recoverable_inr"] = meta.get("booked_loss_inr", 0) * 0.72
-        if "golden_hour_remaining_mins" not in meta:
-            meta["golden_hour_remaining_mins"] = 120
-        if "ncrp_ack_no" not in meta:
-            meta["ncrp_ack_no"] = f"1930-ACK-{request.case_number[-6:]}"
+        # booked / recoverable loss and golden-hour minutes are worked out from uploaded statements; not invented here
         if "current_stage" not in meta:
             meta["current_stage"] = "intake"
         if "gates_passed" not in meta:

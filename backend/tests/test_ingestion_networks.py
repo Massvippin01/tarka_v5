@@ -315,3 +315,17 @@ def test_exports_for_other_tools(client):
 def test_only_intake_holding_cases_carry_proposals(client):
     upload(client, GANG_CSV)  # an ordinary case
     assert all("proposal" not in n for n in client.get(f"/api/v1/cases/{CASE}/networks").json()["networks"])
+
+
+def test_new_case_form_starts_golden_clock_without_inventing_loss(client):
+    """The complaint time starts the clock; booked loss stays unknown until statements are uploaded."""
+    import time
+    pid = client.post("/api/v1/projects", json={"name": "Op Mule Hunt"}).json()["project_id"]
+    at = time.time() - 120 * 60
+    r = client.post("/api/v1/projects/cases", json={"title": "FIR 12", "project_id": pid,
+                    "details": {"fir_number": "12/2026", "claimed_loss_inr": 50000, "complaint_received_at": at}})
+    assert r.status_code == 200 and r.json()["project_id"] == pid
+    assert "booked_loss_inr" not in r.json()["details"]
+    gh = client.get(f"/api/v1/cases/{r.json()['case_id']}/bundle").json().get("goldenHour") or {}
+    assert gh.get("active") and abs(gh["started_at"] - at) < 1
+    assert client.post("/api/v1/projects/cases", json={"title": "x", "project_id": "nope"}).status_code == 404
