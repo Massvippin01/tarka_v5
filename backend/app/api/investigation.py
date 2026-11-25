@@ -83,15 +83,25 @@ def get_ingestion_pipeline_status():
 def login_user(req: AuthTokenRequest):
     auth_service = AuthService.get_instance()
     username_upper = req.username.upper().strip()
-    if username_upper in auth_service.users:
-        user = auth_service.users[username_upper]
+    user = auth_service.authenticate_credentials(username_upper, req.password)
+    if user is not None:
         jwt_token = auth_service.create_jwt_token(username_upper)
         return AuthTokenResponse(access_token=jwt_token, user=user)
 
     raise HTTPException(
         status_code=401,
-        detail="Authentication failed. Invalid username or credentials.",
+        detail="Authentication failed. Invalid username or password.",
     )
+
+
+@router.get("/auth/mode")
+def get_auth_mode():
+    from app.core.config import settings
+
+    return {
+        "demo_auth_enabled": bool(settings.ENABLE_DEMO_AUTH and settings.APP_ENV == "development"),
+        "app_env": settings.APP_ENV,
+    }
 
 
 @router.get("/auth/me", response_model=UserIdentity)

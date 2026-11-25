@@ -120,7 +120,10 @@ export const DemoUserModal: React.FC<DemoUserModalProps> = ({ isOpen, onClose })
       rank: "Observer",
       badgeNo: "GUEST-00",
     });
-    toast.info("Signed out. Operating with guest credentials.");
+    toast.info("Signed out.");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("sentinelx:signed-out"));
+    }
     onClose();
   };
 

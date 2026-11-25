@@ -22,7 +22,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sentinelx_prod}
       POSTGRES_USER: ${POSTGRES_USER:-sentinelx_prod_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinelx_prod_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - pg_prod_data:/var/lib/postgresql/data
     deploy:
@@ -46,7 +46,7 @@ services:
     container_name: sentinelx-prod-neo4j
     restart: always
     environment:
-      NEO4J_AUTH: ${NEO4J_AUTH:-neo4j/sentinelx_prod_password}
+      NEO4J_AUTH: ${NEO4J_AUTH:?Set NEO4J_AUTH in .env}
       NEO4J_PLUGINS: '["apoc"]'
       NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
       NEO4J_server_memory_heap_initial__size: 1G
@@ -75,7 +75,7 @@ services:
     restart: always
     environment:
       - discovery.type=single-node
-      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-SentinelX_ProdPass123!}"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?Set OPENSEARCH_INITIAL_ADMIN_PASSWORD in .env}"
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
     volumes:
       - opensearch_prod_data:/usr/share/opensearch/data
@@ -104,10 +104,10 @@ services:
       - "${STORAGE_CONSOLE_PORT:-9001}:9001"
     command: server /data --console-enable --console-address ":9001"
     environment:
-      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
-      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-${MINIO_ROOT_USER:-sentinelx_minio_admin}}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-${MINIO_ROOT_PASSWORD:-sentinelx_minio_prod_password}}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env}
       RUSTFS_CONSOLE_ENABLE: "true"
       RUSTFS_CONSOLE_ADDRESS: ":9001"
     volumes:
@@ -181,26 +181,24 @@ services:
     environment:
       APP_ENV: production
       DEBUG: "false"
-      SECRET_KEY: ${SECRET_KEY:-sentinelx_production_secret_key_minimum_32_characters_for_prod}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://sentinelx_prod_user:sentinelx_prod_password@postgres:5432/sentinelx_prod}
+      ENABLE_DEMO_AUTH: "false"
+      REASONING_PROVIDER: deterministic
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
       NEO4J_URI: ${NEO4J_URI:-bolt://neo4j:7687}
       NEO4J_USERNAME: ${NEO4J_USERNAME:-neo4j}
-      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-sentinelx_prod_password}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}
       OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-sentinelx_minio_admin}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-sentinelx_minio_prod_password}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-sentinelx-evidence-vault}
       OPA_URL: ${OPA_URL:-http://opa:8181}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://sentinelx.intelligence.gov.in,http://localhost:8080}
-      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
-      SARVAM_API_BASE_URL: ${SARVAM_API_BASE_URL:-https://api.sarvam.ai}
-      SARVAM_STT_MODEL: ${SARVAM_STT_MODEL:-saaras:v4}
-      SARVAM_TTS_MODEL: ${SARVAM_TTS_MODEL:-bulbul:v4-flash}
-      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh_enhi_ads}
     volumes:
       - evidence_prod_data:/app/data/storage/artifacts
+      - ingestion_prod_data:/app/data/ingestion
     depends_on:
       postgres:
         condition: service_healthy
@@ -268,3 +266,4 @@ volumes:
   opensearch_prod_data:
   minio_prod_data:
   evidence_prod_data:
+  ingestion_prod_data:

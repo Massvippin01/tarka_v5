@@ -72,7 +72,14 @@ class SessionRequest(BaseModel):
 
 @router.post("/auth/session", tags=["Forensics Auth"])
 def create_forensic_investigator_session(req: SessionRequest) -> Dict[str, Any]:
-    """Issues a signed HMAC-SHA256 JWT session token for the specified investigator."""
+    """Issues a signed HMAC-SHA256 JWT session token for local development demo mode only."""
+    from app.core.config import settings
+
+    if settings.APP_ENV in ("production", "staging") and not settings.ENABLE_DEMO_AUTH:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Passwordless demo sessions are disabled in staging/production. Use /api/v1/investigation/auth/login.",
+        )
     auth_service = AuthService.get_instance()
     u = req.username.upper().strip()
     if u not in auth_service.users:

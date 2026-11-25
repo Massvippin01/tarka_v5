@@ -136,6 +136,33 @@ def parse_ncrp_csv(content: str | bytes) -> List[Dict[str, Any]]:
     return records
 
 
+def _matched_side(
+    payer: str,
+    payee: str,
+    acct_raw: str,
+    phone: str,
+    phone_candidates: set[str],
+) -> tuple[Optional[str], bool]:
+    """Return (matched_account_label, is_victim_debit) choosing whichever party actually matched."""
+    pk = str(payer or "").strip().lower()
+    qk = str(payee or "").strip().lower()
+    if acct_raw:
+        if pk == acct_raw:
+            return payer, True
+        if qk == acct_raw:
+            return payee, False
+    if pk in phone_candidates:
+        return payer, True
+    if qk in phone_candidates:
+        return payee, False
+    if phone and len(phone) >= 10:
+        if phone in pk or phone in re.sub(r"\D", "", pk):
+            return payer, True
+        if phone in qk or phone in re.sub(r"\D", "", qk):
+            return payee, False
+    return None, True
+
+
 def match_complaint_to_case(
     derived_dir: Path,
     case_id: str,
@@ -177,7 +204,8 @@ def match_complaint_to_case(
                 if m.get("label"):
                     member_to_net[str(m["label"]).strip().lower()] = nid
 
-    rows: List[tuple] = []
+    window_rows: List[tuple] = []
+    any_match_count = 0
     phone_candidates: List[str] = []
     with closing(sqlite3.connect(db_path)) as db:
         has_txns = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='txns'").fetchone()
@@ -190,13 +218,16 @@ def match_complaint_to_case(
                 "matched_txns": [],
             }
 
-        where = ["(LOWER(TRIM(payer)) = ? OR LOWER(TRIM(payee)) = ?)"]
-        params: List[Any] = [acct_raw, acct_raw]
+        clauses: List[str] = []
+        id_params: List[Any] = []
+        if acct_raw:
+            clauses.append("LOWER(TRIM(payer)) = ?")
+            clauses.append("LOWER(TRIM(payee)) = ?")
+            id_params.extend([acct_raw, acct_raw])
         if phone and len(phone) >= 10:
-            like = f"%{phone}"
-            where = ["(LOWER(TRIM(payer)) = ? OR LOWER(TRIM(payee)) = ? OR payer LIKE ? OR payee LIKE ? OR ref LIKE ?)"]
-            params = [acct_raw, acct_raw, like, like, like]
-            # Also check device_events phone -> acct mapping if present.
+            like = f"%{phone}%"
+            clauses.extend(["payer LIKE ?", "payee LIKE ?", "ref LIKE ?"])
+            id_params.extend([like, like, like])
             has_dev = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='device_events'").fetchone()
             if has_dev:
                 dev_accts = db.execute(
@@ -206,15 +237,40 @@ def match_complaint_to_case(
                 phone_candidates = [r[0] for r in dev_accts if r[0]]
                 if phone_candidates:
                     placeholders = ",".join("?" for _ in phone_candidates)
-                    where = [f"({where[0]} OR LOWER(TRIM(payer)) IN ({placeholders}) OR LOWER(TRIM(payee)) IN ({placeholders}))"]
-                    params.extend(phone_candidates)
-                    params.extend(phone_candidates)
+                    clauses.append(f"LOWER(TRIM(payer)) IN ({placeholders})")
+                    clauses.append(f"LOWER(TRIM(payee)) IN ({placeholders})")
+                    id_params.extend(phone_candidates)
+                    id_params.extend(phone_candidates)
 
-        sql = f"SELECT job_id, line, ts, payer, payee, amount, ref FROM txns WHERE {' AND '.join(where)} ORDER BY ts ASC LIMIT 200"
-        rows = db.execute(sql, params).fetchall()
+        id_where = f"({' OR '.join(clauses)})"
+        where_parts = [id_where]
+        params: List[Any] = list(id_params)
 
-    if not rows:
+        # Apply ±72h time window in SQL BEFORE LIMIT so busy accounts with long histories don't get cut off
+        if ts_epoch is not None:
+            where_parts.append("ts BETWEEN ? AND ?")
+            params.extend([float(ts_epoch) - 72 * 3600, float(ts_epoch) + 72 * 3600])
+            order_sql = "ORDER BY ABS(ts - ?) ASC LIMIT 500"
+            order_params: List[Any] = [float(ts_epoch)]
+        else:
+            order_sql = "ORDER BY ts DESC LIMIT 500"
+            order_params = []
+
+        sql = f"SELECT job_id, line, ts, payer, payee, amount, ref FROM txns WHERE {' AND '.join(where_parts)} {order_sql}"
+        window_rows = db.execute(sql, [*params, *order_params]).fetchall()
+        if not window_rows and ts_epoch is not None:
+            any_match_count = int(db.execute(f"SELECT COUNT(*) FROM txns WHERE {id_where}", id_params).fetchone()[0] or 0)
+
+    if not window_rows:
         target_desc = acct_raw or phone
+        if ts_epoch is not None and any_match_count > 0:
+            return {
+                "status": "UNMATCHED",
+                "match_reason": f"Found {any_match_count} transaction(s) for '{target_desc}', but none within ±72 hours of the complaint timestamp.",
+                "matched_account": None,
+                "matched_network_id": None,
+                "matched_txns": [],
+            }
         return {
             "status": "UNMATCHED",
             "match_reason": f"No ingested transaction mentions '{target_desc}' in payer, payee, or device records.",
@@ -223,36 +279,30 @@ def match_complaint_to_case(
             "matched_txns": [],
         }
 
-    # Filter by time window (+/- 72h) when complaint timestamp exists
-    window_rows = rows
-    if ts_epoch is not None:
-        win = [r for r in rows if abs(float(r[2]) - float(ts_epoch)) <= 72 * 3600]
-        if not win:
-            return {
-                "status": "UNMATCHED",
-                "match_reason": f"Found {len(rows)} transaction(s) for '{acct_raw or phone}', but none within ±72 hours of the complaint timestamp.",
-                "matched_account": None,
-                "matched_network_id": None,
-                "matched_txns": [],
-            }
-        window_rows = win
+    phone_cand_set = set(phone_candidates)
+    annotated = []
+    for r in window_rows:
+        m_acct, is_debit = _matched_side(r[3], r[4], acct_raw, phone, phone_cand_set)
+        annotated.append((r, m_acct, is_debit))
 
     # Filter / score by amount if supplied
-    chosen = window_rows
+    chosen = annotated
     if amount is not None and amount > 0:
         tol = max(500.0, amount * 0.25)
-        close = [r for r in window_rows if abs(float(r[5]) - amount) <= tol]
+        close = [item for item in annotated if abs(float(item[0][5]) - amount) <= tol]
         if close:
             chosen = close
         else:
-            total_out = sum(float(r[5]) for r in window_rows)
-            if abs(total_out - amount) <= tol:
-                chosen = window_rows
+            # Sum only debits where the matched victim account was on the payer side
+            debit_items = [item for item in annotated if item[2]]
+            total_out = sum(float(item[0][5]) for item in debit_items)
+            if debit_items and abs(total_out - amount) <= tol:
+                chosen = debit_items
             else:
                 return {
                     "status": "UNMATCHED",
                     "match_reason": (
-                        f"Found {len(window_rows)} row(s) for '{acct_raw or phone}' totalling "
+                        f"Found {len(debit_items)} outgoing debit row(s) for '{acct_raw or phone}' totalling "
                         f"₹{total_out:,.0f}, outside the claimed ₹{amount:,.0f} tolerance."
                     ),
                     "matched_account": None,
@@ -263,16 +313,11 @@ def match_complaint_to_case(
     matched_acct = None
     matched_net = None
     matched_txns = []
-    for job_id, line, ts_val, payer, payee, amt, ref in chosen[:25]:
+    for (job_id, line, ts_val, payer, payee, amt, ref), row_acct, _is_debit in chosen[:25]:
         pk = str(payer or "").strip().lower()
         qk = str(payee or "").strip().lower()
         if not matched_acct:
-            if acct_raw and acct_raw in (pk, qk):
-                matched_acct = payer if pk == acct_raw else payee
-            elif pk in phone_candidates:
-                matched_acct = payer
-            else:
-                matched_acct = payer
+            matched_acct = row_acct or (payer if not qk else payee)
         net_id = member_to_net.get(pk) or member_to_net.get(qk)
         if not matched_net and net_id:
             matched_net = net_id
@@ -287,7 +332,7 @@ def match_complaint_to_case(
             "network_id": net_id,
         })
 
-    tot = sum(float(r[5]) for r in chosen)
+    tot = sum(float(item[0][5]) for item in chosen)
     net_note = f" in {matched_net}" if matched_net else ""
     return {
         "status": "MATCHED",

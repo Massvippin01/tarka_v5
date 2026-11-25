@@ -41,6 +41,13 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
-# Do not copy raw user evidence artifacts into build context
+# Do not copy raw user evidence artifacts or local datasets into build context
 data/storage/artifacts/*
 !data/storage/artifacts/.gitkeep
+data/ingestion/
+data/test_uploads/
+data/validation/
+data/validation_lab/
+data/txbench*
+data/jobs/
+data/cases/

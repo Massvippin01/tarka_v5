@@ -170,19 +170,25 @@ class VerdictStore:
             return None
 
         from sklearn.linear_model import LogisticRegression
+        from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
         clf = LogisticRegression(C=1.0, max_iter=500, random_state=42)
         clf.fit(X, y)
-        coefs = [max(0.0, float(c)) for c in clf.coef_[0]]
-        total_c = sum(coefs)
-        # Keep explainable normalized weights summing near default core budget (or normalized positive weights)
-        if total_c > 0:
-            weights = {f: round(coefs[i], 4) for i, f in enumerate(FEATURE_NAMES)}
-        else:
-            weights = dict(DEFAULT_FEATURE_WEIGHTS)
+        # Preserve real coefficients (including negative coefficients that lower suspicion) with the matching intercept
+        weights = {f: round(float(clf.coef_[0][i]), 4) for i, f in enumerate(FEATURE_NAMES)}
         intercept = round(float(clf.intercept_[0]), 4)
-        preds = clf.predict(X)
-        accuracy = round(sum(int(p == t) for p, t in zip(preds, y)) / len(y), 4)
+
+        min_class = min(pos, neg)
+        if min_class >= 2:
+            n_splits = min(5, min_class)
+            cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+            oof_preds = cross_val_predict(LogisticRegression(C=1.0, max_iter=500, random_state=42), X, y, cv=cv)
+            accuracy = round(sum(int(p == t) for p, t in zip(oof_preds, y)) / len(y), 4)
+            accuracy_mode = "cv"
+        else:
+            preds = clf.predict(X)
+            accuracy = round(sum(int(p == t) for p, t in zip(preds, y)) / len(y), 4)
+            accuracy_mode = "train_fallback"
         now = time.time()
         w_json = json.dumps(weights, sort_keys=True)
 
@@ -207,6 +213,7 @@ class VerdictStore:
             "weights": weights,
             "intercept": intercept,
             "accuracy": accuracy,
+            "accuracy_mode": accuracy_mode,
             "label": f"weights last tuned on {len(y)} verdicts",
         }
 

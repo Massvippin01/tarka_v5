@@ -1,0 +1,88 @@
+# ==============================================================================
+# SENTINELX / TARKA - LEAN PRODUCTION TOPOLOGY (docker-compose.lean.yml)
+# ==============================================================================
+# Minimal deployment stack: PostgreSQL + single-worker Backend (deterministic
+# reasoning + SQLite per-case derived store + persistent ingestion volume)
+# + Frontend (Nginx). All secrets come from .env with no hardcoded defaults.
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sentinelx-lean-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sentinelx_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-sentinelx_prod_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pg_lean_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-sentinelx_prod_user} -d $${POSTGRES_DB:-sentinelx_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelx-lean-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: sentinelx/backend:2.0.0
+    container_name: sentinelx-lean-backend
+    restart: always
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: "false"
+      ENABLE_DEMO_AUTH: "false"
+      REASONING_PROVIDER: deterministic
+      STORAGE_BACKEND: filesystem
+      OPA_FAIL_CLOSED: "true"
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:8080}
+    volumes:
+      - evidence_lean_data:/app/data/storage/artifacts
+      - ingestion_lean_data:/app/data/ingestion
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinelx-lean-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: sentinelx/frontend:2.0.0
+    container_name: sentinelx-lean-frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-80}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - sentinelx-lean-net
+
+networks:
+  sentinelx-lean-net:
+    driver: bridge
+
+volumes:
+  pg_lean_data:
+  evidence_lean_data:
+  ingestion_lean_data:

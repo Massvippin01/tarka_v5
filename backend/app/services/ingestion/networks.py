@@ -42,7 +42,7 @@ HIGH_VALUE_INR = 25_000
 HUB_DEGREE = 50  # parties with this many counterparties are treated as hubs (merchants, payroll, ATMs)
 MULE_THRESHOLD = 0.7
 MAX_MEMBERS_SHOWN = 200
-ANALYSIS_VERSION = "7"
+ANALYSIS_VERSION = "8"
 
 _STRUCTURING_BANDS = (
     (9_900.0, 9_999.0),
@@ -206,6 +206,7 @@ def _compute_account_features(
     in_events: Optional[List[Tuple[float, str, float]]] = None,
     out_events: Optional[List[Tuple[float, str, float]]] = None,
     device_shared: bool = False,
+    device_corroborated: bool = False,
 ) -> Tuple[Dict[str, float], List[str], Dict[str, Any]]:
     """Extract normalized [0, 1] explainable features and human-readable reasons for one party."""
     n, label, ins, incnt, outs, fst, lst, senders, receivers = row
@@ -237,17 +238,19 @@ def _compute_account_features(
         features["multi_sender"] = 1.0
         why.append(f"{senders} senders, {receivers} receivers")
 
-    # Structuring & layering signals over timed outflows: transfers clustered tightly below limits
+    # Structuring & layering signals over timed outflows: transfers clustered tightly in time below limits
     timed_band_hits = sorted((ts, amt) for ts, _, amt in out_ev if amt > 0 and _in_structuring_band(amt))
     band_hits = [amt for _, amt in timed_band_hits]
     high_band_hits = [(ts, a) for ts, a in timed_band_hits if a >= 48_500.0]
-    clustered_band = (
-        len(timed_band_hits) >= 3
-        or (
-            len(high_band_hits) >= 2
-            and (high_band_hits[-1][0] - high_band_hits[0][0] <= 24 * 3600)
-        )
+    clustered_3_in_48h = any(
+        timed_band_hits[k + 2][0] - timed_band_hits[k][0] <= 48 * 3600
+        for k in range(len(timed_band_hits) - 2)
     )
+    clustered_2_high_in_24h = any(
+        high_band_hits[k + 1][0] - high_band_hits[k][0] <= 24 * 3600
+        for k in range(len(high_band_hits) - 1)
+    )
+    clustered_band = clustered_3_in_48h or clustered_2_high_in_24h
     if clustered_band:
         features["below_limit_structuring"] = 1.0
         why.append(
@@ -273,7 +276,7 @@ def _compute_account_features(
             i = j if j > i + 1 else i + 1
     if split_count >= 3 or (
         split_count >= 2
-        and (len(band_hits) >= 2 or device_shared or (features["burst_72h"] == 1.0 and split_sample >= 25_000.0))
+        and (clustered_band or (device_shared and device_corroborated) or (features["burst_72h"] == 1.0 and split_sample >= 25_000.0))
     ):
         features["near_identical_splits"] = 1.0
         why.append(f"split money into {split_count} nearly identical transfers (~{inr(split_sample)} each)")
@@ -321,7 +324,7 @@ def _compute_account_features(
         why.append("shares handset, SIM, or network identifier with other accounts")
 
     # Dormant-burst detection (sliding 72h window): catch accounts quiet >= 30 days (months) that suddenly burst,
-    # or corroborated by structuring / device attribution. Protects ordinary monthly salary-then-rent accounts.
+    # or corroborated by structuring / mule-linked device attribution. Protects ordinary monthly salary-then-rent accounts.
     if features["burst_72h"] == 0.0 and win["is_dormant_burst"]:
         quiet_days = win["quiet_gap_s"] / 86400.0
         corroborated = (
@@ -331,7 +334,7 @@ def _compute_account_features(
                 and (
                     features["below_limit_structuring"] > 0
                     or split_count >= 3
-                    or device_shared
+                    or (device_shared and device_corroborated)
                 )
             )
         )
@@ -350,6 +353,7 @@ def _score(
     in_events: Optional[List[Tuple[float, str, float]]] = None,
     out_events: Optional[List[Tuple[float, str, float]]] = None,
     device_shared: bool = False,
+    device_corroborated: bool = False,
     weights: Optional[Dict[str, float]] = None,
     intercept: Optional[float] = None,
     mode: str = "default",
@@ -369,19 +373,34 @@ def _score(
             **money,
         }
 
-    features, why, _ = _compute_account_features(row, in_events=in_events, out_events=out_events, device_shared=device_shared)
+    features, why, _ = _compute_account_features(
+        row,
+        in_events=in_events,
+        out_events=out_events,
+        device_shared=device_shared,
+        device_corroborated=device_corroborated,
+    )
     w = weights or DEFAULT_FEATURE_WEIGHTS
     if mode == "calibrated" and intercept is not None:
         logit = intercept + sum(float(w.get(f, 0.0)) * features[f] for f in FEATURE_NAMES)
         score = 1.0 / (1.0 + math.exp(-max(-30.0, min(30.0, logit))))
-        is_mule = score >= 0.50 and (features["passthrough"] > 0 or features["device_shared"] > 0 or features["below_limit_structuring"] > 0 or features["rapid_fan_out"] > 0)
+        for f in FEATURE_NAMES:
+            wf = float(w.get(f, 0.0))
+            if features[f] > 0 and wf < 0:
+                why.append(f"{f.replace('_', ' ')} lowers suspicion (calibrated {wf:+.2f})")
+        # Guard: device sharing is corroboration only and must never satisfy the mule guard on its own.
+        is_mule = score >= 0.50 and (
+            features["burst_72h"] > 0
+            or (features["passthrough"] > 0 and (features["below_limit_structuring"] > 0 or features["rapid_fan_out"] > 0))
+            or features["below_limit_structuring"] > 0
+            or features["rapid_fan_out"] > 0
+        )
     else:
-        score = min(1.0, sum(float(w.get(f, DEFAULT_FEATURE_WEIGHTS[f])) * features[f] for f in FEATURE_NAMES))
-        # Guard: legitimate users cannot be flagged merely on round amounts + high value without pass-through/burst/structuring
+        score = max(0.0, min(1.0, sum(float(w.get(f, DEFAULT_FEATURE_WEIGHTS[f])) * features[f] for f in FEATURE_NAMES)))
+        # Guard: device sharing is corroboration only; legitimate users cannot be flagged merely on passthrough + device_shared.
         is_mule = score >= MULE_THRESHOLD and (
             features["burst_72h"] > 0
-            or (features["passthrough"] > 0 and (features["below_limit_structuring"] > 0 or features["rapid_fan_out"] > 0 or features["device_shared"] > 0))
-            or (features["device_shared"] > 0 and features["below_limit_structuring"] > 0)
+            or (features["passthrough"] > 0 and (features["below_limit_structuring"] > 0 or features["rapid_fan_out"] > 0))
         )
 
     return {
@@ -819,22 +838,54 @@ def _run(
     mules: Dict[str, Dict[str, Any]] = {}
     held: Dict[str, float] = {}
     features_to_save: Dict[str, Dict[str, float]] = {}
+    corroborated_device_accts: Set[str] = set()
 
     if cand_set:
         db.execute("CREATE TEMP TABLE IF NOT EXISTS cand (n TEXT PRIMARY KEY)")
         db.execute("DELETE FROM cand")
         db.executemany("INSERT OR IGNORE INTO cand VALUES (?)", [(n,) for n in cand_set])
-        for row in db.execute("SELECT * FROM p WHERE n IN (SELECT n FROM cand)"):
+        cand_rows = db.execute("SELECT * FROM p WHERE n IN (SELECT n FROM cand)").fetchall()
+
+        # Pass 1: score purely on financial behavior (device_shared=False)
+        pass1_scores: Dict[str, tuple[tuple, Dict[str, Any]]] = {}
+        non_device_mules: Set[str] = set()
+        for row in cand_rows:
             nid = row[0]
             m = _score(
                 row,
                 in_events=cand_in.get(nid),
                 out_events=cand_out.get(nid),
-                device_shared=nid in device_accts,
+                device_shared=False,
+                device_corroborated=False,
                 weights=feature_weights,
                 intercept=model_intercept,
                 mode=mode,
             )
+            pass1_scores[nid] = (row, m)
+            if (m["role"] == "MULE" or verdicts.get(nid) == "CONFIRMED_MULE") and verdicts.get(nid) != "NOT_MULE":
+                non_device_mules.add(nid)
+
+        # Device corroboration counts ONLY for accounts sharing a device/network identifier with a Pass-1 flagged mule
+        for cl in device_clusters:
+            cl_accts = cl.get("accounts", [])
+            if any(a in non_device_mules for a in cl_accts):
+                corroborated_device_accts.update(cl_accts)
+
+        # Pass 2: add device corroboration only for accounts linked to Pass-1 flagged mules
+        for nid, (row, m1) in pass1_scores.items():
+            if nid in corroborated_device_accts:
+                m = _score(
+                    row,
+                    in_events=cand_in.get(nid),
+                    out_events=cand_out.get(nid),
+                    device_shared=True,
+                    device_corroborated=True,
+                    weights=feature_weights,
+                    intercept=model_intercept,
+                    mode=mode,
+                )
+            else:
+                m = m1
             features_to_save[nid] = m["features"]
             if verdicts.get(nid) == "CONFIRMED_MULE":
                 m["role"] = "MULE"
@@ -874,9 +925,12 @@ def _run(
     members: Dict[str, Dict[str, Any]] = dict(mules)
     degree: Dict[str, int] = {}
     for row in db.execute("SELECT * FROM p WHERE n IN (SELECT n FROM nb)"):
-        members[row[0]] = _score(
+        nid_nb = row[0]
+        is_corr = nid_nb in corroborated_device_accts
+        members[nid_nb] = _score(
             row,
-            device_shared=row[0] in device_accts,
+            device_shared=is_corr,
+            device_corroborated=is_corr,
             weights=feature_weights,
             intercept=model_intercept,
             mode=mode,

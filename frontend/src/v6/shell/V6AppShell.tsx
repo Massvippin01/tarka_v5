@@ -10,6 +10,8 @@ import { DemoUserModal } from '../../components/tarka/auth/DemoUserModal';
 import { TarkaCommandPalette } from '../../components/tarka/TarkaCommandPalette';
 import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { Skeleton } from '../ui/Skeleton';
+import { LoginScreen } from '../auth/LoginScreen';
+import apiClient from '../../api/client';
 import { Lock } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { cn } from '../../lib/utils';
@@ -151,6 +153,43 @@ export const V6AppShell: React.FC = () => {
   const [isDemoUserOpen, setIsDemoUserOpen] = useState(false);
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
   const [auditDrawerCaseId, setAuditDrawerCaseId] = useState<string | null>(null);
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'login-required'>('checking');
+
+  const checkAuthSession = React.useCallback(async () => {
+    try {
+      const modeRes = await apiClient.get<{ demo_auth_enabled?: boolean }>('/api/v1/investigation/auth/mode');
+      if (modeRes.data?.demo_auth_enabled) {
+        setAuthStatus('authenticated');
+        return;
+      }
+      const token = sessionStorage.getItem('sentinelx_auth_token') || localStorage.getItem('sentinelx_auth_token');
+      if (!token) {
+        setAuthStatus('login-required');
+        return;
+      }
+      await apiClient.get('/api/v1/investigation/auth/me');
+      setAuthStatus('authenticated');
+    } catch (err: unknown) {
+      const statusCode = (err as { response?: { status?: number } })?.response?.status;
+      if (statusCode === 401 || statusCode === 403) {
+        setAuthStatus('login-required');
+      } else {
+        setAuthStatus('authenticated');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void checkAuthSession();
+    const onAuthRequired = () => setAuthStatus('login-required');
+    const onSignedOut = () => void checkAuthSession();
+    window.addEventListener('sentinelx:auth-required', onAuthRequired);
+    window.addEventListener('sentinelx:signed-out', onSignedOut);
+    return () => {
+      window.removeEventListener('sentinelx:auth-required', onAuthRequired);
+      window.removeEventListener('sentinelx:signed-out', onSignedOut);
+    };
+  }, [checkAuthSession]);
 
   // Truncated text anywhere shows its full value on hover (no clipped text without a tooltip).
   useEffect(() => {
@@ -357,6 +396,26 @@ export const V6AppShell: React.FC = () => {
         return <ViewNotFoundScreen view={activeView} />;
     }
   };
+
+  if (authStatus === 'checking') {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[var(--bg)] p-6">
+        <div className="w-full max-w-[420px] space-y-3">
+          <Skeleton height={48} />
+          <Skeleton height={220} />
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === 'login-required') {
+    return (
+      <>
+        <LoginScreen onSuccess={() => setAuthStatus('authenticated')} />
+        <Toaster position="bottom-right" richColors closeButton />
+      </>
+    );
+  }
 
   return (
     <div

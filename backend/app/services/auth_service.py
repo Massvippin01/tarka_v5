@@ -11,6 +11,8 @@ import hashlib
 import hmac
 import json
 import logging
+import os
+import secrets
 import time
 from typing import Any, Dict, Optional
 from uuid import uuid4
@@ -143,6 +145,67 @@ class AuthService:
                 ],
             ),
         }
+
+        # Per-user salted PBKDF2-HMAC-SHA256 password hashes (no plaintext stored)
+        self.password_hashes: Dict[str, str] = {}
+        self._init_password_hashes()
+
+    @staticmethod
+    def hash_password(password: str, iterations: int = 200_000) -> str:
+        """Hash a password with a random 16-byte salt using PBKDF2-HMAC-SHA256."""
+        salt = secrets.token_bytes(16)
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+        return f"pbkdf2_sha256${iterations}${salt.hex()}${dk.hex()}"
+
+    @staticmethod
+    def verify_password(password: str, stored_hash: str) -> bool:
+        """Constant-time verification of a plaintext password against a stored PBKDF2 hash."""
+        if not password or not stored_hash:
+            return False
+        try:
+            algo, iters_s, salt_hex, hash_hex = stored_hash.split("$", 3)
+            if algo != "pbkdf2_sha256":
+                return False
+            iterations = int(iters_s)
+            salt = bytes.fromhex(salt_hex)
+            expected = bytes.fromhex(hash_hex)
+            actual = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+            return hmac.compare_digest(actual, expected)
+        except Exception:
+            return False
+
+    def _init_password_hashes(self) -> None:
+        """Load per-user PBKDF2 hashes from env (AUTH_USER_HASHES_JSON / AUTH_PASSWORD_*) or defaults."""
+        raw_hashes = os.getenv("AUTH_USER_HASHES_JSON", "").strip()
+        if raw_hashes:
+            try:
+                parsed = json.loads(raw_hashes)
+                if isinstance(parsed, dict):
+                    for k, v in parsed.items():
+                        self.password_hashes[str(k).upper().strip()] = str(v)
+            except Exception as exc:
+                logger.warning("Failed to parse AUTH_USER_HASHES_JSON: %s", exc)
+
+        default_pass = os.getenv("TARKA_AUTH_DEFAULT_PASSWORD", "Tarka@2026!")
+        for uname in list(self.users.keys()):
+            if uname in self.password_hashes:
+                continue
+            env_pw = os.getenv(f"AUTH_PASSWORD_{uname}")
+            pw = env_pw if env_pw else default_pass
+            self.password_hashes[uname] = self.hash_password(pw)
+
+    def authenticate_credentials(self, username: str, password: str) -> Optional[UserIdentity]:
+        """Verify username + password against stored PBKDF2 hash; returns UserIdentity or None."""
+        uname = (username or "").upper().strip()
+        if not uname or not password:
+            return None
+        user = self.users.get(uname)
+        stored_hash = self.password_hashes.get(uname)
+        if not user or not stored_hash:
+            return None
+        if not self.verify_password(password, stored_hash):
+            return None
+        return user
 
     @classmethod
     def get_instance(cls) -> AuthService:

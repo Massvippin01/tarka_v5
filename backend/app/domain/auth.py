@@ -63,7 +63,7 @@ class UserIdentity(BaseModel):
 
 class AuthTokenRequest(BaseModel):
     username: str
-    password: str = "synthetic-demo-pass"
+    password: str = ""
 
 
 class AuthTokenResponse(BaseModel):
