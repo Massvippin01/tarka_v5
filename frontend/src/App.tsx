@@ -27,7 +27,7 @@ function App() {
 
   const isLegacy = params.get("legacy") === "1";
   const isCanvas = params.get("view") === "canvas";
-  const isForensics = params.get("mode") === "forensics" || params.has("tab");
+  const isForensics = params.get("mode") === "forensics" || params.get("view") === "forensics";
 
   return (
     <ThemeProvider>

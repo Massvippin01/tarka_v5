@@ -114,18 +114,25 @@ export const TarkaButton = forwardRef<HTMLButtonElement, TarkaButtonProps>(
     };
 
     const variantClasses = {
-      primary: 'bg-[#A85C2A] text-[#FFFDF8] hover:bg-[#8D491E] border border-[#8D491E] shadow-xs active:translate-y-px',
-      secondary: 'bg-[#FFFDF8] text-[#292522] hover:bg-[#F8F4ED] border border-[#D5CABE] shadow-xs active:translate-y-px',
-      tactile: 'tarka-button text-[#292522] hover:bg-[#F8F4ED]',
-      destructive: 'bg-[#B6423B] text-white hover:bg-[#992F29] border border-[#992F29] shadow-xs active:translate-y-px',
-      safe: 'bg-[#287653] text-white hover:bg-[#1E5C40] border border-[#1E5C40] shadow-xs active:translate-y-px',
-      ghost: 'bg-transparent text-[#756A60] hover:text-[#292522] hover:bg-[#EFE9DF] border border-transparent shadow-none',
+      primary: 'v6-btn primary text-[#FFFDF8] shadow-xs active:translate-y-px',
+      secondary: 'v6-btn text-[#292522] border border-[#D5CABE] shadow-xs active:translate-y-px',
+      tactile: 'v6-btn tarka-button text-[#292522] hover:bg-[#F8F4ED]',
+      destructive: 'v6-btn destructive text-white shadow-xs active:translate-y-px',
+      safe: 'v6-btn safe text-white shadow-xs active:translate-y-px',
+      ghost: 'v6-btn ghost text-[#756A60] hover:text-[#292522] border border-transparent shadow-none',
     };
+
+    const primaryStyle: React.CSSProperties = variant === 'primary' ? {
+      backgroundColor: '#A85C2A',
+      borderColor: '#8D491E',
+      color: '#FFFDF8',
+    } : {};
 
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
+        style={{ ...primaryStyle, ...props.style }}
         className={clsx(
           'inline-flex items-center justify-center font-semibold select-none transition-all duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A85C2A]',
           sizeClasses[size],

@@ -48,6 +48,8 @@ data/jobs/
 backend/data/jobs/
 data/upload_sessions/
 backend/data/upload_sessions/
+backend/data/ingestion/
+backend/data/validation_lab/
 data/validation_corpus/
 data/validation_lab/frozen_runs/
 data/validation_lab/sessions/

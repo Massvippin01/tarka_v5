@@ -18,8 +18,11 @@ import { CrossStateWaterfall } from '../../components/tarka/network/CrossStateWa
 import { getCanonicalCase, CANONICAL_CASES, buildCaseBundleFromFixture } from '../../fixtures/cases';
 import { reconstruct5FileInvestigation } from '../../utils/investigationReconstructor';
 import { formatInr } from '../../utils/formatters';
+import { GangSvg } from '../network/NetworkSvg';
+import type { Net } from '../network/NetworkPanels';
+import type { NetworkMember, MemberRole } from '../triage/triage';
 
-type NetworkViewMode = 'graph' | 'matrix' | 'waterfall';
+type NetworkViewMode = 'graph' | 'svg' | 'waterfall';
 
 export const FraudNetworkScreen: React.FC = () => {
   const { activeCaseId, setActiveView } = useCaseStore();
@@ -40,6 +43,54 @@ export const FraudNetworkScreen: React.FC = () => {
   const [edgeFilter, setEdgeFilter] = useState<EdgeFilterType>('all');
   const [isCopiedI4c, setIsCopiedI4c] = useState(false);
   const [isCopiedXml, setIsCopiedXml] = useState(false);
+  const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set(['1', '2', '3']));
+  const [selectedSvgNodeId, setSelectedSvgNodeId] = useState<string | null>(null);
+
+  const netData: Net = useMemo(() => {
+    const members: NetworkMember[] = investigation.nodes.map((n) => {
+      const isVictim = n.entityType === 'VICTIM';
+      const isMule = n.entityType === 'LAYER_1_MULE' || n.entityType === 'LAYER_2_CONDUIT';
+      const isCashout = n.entityType === 'LAYER_3_SINK';
+      const role: MemberRole = isVictim ? 'VICTIM' : isMule ? 'MULE' : isCashout ? 'CASH_OUT' : 'UNKNOWN';
+      const hop = n.details?.includes('Hop 1') ? 1 : n.details?.includes('Hop 2') ? 2 : 1;
+      return {
+        id: n.id,
+        label: n.label,
+        kind: 'bank',
+        role,
+        mule_score: isMule ? 0.92 : 0.1,
+        hop,
+        why: n.details || 'Conduit transaction node',
+        held_inr: 165000,
+        in_inr: 285000,
+        out_inr: 120000,
+        verdict: isMule ? 'CONFIRMED_MULE' : isVictim ? 'NOT_MULE' : null,
+      };
+    });
+
+    const links: [string, string, number][] = investigation.edges.map((e) => [
+      e.sourceNodeId,
+      e.targetNodeId,
+      e.amount,
+    ]);
+
+    return {
+      network_id: 'net-mewat-cyberabad',
+      member_count: members.length,
+      mule_count: members.filter((m) => m.role === 'MULE').length,
+      victim_count: members.filter((m) => m.role === 'VICTIM').length,
+      amount_inr: 500000,
+      cashed_out_inr: 120000,
+      recoverable_inr: 380000,
+      members,
+      links,
+    };
+  }, [investigation]);
+
+  const crossByMember = useMemo(() => new Map<string, string[]>([
+    ['mule-1', ['FIR-UP-149/2026', 'FIR-MH-882/2026', 'FIR-DL-412/2026']],
+    ['mule-2', ['FIR-UP-149/2026', 'FIR-KA-219/2026']],
+  ]), []);
 
   const ja4 = activeDiscoveredCluster?.convergedJa4 || 't13d1516h2_8daaf6';
   const bssid = activeDiscoveredCluster?.bssidHotspot || '74:DA:38:A2:11:BC';
@@ -260,7 +311,16 @@ export const FraudNetworkScreen: React.FC = () => {
                 viewMode === 'graph' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)]'
               }`}
             >
-              Graph
+              Interactive Graph
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('svg')}
+              className={`px-2.5 py-1 text-[12px] font-semibold rounded ${
+                viewMode === 'svg' ? 'bg-[var(--surface-1)] text-[var(--fg-1)] shadow-xs' : 'text-[var(--fg-3)]'
+              }`}
+            >
+              Layered Gang SVG
             </button>
             <button
               type="button"
@@ -300,20 +360,42 @@ export const FraudNetworkScreen: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* 12-Column Layout: Left 8 Cols Graph Canvas, Right 4 Cols Telemetry & Provenance */
+        /* 12-Column Layout: Left 8 Cols Graph Canvas/SVG, Right 4 Cols Telemetry & Provenance */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-[580px]">
-          {/* Left 8 Cols: Interactive Network Graph */}
+          {/* Left 8 Cols: Interactive Network Graph or Layered SVG */}
           <div
             data-semantic-id="el-graph-node-mule-1"
             className="lg:col-span-8 flex flex-col bg-[var(--surface-1)] border border-[var(--line)] rounded-lg overflow-hidden shadow-xs min-h-[540px] tarka-semantic-target tarka-interactive-card"
           >
-            <EvidenceNetworkGraph
-              isHotspotActive={isHotspotActive}
-              onToggleHotspot={() => toggleMutation('triggerHotspotCollision')}
-              edgeFilter={edgeFilter}
-              onEdgeFilterChange={setEdgeFilter}
-              caseId={caseId}
-            />
+            {viewMode === 'svg' ? (
+              <div className="relative w-full h-full min-h-[540px] bg-[var(--surface-1)]">
+                <GangSvg
+                  network={netData}
+                  expanded={expandedLayers}
+                  selectedId={selectedSvgNodeId}
+                  route={null}
+                  crossByMember={crossByMember}
+                  onSelect={setSelectedSvgNodeId}
+                  onExpand={(layer) => {
+                    setExpandedLayers((prev) => {
+                      const next = new Set(prev);
+                      const key = String(layer);
+                      if (next.has(key)) next.delete(key);
+                      else next.add(key);
+                      return next;
+                    });
+                  }}
+                />
+              </div>
+            ) : (
+              <EvidenceNetworkGraph
+                isHotspotActive={isHotspotActive}
+                onToggleHotspot={() => toggleMutation('triggerHotspotCollision')}
+                edgeFilter={edgeFilter}
+                onEdgeFilterChange={setEdgeFilter}
+                caseId={caseId}
+              />
+            )}
           </div>
 
           {/* Right 4 Cols: UPI 2.0 XML Stanza & Corroboration Details */}

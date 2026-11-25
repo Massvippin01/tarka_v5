@@ -31,15 +31,15 @@ export function getInitialCaseIdFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
   const c = params.get("case");
   if (c) return c;
-  return null;
+  return "CASE-2026-001";
 }
 
 export function getInitialViewFromUrl(): string {
-  if (typeof window === "undefined") return "home";
+  if (typeof window === "undefined") return "workspace";
   const params = new URLSearchParams(window.location.search);
   const v = params.get("view") || params.get("screen");
   if (v) return v;
-  return "home";
+  return "workspace";
 }
 
 export const useCaseStore = create<CaseStoreState>((set) => ({

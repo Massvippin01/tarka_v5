@@ -237,23 +237,22 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
       .catch((err) => console.warn("Context negotiation error:", err));
   }, []);
 
-  // URL Sync Effect
-
+  // URL Sync Effect: Strip legacy stale query parameters without overriding canonical ?case=<id>&view=<route>
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams();
-    if (activeCaseId) params.set("case", activeCaseId);
-    if (activeNav) params.set("nav", activeNav);
-    if (activeLens) params.set("lens", activeLens);
-    if (selectedEntityId) params.set("entity", selectedEntityId);
-    if (selectedRelationshipId) params.set("rel", selectedRelationshipId);
-    if (canvasMode) params.set("mode", canvasMode);
-    if (activeRightTab) params.set("tab", activeRightTab);
-    params.set("level", String(experienceLevel));
-
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", newUrl);
-  }, [activeCaseId, activeNav, activeLens, selectedEntityId, selectedRelationshipId, canvasMode, activeRightTab, experienceLevel]);
+    const currentUrl = new URL(window.location.href);
+    const legacyParams = ["nav", "lens", "entity", "rel", "loc", "mode", "tab", "level"];
+    let changed = false;
+    for (const key of legacyParams) {
+      if (currentUrl.searchParams.has(key)) {
+        currentUrl.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    if (changed) {
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  }, []);
 
   // Realtime Server-Sent Events (SSE) Listener
   useEffect(() => {

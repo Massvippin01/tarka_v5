@@ -46,7 +46,7 @@ class AuthService:
                 organization="Delhi Police Special Cell",
                 unit="Cyber Financial Crime Unit",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "C102", "C114", "upi_payment_discrepancy"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Delhi NCR / Special Cell"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -90,7 +90,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481", "C512", "C201"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "C102", "C114", "C481", "C512", "C201"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -296,10 +296,21 @@ class AuthService:
         Validates case-level access scope against user's assigned allowed cases.
         Unconditional cross-case bypasses for supervisory or auditor roles are strictly removed.
         Access outside assigned scope requires an explicit auditable override.
+        Unknown cases must be denied for every role.
         """
-        if not user or not user.scope or not user.scope.allowed_cases:
+        if not user or not user.scope:
             return False
-        return case_id in user.scope.allowed_cases
+        if case_id in (user.scope.allowed_cases or []):
+            return True
+        # Cases created in TARKA belong to their creator (persisted in the local case registry).
+        try:
+            from app.services.ingestion.large_evidence_engine import IngestionJobManager
+            from app.services.ingestion.projects_store import ProjectsStore
+
+            reg = ProjectsStore(IngestionJobManager.get_instance().base_dir).registered(case_id)
+            return bool(reg and reg["owner_id"] == user.user_id)
+        except Exception:
+            return False
 
     def has_permission(self, user: UserIdentity, permission: AccessPermissionEnum) -> bool:
         if user.role == UserRoleEnum.SYSTEM_ADMINISTRATOR and permission == AccessPermissionEnum.SECURITY_ADMIN:

@@ -186,6 +186,27 @@ app.include_router(
     tags=["Founder Validation Lab"],
 )
 
+from app.api.projects_api import networks_router, router as projects_router
+from app.api.ingestion_api import router as ingestion_router
+
+app.include_router(
+    projects_router,
+    prefix="/api/v1/projects",
+    tags=["Projects & Triage Operations"],
+)
+
+app.include_router(
+    networks_router,
+    prefix="/api/v1/cases",
+    tags=["Fraud Networks & Inter-Tool Exports"],
+)
+
+app.include_router(
+    ingestion_router,
+    prefix="/api/v1/ingestion",
+    tags=["Massive Evidence Ingestion & Admission"],
+)
+
 from tarka.api.server import app as tarka_app
 
 app.mount("/api/v1/forensics/tarka", tarka_app)
