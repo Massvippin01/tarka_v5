@@ -99,7 +99,7 @@ const Hero: React.FC<{ c: CanonicalCaseFixture; s: MoneyScope }> = ({ c, s }) =>
             {p.key === 'unk' && <span className="tabular-nums">({formatInrCompact(p.v)})</span>}
           </span>
         ))}
-        {gap !== 0 && (
+        {Math.abs(gap) >= 1 && (
           <span className="inline-flex items-center gap-1 text-[var(--risk)]" title="Lost should equal still held + cashed out + not traced.">
             <AlertTriangle className="w-3.5 h-3.5" /> Figures are off by {formatInr(gap)} — check the network split
           </span>

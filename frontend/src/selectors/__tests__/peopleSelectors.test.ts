@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CANONICAL_CASES } from '../../fixtures/cases';
 import type { NetworksResponse } from '../../v6/triage/triage';
+import type { PersonRow } from "../peopleSelectors";
 import {
   extractIdentifiers,
   filterPeople,
@@ -10,6 +11,7 @@ import {
   reviewFromNetworks,
   roleCounts,
   scoreBand,
+  whyReasons,
   sortPeople,
   sortReview,
 } from '../peopleSelectors';
@@ -76,7 +78,23 @@ describe('peopleSelectors', () => {
 
   it('score band', () => {
     expect(scoreBand(null)).toEqual({ text: '—', band: 'none' });
-    expect(scoreBand(1)).toEqual({ text: '100%', band: 'high' });
+    expect(scoreBand(1)).toEqual({ text: '100.0%', band: 'high' });
+    expect(scoreBand(0.987).text).toBe('98.7%');
     expect(scoreBand(0.5).band).toBe('mid');
+  });
+
+  it('whyReasons splits the server text so the table can show the first reason and "+N more"', () => {
+    expect(whyReasons('passes on 100% of what it receives; all its activity happened within 2.0 h; 3 senders, 1 receivers')).toEqual([
+      'passes on 100% of what it receives',
+      'all its activity happened within 2.0 h',
+      '3 senders, 1 receivers',
+    ]);
+    expect(whyReasons('')).toEqual([]);
+    expect(whyReasons('one reason')).toEqual(['one reason']);
+  });
+
+  it('equal scores rank by what a freeze could still hold', () => {
+    const mk = (label: string, heldInr: number) => ({ key: label, label, role: 'MULE', muleScore: 1, heldInr }) as PersonRow;
+    expect(sortPeople([mk('a', 10), mk('b', 5000), mk('c', 700)]).map((r) => r.label)).toEqual(['b', 'c', 'a']);
   });
 });

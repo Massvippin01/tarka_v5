@@ -58,11 +58,11 @@ export interface NetworkTriage {
 }
 
 export const STATUS_META: Record<NetworkStatus, { label: string; token: string; hint: string }> = {
-  NEW: { label: 'New', token: '--fg-3', hint: 'Found by TARKA; nobody has looked at it yet.' },
+  NEW: { label: 'New', token: '--accent', hint: 'Found by TARKA; nobody has looked at it yet.' },
   UNDER_REVIEW: { label: 'Under review', token: '--urgent', hint: 'An investigator is checking whether this is a real gang.' },
   CASE_OPENED: { label: 'Case opened', token: '--flow', hint: 'Turned into its own case or merged into an existing FIR.' },
-  FREEZES_SENT: { label: 'Freezes sent', token: '--accent', hint: 'Debit-freeze notices (BNSS §106/§107) have gone to the banks.' },
-  CLOSED: { label: 'Closed', token: '--line-2', hint: 'Dismissed or finished; see the reason.' },
+  FREEZES_SENT: { label: 'Freezes sent', token: '--safe', hint: 'Debit-freeze notices (BNSS §106/§107) have gone to the banks.' },
+  CLOSED: { label: 'Closed', token: '--fg-3', hint: 'Dismissed or finished; see the reason.' },
 };
 export const STATUS_ORDER = Object.keys(STATUS_META) as NetworkStatus[];
 

@@ -72,9 +72,6 @@ export const UploadCenterScreen: React.FC = () => {
       />
 
       <ModeChoice mode={mode} onChange={setMode} caseId={caseId} />
-      <GoldenHourClockBar goldenHour={fixture?.goldenHour} />
-      <NcrpImportPanel caseId={caseId} />
-
       {mode === 'find' ? (
         <IntakeUpload />
       ) : (
@@ -131,6 +128,28 @@ export const UploadCenterScreen: React.FC = () => {
       <PastJobs caseId={caseId} hideJobIds={list.map((i) => i.jobId).filter(Boolean) as string[]} />
         </>
       )}
+
+      <NcrpRow caseId={caseId} />
+      <GoldenHourClockBar goldenHour={fixture?.goldenHour} />
+    </div>
+  );
+};
+
+/** NCRP import is a side task (Projects has the full panel): one quiet line that opens the form on demand. */
+const NcrpRow: React.FC<{ caseId: string }> = ({ caseId }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div data-testid="ncrp-row">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded"
+      >
+        <FileSpreadsheet className="w-3.5 h-3.5" /> {open ? 'Hide NCRP import' : 'Import NCRP complaints'}
+        <span className="font-normal text-[var(--fg-3)]">(CSV: matches complaints to the money flows)</span>
+      </button>
+      {open && <div className="mt-2"><NcrpImportPanel caseId={caseId} /></div>}
     </div>
   );
 };

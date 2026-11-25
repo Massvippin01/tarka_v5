@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { Search, X, ShieldCheck, ShieldX, Files } from 'lucide-react';
@@ -12,6 +13,7 @@ import {
   roleCounts,
   scoreBand,
   sortPeople,
+  whyReasons,
   type PersonRow,
   type RoleGroup,
 } from '../../selectors/peopleSelectors';
@@ -55,6 +57,45 @@ export const VerdictTag: React.FC<{ verdict: PersonRow['verdict'] }> = ({ verdic
       {verdict === 'NOT_MULE' ? 'Not a mule' : 'Confirmed'}
     </span>
   ) : null;
+
+/** First reason in full (two lines at most) + "+N more"; hover or focus lists every reason. */
+const WhyCell: React.FC<{ why: string }> = ({ why }) => {
+  const reasons = whyReasons(why);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  if (reasons.length === 0) return dash;
+  const more = reasons.length - 1;
+  const show = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    setPos({ x: Math.min(r.left, window.innerWidth - 380), y: r.bottom + 6 > window.innerHeight - 200 ? Math.max(8, r.top - 190) : r.bottom + 6 });
+  };
+  return (
+    <span className="block min-w-0 leading-snug text-[var(--fg-2)]" data-testid="why-cell">
+      <span className="line-clamp-2 break-words text-[12px]">{reasons[0]}</span>
+      {more > 0 && (
+        <button
+          type="button"
+          onMouseEnter={(e) => show(e.currentTarget)}
+          onMouseLeave={() => setPos(null)}
+          onFocus={(e) => show(e.currentTarget)}
+          onBlur={() => setPos(null)}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`${more} more reasons: ${reasons.slice(1).join('; ')}`}
+          className="text-[11.5px] font-semibold text-[var(--accent)] hover:underline"
+        >
+          +{more} more
+        </button>
+      )}
+      {pos && createPortal(
+        <ul role="tooltip" style={{ left: pos.x, top: pos.y }} className="v6-glass fixed z-[100] w-[360px] space-y-1 rounded-xl border border-[var(--line)] bg-[var(--surface-1)] p-3 text-[12px] text-[var(--fg-1)] shadow-[var(--shadow)]">
+          {reasons.map((r, i) => (
+            <li key={i} className="flex gap-2"><span className="mt-[7px] h-1 w-1 flex-none rounded-full bg-[var(--accent)]" />{r}</li>
+          ))}
+        </ul>,
+        document.body,
+      )}
+    </span>
+  );
+};
 
 const dash = <span className="text-[var(--fg-3)]">—</span>;
 
@@ -196,7 +237,7 @@ export const PeopleTable: React.FC<Props> = ({ rows, focus, loading, scopeNote }
                   ) : (
                     <ScoreBar score={r.muleScore} why={r.why} />
                   )}
-                  <span className="truncate text-[var(--fg-2)]" title={r.why}>{r.why}</span>
+                  <WhyCell why={r.why} />
                   <span className="min-w-0">
                     {r.networks.length === 0 ? dash : (
                       <button

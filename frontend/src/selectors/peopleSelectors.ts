@@ -211,10 +211,10 @@ export function filterPeople(rows: PersonRow[], f: PeopleFilter): PersonRow[] {
   );
 }
 
-/** Mules first by score, then everyone else; stable by label. */
+/** Mules first by score, then by ₹ a freeze could still hold (so equal scores still rank), then label. */
 export function sortPeople(rows: PersonRow[]): PersonRow[] {
   const order: Record<RoleGroup, number> = { MULE: 0, CASH_OUT: 1, UNKNOWN: 2, VICTIM: 3 };
-  return [...rows].sort((a, b) => order[a.role] - order[b.role] || (b.muleScore ?? 0) - (a.muleScore ?? 0) || a.label.localeCompare(b.label));
+  return [...rows].sort((a, b) => order[a.role] - order[b.role] || (b.muleScore ?? 0) - (a.muleScore ?? 0) || b.heldInr - a.heldInr || a.label.localeCompare(b.label));
 }
 
 export function roleCounts(rows: PersonRow[]): Record<RoleGroup | 'ALL', number> {
@@ -226,9 +226,11 @@ export function roleCounts(rows: PersonRow[]): Record<RoleGroup | 'ALL', number>
 /** "1 mule", "20 mules". */
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
 
+/** The server joins reasons with "; ": split them so the table can show the first and list the rest. */
+export const whyReasons = (why: string): string[] => why.split(/;\s*/).map((r) => r.trim()).filter(Boolean);
+
 /** Score as investigators read it, with the band that drives colour. */
 export function scoreBand(score: number | null): { text: string; band: 'high' | 'mid' | 'low' | 'none' } {
   if (score === null) return { text: '—', band: 'none' };
-  const pct = Math.round(score * 100);
-  return { text: `${pct}%`, band: score >= 0.7 ? 'high' : score >= 0.4 ? 'mid' : 'low' };
+  return { text: `${(score * 100).toFixed(1)}%`, band: score >= 0.7 ? 'high' : score >= 0.4 ? 'mid' : 'low' };
 }
