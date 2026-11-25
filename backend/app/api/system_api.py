@@ -391,4 +391,40 @@ async def verify_audit_hash_chain(
         }
 
 
+class DemoResetRequest(BaseModel):
+    rows: int = Field(1_000_000, ge=1000, le=5_000_000)
+    small: bool = False
+    force: bool = False
 
+
+def _demo_only() -> None:
+    from app.core.config import settings
+
+    if not (settings.ENABLE_DEMO_AUTH and settings.APP_ENV != "production"):
+        raise HTTPException(status_code=403, detail="Demo reset is available only in demo mode.")
+
+
+@router.post("/demo-reset", status_code=202, dependencies=[Depends(_demo_only)])
+async def demo_reset(body: Optional[DemoResetRequest] = None, current_user: Any = Depends(get_current_user)):
+    """Move the data root to a backup folder and rebuild the demo state in the background (never deletes)."""
+    from app.services import demo_reset as dr
+
+    body = body or DemoResetRequest()
+    if dr.status()["state"] == "running":
+        raise HTTPException(status_code=409, detail="A demo reset is already running.")
+    busy = dr.busy_jobs()
+    if busy and not body.force:
+        raise HTTPException(status_code=409, detail=f"{len(busy)} upload(s) are still being processed. Wait, or retry with force.")
+    await dr.stop_background_work()
+    try:
+        dr.start(body.rows, body.small)
+    except RuntimeError:
+        raise HTTPException(status_code=409, detail="A demo reset is already running.")
+    return dr.status()
+
+
+@router.get("/demo-reset/status", dependencies=[Depends(_demo_only)])
+def demo_reset_status(current_user: Any = Depends(get_current_user)):
+    from app.services import demo_reset as dr
+
+    return dr.status()
