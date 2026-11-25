@@ -2,7 +2,7 @@ name: SentinelX Production Staging & CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, "feat/**", "release/**" ]
+    branches: [ main, "feat/**", "release/**", "fix/**" ]
   pull_request:
     branches: [ main ]
 
@@ -85,6 +85,9 @@ jobs:
         run: |
           python -m pytest \
             backend/tests/test_tarka_sentinelx_integration.py \
+            backend/tests/test_tarka_e2e_investigation_workflow.py \
+            backend/tests/test_ingestion_networks.py \
+            backend/tests/test_founder_validation_lab.py \
             backend/tests_tarka/ \
             --junitxml=reports/junit-tarka.xml -q
 
@@ -121,6 +124,9 @@ jobs:
 
       - name: Typecheck and Compile Production Assets
         run: npm run build
+
+      - name: Execute Frontend Unit Tests
+        run: npm test
 
       - name: Verify Bundle Integrity
         run: |

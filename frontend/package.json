@@ -9,6 +9,7 @@
     "dev:all": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
     "preview": "vite preview",
     "benchmark:csv": "npx tsx scripts/runPublicBenchmark.ts",
     "verify:discovery": "npx tsx scripts/verify_real_discovery.ts",

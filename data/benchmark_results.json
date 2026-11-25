@@ -2,34 +2,34 @@
   "1000": {
     "transaction_count": 1000,
     "byte_size_mb": 0.04,
-    "rows_per_second": 43630.9,
-    "p50_latency_ms": 20.99,
-    "p95_latency_ms": 27.52,
-    "p99_latency_ms": 27.81,
-    "mean_latency_ms": 22.92,
-    "memory_delta_mb": 2.26,
-    "process_rss_mb": 30.48
+    "rows_per_second": 53545.1,
+    "p50_latency_ms": 18.57,
+    "p95_latency_ms": 21.26,
+    "p99_latency_ms": 21.63,
+    "mean_latency_ms": 18.68,
+    "memory_delta_mb": 2.04,
+    "process_rss_mb": 30.46
   },
   "10000": {
     "transaction_count": 10000,
     "byte_size_mb": 0.42,
-    "rows_per_second": 51757.6,
-    "p50_latency_ms": 188.05,
-    "p95_latency_ms": 219.58,
-    "p99_latency_ms": 220.71,
-    "mean_latency_ms": 193.21,
-    "memory_delta_mb": 12.78,
-    "process_rss_mb": 43.49
+    "rows_per_second": 52474.5,
+    "p50_latency_ms": 187.69,
+    "p95_latency_ms": 204.08,
+    "p99_latency_ms": 205.49,
+    "mean_latency_ms": 190.57,
+    "memory_delta_mb": 13.26,
+    "process_rss_mb": 43.96
   },
   "50000": {
     "transaction_count": 50000,
     "byte_size_mb": 2.17,
-    "rows_per_second": 45809.5,
-    "p50_latency_ms": 1042.59,
-    "p95_latency_ms": 1286.94,
-    "p99_latency_ms": 1322.01,
-    "mean_latency_ms": 1091.48,
-    "memory_delta_mb": 45.58,
-    "process_rss_mb": 89.07
+    "rows_per_second": 50492.1,
+    "p50_latency_ms": 991.37,
+    "p95_latency_ms": 1057.69,
+    "p99_latency_ms": 1069.8,
+    "mean_latency_ms": 990.25,
+    "memory_delta_mb": 44.58,
+    "process_rss_mb": 88.54
   }
 }

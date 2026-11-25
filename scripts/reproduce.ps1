@@ -1,4 +1,4 @@
-# SentinelX Clean-Machine Reproduction Script (PowerShell)
+﻿# SentinelX Clean-Machine Reproduction Script (PowerShell)
 # Usage: .\scripts\reproduce.ps1 [-Mode dev|test|ci]
 
 param (
@@ -44,6 +44,7 @@ if (-not (Test-Path "backend\.env")) {
 
 # 5. Database Migrations / Schema Initialization
 Write-Host "[5/7] Initializing Local Schema & Repositories..." -ForegroundColor Yellow
+$env:PYTHONPATH = "backend"
 .\venv\Scripts\python.exe -c "from app.database.init_db import initialize_database; initialize_database()"
 
 # 6. Test Suite Execution
