@@ -55,6 +55,8 @@ export interface EvidenceFile {
   uploadedAt: number | null;
   status: EvidenceStatus;
   note: string;
+  /** Image or PDF that went through OCR. */
+  canOcr?: boolean;
 }
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -95,6 +97,7 @@ export function inventoryFromJobs(jobs: IngestionJobRow[]): EvidenceFile[] {
         uploader: j.intake_officer || String(s.intake_officer ?? '') || '—',
         uploadedAt: j.started_at ?? null,
         status,
+        canOcr: status === 'READY' && /\.(png|jpe?g|webp|bmp|gif|tiff?|pdf)$/i.test(j.filename),
         note:
           status === 'DUPLICATE' && dup ? `Same file as ${dup.filename} in ${dup.case_id}`
           : status === 'REJECTED' || status === 'FAILED' ? j.error_message ?? ''

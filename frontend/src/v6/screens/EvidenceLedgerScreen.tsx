@@ -25,6 +25,7 @@ import { InvestigationIntelligenceBrief } from '../../components/tarka/investiga
 import { TransformationAuditLog } from '../../components/tarka/investigation/TransformationAuditLog';
 import { useEvidenceData } from '../evidence/useEvidenceData';
 import { FocusBar, IntegrityPanel } from '../evidence/IntegrityPanel';
+import { OcrDialog } from '../evidence/OcrDialog';
 import { CustodyTimeline, EvidenceInventory, InventorySkeleton, RejectedRowsDialog } from '../evidence/EvidenceRegister';
 import { LedgerTable } from '../evidence/LedgerTable';
 
@@ -44,6 +45,7 @@ const EvidenceLedgerScreenInner: React.FC<ActiveCaseProps> = ({ fixture: canonic
 
   const [filters, setFilters] = useState<LedgerFilters>(EMPTY_FILTERS);
   const [rejectedFor, setRejectedFor] = useState<EvidenceFile | null>(null);
+  const [ocrFor, setOcrFor] = useState<EvidenceFile | null>(null);
   const inventoryRef = useRef<HTMLDivElement>(null);
   const ledgerRef = useRef<HTMLDivElement>(null);
   const jump = (id: 'inventory' | 'ledger') => (id === 'inventory' ? inventoryRef : ledgerRef).current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -120,7 +122,7 @@ const EvidenceLedgerScreenInner: React.FC<ActiveCaseProps> = ({ fixture: canonic
             </header>
             <div className="max-h-[420px] overflow-y-auto px-1 py-1">
               {loadingFiles ? <InventorySkeleton /> : (
-                <EvidenceInventory files={files} onShowRejected={setRejectedFor} onShowFileRows={showFileRows} onOpenUpload={() => setActiveView('upload')} />
+                <EvidenceInventory files={files} onShowRejected={setRejectedFor} onShowFileRows={showFileRows} onShowOcr={setOcrFor} onOpenUpload={() => setActiveView('upload')} />
               )}
             </div>
           </section>
@@ -144,6 +146,7 @@ const EvidenceLedgerScreenInner: React.FC<ActiveCaseProps> = ({ fixture: canonic
       <AdvancedChecks fixture={canonicalCase} />
 
       <RejectedRowsDialog file={rejectedFor} onClose={() => setRejectedFor(null)} />
+      <OcrDialog file={ocrFor} caseId={caseId} onClose={() => setOcrFor(null)} />
     </div>
   );
 };

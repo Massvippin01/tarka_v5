@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import mimetypes
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, UploadFile, File, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response, UploadFile, File, status
 from pydantic import BaseModel, Field
 
 from app.domain.auth import UserIdentity
@@ -392,3 +393,74 @@ def case_custody(case_id: str, user: UserIdentity = Depends(get_current_user)) -
     mgr = IngestionJobManager.get_instance()
     names = {j.job_id: j.filename for j in mgr.list_jobs({case_id})}
     return [{**e, "filename": names.get(e["job_id"], "")} for e in mgr.custody_events(case_id)]
+
+
+@router.get("/cases/{case_id}/receipts", tags=["Evidence Forensics"])
+async def case_receipts(case_id: str, user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
+    """OCR-extracted payment receipts/PDFs, manipulation indicators, and bank-statement reconciliation for this case."""
+    store = _case_store(case_id, user)
+    if store is None:
+        return []
+    mgr = IngestionJobManager.get_instance()
+    names = {j.job_id: j.filename for j in mgr.list_jobs({case_id})}
+    return await asyncio.to_thread(store.list_receipts, names, True)
+
+
+@router.get("/cases/{case_id}/jobs/{job_id}/forensics", tags=["Evidence Forensics"])
+async def job_forensics(
+    case_id: str,
+    job_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Full screenshot/PDF forensic payload (OCR bounding polygons, ELA heatmap, metadata, bank reconciliation)."""
+    job = _authorized_job(job_id, user)
+    if job.case_id != _checked_case_id(case_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' is not in case '{case_id}'.")
+    store = _case_store(case_id, user)
+    if store is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No derived forensics found for this case.")
+    names = {j.job_id: j.filename for j in IngestionJobManager.get_instance().list_jobs({case_id})}
+    exam = await asyncio.to_thread(store.get_receipt_forensics, job_id, names)
+    if exam is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No forensic examination found for job '{job_id}'.")
+    return exam
+
+
+@router.get("/cases/{case_id}/jobs/{job_id}/file", tags=["Evidence Forensics"])
+async def job_sealed_file(
+    case_id: str,
+    job_id: str,
+    user: UserIdentity = Depends(get_current_user),
+) -> Response:
+    """Safely serve the sealed read-only evidence bytes for an authorized job (e.g. screenshot preview)."""
+    job = _authorized_job(job_id, user)
+    checked_case = _checked_case_id(case_id)
+    if job.case_id != checked_case:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job '{job_id}' is not in case '{case_id}'.")
+    if not job.admitted_artifact_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sealed evidence artifact not available.")
+    mgr = IngestionJobManager.get_instance()
+    sealed_case_dir = ensure_inside(mgr.evidence_dir, mgr.evidence_dir / checked_case)
+    sealed_path = ensure_inside(sealed_case_dir, sealed_case_dir / f"{job.admitted_artifact_id}_{job.filename}")
+    if not sealed_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sealed evidence file missing on disk.")
+    media_type, _ = mimetypes.guess_type(job.filename)
+    data = await asyncio.to_thread(sealed_path.read_bytes)
+    return Response(
+        content=data,
+        media_type=media_type or "application/octet-stream",
+        headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, max-age=300"},
+    )
+
+
+@router.get("/cases/{case_id}/whatsapp", tags=["Evidence Forensics"])
+async def case_whatsapp_messages(
+    case_id: str,
+    limit: int = Query(200, ge=1, le=2000),
+    user: UserIdentity = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """Parsed WhatsApp export messages and extracted identifiers for this case."""
+    store = _case_store(case_id, user)
+    if store is None:
+        return {"total": 0, "messages": []}
+    return await asyncio.to_thread(store.list_whatsapp_messages, limit)
