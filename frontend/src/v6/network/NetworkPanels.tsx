@@ -332,7 +332,7 @@ export const NetworkPanel: React.FC<{
   const fig = (k: 'paidIn' | 'cashedOut' | 'recoverable') => figs?.[k] ?? null;
   const tabCount = (t: MemberRole | 'HUB') => (t === 'MULE' ? n.mule_count : t === 'VICTIM' ? n.victim_count : sourceMembers.filter(isHub).length);
   return (
-    <div className="flex flex-col min-h-0 h-full" data-testid="network-panel-network">
+    <div className="flex flex-col" data-testid="network-panel-network">
       <div className="px-4 pt-4 pb-3 border-b border-[var(--line)] space-y-3">
         <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
           <Money label="Paid in by victims" hint="Money victims sent into this network" figure={fig('paidIn')} total={n.amount_inr || 0} />
@@ -375,7 +375,7 @@ export const NetworkPanel: React.FC<{
           </button>
         ))}
       </div>
-      <ol className="flex-1 overflow-y-auto py-1.5">
+      <ol className="py-1.5">
         {list.length === 0 && <li className="px-4 py-3 text-[12px] text-[var(--fg-3)]">None in this network.</li>}
         {list.map((m) => (
           <li key={m.id}>

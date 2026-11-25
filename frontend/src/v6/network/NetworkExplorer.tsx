@@ -499,7 +499,7 @@ export const NetworkExplorer: React.FC = () => {
           <Legend zoom={zoom} look={look} hasGroups={graph.someNode((_, a) => a.kind === 'group')} svg={useSvg} />
         </div>
 
-        <aside className={`${glass} min-h-0 overflow-hidden`} aria-label="Details">
+        <aside className={`${glass} min-h-0 overflow-y-auto overscroll-contain`} aria-label="Details">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${zoom}|${network?.network_id ?? ''}|${member?.id ?? ''}`}
