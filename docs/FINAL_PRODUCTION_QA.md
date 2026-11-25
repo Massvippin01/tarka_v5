@@ -11,10 +11,11 @@
 
 ### 1.1 Frontend Automated Test Suite (Vitest)
 - **Command:** `npm --prefix frontend run test -- --run`
-- **Test Files Executed:** 25 files
-- **Total Tests:** 143 passed, 0 failed, 0 skipped
-- **Execution Time:** ~9.74s
+- **Test Files Executed:** 26 files
+- **Total Tests:** 148 passed, 0 failed, 0 skipped
+- **Execution Time:** ~7.95s
 - **Key Suites Verified:**
+  - `src/v6/__tests__/productionAuthAndParticleVoice.test.ts`: 5 tests verifying dual-storage parity, auto-bootstrapping for `INVESTIGATOR_DELHI`, Authorization header attachment in request interceptors, and URL rewriting.
   - `src/utils/__tests__/benchmark.test.ts`: Generates and evaluates 10,000 synthetic rows in < 200ms with deterministic SHA-256 corpus verification.
   - `src/components/tarka/intake/__tests__/ledgerConservation.test.ts`: Verifies zero residual balance across bank ledger transactions.
   - `src/utils/__tests__/statutoryDirectives.test.ts`: Verifies Section 106 BNSS Specific Lien and Section 63 BSA legal formatting.
@@ -26,15 +27,15 @@
 - **Command:** `npm --prefix frontend run build` (`tsc -b && vite build`)
 - **TypeScript Type Check:** 0 errors
 - **Vite Bundler:** 1,783 modules transformed, 0 syntax/chunk errors
-- **Build Output:** Produced production artifacts in `frontend/dist/` (HTML, JS, CSS, fonts, icons).
+- **Build Output:** Produced production artifacts in `frontend/dist/` (HTML, JS, CSS, fonts, icons) in 5.29s.
 
 ### 1.3 Backend Integration & Invariant Tests (Pytest)
-- **Command:** `python -m pytest backend/tests/test_nexus_suite.py -q`
-  - **Results:** 19 passed in 4.15s
-  - **Verified Capabilities:** Realtime event dispatcher, scope isolation, voice command risk guardrails, audit ledger logging.
-- **Command:** `python -m pytest backend/tests/test_tarka_e2e_investigation_workflow.py -q`
-  - **Results:** 7 passed in 19.40s
-  - **Verified Capabilities:** Ingestion, bitstream preservation, OCR extraction, Trace UPI payment forensics, AEGIS reasoning, Section 63 BSA court certificate PDF export with embedded vector TARKA logo.
+- **Command:** `python -m pytest backend/tests/test_nexus_suite.py backend/tests/test_tarka_e2e_investigation_workflow.py backend/tests/test_ingestion_networks.py -q`
+  - **Results:** 44 passed in 25.37s
+  - **Verified Capabilities:**
+    - Realtime event dispatcher, scope isolation, voice command risk guardrails, audit ledger logging (19/19 in `test_nexus_suite.py`).
+    - Ingestion, bitstream preservation, OCR extraction, Trace UPI payment forensics, AEGIS reasoning, Section 63 BSA court certificate PDF export with embedded vector TARKA logo (7/7 in `test_tarka_e2e_investigation_workflow.py`).
+    - Multi-file chunked ingestion, duplicate detection, network clustering, proposal generation, and cross-case hits (18/18 in `test_ingestion_networks.py`).
 
 ### 1.4 API Health & Security Response Verification
 - **Endpoints Checked:**

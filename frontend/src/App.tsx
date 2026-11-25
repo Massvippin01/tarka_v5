@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ensureAuthenticatedSession } from "./api/client";
 import { ThemeProvider } from "./context/ThemeContext";
 import { InvestigationProvider } from "./context/InvestigationContext";
 import { TarkaGlobalProvider } from "./context/TarkaGlobalContext";
@@ -18,6 +19,9 @@ function App() {
   );
 
   useEffect(() => {
+    // Proactively initialize authenticated session for default forensic investigator
+    void ensureAuthenticatedSession();
+
     const handlePopState = () => {
       setParams(new URLSearchParams(window.location.search));
     };

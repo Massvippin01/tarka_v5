@@ -74,9 +74,9 @@ const RailItem: React.FC<RailItemProps> = ({
       collapsed
         ? 'size-9 justify-center mx-auto rounded-lg my-0.5'
         : cn(
-            'gap-2.5 px-3 py-2 rounded-xl text-left text-[12.5px] font-medium w-full',
-            isSubItem && 'pl-7 py-1.5 text-[12px]'
-          ),
+          'gap-2.5 px-3 py-2 rounded-xl text-left text-[12.5px] font-medium w-full',
+          isSubItem && 'pl-7 py-1.5 text-[12px]'
+        ),
       active
         ? 'bg-gradient-to-r from-[#4A3830] to-[#3A2C26] text-[#FFFDF8] font-semibold border border-white/15 shadow-sm'
         : 'text-[#D5CABE] hover:bg-[#342C28] hover:text-[#FFFDF8] border border-transparent'
@@ -123,26 +123,26 @@ export const V6Rail: React.FC<V6RailProps> = ({
   const displayFir = isCaseUnknown
     ? 'Unassigned'
     : matchedWorkspace
-    ? matchedWorkspace.firNumber
-    : isCanonical
-    ? canonicalCase.firNumber
-    : `FIR #${caseId}`;
+      ? matchedWorkspace.firNumber
+      : isCanonical
+        ? canonicalCase.firNumber
+        : `FIR #${caseId}`;
 
   const victimName = isCaseUnknown
     ? 'Unknown Complainant'
     : matchedWorkspace
-    ? matchedWorkspace.complainantName
-    : isCanonical
-    ? canonicalCase.complainant.name
-    : 'Active Victim';
+      ? matchedWorkspace.complainantName
+      : isCanonical
+        ? canonicalCase.complainant.name
+        : 'Active Victim';
 
   const rawTypology = isCaseUnknown
     ? 'Investigation'
     : matchedWorkspace
-    ? matchedWorkspace.typology
-    : isCanonical
-    ? canonicalCase.typology
-    : 'CYBER_FRAUD';
+      ? matchedWorkspace.typology
+      : isCanonical
+        ? canonicalCase.typology
+        : 'CYBER_FRAUD';
 
   const displayTypology = rawTypology
     .toLowerCase()
@@ -461,8 +461,8 @@ export const V6Rail: React.FC<V6RailProps> = ({
                     s.done && !isCurrent
                       ? 'bg-[#287653] text-white border-[#287653]'
                       : isCurrent
-                      ? 'bg-[#E08244] text-white border-[#E08244]'
-                      : 'bg-[#342C28] text-[#8C7F73] border-white/10'
+                        ? 'bg-[#E08244] text-white border-[#E08244]'
+                        : 'bg-[#342C28] text-[#8C7F73] border-white/10'
                   )}
                 >
                   {s.done && !isCurrent ? <Check className="size-3 stroke-[3]" /> : s.num}

@@ -58,6 +58,8 @@ class AuthService:
                     AccessPermissionEnum.RUN_ANALYTICAL_QUERY,
                     AccessPermissionEnum.USE_COPILOT,
                     AccessPermissionEnum.USE_VOICE,
+                    AccessPermissionEnum.MODIFY_EVIDENCE,
+                    AccessPermissionEnum.EXPORT_DATA,
                 ],
             ),
             "INVESTIGATOR_GURUGRAM": UserIdentity(
@@ -68,7 +70,7 @@ class AuthService:
                 organization="Haryana Police Crime Branch",
                 unit="Cyber Crime Police Station Gurugram",
                 scope=CaseAccessScope(
-                    allowed_cases=["C481", "C512"],
+                    allowed_cases=["C481", "C512", "CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004"],
                     jurisdictions=["Gurugram / Haryana"],
                     max_sensitivity_clearance="RESTRICTED",
                 ),
@@ -90,7 +92,7 @@ class AuthService:
                 organization="National Crime Records Bureau / Joint TF",
                 unit="Inter-State Cyber Intelligence Cell",
                 scope=CaseAccessScope(
-                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "C102", "C114", "C481", "C512", "C201"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["Delhi NCR / Gurugram", "Gurugram / Haryana", "National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -114,7 +116,7 @@ class AuthService:
                 organization="National Intelligence Governance Oversight",
                 unit="Compliance & Provenance Audit Bureau",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481", "C512", "C201"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),
@@ -133,7 +135,7 @@ class AuthService:
                 organization="SentinelX Infrastructure Team",
                 unit="Platform Operations",
                 scope=CaseAccessScope(
-                    allowed_cases=["C102", "C114", "C481"],
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "C102", "C114", "C481", "C512", "C201", "upi_payment_discrepancy"],
                     jurisdictions=["National"],
                     max_sensitivity_clearance="HIGHLY_RESTRICTED",
                 ),

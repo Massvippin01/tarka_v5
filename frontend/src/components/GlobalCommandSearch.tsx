@@ -131,14 +131,14 @@ export const GlobalCommandSearch: React.FC<GlobalCommandSearchProps> = ({ isOpen
                         {/* Non-Destructive Entity Resolution Candidates */}
                         {item.er_candidates && item.er_candidates.length > 0 && (
                           <div style={styles.erBox}>
-                             POSSIBLE CANDIDATE MATCH: Match Score {(item.er_candidates[0].match_score * 100).toFixed(0)}% ({item.er_candidates[0].matched_fields.join(", ")})
+                            POSSIBLE CANDIDATE MATCH: Match Score {(item.er_candidates[0].match_score * 100).toFixed(0)}% ({item.er_candidates[0].matched_fields.join(", ")})
                           </div>
                         )}
 
                         {/* Quick Action Buttons */}
                         <div style={styles.actionRow}>
                           <button style={styles.openBtn} onClick={() => handleOpenItem(item)}>
-                             OPEN INVESTIGATION
+                            OPEN INVESTIGATION
                           </button>
                           <button
                             style={styles.copilotBtn}
@@ -147,7 +147,7 @@ export const GlobalCommandSearch: React.FC<GlobalCommandSearchProps> = ({ isOpen
                               onClose();
                             }}
                           >
-                             ASK COPILOT
+                            ASK COPILOT
                           </button>
                         </div>
                       </div>

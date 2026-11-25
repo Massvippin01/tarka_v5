@@ -156,7 +156,7 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
             <span style={styles.subText}>SIH 2026 Claim Verification & Governance Engine</span>
           </div>
           <button style={styles.closeBtn} onClick={onClose}>
-            
+
           </button>
         </div>
 
@@ -176,13 +176,13 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
             style={styles.promptTag}
             onClick={() => handleSend("What connects Case C102 and Case C481?")}
           >
-             What connects C102 and C481?
+            What connects C102 and C481?
           </button>
           <button
             style={styles.promptTag}
             onClick={() => handleSend("Why is relationship rel-p1-p2 important?")}
           >
-             Why is P001 ↔ P044 connected?
+            Why is P001 ↔ P044 connected?
           </button>
         </div>
 
@@ -328,13 +328,13 @@ export const AICopilotDrawer: React.FC<AICopilotDrawerProps> = ({
 
             <div style={styles.vBtnRow}>
               <button style={{ ...styles.vBtn, background: "#10b981" }} onClick={() => handleVerifySubmit("CONFIRMED")}>
-                 CONFIRM CLAIM
+                CONFIRM CLAIM
               </button>
               <button style={{ ...styles.vBtn, background: "#eab308", color: "#000" }} onClick={() => handleVerifySubmit("REQUIRES_REVIEW")}>
-                 REQUIRES REVIEW
+                REQUIRES REVIEW
               </button>
               <button style={{ ...styles.vBtn, background: "#f43f5e" }} onClick={() => handleVerifySubmit("DISMISSED")}>
-                 DISMISS CLAIM
+                DISMISS CLAIM
               </button>
             </div>
           </div>

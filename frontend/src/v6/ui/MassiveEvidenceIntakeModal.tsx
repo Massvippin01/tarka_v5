@@ -13,6 +13,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
+import { getStoredAuthToken, ensureAuthenticatedSession } from '../../api/client';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -57,7 +58,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
         try {
           const res = await fetch(`/api/v1/ingestion/jobs/${jobId}/status`, {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+              Authorization: `Bearer ${getStoredAuthToken() || ''}`,
             },
           });
           if (res.ok) {
@@ -90,11 +91,12 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
     // Call estimate-resources endpoint
     setEstimating(true);
     try {
+      await ensureAuthenticatedSession();
       const res = await fetch('/api/v1/ingestion/estimate-resources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+          Authorization: `Bearer ${getStoredAuthToken() || ''}`,
         },
         body: JSON.stringify({
           case_id: caseId,
@@ -123,12 +125,13 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
     abortControllerRef.current = new AbortController();
 
     try {
+      await ensureAuthenticatedSession();
       // 1. Create Job
       const createRes = await fetch('/api/v1/ingestion/jobs/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+          Authorization: `Bearer ${getStoredAuthToken() || ''}`,
         },
         body: JSON.stringify({
           case_id: caseId,
@@ -164,7 +167,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
             method: 'PUT',
             headers: {
               'Content-Type': 'application/octet-stream',
-              Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+              Authorization: `Bearer ${getStoredAuthToken() || ''}`,
             },
             body: chunkBuf,
             signal: abortControllerRef.current.signal,
@@ -195,7 +198,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
       const res = await fetch(`/api/v1/ingestion/jobs/${jobId}/${action}`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+          Authorization: `Bearer ${getStoredAuthToken() || ''}`,
         },
       });
       if (res.ok) {
@@ -215,7 +218,7 @@ export const MassiveEvidenceIntakeModal: React.FC<MassiveEvidenceIntakeModalProp
         await fetch(`/api/v1/ingestion/jobs/${jobId}/cancel`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('tarka_token') || ''}`,
+            Authorization: `Bearer ${getStoredAuthToken() || ''}`,
           },
         });
       } catch {}

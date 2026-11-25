@@ -28,6 +28,7 @@ import {
   TarkaPanel,
   TarkaInsetPanel,
 } from '../ui';
+import { TarkaParticleOrb, type OrbState } from './TarkaParticleOrb';
 
 export interface TarkaVoiceModalProps {
   isOpen: boolean;
@@ -74,8 +75,16 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
     isSpeaking: false,
   });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const voiceEngineRef = useRef<TarkaVoiceEngine | null>(null);
+
+  const orbState: OrbState =
+    sessionState === 'LISTENING'
+      ? 'listening'
+      : sessionState === 'PROCESSING'
+      ? 'processing'
+      : sessionState === 'SPEAKING'
+      ? 'speaking'
+      : 'idle';
 
   // Initialize or update voice engine
   useEffect(() => {
@@ -142,59 +151,7 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
     };
   }, []);
 
-  // Live waveform animation on canvas driven by real Web Audio Analyser FFT data
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    let animId: number;
-
-    const draw = () => {
-      const width = canvas.width;
-      const height = canvas.height;
-      ctx.clearRect(0, 0, width, height);
-
-      const freq = telemetry.frequencyData;
-      const count = 28;
-      const barWidth = 6;
-      const gap = 5;
-      const totalWidth = count * (barWidth + gap);
-      const startX = (width - totalWidth) / 2;
-
-      for (let i = 0; i < count; i++) {
-        const val = freq[i % freq.length] || 0;
-        const normalized =
-          sessionState === 'LISTENING'
-            ? Math.max(0.12, (val / 255) * 1.6)
-            : sessionState === 'SPEAKING'
-            ? Math.max(0.20, (val / 255) * 1.8)
-            : 0.08;
-        const barHeight = Math.min(height - 8, height * normalized);
-        const x = startX + i * (barWidth + gap);
-        const y = (height - barHeight) / 2;
-
-        ctx.fillStyle =
-          sessionState === 'SPEAKING'
-            ? '#287653' // Forest green
-            : sessionState === 'LISTENING'
-            ? '#A85C2A' // Terracotta amber
-            : sessionState === 'PROCESSING'
-            ? '#476D91' // Slate blue
-            : '#D5CABE';
-
-        ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, barHeight, 3);
-        ctx.fill();
-      }
-
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => cancelAnimationFrame(animId);
-  }, [telemetry, sessionState]);
 
   if (!isOpen) return null;
 
@@ -472,18 +429,26 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
               </div>
             </div>
 
-            {/* Central Waveform Display Panel */}
-            <TarkaInsetPanel className="p-5 flex flex-col items-center justify-center relative bg-[#1E1B19] border-[#49362E] rounded-xl shadow-inner min-h-[190px]">
-              {/* Central HTML5 Audio Waveform Canvas */}
-              <canvas
-                ref={canvasRef}
-                width={420}
-                height={90}
-                className="w-full max-w-[420px] h-[90px] block"
-              />
+            {/* Central Particle Field Display Panel */}
+            <TarkaInsetPanel className="p-4 flex flex-col items-center justify-center relative bg-[#1A1715] border-[#49362E] rounded-xl shadow-inner min-h-[300px]">
+              {/* Canonical 8,800-Point Fibonacci Spherical Particle Field */}
+              <div className="flex flex-col items-center justify-center py-1">
+                <TarkaParticleOrb
+                  state={orbState}
+                  audioLevel={telemetry.rmsEnergy}
+                  frequencyData={telemetry.frequencyData}
+                  size={260}
+                  theme="porcelain"
+                  onClick={sessionState === 'LISTENING' ? handleStopListening : handleStartListening}
+                  className="cursor-pointer transition-transform hover:scale-105"
+                />
+                <div className="text-[11px] font-mono text-[#D5CABE]/70 mt-1.5 tracking-wider uppercase">
+                  8,800-Point Fibonacci Acoustic Particle Field · {sessionState === 'LISTENING' ? 'Click Orb to Conclude Turn' : 'Click Orb to Start Interrogation'}
+                </div>
+              </div>
 
               {/* Live Status Indicators */}
-              <div className="mt-3 flex items-center gap-4 text-xs font-mono">
+              <div className="mt-2 flex items-center gap-4 text-xs font-mono">
                 <span className="flex items-center gap-1.5 text-[#D5CABE]">
                   <span
                     className={`size-2 rounded-full ${
