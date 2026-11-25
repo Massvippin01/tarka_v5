@@ -1,0 +1,128 @@
+{
+  "engine_name": "RapidOCR-PP-OCRv4",
+  "engine_version": "1.4.4-onnx",
+  "device": "CPU",
+  "offline_inference": true,
+  "total_test_samples": 4,
+  "field_level_precision": 1.0,
+  "field_level_recall": 0.6667,
+  "field_level_f1": 0.8,
+  "mean_latency_ms": 6625.0,
+  "max_latency_ms": 7801.78,
+  "peak_memory_mb": 171.42,
+  "failure_rate_pct": 0.0,
+  "detailed_results": [
+    {
+      "id": "CORP-01-SYNTH-PNG",
+      "name": "Synthetic Mobile Receipt (payment_receipt_screenshot.png)",
+      "category": "SYNTHETIC_SCREENSHOT",
+      "file_size_bytes": 62228,
+      "image_dimensions": "720x1280",
+      "tokens_extracted": 24,
+      "latency_ms": 7367.46,
+      "cer": 1.0,
+      "wer": 0.62,
+      "field_matches": {
+        "amount": {
+          "expected": 15000.0,
+          "extracted": 15000.0,
+          "match": true
+        },
+        "rrn": {
+          "expected": "202602148891",
+          "extracted": "202602148891",
+          "match": true
+        },
+        "payee_vpa": {
+          "expected": "merchant.pay@okaxis",
+          "extracted": "merchant.pay@okaxis",
+          "match": true
+        },
+        "status": {
+          "expected": "SUCCESS",
+          "extracted": "PAYMENT SUCCESSFUL",
+          "match": true
+        }
+      }
+    },
+    {
+      "id": "CORP-02-REAL-GPAY",
+      "name": "Founder Live Google Pay Screenshot (1000270701.jpg)",
+      "category": "LIVE_MOBILE_SCREENSHOT",
+      "file_size_bytes": 50708,
+      "image_dimensions": "540x1309",
+      "tokens_extracted": 22,
+      "latency_ms": 7801.78,
+      "cer": 1.0,
+      "wer": 0.8158,
+      "field_matches": {
+        "amount": {
+          "expected": 1495.0,
+          "extracted": 1495.0,
+          "match": true
+        },
+        "rrn": {
+          "expected": "632413615889",
+          "extracted": "632413615889",
+          "match": true
+        },
+        "payee_vpa": {
+          "expected": "1420@okbizaxis",
+          "extracted": ".1420@okbizaxis",
+          "match": false
+        },
+        "status": {
+          "expected": "SUCCESS",
+          "extracted": "COMPLETED",
+          "match": false
+        }
+      }
+    },
+    {
+      "id": "CORP-03-REAL-PHOTO",
+      "name": "Founder Mobile Camera Photo of Handwritten Bill (1000270698.jpg)",
+      "category": "CAMERA_DOCUMENT_PHOTO",
+      "file_size_bytes": 1322572,
+      "image_dimensions": "2296x4080",
+      "tokens_extracted": 14,
+      "latency_ms": 6396.65,
+      "cer": 0.6486,
+      "wer": 1.0,
+      "field_matches": {
+        "merchant_header": {
+          "expected": "SAMBANDAM CYCLE HOUSE",
+          "extracted": "SAMBANDAM CYCLE HOUSE",
+          "match": true
+        },
+        "phone": {
+          "expected": "9444071420",
+          "extracted": "9444071420",
+          "match": true
+        },
+        "apparent_total": {
+          "expected": 1045.0,
+          "extracted": null,
+          "match": false
+        }
+      }
+    },
+    {
+      "id": "CORP-04-REAL-SCAN",
+      "name": "Founder Flatbed High-Res Scan of Bill (1000270702.png)",
+      "category": "SCANNED_DOCUMENT",
+      "file_size_bytes": 4754869,
+      "image_dimensions": "1792x2400",
+      "tokens_extracted": 2,
+      "latency_ms": 4934.12,
+      "cer": 1.0,
+      "wer": 1.0,
+      "field_matches": {
+        "merchant_header": {
+          "expected": "SAMBANDAM CYCLE HOUSE",
+          "extracted": null,
+          "match": false
+        }
+      }
+    }
+  ]
+}

@@ -74,6 +74,43 @@ class TarkaForensicsAdapter:
         self.aegis_reasoning = AegisReasoningEngine()
         self.job_orchestrator = ForensicJobOrchestrator.get_instance()
 
+    def _get_observations_file(self, case_id: str) -> Path:
+        """Returns the canonical persisted path for case observations."""
+        case_dir = self.store.get_case_dir(case_id)
+        obs_dir = case_dir / "observations"
+        obs_dir.mkdir(parents=True, exist_ok=True)
+        return obs_dir / "observations.json"
+
+    def _load_persisted_observations(self, case_id: str) -> List[Dict[str, Any]]:
+        """Loads canonical persisted observations from case directory."""
+        obs_file = self._get_observations_file(case_id)
+        if obs_file.exists():
+            try:
+                with open(obs_file, "r", encoding="utf-8") as fp:
+                    data = json.load(fp)
+                    if isinstance(data, list):
+                        return data
+            except Exception as exc:
+                logger.warning(f"Could not load persisted observations for {case_id}: {exc}")
+        return []
+
+    def _save_persisted_observations(self, case_id: str, new_obs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Atomically merges and persists observations, preventing duplicates across entry points."""
+        existing = self._load_persisted_observations(case_id)
+        obs_map = {o["observation_id"]: o for o in existing if "observation_id" in o}
+        for o in new_obs:
+            if "observation_id" in o:
+                obs_map[o["observation_id"]] = o
+        merged = list(obs_map.values())
+        obs_file = self._get_observations_file(case_id)
+        try:
+            with open(obs_file, "w", encoding="utf-8") as fp:
+                json.dump(merged, fp, indent=2)
+        except Exception as exc:
+            logger.warning(f"Could not persist observations for {case_id}: {exc}")
+        self.case_observations[case_id] = merged
+        return merged
+
     def ensure_synthetic_case(self, case_id: str = "upi_payment_discrepancy", allow_non_demo: bool = False) -> Dict[str, Any]:
         """
         Ensures the canonical SUTRAM 2026 synthetic case is seeded and ready.
@@ -1110,14 +1147,29 @@ class TarkaForensicsAdapter:
             except Exception as e:
                 logger.warning(f"TRACE Screenshot extraction error: {e}")
 
-        if case_id not in self.case_observations:
-            self.case_observations[case_id] = []
-        self.case_observations[case_id].extend(new_obs)
+        # Canonical persistent observation store (survives process restarts)
+        self._save_persisted_observations(case_id, new_obs)
 
-        # Create Analysis Job
-        job_id = f"JOB-{hashlib.sha256(f'{case_id}:{art.artifact_id}:{datetime.now(timezone.utc).isoformat()}'.encode()).hexdigest()[:12]}"
+        # Create durable job in ForensicJobOrchestrator and register event
+        job_obj = self.job_orchestrator.create_job(
+            case_id=case_id,
+            artifact_ids=[art.artifact_id],
+            created_by=officer,
+        )
+        self.job_orchestrator.update_job_stage(
+            job_obj.job_id,
+            JobState.COMPLETED,
+            stage="COMPLETED",
+            progress=100,
+            partial_data={
+                "artifact_id": art.artifact_id,
+                "is_duplicate": is_dedup,
+                "observations_extracted": len(new_obs),
+            },
+        )
+
         job = {
-            "job_id": job_id,
+            "job_id": job_obj.job_id,
             "case_id": case_id,
             "evidence_ids": [art.artifact_id],
             "engine": "TRACE",
@@ -1133,7 +1185,7 @@ class TarkaForensicsAdapter:
                 "observations_extracted": len(new_obs),
             },
         }
-        self.active_jobs[job_id] = job
+        self.active_jobs[job_obj.job_id] = job
 
         evidence_payload = {
             "evidence_id": art.artifact_id,
@@ -1284,9 +1336,8 @@ class TarkaForensicsAdapter:
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
                             })
 
-                if case_id not in self.case_observations:
-                    self.case_observations[case_id] = []
-                self.case_observations[case_id].extend(extracted_obs)
+                # Atomically merge and persist observations to disk
+                self._save_persisted_observations(case_id, extracted_obs)
 
                 self.job_orchestrator.update_job_state(
                     job_id_param,
@@ -1521,9 +1572,8 @@ class TarkaForensicsAdapter:
                             "sha256": item.get("sha256"),
                         }
 
-                if case_id not in self.case_observations:
-                    self.case_observations[case_id] = []
-                self.case_observations[case_id].extend(extracted_obs)
+                # Atomically merge and persist observations to disk
+                self._save_persisted_observations(case_id, extracted_obs)
 
                 self.job_orchestrator.update_job_stage(
                     job_id_param,
@@ -1773,6 +1823,8 @@ class TarkaForensicsAdapter:
         }
 
     def list_observations(self, case_id: str) -> List[Dict[str, Any]]:
+        if case_id not in self.case_observations or not self.case_observations[case_id]:
+            self.case_observations[case_id] = self._load_persisted_observations(case_id)
         return self.case_observations.get(case_id, [])
 
     def reconcile_finances(self, case_id: str) -> Dict[str, Any]:
