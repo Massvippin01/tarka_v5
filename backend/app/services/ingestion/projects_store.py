@@ -256,15 +256,19 @@ class ProjectsStore:
             k: v for k, v in self.case_meta(case_id).items() if k != "case_id"}}
 
     def all_cases(self) -> List[Dict[str, Any]]:
-        """Every case TARKA knows locally: registered, in a project, or with status set."""
+        """Every case TARKA knows locally: registered, in a project, or with status set (two queries, not two per case)."""
         with closing(self._db()) as db:
-            ids = [r[0] for r in db.execute(
-                "SELECT case_id FROM case_registry UNION SELECT case_id FROM case_meta ORDER BY 1")]
+            reg = {r[0]: r for r in db.execute("SELECT case_id, title, owner_id, created_at, details_json FROM case_registry")}
+            meta = {r[0]: r for r in db.execute("SELECT case_id, project_id, lifecycle, assignee FROM case_meta")}
         out = []
-        for cid in ids:
-            reg = self.registered(cid)
-            out.append(reg or {"case_id": cid, "title": "", "owner_id": None, "created_at": None,
-                               **{k: v for k, v in self.case_meta(cid).items() if k != "case_id"}})
+        for cid in sorted(reg.keys() | meta.keys()):
+            m = meta.get(cid)
+            fields = {"project_id": m[1] if m else None, "lifecycle": (m[2] if m else None) or "INTAKE",
+                      "assignee": m[3] if m else None}
+            r = reg.get(cid)
+            out.append({"case_id": cid, "title": r[1], "owner_id": r[2], "created_at": r[3],
+                        "details": json.loads(r[4] or "{}"), **fields} if r else
+                       {"case_id": cid, "title": "", "owner_id": None, "created_at": None, **fields})
         return out
 
     def case_ids(self, project_id: str) -> set:

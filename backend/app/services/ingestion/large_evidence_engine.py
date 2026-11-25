@@ -852,8 +852,10 @@ class IngestionJobManager:
                     job.processing = {**(job.processing or {}), "step": "FINDING_NETWORKS", "rows": read, "pct": 99.0,
                                       "eta_seconds": None}
                     try:  # warm the networks cache so the review board opens instantly; never fails the upload
+                        from app.services.ingestion.identifier_index import IdentifierIndex
                         from app.services.ingestion.networks import case_networks  # local: networks imports this layer
 
+                        await asyncio.to_thread(IdentifierIndex(self.derived_dir).refresh_case, job.case_id)
                         await asyncio.to_thread(case_networks, self.derived_dir, job.case_id)
                     except Exception:
                         logger.exception("Network warm-up failed for %s", job.case_id)

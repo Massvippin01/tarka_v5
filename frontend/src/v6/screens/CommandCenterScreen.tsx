@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useIsFetching } from '@tanstack/react-query';
 import {
   Clock,
   IndianRupee,
@@ -35,7 +34,7 @@ import {
 } from '../../selectors/dashboardSelectors';
 import { formatInr, formatInrCompact, formatGoldenHour, pctOf } from '../../lib/formatInr';
 import { CANONICAL_CASES, buildCaseBundleFromFixture, findCase } from '../../fixtures/cases';
-import { useBundleCases, withBundleFigures } from '../../selectors/bundleAdapter';
+import { useStationSummary, withSummaryFigures } from '../../selectors/bundleAdapter';
 import { selectRecentActivity, selectFinancialSummary, selectPortfolioMoneyFigure } from '../../selectors/caseSelectors';
 import { reconstruct5FileInvestigation } from '../../utils/investigationReconstructor';
 
@@ -51,9 +50,9 @@ import { CrossCaseComparatorDrawer } from '../../components/tarka/workspace/Cros
 export const CommandCenterScreen: React.FC = () => {
   const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
   const { caseWorkspaces: listedWorkspaces, selectCaseWorkspace } = useTarkaGlobal();
-  // Cases with no demo fixture load their uploaded data; a new array identity re-runs every memo below when it lands.
-  const bundleCases = useBundleCases(listedWorkspaces.map((w) => w.caseId));
-  const caseWorkspaces = useMemo(() => withBundleFigures(listedWorkspaces, bundleCases), [listedWorkspaces, bundleCases]);
+  // Uploaded-data cases take their figures from one station summary request (no per-case bundle/networks fetch).
+  const summaryQuery = useStationSummary();
+  const caseWorkspaces = useMemo(() => withSummaryFigures(listedWorkspaces, summaryQuery.data), [listedWorkspaces, summaryQuery.data]);
   const { setReconstructedInvestigation } = useTarkaUiStore();
   const { setActiveCaseId: setWorkbenchCaseId } = useCaseWorkbenchStore();
 
@@ -83,19 +82,19 @@ export const CommandCenterScreen: React.FC = () => {
   }, [caseWorkspaces]);
   // Rows behind the portfolio KPIs; the figure stays the dashboard's, so any case without rows shows as a gap in the sheet.
   const portfolioFigs = useMemo(() => {
-    const fixtures = caseWorkspaces.map((w) => findCase(w.caseId) ?? bundleCases[w.caseId]).filter((f): f is NonNullable<typeof f> => !!f);
+    const fixtures = caseWorkspaces.map((w) => findCase(w.caseId)).filter((f): f is NonNullable<typeof f> => !!f);
     return {
       loss: { ...selectPortfolioMoneyFigure(fixtures, 'loss'), totalInr: dashboardMetrics.totalReportedLossInr },
       recoverable: { ...selectPortfolioMoneyFigure(fixtures, 'recoverable'), totalInr: dashboardMetrics.totalRecoverableInr },
     };
-  }, [caseWorkspaces, bundleCases, dashboardMetrics]);
+  }, [caseWorkspaces, dashboardMetrics]);
 
   const actNowQueue = useMemo(() => {
     return selectActNowQueue(caseWorkspaces);
   }, [caseWorkspaces]);
   const needsDataCount = useMemo(() => selectNeedsDataCases(caseWorkspaces).length, [caseWorkspaces]);
-  // Portfolio totals fill in as each case's bundle arrives; say so instead of showing a partial sum as final.
-  const bundlesLoading = useIsFetching({ queryKey: ['case'] }) > 0;
+  // Totals for uploaded cases arrive with the summary; say so instead of showing a partial sum as final.
+  const bundlesLoading = summaryQuery.isFetching;
 
   const typologyData = useMemo(() => {
     return selectTypologyDistribution(caseWorkspaces);

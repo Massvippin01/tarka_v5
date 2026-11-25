@@ -276,6 +276,10 @@ from app.api.projects_api import networks_router, router as projects_router
 app.include_router(projects_router, prefix="/api/v1/projects", tags=["Projects"])
 app.include_router(networks_router, prefix="/api/v1/cases", tags=["Fraud Networks"])
 
+from app.api.station_api import router as station_router
+
+app.include_router(station_router, prefix="/api/v1/station", tags=["Station"])
+
 from app.api.people_api import router as people_router
 
 app.include_router(people_router, prefix="/api/v1/cases", tags=["People & Accounts"])
