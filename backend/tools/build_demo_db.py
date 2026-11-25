@@ -14,7 +14,6 @@ import asyncio
 import importlib
 import json
 import os
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -34,7 +33,14 @@ def backup_existing(data_dir: Path) -> Path | None:
         return None
     dest = data_dir.parent / f"_backup_{time.strftime('%Y%m%d_%H%M%S')}" / data_dir.name
     dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(data_dir), str(dest))
+    for attempt in range(5):  # rename only: fails cleanly if a file is open (Windows), never copy-then-delete
+        try:
+            data_dir.rename(dest)
+            break
+        except PermissionError:
+            if attempt == 4:
+                raise
+            time.sleep(2)
     return dest.parent
 
 
@@ -78,6 +84,50 @@ def seed_canonical(data_dir: Path) -> str:
     return "seeded CASE-2026-001..004"
 
 
+def build_demo(data_dir: Path, rows: int, log=print, step=lambda name: None) -> dict:
+    """Back up the current data root, then build the demo state. Returns the summary dict (+ backup_path)."""
+    t0 = time.perf_counter()
+    ocr_dir = ROOT / "demo_evidence_files" / "ocr"
+    canon = (ROOT / "backend" / "tools" / "seed_canonical_cases.py").exists()
+    step("Moving current data to a backup folder")
+    backup = backup_existing(data_dir)
+    log(f"Existing data backed up to: {backup}" if backup else "No existing data to back up.")
+    os.environ["TARKA_INGESTION_DIR"] = str(data_dir)
+    from app.services.ingestion.large_evidence_engine import IngestionJobManager
+    IngestionJobManager._instance = None  # server-side singleton must follow the new root
+
+    step(f"Building the Operation Jamtara case ({rows:,} rows)")
+    from seed_golden_hour_demo import seed_demo_workspace
+    res = seed_demo_workspace(
+        base_dir=data_dir,
+        out_dir=data_dir.parent / "validation" / "golden_hour_demo",
+        project_name=PROJECT_NAME,
+        rows=rows,
+        owner=OWNER,
+    )
+    log(f"Demo case {res['case_id']} seeded.")
+    step("Seeding canonical cases")
+    log("Canonical cases:", seed_canonical(data_dir) if canon else "skipped (seed_canonical_cases.py absent)")
+    if ocr_dir.is_dir():
+        step("Uploading OCR evidence files")
+        log("OCR uploads:", "; ".join(upload_ocr_files(data_dir, res["case_id"])) or "no files")
+    else:
+        log("OCR uploads: skipped (demo_evidence_files/ocr absent)")
+
+    from app.services.ingestion.projects_store import ProjectsStore
+    store = ProjectsStore(data_dir)
+    return {
+        "projects": [p["name"] for p in store.list()],
+        "cases": [c["case_id"] for c in store.all_cases()],
+        "demo_case_id": res["case_id"],
+        "rows": res["rows_accepted"],
+        "networks": res["networks_found"],
+        "mules": res["mules_total"],
+        "seconds": round(time.perf_counter() - t0, 1),
+        "backup_path": str(backup) if backup else None,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build a clean TARKA demo database.")
     ap.add_argument("--rows", type=int, default=1_000_000)
@@ -98,38 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Dry run: nothing changed.")
         return 0
 
-    t0 = time.perf_counter()
-    backup = backup_existing(data_dir)
-    print(f"Existing data backed up to: {backup}" if backup else "No existing data to back up.")
-    os.environ["TARKA_INGESTION_DIR"] = str(data_dir)
-    from app.services.ingestion.large_evidence_engine import IngestionJobManager
-    IngestionJobManager._instance = None  # server-side singleton must follow the new root
-
-    from seed_golden_hour_demo import seed_demo_workspace
-    res = seed_demo_workspace(
-        base_dir=data_dir,
-        out_dir=data_dir.parent / "validation" / "golden_hour_demo",
-        project_name=PROJECT_NAME,
-        rows=rows,
-        owner=OWNER,
-    )
-    print(f"Demo case {res['case_id']} seeded.")
-    print("Canonical cases:", seed_canonical(data_dir) if canon else "skipped (seed_canonical_cases.py absent)")
-    if ocr_dir.is_dir():
-        print("OCR uploads:", "; ".join(upload_ocr_files(data_dir, res["case_id"])) or "no files")
-    else:
-        print("OCR uploads: skipped (demo_evidence_files/ocr absent)")
-
-    from app.services.ingestion.projects_store import ProjectsStore
-    store = ProjectsStore(data_dir)
-    summary = {
-        "projects": [p["name"] for p in store.list()],
-        "cases": [c["case_id"] for c in store.all_cases()],
-        "rows": res["rows_accepted"],
-        "networks": res["networks_found"],
-        "mules": res["mules_total"],
-        "seconds": round(time.perf_counter() - t0, 1),
-    }
+    summary = build_demo(data_dir, rows)
     print("SUMMARY " + json.dumps(summary, indent=2))
     return 0
 
