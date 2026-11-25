@@ -19,6 +19,7 @@ import json
 import math
 import re
 import sqlite3
+import threading
 from collections import defaultdict, deque
 from contextlib import closing
 from pathlib import Path
@@ -1204,7 +1205,8 @@ def analyze_store(
     """Run on a case's derived.sqlite; cached until txns, device_events, verdicts, or model weights change.
 
     cache_only: return None instead of running the analysis when nothing is cached for the current data."""
-    with closing(sqlite3.connect(store.path)) as db:
+    # One analysis per case at a time: parallel requests wait here and reuse the cached result.
+    with _store_lock(store.path), closing(sqlite3.connect(store.path, timeout=60)) as db:
         db.execute("CREATE TABLE IF NOT EXISTS analysis_cache (key TEXT PRIMARY KEY, result TEXT)")
         count, last = db.execute("SELECT COUNT(*), MAX(rowid) FROM txns").fetchone()
         dev_count = (
@@ -1236,7 +1238,7 @@ def analyze_store(
             )
             features_snapshot = result.pop("_features", None)
             db.execute("DELETE FROM analysis_cache WHERE key NOT LIKE ?", (f"v{ANALYSIS_VERSION}:{count}:{last}:{dev_count}:%",))
-            db.execute("INSERT INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
+            db.execute("INSERT OR REPLACE INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
             db.commit()
             result["_features_snapshot"] = features_snapshot
     if lookup and result["networks"]:
@@ -1248,6 +1250,15 @@ def analyze_store(
             if found[(k, v)]
         ]
     return result
+
+
+_STORE_LOCKS: Dict[str, threading.Lock] = {}
+_STORE_LOCKS_GUARD = threading.Lock()
+
+
+def _store_lock(path: Path) -> threading.Lock:
+    with _STORE_LOCKS_GUARD:
+        return _STORE_LOCKS.setdefault(str(Path(path).resolve()), threading.Lock())
 
 
 def _sql_lookup(other_dbs: List[Tuple[str, Path]]) -> Lookup:
