@@ -20,16 +20,19 @@ body {
   color: var(--text-primary);
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-  color: inherit;
-}
+/* In the base layer so Tailwind colour utilities (e.g. text-white on blue buttons) always win. */
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
 
-button {
-  cursor: pointer;
+  button {
+    cursor: pointer;
+  }
 }
 
 .sentinel-app {
