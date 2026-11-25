@@ -28,7 +28,7 @@ how it fits next to the systems police already use. That gap is exactly the judg
 |---|---|---|
 | Fraud attribution engine | Mule scoring (`mule_scoring_service.py`), Devices & SIMs (shared IMEI / Wi-Fi / IP) | Real; explainable scores |
 | Entity resolution | People & accounts, `case_entity_resolution_service.py` | Real for accounts/UPI; person-level merging is thin |
-| Financial evidence correlation dashboard | Money trail, Station overview | Real, reconciles to booked loss |
+| Financial evidence correlation dashboard | Money trail, Station dashboard | Real, reconciles to booked loss |
 | Fraud-network visualisation | Network page (WebGL), Triage | Real |
 | Investigative reports | Actions & report (freeze notices, A4 report, hash chain) | Real; PDF goes through the browser print dialog |
 

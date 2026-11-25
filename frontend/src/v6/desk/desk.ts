@@ -1,4 +1,4 @@
-/** Pure helpers for My Desk (Act now inbox) and ⌘K identifier search. No I/O here. */
+/** Pure helpers for Inbox (Act now inbox) and ⌘K identifier search. No I/O here. */
 import { formatInr } from '../../lib/formatInr';
 import type { FraudNetwork, NetworksResponse } from '../triage/triage';
 import { intakeLabel } from '../intake/intake';

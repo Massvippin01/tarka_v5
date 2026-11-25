@@ -344,7 +344,7 @@ const FileRow: React.FC<{ item: UploadItem }> = ({ item }) => {
   const problem =
     step === 'attention' || step === 'rejected'
       ? item.status?.stage === 'NEEDS_MAPPING'
-        ? 'Columns need matching — My Desk links to this file.'
+        ? 'Columns need matching — Inbox links to this file.'
         : item.status?.stage === 'DUPLICATE'
           ? undefined
           : item.reason || STATE_LABEL[item.state].tip

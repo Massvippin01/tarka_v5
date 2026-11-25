@@ -276,6 +276,9 @@ def seed_demo_workspace(
         j.sha256_digest = sha
         j.analytics_summary = summary
         mgr._save(j)
+        with closing(sqlite3.connect(mgr._db_path)) as db:  # re-seeding must not stack duplicate seal rows
+            db.execute("DELETE FROM custody WHERE job_id = ? AND action = 'Evidence sealed'", (jid,))
+            db.commit()
         mgr._custody(j, "Evidence sealed", f"SHA-256 {sha} verified and indexed into derived.sqlite", actor=owner)
 
     # Analyze fraud networks + controller attribution + time-aware paths
@@ -314,6 +317,7 @@ def seed_demo_workspace(
         "ingest_secs": ingest_secs,
         "analyze_secs": analyze_secs,
         "networks_found": len(nets_result["networks"]),
+        "mules_total": sum(n.get("mule_count", 0) for n in nets_result["networks"]),
         "biggest_network_id": biggest["network_id"] if biggest else None,
         "biggest_network_mules": biggest["mule_count"] if biggest else 0,
         "biggest_network_controllers": len(biggest.get("controllers", [])) if biggest else 0,

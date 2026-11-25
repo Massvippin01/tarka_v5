@@ -122,7 +122,7 @@ describe('overall progress', () => {
   });
 });
 
-describe('intake label (Projects / My Desk)', () => {
+describe('intake label (Projects / Inbox)', () => {
   it('shows the open count until every proposal is handled', async () => {
     const { intakeLabel } = await import('../intake');
     expect(intakeLabel([net('a', 'NEW_CASE'), net('b', 'ATTACH'), net('c', 'MINOR', 'CLOSED')])).toBe('Intake — review 2 proposed cases');

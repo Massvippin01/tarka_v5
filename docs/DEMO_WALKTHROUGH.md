@@ -2,6 +2,11 @@
 
 This walkthrough uses the repeatable 1-command dataset built by `backend/tools/seed_golden_hour_demo.py` (`1,000,000` transactions, `50` planted mule gangs, device sightings, and matching NCRP cyber complaints).
 
+
+## Clean demo database (one command)
+
+`PYTHONPATH=backend python backend/tools/build_demo_db.py [--small] [--dry-run]` backs up any existing `data/ingestion` to `data/_backup_<timestamp>/`, then builds project "Operation Jamtara" (50-gang case + NCRP complaints), plus CASE-2026-001..004 and `demo_evidence_files/ocr/*` when present. Data root: `--data-dir` or env `TARKA_INGESTION_DIR`. Prints projects/cases/rows/networks/mules/time.
+
 ---
 
 ## 0. Honest Benchmark & Seeder Numbers (Tool-by-Tool)

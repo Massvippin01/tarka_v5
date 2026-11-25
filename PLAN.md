@@ -79,7 +79,7 @@ reports mule precision/recall, gang separation, speed, memory. Regression test i
 - Still to do: the actual 5 × 1 GB run on an 8 GB laptop (≈70M rows; ingest ≈ 17 min at the measured 70k rows/s).
 
 ## Phase 2 — Professional glass UI + wow features
-IA: My Desk (Act Now inbox) → Projects/Cases → Case: Overview · Money · Network · People & Devices · Evidence · Report.
+IA: Inbox (Act Now inbox) → Projects/Cases → Case: Overview · Money · Network · People & Devices · Evidence · Report.
 Lab + orb home move under "Advanced". Refined glass, one accent, dark + light, purposeful motion.
 Features: every number drills to source rows; money-flow replay; WebGL network explorer (sigma.js + graphology,
 50k+ nodes, victim→cash-out path); batch §106/§107 freeze notices with ack tracking; cross-case alerts;
@@ -88,11 +88,11 @@ Features: every number drills to source rows; money-flow replay; WebGL network e
 Done (slice 1):
 - [x] Design tokens: one accent, glass levels (`--glass-1..3`, `--blur-1..3`, `.v6-glass`), spacing + type scale,
       dark + light themes with a persisted topbar toggle (`useV6Theme`, `data-v6-theme` on <html>).
-- [x] My Desk (`?view=desk`): Act-now inbox from real data (mapping/duplicate files, unsplit mule networks,
+- [x] Inbox (`?view=desk`): Act-now inbox from real data (mapping/duplicate files, unsplit mule networks,
       same-person matches, cross-case hits, "Action pending" cases); loading/empty/error/partial states.
 - [x] ⌘K search: existing palette extended with views, all accessible cases, and VPA/phone/account search
       across loaded networks → triage of the case that has it.
-- [x] Page pass (all 16 v6 views, 1280px, both themes): rail IA = My Desk → Station overview / Projects /
+- [x] Page pass (all 16 v6 views, 1280px, both themes): rail IA = Inbox → Station dashboard / Projects /
       All cases → "This case" steps (+ Mule triage) → Advanced (orb home, labs); removed hard-coded "4" badge;
       Lab no longer overflows; Cases table fits 1280 with no sideways scroll; truncated text gets a hover tooltip
       app-wide; @theme colours follow the runtime tokens so dark mode reaches chips/badges; dark contrast failures
@@ -111,7 +111,7 @@ Not done yet (spec items still open):
 - [x] 3. WebGL network explorer (50k+, bubbles, mule heat, victim → cash-out path). Network step → "All linked accounts" tab
       (`frontend/src/v6/network/`). 50,000 accounts / 48,000 links: 60 fps (AMD Radeon iGPU, D3D11, `&stress=50000`).
 - [x] 4. Freeze-priority queue → batch §106/§107 notices + acknowledgement tracking.
-- [x] 5. Cross-case alerts — My Desk + Triage, and "Also in N other FIRs" badges on networks and accounts (Network page).
+- [x] 5. Cross-case alerts — Inbox + Triage, and "Also in N other FIRs" badges on networks and accounts (Network page).
 - [~] 6. ⌘K search — phone / UPI / account across loaded networks; IMEI not searchable (not in network data).
 - [ ] 7. Assistant with row citations in Hindi/Tamil/English.
 - [ ] 8. India map from IFSC / ATM / cell-tower locations.
@@ -139,7 +139,7 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       controller-device nodes and marks ordinary merchants "§107 Frozen"; People adds "NCRP 1930 intake" per victim,
       "KYC discrepancy 90/100", wrong "first recipient" story; People "Attribution 26%" vs Triage mule score 1.0.
 - [~] Discovery (fixed: cases with uploads / created in TARKA are listed; lifecycle → Investigating after upload;
-      left: top bar still shows the stage from the old workspace record): My Desk / Projects / case switcher only know demo cases + project members (C102/C114 invisible);
+      left: top bar still shows the stage from the old workspace record): Inbox / Projects / case switcher only know demo cases + project members (C102/C114 invisible);
       case lifecycle stays "Intake" after processing.
 - [ ] Triage adaptivity: 1 network still shows cards (should open it); 50 networks = 50 tall cards, 15k px scroll
       (needs table + bulk actions at 20+); no network status / decisions (only Split); "1 mules · 1 victims" grammar.
@@ -265,7 +265,7 @@ Walkthrough 17 Nov 2026 (scenarios A tiny / B 20 mules + 100 victims / C 1M rows
       When every file is done it opens the review board (Triage of a holding case = `v6/intake/IntakeReviewBoard.tsx`):
       headline "N files · N gangs found · N new cases · N match existing cases · N minor", one table row per gang
       (editable title, mules, victims, ₹, action chip with shared identifiers in the tooltip, Network link, dismiss with
-      reason), Create all / Create selected, a result summary with links and failures. Projects and My Desk show
+      reason), Create all / Create selected, a result summary with links and failures. Projects and Inbox show
       "Intake — review N proposed cases" until every proposal is handled. Pure logic + tests in `v6/intake/intake.ts`.
       Not done: merging two proposed gangs before creating them.
 - [x] Duplicate files stay unread on purpose (their gangs are already in that case); the row says "Already in <case>:

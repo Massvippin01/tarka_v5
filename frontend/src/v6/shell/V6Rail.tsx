@@ -1,3 +1,4 @@
+import { CASE_STEPS } from './caseSteps';
 import React, { useState } from 'react';
 import {
   Inbox,
@@ -140,22 +141,16 @@ export const V6Rail: React.FC<V6RailProps> = ({ isCollapsed = false, onToggleCol
 
   const isCurrentView = (views: string[]) => views.includes(activeView);
 
-  const steps = [
-    { id: 'triage', views: ['triage'], label: 'Triage', icon: ShieldAlert, count: num(c.undecided, true), tip: 'Networks nobody has decided on yet' },
-    { id: 'evidence', views: ['evidence', 'intake'], label: 'Evidence', icon: FileSpreadsheet, count: null, tip: 'Uploaded files and the ledger' },
-    { id: 'people', views: ['people', 'entities'], label: 'People & accounts', icon: Users, count: num(c.mules), tip: 'Suspected mule accounts' },
-    {
-      id: 'money',
-      views: ['money', 'taint-engine'],
-      label: 'Money trail',
-      icon: GitMerge,
-      count: c.freezableInr ? { text: formatInr(c.freezableInr, { compact: true }) } : null,
-      tip: 'Still freezable',
-    },
-    { id: 'network', views: ['network'], label: 'Network', icon: Network, count: num(c.networks), tip: 'Fraud networks found' },
-    { id: 'device', views: ['device', 'handset-sim', 'attribution'], label: 'Devices & SIMs', icon: Smartphone, count: num(c.deviceGroups), tip: 'Shared-device groups' },
-    { id: 'actions', views: ['actions', 'report'], label: 'Actions & report', icon: Scale, count: num(c.toFreeze, !gh.expired), tip: 'Accounts still to freeze' },
-  ];
+  const extras: Record<string, { icon: typeof ShieldAlert; count: ReturnType<typeof num> | { text: string } | null; tip: string }> = {
+    triage: { icon: ShieldAlert, count: num(c.undecided, true), tip: 'Networks nobody has decided on yet' },
+    evidence: { icon: FileSpreadsheet, count: null, tip: 'Uploaded files and the ledger' },
+    people: { icon: Users, count: num(c.mules), tip: 'Suspected mule accounts' },
+    money: { icon: GitMerge, count: c.freezableInr ? { text: formatInr(c.freezableInr, { compact: true }) } : null, tip: 'Still freezable' },
+    network: { icon: Network, count: num(c.networks), tip: 'Fraud networks found' },
+    device: { icon: Smartphone, count: num(c.deviceGroups), tip: 'Shared-device groups' },
+    actions: { icon: Scale, count: num(c.toFreeze, !gh.expired), tip: 'Accounts still to freeze' },
+  };
+  const steps = CASE_STEPS.map((st) => ({ ...st, ...extras[st.id] }));
   const currentStepIndex = steps.findIndex((s) => isCurrentView(s.views));
 
   const more = [

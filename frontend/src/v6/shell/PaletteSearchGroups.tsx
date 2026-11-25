@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { Command, defaultFilter, useCommandState } from 'cmdk';
-import { FolderKanban, FolderOpen, GitFork, Inbox, Loader2, UploadCloud, Wallet } from 'lucide-react';
+import { FolderKanban, FolderOpen, GitFork, Inbox, LayoutDashboard, Loader2, UploadCloud, Wallet } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
 import { setFocus } from '../../lib/focusUrl';
 import { buildIdentifierIndex, searchIdentifiers } from '../desk/desk';
@@ -15,7 +15,8 @@ export const paletteFilter = (value: string, search: string, keywords?: string[]
 };
 
 const VIEWS = [
-  { view: 'desk', label: 'My Desk · what needs you now', icon: Inbox },
+  { view: 'desk', label: 'Inbox · what needs you now', icon: Inbox },
+  { view: 'workspace', label: 'Station dashboard · every active case', icon: LayoutDashboard },
   { view: 'projects', label: 'Projects · group cases into operations', icon: FolderKanban },
   { view: 'triage', label: 'Triage · fraud networks in this case', icon: GitFork },
   { view: 'upload', label: 'Upload centre · add bank, CDR, WhatsApp files', icon: UploadCloud },

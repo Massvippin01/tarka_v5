@@ -333,7 +333,7 @@ export const TarkaCommandPalette: React.FC = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <LayoutGrid size={15} style={{ color: 'var(--flow)' }} />
-                  <span>Command Center · Station Overview & Corridors</span>
+                  <span>Command Center · Station dashboard & Corridors</span>
                 </div>
                 <kbd style={{ fontSize: '12px', color: 'var(--fg-3)', fontFamily: 'var(--font-mono)' }}>Alt+0</kbd>
               </Command.Item>

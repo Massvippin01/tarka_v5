@@ -503,7 +503,8 @@ class IngestionJobManager:
     @classmethod
     def get_instance(cls) -> "IngestionJobManager":
         if cls._instance is None:
-            cls._instance = cls()
+            # TARKA_INGESTION_DIR lets the demo builder / tests point at a separate data root.
+            cls._instance = cls(Path(os.environ.get("TARKA_INGESTION_DIR") or "data/ingestion"))
         return cls._instance
 
     _TERMINAL = {"EVIDENCE_AVAILABLE", "NEEDS_MAPPING", "REJECTED", "DUPLICATE"}

@@ -2,22 +2,9 @@ import React from 'react';
 import { ChevronRight, Check } from 'lucide-react';
 import clsx from 'clsx';
 import { useCaseStore } from '../../store/useCaseStore';
+import { CASE_STEPS } from '../shell/caseSteps';
 
-export interface StepItem {
-  id: string;
-  stepNum: number;
-  label: string;
-  views: string[];
-}
-
-const STEPS: StepItem[] = [
-  { id: 'evidence', stepNum: 1, label: 'Evidence', views: ['evidence', 'intake'] },
-  { id: 'people', stepNum: 2, label: 'People & accounts', views: ['people', 'entities'] },
-  { id: 'money', stepNum: 3, label: 'Money trail', views: ['money', 'taint-engine'] },
-  { id: 'network', stepNum: 4, label: 'Network', views: ['network'] },
-  { id: 'device', stepNum: 5, label: 'Devices & SIMs', views: ['device', 'attribution', 'handset-sim'] },
-  { id: 'actions', stepNum: 6, label: 'Actions & report', views: ['actions', 'report'] },
-];
+const STEPS = CASE_STEPS.map((s, i) => ({ ...s, stepNum: i + 1 }));
 
 export const HorizontalStepper: React.FC = () => {
   const { activeView, setActiveView } = useCaseStore();

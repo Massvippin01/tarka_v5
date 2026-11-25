@@ -338,7 +338,7 @@ const CaseRow: React.FC<{ c: ProjectCase; project: Project; others: Project[]; i
     if (assignee.trim() !== (c.assignee ?? '')) patchCase.mutate({ assignee: assignee.trim() });
   };
   const stage = LIFECYCLE.findIndex((l) => l.key === c.lifecycle);
-  // Same query key as Triage / My Desk; limit eager background prefetch to top/active case so large archives load fast.
+  // Same query key as Triage / Inbox; limit eager background prefetch to top/active case so large archives load fast.
   const nets = useQuery({
     queryKey: ['networks', c.case_id],
     queryFn: async () => (await apiClient.get<NetworksResponse>(`/api/v1/cases/${encodeURIComponent(c.case_id)}/networks`)).data,

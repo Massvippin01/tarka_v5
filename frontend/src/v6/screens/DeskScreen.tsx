@@ -32,7 +32,7 @@ export const DeskScreen: React.FC = () => {
   return (
     <div className="v6-enter space-y-[var(--space-4)] max-w-[1100px]" data-testid="v6-desk">
       <PageHead
-        kicker="My Desk"
+        kicker="Inbox"
         title={items.length ? `${items.length} ${items.length === 1 ? 'thing needs' : 'things need'} you` : d.isLoading ? 'Checking your cases…' : 'All clear'}
         subtitle={caseCount ? `Across ${caseCount} ${caseCount === 1 ? 'case' : 'cases'} you can access${d.isLoading && items.length ? ' · still checking, more may appear' : ''}` : undefined}
         actions={
