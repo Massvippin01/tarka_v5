@@ -17,6 +17,7 @@ import {
   Globe,
   Radio,
 } from 'lucide-react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import { useCaseStore } from '../../store/useCaseStore';
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -492,8 +493,8 @@ Select a contextual question below, ask in any of 11 Indian languages, or activa
       {/* 1. Header with Language Selector & Specialist Badge */}
       <div className="px-5 py-3.5 border-b border-[#D5CABE] bg-[#F8F4ED] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-lg bg-[#EED9C7] text-[#A85C2A] border border-[#A85C2A]/30 flex items-center justify-center shrink-0 shadow-2xs">
-            <Sparkles className="size-4" />
+          <div className="size-8 rounded-lg bg-[#EED9C7] text-[#A85C2A] border border-[#A85C2A]/30 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden p-1">
+            <TarkaLogo variant="icon" height={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">

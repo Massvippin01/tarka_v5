@@ -18,6 +18,7 @@ Strict Forensic Constraints:
 
 from __future__ import annotations
 
+import os
 import datetime
 import hashlib
 import html
@@ -1214,6 +1215,7 @@ class ForensicReportPDFExporter:
                 TableStyle,
                 KeepTogether,
                 HRFlowable,
+                Image as RLImage,
             )
         except ImportError as exc:
             raise RuntimeError(f"ReportLab is not available for PDF export: {exc}")
@@ -1320,7 +1322,11 @@ class ForensicReportPDFExporter:
         # SECTION A: COVER & ADMINISTRATIVE METADATA
         # ======================================================================
         elements.append(Paragraph("RESTRICTED // LAW ENFORCEMENT & STATUTORY PROCEEDINGS ONLY", classification_style))
-        elements.append(Spacer(1, 3))
+        elements.append(Spacer(1, 4))
+        logo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "brand", "tarka-logo.png"))
+        if os.path.exists(logo_path):
+            elements.append(RLImage(logo_path, width=130, height=31))
+            elements.append(Spacer(1, 4))
         elements.append(Paragraph("TARKA | INDIGENOUS DIGITAL FORENSICS PLATFORM", title_style))
         elements.append(Paragraph("SUTRAM 2026 FORENSIC INVESTIGATION PROTOCOL • SIH 2026 PS 26189 BENCHMARK", subtitle_style))
         elements.append(Spacer(1, 4))

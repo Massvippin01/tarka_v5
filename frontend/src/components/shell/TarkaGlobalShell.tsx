@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { TarkaLogo } from "../common/TarkaLogo";
 import {
-  Shield,
   FileText,
   Zap,
   RotateCcw,
@@ -799,27 +799,11 @@ Demands: Section 63(4) electronic record certificate verifying UPI 2.0 <Device> 
             {/* Brand Row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: isExpanded ? "space-between" : "center", padding: "0 4px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "7px",
-                    background: "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#FFFFFF",
-                    boxShadow: "0 2px 10px rgba(6, 182, 212, 0.35)",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Shield size={16} strokeWidth={2.4} />
-                </div>
-                {isExpanded && (
-                  <span style={{ fontSize: "15px", fontWeight: 800, letterSpacing: "-0.03em", color: "#FFFFFF" }}>
-                    TARKA
-                  </span>
-                )}
+                <TarkaLogo
+                  variant={isExpanded ? "full" : "icon"}
+                  theme="dark"
+                  height={isExpanded ? 24 : 22}
+                />
               </div>
               {isExpanded && <ReuiStatusBadge text="v5.0 BSA § 63" variant="indigo" dot={false} />}
             </div>

@@ -291,10 +291,14 @@ class ForensicJobOrchestrator:
             yield f"data: {init_data}\n\n"
 
             while True:
-                data = await queue.get()
-                eid = data.get("id", "")
-                etype = data.get("type", "message")
-                yield f"id: {eid}\nevent: {etype}\ndata: {json.dumps(data)}\n\n"
+                try:
+                    data = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    eid = data.get("id", "")
+                    etype = data.get("type", "message")
+                    yield f"id: {eid}\nevent: {etype}\ndata: {json.dumps(data)}\n\n"
+                except asyncio.TimeoutError:
+                    # Keepalive heartbeat every 15s to keep connection alive through reverse proxies
+                    yield ": keepalive\n\n"
         except asyncio.CancelledError:
             pass
         finally:

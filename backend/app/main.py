@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 from app.api.case import router as case_router
 from app.api.explorer import router as explorer_router
@@ -14,6 +16,20 @@ from app.api.relationships import router as relationship_router
 from app.api.resolution import router as resolution_router
 from app.core.config import settings
 from app.database.init_db import initialize_database
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Hardened security response headers for production deployment."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
 
 @asynccontextmanager
@@ -31,6 +47,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(SecurityHeadersMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -38,6 +56,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
+)
+
+# Root-level health & readiness endpoints for platform health probes (Render, ALB, k8s)
+app.include_router(
+    health_router,
+    tags=["Health Probes"],
 )
 
 app.include_router(

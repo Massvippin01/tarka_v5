@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import {
-  Shield,
   Home,
   LayoutDashboard,
   FolderKanban,
@@ -235,9 +235,9 @@ export const V6Rail: React.FC<V6RailProps> = ({
             type="button"
             onClick={() => setActiveView('home')}
             title="TARKA · Sovereign Cyber Intelligence"
-            className="size-9 rounded-xl flex items-center justify-center text-white shadow-md hover:scale-105 transition-transform bg-[#A85C2A]"
+            className="size-9 rounded-xl flex items-center justify-center p-1 shadow-md hover:scale-105 transition-transform bg-[#221C19] border border-white/10 hover:border-[#C35B34]/60"
           >
-            <Shield className="size-4.5 stroke-[2.2] text-white" />
+            <TarkaLogo variant="icon" theme="dark" height={22} width={22} />
           </button>
           {onToggleCollapse && (
             <button
@@ -259,12 +259,7 @@ export const V6Rail: React.FC<V6RailProps> = ({
               onClick={() => setActiveView('home')}
               title="TARKA · Home"
             >
-              <div className="size-7.5 rounded-lg flex items-center justify-center text-white bg-[#A85C2A] shadow-sm">
-                <Shield className="size-4 stroke-[2.2] text-white" />
-              </div>
-              <span className="font-extrabold text-[15px] font-mono tracking-widest text-[#FFFDF8]">
-                TARKA
-              </span>
+              <TarkaLogo variant="full" theme="dark" height={22} />
             </div>
             {onToggleCollapse && (
               <button

@@ -110,26 +110,31 @@ def execute_voice_command(req: VoiceCommandRequest, user: UserIdentity = Depends
 
 
 @router.get("/events/stream")
-def stream_realtime_events(case_id: Optional[str] = "C102", user: UserIdentity = Depends(get_current_user)):
+async def stream_realtime_events(
+    case_id: Optional[str] = "C102",
+    last_event_id: Optional[str] = Header(None, alias="Last-Event-ID"),
+    last_event_query: Optional[int] = Query(None, alias="last_event_id"),
+    user: UserIdentity = Depends(get_current_user),
+):
     target_case = case_id or "C102"
     AuthService.get_instance().enforce_case_access(user, target_case)
     dispatcher = RealtimeDispatcher.get_instance()
-    scope = EventSubscriptionScope(case_id=target_case)
 
-    def event_generator():
-        # Yield initial connection heartbeat
-        init_event = dispatcher.publish_event(
-            event_type="REALTIME_SUBSCRIPTION_ACTIVE",
-            payload={"status": "CONNECTED", "subscribed_case": target_case},
-            case_id=target_case,
-        )
-        yield dispatcher.format_sse_event(init_event)
+    seq = 0
+    if last_event_id and last_event_id.isdigit():
+        seq = int(last_event_id)
+    elif last_event_query is not None:
+        seq = last_event_query
 
-        # Yield matching scoped events
-        for ev in dispatcher.get_scoped_events(scope):
-            yield dispatcher.format_sse_event(ev)
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        dispatcher.stream_events(case_id=target_case, after_sequence=seq),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/events/simulate")

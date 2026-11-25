@@ -52,7 +52,7 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
   const progressPercent = Math.round(
     (plan.steps.filter((s) => s.status === "COMPLETED" || s.status === "SKIPPED").length /
       Math.max(1, plan.steps.length)) *
-      100
+    100
   );
 
   const handleExecuteNext = async (token?: string) => {
@@ -181,8 +181,8 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
                 plan.status === "COMPLETED"
                   ? "var(--status-verified)"
                   : plan.status === "WAITING_CONFIRMATION"
-                  ? "var(--status-gap)"
-                  : "var(--sentinel-crimson)",
+                    ? "var(--status-gap)"
+                    : "var(--sentinel-crimson)",
             }}
           />
           <span
@@ -307,13 +307,13 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
                     border: isCurrent
                       ? "1px solid var(--sentinel-crimson)"
                       : isSelected
-                      ? "1px solid var(--border-strong)"
-                      : "1px solid var(--border-structural)",
+                        ? "1px solid var(--border-strong)"
+                        : "1px solid var(--border-structural)",
                     backgroundColor: isCurrent
                       ? "var(--surface-selected)"
                       : isSelected
-                      ? "var(--surface-secondary)"
-                      : "var(--surface-primary)",
+                        ? "var(--surface-secondary)"
+                        : "var(--surface-primary)",
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
@@ -353,10 +353,10 @@ export const SentinelRunnerOverlay: React.FC<SentinelRunnerOverlayProps> = ({
                             st.status === "COMPLETED"
                               ? "var(--status-verified)"
                               : st.status === "RUNNING"
-                              ? "var(--sentinel-crimson)"
-                              : st.status === "BLOCKED_ON_CONFIRMATION"
-                              ? "var(--status-gap)"
-                              : "var(--text-muted)",
+                                ? "var(--sentinel-crimson)"
+                                : st.status === "BLOCKED_ON_CONFIRMATION"
+                                  ? "var(--status-gap)"
+                                  : "var(--text-muted)",
                         }}
                       >
                         {st.status}

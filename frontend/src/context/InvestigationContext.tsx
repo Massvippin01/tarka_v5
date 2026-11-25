@@ -255,42 +255,59 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Realtime Server-Sent Events (SSE) Listener
+  // Realtime Server-Sent Events (SSE) Listener with resilient reconnection & event dispatch
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     let eventSource: EventSource | null = null;
-    try {
-      eventSource = createEventSource(`/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
+    let isCancelled = false;
 
-      eventSource.onopen = () => {
-        setRealtimeState("LIVE");
-      };
+    const connectSSE = () => {
+      try {
+        const streamUrl = `/api/v1/investigation/events/stream?case_id=${activeCaseId}${lastSequenceNumber ? `&last_event_id=${lastSequenceNumber}` : ""}`;
+        eventSource = createEventSource(streamUrl);
 
-      eventSource.onmessage = (e) => {
-        try {
-          const parsed = JSON.parse(e.data);
-          if (parsed.sequence_number) {
-            setLastSequenceNumber(parsed.sequence_number);
+        const handleIncoming = (e: MessageEvent) => {
+          try {
+            if (!e.data || e.data.trim() === "") return;
+            const parsed = JSON.parse(e.data);
+            if (parsed.sequence_number) {
+              setLastSequenceNumber(parsed.sequence_number);
+            }
+            if (parsed.event_type === "EVIDENCE_ADDED") {
+              setNewEvidenceAlert(true);
+            }
+            dispatchEvent("REALTIME_EVENT_RECEIVED", parsed);
+          } catch (err) {
+            console.error("Failed to parse SSE event", err);
           }
-          if (parsed.event_type === "EVIDENCE_ADDED") {
-            setNewEvidenceAlert(true);
-          }
-          dispatchEvent("REALTIME_EVENT_RECEIVED", parsed);
-        } catch (err) {
-          console.error("Failed to parse SSE event", err);
-        }
-      };
+        };
 
-      eventSource.onerror = () => {
-        setRealtimeState("RECONNECTING");
-      };
-    } catch (e) {
-      setRealtimeState("OFFLINE");
-    }
+        eventSource.onopen = () => {
+          if (!isCancelled) setRealtimeState("LIVE");
+        };
+
+        eventSource.onmessage = handleIncoming;
+        eventSource.addEventListener("EVIDENCE_ADDED", handleIncoming as EventListener);
+        eventSource.addEventListener("REALTIME_SUBSCRIPTION_ACTIVE", handleIncoming as EventListener);
+        eventSource.addEventListener("FORENSIC_JOB_PROGRESS", handleIncoming as EventListener);
+
+        eventSource.onerror = () => {
+          if (!isCancelled) setRealtimeState("RECONNECTING");
+        };
+      } catch (e) {
+        if (!isCancelled) setRealtimeState("OFFLINE");
+      }
+    };
+
+    connectSSE();
 
     return () => {
-      if (eventSource) eventSource.close();
+      isCancelled = true;
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
     };
   }, [activeCaseId]);
 
