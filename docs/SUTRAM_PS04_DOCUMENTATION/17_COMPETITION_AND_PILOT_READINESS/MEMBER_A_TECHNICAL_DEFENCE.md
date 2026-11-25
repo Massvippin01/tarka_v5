@@ -93,7 +93,7 @@
 
 ### 5. LIKELY JUDGE QUESTIONS & DEFENCE ANSWERS
 
-**Q1: "Why not simply use an LLM like GPT-4 or Claude to resolve entities and trace money trails?"**  
+**Q1: "Why not simply use a cloud LLM to resolve entities and trace money trails?"**  
 *Member A Answer:* *"LLMs are probabilistic generative models. They hallucinate, cannot guarantee arithmetic conservation of money across 5-column bank journals, and are legally inadmissible under Section 63 BSA because their weights are non-deterministic black boxes. TARKA uses deterministic graph theory and Microsoft Z3 SMT solver. Our entity resolution has a mathematical hard-veto guarantee, and our money trail satisfies formal conservation equations."*
 
 **Q2: "What happens if a bank account has ₹10 Lakhs of legitimate retail business income, and a scammer transfers ₹1 Lakh of stolen funds into it? Do you freeze the entire account?"**  

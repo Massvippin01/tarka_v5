@@ -44,7 +44,7 @@ TARKA is engineered as a **modular hybrid system** that balances operational sim
 
 Under Indian evidentiary law and the Digital Personal Data Protection Act, 2023 (DPDPA), raw cyber-fraud case evidence must remain strictly within sovereign territorial boundaries:
 1. **Strict Territorial Residency:** All databases, object storage buckets, and model weights reside exclusively in Indian data centres (e.g. NIC National Data Centres in Delhi, Hyderabad, Pune, or Bhubaneswar).
-2. **Zero External Data Egress:** All LLM inference, OCR extraction, audio processing, and graph calculations execute on internal on-premise hardware. **No raw evidence bytes or transcripts are transmitted to external commercial APIs** (such as OpenAI, Anthropic, or foreign cloud servers).
+2. **Zero External Data Egress:** All LLM inference, OCR extraction, audio processing, and graph calculations execute on internal on-premise hardware. **No raw evidence bytes or transcripts are transmitted to external commercial APIs** (such as commercial AI providers or foreign cloud servers).
 3. **Cryptographic Bitstream Sealing:** Every admitted digital artifact is immediately sealed with a SHA-256 hash upon intake. Modifying or replacing a file violates the immutable hash check and raises an immediate Gate I4 tamper alert.
 
 ---

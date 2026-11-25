@@ -1,6 +1,6 @@
 """NCRP cyber-crime complaint CSV import, deterministic case matching, and golden-hour step timing.
 
-Rules (CLAUDE.md / PLAN.md):
+Rules (PLAN.md):
 - Never invent missing fields: blank CSV columns stay empty / None.
 - Match complaints strictly against rows already ingested in derived.sqlite (by account/VPA/phone,
   amount tolerance, and optional timestamp window). Every unmatched complaint explains why.
