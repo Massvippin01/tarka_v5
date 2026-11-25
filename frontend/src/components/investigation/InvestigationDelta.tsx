@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface DeltaData {
@@ -22,7 +23,7 @@ export const InvestigationDelta: React.FC = () => {
     let isMounted = true;
     const fetchDelta = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/delta`);
+        const res = await fetch(apiUrl(`/api/v1/investigations/${activeCaseId}/delta`));
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setDelta(data);

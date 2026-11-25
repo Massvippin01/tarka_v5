@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface ImpactData {
@@ -22,7 +23,7 @@ export const EvidenceImpactPanel: React.FC = () => {
     let isMounted = true;
     const fetchImpact = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/state`);
+        const res = await fetch(apiUrl(`/api/v1/investigations/${activeCaseId}/state`));
         if (res.ok) {
           await res.json();
           if (isMounted) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl } from "../api/client";
 import { useInvestigation } from "../context/InvestigationContext";
 
 interface AnalyticalContextPanelProps {
@@ -17,7 +18,7 @@ export const AnalyticalContextPanel: React.FC<AnalyticalContextPanelProps> = ({ 
     async function fetchSignals() {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:8000/api/v1/investigation/analytics/signals/${caseId}`);
+        const res = await axios.get(apiUrl(`/api/v1/investigation/analytics/signals/${caseId}`));
         setData(res.data);
       } catch (e) {
         console.error(e);

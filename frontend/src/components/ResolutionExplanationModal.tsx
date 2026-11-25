@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl } from "../api/client";
 
 interface ResolutionExplanationModalProps {
   entityId: string;
@@ -20,7 +21,7 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
     async function loadMatches() {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:8000/api/v1/resolution/matches/${entityId}`);
+        const res = await axios.get(apiUrl(`/api/v1/resolution/matches/${entityId}`));
         setMatches(res.data || []);
       } catch (err) {
         console.error("Failed to load resolution matches", err);
@@ -35,7 +36,7 @@ export const ResolutionExplanationModal: React.FC<ResolutionExplanationModalProp
 
   const handleDecision = async (candidateId: string, action: "CONFIRM" | "REJECT") => {
     try {
-      await axios.post("http://localhost:8000/api/v1/investigation/verify-claim", {
+      await axios.post(apiUrl("/api/v1/investigation/verify-claim"), {
         claim_id: `RESOLUTION_CLAIM_${entityId}_${candidateId}`,
         action: action === "CONFIRM" ? "VERIFIED" : "DISMISSED",
         investigator_notes: `Investigator manually ${action.toLowerCase()}ed entity resolution match between ${entityId} and ${candidateId}.`,

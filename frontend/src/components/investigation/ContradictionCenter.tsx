@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface ContradictionItem {
@@ -23,7 +24,7 @@ export const ContradictionCenter: React.FC = () => {
     let isMounted = true;
     const fetchContradictions = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/contradictions`);
+        const res = await fetch(apiUrl(`/api/v1/investigations/${activeCaseId}/contradictions`));
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setContradictions(data.contradictions || []);

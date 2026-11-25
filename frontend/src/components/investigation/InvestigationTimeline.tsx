@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface TimelineEntry {
@@ -22,7 +23,7 @@ export const InvestigationTimeline: React.FC = () => {
     let isMounted = true;
     const fetchTimeline = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/timeline`);
+        const res = await fetch(apiUrl(`/api/v1/investigations/${activeCaseId}/timeline`));
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setEntries(data.entries || []);

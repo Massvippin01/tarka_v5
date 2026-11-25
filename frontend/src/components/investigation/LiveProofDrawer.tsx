@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface ProofStep {
@@ -36,7 +37,7 @@ export const LiveProofDrawer: React.FC = () => {
     let isMounted = true;
     const fetchProof = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/proof/${proofDrawerClaimId}`);
+        const res = await fetch(apiUrl(`/api/v1/proof/${proofDrawerClaimId}`));
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setProof(data);

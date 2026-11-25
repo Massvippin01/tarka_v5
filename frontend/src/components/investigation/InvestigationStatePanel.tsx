@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Clock, Camera, RefreshCw } from "lucide-react";
+import { apiUrl } from "../../api/client";
 import { useInvestigation } from "../../context/InvestigationContext";
 
 interface StateData {
@@ -43,7 +44,7 @@ export const InvestigationStatePanel: React.FC = () => {
     let isMounted = true;
     const fetchState = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/investigations/${activeCaseId}/state`);
+        const res = await fetch(apiUrl(`/api/v1/investigations/${activeCaseId}/state`));
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setState(data);
@@ -209,7 +210,7 @@ export const InvestigationStatePanel: React.FC = () => {
             }}
             onClick={async () => {
               try {
-                const res = await fetch("http://localhost:8000/api/v1/memory/snapshot", {
+                const res = await fetch(apiUrl("/api/v1/memory/snapshot"), {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ case_id: activeCaseId }),
@@ -236,7 +237,7 @@ export const InvestigationStatePanel: React.FC = () => {
             }}
             onClick={async () => {
               try {
-                const res = await fetch("http://localhost:8000/api/v1/memory/rehydrate", {
+                const res = await fetch(apiUrl("/api/v1/memory/rehydrate"), {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ case_id: activeCaseId }),

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createEventSource } from "../api/client";
 import type { OperatingContext } from "../types/operatingContext";
 import { OperatingContextService } from "../services/operatingContextService";
 import { commandBus } from "../services/commandBusService";
@@ -260,7 +261,7 @@ export const InvestigationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`http://localhost:8000/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
+      eventSource = createEventSource(`/api/v1/investigation/events/stream?case_id=${activeCaseId}`);
 
       eventSource.onopen = () => {
         setRealtimeState("LIVE");

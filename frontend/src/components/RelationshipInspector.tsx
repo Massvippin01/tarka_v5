@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { apiUrl } from "../api/client";
 
 interface RelationshipInspectorProps {
   relId: string | null;
@@ -20,7 +21,7 @@ export const RelationshipInspector: React.FC<RelationshipInspectorProps> = ({
     async function loadRelationship() {
       try {
         const idToFetch = relId || "rel-p1-p2";
-        const res = await axios.get(`http://localhost:8000/api/v1/investigation/relationship-inspector/${idToFetch}`);
+        const res = await axios.get(apiUrl(`/api/v1/investigation/relationship-inspector/${idToFetch}`));
         setData(res.data);
       } catch (e) {
         console.error(e);

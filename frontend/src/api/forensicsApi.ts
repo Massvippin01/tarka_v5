@@ -5,8 +5,9 @@ import type {
   LocalModelStatus,
 } from "../types/forensics";
 
+const apiBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 const api = axios.create({
-  baseURL: "/api/v1/forensics",
+  baseURL: `${apiBase}/api/v1/forensics`,
   timeout: 30000,
 });
 
