@@ -7,6 +7,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
+from fastapi.concurrency import run_in_threadpool
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel, Field
 
@@ -1235,6 +1236,35 @@ def uploaded_bundle(case_id: str, record: Optional[Dict[str, Any]] = None) -> Op
     }
 
 
+_BUNDLE_CACHE: Dict[str, tuple] = {}
+
+
+def _data_version(case_id: str) -> tuple:
+    """Changes whenever the case's rows, jobs, verdicts or registry change (file mtimes incl. WAL)."""
+    mgr = IngestionJobManager.get_instance()
+    paths = [mgr.derived_dir / case_id / "derived.sqlite", mgr.base_dir / "jobs.sqlite", mgr.base_dir / "projects.sqlite"]
+    out = []
+    for p in paths:
+        for q in (p, p.with_name(p.name + "-wal")):
+            try:
+                st = q.stat()
+                out.append((st.st_mtime_ns, st.st_size))
+            except OSError:
+                out.append(None)
+    return tuple(out)
+
+
+def cached_uploaded_bundle(case_id: str, record: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """uploaded_bundle, memoised per case until its derived data version changes (runs in a worker thread)."""
+    hit = _BUNDLE_CACHE.get(case_id)
+    if hit and hit[0] == _data_version(case_id) and hit[1] == record:
+        return hit[2]
+    bundle = uploaded_bundle(case_id, record)
+    if bundle is not None:  # key taken after the build: analysis writes its own cache into derived.sqlite
+        _BUNDLE_CACHE[case_id] = (_data_version(case_id), record, bundle)
+    return bundle
+
+
 @router.get("/{case_id}/bundle")
 async def get_case_bundle(
     case_id: str,
@@ -1255,7 +1285,7 @@ async def get_case_bundle(
     reg = ProjectsStore(IngestionJobManager.get_instance().base_dir).registered(case_id)
     if reg:  # created in TARKA: no SQL case row exists
         d = reg.get("details") or {}
-        return uploaded_bundle(case_id, {
+        return await run_in_threadpool(cached_uploaded_bundle, case_id, {
             "title": reg["title"],
             "firNumber": d.get("fir_number", ""),
             "policeStation": d.get("police_station", ""),
@@ -1268,7 +1298,7 @@ async def get_case_bundle(
         if not case:
             case = await uow.cases.get_by_case_number(case_id)
         if not case:
-            bundle = uploaded_bundle(case_id)
+            bundle = await run_in_threadpool(cached_uploaded_bundle, case_id)
             if bundle is None:
                 raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found.")
             return bundle

@@ -2,8 +2,9 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ChevronRight, Copy, FileSpreadsheet, GitFork, Inbox, Layers, RotateCcw, Share2, UserCheck, Zap } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
+import { formatInr } from '../../lib/formatInr';
 import { Button, Chip, EmptyState, PageHead, Skeleton, SourceNumber, type ChipVariant } from '../ui';
-import { buildDeskItems, type DeskItem, type DeskKind } from '../desk/desk';
+import { buildDeskItems, type DeskItem, type DeskKind, type DeskUrgency } from '../desk/desk';
 import { useDeskData } from '../desk/useDeskData';
 
 const KIND: Record<DeskKind, { label: string; hint: string; icon: React.ReactNode; variant: ChipVariant }> = {
@@ -16,6 +17,12 @@ const KIND: Record<DeskKind, { label: string; hint: string; icon: React.ReactNod
   duplicate: { label: 'Duplicate upload', hint: 'The same file (by SHA-256) was already uploaded', icon: <Copy className="w-4 h-4" />, variant: 'muted' },
 };
 
+const URGENCY: Record<DeskUrgency, { label: string; variant: ChipVariant }> = {
+  high: { label: 'Urgent', variant: 'risk' },
+  medium: { label: 'Soon', variant: 'urgent' },
+  low: { label: 'When free', variant: 'muted' },
+};
+
 export const DeskScreen: React.FC = () => {
   const d = useDeskData();
   const items = useMemo(() => buildDeskItems(d.cases), [d.cases]);
@@ -26,8 +33,8 @@ export const DeskScreen: React.FC = () => {
     <div className="v6-enter space-y-[var(--space-4)] max-w-[1100px]" data-testid="v6-desk">
       <PageHead
         kicker="My Desk"
-        title={d.isLoading ? 'Checking your cases…' : items.length ? `${items.length} ${items.length === 1 ? 'thing needs' : 'things need'} you` : 'All clear'}
-        subtitle={caseCount ? `Across ${caseCount} ${caseCount === 1 ? 'case' : 'cases'} you can access` : undefined}
+        title={items.length ? `${items.length} ${items.length === 1 ? 'thing needs' : 'things need'} you` : d.isLoading ? 'Checking your cases…' : 'All clear'}
+        subtitle={caseCount ? `Across ${caseCount} ${caseCount === 1 ? 'case' : 'cases'} you can access${d.isLoading && items.length ? ' · still checking, more may appear' : ''}` : undefined}
         actions={
           <Button size="sm" variant="ghost" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={d.refetch}>
             Refresh
@@ -106,12 +113,15 @@ const DeskRow: React.FC<{ item: DeskItem; index: number }> = ({ item, index }) =
           <span className="block text-[var(--text-md)] font-semibold text-[var(--fg-1)] truncate" title={item.title}>{item.title}</span>
           <span className="block text-[var(--text-xs)] text-[var(--fg-2)] truncate mt-0.5" title={item.detail}>{item.detail}</span>
         </span>
+        <Chip variant={URGENCY[item.urgency].variant} className="flex-none w-[76px] justify-center" title="Urgent: money at stake or notices waiting. Soon: needs a decision. When free: housekeeping.">{URGENCY[item.urgency].label}</Chip>
         <Chip variant="muted" className="flex-none font-mono" title={`Opens ${item.caseId}`}>{item.caseId}</Chip>
         <ChevronRight className="w-4 h-4 text-[var(--fg-3)] flex-none" />
       </button>
-      {item.figure && (
-        <SourceNumber figure={item.figure} className="flex-none mr-[var(--space-4)] v6-mono text-[var(--text-sm)] font-semibold text-[var(--fg-1)]" />
-      )}
+      {item.figure ? (
+        <SourceNumber figure={item.figure} className="flex-none mr-[var(--space-4)] min-w-[88px] text-right v6-mono text-[var(--text-sm)] font-semibold text-[var(--fg-1)]" />
+      ) : item.amount > 0 ? (
+        <span className="flex-none mr-[var(--space-4)] min-w-[88px] text-right v6-mono text-[var(--text-sm)] font-semibold text-[var(--fg-1)]">{formatInr(item.amount, { compact: true })}</span>
+      ) : null}
     </motion.li>
   );
 };

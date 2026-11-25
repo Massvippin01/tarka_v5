@@ -385,7 +385,7 @@ async def job_rejected_rows(
 
 
 @router.get("/cases/{case_id}/custody", tags=["Evidence Ledger"])
-async def case_custody(case_id: str, user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
+def case_custody(case_id: str, user: UserIdentity = Depends(get_current_user)) -> List[Dict[str, Any]]:
     """Chain of custody for every file in the case: who did what, when (oldest first)."""
     case_id = _checked_case_id(case_id)
     AuthService.get_instance().enforce_case_access(user, case_id)

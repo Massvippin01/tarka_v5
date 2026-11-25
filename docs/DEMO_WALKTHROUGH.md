@@ -21,7 +21,7 @@ Two separate scripts measure 1,000,000-row performance on this machine (results 
    - **Ingest**: **14.09 s** (**70,972 rows/s**) into `derived.sqlite`
    - **Analysis**: **20.62 s** (cached thereafter in `derived.sqlite` for fast UI navigation)
    - **Networks found**: **55** components covering the **50 planted gangs** — **53** components come from planted gangs (3 gangs split across non-bridged L2 sub-paths) and **2** extra single-account false-positive components (`user24671@okhdfcbank`, `user19133@ybl`) whose random P2P transfers coincided with ≥ 2 near-limit outflows inside a 72 h window (**Precision 0.991**, `232 / 234` flagged mules)
-   - **Flagship syndicate (`NET-7E008CEA`)**: **14 flagged mule accounts**, **6 victims**, **₹13.4 L paid in**, **₹2.8 L recoverable**, **1 controller cluster (`CTRL-DC-001`)**: *"These 14 mule accounts are operated from 2 phones"*
+   - **Flagship syndicate (`NET-7E008CEA`)**: **14 flagged mule accounts**, **6 victims**, **₹13.4 L paid in**, **₹2.8 L recoverable**, **1 device group (`DC-001`)**: the 14 flagship mules share 2 phones (IMEIs `358911090000001` / `…002`), but the Devices page lists **21 accounts** in `DC-001`, because the seeder gives the controller phones of planted gangs 1 and 2 the same two IMEIs, so their mules join the group (23 accounts in a 200k-row seed)
    - **NCRP complaints**: 3 imported (`NCRP-2026-990001`, `NCRP-2026-990002` **MATCHED**; `NCRP-2026-990003` **UNMATCHED** with explicit diagnostic reason — zero invented fields)
 3. **IBM AMLworld External Benchmark** ([`benchmark_amlworld.py`](file:///e:/new_tarka/tarka_v5/backend/tools/benchmark_amlworld.py)): **Loader ready, run pending** (full Kaggle dataset is not downloaded locally; schema parser test passes in `test_engine_attribution_upgrade.py`).
 
@@ -51,7 +51,7 @@ venv\Scripts\python backend/tools/seed_golden_hour_demo.py --rows 1000000 --gang
 ### Minute 1:20 – 2:05 · Biggest Gang & Device Attribution (`Network`)
 1. Open **Network** (`Step 4`) and select **`NET-7E008CEA`** (`₹13.4 L`, `14 mules`, `6 victims`).
 2. Highlight the **Controller attribution** panel:
-   - **"These 14 mule accounts are operated from 2 phones"** (`IMEI: 358911090000001`, `IMEI: 358911090000002`, shared `BSSID: AA:BB:CC:44:55:01`) with expandable 14-row device sighting evidence.
+   - **Say "14 mules, 2 phones" for the flagship network, and "21 accounts" for the Devices page group `DC-001`.** The group is the 14 flagship mules (`IMEI: 358911090000001`, `IMEI: 358911090000002`, shared `BSSID: AA:BB:CC:44:55:01`) plus the accounts of two other planted gangs whose controller phones reuse those IMEIs in the seed data. Open `DC-001` on **Devices & SIMs** to show the per-IMEI account lists.
 3. Expand **Time-aware money paths** (`TracesSummaryCard`) to show chronological LIBR money paths from `victim0_0@oksbi` through L1/L2 mules to cash-out vs residual recoverable balances (`₹2.8 L` still in mule accounts in `NET-7E008CEA`).
    - Screenshot: [04-network-14-mules-2-phones.png](file:///e:/new_tarka/tarka_v5/docs/demo/04-network-14-mules-2-phones.png)
 

@@ -19,6 +19,7 @@ export interface DeskCase {
   networks?: NetworksResponse;
 }
 
+export type DeskUrgency = 'high' | 'medium' | 'low';
 export type DeskKind = 'intake' | 'action' | 'unsplit' | 'cross' | 'identity' | 'mapping' | 'duplicate';
 
 export interface DeskItem {
@@ -30,8 +31,19 @@ export interface DeskItem {
   /** v6 view the item opens, with the case set. */
   view: string;
   amount: number;
+  /** How soon it needs you: drives the order of the list. */
+  urgency: DeskUrgency;
   /** Rows behind `amount`, when the item has one. */
   figure?: MoneyFigure;
+}
+
+const URGENCY_RANK: Record<DeskUrgency, number> = { high: 0, medium: 1, low: 2 };
+/** Big money still sitting in an unsplit gang, or a case waiting for its notices, can't wait; duplicates can. */
+const BIG_INR = 10_00_000;
+export function urgencyOf(kind: DeskKind, amount: number): DeskUrgency {
+  if (kind === 'action') return 'high';
+  if (kind === 'unsplit') return amount >= BIG_INR ? 'high' : 'medium';
+  return kind === 'duplicate' ? 'low' : 'medium';
 }
 
 const ORDER: DeskKind[] = ['intake', 'action', 'unsplit', 'cross', 'identity', 'mapping', 'duplicate'];
@@ -39,7 +51,7 @@ const n = (count: number, one: string, many = `${one}s`) => `${count.toLocaleStr
 const names = (xs: string[], max = 3) => xs.slice(0, max).join(', ') + (xs.length > max ? ` and ${xs.length - max} more` : '');
 
 export function buildDeskItems(cases: DeskCase[]): DeskItem[] {
-  const items: DeskItem[] = [];
+  const items: Omit<DeskItem, 'urgency'>[] = [];
   const crossPairs = new Set<string>(); // "C1|C2" shown once, not again from C2's side
   for (const c of cases) {
     const id = c.caseId;
@@ -92,7 +104,9 @@ export function buildDeskItems(cases: DeskCase[]): DeskItem[] {
         detail: net.review_queue.slice(0, 2).map((r) => `${r.a} ↔ ${r.b}`).join(' · ') });
     }
   }
-  return items.sort((a, b) => ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind) || b.amount - a.amount || a.caseId.localeCompare(b.caseId));
+  return items
+    .map((i) => ({ ...i, urgency: urgencyOf(i.kind, i.amount) }))
+    .sort((a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency] || ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind) || b.amount - a.amount || a.caseId.localeCompare(b.caseId));
 }
 
 /** Victim → member payments behind a network's amount. The server only lists links between the members it shows, so a large network can show a gap. */

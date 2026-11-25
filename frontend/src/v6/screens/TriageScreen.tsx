@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { GitFork, Network, RotateCcw, Scale, Share2, Users } from 'lucide-react';
+import { ArrowRight, GitFork, Network, UploadCloud, RotateCcw, Scale, Share2, Users } from 'lucide-react';
 import apiClient from '../../api/client';
 import { useCaseStore } from '../../store/useCaseStore';
 import { formatInr } from '../../lib/formatInr';
@@ -19,6 +19,9 @@ import {
 } from '../triage/triage';
 import { IntakeReviewBoard } from '../intake/IntakeReviewBoard';
 import { ExportButtons } from '../triage/ExportButtons';
+import { networkRows, triageLayout, type NetworkRow } from '../triage/layout';
+import { NetworkTable, StatusPill } from '../triage/NetworkTable';
+import { setFocus } from '../../lib/focusUrl';
 
 const errText = (e: unknown) => {
   if (axios.isAxiosError(e)) {
@@ -32,6 +35,33 @@ const errText = (e: unknown) => {
 
 const card = 'rounded-2xl border border-[var(--line)] bg-[var(--surface-1)]/80 backdrop-blur-md shadow-[var(--shadow)]';
 const MEMBERS_SHOWN = 8;
+const plural = (n: number, one: string) => `${n.toLocaleString('en-IN')} ${n === 1 ? one : `${one}s`}`;
+
+const NothingFound: React.FC<{ caseId: string }> = ({ caseId }) => {
+  const { setActiveView } = useCaseStore();
+  const jobs = useQuery({
+    queryKey: ['ingestion-jobs', caseId],
+    queryFn: async () => (await apiClient.get<{ stage: string; is_cancelled?: boolean }[]>('/api/v1/ingestion/jobs', { params: { case_id: caseId } })).data,
+  });
+  const files = (jobs.data ?? []).filter((j) => !j.is_cancelled).length;
+  return (
+    <div className={`${card} p-8 text-center`} data-testid="triage-empty">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent)]"><Network className="w-6 h-6" /></div>
+      <div className="text-[16px] font-semibold text-[var(--fg-1)]">No fraud network found in {caseId}</div>
+      <p className="mx-auto mt-1.5 max-w-[60ch] text-[13px] text-[var(--fg-2)]">
+        {files > 0 ? `TARKA read ${plural(files, 'uploaded file')}` : 'TARKA has no uploaded statements for this case'} and looked for accounts that receive money from victims and quickly pass it on to each other. None matched.
+      </p>
+      <ul className="mx-auto mt-3 max-w-[56ch] space-y-1 text-left text-[12.5px] text-[var(--fg-2)] list-disc pl-5">
+        <li>The suspects’ own bank or UPI statements help most: they show where the money went next.</li>
+        <li>Add the victims’ statements too, so the payments into the first account are visible.</li>
+        <li>CSV or Excel with a date, an amount and who paid whom is enough.</li>
+      </ul>
+      <Button className="mt-4" variant="primary" size="md" onClick={() => setActiveView('upload')}>
+        <span className="flex items-center gap-1.5"><UploadCloud className="w-3.5 h-3.5" /> Upload statements</span>
+      </Button>
+    </div>
+  );
+};
 
 export const TriageScreen: React.FC = () => {
   const { activeCaseId } = useCaseStore();
@@ -42,12 +72,14 @@ export const TriageScreen: React.FC = () => {
   });
   const networks = q.data?.networks ?? [];
   const totals = useMemo(() => triageTotals(networks), [networks]);
+  const rows = useMemo(() => networkRows(networks, q.data?.cross_case_hits ?? []), [networks, q.data]);
+  const layout = triageLayout(networks.length);
   // A bulk-intake holding case: show the review board instead of the network cards.
   if (networks.some((n) => n.proposal)) return <IntakeReviewBoard caseId={caseId} networks={networks} />;
 
   return (
     <div className="v6-enter space-y-4" data-testid="v6-triage">
-      <PageHead kicker="Triage" title={q.data ? headlineText(totals) : 'Fraud networks'} subtitle={`Groups of linked accounts found in ${caseId}'s evidence, most mule-like first.`}
+      <PageHead kicker="Triage" title={q.data ? headlineText(totals) : 'Fraud networks'} subtitle={`Groups of linked accounts found in ${caseId}'s evidence, ranked by ₹ still freezable and urgency.`}
         actions={networks.length > 0 ? <ExportButtons caseId={caseId} /> : undefined} />
 
       {q.isLoading ? (
@@ -69,21 +101,18 @@ export const TriageScreen: React.FC = () => {
         />
       ) : (
         <>
-          {networks.length === 0 ? (
-            <EmptyState
-              icon={<Network className="w-6 h-6" />}
-              title="No networks found yet"
-              description="Upload bank or UPI statements for this case. Accounts that pass money between each other are grouped here."
-            />
-          ) : (
+          {layout === 'empty' && <NothingFound caseId={caseId} />}
+          {layout === 'single' && <NetworkCard caseId={caseId} row={rows[0]} index={0} wide />}
+          {layout === 'cards' && (
             <div className="grid lg:grid-cols-2 gap-3">
-              {networks.map((n, i) => (
-                <motion.div key={n.network_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, delay: Math.min(i, 6) * 0.03 }}>
-                  <NetworkCard caseId={caseId} n={n} index={i} />
+              {rows.map((r, i) => (
+                <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, delay: Math.min(i, 6) * 0.03 }}>
+                  <NetworkCard caseId={caseId} row={r} index={i} />
                 </motion.div>
               ))}
             </div>
           )}
+          {layout === 'table' && <NetworkTable caseId={caseId} rows={rows} />}
           <div className="grid lg:grid-cols-2 gap-3">
             <ReviewQueue items={q.data?.review_queue ?? []} />
             <CrossCaseHits hits={q.data?.cross_case_hits ?? []} caseId={caseId} />
@@ -94,24 +123,31 @@ export const TriageScreen: React.FC = () => {
   );
 };
 
-const NetworkCard: React.FC<{ caseId: string; n: FraudNetwork; index: number }> = ({ caseId, n, index }) => {
-  const [showAll, setShowAll] = useState(false);
+const NetworkCard: React.FC<{ caseId: string; row: NetworkRow; index: number; wide?: boolean }> = ({ caseId, row, index, wide }) => {
+  const n = row.net;
+  const { setActiveView } = useCaseStore();
+  const [showAll, setShowAll] = useState(!!wide);
   const [splitting, setSplitting] = useState(false);
   const ranked = useMemo(() => rankMembers(n.members), [n.members]);
   const shown = showAll ? ranked : ranked.slice(0, MEMBERS_SHOWN);
 
   return (
-    <div className={`${card} p-4`} data-testid="network-card">
+    <div className={`${card} p-4 ${index === 0 && !wide ? 'ring-1 ring-[var(--accent)]/40' : ''}`} data-testid="network-card">
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 flex-none rounded-lg flex items-center justify-center bg-[var(--risk-bg)] text-[var(--risk)]">
           <Share2 className="w-[18px] h-[18px]" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-semibold text-[var(--fg-1)] truncate" title={n.network_id}>
-            Network {index + 1}
+            {wide ? n.network_id : `#${index + 1} · ${n.network_id}`}
           </div>
           <div className="text-[12px] text-[var(--fg-3)]">
-            {n.member_count.toLocaleString('en-IN')} accounts · {n.mule_count.toLocaleString('en-IN')} mules · {n.victim_count.toLocaleString('en-IN')} victims
+            {n.member_count.toLocaleString('en-IN')} accounts · {plural(n.mule_count, 'mule')} · {plural(n.victim_count, 'victim')}
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <StatusPill status={row.status} />
+            {row.freezable > 0 && <span className="text-[11.5px] font-semibold text-[var(--safe)]" title={formatInr(row.freezable)}>{formatInr(row.freezable, { compact: true })} still freezable</span>}
+            {row.otherFirs > 0 && <span className="text-[11.5px] font-semibold text-[var(--urgent)]">Also in {plural(row.otherFirs, 'other FIR')}</span>}
           </div>
         </div>
         <div className="text-right flex-none">
@@ -134,7 +170,12 @@ const NetworkCard: React.FC<{ caseId: string; n: FraudNetwork; index: number }> 
         </button>
       )}
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex justify-end gap-2">
+        {wide && (
+          <Button size="sm" variant="primary" onClick={() => { setFocus({ networkId: n.network_id, account: null }); setActiveView('network'); }}>
+            Open on network page <ArrowRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
+        )}
         {splitting ? (
           <SplitForm caseId={caseId} n={n} index={index} onClose={() => setSplitting(false)} />
         ) : (

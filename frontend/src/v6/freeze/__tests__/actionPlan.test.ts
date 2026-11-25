@@ -36,7 +36,8 @@ describe('action plan selectors', () => {
 
   it('groups by IFSC when present, else by UPI handle with "bank not known"', () => {
     expect(bankKeyOf({ ifsc: 'HDFC0001234', bank: 'HDFC Bank', holderName: 'x', accountMasked: '' })).toEqual({ key: 'HDFC', label: 'HDFC Bank', known: true });
-    expect(bankKeyOf({ ifsc: '', bank: '', holderName: 'mule1@YBL', accountMasked: '' })).toMatchObject({ key: '@ybl', known: false });
+    expect(bankKeyOf({ ifsc: '', bank: '', holderName: 'mule1@YBL', accountMasked: '' })).toEqual({ key: '@ybl', label: 'Yes Bank', known: true });
+    expect(bankKeyOf({ ifsc: '', bank: '', holderName: 'mule1@zzpsp', accountMasked: '' })).toMatchObject({ key: '@zzpsp', known: false });
     expect(bankKeyOf({ ifsc: '', bank: '', holderName: 'Ravi', accountMasked: '' }).label).toBe('Bank not known');
     const groups = groupByBank(rankFreezeQueue(freezes, [], 0));
     expect(groups.map((g) => g.key).sort()).toEqual(['@oksbi', '@ybl', 'HDFC']);

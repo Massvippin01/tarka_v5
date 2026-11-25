@@ -379,7 +379,7 @@ export const ProjectBubbles: React.FC<{
               >
                 <title>{label}</title>
                 <circle className="ring" r={s.r + 5} fill="none" stroke={hot ? 'var(--accent)' : 'transparent'} strokeWidth={2} />
-                <circle r={s.r} fill={`color-mix(in srgb, ${c} 16%, var(--surface-1))`} stroke={c} strokeWidth={hot ? 3 : 2} />
+                <circle r={s.r} fill={`color-mix(in srgb, ${c} 30%, var(--surface-1))`} stroke={c} strokeWidth={hot ? 4 : 3} strokeDasharray={st === 'CLOSED' ? '5 4' : undefined} />
                 {s.r >= 24 ? (
                   <text y={4} textAnchor="middle" fontSize={s.r >= 34 ? 13 : 11} fontWeight={650} fill="var(--fg-1)" className="tabular-nums">
                     {formatInr(n.amount_inr || 0, { compact: true })}
