@@ -324,7 +324,7 @@ export class CaseSyncBridge {
   public async getCaseBundle(caseId: string, caseMetadata?: CaseWorkspace): Promise<ReconstructedInvestigation> {
     try {
       const res = await apiClient.get(`/api/v1/cases/${caseId}/bundle`, {
-        timeout: 2500,
+        timeout: 15000,
       });
       if (res.data && res.data.nodes && res.data.nodes.length > 0) {
         const raw = res.data;
@@ -438,7 +438,7 @@ export class CaseSyncBridge {
    */
   public async listCasesFromBackend(): Promise<CaseWorkspace[] | null> {
     try {
-      const res = await apiClient.get(`/api/v1/cases`, { timeout: 2500 });
+      const res = await apiClient.get(`/api/v1/cases`, { timeout: 15000 });
       if (Array.isArray(res.data) && res.data.length > 0) {
         const mapped: CaseWorkspace[] = await Promise.all(
           res.data.map(async (c: any) => {
@@ -446,7 +446,7 @@ export class CaseSyncBridge {
             // Fetch artifacts for this case
             let artifacts = [];
             try {
-              const artRes = await apiClient.get(`/api/v1/cases/${c.id}/artifacts`, { timeout: 1500 });
+              const artRes = await apiClient.get(`/api/v1/cases/${c.id}/artifacts`, { timeout: 10000 });
               if (Array.isArray(artRes.data)) {
                 artifacts = artRes.data;
               }
@@ -512,7 +512,7 @@ export class CaseSyncBridge {
           gateDetail: art.gateDetail || "Verified bitstream integrity",
           piiBlindedStats: art.piiBlindedStats,
         },
-        { timeout: 2500 }
+        { timeout: 15000 }
       );
       return true;
     } catch {
@@ -548,7 +548,7 @@ export class CaseSyncBridge {
    */
   public async fetchMuleScores(caseId: string): Promise<Record<string, any> | null> {
     try {
-      const res = await apiClient.get(`/api/v1/cases/${caseId}/mule-scores`, { timeout: 2500 });
+      const res = await apiClient.get(`/api/v1/cases/${caseId}/mule-scores`, { timeout: 15000 });
       return res.data;
     } catch {
       return null;
@@ -602,7 +602,7 @@ export class CaseSyncBridge {
         decision,
         notes,
         officerId: "IO-409",
-      }, { timeout: 2500 });
+      }, { timeout: 15000 });
       return res.data;
     } catch (err) {
       console.warn("Backend entity-decisions failed, generating offline proof", err);
