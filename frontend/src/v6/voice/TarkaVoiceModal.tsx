@@ -81,10 +81,10 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
     sessionState === 'LISTENING'
       ? 'listening'
       : sessionState === 'PROCESSING'
-      ? 'processing'
-      : sessionState === 'SPEAKING'
-      ? 'speaking'
-      : 'idle';
+        ? 'processing'
+        : sessionState === 'SPEAKING'
+          ? 'speaking'
+          : 'idle';
 
   // Initialize or update voice engine
   useEffect(() => {
@@ -309,18 +309,16 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('station')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-                  activeTab === 'station' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${activeTab === 'station' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
+                  }`}
               >
                 Station
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('models')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'models' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${activeTab === 'models' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
+                  }`}
               >
                 <HardDrive className="size-3" />
                 Models ({installedModels.length})
@@ -328,9 +326,8 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('benchmark')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'benchmark' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${activeTab === 'benchmark' ? 'bg-[#A85C2A] text-white' : 'text-[#978B7F] hover:text-[#FFFDF8]'
+                  }`}
               >
                 <Zap className="size-3" />
                 Benchmark
@@ -417,11 +414,10 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setHandsFreeMode(!handsFreeMode)}
-                  className={`w-full text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-                    handsFreeMode
+                  className={`w-full text-xs font-semibold rounded-lg px-2.5 py-1.5 border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${handsFreeMode
                       ? 'bg-[#287653] text-white border-[#287653]'
                       : 'bg-[#F7F4EB] text-[#655044] border-[#D5CABE]'
-                  }`}
+                    }`}
                 >
                   <Layers className="size-3.5" />
                   {handsFreeMode ? 'Hands-Free (Continuous VAD)' : 'Push-To-Talk (Manual)'}
@@ -451,15 +447,14 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
               <div className="mt-2 flex items-center gap-4 text-xs font-mono">
                 <span className="flex items-center gap-1.5 text-[#D5CABE]">
                   <span
-                    className={`size-2 rounded-full ${
-                      sessionState === 'LISTENING'
+                    className={`size-2 rounded-full ${sessionState === 'LISTENING'
                         ? 'bg-[#A85C2A] animate-pulse'
                         : sessionState === 'SPEAKING'
-                        ? 'bg-[#287653] animate-pulse'
-                        : sessionState === 'PROCESSING'
-                        ? 'bg-[#476D91] animate-pulse'
-                        : 'bg-[#655044]'
-                    }`}
+                          ? 'bg-[#287653] animate-pulse'
+                          : sessionState === 'PROCESSING'
+                            ? 'bg-[#476D91] animate-pulse'
+                            : 'bg-[#655044]'
+                      }`}
                   />
                   STATE: <strong className="text-white">{sessionState}</strong>
                 </span>
