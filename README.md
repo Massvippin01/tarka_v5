@@ -3,6 +3,8 @@
 
 > *"Drop in raw bank statements, telecom device logs, NCRP complaints, and UPI screenshots. TARKA isolates every mule network, links accounts to shared controller phones, traces recoverable balances forward in time, and drafts BNSS §106/§107 freeze notices and bilingual court reports — with every number backed by a SHA-256 chain of custody."*
 
+**🌐 Live Deployment:** https://tarka-v5-2.onrender.com/
+
 ---
 
 ## ⚡ Quickstart
