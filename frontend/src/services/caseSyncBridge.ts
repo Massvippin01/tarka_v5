@@ -308,7 +308,7 @@ export function getArtifactDisplayName(art: any, fallbackIndex?: number): string
 export class CaseSyncBridge {
   private static instance: CaseSyncBridge;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): CaseSyncBridge {
     if (!CaseSyncBridge.instance) {
@@ -831,12 +831,12 @@ export class CaseSyncBridge {
       const summary = isVictim
         ? `Target of extortion under ${inv.firNumber}. Suffered ${formatInr(inv.bookedLossInr)} defrauded outflow.`
         : isL1
-        ? `Primary recipient of fraudulent inflow. Rapid pass-through conduit to downstream layering accounts within 120s.`
-        : isMerchant
-        ? `Innocent commercial merchant. Protected under BNSS §106 specific lien shielding lawful commercial turnover.`
-        : isL2
-        ? `Layer-2 conduit utilized for structured split disbursements to evade single-transaction threshold alerts.`
-        : `Terminal settlement or cashout point identified in forensic graph.`;
+          ? `Primary recipient of fraudulent inflow. Rapid pass-through conduit to downstream layering accounts within 120s.`
+          : isMerchant
+            ? `Innocent commercial merchant. Protected under BNSS §106 specific lien shielding lawful commercial turnover.`
+            : isL2
+              ? `Layer-2 conduit utilized for structured split disbursements to evade single-transaction threshold alerts.`
+              : `Terminal settlement or cashout point identified in forensic graph.`;
 
       const entId = `ENT-${String(idx + 1).padStart(2, "0")}`;
 

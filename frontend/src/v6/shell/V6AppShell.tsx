@@ -203,6 +203,20 @@ export const V6AppShell: React.FC = () => {
         return;
       }
 
+      // 'w' or 'W': Jump to Workstation / Active Investigation Workspace
+      if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setActiveView('workspace');
+        return;
+      }
+
+      // 'h' or 'H': Jump to Sovereign Voice Field Home
+      if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setActiveView('home');
+        return;
+      }
+
       // Keys 1 to 6: Jump to investigation steps
       if (e.key === '1') {
         e.preventDefault();

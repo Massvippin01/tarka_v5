@@ -1,4 +1,5 @@
 import React from 'react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import {
   AlertTriangle,
   ChevronDown,
@@ -102,6 +103,18 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
 
   return (
     <header className="v6-topbar">
+      {/* Brand Anchor (Click to Command Centre / Home) */}
+      <div
+        onClick={() => setActiveView('workspace')}
+        className="flex items-center gap-2 pr-3.5 border-r border-[var(--line)] cursor-pointer hover:opacity-85 transition-opacity select-none shrink-0"
+        title="TARKA · Command Centre (Click to return to dashboard)"
+      >
+        <TarkaLogo variant="icon" theme="light" height={22} width={22} />
+        <span className="font-extrabold text-[13.5px] tracking-tight text-[#2B1E16] font-serif hidden md:inline">
+          TARKA
+        </span>
+      </div>
+
       {/* Upgraded Case Switcher Pill */}
       <UpgradedCaseSwitcher
         activeCase={activeCase}

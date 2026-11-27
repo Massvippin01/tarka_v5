@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_, func, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import (
@@ -45,6 +45,77 @@ class PostgresCaseRepository:
         stmt = select(CaseModel).order_by(CaseModel.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_filtered(
+        self,
+        status: Optional[str] = None,
+        q: Optional[str] = None,
+        io: Optional[str] = None,
+        typology: Optional[str] = None,
+        sort: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> tuple[List[CaseModel], int]:
+        stmt = select(CaseModel)
+        count_stmt = select(func.count(CaseModel.id))
+
+        filters = []
+        if status:
+            filters.append(CaseModel.status == status)
+        if q:
+            term = f"%{q.strip()}%"
+            filters.append(
+                or_(
+                    CaseModel.case_number.ilike(term),
+                    CaseModel.title.ilike(term),
+                    CaseModel.description.ilike(term),
+                    CaseModel.fir_number.ilike(term),
+                )
+            )
+        if io:
+            term = f"%{io.strip()}%"
+            filters.append(
+                or_(
+                    CaseModel.police_station.ilike(term),
+                    cast(CaseModel.metadata_json, String).ilike(term),
+                )
+            )
+        if typology:
+            term = f"%{typology.strip()}%"
+            filters.append(
+                or_(
+                    CaseModel.crime_type == typology,
+                    CaseModel.crime_type.ilike(term),
+                )
+            )
+
+        if filters:
+            stmt = stmt.where(and_(*filters))
+            count_stmt = count_stmt.where(and_(*filters))
+
+        if sort == "created_asc":
+            stmt = stmt.order_by(CaseModel.created_at.asc())
+        elif sort == "priority":
+            stmt = stmt.order_by(CaseModel.priority.desc(), CaseModel.created_at.desc())
+        else:
+            stmt = stmt.order_by(CaseModel.created_at.desc())
+
+        offset = max(0, (page - 1) * page_size)
+        stmt = stmt.offset(offset).limit(page_size)
+
+        total_res = await self.session.execute(count_stmt)
+        total = total_res.scalar() or 0
+
+        res = await self.session.execute(stmt)
+        return list(res.scalars().all()), total
+
+    async def delete(self, case_id: str) -> bool:
+        case = await self.get(case_id)
+        if case:
+            await self.session.delete(case)
+            await self.session.flush()
+            return True
+        return False
 
 
 class PostgresEvidenceRepository:

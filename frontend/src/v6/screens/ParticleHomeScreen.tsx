@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import { TarkaParticleOrb, type OrbState } from '../voice/TarkaParticleOrb';
 import { tarkaVoiceEngine, type VoiceAudioTelemetry, type SpeechProviderType } from '../voice/TarkaVoiceEngine';
 import { useCaseStore } from '../../store/useCaseStore';
 import { resolveNavigationIntent } from '../navigation/tarkaNavigationRegistry';
 import { highlightController } from '../highlight/semanticRegistry';
-import { ShieldCheck, Lock, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
 export const ParticleHomeScreen: React.FC = () => {
   const { activeCaseId, setActiveView } = useCaseStore();
@@ -311,24 +312,37 @@ export const ParticleHomeScreen: React.FC = () => {
     >
       {/* 1. Subtle, Minimal Top Identity & Status (Pure HUD, No Navbar) */}
       <header className="w-full max-w-5xl px-8 pt-8 flex items-center justify-between z-10 pointer-events-none">
-        {/* Minimal Wordmark */}
-        <div className="flex items-baseline gap-3">
-          <span
-            className="text-2xl font-bold tracking-[0.25em] text-white/90"
-            style={{ fontFamily: "'Cinzel', 'IBM Plex Serif', Georgia, serif" }}
-          >
-            TARKA
-          </span>
-          <span className="text-sm font-semibold text-sky-400 tracking-wider">
+        {/* Official Brand Lockup & Status */}
+        <div className="flex items-center gap-3.5 pointer-events-auto">
+          <TarkaLogo
+            variant="full"
+            theme="dark"
+            height={26}
+            onClick={() => setActiveView('workspace')}
+            className="cursor-pointer hover:opacity-90 transition-opacity"
+            alt="TARKA Forensic Platform"
+          />
+          <span className="text-sm font-semibold text-[#E08244] tracking-wider font-sans">
             तर्क
           </span>
-          <span className="text-[11px] font-mono text-slate-500 tracking-widest uppercase border-l border-slate-800 pl-3">
-            SUTRAM 2026 • DIGITAL FORENSICS
+          <span className="text-[11px] font-mono text-slate-500 tracking-widest uppercase border-l border-slate-800 pl-3 hidden md:inline">
+            SOVEREIGN FORENSIC INTELLIGENCE • BSA §63
           </span>
         </div>
 
-        {/* Minimal Connection & Privacy Indicator */}
-        <div className="flex items-center gap-4 text-xs font-mono tracking-wider">
+        {/* Minimal Connection, Language & Enter Workstation Trigger */}
+        <div className="flex items-center gap-3 text-xs font-mono tracking-wider pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => setActiveView('workspace')}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2B221D] hover:bg-[#3D3028] border border-[#C85A32]/40 text-[#F5EDE4] hover:text-[#FFFDF8] text-[11px] font-semibold transition cursor-pointer shadow-sm"
+            title="Open V6 Tactical Workstation (Key: W or Enter)"
+          >
+            <span>WORKSTATION</span>
+            <kbd className="text-[10px] bg-[#1A1512] px-1 py-0.2 rounded border border-white/10 text-amber-200">W</kbd>
+            <ArrowRight className="size-3 text-[#E08244]" />
+          </button>
+
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/60 border border-slate-800/80">
             <span
               className={`w-2 h-2 rounded-full ${

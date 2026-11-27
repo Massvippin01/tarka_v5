@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import {
   Mic,
   MicOff,
   Square,
   X,
-  Radio,
   Shield,
   HardDrive,
   Cpu,
@@ -285,8 +285,8 @@ export const TarkaVoiceModal: React.FC<TarkaVoiceModalProps> = ({
         {/* Hardware-styled Top Bezel */}
         <div className="h-14 px-6 bg-[#292522] border-b border-[#3B332F] flex items-center justify-between text-[#FFFDF8]">
           <div className="flex items-center gap-3">
-            <div className="size-8 rounded-lg bg-[#A85C2A] flex items-center justify-center text-white shadow-xs">
-              <Radio className="size-4 animate-pulse" />
+            <div className="size-8 rounded-lg bg-[#2B231F] border border-[#C85A32]/50 flex items-center justify-center p-1 shadow-sm shrink-0">
+              <TarkaLogo variant="icon" theme="dark" height={20} width={20} />
             </div>
             <div>
               <div className="flex items-center gap-2">

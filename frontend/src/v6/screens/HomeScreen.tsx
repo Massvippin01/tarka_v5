@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { TarkaLogo } from '../../components/common/TarkaLogo';
 import {
   Shield,
   FolderKanban,
@@ -97,6 +98,12 @@ export const HomeScreen: React.FC = () => {
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
+            <div className="flex items-center gap-3 mb-1">
+              <TarkaLogo variant="full" theme="light" height={26} />
+              <span className="text-[10.5px] font-mono font-bold text-[#A85C2A] bg-[#FAF2EB] border border-[#E8D5C4] px-2 py-0.5 rounded-md uppercase tracking-wider">
+                V6 CANONICAL
+              </span>
+            </div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold bg-[#49362E] text-[#FFFDF8] border border-[#655044] shadow-2xs">
                 <Shield className="size-3.5 text-[#EED9C7]" />
