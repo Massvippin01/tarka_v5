@@ -193,3 +193,10 @@ npm run build          # TypeScript compilation & Vite production bundle
 
 Developed with pride for **SUTRAM 2026 / SIH 2026 Datathon**.  
 *All synthetic cases, identities, phone numbers, and bank account numbers are purely fictional and created for testing and demonstration purposes.*
+
+---
+
+## 🔒 License
+
+Copyright © 2026 **Vippin Antony P & TARKA Engineering Team**. **All Rights Reserved.**  
+See [LICENSE](LICENSE) for full terms — evaluation access only; no copying, modification, or redistribution without written permission.

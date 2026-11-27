@@ -1,0 +1,33 @@
+TARKA (तर्क) — Proprietary Software License
+Copyright (c) 2026 Vippin Antony P and the TARKA Engineering Team.
+All Rights Reserved.
+
+1. PROPRIETARY OWNERSHIP
+This software, including all source code, algorithms, user interface designs,
+forensic scoring models, documentation, datasets, and associated files (the
+"Software"), is the exclusive intellectual property of Vippin Antony P and the
+TARKA Engineering Team ("Copyright Holders").
+
+2. NO GRANT OF OPEN-SOURCE LICENSE
+Unless a separate written commercial or pilot agreement is executed with the
+Copyright Holders, no license or right is granted to copy, modify, merge,
+publish, distribute, sublicense, sell, or create derivative works from this
+Software, in whole or in part.
+
+3. PERMITTED EVALUATION ACCESS
+Authorized competition judges, evaluators, and explicitly invited reviewers
+may view and execute this Software solely for the purpose of evaluating it for
+SUTRAM 2026 / SIH 2026 or authorized law-enforcement pilot demonstrations.
+Any other use, reproduction, extraction of models/heuristics, or public
+redistribution is strictly prohibited.
+
+4. THIRD-PARTY COMPONENTS
+Third-party open-source packages referenced in requirements.txt and
+package.json remain subject to their respective upstream licenses.
+
+5. DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+Contact: massvippin@gmail.com
