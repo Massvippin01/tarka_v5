@@ -41,7 +41,7 @@ docker compose -f docker-compose.lean.yml up --build -d
 | **Time-Aware LIBR Money Trail** | Strictly forward-in-time tracing using Lowest Intermediate Balance Rule (LIBR) to separate cashed-out funds from recoverable balances. | **④ Money trail** |
 | **Controller Phone Attribution** | Clusters mule accounts sharing IMEI, IMSI, Wi-Fi BSSID, or IP while filtering carrier NAT (`> 25` accounts) and flagging SIM swaps. | **⑤ Network** & **⑥ Devices & SIMs** |
 | **Bank Reply Loop & Bilingual Court Report** | Drafts per-bank **BNSS §106/§107** freeze notices (`Sent → Acknowledged → Frozen`), logs officer handover, and exports EN/HI SHA-256 PDFs. | **⑦ Actions & report** |
-| **Grounded Local Copilot** | On-premise **Ollama (`llama3.1:8b`)** assistant with animated particle orb and strict `DATA_ONLY` prompt-injection defense. | **Ask TARKA** |
+| **Grounded Local Copilot *(LLM Optional)*** | Optional on-premise **Ollama (`llama3.1:8b`)** assistant with animated particle orb and strict `DATA_ONLY` prompt-injection defense. Automatically falls back to the deterministic engine when no LLM is running. | **Ask TARKA** |
 
 ---
 
@@ -130,7 +130,7 @@ flowchart TD
 
 1. **AI Proposes, Evidence Verifies, Human Decides**: TARKA never declares a person guilty or innocent — every flag carries a plain-English rationale and requires human confirmation.
 2. **Immutable Evidence Integrity**: Raw evidence is append-only and SHA-256 hashed; content inside evidence is strictly `DATA_ONLY` and never treated as instructions.
-3. **Deterministic Math, Zero Guessing**: Scoring, LIBR fund tracing, and device clustering are 100% deterministic and reproducible; missing data produces no signal rather than a guess.
+3. **Deterministic Math, LLM Completely Optional**: Mule scoring, LIBR fund tracing, device clustering, OCR forensics, and court reports run 100% deterministically with zero LLM dependency. Local Ollama is strictly optional for conversational Q&A and gracefully falls back to the deterministic engine when absent.
 4. **Indian Statutory Alignment**: Indian rupee formatting (`₹1,00,000`), **BNSS §§106–107** freeze/attachment workflows, and **BSA §63** electronic record certification.
 
 ---
