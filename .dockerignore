@@ -51,3 +51,4 @@ data/validation_lab/
 data/txbench*
 data/jobs/
 data/cases/
+data/_backup_*/

@@ -13,6 +13,7 @@ import { selectCaseActionFinancials } from '../../selectors/actionSelectors';
 import { formatInr } from '../../utils/formatters';
 import { CreateCaseWizard } from '../../components/tarka/cases/CreateCaseWizard';
 import { EditCaseSheet } from '../../components/tarka/cases/EditCaseSheet';
+import { isCleanDashboardMode } from '../admin/resetDemoModel';
 
 interface CaseDisplayItem {
   id: string;
@@ -43,7 +44,7 @@ export const CasesScreen: React.FC = () => {
 
   // Compile full case list from caseWorkspaces and canonical baseline
   const allCases = useMemo<CaseDisplayItem[]>(() => {
-    const canonicalIds = Object.keys(CANONICAL_CASES);
+    const canonicalIds = isCleanDashboardMode() ? [] : Object.keys(CANONICAL_CASES);
     const customCases = caseWorkspaces.filter((w) => !canonicalIds.includes(w.caseId));
 
     const canonicalItems: CaseDisplayItem[] = canonicalIds.map((cid) => {

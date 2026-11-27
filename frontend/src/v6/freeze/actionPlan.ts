@@ -121,8 +121,8 @@ export function rankActionQueue(rows: QueueRow[], scope: ActionScope, nowMs: num
       const urgency = statusW * likelihood;
       const stand =
         r.status === 'NOT_SENT' ? 'No notice sent yet' : r.status === 'REFUSED' ? 'Bank refused: re-issue or escalate'
-        : overdue === 'ack' ? 'Bank has not acknowledged in 2 h' : overdue === 'outcome' ? 'Bank has not confirmed the hold in 24 h'
-        : r.status === 'SENT' ? 'Waiting for the bank' : r.status === 'ACKNOWLEDGED' ? 'Bank acknowledged' : r.status === 'RELEASED' ? 'Released' : 'Frozen';
+          : overdue === 'ack' ? 'Bank has not acknowledged in 2 h' : overdue === 'outcome' ? 'Bank has not confirmed the hold in 24 h'
+            : r.status === 'SENT' ? 'Waiting for the bank' : r.status === 'ACKNOWLEDGED' ? 'Bank acknowledged' : r.status === 'RELEASED' ? 'Released' : 'Frozen';
       const activity = m?.lastTs || m?.hrs != null
         ? (staleHours < 1 ? 'last outflow < 1 h ago' : `last outflow ${staleHours.toFixed(1)} h ago`)
         : 'no activity time in the data';

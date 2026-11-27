@@ -81,8 +81,9 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
     const centerY = size / 2;
     const sphereRadius = size * 0.38;
 
-    // Generate high-density spherical particles matching the canonical TARKA forensic orb (~6,800 points)
-    const particleCount = prefersReducedMotion ? 1800 : 6800;
+    // Scale particle density smoothly by orb size so inline mini-orbs stay crisp at 60 FPS
+    const baseCount = size <= 56 ? 420 : size <= 110 ? 1100 : 6800;
+    const particleCount = prefersReducedMotion ? Math.min(baseCount, 420) : baseCount;
     const particles: Particle[] = [];
 
     // Golden angle for Fibonacci spherical distribution
@@ -339,11 +340,24 @@ export const TarkaParticleOrb: React.FC<TarkaParticleOrbProps> = ({
           red = Math.round(red * 0.7 + 56 * 0.3);
           green = Math.round(green * 0.8 + 189 * 0.2);
           blue = 255;
+        } else if (currentState === "processing" || currentState === "investigating") {
+          // Luminous cobalt-cyan energy when Ollama / orchestrator is reasoning
+          red = 35;
+          green = 110;
+          blue = 248;
+          alpha = Math.min(1.0, alpha * 1.15);
+        } else if (currentState === "speaking") {
+          // Emerald-teal harmonic pulse while answering / speaking
+          red = 20;
+          green = 165;
+          blue = 128;
         }
 
+        const sizeBoost = size <= 56 ? 1.25 : 1.0;
+        const drawSize = dotSize * sizeBoost;
         // Render point with sub-pixel rect for razor-sharp stippling (10x faster than ctx.arc)
         ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-        ctx.fillRect(projX - dotSize / 2, projY - dotSize / 2, dotSize, dotSize);
+        ctx.fillRect(projX - drawSize / 2, projY - drawSize / 2, drawSize, drawSize);
       }
 
       animFrameRef.current = requestAnimationFrame(render);

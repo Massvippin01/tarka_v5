@@ -40,13 +40,26 @@ function useRefreshTotals(caseId: string) {
 }
 
 export function useAccountVerdict(caseId: string) {
+  const qc = useQueryClient();
   const refresh = useRefreshTotals(caseId);
   return useMutation({
     mutationFn: async (v: { account: string; verdict: Verdict | null; reason?: string }) =>
       (await apiClient.put(`/api/v1/cases/${enc(caseId)}/accounts/verdict`, { reason: '', ...v })).data,
-    onSuccess: async (_d, v) => {
-      toast.success(v.verdict === null ? 'Verdict cleared' : v.verdict === 'NOT_MULE' ? 'Marked “not a mule”. Totals recalculating…' : 'Confirmed as mule. Totals recalculating…');
-      await refresh();
+    onSuccess: (_d, v) => {
+      const target = partyKey(v.account);
+      qc.setQueryData<NetworksResponse>(['networks', caseId], (prev) =>
+        prev
+          ? {
+              ...prev,
+              networks: prev.networks.map((nw) => ({
+                ...nw,
+                members: nw.members.map((m) => (partyKey(m.id) === target ? { ...m, verdict: v.verdict } : m)),
+              })),
+            }
+          : prev,
+      );
+      toast.success(v.verdict === null ? 'Verdict cleared' : v.verdict === 'NOT_MULE' ? 'Marked “not a mule”. Totals recalculating…' : 'Confirmed as mule');
+      void refresh();
     },
     onError: (e) => toast.error(`Not saved: ${errMsg(e)}`),
   });
@@ -57,9 +70,9 @@ export function usePairVerdict(caseId: string) {
   return useMutation({
     mutationFn: async (v: { a: string; b: string; verdict: PairVerdict | null; reason?: string }) =>
       (await apiClient.put(`/api/v1/cases/${enc(caseId)}/review/verdict`, { reason: '', ...v })).data,
-    onSuccess: async (_d, v) => {
+    onSuccess: (_d, v) => {
       toast.success(v.verdict === 'MERGE' ? 'Recorded: same person' : v.verdict === 'NOT_SAME' ? 'Recorded: not the same person' : 'Decision cleared');
-      await refresh();
+      void refresh();
     },
     onError: (e) => toast.error(`Not saved: ${errMsg(e)}`),
   });

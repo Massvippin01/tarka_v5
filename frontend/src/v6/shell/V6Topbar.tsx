@@ -22,6 +22,7 @@ import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useV6Theme } from './useV6Theme';
 import { NotificationCenterPopover } from '../../components/tarka/notifications/NotificationCenterPopover';
 import { UpgradedCaseSwitcher } from '../../components/shell/UpgradedCaseSwitcher';
+import { isCleanDashboardMode } from '../admin/resetDemoModel';
 
 interface V6TopbarProps {
   onOpenCommandPalette?: () => void;
@@ -39,7 +40,8 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const { caseWorkspaces, activeCase, setActiveCaseId: setTarkaGlobalCaseId } = useTarkaGlobal();
   const { toggleAskTarka, setIntelligenceBriefOpen } = useTarkaUiStore();
 
-  const caseId = activeCaseId || 'CASE-2026-001';
+  const cleanEmpty = isCleanDashboardMode() && !activeCaseId;
+  const caseId = activeCaseId || (cleanEmpty ? '' : 'CASE-2026-001');
   const lifecycle = useProjectLifecycle(caseId);
   const canonicalCase = getCanonicalCase(caseId);
   useBundleCaseStore((s) => s.cases[caseId]); // re-render when this case's uploaded data loads
@@ -56,7 +58,9 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
   const isCanonical = ['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(caseId);
   const matchedWorkspace = caseWorkspaces.find((c) => c.caseId === caseId);
 
-  const victimName = isCaseUnknown
+  const victimName = cleanEmpty
+    ? 'Ready for upload'
+    : isCaseUnknown
     ? 'Unknown Case'
     : matchedWorkspace
     ? matchedWorkspace.complainantName
@@ -64,7 +68,9 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
     ? canonicalCase.complainant.name
     : `Case ${caseId}`;
 
-  const typology = isCaseUnknown
+  const typology = cleanEmpty
+    ? 'Clean workspace'
+    : isCaseUnknown
     ? 'Unregistered'
     : matchedWorkspace
     ? matchedWorkspace.title
@@ -72,8 +78,10 @@ export const V6Topbar: React.FC<V6TopbarProps> = ({
     ? canonicalCase.title || canonicalCase.typology
     : 'Cyber Fraud';
 
-  const displayCaseId = isCaseUnknown ? activeCaseId : isCanonical ? canonicalCase.caseId : caseId;
-  const displayFir = isCaseUnknown
+  const displayCaseId = cleanEmpty ? 'No case yet' : isCaseUnknown ? activeCaseId : isCanonical ? canonicalCase.caseId : caseId;
+  const displayFir = cleanEmpty
+    ? 'Upload evidence'
+    : isCaseUnknown
     ? 'Unregistered'
     : matchedWorkspace
     ? matchedWorkspace.firNumber

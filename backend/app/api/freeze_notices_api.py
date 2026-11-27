@@ -18,11 +18,13 @@ from typing import Any, Dict, List, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core.config import settings
 from app.database.models import AuditEventModel
 from app.domain.auth import UserIdentity
 from app.repositories.unit_of_work import UnitOfWork
 from app.services.auth_service import AuthService, get_current_user
 from app.services.ingestion.large_evidence_engine import IngestionJobManager
+from app.services.ingestion.projects_store import ProjectsStore
 
 router = APIRouter()
 
@@ -97,7 +99,8 @@ def _upload_store() -> UploadNoticeStore:
 
 
 def _is_upload_case(case_id: str) -> bool:
-    return bool(IngestionJobManager.get_instance().list_jobs({case_id}))
+    mgr = IngestionJobManager.get_instance()
+    return bool(mgr.list_jobs({case_id})) or bool(ProjectsStore(mgr.base_dir).registered(case_id))
 
 
 class _Notices:
@@ -107,13 +110,18 @@ class _Notices:
         self.uow, self.case_id, self.user, self.case = uow, case_id, user, None
 
     async def load(self) -> List[Dict[str, Any]]:
-        self.case = await self.uow.cases.get(self.case_id) or await self.uow.cases.get_by_case_number(self.case_id)
+        if _is_upload_case(self.case_id):
+            return _upload_store().get(self.case_id)
+        try:
+            self.case = await self.uow.cases.get(self.case_id) or await self.uow.cases.get_by_case_number(self.case_id)
+        except Exception as exc:
+            if settings.APP_ENV in ("development", "test") and (isinstance(exc, OSError) or "asyncpg" in type(exc).__module__):
+                raise HTTPException(status_code=404, detail=f"Case '{self.case_id}' not found.")
+            raise
         if self.case:
             self.case_id = self.case.id
             return [dict(n) for n in (self.case.metadata_json or {}).get("freeze_notices", [])]
-        if not _is_upload_case(self.case_id):
-            raise HTTPException(status_code=404, detail=f"Case '{self.case_id}' not found.")
-        return _upload_store().get(self.case_id)
+        raise HTTPException(status_code=404, detail=f"Case '{self.case_id}' not found.")
 
     async def save(self, notices: List[Dict[str, Any]], action: str, resource_id: str, details: Dict[str, Any]) -> None:
         if self.case is None:

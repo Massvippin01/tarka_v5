@@ -47,6 +47,22 @@ def test_reset_moves_data_and_rebuilds(client):
     assert st["backups"] and IngestionJobManager.get_instance().base_dir == d
 
 
+def test_reset_empty_clean_dashboard(client):
+    c, d = client
+    r = c.post("/api/v1/system/demo-reset", json={"empty": True})
+    assert r.status_code == 202
+    for _ in range(100):
+        st = c.get("/api/v1/system/demo-reset/status").json()
+        if st["state"] != "running":
+            break
+        time.sleep(0.1)
+    assert st["state"] == "done", st
+    assert list(d.parent.glob("_backup_*/ingestion/stray.txt")) and not (d / "stray.txt").exists()
+    assert st["summary"]["empty"] is True
+    assert st["summary"]["cases"] == []
+    assert ProjectsStore(d).list() == []
+
+
 def test_reset_forbidden_in_production(client, monkeypatch):
     c, d = client
     monkeypatch.setattr(settings, "APP_ENV", "production")

@@ -88,3 +88,23 @@ def test_verdict_audit_chain_detects_tampering(tmp_path):
     with sqlite3.connect(store.path) as db:
         db.execute("UPDATE entity_verdict_log SET after_json = '{}' WHERE seq = 1")
     assert not store.verify_chain()
+
+
+def test_confirm_mule_fast_patch_skips_full_recompute(client, monkeypatch):
+    from app.services.ingestion import networks as nw_mod
+
+    upload(client, GANG_CSV)
+    # Prime the analysis cache first.
+    before = client.get(f"/api/v1/cases/{CASE}/networks").json()["networks"]
+    mule_id = next(m["id"] for m in before[0]["members"] if m["role"] == "MULE")
+
+    r = client.put(f"/api/v1/cases/{CASE}/accounts/verdict", json={"account": mule_id, "verdict": "CONFIRMED_MULE"})
+    assert r.status_code == 200
+
+    # Patching CONFIRMED_MULE onto an already-flagged MULE must not re-run _run().
+    monkeypatch.setattr(nw_mod, "_run", lambda *a, **kw: (_ for _ in ()).throw(AssertionError("should use fast patch")))
+    after = client.get(f"/api/v1/cases/{CASE}/networks").json()["networks"]
+    patched = next(m for m in after[0]["members"] if m["id"] == mule_id)
+    assert patched["verdict"] == "CONFIRMED_MULE"
+    assert after[0]["recoverable_inr"] == before[0]["recoverable_inr"]
+    assert after[0]["mule_count"] == before[0]["mule_count"]

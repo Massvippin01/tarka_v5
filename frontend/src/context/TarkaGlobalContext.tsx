@@ -5,6 +5,7 @@ import { CaseSyncBridge } from "../services/caseSyncBridge";
 import { useTarkaUiStore } from "../store/useTarkaUiStore";
 import { useCaseStore } from "../store/useCaseStore";
 import { CANONICAL_CASES } from "../fixtures/cases";
+import { isCleanDashboardMode } from "../v6/admin/resetDemoModel";
 
 export type ActiveRoute =
   | "workspace"
@@ -560,13 +561,16 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const params = new URLSearchParams(window.location.search);
       const caseParam = params.get("case");
       if (caseParam) return caseParam;
+      if (isCleanDashboardMode()) return "";
     }
     return "CASE-2026-001";
   };
 
   const [activeRoute, setActiveRouteState] = useState<TarkaRoute>(getInitialRoute);
   const [activeCaseId, setActiveCaseIdState] = useState<string>(getInitialCaseId);
-  const [caseWorkspaces, setCaseWorkspaces] = useState<CaseWorkspace[]>(INITIAL_CASE_WORKSPACES);
+  const [caseWorkspaces, setCaseWorkspaces] = useState<CaseWorkspace[]>(() =>
+    isCleanDashboardMode() ? [] : INITIAL_CASE_WORKSPACES
+  );
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState<boolean>(false);
   const [evidenceModalTargetCaseId, setEvidenceModalTargetCaseId] = useState<string>(getInitialCaseId);
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState<boolean>(false);
@@ -617,7 +621,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           hasLegacy = true;
         }
       }
-      if (!url.searchParams.has("case")) {
+      if (!url.searchParams.has("case") && activeCaseId) {
         url.searchParams.set("case", activeCaseId);
         hasLegacy = true;
       }
@@ -656,7 +660,13 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
           ? cases
           : new Promise((r) => setTimeout(r, 3000)).then(() => loadCases(attempt + 1)));
     loadCases(1).then((backendCases) => {
-      if (mounted && backendCases && backendCases.length > 0) {
+      if (!mounted || !backendCases) return;
+      if (isCleanDashboardMode()) {
+        // Clean dashboard mode: show only live backend cases (0 when empty; uploaded cases appear immediately).
+        setCaseWorkspaces(backendCases);
+        return;
+      }
+      if (backendCases.length > 0) {
         // Union by id: backend rows win, demo cases the backend doesn't list stay.
         setCaseWorkspaces((prev) => {
           const ids = new Set(backendCases.map((c) => c.caseId));
@@ -666,11 +676,13 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
 
     // Hydrate initial active case bundle
-    CaseSyncBridge.getInstance().getCaseBundle(activeCaseId).then((bundle) => {
-      if (mounted && bundle) {
-        useTarkaUiStore.getState().setReconstructedInvestigation(bundle);
-      }
-    });
+    if (activeCaseId) {
+      CaseSyncBridge.getInstance().getCaseBundle(activeCaseId).then((bundle) => {
+        if (mounted && bundle) {
+          useTarkaUiStore.getState().setReconstructedInvestigation(bundle);
+        }
+      });
+    }
 
     return () => {
       mounted = false;
@@ -711,7 +723,7 @@ export const TarkaGlobalProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [intakeGate, setIntakeGate] = useState<IntakeGateState>(DEFAULT_INTAKE_GATE);
 
   const activeCase = useMemo(() => {
-    return caseWorkspaces.find((c) => c.caseId === activeCaseId) || caseWorkspaces[0];
+    return caseWorkspaces.find((c) => c.caseId === activeCaseId) || caseWorkspaces[0] || INITIAL_CASE_WORKSPACES[0];
   }, [caseWorkspaces, activeCaseId]);
 
   const clockMinutes = useMemo(() => Math.round(timeOffsetHours * 60), [timeOffsetHours]);

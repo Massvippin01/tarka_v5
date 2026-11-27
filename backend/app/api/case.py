@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import json
 import hashlib
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -11,6 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from pydantic import BaseModel, Field
 
+from app.core.config import settings
 from app.database.models import CaseModel, EvidenceArtifactModel, EvidenceCustodyRecordModel, AuditEventModel
 from app.repositories.unit_of_work import UnitOfWork
 from app.schemas.case import CaseCreate, CaseResponse, CasePatch, CaseStatusRequest, CaseLinkRequest
@@ -23,6 +25,7 @@ logger = logging.getLogger("sentinelx.api.case")
 router = APIRouter()
 
 CASE_BUNDLES_LIVE: Dict[str, Any] = {}
+_PG_LIST_UNAVAILABLE_UNTIL: float = 0.0
 
 LIFECYCLE_STATES = {
     "DRAFT",
@@ -118,26 +121,36 @@ async def list_cases(
     Supports filtering by status, search query q, assigned io, typology, sorting, and pagination.
     Preserves RBAC case scope authorization.
     """
+    global _PG_LIST_UNAVAILABLE_UNTIL
+    if settings.APP_ENV == "development" and time.monotonic() < _PG_LIST_UNAVAILABLE_UNTIL:
+        return []
     auth_service = AuthService.get_instance()
-    async with UnitOfWork() as uow:
-        cases, _ = await uow.cases.list_filtered(
-            status=status,
-            q=q,
-            io=io,
-            typology=typology,
-            sort=sort,
-            page=page,
-            page_size=page_size,
-        )
+    try:
+        async with UnitOfWork() as uow:
+            cases, _ = await uow.cases.list_filtered(
+                status=status,
+                q=q,
+                io=io,
+                typology=typology,
+                sort=sort,
+                page=page,
+                page_size=page_size,
+            )
 
-        responses = []
-        for c in cases:
-            if not (auth_service.validate_case_scope(user, c.id) or auth_service.validate_case_scope(user, c.case_number)):
-                continue
+            responses = []
+            for c in cases:
+                if not (auth_service.validate_case_scope(user, c.id) or auth_service.validate_case_scope(user, c.case_number)):
+                    continue
 
-            artifacts = await uow.evidence.list_artifacts_by_case(c.id)
-            responses.append(build_case_response(c, len(artifacts)))
-        return responses
+                artifacts = await uow.evidence.list_artifacts_by_case(c.id)
+                responses.append(build_case_response(c, len(artifacts)))
+            return responses
+    except Exception as exc:
+        if settings.APP_ENV != "development" or not (isinstance(exc, OSError) or "asyncpg" in type(exc).__module__):
+            raise
+        _PG_LIST_UNAVAILABLE_UNTIL = time.monotonic() + 30.0
+        logger.warning("Local SQL database unavailable in development mode (%s); returning empty SQL case list for 30s.", exc)
+        return []
 
 
 @router.post("", response_model=CaseResponse)

@@ -92,6 +92,8 @@ export function useFreezeNotices(caseId: string) {
   return useQuery<{ notices: FreezeNotice[] }>({
     queryKey: ['case', caseId, 'freeze-notices'],
     queryFn: async () => (await apiClient.get<{ notices: FreezeNotice[] }>(`/api/v1/cases/${encodeURIComponent(caseId)}/freeze-notices`)).data,
+    retry: 1,
+    staleTime: 15_000,
   });
 }
 
@@ -413,9 +415,9 @@ export const NoticeList: React.FC<{ data: ActionData }> = ({ data }) => {
             const busy = (advance.isPending && advance.variables?.id === n.id) || (remind.isPending && remind.variables === n.id);
             const next: NoticeStatus[] =
               n.status === 'SENT' ? ['ACKNOWLEDGED', 'FROZEN', 'REFUSED']
-              : n.status === 'ACKNOWLEDGED' ? ['FROZEN', 'REFUSED']
-              : n.status === 'FROZEN' ? ['RELEASED']
-              : [];
+                : n.status === 'ACKNOWLEDGED' ? ['FROZEN', 'REFUSED']
+                  : n.status === 'FROZEN' ? ['RELEASED']
+                    : [];
             const asked = total(n);
             const steps: [string, string | null | undefined][] = [
               ['Sent', n.sentAt],

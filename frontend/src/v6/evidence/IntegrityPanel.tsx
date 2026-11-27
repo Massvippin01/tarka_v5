@@ -1,6 +1,6 @@
-import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ChevronRight, Layers, Network, UserRound, X, FileWarning } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ShieldCheck, ShieldAlert, ChevronDown, ChevronRight, Check, Layers, Network, Search, UserRound, X, FileWarning } from 'lucide-react';
 import clsx from 'clsx';
 import { BorderBeam } from '../../components/magicui/border-beam';
 import { SourceNumber } from '../ui';
@@ -34,39 +34,275 @@ const n = (x: number) => x.toLocaleString('en-IN');
 
 // ── Zoom: Case › Network › Account ─────────────────────────────────────────
 
+const NetworkPicker: React.FC<{
+  networks: FraudNetwork[];
+  selectedId: string | null;
+  active: boolean;
+  onSelect: (networkId: string | null) => void;
+}> = ({ networks, selectedId, active, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selected = useMemo(() => networks.find((x) => x.network_id === selectedId) ?? null, [networks, selectedId]);
+  const totals = useMemo(
+    () => ({
+      mules: networks.reduce((s, x) => s + (x.mule_count || 0), 0),
+      inr: networks.reduce((s, x) => s + (x.amount_inr || 0), 0),
+    }),
+    [networks]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return networks;
+    return networks.filter(
+      (x) =>
+        x.network_id.toLowerCase().includes(q) ||
+        `${x.mule_count} mules`.includes(q) ||
+        formatInr(x.amount_inr, { compact: true }).toLowerCase().includes(q)
+    );
+  }, [networks, query]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      return;
+    }
+    if (networks.length > 5) {
+      const id = window.setTimeout(() => inputRef.current?.focus(), 20);
+      return () => window.clearTimeout(id);
+    }
+  }, [open, networks.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  const pick = (id: string | null) => {
+    onSelect(id);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        data-testid="focus-network-picker"
+        title={
+          selected
+            ? `${selected.network_id}: ${selected.mule_count} suspected mules, ${formatInr(selected.amount_inr)} paid in by victims`
+            : 'Pick one network to narrow this view'
+        }
+        className={clsx(
+          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] font-medium transition-all duration-150 cursor-pointer',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]',
+          open || active
+            ? 'border-[var(--accent)]/50 bg-[var(--surface-1)] text-[var(--fg-1)] shadow-[0_2px_10px_rgba(35,87,245,0.10)]'
+            : 'border-[var(--line)] bg-[var(--surface-1)]/80 text-[var(--fg-2)] hover:border-[var(--accent)]/40 hover:text-[var(--fg-1)]'
+        )}
+      >
+        <Network className={clsx('h-3.5 w-3.5 flex-none', (open || active) ? 'text-[var(--accent)]' : 'text-[var(--fg-3)]')} />
+        {selected ? (
+          <>
+            <span className="v6-mono font-semibold text-[var(--fg-1)]">{selected.network_id}</span>
+            <span className="inline-flex items-center rounded-full bg-[var(--risk-bg)] px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--risk)] tabular-nums">
+              {selected.mule_count} {selected.mule_count === 1 ? 'mule' : 'mules'}
+            </span>
+            <span className="text-[12px] font-semibold text-[var(--fg-2)] tabular-nums">
+              {formatInr(selected.amount_inr, { compact: true })}
+            </span>
+          </>
+        ) : (
+          <span className="font-medium">
+            {networks.length === 1 ? 'Its 1 network' : `All ${n(networks.length)} networks`}
+          </span>
+        )}
+        <ChevronDown className={clsx('h-3.5 w-3.5 text-[var(--fg-3)] transition-transform duration-150', open && 'rotate-180 text-[var(--accent)]')} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="listbox"
+            aria-label="Choose fraud network"
+            initial={{ opacity: 0, y: 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            className="absolute left-0 top-full z-50 mt-2 w-[360px] max-w-[92vw] overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] shadow-2xl backdrop-blur-xl"
+          >
+            {networks.length > 5 && (
+              <div className="border-b border-[var(--line)] p-2">
+                <div className="relative flex items-center">
+                  <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[var(--fg-3)]" />
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`Filter ${n(networks.length)} networks by ID or amount…`}
+                    className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-2)] py-1.5 pl-8 pr-7 text-[12px] text-[var(--fg-1)] placeholder:text-[var(--fg-3)] focus:border-[var(--accent)] focus:outline-none"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      aria-label="Clear filter"
+                      className="absolute right-2 rounded p-0.5 text-[var(--fg-3)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="border-b border-[var(--line)] p-1.5">
+              <button
+                type="button"
+                role="option"
+                aria-selected={!selectedId}
+                onClick={() => pick(null)}
+                className={clsx(
+                  'flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left transition-colors cursor-pointer',
+                  !selectedId ? 'bg-[var(--accent-bg)] text-[var(--fg-1)]' : 'text-[var(--fg-2)] hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+                )}
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className={clsx('flex h-6 w-6 flex-none items-center justify-center rounded-lg', !selectedId ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)] text-[var(--fg-3)]')}>
+                    <Layers className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold leading-tight">
+                      {networks.length === 1 ? 'Its 1 network' : `All ${n(networks.length)} networks`}
+                    </span>
+                    <span className="block text-[11px] text-[var(--fg-3)]">
+                      {n(totals.mules)} total mules · whole case scope
+                    </span>
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 flex-none">
+                  <span className="text-[12px] font-semibold tabular-nums text-[var(--fg-1)]">
+                    {formatInr(totals.inr, { compact: true })}
+                  </span>
+                  {!selectedId && <Check className="h-3.5 w-3.5 text-[var(--accent)]" />}
+                </span>
+              </button>
+            </div>
+
+            <div className="max-h-[320px] overflow-y-auto p-1.5 space-y-0.5">
+              {filtered.length === 0 ? (
+                <div className="px-3 py-6 text-center text-[12px] text-[var(--fg-3)]">
+                  No networks match “{query}”
+                </div>
+              ) : (
+                filtered.map((x) => {
+                  const rank = networks.indexOf(x) + 1;
+                  const isSel = x.network_id === selectedId;
+                  return (
+                    <button
+                      key={x.network_id}
+                      type="button"
+                      role="option"
+                      aria-selected={isSel}
+                      onClick={() => pick(x.network_id)}
+                      className={clsx(
+                        'flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left transition-colors cursor-pointer',
+                        isSel
+                          ? 'bg-[var(--accent-bg)] ring-1 ring-[var(--accent)]/30'
+                          : 'hover:bg-[var(--hover)]'
+                      )}
+                    >
+                      <span className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className={clsx(
+                            'flex h-5 min-w-[24px] flex-none items-center justify-center rounded-md px-1 text-[10.5px] font-bold tabular-nums',
+                            rank <= 3
+                              ? 'bg-[var(--risk-bg)] text-[var(--risk)]'
+                              : 'bg-[var(--surface-2)] text-[var(--fg-3)]'
+                          )}
+                        >
+                          #{rank}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate v6-mono text-[12.5px] font-semibold text-[var(--fg-1)] leading-tight">
+                            {x.network_id}
+                          </span>
+                          <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--fg-3)]">
+                            <span className="font-medium text-[var(--risk)] tabular-nums">
+                              {x.mule_count} {x.mule_count === 1 ? 'mule' : 'mules'}
+                            </span>
+                            <span>·</span>
+                            <span className="tabular-nums">
+                              {x.victim_count} {x.victim_count === 1 ? 'victim' : 'victims'}
+                            </span>
+                          </span>
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2 flex-none">
+                        <span className="text-[12.5px] font-semibold tabular-nums text-[var(--fg-1)]">
+                          {formatInr(x.amount_inr, { compact: true })}
+                        </span>
+                        <span className="flex w-4 justify-center">
+                          {isSel && <Check className="h-3.5 w-3.5 text-[var(--accent)]" />}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export const FocusBar: React.FC<{ caseId: string; focus: Focus; networks: FraudNetwork[] | null }> = ({ caseId, focus, networks }) => {
   const level = focusLevel(focus);
-  const net = networks?.find((x) => x.network_id === focus.networkId);
-  const crumb = 'inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[12.5px] font-medium transition-colors';
+  const crumb = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12.5px] font-medium transition-colors';
   return (
-    <nav aria-label="Zoom level" className="flex flex-wrap items-center gap-1 text-[var(--fg-2)]">
+    <nav aria-label="Zoom level" className="flex flex-wrap items-center gap-1.5 text-[var(--fg-2)]">
       <button
         type="button"
         onClick={() => setFocus({ networkId: null, account: null })}
-        className={clsx(crumb, level === 'project' ? 'text-[var(--fg-1)] bg-[var(--glass-2)] shadow-[var(--glass-shadow)]' : 'hover:bg-[var(--hover)]')}
+        className={clsx(
+          crumb,
+          'border cursor-pointer',
+          level === 'project'
+            ? 'border-[var(--accent)]/40 text-[var(--fg-1)] bg-[var(--surface-1)] shadow-xs'
+            : 'border-transparent hover:bg-[var(--hover)] hover:text-[var(--fg-1)]'
+        )}
         title="Every network in this case"
       >
         <Layers className="h-3.5 w-3.5" /> Whole case <span className="v6-mono text-[var(--fg-3)]">{caseId}</span>
       </button>
       <ChevronRight className="h-3.5 w-3.5 text-[var(--fg-3)]" />
       {networks && networks.length > 0 ? (
-        <label className={clsx(crumb, 'relative', level === 'network' && 'text-[var(--fg-1)] bg-[var(--glass-2)] shadow-[var(--glass-shadow)]')}>
-          <Network className="h-3.5 w-3.5" />
-          <span className="sr-only">Network</span>
-          <select
-            value={focus.networkId ?? ''}
-            onChange={(e) => setFocus({ networkId: e.target.value || null, account: null })}
-            className="max-w-[320px] cursor-pointer truncate bg-transparent pr-1 outline-none"
-            title={net ? `${net.network_id}: ${net.mule_count} suspected mules, ${formatInr(net.amount_inr)} paid in by victims` : 'Pick one network to narrow the ledger'}
-          >
-            <option value="">{networks.length === 1 ? 'Its 1 network' : `All ${networks.length} networks`}</option>
-            {networks.map((x) => (
-              <option key={x.network_id} value={x.network_id}>
-                {`${x.network_id} (${x.mule_count} mule${x.mule_count === 1 ? '' : 's'}, ${formatInr(x.amount_inr, { compact: true })})`}
-              </option>
-            ))}
-          </select>
-        </label>
+        <NetworkPicker
+          networks={networks}
+          selectedId={focus.networkId}
+          active={level === 'network'}
+          onSelect={(networkId) => setFocus({ networkId, account: null })}
+        />
       ) : (
         <span className={clsx(crumb, 'text-[var(--fg-3)]')} title="No fraud networks found in the uploaded rows yet">
           <Network className="h-3.5 w-3.5" /> No networks yet
@@ -75,14 +311,14 @@ export const FocusBar: React.FC<{ caseId: string; focus: Focus; networks: FraudN
       {focus.account && (
         <>
           <ChevronRight className="h-3.5 w-3.5 text-[var(--fg-3)]" />
-          <span className={clsx(crumb, 'max-w-[300px] text-[var(--fg-1)] bg-[var(--glass-2)] shadow-[var(--glass-shadow)]')}>
-            <UserRound className="h-3.5 w-3.5 flex-none" />
+          <span className={clsx(crumb, 'max-w-[300px] border border-[var(--line)] text-[var(--fg-1)] bg-[var(--surface-1)] shadow-xs')}>
+            <UserRound className="h-3.5 w-3.5 flex-none text-[var(--accent)]" />
             <span className="truncate v6-mono" title={focus.account}>{focus.account}</span>
             <button
               type="button"
               aria-label="Back to the network"
               onClick={() => setFocus({ networkId: focus.networkId, account: null })}
-              className="ml-0.5 rounded p-0.5 hover:bg-[var(--hover)]"
+              className="ml-0.5 rounded-full p-0.5 hover:bg-[var(--hover)] cursor-pointer"
             >
               <X className="h-3 w-3" />
             </button>

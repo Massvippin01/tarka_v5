@@ -437,8 +437,11 @@ export class CaseSyncBridge {
    */
   public async listCasesFromBackend(): Promise<CaseWorkspace[] | null> {
     try {
-      // The SQL case list can be unavailable (no Postgres locally); cases created in TARKA or with uploads still load.
-      const res = await apiClient.get(`/api/v1/cases`, { timeout: 2500 }).catch(() => ({ data: [] as any[] }));
+      // Fetch SQL cases and project-registered cases in parallel so local dev never waits on Postgres.
+      const [res, registered] = await Promise.all([
+        apiClient.get(`/api/v1/cases`, { timeout: 2500 }).catch(() => ({ data: [] as any[] })),
+        this.listRegisteredCases(),
+      ]);
       if (Array.isArray(res.data)) {
         const mapped: CaseWorkspace[] = await Promise.all(
           res.data.map(async (c: any) => {
@@ -487,7 +490,7 @@ export class CaseSyncBridge {
         );
         // Cases created in TARKA, in a project, or with uploads are listed by /projects/cases, not /cases.
         const known = new Set(mapped.map((w) => w.caseId));
-        for (const c of await this.listRegisteredCases()) {
+        for (const c of registered) {
           if (!known.has(c.case_id)) {
             known.add(c.case_id);
             mapped.push(registeredWorkspace(c));

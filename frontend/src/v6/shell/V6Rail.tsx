@@ -36,6 +36,7 @@ import { formatInr } from '../../lib/formatInr';
 import { selectGoldenHour } from '../../lib/goldenHour';
 import { setFocus, useFocus } from '../../lib/focusUrl';
 import { useRailCounts } from './useRailCounts';
+import { isCleanDashboardMode } from '../admin/resetDemoModel';
 
 interface V6RailProps {
   isCollapsed?: boolean;
@@ -122,7 +123,8 @@ export const V6Rail: React.FC<V6RailProps> = ({ isCollapsed = false, onToggleCol
   const focus = useFocus();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const caseId = activeCaseId || 'CASE-2026-001';
+  const cleanEmpty = isCleanDashboardMode() && !activeCaseId;
+  const caseId = activeCaseId || (cleanEmpty ? '' : 'CASE-2026-001');
   const isCanonical = ['CASE-2026-001', 'CASE-2026-002', 'CASE-2026-003', 'CASE-2026-004'].includes(caseId);
   const matchedWorkspace = caseWorkspaces.find((c) => c.caseId === caseId);
   const isCaseUnknown = Boolean(activeCaseId) && !isCanonical && !matchedWorkspace;
@@ -207,7 +209,7 @@ export const V6Rail: React.FC<V6RailProps> = ({ isCollapsed = false, onToggleCol
         <RailItem icon={<UploadCloud className="size-4" />} label="Upload evidence" active={isCurrentView(['upload'])} onClick={() => setActiveView('upload')} collapsed={isCollapsed} title="Upload bank, telecom and device files" testId="rail-nav-upload" />
 
         {/* Focus: Project > Case > Network */}
-        {!isCollapsed && !isCaseUnknown && (
+        {!isCollapsed && !isCaseUnknown && !cleanEmpty && (
           <div className="v6-rail-focus rounded-xl p-2.5 mt-3 mb-1 shrink-0 space-y-1.5" data-testid="rail-focus">
             <div className="flex items-center gap-1 text-[10.5px] text-[var(--fg-3)] min-w-0" aria-label="Focus">
               {c.project && (

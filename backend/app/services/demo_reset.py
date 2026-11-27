@@ -67,25 +67,43 @@ async def stop_background_work() -> None:
     drop_caches()
 
 
-def start(rows: int, small: bool) -> None:
-    """Claim the single reset slot and run the rebuild in a thread. Raises RuntimeError if one is running."""
+def start(rows: int, small: bool, empty: bool = False) -> None:
+    """Claim the single reset slot and run the rebuild (or clean empty wipe) in a thread. Raises RuntimeError if one is running."""
     with _LOCK:
         if _STATE["state"] == "running":
             raise RuntimeError("running")
         _STATE.update(state="running", step="Starting", started_at=time.time(), finished_at=None,
                       backup_path=None, summary=None, error=None)
-    threading.Thread(target=_run, args=(rows, small), name="demo-reset", daemon=True).start()
+    threading.Thread(target=_run, args=(rows, small, empty), name="demo-reset", daemon=True).start()
 
 
-def _run(rows: int, small: bool) -> None:
+def _run(rows: int, small: bool, empty: bool = False) -> None:
     root = _data_root()
     try:
         if str(_TOOLS) not in sys.path:
             sys.path.insert(0, str(_TOOLS))
         import build_demo_db
-        n = build_demo_db.SMALL_ROWS if small else rows
         step = lambda s: _set(step=s)  # noqa: E731
-        summary = build_demo_db.build_demo(root, n, log=lambda *a: None, step=step)
+        if empty:
+            t0 = time.perf_counter()
+            step("Moving current data to a backup folder")
+            backup = build_demo_db.backup_existing(root)
+            root.mkdir(parents=True, exist_ok=True)
+            os.environ["TARKA_INGESTION_DIR"] = str(root)
+            summary: Dict[str, Any] = {
+                "projects": [],
+                "cases": [],
+                "demo_case_id": None,
+                "rows": 0,
+                "networks": 0,
+                "mules": 0,
+                "empty": True,
+                "seconds": round(time.perf_counter() - t0, 1),
+                "backup_path": str(backup) if backup else None,
+            }
+        else:
+            n = build_demo_db.SMALL_ROWS if small else rows
+            summary = build_demo_db.build_demo(root, n, log=lambda *a: None, step=step)
         step("Refreshing the running server")
         drop_caches()  # next request builds a manager on the new data
         from app.services.ingestion.large_evidence_engine import IngestionJobManager

@@ -3,8 +3,12 @@ import { doneSummary, elapsedSeconds, failureText, panelView, resetRequestBody }
 
 describe('resetDemoModel', () => {
   it('maps size to request body', () => {
-    expect(resetRequestBody('quick')).toEqual({ rows: 200_000, small: true });
-    expect(resetRequestBody('full')).toEqual({ rows: 1_000_000, small: false });
+    expect(resetRequestBody('empty')).toEqual({ rows: 1000, small: false, empty: true });
+    expect(resetRequestBody('quick')).toEqual({ rows: 200_000, small: true, empty: false });
+    expect(resetRequestBody('full')).toEqual({ rows: 1_000_000, small: false, empty: false });
+  });
+  it('summarizes clean empty reset', () => {
+    expect(doneSummary({ state: 'done', summary: { empty: true, rows: 0, networks: 0, seconds: 0.2 } })).toContain('Clean dashboard ready');
   });
   it('picks the panel view from status', () => {
     expect(panelView(null)).toBe('confirm');

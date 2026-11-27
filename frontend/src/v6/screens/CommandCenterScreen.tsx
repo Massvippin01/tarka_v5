@@ -46,6 +46,7 @@ import { BulkIngestionModal } from '../../components/tarka/workspace/BulkIngesti
 import { CreateCaseWizard } from '../../components/tarka/cases/CreateCaseWizard';
 import { EditCaseSheet } from '../../components/tarka/cases/EditCaseSheet';
 import { CrossCaseComparatorDrawer } from '../../components/tarka/workspace/CrossCaseComparatorDrawer';
+import { ResetDemoPanel } from '../admin/ResetDemoPanel';
 
 export const CommandCenterScreen: React.FC = () => {
   const { activeCaseId, setActiveCaseId, setActiveView } = useCaseStore();
@@ -219,6 +220,7 @@ export const CommandCenterScreen: React.FC = () => {
         subtitle={`${dashboardMetrics.totalCases} active cases · ${dashboardMetrics.goldenHourActiveCount} inside golden hour`}
         actions={
           <div className="flex items-center gap-2">
+            <ResetDemoPanel compact />
             <Button
               variant="ghost"
               size="sm"

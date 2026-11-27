@@ -86,3 +86,5 @@ frontend/scratch/
 data/validation/
 # Local assistant notes (not part of the product)
 data/test_uploads/
+# Demo-reset timestamped backups
+data/_backup_*/

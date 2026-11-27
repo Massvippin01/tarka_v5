@@ -1192,6 +1192,28 @@ def analyze(
         return res
 
 
+def _try_fast_patch_verdicts(prev: Dict[str, Any], verdicts: Dict[str, str]) -> Optional[Dict[str, Any]]:
+    """Patch CONFIRMED_MULE verdicts in-place on a prior cached result when no role/totals can change."""
+    if any(v != "CONFIRMED_MULE" for v in verdicts.values()):
+        return None
+    by_id: Dict[str, Dict[str, Any]] = {}
+    for net in prev.get("networks", []):
+        for member in net.get("members", []):
+            mid = member["id"]
+            if member.get("verdict") == "NOT_MULE":
+                return None
+            if member.get("verdict") == "CONFIRMED_MULE" and mid not in verdicts:
+                return None
+            by_id[mid] = member
+    if not all(k in by_id and by_id[k].get("role") == "MULE" for k in verdicts):
+        return None
+    for net in prev.get("networks", []):
+        for member in net.get("members", []):
+            if member["id"] in verdicts:
+                member["verdict"] = verdicts[member["id"]]
+    return prev
+
+
 def analyze_store(
     store: DerivedStore,
     lookup: Optional[Lookup] = None,
@@ -1223,24 +1245,34 @@ def analyze_store(
         elif cache_only:
             return None
         else:
-            dev = device_clusters_from_db(db, include_evidence=True)
-            db.execute(_FROM_ROWS.format(source="(SELECT payer, payee, amount, 1 AS cnt, ts AS fst, ts AS lst FROM txns)"))
-            result = _run(
-                db,
-                None,
-                max_members,
-                verdicts,
-                raw_table="txns",
-                device_clusters=dev.get("clusters", []),
-                feature_weights=feature_weights,
-                model_intercept=model_intercept,
-                scoring_meta=scoring_meta,
-            )
-            features_snapshot = result.pop("_features", None)
-            db.execute("DELETE FROM analysis_cache WHERE key NOT LIKE ?", (f"v{ANALYSIS_VERSION}:{count}:{last}:{dev_count}:%",))
-            db.execute("INSERT OR REPLACE INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
-            db.commit()
-            result["_features_snapshot"] = features_snapshot
+            prev_row = db.execute(
+                "SELECT result FROM analysis_cache WHERE key LIKE ? LIMIT 1",
+                (f"v{ANALYSIS_VERSION}:{count}:{last}:{dev_count}:{max_members}:%:{wkey}",),
+            ).fetchone()
+            patched = _try_fast_patch_verdicts(json.loads(prev_row[0]), verdicts or {}) if prev_row else None
+            if patched is not None:
+                result = patched
+                db.execute("INSERT OR REPLACE INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
+                db.commit()
+            else:
+                dev = device_clusters_from_db(db, include_evidence=True)
+                db.execute(_FROM_ROWS.format(source="(SELECT payer, payee, amount, 1 AS cnt, ts AS fst, ts AS lst FROM txns)"))
+                result = _run(
+                    db,
+                    None,
+                    max_members,
+                    verdicts,
+                    raw_table="txns",
+                    device_clusters=dev.get("clusters", []),
+                    feature_weights=feature_weights,
+                    model_intercept=model_intercept,
+                    scoring_meta=scoring_meta,
+                )
+                features_snapshot = result.pop("_features", None)
+                db.execute("DELETE FROM analysis_cache WHERE key NOT LIKE ?", (f"v{ANALYSIS_VERSION}:{count}:{last}:{dev_count}:%",))
+                db.execute("INSERT OR REPLACE INTO analysis_cache VALUES (?, ?)", (key, json.dumps(result)))
+                db.commit()
+                result["_features_snapshot"] = features_snapshot
     if lookup and result["networks"]:
         mine = {i for n in result["networks"] for m in n["members"] for i in _ids(m["label"])}
         found = lookup(mine)

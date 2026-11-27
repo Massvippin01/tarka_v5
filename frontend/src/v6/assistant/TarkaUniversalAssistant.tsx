@@ -18,8 +18,12 @@ import {
   Radio,
 } from 'lucide-react';
 import { useCaseStore } from '../../store/useCaseStore';
+import { useTarkaGlobal } from '../../context/TarkaGlobalContext';
 import { useTarkaUiStore } from '../../store/useTarkaUiStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import apiClient from '../../api/client';
+import { useV6Theme } from '../shell/useV6Theme';
+import { TarkaParticleOrb, type OrbState } from '../voice/TarkaParticleOrb';
 import { answerCaseQuestion, answerLangFor, getCaseWelcome, getSuggestedQuestions } from './caseAssistantEngine';
 import { MiniMarkdown } from './MiniMarkdown';
 import {
@@ -110,18 +114,42 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
   className = '',
 }) => {
   const { activeCaseId, activeView, setActiveView } = useCaseStore();
+  const { caseWorkspaces } = useTarkaGlobal();
   const { setVoiceModalOpen } = useTarkaUiStore();
   const { profile } = useSettingsStore();
+  const { theme } = useV6Theme();
 
-  const caseId = activeCaseId || 'CASE-2026-001';
+  const urlCaseId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('case') : null;
+  const caseId = activeCaseId || urlCaseId || caseWorkspaces[0]?.caseId || 'CASE-2026-001';
 
   const [selectedLanguage, setSelectedLanguage] = useState<string>('en-IN');
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechActive, setSpeechActive] = useState(true);
+  const [ollama, setOllama] = useState<{ available: boolean; model: string | null }>({ available: false, model: null });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let alive = true;
+    apiClient
+      .get<{ available: boolean; model: string | null }>('/api/v1/forensics/assistant/ollama-status')
+      .then((res) => {
+        if (alive && res.data) {
+          setOllama({ available: Boolean(res.data.available), model: res.data.model ?? null });
+        }
+      })
+      .catch(() => {
+        if (alive) setOllama({ available: false, model: null });
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const orbState: OrbState = isLoading ? 'processing' : isSpeaking ? 'speaking' : 'idle';
+  const orbTheme = theme === 'dark' ? 'obsidian-glass' : 'porcelain';
 
   const contextualPrompts = useMemo(() => getSuggestedQuestions(caseId, activeView), [activeView, caseId]);
 
@@ -198,7 +226,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
     }
   };
 
-  // Dispatch message through governed orchestrator
+  // Dispatch message through live Ollama (strict DATA_ONLY) or deterministic fallback
   const handleSendMessage = async (queryText?: string) => {
     const text = (queryText || inputText).trim();
     if (!text || isLoading) return;
@@ -214,31 +242,70 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
       text,
     };
 
+    const recentHistory = messages.slice(-4).map((m) => ({ sender: m.sender, text: m.text }));
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Simulate multi-agent governed specialist orchestration (1.0s to 1.8s for realism)
-    setTimeout(() => {
-      const ans = answerCaseQuestion(caseId, text, answerLangFor(selectedLanguage));
-      const specialist: OrchestrationStep['specialist'] =
-        ans.intent === 'timeline' ? 'Temporal Analyst'
-        : ans.intent === 'mules' || ans.intent === 'recoverable' ? 'Financial Analyst'
-        : 'Forensic Reasoning Analyst';
-      const assistantMessage: AssistantMessage = {
-        id: `ast-${Date.now()}`,
-        sender: 'assistant',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        language: selectedLanguage,
-        text: ans.text,
-        specialistUsed: specialist,
-        requestId: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
-        observedFacts: ans.observedFacts,
-        suggestedAction: ans.suggestedAction,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
-      speakText(ans.text, selectedLanguage);
-    }, 300);
+    if (ollama.available) {
+      try {
+        const res = await apiClient.post<{
+          available: boolean;
+          provider: string;
+          model?: string;
+          text?: string;
+          observed_facts?: string[];
+        }>(
+          `/api/v1/forensics/cases/${encodeURIComponent(caseId)}/assistant/chat`,
+          {
+            query: text,
+            language: selectedLanguage,
+            active_view: activeView,
+            model: ollama.model,
+            history: recentHistory,
+          },
+          { timeout: 45000 }
+        );
+        if (res.data?.available && res.data.text) {
+          const modelLabel = res.data.model || ollama.model || 'llama3.1:8b';
+          const assistantMessage: AssistantMessage = {
+            id: `ast-${Date.now()}`,
+            sender: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            language: selectedLanguage,
+            text: res.data.text,
+            specialistUsed: `Ollama · ${modelLabel}`,
+            requestId: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+            observedFacts: res.data.observed_facts,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsLoading(false);
+          speakText(res.data.text, selectedLanguage);
+          return;
+        }
+      } catch {
+        // Fall through to deterministic local engine cleanly
+      }
+    }
+
+    const ans = answerCaseQuestion(caseId, text, answerLangFor(selectedLanguage));
+    const specialist: OrchestrationStep['specialist'] =
+      ans.intent === 'timeline' ? 'Temporal Analyst'
+      : ans.intent === 'mules' || ans.intent === 'recoverable' ? 'Financial Analyst'
+      : 'Forensic Reasoning Analyst';
+    const assistantMessage: AssistantMessage = {
+      id: `ast-${Date.now()}`,
+      sender: 'assistant',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      language: selectedLanguage,
+      text: ans.text,
+      specialistUsed: specialist,
+      requestId: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+      observedFacts: ans.observedFacts,
+      suggestedAction: ans.suggestedAction,
+    };
+    setMessages((prev) => [...prev, assistantMessage]);
+    setIsLoading(false);
+    speakText(ans.text, selectedLanguage);
   };
 
   const handleActionClick = (action?: AssistantMessage['suggestedAction']) => {
@@ -254,37 +321,37 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
       data-testid="tarka-universal-assistant"
       className={`h-full flex flex-col bg-[var(--surface-1)] text-[var(--fg-1)] ${className}`}
     >
-      {/* 1. Header with Language Selector & Specialist Badge */}
-      <div className="px-5 py-3.5 border-b border-[var(--line)] bg-[var(--surface-2)] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-lg bg-[var(--accent-bg)] text-[var(--accent)] border border-[var(--accent)]/30 flex items-center justify-center shrink-0 shadow-2xs">
-            <Sparkles className="size-4" />
+      {/* 1. Header with Live Orb, Model Badge & Controls */}
+      <div className="px-4 py-3 border-b border-[var(--line)] bg-[var(--surface-2)]/90 backdrop-blur-md flex items-center justify-between gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative flex size-10 items-center justify-center rounded-full bg-[var(--surface-1)] border border-[var(--line)] shadow-2xs shrink-0 overflow-hidden">
+            <TarkaParticleOrb state={orbState} size={40} theme={orbTheme} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-[var(--fg-1)]">TARKA Assistant</h2>
-              <TarkaStatus status="safe" label="BSA §63 Copilot" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-[13.5px] font-bold text-[var(--fg-1)] truncate">TARKA Assistant</h2>
+              <TarkaStatus status="safe" label={ollama.available && ollama.model ? ollama.model : 'BSA §63'} />
             </div>
-            <p className="text-[11.5px] text-[var(--fg-2)] truncate">
-              {caseId} · View: <strong className="text-[var(--accent)]">{activeView.toUpperCase()}</strong>
+            <p className="text-[11px] text-[var(--fg-2)] truncate">
+              <span className="font-mono">{caseId}</span> · <strong className="text-[var(--accent)]">{activeView.toUpperCase()}</strong>
             </p>
           </div>
         </div>
 
         {/* Right Header Controls */}
-        <div className="flex items-center gap-2">
-          {/* Multilingual Selector */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Compact Language Selector */}
           <div className="relative flex items-center">
-            <Globe className="size-3.5 text-[var(--fg-2)] absolute left-2 pointer-events-none" />
+            <Globe className="size-3.5 text-[var(--fg-3)] absolute left-2 pointer-events-none" />
             <select
               value={selectedLanguage}
               onChange={(e) => setSelectedLanguage(e.target.value)}
               aria-label="Select Assistant Language"
-              className="text-[12px] font-semibold text-[var(--fg-1)] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg pl-7 pr-3 py-1 cursor-pointer hover:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] shadow-2xs"
+              className="w-[104px] text-[11.5px] font-semibold text-[var(--fg-1)] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg pl-6.5 pr-2 py-1 cursor-pointer hover:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] truncate"
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>
-                  {lang.name}
+                  {lang.label}
                 </option>
               ))}
             </select>
@@ -300,7 +367,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
             title="Switch to Real-Time Multilingual Voice Interrogation (Press 'V')"
             className="size-8 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-bg)]/50 text-[var(--accent)] hover:bg-[var(--accent-bg)] flex items-center justify-center transition-colors cursor-pointer"
           >
-            <Mic className="size-4" />
+            <Mic className="size-3.5" />
           </button>
 
           {/* Speech Audio Toggle */}
@@ -314,11 +381,11 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
             className="size-8 rounded-lg border border-[var(--line)] bg-[var(--surface-1)] text-[var(--fg-2)] hover:text-[var(--fg-1)] flex items-center justify-center transition-colors cursor-pointer"
           >
             {isSpeaking ? (
-              <Radio className="size-4 text-[var(--accent)] animate-pulse" />
+              <Radio className="size-3.5 text-[var(--accent)] animate-pulse" />
             ) : speechActive ? (
-              <Volume2 className="size-4 text-[var(--safe)]" />
+              <Volume2 className="size-3.5 text-[var(--safe)]" />
             ) : (
-              <VolumeX className="size-4 text-[var(--fg-3)]" />
+              <VolumeX className="size-3.5 text-[var(--fg-3)]" />
             )}
           </button>
 
@@ -330,7 +397,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
               title={mode === 'fullscreen' ? 'Exit fullscreen' : 'Expand to fullscreen review'}
               className="size-8 rounded-lg border border-[var(--line)] bg-[var(--surface-1)] text-[var(--fg-2)] hover:text-[var(--fg-1)] flex items-center justify-center transition-colors cursor-pointer"
             >
-              {mode === 'fullscreen' ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+              {mode === 'fullscreen' ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
             </button>
           )}
 
@@ -342,19 +409,21 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
               className="size-8 rounded-lg flex items-center justify-center text-[var(--fg-2)] hover:text-[var(--fg-1)] hover:bg-[var(--hover)] transition-colors cursor-pointer"
               aria-label="Close assistant"
             >
-              <X className="size-4" />
+              <X className="size-3.5" />
             </button>
           )}
         </div>
       </div>
 
       {/* 2. Security Banner & Governance Doctrine */}
-      <div className="px-5 py-2 bg-[var(--surface-2)] border-b border-[var(--line)] flex items-center justify-between text-[11.5px] text-[var(--fg-2)] shrink-0">
-        <div className="flex items-center gap-1.5 font-medium">
-          <Shield className="size-3.5 text-[var(--safe)]" />
-          <span>Local Engine · Evidence strictly <strong>DATA_ONLY</strong> · Zero Prompt-Injection</span>
+      <div className="px-4 py-1.5 bg-[var(--surface-2)]/60 border-b border-[var(--line)] flex items-center justify-between gap-2 text-[11px] text-[var(--fg-2)] shrink-0">
+        <div className="flex items-center gap-1.5 font-medium truncate">
+          <Shield className="size-3.5 text-[var(--safe)] shrink-0" />
+          <span className="truncate">
+            {ollama.available && ollama.model ? `Ollama (${ollama.model})` : 'Local Engine'} · <strong>DATA_ONLY</strong>
+          </span>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[11px]">
+        <div className="flex items-center gap-1.5 font-mono text-[10.5px] shrink-0 whitespace-nowrap">
           <span className="text-[var(--accent)] font-bold">AI PROPOSES</span>
           <span>→</span>
           <span className="text-[var(--safe)] font-bold">EVIDENCE VERIFIES</span>
@@ -502,12 +571,16 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-3 p-4 rounded-xl tarka-panel bg-[var(--surface-1)] max-w-sm">
-            <Sparkles className="size-4 text-[var(--accent)] animate-spin" />
-            <div className="space-y-1">
-              <span className="text-[12.5px] font-bold text-[var(--fg-1)]">Orchestrator Evaluating...</span>
-              <p className="text-[11.5px] text-[var(--fg-2)]">
-                Invoking Specialist & Validating Bitstream Lineage
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-[var(--accent)]/25 bg-[var(--surface-2)]/70 shadow-sm max-w-sm">
+            <div className="relative flex size-10 items-center justify-center rounded-full bg-[var(--surface-1)] border border-[var(--accent)]/30 shrink-0 overflow-hidden">
+              <TarkaParticleOrb state="processing" size={40} theme={orbTheme} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[12.5px] font-bold text-[var(--fg-1)] block truncate">
+                {ollama.available && ollama.model ? `Reasoning with ${ollama.model}…` : 'Evaluating case evidence…'}
+              </span>
+              <p className="text-[11px] text-[var(--fg-2)] truncate">
+                Strictly grounded in DATA_ONLY artifacts
               </p>
             </div>
           </div>
@@ -517,18 +590,18 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
       </div>
 
       {/* 4. Contextual Guided Prompts Tray */}
-      <div className="p-3 border-t border-[var(--line)] bg-[var(--surface-2)] space-y-1.5 shrink-0">
-        <div className="flex items-center justify-between text-[11px] text-[var(--fg-2)] px-1 font-semibold">
-          <span>Suggested Questions for {activeView.toUpperCase()}:</span>
-          <span className="text-[var(--accent)]">{selectedLanguage}</span>
+      <div className="px-4 py-2.5 border-t border-[var(--line)] bg-[var(--surface-2)]/60 space-y-1.5 shrink-0">
+        <div className="flex items-center justify-between text-[11px] text-[var(--fg-2)] px-0.5 font-semibold">
+          <span>Suggested for {activeView.toUpperCase()}</span>
+          <span className="text-[var(--accent)] font-mono text-[10.5px]">{selectedLanguage}</span>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {contextualPrompts.map((cp, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => handleSendMessage(cp.q)}
-              className="text-[12px] font-medium text-[var(--fg-1)] bg-[var(--surface-1)] border border-[var(--line)] rounded-lg px-3 py-1.5 whitespace-nowrap hover:border-[var(--accent)] hover:bg-[var(--accent-bg)]/20 transition-all cursor-pointer shadow-2xs shrink-0"
+              className="text-[11.5px] font-medium text-[var(--fg-1)] bg-[var(--surface-1)] border border-[var(--line)] rounded-full px-3 py-1.5 whitespace-nowrap hover:border-[var(--accent)] hover:bg-[var(--accent-bg)]/20 transition-all cursor-pointer shadow-2xs shrink-0"
             >
               {cp.q}
             </button>
@@ -536,8 +609,8 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
         </div>
       </div>
 
-      {/* 5. Input Bar & Voice Trigger */}
-      <div className="p-4 border-t border-[var(--line)] bg-[var(--surface-1)] shrink-0">
+      {/* 5. Input Bar with Live Orb & Voice Trigger */}
+      <div className="px-4 py-3 border-t border-[var(--line)] bg-[var(--surface-1)] shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -545,13 +618,25 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
           }}
           className="flex items-center gap-2"
         >
-          <div className="relative flex-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (onOpenVoice) onOpenVoice();
+              else setVoiceModalOpen(true);
+            }}
+            title={isLoading ? 'TARKA Orb: reasoning…' : isSpeaking ? 'TARKA Orb: speaking…' : 'Click orb for Voice Interrogation'}
+            className="relative flex size-10 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--accent)]/60 transition-colors cursor-pointer shrink-0 overflow-hidden shadow-2xs"
+          >
+            <TarkaParticleOrb state={orbState} size={38} theme={orbTheme} />
+          </button>
+
+          <div className="relative flex-1 min-w-0">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={`Ask TARKA Assistant in ${SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.label || 'any language'}...`}
-              className="w-full text-[13px] bg-[var(--surface-2)] border border-[var(--line)] rounded-xl px-4 py-2.5 text-[var(--fg-1)] placeholder-[#7D89A6] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
+              placeholder={`Ask ${ollama.available && ollama.model ? ollama.model : 'TARKA'} about this case…`}
+              className="w-full text-[13px] bg-[var(--surface-2)] border border-[var(--line)] rounded-xl px-3.5 py-2.5 text-[var(--fg-1)] placeholder:text-[var(--fg-3)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
             />
           </div>
 
@@ -564,7 +649,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
             title="Speak query via microphone"
             className="size-10 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] text-[var(--fg-2)] hover:text-[var(--accent)] hover:border-[var(--accent)] flex items-center justify-center transition-all cursor-pointer shrink-0"
           >
-            <Mic className="size-4.5" />
+            <Mic className="size-4" />
           </button>
 
           <TarkaButton
@@ -574,7 +659,7 @@ export const TarkaUniversalAssistant: React.FC<TarkaUniversalAssistantProps> = (
             disabled={!inputText.trim() || isLoading}
             icon={<Send className="size-4" />}
             title="Send query to TARKA Copilot"
-            className="h-10 px-4 rounded-xl"
+            className="h-10 px-4 rounded-xl shrink-0"
           >
             Send
           </TarkaButton>

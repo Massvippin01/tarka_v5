@@ -8,8 +8,18 @@ interface ApiProject { archived?: boolean; cases: { case_id: string; lifecycle: 
 
 /** Cases the user can access (backend list ∪ project links), each with its jobs and networks. Shares query keys with Upload/Triage. */
 export function useDeskData() {
-  const casesQ = useQuery({ queryKey: ['cases-list'], queryFn: async () => (await apiClient.get<ApiCase[]>('/api/v1/cases')).data });
-  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: async () => (await apiClient.get<ApiProject[]>('/api/v1/projects')).data });
+  const casesQ = useQuery({
+    queryKey: ['cases-list'],
+    queryFn: async () => (await apiClient.get<ApiCase[]>('/api/v1/cases')).data,
+    retry: false,
+    staleTime: 30_000,
+  });
+  const projectsQ = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => (await apiClient.get<ApiProject[]>('/api/v1/projects')).data,
+    retry: false,
+    staleTime: 30_000,
+  });
 
   const lifecycle = new Map<string, string | null>();
   for (const p of projectsQ.data ?? []) for (const c of p.cases) lifecycle.set(c.case_id, c.lifecycle);
@@ -20,12 +30,16 @@ export function useDeskData() {
     queries: ids.map((id) => ({
       queryKey: ['ingestion-jobs', id],
       queryFn: async () => (await apiClient.get<DeskJob[]>('/api/v1/ingestion/jobs', { params: { case_id: id } })).data,
+      retry: false,
+      staleTime: 30_000,
     })),
   });
   const netQ = useQueries({
     queries: ids.map((id) => ({
       queryKey: ['networks', id],
       queryFn: async () => (await apiClient.get<NetworksResponse>(`/api/v1/cases/${encodeURIComponent(id)}/networks`)).data,
+      retry: false,
+      staleTime: 30_000,
     })),
   });
 
