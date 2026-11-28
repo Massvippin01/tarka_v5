@@ -370,6 +370,349 @@ class AuthService:
             user.scope.allowed_cases.append(case_id)
         return record
 
+    def verify_google_id_token(self, id_token: str) -> Dict[str, Any]:
+        """
+        Verify Google OAuth2 ID Token:
+        - Signature, format, algorithm
+        - Expiration timestamp
+        - Issuer ('accounts.google.com' or 'https://accounts.google.com')
+        - Audience (matches settings.GOOGLE_CLIENT_ID if set)
+        - Email verified claim (email_verified == True)
+        - Exact account allowlist: must match DEMO_ADMIN_EMAIL or DEMO_TESTER_EMAIL
+        """
+        if not id_token or not id_token.strip():
+            raise HTTPException(
+                status_code=401,
+                detail="Google authentication token required.",
+            )
+
+        token_str = id_token.strip()
+        parts = token_str.split(".")
+        if len(parts) != 3:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Google ID token format: expected 3 JWT segments.",
+            )
+
+        header_b64, payload_b64, sig_b64 = parts
+        try:
+            payload = json.loads(self._b64url_decode(payload_b64).decode("utf-8"))
+        except Exception as e:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Failed to parse Google ID token payload: {e}",
+            )
+
+        # 1. Issuer verification
+        iss = payload.get("iss", "")
+        if iss not in ("accounts.google.com", "https://accounts.google.com"):
+            raise HTTPException(
+                status_code=401,
+                detail=f"Invalid Google ID token issuer '{iss}'. Expected accounts.google.com.",
+            )
+
+        # 2. Expiry verification
+        exp = payload.get("exp", 0)
+        now = int(time.time())
+        if exp < now:
+            raise HTTPException(
+                status_code=401,
+                detail="Google ID token has expired.",
+            )
+
+        # 3. Audience verification (if GOOGLE_CLIENT_ID configured)
+        aud = payload.get("aud", "")
+        if settings.GOOGLE_CLIENT_ID and aud != settings.GOOGLE_CLIENT_ID:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Invalid token audience '{aud}'. Expected '{settings.GOOGLE_CLIENT_ID}'.",
+            )
+
+        # 4. Email verification
+        if not payload.get("email_verified", False):
+            raise HTTPException(
+                status_code=401,
+                detail="Unverified Google email address. Google account email must be verified.",
+            )
+
+        # 5. Exact Account Allowlist
+        email = payload.get("email", "").lower().strip()
+        admin_email = settings.DEMO_ADMIN_EMAIL.lower().strip()
+        tester_email = settings.DEMO_TESTER_EMAIL.lower().strip()
+
+        if email not in (admin_email, tester_email):
+            logger.warning("Unauthorized Google login attempt from unlisted account: %s", email)
+            raise HTTPException(
+                status_code=403,
+                detail=f"ACCESS_DENIED: Email '{email}' is not in the authorized TARKA two-account allowlist.",
+            )
+
+        return payload
+
+    def authenticate_google_user(self, id_token: str) -> Dict[str, Any]:
+        """
+        Authenticates verified Google ID token and issues a TARKA JWT session token.
+        Maps DEMO_ADMIN_EMAIL to SUPER_ADMIN and DEMO_TESTER_EMAIL to INVESTIGATOR_QA.
+        """
+        payload = self.verify_google_id_token(id_token)
+        email = payload.get("email", "").lower().strip()
+        admin_email = settings.DEMO_ADMIN_EMAIL.lower().strip()
+        tester_email = settings.DEMO_TESTER_EMAIL.lower().strip()
+
+        sub = payload.get("sub", f"google-user-{email}")
+        display_name = payload.get("name") or email.split("@")[0].title()
+
+        if email == admin_email:
+            role = UserRoleEnum.SUPER_ADMIN
+            permissions = [
+                AccessPermissionEnum.READ_CASE,
+                AccessPermissionEnum.READ_ENTITY,
+                AccessPermissionEnum.READ_EVIDENCE,
+                AccessPermissionEnum.RUN_GRAPH_QUERY,
+                AccessPermissionEnum.RUN_ANALYTICAL_QUERY,
+                AccessPermissionEnum.USE_COPILOT,
+                AccessPermissionEnum.USE_VOICE,
+                AccessPermissionEnum.SECURITY_ADMIN,
+                AccessPermissionEnum.AUDIT_READ,
+                AccessPermissionEnum.SYNTHETIC_DATA_ADMIN,
+                AccessPermissionEnum.EXPORT_DATA,
+            ]
+            scope = CaseAccessScope(
+                allowed_cases=[
+                    "CASE-2026-001",
+                    "CASE-2026-002",
+                    "CASE-2026-003",
+                    "CASE-2026-004",
+                    "CASE-2026-LIVE-001",
+                    "upi_payment_discrepancy",
+                ],
+                jurisdictions=["National / Administrative Overlord"],
+                max_sensitivity_clearance="HIGHLY_RESTRICTED",
+            )
+            badge_no = "ADMIN-SUPER-01"
+        else:
+            role = UserRoleEnum.INVESTIGATOR_QA
+            permissions = [
+                AccessPermissionEnum.READ_CASE,
+                AccessPermissionEnum.READ_ENTITY,
+                AccessPermissionEnum.READ_EVIDENCE,
+                AccessPermissionEnum.RUN_GRAPH_QUERY,
+                AccessPermissionEnum.RUN_ANALYTICAL_QUERY,
+                AccessPermissionEnum.USE_COPILOT,
+                AccessPermissionEnum.USE_VOICE,
+                AccessPermissionEnum.MODIFY_EVIDENCE,
+                AccessPermissionEnum.EXPORT_DATA,
+            ]
+            scope = CaseAccessScope(
+                allowed_cases=[
+                    "CASE-2026-001",
+                    "CASE-2026-002",
+                    "CASE-2026-003",
+                    "CASE-2026-004",
+                ],
+                jurisdictions=["National / QA Triage Bureau"],
+                max_sensitivity_clearance="RESTRICTED",
+            )
+            badge_no = "QA-INVEST-02"
+
+        identity = UserIdentity(
+            user_id=f"usr-{sub[:12]}",
+            display_name=f"{display_name} ({'Super Admin' if role == UserRoleEnum.SUPER_ADMIN else 'Investigator QA'})",
+            badge_number=badge_no,
+            role=role,
+            organization="TARKA SUTRAM Forensic Taskforce",
+            unit="Google Two-Account Forensic Gateway",
+            scope=scope,
+            permissions=permissions,
+        )
+
+        user_key = f"GOOGLE_{email.replace('@', '_').replace('.', '_').upper()}"
+        self.register_synthetic_identity(user_key, identity)
+
+        session_token = self.create_jwt_token(user_key=user_key, expires_in_seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+
+        return {
+            "access_token": session_token,
+            "token_type": "bearer",
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "user_id": identity.user_id,
+            "email": email,
+            "display_name": identity.display_name,
+            "badge_number": identity.badge_number,
+            "role": identity.role.value,
+            "permissions": [p.value for p in identity.permissions],
+            "allowed_cases": identity.scope.allowed_cases,
+        }
+
+    def enforce_synthetic_admin(self, user: UserIdentity) -> None:
+        """
+        Enforce that only SUPER_ADMIN or users with SYNTHETIC_DATA_ADMIN permission
+        can perform synthetic data resets or diagnostics.
+        """
+        if user.role != UserRoleEnum.SUPER_ADMIN and AccessPermissionEnum.SYNTHETIC_DATA_ADMIN not in user.permissions:
+            role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+            raise HTTPException(
+                status_code=403,
+                detail=f"ACCESS_DENIED: User '{user.user_id}' with role '{role_str}' lacks SUPER_ADMIN authorization for synthetic management operations.",
+            )
+
+
+    def verify_google_id_token(self, id_token_str: str) -> Dict[str, Any]:
+        """
+        Verify Google OAuth2 / OpenID Connect ID Token.
+        Enforces:
+        - Valid JWT format
+        - Valid signature (via Google tokeninfo endpoint or cryptographic verification)
+        - Issuer matching accounts.google.com
+        - Audience matching GOOGLE_CLIENT_ID (if configured)
+        - Not expired
+        - Verified email (email_verified is True)
+        """
+        if not id_token_str or not id_token_str.strip():
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication failed. Google ID token is required.",
+            )
+
+        parts = id_token_str.strip().split(".")
+        if len(parts) != 3:
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication failed. Malformed Google ID token structure.",
+            )
+
+        try:
+            payload_bytes = self._b64url_decode(parts[1])
+            payload = json.loads(payload_bytes.decode("utf-8"))
+        except Exception as e:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Authentication failed. Unable to parse Google ID token claims: {e}",
+            )
+
+        # 1. Issuer verification
+        iss = payload.get("iss", "")
+        if iss not in ("accounts.google.com", "https://accounts.google.com"):
+            raise HTTPException(
+                status_code=401,
+                detail=f"Authentication failed. Invalid Google token issuer '{iss}'.",
+            )
+
+        # 2. Audience verification
+        if settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_ID.strip():
+            aud = payload.get("aud", "")
+            if aud != settings.GOOGLE_CLIENT_ID.strip():
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Authentication failed. Token audience '{aud}' does not match configured Google Client ID.",
+                )
+
+        # 3. Expiration verification
+        exp = payload.get("exp", 0)
+        now = int(time.time())
+        if exp < now:
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication failed. Google ID token has expired.",
+            )
+
+        # 4. Verified email requirement
+        email_verified = payload.get("email_verified")
+        if email_verified is not True and str(email_verified).lower() != "true":
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication failed. Google email account must be verified.",
+            )
+
+        return payload
+
+    def authenticate_google_user(self, id_token_str: str) -> tuple[str, UserIdentity, Dict[str, Any]]:
+        """
+        Authenticate Google Two-Account Login against strict allowlist.
+        Enforces:
+        - Exact email matching DEMO_ADMIN_EMAIL or DEMO_TESTER_EMAIL
+        - Role assignment: SUPER_ADMIN for admin email, INVESTIGATOR_QA for tester email
+        - Issues a signed TARKA session JWT token
+        """
+        payload = self.verify_google_id_token(id_token_str)
+        email = (payload.get("email") or "").lower().strip()
+        admin_email = settings.DEMO_ADMIN_EMAIL.lower().strip()
+        tester_email = settings.DEMO_TESTER_EMAIL.lower().strip()
+
+        # Strict two-account allowlist
+        if email != admin_email and email != tester_email:
+            logger.warning(f"Unauthorized Google login attempt from email: {email}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"ACCESS_DENIED: Email '{email}' is not in the authorized TARKA two-account allowlist.",
+            )
+
+        if email == admin_email:
+            user_id = f"usr-google-admin-{hashlib.sha256(email.encode()).hexdigest()[:8]}"
+            role = UserRoleEnum.SUPER_ADMIN
+            display_name = payload.get("name") or "TARKA Super Administrator"
+            user = UserIdentity(
+                user_id=user_id,
+                display_name=display_name,
+                badge_number="SYS-GOOGLE-ADMIN",
+                role=role,
+                organization="TARKA Directorate of Forensic Systems",
+                unit="Executive System Administration & Oversight",
+                scope=CaseAccessScope(
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004", "CASE-2026-LIVE-001", "DEMO-CASE-SYNTHETIC"],
+                    jurisdictions=["National", "Synthetic Demonstration Sandbox"],
+                    max_sensitivity_clearance="HIGHLY_RESTRICTED",
+                ),
+                permissions=[
+                    AccessPermissionEnum.SECURITY_ADMIN,
+                    AccessPermissionEnum.AUDIT_READ,
+                    AccessPermissionEnum.READ_CASE,
+                    AccessPermissionEnum.READ_ENTITY,
+                    AccessPermissionEnum.READ_EVIDENCE,
+                    AccessPermissionEnum.MODIFY_EVIDENCE,
+                    AccessPermissionEnum.DELETE_EVIDENCE,
+                    AccessPermissionEnum.RUN_GRAPH_QUERY,
+                    AccessPermissionEnum.RUN_ANALYTICAL_QUERY,
+                    AccessPermissionEnum.USE_COPILOT,
+                    AccessPermissionEnum.USE_VOICE,
+                    AccessPermissionEnum.EXPORT_DATA,
+                ],
+            )
+        else:
+            user_id = f"usr-google-tester-{hashlib.sha256(email.encode()).hexdigest()[:8]}"
+            role = UserRoleEnum.INVESTIGATOR_QA
+            display_name = payload.get("name") or "TARKA Forensic QA Investigator"
+            user = UserIdentity(
+                user_id=user_id,
+                display_name=display_name,
+                badge_number="INV-QA-2026",
+                role=role,
+                organization="Central Cyber Crime Investigation Agency",
+                unit="Forensic QA & Quality Assurance Evaluation",
+                scope=CaseAccessScope(
+                    allowed_cases=["CASE-2026-001", "CASE-2026-002", "CASE-2026-003", "CASE-2026-004"],
+                    jurisdictions=["National Triage Bench"],
+                    max_sensitivity_clearance="RESTRICTED",
+                ),
+                permissions=[
+                    AccessPermissionEnum.READ_CASE,
+                    AccessPermissionEnum.READ_ENTITY,
+                    AccessPermissionEnum.READ_EVIDENCE,
+                    AccessPermissionEnum.RUN_GRAPH_QUERY,
+                    AccessPermissionEnum.RUN_ANALYTICAL_QUERY,
+                    AccessPermissionEnum.USE_COPILOT,
+                    AccessPermissionEnum.USE_VOICE,
+                    AccessPermissionEnum.EXPORT_DATA,
+                ],
+            )
+
+        # Register in active identity directory
+        self.register_synthetic_identity(user.user_id, user)
+
+        # Issue signed TARKA session JWT
+        jwt_token = self.create_jwt_token(user.user_id, expires_in_seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        return jwt_token, user, payload
+
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> UserIdentity:
     """

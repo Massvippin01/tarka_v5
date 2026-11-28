@@ -51,6 +51,14 @@ export const TarkaLogo: React.FC<TarkaLogoProps> = ({
   const defaultHeight = isIcon ? (height || 26) : (height || 24);
   const defaultWidth = width || 'auto';
 
+  const handleClick = (_e?: React.SyntheticEvent) => {
+    if (onClick) {
+      onClick();
+    } else if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('tarka:navigate-workspace'));
+    }
+  };
+
   return (
     <img
       src={imgSrc}
@@ -68,16 +76,16 @@ export const TarkaLogo: React.FC<TarkaLogoProps> = ({
         objectFit: 'contain',
         ...style,
       }}
-      className={`select-none ${onClick ? 'cursor-pointer hover:opacity-90 active:scale-95 transition-all duration-150' : ''} ${className}`}
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => {
+      className={`select-none cursor-pointer hover:opacity-90 active:scale-95 transition-all duration-150 ${className}`}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          handleClick(e as unknown as React.MouseEvent);
         }
-      } : undefined}
+      }}
       loading="eager"
       decoding="async"
     />

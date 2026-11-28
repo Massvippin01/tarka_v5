@@ -1,0 +1,19 @@
+[package]
+name = "tarka-admission-engine"
+version = "0.1.0"
+edition = "2021"
+authors = ["TARKA Systems Architecture Team <engineering@tarka.local>"]
+description = "High-throughput, memory-bounded forensic evidence admission, CAS hashing, and archive security engine for TARKA"
+license = "Proprietary"
+
+[dependencies]
+sha2 = "0.10"
+hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+[lib]
+name = "tarka_admission_engine"
+crate-type = ["cdylib", "rlib"]

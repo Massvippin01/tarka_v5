@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 
 class UserRoleEnum(str, Enum):
+    SUPER_ADMIN = "SUPER_ADMIN"
+    INVESTIGATOR_QA = "INVESTIGATOR_QA"
     INVESTIGATOR = "INVESTIGATOR"
     SUPERVISOR = "SUPERVISOR"
     ANALYST = "ANALYST"
@@ -31,6 +33,7 @@ class AccessPermissionEnum(str, Enum):
     EXPORT_DATA = "EXPORT_DATA"
     AUDIT_READ = "AUDIT_READ"
     SECURITY_ADMIN = "SECURITY_ADMIN"
+    SYNTHETIC_DATA_ADMIN = "SYNTHETIC_DATA_ADMIN"
 
 
 class CaseAccessScope(BaseModel):

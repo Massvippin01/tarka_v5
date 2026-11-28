@@ -58,6 +58,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.auth import router as auth_router
+
+app.include_router(
+    auth_router,
+    prefix="/api/v1/auth",
+    tags=["Authentication & Google 2-Account"],
+)
+
 # Root-level health & readiness endpoints for platform health probes (Render, ALB, k8s)
 app.include_router(
     health_router,
@@ -213,6 +221,26 @@ app.include_router(
 
 from app.api.projects_api import networks_router, router as projects_router
 from app.api.ingestion_api import router as ingestion_router
+from app.api.auth import router as auth_router
+from app.api.whatsapp_api import router as whatsapp_router
+
+app.include_router(
+    auth_router,
+    prefix="/api/v1/auth",
+    tags=["Authentication & Google OIDC"],
+)
+
+app.include_router(
+    whatsapp_router,
+    prefix="/api/v1/connectors/whatsapp",
+    tags=["WhatsApp Business Cloud API"],
+)
+
+app.include_router(
+    whatsapp_router,
+    prefix="/api/v1/whatsapp",
+    tags=["WhatsApp Business Cloud API (Direct)"],
+)
 
 app.include_router(
     projects_router,

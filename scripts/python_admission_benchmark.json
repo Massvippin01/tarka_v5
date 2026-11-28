@@ -1,0 +1,31 @@
+{
+  "sha256_streaming": {
+    "1MB": {
+      "elapsed_ms": 4.49,
+      "throughput_mb_s": 222.81,
+      "sha256_prefix": "ce2442b8b1c15414"
+    },
+    "10MB": {
+      "elapsed_ms": 47.12,
+      "throughput_mb_s": 212.22,
+      "sha256_prefix": "05bf30a7bca309e4"
+    },
+    "50MB": {
+      "elapsed_ms": 209.63,
+      "throughput_mb_s": 238.52,
+      "sha256_prefix": "6607cf33603413d5"
+    }
+  },
+  "magic_signature_validation": {
+    "iterations": 20000,
+    "elapsed_ms": 18.79,
+    "ops_per_second": 1064334.0
+  },
+  "transaction_csv_normalization": {
+    "rows_processed": 10000,
+    "unique_rows": 10000,
+    "total_amount": 230532500.0,
+    "elapsed_ms": 45.52,
+    "rows_per_second": 219700.0
+  }
+}

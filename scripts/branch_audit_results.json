@@ -1,0 +1,227 @@
+{
+  "origin/main": {
+    "sha": "c7b10a3b04b2bcf494ada84ac723f3f5b71e9881",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t206",
+    "unique_commit_count": 206,
+    "unique_commits": [
+      "c7b10a3 docs(readme): clarify that LLM / Ollama is completely optional",
+      "62a0dbf docs(readme): add live Render deployment URL",
+      "521c91d docs(readme): remove hackathon branding and update with live v6 UI screenshots",
+      "fc7fe8b chore(legal): add All-Rights-Reserved proprietary LICENSE",
+      "ffa1d01 feat(demo,perf,ai): clean dashboard reset, fast verdicts/freeze/inbox, FocusBar picker, and Ollama copilot with live orb",
+      "792b56d Merge branch 'feat/reset-demo'",
+      "7eaf4b6 feat(demo): in-app reset of demo data with backup, status polling and Settings button",
+      "90afa50 fix(network): details panel scrolls as a whole; mule list no longer squeezed",
+      "2f8ad32 fix(ocr): read Indian lakh grouping in amounts (2,96,000 was read as 2)",
+      "c9fe5b6 feat(demo): generator for a fresh linked upload set (CSV, 2 receipts, statement PDF)"
+    ],
+    "diff_stat": "1755 files changed, 247194 insertions(+), 28205 deletions(-)"
+  },
+  "origin/feat/tarka-production-upgrade": {
+    "sha": "d321a44557f869e2ed82f659854eb47224c3bf32",
+    "merge_base": "d321a44557f869e2ed82f659854eb47224c3bf32",
+    "ahead_behind": "0\t0",
+    "unique_commit_count": 0,
+    "unique_commits": [],
+    "diff_stat": ""
+  },
+  "origin/phase-13/independent-assurance": {
+    "sha": "a5942e451f96d97637d9610f253af94fc6d67825",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t57",
+    "unique_commit_count": 57,
+    "unique_commits": [
+      "a5942e4 docs(assurance): complete Phase 13 independent assurance programme and 12 evaluation reports",
+      "e2a4268 docs(release): complete Phase 12 competition release, demonstration & pilot readiness pack",
+      "98e79e1 docs(acceptance): complete 20-report independent verification & FIELDNOTE perfection program",
+      "813012a docs: record 100% green CI run 42068196310 in PROJECT_STATE.md",
+      "e6c3890 fix(ci): remediate orchestrator navigation intent collision, update sarvam voice contract tests, and standardize docker smoke test topology",
+      "e26fb55 feat(sutram): master institutional readiness, CI/CD remediation, 3 signature forensic systems & 15-scenario curriculum",
+      "31b47b9 docs(sutram): publish complete SUTRAM 2026 PS04 competition submission dossier",
+      "b74317e docs(sutram): finalize PS04 engineering, deployment and workbench documentation",
+      "afdb894 feat(sutram): complete M4 end-to-end investigation integration",
+      "371e060 test(sutram): add M3 adversarial and security validation"
+    ],
+    "diff_stat": "600 files changed, 127153 insertions(+), 18693 deletions(-)"
+  },
+  "origin/phase-14/implementation-completion": {
+    "sha": "b5a5a25481aa7c12ae51ec3cb56e9fa0889d7c37",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t165",
+    "unique_commit_count": 165,
+    "unique_commits": [
+      "b5a5a25 feat(handbook): generate judge demonstration handbook pdf, screenshots, and verification matrix",
+      "97701fb feat(ux): autonomous particle intelligence, voice-first navigation, contextual guide, and semantic highlighting",
+      "8d534fc feat(platform): sovereign forensic platform evolution, particle home, curved skeuomorphic rail, and massive evidence ingestion",
+      "aa2b99a fix(ui): perfect sidebar active indicator pill line, eliminate case card boxed overlap, and expand graph node vertical spacing",
+      "6f7e2d1 fix(ui): eliminate dull gray backgrounds on cards and pills, add full dynamic shrink-to-fit auto-scaling to fraud network graph",
+      "d50005f feat(ui): refine case switcher popover, unclutter fraud network layout, add true fullscreen replay portal & minimizable mini-HUD",
+      "9316215 fix(navigation): upgrade completed step tick circles to vibrant solid emerald with crisp white checkmark",
+      "f1147e9 fix(navigation): make active and selected states prominently visible in sidebar and tab navigation",
+      "d60f8a7 fix(money-trail): lock Sankey diagram to compact proportioned height so it is always small",
+      "26df85a fix(sidebar): redesign navigation rail, eliminate truncation and double checkmarks, center collapsed icons"
+    ],
+    "diff_stat": "1487 files changed, 223296 insertions(+), 28002 deletions(-)"
+  },
+  "origin/phase-14/whole-system-completion": {
+    "sha": "aa52f87fc4704eaf01f19fb64aca4d858bb640e8",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t61",
+    "unique_commit_count": 61,
+    "unique_commits": [
+      "aa52f87 fix(repo): remove accidentally committed terminal artifacts",
+      "2ad0fce feat(tarka): complete investigation platform integration and verification",
+      "4b4242f docs(governance): update PROJECT_STATE.md with Phase 13 assurance and Phase 14 audit verification",
+      "1d11981 docs(audit): complete Phase 14.0-14.1 whole-system requirements and implementation audit",
+      "a5942e4 docs(assurance): complete Phase 13 independent assurance programme and 12 evaluation reports",
+      "e2a4268 docs(release): complete Phase 12 competition release, demonstration & pilot readiness pack",
+      "98e79e1 docs(acceptance): complete 20-report independent verification & FIELDNOTE perfection program",
+      "813012a docs: record 100% green CI run 42068196310 in PROJECT_STATE.md",
+      "e6c3890 fix(ci): remediate orchestrator navigation intent collision, update sarvam voice contract tests, and standardize docker smoke test topology",
+      "e26fb55 feat(sutram): master institutional readiness, CI/CD remediation, 3 signature forensic systems & 15-scenario curriculum"
+    ],
+    "diff_stat": "610 files changed, 128679 insertions(+), 18555 deletions(-)"
+  },
+  "origin/phase-15/polish": {
+    "sha": "5d3a30684362244dc611cdac79f68e8bb5fd0287",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t76",
+    "unique_commit_count": 76,
+    "unique_commits": [
+      "5d3a306 feat(ui): clean global header, auto-fit in-page node graph, minimize strip, and convert fullscreen graph & voice AI to white SaaS theme",
+      "d50b971 docs: update PROJECT_STATE.md with Phase 16 universal database synchronization verification",
+      "f0846e5 feat(phase-16): universal database synchronization across all 8 forensic screens with dynamic infographics",
+      "9263dff feat(phase-16): complete database persistence, dynamic multi-case sync, and saas workspace hub",
+      "7a2d188 feat(network): resolve node congestion, add fullscreen replay with play button, and collapsible minimize bar",
+      "3fbfb33 docs: update PROJECT_STATE.md with full completion of 7-section forensics framework (2.1 to 2.7)",
+      "d5eff35 feat(forensics): complete Phase 15.4 - multi-evidence counterfactuals, replayable packages, deterministic reproduction, and synthetic ground truth benchmark",
+      "f9650fa feat(forensics): complete Phase 15.3 - Evidence IR, claim manifests, integrity circuit breaker, identity precondition verification, and non-guilt disclaimers",
+      "45a2e1c feat(forensics): complete Phase 15.2 - temporal graph queries, multi-hop pathfinding, balance reconciliation, and comparative taint modeling",
+      "e3b97ed feat(forensics): complete Phase 15.1 - canonical entity types, normalizers, conflict detector, decision manager, and CGNAT guardrail"
+    ],
+    "diff_stat": "640 files changed, 139946 insertions(+), 18803 deletions(-)"
+  },
+  "origin/phase-15.7": {
+    "sha": "2f5c536e31b568787cb886e0a8a5d719be077738",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t48",
+    "unique_commit_count": 48,
+    "unique_commits": [
+      "2f5c536 refactor(ui): minimalist institutional polish, unified neutral chrome, clean workspace control bar, and default expanded sidebar",
+      "82947fa fix(api): import BaseModel and Field in server.py for Section 4 endpoints",
+      "359be4a feat(sutram-section-4): complete Section 4 integration across all 5 domains, multi-sheet Excel ingestion, 6-typology scam classifier, 1930 NCRP entity extraction, and 104/104 passing tests",
+      "3b5e708 docs: add brutally honest ground-truth audit of Member A, B, and C implementations",
+      "0588b52 docs: add comprehensive master engineering and onboarding guide for team handover",
+      "c018cb2 feat(championship): deliver 5-file Indian investigation reconstructor, relationship evidence sheet with INSUFFICIENT_EVIDENCE safeguard, 10-step transformation audit, and 7-question explainable brief",
+      "cb7eb84 fix: prevent white screen on large file upload by adding defensive cluster fallbacks and error boundary",
+      "0592d7b feat: fix IBM AML 0% recall, eliminate 300 PaySim FNs, and add all-6-engine 100k CSV generator",
+      "50ebcc0 feat: TARKA Benchmark v4.0 - fix 2.48M PaySim false positives & universal schema capability matrix",
+      "d0b1f6c feat: TARKA Benchmark Lab v3.0 - 100% recall ensemble & 5-typology bulk segregation engine"
+    ],
+    "diff_stat": "648 files changed, 124883 insertions(+), 1837 deletions(-)"
+  },
+  "origin/phase-16/bulk-intake-and-pages": {
+    "sha": "39693497434c2f7fc32ea10e768f316668c1ffe3",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t169",
+    "unique_commit_count": 169,
+    "unique_commits": [
+      "3969349 feat: bulk intake with proposed cases, 5x faster ingestion, page redesigns, security fixes",
+      "b6d7436 Merge remote main into sovereign v6 foundation (local state authoritative)",
+      "6134f24 feat(v6): sovereign platform foundation, full v6 suite, and ingestion architecture",
+      "4650774 Merge pull request #1 from Massvippin01/phase-14/implementation-completion",
+      "b5a5a25 feat(handbook): generate judge demonstration handbook pdf, screenshots, and verification matrix",
+      "97701fb feat(ux): autonomous particle intelligence, voice-first navigation, contextual guide, and semantic highlighting",
+      "8d534fc feat(platform): sovereign forensic platform evolution, particle home, curved skeuomorphic rail, and massive evidence ingestion",
+      "aa2b99a fix(ui): perfect sidebar active indicator pill line, eliminate case card boxed overlap, and expand graph node vertical spacing",
+      "6f7e2d1 fix(ui): eliminate dull gray backgrounds on cards and pills, add full dynamic shrink-to-fit auto-scaling to fraud network graph",
+      "d50005f feat(ui): refine case switcher popover, unclutter fraud network layout, add true fullscreen replay portal & minimizable mini-HUD"
+    ],
+    "diff_stat": "1594 files changed, 234137 insertions(+), 28052 deletions(-)"
+  },
+  "origin/ui/v6-light-professional": {
+    "sha": "ba3b788e2d55985213a7d8aed8c77f410c493876",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t130",
+    "unique_commit_count": 130,
+    "unique_commits": [
+      "ba3b788 feat(v6-theme): apply light executive tokens matching tarka-reference specification",
+      "3c3271c fix(v6): install and wire Tailwind v4 (v6 was rendering unstyled)",
+      "171fb87 feat(v6-parity): adapt command palette, ask tarka copilot, and multi-tab lab workstation",
+      "6d5eabc docs(v6): document completed v6 presentation layer rebuild and quality gates in DECISIONS.md",
+      "8bacd5b feat(v6): deliverable side-by-side review gallery at docs/redesign/index.html and verified e2e progress artifacts",
+      "189f260 fix(v6): ensure case switcher accessible name and rail unknown-case boundary pass 100% audit",
+      "3fd7692 feat(v6): screen i - lab, settings, and health diagnostics wrapped in v6 design system",
+      "b7dd19e feat(v6): screen h - actions and report with freeze simulation and sealed admissible paper report",
+      "1067a72 feat(v6): screen g - device and sim correlation with hardware specifications and cdr timeline",
+      "85d0ff9 feat(v6): screen f - fraud network graph with theft replay, digital clock, and node inspector"
+    ],
+    "diff_stat": "1176 files changed, 199222 insertions(+), 27909 deletions(-)"
+  },
+  "origin/v5/main": {
+    "sha": "9c39c3c192363d538492c8f355ca18f5b8ad2388",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t31",
+    "unique_commit_count": 31,
+    "unique_commits": [
+      "9c39c3c feat(viz): execute Round R6 Graph Rescue 2 with pure layout, S3 sankey, and recoveryModel",
+      "9954702 feat(r5): complete Round R5 Graph Rescue for Attribution, Network, and Taint Sankey with 100% fidelity",
+      "b597ec5 feat(v8.0): complete Master V8.0 visual layer and data-visualization rebuild across all 6 views",
+      "bc88e23 feat(ui): Master V7.5 World-Class Infographics & Forensic Micro-Interactions (Attribution Sankey, Precision Vernier Gauge, Dynamic Taint DAG & Dinic Min-Cut)",
+      "883202b feat: Master V7.0 PS4 alignment with 6-module sidebar and spacious 2-panel executive UX",
+      "2234085 feat: world-class executive polish for CGNAT funnel, Z3 SMT caliper, and Taint DAG infographics (v6.5 finale)",
+      "8c96f1e feat: implement Master V6.0 National Finale upgrade (PS4 100% Rubric Alignment)",
+      "1ddcd99 docs: add master architectural & forensic technical audit document",
+      "e79c21a feat(taint): elevate Screen 3 Taint & Lien Engine to world-class forensic workstation",
+      "a905df5 feat(attribution): enhance CGNAT Funnel and Z3 SMT Vernier Caliper infographics"
+    ],
+    "diff_stat": "306 files changed, 50480 insertions(+), 1457 deletions(-)"
+  },
+  "origin/v6-release": {
+    "sha": "aa2b99a59c0b73b4202a3ae252e12b50a05b4b64",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t162",
+    "unique_commit_count": 162,
+    "unique_commits": [
+      "aa2b99a fix(ui): perfect sidebar active indicator pill line, eliminate case card boxed overlap, and expand graph node vertical spacing",
+      "6f7e2d1 fix(ui): eliminate dull gray backgrounds on cards and pills, add full dynamic shrink-to-fit auto-scaling to fraud network graph",
+      "d50005f feat(ui): refine case switcher popover, unclutter fraud network layout, add true fullscreen replay portal & minimizable mini-HUD",
+      "9316215 fix(navigation): upgrade completed step tick circles to vibrant solid emerald with crisp white checkmark",
+      "f1147e9 fix(navigation): make active and selected states prominently visible in sidebar and tab navigation",
+      "d60f8a7 fix(money-trail): lock Sankey diagram to compact proportioned height so it is always small",
+      "26df85a fix(sidebar): redesign navigation rail, eliminate truncation and double checkmarks, center collapsed icons",
+      "c3d7f5d fix(device-sim): enhance CGNAT attribution funnel and device SIM UI in light professional system",
+      "6b3d9d8 fix(network-graph): enhance fraud network layout, eliminate hub/hull collision, render cashout sink, and separate edge paths",
+      "600cc97 docs: record AI Mode UI enhancement and verification"
+    ],
+    "diff_stat": "1233 files changed, 200678 insertions(+), 27968 deletions(-)"
+  },
+  "origin/feat/sutram-2026-ps04-member-b": {
+    "sha": "e2a4268c2022901dfa0dbc6890d26329c9f4f3cb",
+    "merge_base": "2c32bb05f36e80baba130e10c910623ada687dea",
+    "ahead_behind": "27\t56",
+    "unique_commit_count": 56,
+    "unique_commits": [
+      "e2a4268 docs(release): complete Phase 12 competition release, demonstration & pilot readiness pack",
+      "98e79e1 docs(acceptance): complete 20-report independent verification & FIELDNOTE perfection program",
+      "813012a docs: record 100% green CI run 42068196310 in PROJECT_STATE.md",
+      "e6c3890 fix(ci): remediate orchestrator navigation intent collision, update sarvam voice contract tests, and standardize docker smoke test topology",
+      "e26fb55 feat(sutram): master institutional readiness, CI/CD remediation, 3 signature forensic systems & 15-scenario curriculum",
+      "31b47b9 docs(sutram): publish complete SUTRAM 2026 PS04 competition submission dossier",
+      "b74317e docs(sutram): finalize PS04 engineering, deployment and workbench documentation",
+      "afdb894 feat(sutram): complete M4 end-to-end investigation integration",
+      "371e060 test(sutram): add M3 adversarial and security validation",
+      "283dbeb chore(sutram): verify and publish M2 distributed event fabric"
+    ],
+    "diff_stat": "588 files changed, 125853 insertions(+), 18693 deletions(-)"
+  },
+  "origin/fix/ci-post-merge-repair": {
+    "sha": "9580dbffb420b1ee4e714fd800fc4fb2befa18f2",
+    "merge_base": "9580dbffb420b1ee4e714fd800fc4fb2befa18f2",
+    "ahead_behind": "5\t0",
+    "unique_commit_count": 0,
+    "unique_commits": [],
+    "diff_stat": ""
+  }
+}

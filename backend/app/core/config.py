@@ -101,6 +101,46 @@ class Settings(BaseSettings):
         description="Allow raw synthetic user keys as bearer tokens (LOCAL DEV ONLY - strictly prohibited in staging/prod)"
     )
 
+    # Google Two-Account Authentication
+    GOOGLE_CLIENT_ID: str = Field(
+        default="",
+        description="Google OAuth2 Client ID for authentication"
+    )
+    DEMO_ADMIN_EMAIL: str = Field(
+        default="admin@tarka.local",
+        description="Allowed Google account for SUPER_ADMIN role"
+    )
+    DEMO_TESTER_EMAIL: str = Field(
+        default="tester@tarka.local",
+        description="Allowed Google account for INVESTIGATOR_QA role"
+    )
+
+    # WhatsApp Official Business Cloud API Integration
+    WHATSAPP_ENABLED: bool = Field(
+        default=False,
+        description="Enable official WhatsApp Cloud API integration (disabled until valid credentials provided)"
+    )
+    WHATSAPP_PHONE_NUMBER_ID: str = Field(
+        default="",
+        description="Meta WhatsApp Cloud API Phone Number ID"
+    )
+    WHATSAPP_ACCESS_TOKEN: str = Field(
+        default="",
+        description="Meta WhatsApp Cloud API System User Access Token"
+    )
+    WHATSAPP_WEBHOOK_VERIFY_TOKEN: str = Field(
+        default="tarka_webhook_verify_token_2026",
+        description="Verification token for WhatsApp webhook subscription handshake"
+    )
+    WHATSAPP_APP_SECRET: str = Field(
+        default="",
+        description="Meta App Secret for X-Hub-Signature-256 webhook validation"
+    )
+    WHATSAPP_BUSINESS_ACCOUNT_ID: str = Field(
+        default="",
+        description="Meta WhatsApp Business Account ID"
+    )
+
 
     # Persistence - PostgreSQL Transactional Authority
     DATABASE_URL: str = Field(

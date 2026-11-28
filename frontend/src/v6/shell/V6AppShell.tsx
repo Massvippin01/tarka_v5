@@ -168,6 +168,18 @@ export const V6AppShell: React.FC = () => {
     return () => window.removeEventListener('popstate', syncFromUrl);
   }, [syncFromUrl]);
 
+  // Global logo navigation listeners
+  useEffect(() => {
+    const handleNavWorkspace = () => setActiveView('workspace');
+    const handleNavHome = () => setActiveView('home');
+    window.addEventListener('tarka:navigate-workspace', handleNavWorkspace);
+    window.addEventListener('tarka:navigate-home', handleNavHome);
+    return () => {
+      window.removeEventListener('tarka:navigate-workspace', handleNavWorkspace);
+      window.removeEventListener('tarka:navigate-home', handleNavHome);
+    };
+  }, [setActiveView]);
+
   // Global Keyboard Shortcuts (1-6, Cmd/Ctrl-K, F, A, V, Esc)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

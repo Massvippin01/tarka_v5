@@ -65,6 +65,15 @@ def run():
             f.write(dark_svg)
         print('Created frontend/public/tarka-icon-dark.svg')
 
+    # Synchronize to root brand/ directory for backend PDF reports and packaging
+    import shutil
+    shutil.copyfile('frontend/public/brand/tarka-logo-full.png', 'brand/tarka-logo.png')
+    shutil.copyfile('frontend/public/brand/tarka-symbol.png', 'brand/tarka-icon.png')
+    shutil.copyfile('frontend/public/brand/tarka-logo-dark.png', 'brand/tarka-logo-dark.png')
+    shutil.copyfile('frontend/public/brand/tarka-symbol-dark.png', 'brand/tarka-icon-dark.png')
+    shutil.copyfile('frontend/public/favicon.ico', 'brand/favicon.ico')
+    print('Synchronized official brand assets to root brand/ directory!')
+
     print('Successfully generated dark theme brand assets!')
 
 if __name__ == '__main__':
