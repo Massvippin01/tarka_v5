@@ -223,6 +223,13 @@ from app.api.projects_api import networks_router, router as projects_router
 from app.api.ingestion_api import router as ingestion_router
 from app.api.auth import router as auth_router
 from app.api.whatsapp_api import router as whatsapp_router
+from app.api.system_api import router as system_router
+
+app.include_router(
+    system_router,
+    prefix="/api/v1/system",
+    tags=["System Settings & Administration"],
+)
 
 app.include_router(
     auth_router,

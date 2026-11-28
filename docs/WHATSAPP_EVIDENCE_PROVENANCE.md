@@ -1,66 +1,67 @@
-# TARKA — WHATSAPP EVIDENCE PROVENANCE & CUSTODY LINEAGE
-**Document ID:** TARKA-WA-PROV-2026-V6  
-**Classification:** Forensic Evidence Integrity & Custody Specification  
-**Standard:** Section 63 Bharatiya Sakshya Adhiniyam (BSA) 2023  
-**Status:** VERIFIED & COMPLIANT  
+# TARKA WhatsApp Evidence Provenance & Statutory Compliance
+
+## 1. Statutory Context: Bharatiya Sakshya Adhiniyam (BSA), 2023 & DPDPA 2023
+
+Electronic evidence acquired through third-party messaging networks such as WhatsApp must meet strict statutory standards under Indian law before being admitted in financial cybercrime proceedings:
+
+1. **Bharatiya Sakshya Adhiniyam (BSA), 2023 — Section 63:**
+   - Admissibility of electronic records requires proof of the integrity of the device/system producing the record, custody chain, and un-tampered storage.
+   - Requires generating an electronic record certificate detailing cryptographic integrity (SHA-256), acquisition timestamp, and system operational conditions.
+2. **Digital Personal Data Protection Act (DPDPA), 2023:**
+   - Requires purpose limitation and data minimization.
+   - PII collected during victim reporting cannot be leaked or indexed outside authorized case parameters.
 
 ---
 
-## 1. Evidentiary Invariants
+## 2. Invariant: Phone Number NEVER Proves Identity
 
-Under Section 63 BSA 2023, electronic evidence transmitted over consumer messaging channels carries no legal presumption of authenticity without demonstrable provenance, unaltered bitstream custody, and explicit chain of custody:
+### The Problem of Spoofing and Mule SIMs
+In financial cybercrime (UPI scams, Part-Time job scams, investment frauds):
+- Criminal syndicates frequently employ stolen SIM cards, corporate SIM farms, VoIP spoofing, or compromised citizen accounts.
+- Conversely, victims contacting law enforcement via WhatsApp may be borrowing a relative's phone or using dual-SIM numbers unregistered in official records.
 
-> **Constitutional Rule:** Electronic records received via WhatsApp are DATA_ONLY. WhatsApp media is never accepted as canonical evidence merely because it arrived over a secured channel.
+### Constitutional Invariant
+Under Section 5 of the SentinelX Engineering Constitution:
+> **AI PROPOSES. EVIDENCE VERIFIES. HUMAN DECIDES.**
+> **Never classify a person as GUILTY or INNOCENT.**
+> **Never infer guilt from association, centrality, similarity, or graph proximity.**
+> **Never perform automatic identity merges.**
 
----
-
-## 2. Provenance Record Schema
-
-Every accepted WhatsApp artifact produces a dual entity in the Canonical Fraud Schema:
-
-### 2.1 EvidenceArtifact Entity
-```json
-{
-  "entity_type": "EvidenceArtifact",
-  "entity_id": "ART-WA-HBgLMjAy",
-  "attributes": {
-    "wamid": "wamid.HBgLMjAyNjExMjgxNDA1MzQxFgASEA==",
-    "sha256_hash": "3ee008a4389031846b41249b92eb295ff68f7b767ef2cbbe415b3c0e1e698888",
-    "byte_count": 524288,
-    "mime_type": "application/pdf",
-    "file_name": "victim_hdfc_statement.pdf",
-    "associated_case_id": "CASE-2026-001",
-    "triage_status": "ASSIGNED_TO_CASE",
-    "admitted_at_utc": "2026-11-28T14:47:00Z"
-  },
-  "provenance_connector": "CONN-COMM-WHATSAPP-01",
-  "confidence": 0.92
-}
-```
-
-### 2.2 Communication Observation Entity
-```json
-{
-  "entity_type": "Communication",
-  "entity_id": "COMM-WA-HBgLMjAy",
-  "attributes": {
-    "channel": "WHATSAPP",
-    "sender_phone_masked": "+91******3210",
-    "sender_phone_sha256": "8f4e2c1b9a...",
-    "sender_display_name": "Sunil Kumar",
-    "timestamp_utc": "2026-11-28T14:46:40Z",
-    "identity_verified": false,
-    "statutory_caveat": "Sender phone does not establish legal identity. Requires secondary verification under Section 63 BSA."
-  },
-  "provenance_connector": "CONN-COMM-WHATSAPP-01"
-}
-```
+**Technical Rule:**
+A WhatsApp message originating from phone number $+91\text{ }XXXXXXXXXX$ with profile display name $N$ does **NOT** constitute proof that person $N$ is the sender or owner of that number.
+- `identity_verified` is strictly hardcoded to `False`.
+- Automatic merge of citizen contact with any known suspect or victim entity is strictly **prohibited**.
 
 ---
 
-## 3. Statutory Rejection & Human Escalation Triggers
+## 3. Explicit Case Association vs. Provisional Submissions
 
-An inbound WhatsApp submission triggers mandatory human investigator escalation if:
-1. **Unassigned Case Reference:** The message lacks an explicit valid FIR, case ID, or 1930 acknowledgment number.
-2. **Exceeded Compression Threshold:** Received images have been severely compressed by consumer WhatsApp transcoding, obscuring UTR digits.
-3. **Mule Conduit Self-Report:** The sender claims to have forwarded money under instruction (potential victim-to-mule conversion).
+Incoming WhatsApp messages are routed according to explicit case tokens:
+
+| Case Token Pattern | Example | Classification | Action |
+|:---|:---|:---|:---|
+| `CASE-\d{4}-\d{3,6}` | `CASE-2026-001` | `CASE_ASSOCIATED_SUPPLEMENTARY` | Attached as unverified supplementary evidence to active case dossier; flagged for investigator review. |
+| `1930-ACK-\d+` | `1930-ACK-8837192` | `NCRP_PORTAL_REFERENCE` | Linked to National Cybercrime Reporting Portal acknowledgment reference. |
+| *No matching pattern* | *"I was scammed out of 50000 rupees yesterday"* | `UNASSIGNED_PENDING_TRIAGE` | Kept in unassigned evidence pool with `requires_human_escalation=True`. |
+
+---
+
+## 4. Cryptographic Non-Repudiation & Chain of Custody
+
+Every admitted WhatsApp message follows an unbroken forensic custody chain:
+
+1. **Raw Webhook Ingress Hash:**
+   - Exact raw bytes received from Meta Cloud API are hashed:
+     $$\text{Raw Body SHA-256} = \text{SHA256}(\text{raw\_bytes})$$
+2. **WAMID Deduplication:**
+   - Meta assigns a unique WhatsApp Message ID (`wamid.HBgL...`).
+   - TARKA verifies the WAMID against the deduplication index to prevent replay or retransmission tampering.
+3. **Evidence Artifact Normalization:**
+   - Emits an `EvidenceArtifact` entity containing:
+     - `artifact_type`: `"whatsapp_message"` or `"whatsapp_media"`
+     - `sha256`: Digest of raw message content or media payload
+     - `source_uri`: `"whatsapp://v20.0/{phone_number_id}/messages/{wamid}"`
+     - `ingest_timestamp`: UTC ISO-8601 acquisition time
+     - `statutory_cert_eligible`: `True` (eligible for Section 63 BSA certificate generation)
+4. **Communication Entity:**
+   - Emits a `Communication` entity with channel `"WHATSAPP"`, sender phone, message timestamp, and `identity_verified=False`.
